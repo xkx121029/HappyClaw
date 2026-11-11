@@ -3,6 +3,7 @@ import { getApiUrl } from "../api/config";
 import { isNetworkFetchError } from "../utils/networkError";
 import BootOfflinePanel from "./BootOfflinePanel";
 import BrandLoading from "./BrandLoading";
+import SessionRecoveryPrompt from "./SessionRecoveryPrompt";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -64,5 +65,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     return <BrandLoading viewport />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <SessionRecoveryPrompt />
+    </>
+  );
 }

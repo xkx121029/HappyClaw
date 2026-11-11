@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { OctopUser } from "../api/modules/auth";
 import { buildNavSections } from "./sidebarNav";
 import {
   createGroup,
@@ -11,22 +10,9 @@ import {
   visibleEditorGroups,
 } from "./sidebarNavLayout";
 
-const adminUser = {
-  id: 1,
-  username: "admin",
-  role: "admin",
-  permissions: ["*"],
-} as OctopUser;
-
-const limitedUser = {
-  id: 2,
-  username: "ada",
-  role: "user",
-  permissions: [],
-} as OctopUser;
-
 function catalog() {
-  return buildNavSections(adminUser, { mobileEnabled: true });
+  // 单人模式：本机拥有完整导航目录，不再按角色裁剪。
+  return buildNavSections({ mobileEnabled: true });
 }
 
 describe("sidebarNavLayout", () => {
@@ -115,8 +101,8 @@ describe("sidebarNavLayout", () => {
     );
   });
 
-  it("omits nav items and built-in groups the user cannot access", () => {
-    const sections = buildNavSections(limitedUser, { mobileEnabled: false });
+  it("drops keys that are not in the local catalog", () => {
+    const sections = catalog();
     const editor = editorFromCatalog(sections, {
       groups: [
         { id: "settings" },
@@ -136,12 +122,12 @@ describe("sidebarNavLayout", () => {
       ...editor.hidden,
     ];
     expect(shown).not.toContain("admin-users");
-    expect(shown).not.toContain("channels");
     expect(shown).toContain("chat");
-    expect(shown).not.toContain("personalization");
+    expect(shown).toContain("channels");
+    expect(shown).toContain("personalization");
     expect(
       visibleEditorGroups(editor, sections).map((group) => group.id),
-    ).toEqual(["settings", "c_aabbccdd"]);
+    ).toEqual(["settings", "admin", "c_aabbccdd"]);
   });
 
   it("keeps a new empty group only in the editor", () => {

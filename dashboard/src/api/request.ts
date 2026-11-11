@@ -357,7 +357,11 @@ async function throwIfUnauthorized(
   }
   clearAuthToken();
   handleUnauthorized();
-  let message = "Unauthorized";
+  // 单人模式没有登录页；给调用方一条中文可执行信息，而不是裸的英文 401。
+  let message = i18n.t(
+    "errors.sessionExpired",
+    "本机连接已失效：请点击「重新连接」刷新页面；如果仍然失败，请确认本机服务正在运行。",
+  );
   if (path.startsWith("/setup/")) {
     try {
       const body = (await response.clone().json()) as {

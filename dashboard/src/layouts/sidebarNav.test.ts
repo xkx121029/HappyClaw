@@ -5,14 +5,6 @@ import {
   buildNavSections,
   isGroupedNavKey,
 } from "./sidebarNav";
-import type { OctopUser } from "../api/modules/auth";
-
-const adminUser = {
-  id: 1,
-  username: "admin",
-  role: "admin",
-  permissions: ["*"],
-} as OctopUser;
 
 describe("sidebarNav", () => {
   it("marks catalog keys as grouped", () => {
@@ -24,7 +16,8 @@ describe("sidebarNav", () => {
   });
 
   it("places grouped keys only under sections with groupKey", () => {
-    const sections = buildNavSections(adminUser, { mobileEnabled: true });
+    // 单人模式：导航不再按角色裁剪，本机直接拿到完整目录。
+    const sections = buildNavSections({ mobileEnabled: true });
     const flatKeys = new Set(
       sections
         .filter((s) => !s.groupKey)
@@ -44,12 +37,12 @@ describe("sidebarNav", () => {
     }
   });
 
-  it("covers every catalog key from the admin nav", () => {
-    const keys = buildNavSections(adminUser, { mobileEnabled: true }).flatMap(
-      (section) => section.items.map((item) => item.key),
+  it("covers every catalog key from the local owner nav", () => {
+    const keys = buildNavSections({ mobileEnabled: true }).flatMap((section) =>
+      section.items.map((item) => item.key),
     );
     expect(new Set(keys)).toEqual(new Set(SIDEBAR_NAV_KEYS));
-    const grouped = buildNavSections(adminUser, { mobileEnabled: true }).filter(
+    const grouped = buildNavSections({ mobileEnabled: true }).filter(
       (section) => section.id,
     );
     expect(grouped.map((section) => section.id)).toEqual([
@@ -57,5 +50,12 @@ describe("sidebarNav", () => {
       "control",
       "admin",
     ]);
+  });
+
+  it("no longer exposes user or team management entries", () => {
+    const keys = buildNavSections({ mobileEnabled: true }).flatMap((section) =>
+      section.items.map((item) => item.key),
+    );
+    expect(keys).not.toContain("admin-users");
   });
 });

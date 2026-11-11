@@ -4,6 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { octopThreadsApi } from "../../../api/modules/octopThreads";
 import SessionList from "./SessionList";
 
+// 编辑专家抽屉会把 PDF / 浏览器预览整条链路带进 jsdom，
+// 这些用例只关心会话目录与空态，替身掉抽屉即可。
+vi.mock("./ChatEditExpertDrawer", () => ({
+  default: () => null,
+  canEditExpertFromChat: () => false,
+}));
+
 function renderList(props: { unreadyExperts?: number } = {}) {
   render(
     <MemoryRouter>

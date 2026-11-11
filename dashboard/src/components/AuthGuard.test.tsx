@@ -1,46 +1,36 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import AuthGuard from "./AuthGuard";
 
-vi.mock("../api/modules/auth", () => ({
-  authApi: {
-    getAuthStatus: vi.fn(),
-    me: vi.fn(),
-  },
-}));
+/**
+ * 单人本机模式：入口不再校验登录态，只探测后端连通性。
+ * 这些用例覆盖「离线面板 / 直接进入 / 重试」三条主路径。
+ */
+describe("AuthGuard local gate", () => {
+  const fetchMock = vi.fn();
 
-vi.mock("../api/request", () => ({
-  getAuthToken: vi.fn(() => null),
-  clearAuthToken: vi.fn(),
-}));
-
-vi.mock("../utils/locale", () => ({
-  applyUserLocale: vi.fn(() => Promise.resolve()),
-}));
-
-import { authApi } from "../api/modules/auth";
-import { getAuthToken } from "../api/request";
-
-describe("AuthGuard offline boot", () => {
   beforeEach(() => {
-    vi.mocked(authApi.getAuthStatus).mockReset();
-    vi.mocked(authApi.me).mockReset();
-    vi.mocked(getAuthToken).mockReset();
-    vi.mocked(getAuthToken).mockReturnValue(null);
+    fetchMock.mockReset();
+    // ``api/config`` reads the Vite ``define`` constant; Vitest config does not
+    // inject it, so provide an empty base or the probe throws before fetching.
+    vi.stubGlobal("BASE_URL", "");
+    vi.stubGlobal("fetch", fetchMock);
   });
 
-  it("shows offline panel instead of the protected shell when setup/status fails", async () => {
-    vi.mocked(authApi.getAuthStatus).mockRejectedValue(
-      new TypeError("Failed to fetch"),
-    );
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shows offline panel instead of the shell when the local backend is unreachable", async () => {
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
 
     render(
       <MemoryRouter>
         <AuthGuard>
-          <div>protected-shell</div>
+          <div>local-shell</div>
         </AuthGuard>
       </MemoryRouter>,
     );
@@ -53,28 +43,18 @@ describe("AuthGuard offline boot", () => {
     expect(
       screen.getByRole("button", { name: /errors\.retry|Retry|重试/ }),
     ).toBeInTheDocument();
-    expect(screen.queryByText("protected-shell")).not.toBeInTheDocument();
+    expect(screen.queryByText("local-shell")).not.toBeInTheDocument();
   });
 
-  it("keeps the authenticated shell mounted across in-app navigations", async () => {
-    vi.mocked(getAuthToken).mockReturnValue("tok");
-    vi.mocked(authApi.getAuthStatus).mockResolvedValue({
-      setup_required: false,
-      has_admin: true,
-    } as never);
-    vi.mocked(authApi.me).mockResolvedValue({
-      user_id: 1,
-      username: "admin",
-      role: "admin",
-      locale: "zh",
-    } as never);
+  it("enters the shell directly without any auth request", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 } as Response);
 
     function NavProbe() {
       const navigate = useNavigate();
       useEffect(() => {
         navigate("/b");
       }, [navigate]);
-      return <div>protected-shell</div>;
+      return <div>local-shell</div>;
     }
 
     render(
@@ -82,44 +62,29 @@ describe("AuthGuard offline boot", () => {
         <AuthGuard>
           <Routes>
             <Route path="/a" element={<NavProbe />} />
-            <Route path="/b" element={<div>protected-shell</div>} />
+            <Route path="/b" element={<div>local-shell</div>} />
           </Routes>
         </AuthGuard>
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("protected-shell")).toBeInTheDocument();
+    expect(await screen.findByText("local-shell")).toBeInTheDocument();
     await waitFor(() => {
-      expect(authApi.getAuthStatus).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
-    // Give route-driven navigate identity churn a tick; gate must not re-run.
-    await waitFor(() => {
-      expect(screen.getByText("protected-shell")).toBeInTheDocument();
-    });
-    expect(authApi.getAuthStatus).toHaveBeenCalledTimes(1);
-    expect(authApi.me).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/health");
   });
 
-  it("retries auth from the offline panel without leaving a blank shell", async () => {
-    vi.mocked(authApi.getAuthStatus)
+  it("retries from the offline panel without a blank shell", async () => {
+    fetchMock
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
-      .mockResolvedValue({
-        setup_required: false,
-        has_admin: true,
-      } as never);
-    vi.mocked(getAuthToken).mockReturnValue("tok");
-    vi.mocked(authApi.me).mockResolvedValue({
-      user_id: 1,
-      username: "admin",
-      role: "admin",
-      locale: "zh",
-    } as never);
+      .mockResolvedValue({ ok: true, status: 200 } as Response);
 
     const user = userEvent.setup();
     render(
       <MemoryRouter>
         <AuthGuard>
-          <div>protected-shell</div>
+          <div>local-shell</div>
         </AuthGuard>
       </MemoryRouter>,
     );
@@ -128,6 +93,6 @@ describe("AuthGuard offline boot", () => {
       name: /errors\.retry|Retry|重试/,
     });
     await user.click(retry);
-    expect(await screen.findByText("protected-shell")).toBeInTheDocument();
+    expect(await screen.findByText("local-shell")).toBeInTheDocument();
   });
 });

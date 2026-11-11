@@ -7,6 +7,13 @@ import { octopThreadsApi } from "../../../api/modules/octopThreads";
 import MinimalAgentSessionNav from "./MinimalAgentSessionNav";
 import SessionList from "./SessionList";
 
+// 编辑专家抽屉会把 PDF / 浏览器预览整条链路带进 jsdom，
+// 这些用例只覆盖导航范围，替身掉抽屉即可。
+vi.mock("./ChatEditExpertDrawer", () => ({
+  default: () => null,
+  canEditExpertFromChat: () => false,
+}));
+
 function agent(
   partial: Pick<OctopAgent, "agent_id" | "name"> &
     Partial<Pick<OctopAgent, "kind" | "bridge">>,

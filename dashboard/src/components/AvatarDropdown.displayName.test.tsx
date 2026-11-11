@@ -1,20 +1,16 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, fallback?: string) => fallback ?? key,
     i18n: { language: "zh" },
   }),
 }));
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => vi.fn(),
-}));
-
-vi.mock("../hooks/useUserRole", () => ({
-  useUserRole: () => "user",
 }));
 
 vi.mock("../hooks/useIsMobile", () => ({
@@ -28,27 +24,8 @@ vi.mock("../context/LayoutModeContext", () => ({
   }),
 }));
 
-vi.mock("../api/modules/auth", () => ({
-  authApi: {
-    me: () => Promise.resolve({ id: 1, username: "ada", has_password: true }),
-    mfaStatus: () =>
-      Promise.resolve({
-        totp_verified: false,
-        passkeys: [],
-        recovery_remaining: 0,
-        is_last_factor: false,
-        can_enroll: true,
-        has_password: true,
-        sso_linked: false,
-      }),
-    getOauthStatus: () => Promise.resolve({ providers: [] }),
-    updateProfile: vi.fn(),
-    logout: vi.fn(),
-  },
-}));
-
-vi.mock("../api/modules/preferences", () => ({
-  preferencesApi: { setLocale: vi.fn() },
+vi.mock("../utils/locale", () => ({
+  applyUserLocale: vi.fn(() => Promise.resolve("zh")),
 }));
 
 vi.mock("./ThemeSwitcher", () => ({ default: () => null }));
@@ -61,70 +38,53 @@ vi.mock("../pages/Admin/Users/ProfileAvatar", () => ({
 
 import AvatarDropdown from "./AvatarDropdown";
 
-const user = {
-  id: 1,
-  username: "ada",
-  role: "user",
-  display_name: "Ada",
-  locale: "zh",
-};
-
-async function openSettings() {
-  const view = userEvent.setup();
-  render(<AvatarDropdown user={user} placement="sidebar" />);
-  await view.click(screen.getByRole("button", { name: /Ada/ }));
-  await view.click(screen.getByRole("button", { name: "account.settings" }));
-  return view;
-}
-
-describe("AvatarDropdown personal settings", () => {
-  it("puts save and cancel in the drawer footer", async () => {
-    await openSettings();
-
-    const cancel = await screen.findByRole("button", { name: "common.cancel" });
-    const save = screen.getByRole("button", { name: "common.save" });
-    const footer = cancel.closest(".ant-drawer-footer");
-    expect(footer).toContainElement(save);
-    expect(
-      screen.queryByRole("button", { name: "account.saveDisplayName" }),
-    ).not.toBeInTheDocument();
+/**
+ * 单人本机模式：入口只保留本机外观 / 语言 / 显示名与备份入口，
+ * 不再有账号、角色、改密与退出登录。
+ */
+describe("AvatarDropdown local profile", () => {
+  beforeEach(() => {
+    localStorage.clear();
   });
 
-  it("shows display name, login name, and role on one line without a duplicate avatar", async () => {
-    await openSettings();
-
-    const identity = await waitFor(() => {
-      const handle = screen.getByText("@ada");
-      const row = handle.parentElement;
-      expect(row).toBeTruthy();
-      return row as HTMLElement;
-    });
-
-    expect(identity.textContent).toMatch(
-      /Ada[\s\S]*@ada[\s\S]*account\.roleUser/,
-    );
-    expect(identity.querySelector("[data-testid='profile-avatar']")).toBeNull();
-    expect(screen.getByTestId("avatar-picker")).toBeInTheDocument();
-  });
-
-  it("opens account security with the password form in one drawer", async () => {
+  async function openMenu() {
     const view = userEvent.setup();
-    render(<AvatarDropdown user={user} placement="sidebar" />);
+    render(<AvatarDropdown placement="sidebar" />);
+    await view.click(screen.getByRole("button", { name: /我/ }));
+    return view;
+  }
 
-    await view.click(screen.getByRole("button", { name: /Ada/ }));
-    expect(
-      screen.queryByRole("button", { name: "account.changePassword" }),
-    ).not.toBeInTheDocument();
-    await view.click(screen.getByRole("button", { name: "account.security" }));
+  it("labels the profile as local single-user mode", async () => {
+    await openMenu();
 
-    expect(
-      await screen.findByText("account.currentPassword"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "account.changePassword" }),
-    ).toBeInTheDocument();
-    expect(
-      document.querySelector(".ant-drawer-right, .octop-drawer-right"),
-    ).toBeTruthy();
+    expect(screen.getByText("本机 · 单人模式")).toBeInTheDocument();
+    expect(screen.getByText("account.settings")).toBeInTheDocument();
+    expect(screen.getByText("本机数据备份与恢复")).toBeInTheDocument();
+    expect(screen.queryByText("account.roleUser")).toBeNull();
+    expect(screen.queryByText("account.changePassword")).toBeNull();
+  });
+
+  it("puts close and save in the settings drawer footer", async () => {
+    const view = await openMenu();
+    await view.click(screen.getByRole("button", { name: "account.settings" }));
+
+    const save = await screen.findByRole("button", { name: "common.save" });
+    // antd 会在两个汉字之间插入空格，按正则匹配。
+    const close = screen.getByRole("button", { name: /关\s*闭/ });
+    const footer = close.closest(".ant-drawer-footer");
+    expect(footer).toContainElement(save);
+
+    expect(await screen.findByTestId("avatar-picker")).toBeInTheDocument();
+    expect(screen.queryByText("account.currentPassword")).toBeNull();
+  });
+
+  it("keeps display name and mode hint together in the drawer identity", async () => {
+    const view = await openMenu();
+    await view.click(screen.getByRole("button", { name: "account.settings" }));
+
+    const modeHint = await screen.findByText("本机 · 单人模式");
+    const identity = modeHint.parentElement as HTMLElement;
+    expect(identity.textContent).toContain("我");
+    expect(identity.textContent).toContain("本机 · 单人模式");
   });
 });

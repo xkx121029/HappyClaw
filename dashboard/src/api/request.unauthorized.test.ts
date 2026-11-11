@@ -5,7 +5,10 @@ vi.mock("./config", () => ({
 }));
 
 vi.mock("../i18n", () => ({
-  default: { language: "zh" },
+  default: {
+    language: "zh",
+    t: (_key: string, fallback?: string) => fallback ?? _key,
+  },
 }));
 
 function unauthorizedResponse(): Response {
@@ -49,10 +52,11 @@ describe("401 handling", () => {
     window.removeEventListener(mod.UNAUTHORIZED_EVENT, listener);
   });
 
-  it("falls back to a full-page navigation when nothing handles the event", async () => {
-    await expect(mod.request("/agents")).rejects.toThrow();
+  it("keeps the page alive and reports a readable message when nothing handles the event", async () => {
+    await expect(mod.request("/agents")).rejects.toThrow(/本机连接已失效/);
 
-    expect(replace).toHaveBeenCalledWith("/login");
+    expect(replace).not.toHaveBeenCalled();
+    expect(mod.getAuthToken()).toBe("");
   });
 
   it("keeps the local session when a 401 is a peer credential error", async () => {

@@ -190,7 +190,9 @@ export default function AdminStep({
           name="email"
           rules={[
             {
-              type: "email",
+              // 单人本机场景不要求真实邮箱：允许 ``owner@local`` 这类内网写法，
+              // 只拦住完全不像邮箱的输入。
+              pattern: /^[^\s@]+@[^\s@]+$/,
               message: t("wizard.admin.emailInvalid") as string,
             },
           ]}
