@@ -710,25 +710,19 @@ async function runTrayBackup(): Promise<void> {
     await showShellMessage(null, "正在备份", "上一次备份还没有结束，请稍候。");
     return;
   }
-  if (!deviceSession || !backendPort || apiAdmissionClosed) {
+  if (!backendPort || apiAdmissionClosed) {
     await showShellError(null, "暂时无法备份", "本地服务还没有准备好，请等主界面加载完成后再试。");
     return;
   }
-  const session = await deviceSession.renew();
-  if (!session) {
-    await showShellError(
-      null,
-      "暂时无法备份",
-      "本机登录状态不可用。请在应用内完成一次登录，或到设置 → 备份 手动备份。",
-    );
-    return;
-  }
+  // 单人模式允许空 token：凭据缺失就匿名调用，续期失败也再兜底一次。
+  const session = await deviceSession?.renew();
+  const baseUrl = `http://127.0.0.1:${backendPort}`;
   backupInFlight = true;
   try {
-    const result = await createManualBackup({
-      baseUrl: `http://127.0.0.1:${backendPort}`,
-      token: session.access_token,
-    });
+    let result = await createManualBackup({ baseUrl, token: session?.access_token });
+    if (!result.ok && session) {
+      result = await createManualBackup({ baseUrl });
+    }
     if (!result.ok) {
       await showShellError(null, "备份失败", result.message ?? "未知错误");
       return;

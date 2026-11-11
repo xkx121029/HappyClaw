@@ -1,10 +1,12 @@
 /**
  * "Back up now" from the tray / Help menu.
  *
- * The shell renews its device JWT (the same seamless session the Dashboard
- * uses) and calls the normal backup endpoint, so a tray backup is the same
+ * The shell calls the normal backup endpoint, so a tray backup is the same
  * archive the settings page produces. Chat history is included: for a
  * single-user personal tool that is the part worth protecting.
+ *
+ * A device JWT is optional: the single-user sidecar accepts an empty token, so
+ * a fresh install can back up before any device credential exists.
  */
 
 export interface ManualBackupResult {
@@ -28,19 +30,19 @@ function errorDetail(body: unknown, status: number): string {
 
 export async function createManualBackup(options: {
   baseUrl: string;
-  token: string;
+  /** Omit on machines without a device credential; the sidecar then runs unauthenticated. */
+  token?: string | null;
   fetchImpl?: typeof fetch;
 }): Promise<ManualBackupResult> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (options.token) headers.authorization = `Bearer ${options.token}`;
   try {
     const response = await fetchImpl(`${options.baseUrl}/api/backup/create`, {
       method: "POST",
-      headers: {
-        authorization: `Bearer ${options.token}`,
-        "content-type": "application/json",
-      },
+      headers,
       body: JSON.stringify({ include_chats: true }),
       signal: controller.signal,
     });

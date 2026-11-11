@@ -45,6 +45,26 @@ test("the backend's error message reaches the dialog", async () => {
   assert.equal(result.message, "备份正在进行中");
 });
 
+test("a fresh install backs up without a device token", async () => {
+  const seen: Array<{ url: string; init?: RequestInit }> = [];
+  const fetchImpl = (async (url: string, init?: RequestInit) => {
+    seen.push({ url, init });
+    return new Response(JSON.stringify({ name: "octop-backup-2.tar.gz", size: 2048 }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  }) as unknown as typeof fetch;
+
+  const result = await createManualBackup({
+    baseUrl: "http://127.0.0.1:3210",
+    fetchImpl,
+  });
+  assert.equal(result.ok, true);
+  const headers = seen[0]?.init?.headers as Record<string, string>;
+  assert.equal(headers.authorization, undefined);
+  assert.equal(headers["content-type"], "application/json");
+});
+
 test("a transport failure is reported, not thrown", async () => {
   const fetchImpl = (async () => {
     throw new Error("connect ECONNREFUSED");
