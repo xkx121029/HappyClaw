@@ -67,6 +67,7 @@ import AgentNotReadyScreen from "./components/AgentNotReadyScreen";
 import ModelConfigEmpty from "./components/ModelConfigEmpty";
 import AgentProfileDrawer from "../../components/AgentProfileDrawer";
 import TrajectoryDrawer from "./components/TrajectoryDrawer";
+import CommandPalette from "./components/CommandPalette";
 import { useExpertChatWelcome } from "./hooks/useExpertQuickCards";
 import { useSkills } from "../Agent/Skills/useSkills";
 import { useChatSubagents } from "./hooks/useChatSubagents";
@@ -286,6 +287,7 @@ function ChatPageInner() {
     chatSkillCatalogAgentId(resolvedAgentId, agentChatReady, agentsLoading),
   );
   const [trajectoryDrawerOpen, setTrajectoryDrawerOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [turnRailVisible, setTurnRailVisible] = useState(false);
   const {
     sessions,
@@ -606,6 +608,16 @@ function ChatPageInner() {
     composerSession?.conversationMode,
     composerSession?.hitlPolicy,
     composerSession?.owned !== false,
+  );
+
+  const paletteModels = useMemo(
+    () =>
+      availableModels.map((model) => ({
+        value: `${model.provider_name}/${model.model}`,
+        label: model.name || model.model,
+        provider: model.provider_name,
+      })),
+    [availableModels],
   );
 
   const { contextMaxTokens, contextUsedTokens } = useChatContextWindow(
@@ -997,6 +1009,40 @@ function ChatPageInner() {
     clearQueued();
     startNewChat();
   }, [clearQueued, startNewChat]);
+
+  const openLocalSettings = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("octop:open-settings"));
+  }, []);
+
+  // 单人本机快捷键：命令面板 / 新建会话 / 模型切换 / 本机设置。
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const mod = event.metaKey || event.ctrlKey;
+      if (!mod) return;
+      const key = event.key.toLowerCase();
+      if (key === "k" && !event.shiftKey) {
+        event.preventDefault();
+        setPaletteOpen(true);
+        return;
+      }
+      if (key === "o" && event.shiftKey) {
+        event.preventDefault();
+        handleNewChat();
+        return;
+      }
+      if (key === "m" && event.shiftKey) {
+        event.preventDefault();
+        setPaletteOpen(true);
+        return;
+      }
+      if (event.key === ",") {
+        event.preventDefault();
+        openLocalSettings();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleNewChat, openLocalSettings]);
 
   useEffect(() => {
     return chatStore.onSlashAction((ev) => {
@@ -2015,6 +2061,18 @@ function ChatPageInner() {
               onClose={() => setTrajectoryDrawerOpen(false)}
             />
           )}
+          <CommandPalette
+            open={paletteOpen}
+            sessions={sessions}
+            models={paletteModels}
+            modelsReady={modelsReady}
+            currentModel={selectedModel}
+            onClose={() => setPaletteOpen(false)}
+            onNewChat={handleNewChat}
+            onSelectSession={handleSelectSession}
+            onSelectModel={setSelectedModel}
+            onOpenSettings={openLocalSettings}
+          />
         </div>
       </ChatToolDockProvider>
     </ChatFilePreviewProvider>

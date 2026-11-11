@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Drawer, Form, Input, Button, Segmented, Tooltip, Popover } from "antd";
 import { message } from "@/utils/antdMessage";
 
@@ -78,6 +78,16 @@ export default function AvatarDropdown({
     profileForm.setFieldsValue({ display_name: profile.display_name || "" });
     deferOpen(() => setSettingsOpen(true));
   };
+
+  // 全局快捷键 Ctrl/Cmd + , 由聊天页广播，本组件始终挂载在侧边栏。
+  useEffect(() => {
+    const onOpenSettings = () => openSettings();
+    window.addEventListener("octop:open-settings", onOpenSettings);
+    return () =>
+      window.removeEventListener("octop:open-settings", onOpenSettings);
+    // 设置入口只依赖稳定的表单实例与 prop，挂载一次即可。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openCustomizeNav = () => {
     setMenuOpen(false);
