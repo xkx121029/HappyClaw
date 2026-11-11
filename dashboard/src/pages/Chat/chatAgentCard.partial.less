@@ -212,6 +212,28 @@
   line-height: 1.4;
 }
 
+.agentCardSessionsEmptyAction {
+  margin-left: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--fn-text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--fn-text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-brand);
+    outline-offset: 2px;
+  }
+}
+
 /* 会话目录加载骨架：行高与 .sessionRow 对齐，避免内容到位时整列跳动。 */
 .sessionSkeleton {
   display: flex;

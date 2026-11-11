@@ -44,6 +44,12 @@ import {
 } from "../utils/navSessionSearch";
 import { sortExpertsByPin } from "../utils/pinnedExpertsPrefs";
 import {
+  readSessionSortMode,
+  sortSessionsForDisplay,
+  writeSessionSortMode,
+  type SessionSortMode,
+} from "../utils/sessionSortPrefs";
+import {
   initialChatNavScope,
   matchesChatNavScope,
   type ChatNavScope,
@@ -316,6 +322,7 @@ interface AgentCardProps {
   onTogglePin?: () => void;
   onEdit?: () => void;
   liveWorkingIds: ReadonlySet<string>;
+  sortMode: SessionSortMode;
 }
 
 function ActiveAgentCard({
@@ -342,15 +349,18 @@ function ActiveAgentCard({
   onTogglePin,
   onEdit,
   liveWorkingIds,
+  sortMode,
 }: AgentCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const accent = agent.color || "#6366f1";
 
   const filteredSessions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return sessions;
-    return sessions.filter((s) => s.name.toLowerCase().includes(q));
-  }, [sessions, searchQuery]);
+    const base = q
+      ? sessions.filter((s) => s.name.toLowerCase().includes(q))
+      : sessions;
+    return sortSessionsForDisplay(base, sortMode, i18n.language);
+  }, [sessions, searchQuery, sortMode, i18n.language]);
 
   const fetchAllRequestedRef = useRef(false);
   useEffect(() => {
@@ -440,7 +450,14 @@ function ActiveAgentCard({
           </div>
         ) : sessions.length === 0 ? (
           <div className={styles.agentCardSessionsEmpty}>
-            {t("chat.noSessionsYet", "直接发消息即可开始对话")}
+            <span>{t("chat.noSessionsYet", "直接发消息即可开始对话")}</span>
+            <button
+              type="button"
+              className={styles.agentCardSessionsEmptyAction}
+              onClick={() => onNewChat(agent.agent_id)}
+            >
+              {t("chat.palette.newChat", "新建会话")}
+            </button>
           </div>
         ) : filteredSessions.length === 0 ? (
           <div className={styles.agentCardSessionsEmpty}>
@@ -626,6 +643,11 @@ export default function SessionList({
   const navigate = useNavigate();
   const liveWorkingIds = useSessionWorkIds();
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortMode, setSortMode] = useState<SessionSortMode>(readSessionSortMode);
+  const changeSortMode = useCallback((mode: SessionSortMode) => {
+    setSortMode(mode);
+    writeSessionSortMode(mode);
+  }, []);
   const [showingHidden, setShowingHidden] = useState(false);
   const [editAgent, setEditAgent] = useState<OctopAgent | null>(null);
   const [navScope, setNavScope] = useState<ChatNavScope>(() =>
@@ -831,6 +853,7 @@ export default function SessionList({
             canEditExpertFromChat(agent) ? () => setEditAgent(agent) : undefined
           }
           liveWorkingIds={liveWorkingIds}
+          sortMode={sortMode}
         />
       );
     }
@@ -882,6 +905,34 @@ export default function SessionList({
               placeholder={t("chat.searchSessions", "搜索会话")}
               aria-label={t("chat.searchSessions", "搜索会话")}
             />
+          </div>
+          <div
+            className={styles.sessionSortSwitch}
+            role="group"
+            aria-label={t("chat.sortLabel", "会话排序")}
+          >
+            <button
+              type="button"
+              className={cx(
+                styles.sessionSortOption,
+                sortMode === "recent" && styles.sessionSortOptionActive,
+              )}
+              aria-pressed={sortMode === "recent"}
+              onClick={() => changeSortMode("recent")}
+            >
+              {t("chat.sortRecent", "最近")}
+            </button>
+            <button
+              type="button"
+              className={cx(
+                styles.sessionSortOption,
+                sortMode === "name" && styles.sessionSortOptionActive,
+              )}
+              aria-pressed={sortMode === "name"}
+              onClick={() => changeSortMode("name")}
+            >
+              {t("chat.sortName", "名称")}
+            </button>
           </div>
         </div>
       ) : null}
