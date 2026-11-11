@@ -206,7 +206,6 @@ def _row_dict(
     payload: dict[str, Any] = {
         "id": row.id,
         "agent_id": row.agent_id,
-        "user_id": row.user_id,
         "name": row.name,
         "description": row.description,
         "persona_mbti": row.persona_mbti,
@@ -253,6 +252,12 @@ def _row_dict(
                 shared=payload["is_shared"],
             )
         )
+    # Single-user mode: multi-user scope fields carry no meaning. ``is_shared``
+    # and ``is_owner`` stay because the dashboard still reads them.
+    payload.pop("visibility", None)
+    payload.pop("group_ids", None)
+    if payload["state"] == "created" and not (row.default_model or "").strip():
+        payload["setup_hint"] = "尚未配置可用模型，请先在「模型」中添加并启用一个模型。"
     return payload
 
 

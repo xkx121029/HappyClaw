@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import re
 import shutil
 import threading
@@ -21,7 +22,6 @@ from octop_harness.security.models import SecurityPolicy
 
 from octop.i18n.domains.agents import (
     AGENT_START_TIMEOUT,
-    NO_MODELS_CONFIGURED,
     format_agent_start_error,
 )
 from octop.infra.agents.memory.backend import memory_backend_from_agent_config
@@ -1684,7 +1684,19 @@ class AgentManager:
         state = (row.last_state or "").strip().lower()
         if state in ("failed", "error"):
             return OctopError(ErrorCode.AGENT_FAILED, f"agent {agent_id!r} failed to start")
+        if state in ("created", "starting") and not self._has_usable_model(row):
+            # First run with no provider: an actionable "add a model" hint beats
+            # the generic "expert is not enabled" copy.
+            return OctopError(
+                ErrorCode.AGENT_NO_MODEL,
+                f"agent {agent_id!r} has no model configured",
+            )
         return OctopError(ErrorCode.AGENT_NOT_RUNNING, f"agent {agent_id!r} not running")
+
+    def _has_usable_model(self, row: AgentRow) -> bool:
+        if self._harness_manager is not None and self._harness_manager.shared_factory is not None:
+            return True
+        return bool((row.default_model or "").strip())
 
     def assert_agents_deletable(self, agent_ids: Sequence[str]) -> None:
         """Raise when any owned agent has an in-flight team job."""
@@ -3596,12 +3608,44 @@ class AgentManager:
         except Exception:
             logger.exception("Deferred bootstrap failed for agent %s", row.agent_id)
 
+    def _repair_persisted_backend_root(self, row: AgentRow) -> None:
+        """Persist a workspace-scoped backend root for agents stored on the wrong drive.
+
+        Older builds wrote the *home drive* (``C:/``) into the default expert's
+        ``config.backend.root_dir`` even when ``OCTOP_HOME`` lived on another
+        drive. Resolving already neutralizes that in memory; rewriting the stored
+        value keeps the settings UI honest and stops the warning from repeating.
+        The original value is logged first.
+        """
+        if os.name != "nt":
+            return
+        cfg = self._agent_config_dict(row)
+        backend = cfg.get("backend")
+        if not isinstance(backend, dict):
+            return
+        workspace_dir = self.resolve_workspace_dir(row.agent_id)
+        fixed = windows_neutralize_host_root(
+            backend, workspace_dir=workspace_dir, agent_id=row.agent_id
+        )
+        if not isinstance(fixed, dict) or fixed == backend:
+            return
+        cfg["backend"] = fixed
+        self.persist_harness_config(row.agent_id, cfg)
+
     async def _start_agent(
         self, row: AgentRow, *, init_workspace: bool = True
     ) -> HarnessAgent | None:
         assert self._harness_manager is not None, "_start_agent called before boot()"
+        self._repair_persisted_backend_root(row)
         if self._harness_manager.shared_factory is None:
-            self._repos.agent_repo.set_state(row.agent_id, "failed", error=NO_MODELS_CONFIGURED)
+            # Single-user mode: no model configured yet is a normal first-run
+            # state, not an internal failure. Keep the expert reloadable by the
+            # existing "needs model reload" path.
+            self._repos.agent_repo.set_state(row.agent_id, "created", error=None)
+            logger.info(
+                "agent %s not started: no model configured (single-user first run)",
+                row.agent_id,
+            )
             return None
         async with self._lifecycle_lock_for(row.agent_id):
             existing = self._octop_harness_or_none(row.agent_id)
@@ -3692,13 +3736,13 @@ class AgentManager:
 
                 synced_skills = await sync_octop_builtin_skills(ws)
                 logger.info(
-                    "Agent %s: synced Octop built-in skills=%s",
+                    "Agent %s: synced HappyClaw built-in skills=%s",
                     row.agent_id,
                     synced_skills,
                 )
             except Exception:
                 logger.warning(
-                    "Agent %s: failed to sync Octop built-in skills",
+                    "Agent %s: failed to sync HappyClaw built-in skills",
                     row.agent_id,
                     exc_info=True,
                 )
@@ -3794,9 +3838,13 @@ class AgentManager:
             backend_spec,
             repo=self._repos.storage_backend_repo,
         )
-        # Windows: the dashboard defaults local backends to root_dir "/", which
-        # resolves to a drive other than the workspace and breaks path checks.
-        return windows_neutralize_host_root(resolved, workspace_dir=workspace_dir)
+        # Windows: the dashboard defaults local backends to root_dir "/", and
+        # older builds persisted the home drive ("C:/") even when OCTOP_HOME
+        # lives elsewhere. Either root resolves to a different drive than the
+        # workspace and breaks path checks.
+        return windows_neutralize_host_root(
+            resolved, workspace_dir=workspace_dir, agent_id=row.agent_id
+        )
 
     def resolved_backend_spec(self, agent_id: str) -> Any:
         """Backend spec for *agent_id* with Octop docker enrichments applied."""

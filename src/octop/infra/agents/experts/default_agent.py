@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+from pathlib import Path
 from typing import Any
 
 from octop.infra.agents.experts.catalog import ExpertCatalog, build_create_spec_from_expert
@@ -18,7 +20,7 @@ from octop.infra.users.resource_policy import (
     POLICY_WORKSPACE_ROOT_DIR,
     effective_workspace_root_dir,
 )
-from octop.infra.utils.host_dirs import host_fs_tree_root
+from octop.infra.utils.host_dirs import host_fs_tree_root, host_path_text
 from octop.infra.utils.locale import normalize_locale
 
 logger = logging.getLogger(__name__)
@@ -30,15 +32,37 @@ SETUP_DEFAULT_AGENT_ID = "main"
 def default_home_local_backend(*, root_dir: str | None = None) -> dict[str, Any]:
     """Same local backend as the dashboard create-from-expert default.
 
-    Defaults to host filesystem root; pass *root_dir* when a user
-    ``workspace_root_dir`` policy applies.
+    Defaults to the root that contains the real ``OCTOP_HOME`` workspace; pass
+    *root_dir* when a user ``workspace_root_dir`` policy applies.
     """
-    resolved = (root_dir or "").strip() or host_fs_tree_root()
+    resolved = (root_dir or "").strip() or _default_local_root()
     return {
         "type": "local_shell",
         "root_dir": resolved,
         "virtual_mode": True,
     }
+
+
+def _default_local_root() -> str:
+    """Host root that contains this install's data directory.
+
+    On POSIX that is ``/``. On Windows :func:`host_fs_tree_root` returns the
+    *home drive* root (``C:/``), which breaks every agent whose ``OCTOP_HOME``
+    lives on another drive: deepagents rejects the workspace with
+    ``Path ... outside root directory``. Derive the drive from ``OCTOP_HOME``
+    instead so skills / artifacts stay under the same root as the workspace.
+    """
+    if os.name != "nt":
+        return host_fs_tree_root()
+    from octop.infra.utils.paths import PathLayout  # noqa: PLC0415
+
+    try:
+        anchor = PathLayout.from_env().root.expanduser().resolve().anchor
+    except OSError:
+        anchor = ""
+    if not anchor:
+        return host_fs_tree_root()
+    return host_path_text(Path(anchor))
 
 
 def user_policy_workspace_root(server: Any, user_id: int) -> str | None:

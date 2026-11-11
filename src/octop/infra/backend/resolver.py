@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any
 
 from octop.infra.backend.adapter import row_to_backend_spec
+
+logger = logging.getLogger(__name__)
 
 
 def default_agent_backend_spec(workspace_dir: Path) -> dict[str, Any]:
@@ -31,38 +34,94 @@ def default_agent_backend_spec(workspace_dir: Path) -> dict[str, Any]:
     return dict(DEFAULT_BACKEND_SPEC)
 
 
-def windows_neutralize_host_root(spec: Any, *, workspace_dir: Path) -> Any:
-    """Windows: rewrite local backends rooted at ``/`` to the agent workspace.
+def windows_neutralize_host_root(
+    spec: Any,
+    *,
+    workspace_dir: Path,
+    agent_id: str | None = None,
+) -> Any:
+    """Windows: scope local backends so they can reach the agent workspace.
 
-    ``root_dir: "/"`` is the dashboard's default for local backends. On Windows
-    it resolves to the *current drive root* (often a different drive than the
-    agent workspace), so deepagents virtual-path checks reject every workspace
-    path with ``Path ... outside root directory``. Only ``root_dir`` is rewritten
-    so ``type`` / ``virtual_mode`` and other fields stay intact.
+    Two shapes get rewritten to ``workspace_dir``:
 
-    Applies to top-level ``local_shell`` / ``filesystem`` specs and to the
-    ``default`` of composite specs (the default is what anchors the agent
-    workspace). Route sub-backends are user-pinned and left untouched — a route
-    root of ``/`` is the caller's explicit choice and harmless to loading.
+    * ``root_dir: "/"`` — the dashboard's default for local backends. On
+      Windows it resolves to the *current drive root* (often a different drive
+      than the agent workspace), so deepagents virtual-path checks reject every
+      workspace path with ``Path ... outside root directory``.
+    * a bare drive root on a *different* drive than the workspace (e.g. a
+      persisted ``C:/`` while ``OCTOP_HOME`` lives on ``E:``). Those were
+      written by the old default-expert bootstrap and can never reach the
+      workspace; the original value is logged before the rewrite.
+
+    Only ``root_dir`` is rewritten so ``type`` / ``virtual_mode`` and other
+    fields stay intact. Applies to top-level ``local_shell`` / ``filesystem``
+    specs and to the ``default`` of composite specs (the default is what
+    anchors the agent workspace). Route sub-backends are user-pinned and left
+    untouched — a route root of ``/`` is the caller's explicit choice and
+    harmless to loading.
     """
     if os.name != "nt":
         return spec
     if not isinstance(spec, dict):
         return spec
     kind = spec.get("type")
-    if kind in ("local_shell", "filesystem") and _is_host_root(spec.get("root_dir")):
-        return {**spec, "root_dir": str(workspace_dir.resolve())}
+    if kind in ("local_shell", "filesystem") and _root_unreachable(
+        spec.get("root_dir"), workspace_dir
+    ):
+        return {**spec, "root_dir": _scoped_root(spec, workspace_dir, agent_id)}
     if (
         kind == "composite"
         and isinstance(spec.get("default"), dict)
-        and _is_host_root(spec["default"].get("root_dir"))
+        and _root_unreachable(spec["default"].get("root_dir"), workspace_dir)
     ):
         default = spec["default"]
         return {
             **spec,
-            "default": {**default, "root_dir": str(workspace_dir.resolve())},
+            "default": {
+                **default,
+                "root_dir": _scoped_root(default, workspace_dir, agent_id),
+            },
         }
     return spec
+
+
+def _scoped_root(spec: dict[str, Any], workspace_dir: Path, agent_id: str | None) -> str:
+    scoped = str(workspace_dir.resolve())
+    logger.warning(
+        "agent %s backend root_dir %r cannot reach workspace %s on Windows; "
+        "scoping the backend to the workspace",
+        agent_id or "?",
+        spec.get("root_dir"),
+        scoped,
+    )
+    return scoped
+
+
+def _root_unreachable(root: Any, workspace_dir: Path) -> bool:
+    """True when a Windows local root can never contain *workspace_dir*."""
+    if _is_host_root(root):
+        return True
+    drive = _drive_root(root)
+    if not drive:
+        return False
+    return drive != _drive_of(workspace_dir)
+
+
+def _drive_root(value: Any) -> str:
+    """``"c:"`` for a bare drive root (``C:/``, ``C:\\``, ``C:``); else ``""``."""
+    text = str(value or "").strip().replace("\\", "/")
+    if len(text) in (2, 3) and text[0].isalpha() and text[1] == ":":
+        if len(text) == 2 or text[2] == "/":
+            return text[:2].lower()
+    return ""
+
+
+def _drive_of(value: Any) -> str:
+    """``"e:"`` for anything on that drive (``E:/data``, ``E:\\x``)."""
+    text = str(value or "").strip().replace("\\", "/")
+    if len(text) >= 2 and text[0].isalpha() and text[1] == ":":
+        return text[:2].lower()
+    return ""
 
 
 def _is_host_root(root: Any) -> bool:
