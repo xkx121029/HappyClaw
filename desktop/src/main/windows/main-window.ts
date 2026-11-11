@@ -1,4 +1,4 @@
-import { BrowserWindow } from "electron";
+import { BrowserWindow, screen } from "electron";
 
 import { IPC_CHANNELS } from "../../shared/ipc-contract";
 import {
@@ -8,7 +8,7 @@ import {
   windowChrome,
   type WindowChromeTheme,
 } from "./chrome";
-import { DEFAULT_WINDOW_SIZE, MIN_WINDOW_SIZE } from "./size";
+import { DEFAULT_WINDOW_SIZE, fitMinWindowSize } from "./size";
 
 /**
  * The real Dashboard window. Packaged builds load ``octop://app/`` (static
@@ -63,14 +63,21 @@ export function createMainWindow(options: {
   bounds?: { x: number; y: number; width: number; height: number } | null;
   maximized?: boolean;
 }): BrowserWindow {
+  // The floor follows the display the window is reopening on: on a low-DPI
+  // screen 960x600 would be wider than the work area, so it shrinks instead of
+  // opening partly off-screen.
+  const display = options.bounds
+    ? screen.getDisplayNearestPoint({ x: options.bounds.x, y: options.bounds.y })
+    : screen.getPrimaryDisplay();
+  const minSize = fitMinWindowSize(display.workAreaSize);
   const win = new BrowserWindow({
     title: "HappyClaw",
     width: DEFAULT_WINDOW_SIZE.width,
     height: DEFAULT_WINDOW_SIZE.height,
     // The Dashboard stops being usable below its desktop breakpoint, so the
     // window refuses to shrink past it instead of letting the user do it.
-    minWidth: MIN_WINDOW_SIZE.width,
-    minHeight: MIN_WINDOW_SIZE.height,
+    minWidth: minSize.width,
+    minHeight: minSize.height,
     ...(options.bounds ?? {}),
     show: false,
     // macOS pins traffic lights over the page. Windows overlays transparent

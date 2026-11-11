@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, screen } from "electron";
 
 import { EARLY_IPC } from "../../shared/early-ipc";
 import { encodeShellError, SHELL_ERROR_PARAM, type ShellFailure } from "../../shared/shell-error";
@@ -8,7 +8,7 @@ import {
   windowChrome,
   type WindowChromeTheme,
 } from "./chrome";
-import { DEFAULT_WINDOW_SIZE, MIN_WINDOW_SIZE } from "./size";
+import { DEFAULT_WINDOW_SIZE, fitMinWindowSize } from "./size";
 
 /**
  * Early Window (§4): shown immediately so the cold start never shows a blank
@@ -49,14 +49,19 @@ export function createEarlyWindow(options: EarlyWindowOptions): EarlyWindow {
   registerRelaunchHandler();
   const mode = options.theme.mode;
 
+  const bounds = options.bounds ?? null;
+  const display = bounds
+    ? screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y })
+    : screen.getPrimaryDisplay();
+  const minSize = fitMinWindowSize(display.workAreaSize);
   const win = new BrowserWindow({
     title: "HappyClaw",
     width: DEFAULT_WINDOW_SIZE.width,
     height: DEFAULT_WINDOW_SIZE.height,
     // Same floor as the Dashboard: this window becomes the Dashboard, so a
     // size the page would refuse has to be refused here too.
-    minWidth: MIN_WINDOW_SIZE.width,
-    minHeight: MIN_WINDOW_SIZE.height,
+    minWidth: minSize.width,
+    minHeight: minSize.height,
     ...(options.bounds ?? {}),
     show: false,
     // Same native chrome as the Dashboard window, so the swap from splash to

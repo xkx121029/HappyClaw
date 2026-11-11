@@ -639,6 +639,14 @@ async function openDataDirectory(): Promise<boolean> {
   }
 }
 
+/** Reveal the shell log in the OS file manager; fall back to its folder. */
+function openLogFile(): void {
+  const path = desktopLog().path;
+  if (!path) return;
+  if (existsSync(path)) shell.showItemInFolder(path);
+  else void shell.openPath(dirname(path));
+}
+
 /** Apply "open at login". Linux writes its own freedesktop entry. */
 function applyAutoLaunchSetting(enabled: boolean): void {
   try {
@@ -727,11 +735,25 @@ async function runTrayBackup(): Promise<void> {
       await showShellError(null, "备份失败", result.message ?? "未知错误");
       return;
     }
-    await showShellMessage(
-      null,
-      "备份完成",
-      [`文件: ${result.name ?? "已生成归档"}`, `位置: ${join(octopHomePath, "backups")}`].join("\n"),
-    );
+    const backupsDir = octopHomePath ? join(octopHomePath, "backups") : null;
+    const detail = [
+      `文件: ${result.name ?? "已生成归档"}`,
+      backupsDir ? `位置: ${backupsDir}` : "",
+    ]
+      .filter((line) => line)
+      .join("\n");
+    // A tray backup happens while the user is elsewhere in the app, so the
+    // dialog offers the folder instead of only naming it.
+    const choice = await dialog.showMessageBox({
+      type: "info",
+      buttons: backupsDir ? ["打开备份文件夹", "好"] : ["好"],
+      defaultId: backupsDir ? 1 : 0,
+      cancelId: backupsDir ? 1 : 0,
+      noLink: true,
+      message: "备份完成",
+      detail,
+    });
+    if (backupsDir && choice.response === 0) await shell.openPath(backupsDir);
   } finally {
     backupInFlight = false;
   }
@@ -864,6 +886,9 @@ function installMacHelpMenu(): void {
       click: () => void openDataDirectory(),
     }),
   );
+  help.submenu.append(
+    new MenuItem({ id: "openLogFile", label: "打开日志文件", click: () => void openLogFile() }),
+  );
   macHelpInstalled = true;
 }
 
@@ -916,8 +941,84 @@ function openExternal(url: string): void {
   if (isExternalLink(url)) void shell.openExternal(url);
 }
 
+const HEALTH_PROBE_MS = 20_000;
+
+let healthWatchTimer: NodeJS.Timeout | null = null;
+let healthFailures = 0;
+let reconnectPromptOpen = false;
+
+/** Poll the sidecar while a Dashboard window exists so a dead backend is noticed. */
+function startHealthWatch(): void {
+  if (healthWatchTimer) return;
+  healthFailures = 0;
+  healthWatchTimer = setInterval(() => void probeBackendHealth(), HEALTH_PROBE_MS);
+}
+
+function stopHealthWatch(): void {
+  if (healthWatchTimer) clearInterval(healthWatchTimer);
+  healthWatchTimer = null;
+  healthFailures = 0;
+}
+
+async function probeBackendHealth(): Promise<void> {
+  if (quitting || !backendPort) return;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5_000);
+  try {
+    const response = await net.fetch(`http://127.0.0.1:${backendPort}/api/health`, {
+      signal: controller.signal,
+    });
+    if (response.ok) {
+      healthFailures = 0;
+      return;
+    }
+    healthFailures += 1;
+  } catch {
+    healthFailures += 1;
+  } finally {
+    clearTimeout(timer);
+  }
+  // One missed probe is a blip (backup, update download). Two in a row is an outage.
+  if (healthFailures >= 2) {
+    healthFailures = 0;
+    await offerReconnect();
+  }
+}
+
+/** The backend stopped answering: say so and offer a restart instead of a dead page. */
+async function offerReconnect(): Promise<void> {
+  if (reconnectPromptOpen || quitting) return;
+  reconnectPromptOpen = true;
+  try {
+    const win = dashboardWindow && !dashboardWindow.isDestroyed() ? dashboardWindow : null;
+    const options = {
+      type: "warning" as const,
+      buttons: ["重新连接", "稍后"],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+      message: "与本地服务的连接已断开",
+      detail: "本地 Python 服务没有响应。重新连接会重启该服务并刷新页面。",
+    };
+    const { response } = win
+      ? await dialog.showMessageBox(win, options)
+      : await dialog.showMessageBox(options);
+    if (response !== 0) return;
+    await supervisor?.stop();
+    apiAdmissionClosed = false;
+    if (!(await startBackend())) {
+      await showShellError(win, "重连失败", errorDetail("本地服务仍未能启动。") ?? "请查看日志后重试。");
+      return;
+    }
+    if (win && !win.isDestroyed()) win.webContents.reload();
+  } finally {
+    reconnectPromptOpen = false;
+  }
+}
+
 /** Close-to-tray and the "backend ready" signal. Shared by the first window and a later one. */
 function watchDashboardLifetime(win: BrowserWindow): void {
+  startHealthWatch();
   win.on("close", (event) => {
     if (
       !shouldKeepWindowOnClose({
@@ -1133,6 +1234,9 @@ function runWindowsMenuCommand(win: BrowserWindow, command: WindowsMenuCommandId
     case "openDataDirectory":
       void openDataDirectory();
       return;
+    case "openLogFile":
+      void openLogFile();
+      return;
     case "about":
       showAboutDialog(appVersion);
       return;
@@ -1148,6 +1252,7 @@ function installWindowsAppMenu(version: string): void {
         onAbout: () => showAboutDialog(version),
         onOnboarding: () => showOnboarding(),
         onOpenDataDirectory: () => void openDataDirectory(),
+        onOpenLogFile: () => void openLogFile(),
       }),
     ),
   );
@@ -1557,6 +1662,7 @@ app.on("before-quit", (event) => {
 });
 
 app.on("will-quit", () => {
+  stopHealthWatch();
   globalShortcut.unregisterAll();
 });
 

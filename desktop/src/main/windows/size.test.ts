@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { DEFAULT_WINDOW_SIZE, MIN_WINDOW_SIZE } from "./size";
+import { DEFAULT_WINDOW_SIZE, MIN_WINDOW_SIZE, fitMinWindowSize } from "./size";
 
 /**
  * The window refuses to shrink below `MIN_WINDOW_SIZE`, so that number has to
@@ -18,4 +18,11 @@ test("the minimum is smaller than the size a window opens at", () => {
   // Otherwise the window could never reach its own default size.
   assert.ok(MIN_WINDOW_SIZE.width < DEFAULT_WINDOW_SIZE.width);
   assert.ok(MIN_WINDOW_SIZE.height < DEFAULT_WINDOW_SIZE.height);
+});
+
+test("a small work area lowers the floor instead of pushing the window off-screen", () => {
+  // 1366x768 at 150% scaling.
+  assert.deepEqual(fitMinWindowSize({ width: 910, height: 480 }), { width: 910, height: 480 });
+  // A normal screen keeps the nominal floor.
+  assert.deepEqual(fitMinWindowSize({ width: 1920, height: 1040 }), MIN_WINDOW_SIZE);
 });

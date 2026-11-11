@@ -29,6 +29,7 @@ const WINDOWS_MENU_COMMANDS = [
   "togglefullscreen",
   "onboarding",
   "openDataDirectory",
+  "openLogFile",
   "about",
 ] as const;
 
@@ -133,6 +134,7 @@ export function windowsMenuModel(locale: string): WindowsMenuModel {
       [
         command("onboarding", text("首次引导", "First-run guide"), null),
         command("openDataDirectory", text("打开数据目录", "Open data folder"), null),
+        command("openLogFile", text("打开日志文件", "Open log file"), null),
         { kind: "separator" },
         command("about", labels.about, null),
       ],
@@ -144,6 +146,7 @@ export interface WindowsMenuHandlers {
   onAbout: () => void;
   onOnboarding: () => void;
   onOpenDataDirectory: () => void;
+  onOpenLogFile: () => void;
 }
 
 export function windowsApplicationMenu(
@@ -165,6 +168,9 @@ export function windowsApplicationMenu(
           label: entry.label,
           click: handlers.onOpenDataDirectory,
         };
+      }
+      if (entry.id === "openLogFile") {
+        return { id: entry.id, label: entry.label, click: handlers.onOpenLogFile };
       }
       return { id: entry.id, role: entry.id };
     }),

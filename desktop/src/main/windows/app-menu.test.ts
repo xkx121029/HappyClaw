@@ -36,6 +36,7 @@ test("四个顶层菜单带上常规命令", () => {
   let abouts = 0;
   let guides = 0;
   let folders = 0;
+  let logs = 0;
   const menu = windowsApplicationMenu("zh-CN", {
     onAbout: () => {
       abouts += 1;
@@ -45,6 +46,9 @@ test("四个顶层菜单带上常规命令", () => {
     },
     onOpenDataDirectory: () => {
       folders += 1;
+    },
+    onOpenLogFile: () => {
+      logs += 1;
     },
   });
   assert.deepEqual(
@@ -74,14 +78,16 @@ test("四个顶层菜单带上常规命令", () => {
   assert.ok(Array.isArray(help));
   assert.deepEqual(
     help.map((entry) => entry.label ?? entry.type),
-    ["首次引导", "打开数据目录", "separator", "关于 HappyClaw"],
+    ["首次引导", "打开数据目录", "打开日志文件", "separator", "关于 HappyClaw"],
   );
   help[0]?.click?.({} as never, undefined, {} as never);
   help[1]?.click?.({} as never, undefined, {} as never);
-  help[3]?.click?.({} as never, undefined, {} as never);
+  help[2]?.click?.({} as never, undefined, {} as never);
+  help[4]?.click?.({} as never, undefined, {} as never);
   assert.equal(abouts, 1);
   assert.equal(guides, 1);
   assert.equal(folders, 1);
+  assert.equal(logs, 1);
 });
 
 test("页面上的菜单带中文标签和快捷键", () => {
