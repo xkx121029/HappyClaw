@@ -414,6 +414,113 @@ async function retryWithDesktopSession(
   });
 }
 
+/**
+ * Failed HTTP response with the payload already parsed.
+ *
+ * ``message`` is safe to show: either the server's own ``error.message`` or a
+ * localized, actionable fallback. ``code`` / ``details`` stay available so
+ * ``parseApiError()`` can still map known business codes to translations.
+ */
+export class ApiHttpError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly details?: Record<string, unknown>;
+
+  constructor(
+    status: number,
+    message: string,
+    code?: string,
+    details?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = "ApiHttpError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+}
+
+function httpFallbackMessage(status: number): string {
+  if (status === 400) return i18n.t("errors.badRequest", "请求参数有误（400），请检查填写内容后重试。");
+  if (status === 403) return i18n.t("errors.forbidden", "没有权限执行这个操作（403）。");
+  if (status === 404) return i18n.t("errors.notFound", "没有找到对应的内容（404），它可能已被删除或移动。");
+  if (status === 429) return i18n.t("errors.tooManyRequests", "操作太频繁（429），请稍等几秒再试。");
+  if (status === 502 || status === 503 || status === 504) {
+    return i18n.t(
+      "errors.serviceUnavailable",
+      "本机服务暂时不可用（{{status}}），请稍等几秒后重试。",
+      { status },
+    );
+  }
+  if (status >= 500) {
+    return i18n.t(
+      "errors.serverError",
+      "本机服务处理请求时出错（{{status}}），请重试；如果持续失败，请确认本机服务正在运行。",
+      { status },
+    );
+  }
+  return i18n.t("errors.requestFailed", "请求失败（{{status}}），请稍后重试。", {
+    status,
+  });
+}
+
+interface ApiErrorEnvelope {
+  error?: {
+    code?: string;
+    message?: string;
+    details?: Record<string, unknown>;
+  };
+  detail?: unknown;
+  message?: string;
+}
+
+/**
+ * Build a displayable error from a failed response.
+ *
+ * Only a JSON envelope's own ``error.message`` is trusted as user copy — plain
+ * gateway text such as ``Internal Server Error`` is replaced by a localized
+ * fallback instead of leaking English internals into the UI.
+ */
+async function buildHttpError(response: Response): Promise<ApiHttpError> {
+  const fallback = httpFallbackMessage(response.status);
+  let serverMessage: string | undefined;
+  let code: string | undefined;
+  let details: Record<string, unknown> | undefined;
+
+  const text = await response.text().catch(() => "");
+  if (text) {
+    try {
+      const body = JSON.parse(text) as ApiErrorEnvelope;
+      const envelope = body?.error;
+      if (envelope && typeof envelope === "object") {
+        if (typeof envelope.message === "string" && envelope.message.trim()) {
+          serverMessage = envelope.message.trim();
+        }
+        if (typeof envelope.code === "string" && envelope.code.trim()) {
+          code = envelope.code;
+        }
+        if (envelope.details && typeof envelope.details === "object") {
+          details = envelope.details;
+        }
+      } else if (typeof body?.detail === "string" && body.detail.trim()) {
+        serverMessage = body.detail.trim();
+      } else if (typeof body?.message === "string" && body.message.trim()) {
+        serverMessage = body.message.trim();
+      }
+    } catch {
+      // Non-JSON bodies are intentionally ignored: they tend to be gateway
+      // status lines or HTML, neither of which helps the user.
+    }
+  }
+
+  return new ApiHttpError(
+    response.status,
+    serverMessage ?? fallback,
+    code,
+    details,
+  );
+}
+
 export async function request<T = unknown>(
   path: string,
   options: RequestInit = {},
@@ -448,12 +555,7 @@ export async function request<T = unknown>(
         new CustomEvent(FORBIDDEN_EVENT, { detail: { path } }),
       );
     }
-    const text = await response.text().catch(() => "");
-    throw new Error(
-      `Request failed: ${response.status} ${response.statusText}${
-        text ? ` - ${text}` : ""
-      }`,
-    );
+    throw await buildHttpError(response);
   }
 
   if (response.status === 204) {
@@ -497,12 +599,7 @@ export async function requestBlob(
   applyRenewedAccessToken(response);
 
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(
-      `Request failed: ${response.status} ${response.statusText}${
-        text ? ` - ${text}` : ""
-      }`,
-    );
+    throw await buildHttpError(response);
   }
 
   const total = Number(response.headers.get("content-length")) || 0;
@@ -550,12 +647,7 @@ export async function probeAuthResource(
   applyRenewedAccessToken(response);
 
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(
-      `Request failed: ${response.status} ${response.statusText}${
-        text ? ` - ${text}` : ""
-      }`,
-    );
+    throw await buildHttpError(response);
   }
 
   try {
@@ -590,16 +682,16 @@ export async function requestStream(
   applyRenewedAccessToken(response);
 
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(
-      `Request failed: ${response.status} ${response.statusText}${
-        text ? ` - ${text}` : ""
-      }`,
-    );
+    throw await buildHttpError(response);
   }
 
   if (!response.body) {
-    throw new Error("Empty stream from server");
+    throw new Error(
+      i18n.t(
+        "errors.invalidResponse",
+        "本机服务返回了无法解析的数据，请重试；如果持续出现，请更新到最新版本。",
+      ),
+    );
   }
 
   return {
@@ -697,25 +789,37 @@ export async function requestUpload<T = unknown>(
 
         if (!response.ok) {
           // Same shape as request() so parseApiError() can read the error envelope.
-          reject(
-            new Error(
-              `Upload failed: ${status}${
-                responseText ? ` - ${responseText}` : ""
-              }`,
-            ),
-          );
+          reject(await buildHttpError(response));
           return;
         }
 
         try {
           resolve((await response.json()) as T);
         } catch {
-          reject(new Error("Upload failed: invalid JSON response"));
+          reject(
+            new ApiHttpError(
+              status,
+              i18n.t(
+                "errors.invalidResponse",
+                "本机服务返回了无法解析的数据，请重试；如果持续出现，请更新到最新版本。",
+              ),
+            ),
+          );
         }
       })();
     };
 
-    xhr.onerror = () => reject(new Error("Network error"));
+    xhr.onerror = () =>
+      reject(
+        new ApiHttpError(
+          0,
+          i18n.t(
+            "errors.networkError",
+            "无法连接本机服务：请确认服务正在运行，或检查网络后重试。",
+          ),
+          "NETWORK_ERROR",
+        ),
+      );
     xhr.onabort = () =>
       reject(new DOMException("The operation was aborted.", "AbortError"));
 

@@ -7,7 +7,20 @@ vi.mock("./config", () => ({
 vi.mock("../i18n", () => ({
   default: {
     language: "zh",
-    t: (_key: string, fallback?: string) => fallback ?? _key,
+    t: (
+      _key: string,
+      fallback?: string | Record<string, unknown>,
+      options?: Record<string, unknown>,
+    ) => {
+      const template =
+        typeof fallback === "string" ? fallback : fallback ? _key : _key;
+      const values =
+        (options ?? (typeof fallback === "object" ? fallback : undefined)) ??
+        {};
+      return template.replace(/\{\{(\w+)\}\}/g, (match, name: string) =>
+        values[name] === undefined ? match : String(values[name]),
+      );
+    },
   },
 }));
 
@@ -81,12 +94,62 @@ describe("401 handling", () => {
       ),
     );
 
-    await expect(
-      mod.request("/bridge/probe", { method: "POST" }),
-    ).rejects.toThrow(/BRIDGE_AUTH_FAILED/);
+    const err = await mod
+      .request("/bridge/probe", { method: "POST" })
+      .catch((e: unknown) => e);
 
+    expect((err as { code?: string }).code).toBe("BRIDGE_AUTH_FAILED");
+    expect((err as Error).message).toBe("peer rejected credentials");
     expect(replace).not.toHaveBeenCalled();
     expect(mod.getAuthToken()).toBe("expired-token");
+  });
+
+  it("turns a bare 500 into a readable Chinese message", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response("Internal Server Error", {
+            status: 500,
+            statusText: "Internal Server Error",
+          }),
+        ),
+      ),
+    );
+
+    const err = await mod.request("/agents").catch((e: unknown) => e);
+
+    expect((err as Error).message).toMatch(/本机服务处理请求时出错（500）/);
+    expect((err as Error).message).not.toMatch(/Internal Server Error/);
+    expect((err as { status?: number }).status).toBe(500);
+  });
+
+  it("shows the server error.message from a JSON envelope", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              error: {
+                code: "MODEL_NOT_CONFIGURED",
+                message: "还没有配置可用的模型，请先到「本机设置 → 模型」添加。",
+              },
+            }),
+            {
+              status: 500,
+              headers: { "content-type": "application/json" },
+            },
+          ),
+        ),
+      ),
+    );
+
+    const err = await mod.request("/agents").catch((e: unknown) => e);
+
+    expect((err as Error).message).toBe(
+      "还没有配置可用的模型，请先到「本机设置 → 模型」添加。",
+    );
   });
 
   it("redirects only once when several requests fail concurrently", async () => {

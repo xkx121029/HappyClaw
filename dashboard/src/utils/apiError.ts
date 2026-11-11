@@ -9,6 +9,22 @@ export interface ParsedApiError {
 /** Parse Octop API error envelope from a thrown request() Error. */
 export function parseApiError(error: unknown): ParsedApiError | null {
   if (!(error instanceof Error)) return null;
+  // request() parses the envelope itself; keep its structured fields so known
+  // business codes still map to localized copy.
+  const structured = error as Error & {
+    code?: unknown;
+    details?: unknown;
+  };
+  if (typeof structured.code === "string" && structured.code.trim()) {
+    return {
+      code: structured.code,
+      message: error.message,
+      details:
+        structured.details && typeof structured.details === "object"
+          ? (structured.details as Record<string, unknown>)
+          : undefined,
+    };
+  }
   const raw = error.message;
   const jsonStart = raw.indexOf("{");
   if (jsonStart < 0) return null;

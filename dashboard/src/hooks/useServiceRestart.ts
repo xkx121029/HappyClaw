@@ -28,12 +28,18 @@ function shouldPollAfterRestartError(err: unknown): boolean {
   if (!(err instanceof Error)) {
     return false;
   }
+  // request() attaches the HTTP status; a 502/503/504 usually means the old
+  // process is already shutting down, so keep polling for the new one.
+  const status = (err as { status?: number }).status;
+  if (typeof status === "number" && status > 0) {
+    return status === 502 || status === 503 || status === 504;
+  }
   const msg = err.message;
   if (!msg.startsWith("Request failed:")) {
     return true;
   }
-  const status = Number(/Request failed: (\d+)/.exec(msg)?.[1] ?? 0);
-  return status === 502 || status === 503 || status === 504;
+  const legacyStatus = Number(/Request failed: (\d+)/.exec(msg)?.[1] ?? 0);
+  return legacyStatus === 502 || legacyStatus === 503 || legacyStatus === 504;
 }
 
 export function hasProcessRestarted(
