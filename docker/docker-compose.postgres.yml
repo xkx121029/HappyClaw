@@ -1,5 +1,5 @@
 # =============================================================================
-# Local PostgreSQL (+ pgvector) for Octop dual-backend development / tests
+# Local PostgreSQL (+ pgvector) for HappyClaw dual-backend development / tests
 #
 # From repo root:
 #   docker compose -f docker/docker-compose.postgres.yml up -d
@@ -13,7 +13,7 @@
 #   export OCTOP_DATABASE_URL='postgresql://octop:octop@127.0.0.1:5432/octop'
 #
 # Init layers (ADR 002):
-#   - Control-plane schema → Octop migrate (NNN_*.pg.sql), not this compose
+#   - Control-plane schema → HappyClaw migrate (NNN_*.pg.sql), not this compose
 #   - CREATE EXTENSION vector → postgres/init-vector.sql (initdb.d only)
 #   - Agent memory tables → octop-memory at runtime
 # =============================================================================

@@ -207,7 +207,7 @@ forwards to `chats`.
 
 ## `octop bridge`
 
-Octop-to-Octop peer links (same surface as Dashboard **远程桥接**).
+HappyClaw-to-HappyClaw peer links (same surface as Dashboard **远程桥接**).
 `--user` / pinned `default_user` are compatibility fields; the local owner is
 always used. `--peer-user` is the **remote** peer's username. Single-user
 peers accept any username/password; older multi-user peers require a valid

@@ -948,7 +948,7 @@ mkdir -p "$OCTOP_BIN"
 
 cat > "$OCTOP_BIN/octop" << 'WRAPPER'
 #!/usr/bin/env bash
-# Octop CLI wrapper. Delegates to the uv-managed environment.
+# HappyClaw CLI wrapper. Delegates to the uv-managed environment.
 set -euo pipefail
 
 OCTOP_HOME="${OCTOP_HOME:-$HOME/.octop}"

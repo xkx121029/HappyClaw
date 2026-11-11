@@ -602,7 +602,7 @@ endpoint (public, mounted directly in `api/app.py`).
 | `WS`/`POST`/`GET`/… | `/agents/{aid}/terminal` | owner | AI-assisted remote PTY |
 | `GET` | `/agents/{aid}/terminal/context` | owner | recent terminal context for the AI helper |
 | `WS`/`POST`/`GET`/… | `/browser/...` | user | octop-browser sessions, live stream, record/replay |
-| `POST` | `/browser/shutdown` | user | stop the current user's Octop-managed Chrome |
+| `POST` | `/browser/shutdown` | user | stop the current user's HappyClaw-managed Chrome |
 | `POST` | `/agents/{aid}/upload` | user | multipart upload → `{workspace}/inbound/` |
 | `POST` | `/agents/{aid}/files/access-urls` | user | refresh inbound media URLs (signed) |
 | `GET`  | `/agents/{aid}/files/{path}` | owner | read an inbound file |

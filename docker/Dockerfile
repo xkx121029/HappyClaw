@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # =============================================================================
-# Octop — 多阶段 Docker 构建
+# HappyClaw — 多阶段 Docker 构建
 #
 # 阶段 1: 构建 React/TypeScript 前端
 # 阶段 2: Python 运行时 + 预构建前端

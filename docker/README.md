@@ -1,4 +1,4 @@
-# Octop Docker Deployment
+# HappyClaw Docker Deployment
 
 ---
 
@@ -14,7 +14,7 @@ This directory contains the Docker build and deployment assets for Octop.
 | `docker-compose.yml` | One-command local / self-hosted deployment |
 | `docker-compose.cn.yml` | Same stack, pulls `ghcr.nju.edu.cn/tencentcloud/octop:latest` (no local build) |
 | `docker-compose.postgres.yml` | PostgreSQL (+ pgvector) for dual-backend dev/tests |
-| `postgres/init-vector.sql` | Instance-level `CREATE EXTENSION vector` (initdb.d; **not** Octop migrations) |
+| `postgres/init-vector.sql` | Instance-level `CREATE EXTENSION vector` (initdb.d; **not** HappyClaw migrations) |
 | `docker-entrypoint.sh` | Container entrypoint: first-run init + start server |
 
 ### Quick start
