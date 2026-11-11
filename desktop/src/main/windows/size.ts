@@ -7,5 +7,5 @@
  */
 export const MIN_WINDOW_SIZE = { width: 960, height: 600 } as const;
 
-/** Size of the Dashboard window on first launch (it is not persisted yet). */
+/** Size of the Dashboard window on first launch; later launches restore the last bounds. */
 export const DEFAULT_WINDOW_SIZE = { width: 1280, height: 800 } as const;

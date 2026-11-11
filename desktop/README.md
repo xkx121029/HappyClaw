@@ -126,7 +126,22 @@ packaged build.
 `dashboard/` is still npm-managed (`dashboard/package-lock.json`); the two
 package managers never share a `node_modules` tree.
 
-## Accounts (no sign-in wall)
+## Single local user (no sign-in wall)
+
+The shell has **no account, invite, user-switcher or team surface**: the only
+identity is the device credential below, and the only data root is
+`<OCTOP_HOME>`. A desktop launch goes straight to the Dashboard; the two-step
+guide (`renderer/onboarding.html`) explains the local data model and the system
+integration, can be skipped from its first screen, and reopens from
+Help → 首次引导 (or `window.octopDesktop.openOnboarding()`).
+
+Reaching a login page is still possible in two legacy cases: an `OCTOP_HOME`
+with no users lands on the server's `/setup` wizard, and an existing home
+without a bound credential lands on `/login`. Both are Dashboard/backend
+decisions — the shell does not invent a password entry point. The claim flow is
+specified in [`docs/LOCAL_ACCOUNT_CLAIM.zh.md`](docs/LOCAL_ACCOUNT_CLAIM.zh.md)
+and is still unimplemented.
+
 
 Desktop builds run without the account system. `buildSidecarEnv()` gives the
 sidecar `OCTOP_REQUIRE_SETUP_PASSWORD=0`, so the wizard skips its CLI password
@@ -220,9 +235,43 @@ the taskbar or Dock.
 5. If the installer never opens, the sidecar is restarted and the window
    reloads, so a failed hand-off does not leave a dead backend.
 
-Not covered yet: the §3.4 "running tasks" confirmation before quit (the backend
-has no task-query endpoint) and manifest-level digests — release assets carry no
-checksum, so only the pinned-download-host rule is enforced.
+The quit guard is implemented shell-side in `main/quit-guard.ts`: a user quit
+asks once when the Dashboard reports unsaved work
+(`window.octopDesktop.setUnsavedContent(true)`) or
+`GET /api/runtime/activity` says the backend is busy. An 800 ms ceiling means a
+missing or hung endpoint can never block the exit, and update installs/signals
+skip the dialog. The backend endpoint itself is still pending, so today the
+prompt only appears for the renderer-reported unsaved flag.
+
+Not covered yet: manifest-level digests — release assets carry no checksum, so
+only the pinned-download-host rule is enforced.
+
+## First run, window and system integration
+
+- **Window state** — `main/windows/window-state.ts` saves the normal bounds and
+  maximized flag to `desktop-window.json` under Electron's `userData`, debounced
+  on move/resize and once more on close. A rect that no longer intersects any
+  attached display is discarded, and the minimum size stays `960×600`.
+- **Tray** — left click opens, right click (Linux: the context menu) offers
+  `打开窗口 / 立即备份 / 退出`. "立即备份" renews the device JWT and calls the
+  normal backup endpoint with `include_chats: true`, then shows the archive name
+  and the `backups/` folder in a native dialog.
+- **Accelerators** — `Ctrl/⌘+Shift+H` raises the window, `Ctrl/⌘+Shift+N` opens
+  `/chat` (a fresh conversation) or asks the page to start one when it is already
+  there. Registration failures are logged, not fatal, and all accelerators are
+  released on `will-quit`.
+- **Open at login** — default **off**. Windows/macOS use
+  `app.setLoginItemSettings`; Linux writes
+  `~/.config/autostart/happyclaw.desktop`. Every boot re-applies the saved
+  preference, so an external change is converged back.
+- **Crash recovery** — the last in-app URL is written to `desktop-session.json`
+  on throttled navigation, and the file is marked clean on a normal quit but not
+  on a signal/forced kill. The next launch reopens that URL (skipping `/login`,
+  `/setup` and `/invite`) instead of the home screen.
+- **Data folder** — Help → 打开数据目录 and the guide's "打开" button call
+  `shell.openPath(<OCTOP_HOME>)`; the path is also returned by
+  `window.octopDesktop.desktopInfo()`.
+
 
 ## Data directory
 

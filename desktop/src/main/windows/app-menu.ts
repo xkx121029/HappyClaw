@@ -27,6 +27,8 @@ const WINDOWS_MENU_COMMANDS = [
   "zoomIn",
   "zoomOut",
   "togglefullscreen",
+  "onboarding",
+  "openDataDirectory",
   "about",
 ] as const;
 
@@ -73,7 +75,7 @@ export function windowsAppMenuLabels(locale: string): WindowsAppMenuLabels {
       edit: "编辑",
       view: "视图",
       help: "帮助",
-      about: "关于 Octop",
+      about: "关于 HappyClaw",
     };
   }
   return {
@@ -81,7 +83,7 @@ export function windowsAppMenuLabels(locale: string): WindowsAppMenuLabels {
     edit: "Edit",
     view: "View",
     help: "Help",
-    about: "About Octop",
+    about: "About HappyClaw",
   };
 }
 
@@ -128,21 +130,42 @@ export function windowsMenuModel(locale: string): WindowsMenuModel {
         { kind: "separator" },
         command("togglefullscreen", text("切换全屏", "Toggle Full Screen"), "F11"),
       ],
-      [command("about", labels.about, null)],
+      [
+        command("onboarding", text("首次引导", "First-run guide"), null),
+        command("openDataDirectory", text("打开数据目录", "Open data folder"), null),
+        { kind: "separator" },
+        command("about", labels.about, null),
+      ],
     ],
   };
 }
 
+export interface WindowsMenuHandlers {
+  onAbout: () => void;
+  onOnboarding: () => void;
+  onOpenDataDirectory: () => void;
+}
+
 export function windowsApplicationMenu(
   locale: string,
-  onAbout: () => void,
+  handlers: WindowsMenuHandlers,
 ): MenuItemConstructorOptions[] {
   const model = windowsMenuModel(locale);
   return model.titles.map((label, index) => ({
     label,
     submenu: (model.menus[index] ?? []).map((entry): MenuItemConstructorOptions => {
       if (entry.kind === "separator") return { type: "separator" };
-      if (entry.id === "about") return { id: entry.id, label: entry.label, click: onAbout };
+      if (entry.id === "about") return { id: entry.id, label: entry.label, click: handlers.onAbout };
+      if (entry.id === "onboarding") {
+        return { id: entry.id, label: entry.label, click: handlers.onOnboarding };
+      }
+      if (entry.id === "openDataDirectory") {
+        return {
+          id: entry.id,
+          label: entry.label,
+          click: handlers.onOpenDataDirectory,
+        };
+      }
       return { id: entry.id, role: entry.id };
     }),
   }));

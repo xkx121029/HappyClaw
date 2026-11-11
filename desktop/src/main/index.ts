@@ -2,8 +2,10 @@ import {
   app,
   BrowserWindow,
   dialog,
+  globalShortcut,
   ipcMain,
   Menu,
+  MenuItem,
   nativeImage,
   net,
   protocol,
@@ -22,10 +24,19 @@ import { pathToFileURL } from "node:url";
 import {
   IPC_CHANNELS,
   type ClientSettings,
+  type DesktopInfo,
   type IssuedSession,
   type PlatformInfo,
   type UpdateCheckResult,
 } from "../shared/ipc-contract";
+import { createManualBackup } from "./backup/manual-backup";
+import { inspectBeforeQuit, quitPrompt, type QuitReason } from "./quit-guard";
+import {
+  readSessionSnapshot,
+  recoveryUrl,
+  writeSessionSnapshot,
+  type SessionSnapshot,
+} from "./session/session-restore";
 import { resolveAppVersion } from "./app-version";
 import { desktopLog, installDesktopLog } from "./log/desktop-log";
 import { DeviceCredentialStore } from "./session/device-credential";
@@ -81,7 +92,15 @@ import {
 import { createEarlyWindow } from "./windows/early-window";
 import { createMainWindow, installDashboardGuards } from "./windows/main-window";
 import type { EarlyWindow } from "./windows/early-window";
+import { createOnboardingWindow } from "./windows/onboarding-window";
 import { isWindowOnScreen, presentWindows, shouldKeepWindowOnClose } from "./windows/present";
+import { MIN_WINDOW_SIZE } from "./windows/size";
+import { writeLinuxAutostart } from "./windows/auto-launch";
+import {
+  readWindowState,
+  usableWindowBounds,
+  writeWindowState,
+} from "./windows/window-state";
 import {
   shouldInstallSystemTray,
   trayExecutableFallback,
@@ -108,6 +127,11 @@ const WINDOW_ORIGIN = "octop://app";
 const PRELOAD_PATH = join(__dirname, "../preload/index.js");
 const SPLASH_PATH = join(__dirname, "../renderer/splash.html");
 const ERROR_PATH = join(__dirname, "../renderer/error.html");
+const ONBOARDING_PATH = join(__dirname, "../renderer/onboarding.html");
+
+/** Global accelerators. `CommandOrControl` maps to ⌘ on macOS and Ctrl elsewhere. */
+const SHORTCUT_SHOW_WINDOW = "CommandOrControl+Shift+H";
+const SHORTCUT_NEW_SESSION = "CommandOrControl+Shift+N";
 
 interface PortableManifestFile {
   version: string;
@@ -138,6 +162,25 @@ let dashboardOrigin: string | null = null;
 // Current loopback port of the sidecar. Read per request (not captured), so a
 // restart after a failed install can hand the proxy a new port.
 let backendPort = 0;
+// Single-user data root. Resolved once at boot and shared with the guide.
+let octopHomePath = "";
+// The Dashboard window (not the guide). Global shortcuts target it.
+let dashboardWindow: BrowserWindow | null = null;
+let onboardingWindow: BrowserWindow | null = null;
+// Geometry and crash-recovery files live beside the client settings.
+let windowStatePath = "";
+let sessionSnapshotPath = "";
+let lastDashboardUrl: string | null = null;
+// A launch that reads an unclean snapshot keeps it here until the first window
+// picks an entry URL; a second window must not replay the recovery.
+let pendingRecovery: SessionSnapshot | null = null;
+// Renderer-reported unsaved work, used by the quit guard.
+let rendererUnsaved = false;
+// User quits may ask; updates and signals must not block the exit path.
+let quitReason: QuitReason = "user";
+let quitGuardRunning = false;
+let quitConfirmed = false;
+let backupInFlight = false;
 // §5.2: WebSockets cannot ride the custom scheme, so the page dials this relay.
 let wsRelay: WsRelay | null = null;
 // Everything needed to (re)spawn the sidecar for this launch.
@@ -440,6 +483,9 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.clientSettingsSet, (_e, patch: Partial<ClientSettings>) => {
     const saved = settingsStore.save(patch);
     closeBehavior = saved.closeBehavior;
+    if (patch && Object.prototype.hasOwnProperty.call(patch, "launchAtLogin")) {
+      applyAutoLaunchSetting(saved.launchAtLogin);
+    }
     return saved;
   });
 
@@ -500,7 +546,9 @@ function registerIpcHandlers(): void {
       await showShellError(win, "升级失败", outcome.message);
       return;
     }
-    // §6.3 step 3: the installer owns the rest — hand it our exit.
+    // §6.3 step 3: the installer owns the rest — hand it our exit. An update
+    // must never stop on the "still running" prompt.
+    quitReason = "update";
     app.quit();
   });
 
@@ -516,6 +564,16 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.sessionRevoke, (_event, accessToken: unknown): Promise<boolean> => {
     if (!isUsableAccessToken(accessToken)) return Promise.resolve(false);
     return deviceSession?.revoke(accessToken) ?? Promise.resolve(false);
+  });
+
+  // Single-user machine facts. No account list, no team, one data root.
+  ipcMain.handle(IPC_CHANNELS.desktopInfo, (): DesktopInfo => desktopInfoData());
+  ipcMain.handle(IPC_CHANNELS.openDataDirectory, (): Promise<boolean> => openDataDirectory());
+  ipcMain.handle(IPC_CHANNELS.openOnboarding, (): void => showOnboarding());
+
+  // The Dashboard owns "is there unsaved work"; the shell only asks on quit.
+  ipcMain.on(IPC_CHANNELS.unsavedContent, (_event, dirty: unknown) => {
+    rendererUnsaved = dirty === true;
   });
 
   // The page reports its theme so the native controls follow it; window buttons
@@ -538,6 +596,281 @@ function errorDetail(detail?: string): string | undefined {
   const path = desktopLog().path;
   const text = [detail, path ? `日志: ${path}` : ""].filter((line) => line).join("\n");
   return text || undefined;
+}
+
+function shortcutDisplay(accelerator: string): string {
+  if (process.platform !== "darwin") return accelerator.replace("CommandOrControl", "Ctrl");
+  return accelerator
+    .replace("CommandOrControl", "⌘")
+    .replace("Shift", "⇧")
+    .replace("Alt", "⌥")
+    .replace(/\+/g, "");
+}
+
+/** Single-user facts for the guide and for any settings page that asks. */
+function desktopInfoData(): DesktopInfo {
+  return {
+    appVersion,
+    platform: process.platform as DesktopInfo["platform"],
+    dataDirectory: octopHomePath,
+    backupsDirectory: octopHomePath ? join(octopHomePath, "backups") : "",
+    logFile: desktopLog().path,
+    shortcuts: {
+      showWindow: shortcutDisplay(SHORTCUT_SHOW_WINDOW),
+      newSession: shortcutDisplay(SHORTCUT_NEW_SESSION),
+    },
+    singleUser: true,
+  };
+}
+
+async function openDataDirectory(): Promise<boolean> {
+  if (!octopHomePath) return false;
+  try {
+    await fs.mkdir(octopHomePath, { recursive: true });
+    const failure = await shell.openPath(octopHomePath);
+    if (failure) {
+      desktopLog().warn(`open data directory failed: ${failure}`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    desktopLog().warn(`open data directory failed: ${errorMessageOf(err)}`);
+    return false;
+  }
+}
+
+/** Apply "open at login". Linux writes its own freedesktop entry. */
+function applyAutoLaunchSetting(enabled: boolean): void {
+  try {
+    if (process.platform === "linux") {
+      writeLinuxAutostart({
+        homeDir: app.getPath("home"),
+        enabled,
+        name: "HappyClaw",
+        execPath: process.execPath,
+        args: app.isPackaged ? [] : [app.getAppPath()],
+      });
+      return;
+    }
+    app.setLoginItemSettings({ openAtLogin: enabled });
+  } catch (err) {
+    desktopLog().warn(`launch-at-login update failed: ${errorMessageOf(err)}`);
+  }
+}
+
+/** Two-step guide. Reused by the first launch and Help → 首次引导. */
+function showOnboarding(): void {
+  if (onboardingWindow && !onboardingWindow.isDestroyed()) {
+    onboardingWindow.show();
+    onboardingWindow.focus();
+    return;
+  }
+  if (!settingsStore) return;
+  const chromeTheme = resolveWindowChromeTheme(settingsStore.load().themeBackground);
+  onboardingWindow = createOnboardingWindow({
+    file: ONBOARDING_PATH,
+    preload: PRELOAD_PATH,
+    theme: chromeTheme,
+    parent: dashboardWindow,
+  });
+  onboardingWindow.on("closed", () => {
+    onboardingWindow = null;
+  });
+}
+
+/**
+ * Global "new conversation". The chat route is the one URL the Dashboard
+ * already treats as a fresh conversation; when we are already there, the page
+ * gets a chance to start one in place (Dashboard wiring is tracked separately).
+ */
+function openNewSession(): void {
+  if (quitting) return;
+  revealAppWindow();
+  const win = dashboardWindow && !dashboardWindow.isDestroyed() ? dashboardWindow : null;
+  if (!win) return;
+  try {
+    const current = new URL(win.webContents.getURL());
+    if (current.pathname !== "/chat") {
+      const chromeTheme = resolveWindowChromeTheme(settingsStore.load().themeBackground);
+      current.pathname = "/chat";
+      current.hash = "";
+      current.searchParams.set("octopTheme", chromeTheme.scheme ?? chromeTheme.mode);
+      void win.loadURL(current.toString());
+      return;
+    }
+  } catch {
+    // Not an app URL (still on the splash): fall through to the page event.
+  }
+  win.webContents.send(IPC_CHANNELS.newSessionShortcut);
+}
+
+/** Tray "back up now" — the same archive the settings page creates. */
+async function runTrayBackup(): Promise<void> {
+  if (backupInFlight) {
+    await showShellMessage(null, "正在备份", "上一次备份还没有结束，请稍候。");
+    return;
+  }
+  if (!deviceSession || !backendPort || apiAdmissionClosed) {
+    await showShellError(null, "暂时无法备份", "本地服务还没有准备好，请等主界面加载完成后再试。");
+    return;
+  }
+  const session = await deviceSession.renew();
+  if (!session) {
+    await showShellError(
+      null,
+      "暂时无法备份",
+      "本机登录状态不可用。请在应用内完成一次登录，或到设置 → 备份 手动备份。",
+    );
+    return;
+  }
+  backupInFlight = true;
+  try {
+    const result = await createManualBackup({
+      baseUrl: `http://127.0.0.1:${backendPort}`,
+      token: session.access_token,
+    });
+    if (!result.ok) {
+      await showShellError(null, "备份失败", result.message ?? "未知错误");
+      return;
+    }
+    await showShellMessage(
+      null,
+      "备份完成",
+      [`文件: ${result.name ?? "已生成归档"}`, `位置: ${join(octopHomePath, "backups")}`].join("\n"),
+    );
+  } finally {
+    backupInFlight = false;
+  }
+}
+
+/** Last validated geometry, or Electron's defaults on first launch. */
+function windowStateOptions(): {
+  bounds: { x: number; y: number; width: number; height: number } | null;
+  maximized: boolean;
+} {
+  if (!windowStatePath) return { bounds: null, maximized: false };
+  const stored = readWindowState(windowStatePath) ?? {};
+  const workAreas = screen.getAllDisplays().map((display) => display.workArea);
+  return {
+    bounds: usableWindowBounds(stored, workAreas, MIN_WINDOW_SIZE),
+    maximized: stored.maximized === true,
+  };
+}
+
+/** Persist bounds while the user drags/resizes, and once more on close. */
+function attachWindowStatePersistence(win: BrowserWindow): void {
+  if (!windowStatePath) return;
+  let timer: NodeJS.Timeout | null = null;
+  const save = () => {
+    if (win.isDestroyed()) return;
+    try {
+      writeWindowState(windowStatePath, {
+        ...win.getNormalBounds(),
+        maximized: win.isMaximized(),
+      });
+    } catch (err) {
+      desktopLog().warn(`window state save failed: ${errorMessageOf(err)}`);
+    }
+  };
+  const schedule = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      save();
+    }, 400);
+  };
+  win.on("resize", schedule);
+  win.on("move", schedule);
+  win.on("maximize", save);
+  win.on("unmaximize", save);
+  win.on("close", save);
+}
+
+let locationTimer: NodeJS.Timeout | null = null;
+
+/** Remember the last in-app URL so an unclean exit can reopen it. */
+function rememberDashboardLocation(url: string): void {
+  if (!sessionSnapshotPath || !dashboardOrigin) return;
+  if (
+    url !== dashboardOrigin &&
+    !url.startsWith(`${dashboardOrigin}/`) &&
+    !url.startsWith(`${dashboardOrigin}?`)
+  ) {
+    return;
+  }
+  lastDashboardUrl = url;
+  if (locationTimer) clearTimeout(locationTimer);
+  locationTimer = setTimeout(() => {
+    locationTimer = null;
+    if (!lastDashboardUrl) return;
+    try {
+      writeSessionSnapshot(sessionSnapshotPath, { url: lastDashboardUrl, cleanExit: false });
+    } catch (err) {
+      desktopLog().warn(`session snapshot save failed: ${errorMessageOf(err)}`);
+    }
+  }, 500);
+}
+
+function markCleanExit(): void {
+  if (!sessionSnapshotPath) return;
+  if (locationTimer) {
+    clearTimeout(locationTimer);
+    locationTimer = null;
+  }
+  try {
+    writeSessionSnapshot(sessionSnapshotPath, { url: lastDashboardUrl, cleanExit: true });
+  } catch (err) {
+    desktopLog().warn(`clean-exit snapshot failed: ${errorMessageOf(err)}`);
+  }
+}
+
+/** The recovered URL on the first window only; later windows use the entry URL. */
+function entryUrlFor(
+  appOrigin: string,
+  theme: "system" | "light" | "dark",
+): string {
+  const snapshot = pendingRecovery;
+  pendingRecovery = null;
+  return (snapshot ? recoveryUrl(snapshot, appOrigin, theme) : null) ?? dashboardEntryUrl(theme, appOrigin);
+}
+
+function registerGlobalShortcuts(): void {
+  const bind = (accelerator: string, run: () => void) => {
+    try {
+      if (!globalShortcut.register(accelerator, run)) {
+        desktopLog().warn(`global shortcut already taken: ${accelerator}`);
+      }
+    } catch (err) {
+      desktopLog().warn(`global shortcut failed (${accelerator}): ${errorMessageOf(err)}`);
+    }
+  };
+  bind(SHORTCUT_SHOW_WINDOW, () => revealAppWindow());
+  bind(SHORTCUT_NEW_SESSION, () => openNewSession());
+}
+
+/**
+ * macOS keeps the system menu bar, which the shell never builds. Add the two
+ * shell-owned Help entries to the default Help submenu so the guide and the
+ * data folder stay reachable without a Dashboard settings page.
+ */
+let macHelpInstalled = false;
+
+function installMacHelpMenu(): void {
+  if (process.platform !== "darwin" || macHelpInstalled) return;
+  const menu = Menu.getApplicationMenu();
+  const help = menu?.items.find((item) => item.role === "help");
+  if (!help?.submenu) return;
+  help.submenu.append(
+    new MenuItem({ id: "onboarding", label: "首次引导", click: () => showOnboarding() }),
+  );
+  help.submenu.append(
+    new MenuItem({
+      id: "openDataDirectory",
+      label: "打开数据目录",
+      click: () => void openDataDirectory(),
+    }),
+  );
+  macHelpInstalled = true;
 }
 
 /** Spawn the Python sidecar on a fresh loopback port and wait for health. */
@@ -639,16 +972,24 @@ function watchLinuxCaptionState(win: BrowserWindow): void {
 function openDashboardWindow(appOrigin: string): BrowserWindow {
   dashboardOrigin = appOrigin;
   const chromeTheme = resolveWindowChromeTheme(settingsStore.load().themeBackground);
+  const geometry = windowStateOptions();
   const win = createMainWindow({
     preload: PRELOAD_PATH,
     theme: chromeTheme,
     backgroundColor: windowBackground(chromeTheme.mode),
-    entryUrl: dashboardEntryUrl(chromeTheme.scheme ?? chromeTheme.mode, appOrigin),
+    entryUrl: entryUrlFor(appOrigin, chromeTheme.scheme ?? chromeTheme.mode),
     appOrigin,
     onNavigate: openExternal,
+    bounds: geometry.bounds,
+    maximized: geometry.maximized,
   });
+  dashboardWindow = win;
+  attachWindowStatePersistence(win);
   watchDashboardLifetime(win);
   watchLinuxCaptionState(win);
+  win.on("closed", () => {
+    if (dashboardWindow === win) dashboardWindow = null;
+  });
   return win;
 }
 
@@ -661,9 +1002,24 @@ function continueInEarlyWindow(early: EarlyWindow, appOrigin: string): void {
     return;
   }
   installDashboardGuards(win, { appOrigin, onNavigate: openExternal });
+  dashboardWindow = win;
+  attachWindowStatePersistence(win);
   watchDashboardLifetime(win);
-  const chromeTheme = resolveWindowChromeTheme(settingsStore.load().themeBackground);
-  void win.loadURL(dashboardEntryUrl(chromeTheme.scheme ?? chromeTheme.mode, appOrigin));
+  win.webContents.on("did-navigate", (_event, url) => rememberDashboardLocation(url));
+  win.webContents.on("did-navigate-in-page", (_event, url, isMainFrame) => {
+    if (isMainFrame) rememberDashboardLocation(url);
+  });
+  win.on("closed", () => {
+    if (dashboardWindow === win) dashboardWindow = null;
+  });
+  const settings = settingsStore.load();
+  const chromeTheme = resolveWindowChromeTheme(settings.themeBackground);
+  if (!settings.onboardingCompleted) {
+    // After the Dashboard has painted, not over the splash. The guide is a
+    // separate window, so the main UI is already usable behind it.
+    win.webContents.once("did-finish-load", () => showOnboarding());
+  }
+  void win.loadURL(entryUrlFor(appOrigin, chromeTheme.scheme ?? chromeTheme.mode));
 }
 
 /**
@@ -709,8 +1065,8 @@ function showAboutDialog(version: string): void {
   });
   void dialog.showMessageBox({
     type: "info",
-    title: locale.toLowerCase().startsWith("zh") ? "关于 Octop" : "About Octop",
-    message: "Octop",
+    title: locale.toLowerCase().startsWith("zh") ? "关于 HappyClaw" : "About HappyClaw",
+    message: "HappyClaw",
     detail: formatAboutDetail({
       version,
       setup: windowsInstallScope(process.execPath),
@@ -777,6 +1133,12 @@ function runWindowsMenuCommand(win: BrowserWindow, command: WindowsMenuCommandId
     case "togglefullscreen":
       win.setFullScreen(!win.isFullScreen());
       return;
+    case "onboarding":
+      showOnboarding();
+      return;
+    case "openDataDirectory":
+      void openDataDirectory();
+      return;
     case "about":
       showAboutDialog(appVersion);
       return;
@@ -787,7 +1149,13 @@ function runWindowsMenuCommand(win: BrowserWindow, command: WindowsMenuCommandId
 function installWindowsAppMenu(version: string): void {
   if (!usesCaptionOverlay()) return;
   Menu.setApplicationMenu(
-    Menu.buildFromTemplate(windowsApplicationMenu(app.getLocale(), () => showAboutDialog(version))),
+    Menu.buildFromTemplate(
+      windowsApplicationMenu(app.getLocale(), {
+        onAbout: () => showAboutDialog(version),
+        onOnboarding: () => showOnboarding(),
+        onOpenDataDirectory: () => void openDataDirectory(),
+      }),
+    ),
   );
 }
 
@@ -837,10 +1205,11 @@ async function installSystemTray(): Promise<void> {
   // The Linux panel wants a small PNG; a full app icon is dropped or drawn huge.
   trayIcon = process.platform === "linux" ? icon.resize({ width: 24, height: 24 }) : icon;
   const created = new Tray(trayIcon);
-  created.setToolTip("Octop");
+  created.setToolTip("HappyClaw");
   const labels = trayMenuLabels(app.getLocale());
   const menu = Menu.buildFromTemplate([
-    { label: labels.show, click: () => revealAppWindow() },
+    { label: labels.open, click: () => revealAppWindow() },
+    { label: labels.backup, click: () => void runTrayBackup() },
     { type: "separator" },
     { label: labels.quit, click: () => app.quit() },
   ]);
@@ -899,9 +1268,27 @@ async function boot(): Promise<void> {
   appVersion = await resolveProductVersion();
   installWindowsAppMenu(appVersion);
 
-  settingsStore = new ClientSettingsStore(defaultClientSettingsPath(app.getPath("userData")));
+  const userDataDir = app.getPath("userData");
+  settingsStore = new ClientSettingsStore(defaultClientSettingsPath(userDataDir));
   const settings = settingsStore.load();
   closeBehavior = settings.closeBehavior;
+
+  // Geometry, crash recovery and "open at login" are shell-owned. All three
+  // converge to the saved preference at boot, so a manual OS change is undone.
+  windowStatePath = join(userDataDir, "desktop-window.json");
+  sessionSnapshotPath = join(userDataDir, "desktop-session.json");
+  applyAutoLaunchSetting(settings.launchAtLogin);
+  registerGlobalShortcuts();
+  installMacHelpMenu();
+
+  const previousSession = readSessionSnapshot(sessionSnapshotPath);
+  lastDashboardUrl = previousSession.url;
+  pendingRecovery = previousSession;
+  // This launch is now "in progress"; a clean quit flips the flag back.
+  writeSessionSnapshot(sessionSnapshotPath, {
+    url: previousSession.url,
+    cleanExit: false,
+  });
   // Apply the source before resolving, so a stored "system" reads the OS
   // preference rather than whatever an earlier explicit source left behind.
   applyNativeTheme({
@@ -918,14 +1305,18 @@ async function boot(): Promise<void> {
     // BrowserWindow cannot swap its preload.
     preload: PRELOAD_PATH,
     theme: chromeTheme,
+    ...windowStateOptions(),
   });
   watchLinuxCaptionState(early.browserWindow);
+  // macOS has a menu bar as soon as a window exists; add the Help entries now.
+  installMacHelpMenu();
 
   // Resolve OCTOP_HOME, reading the login shell on macOS/Linux (GUI apps don't
   // inherit it). The extraction dir and the child env must agree on one root.
   const loginShellEnv =
     process.platform === "win32" ? {} : await readLoginShellEnv(process.env.SHELL);
   const octopHome = resolveOctopHome(process.env, loginShellEnv);
+  octopHomePath = octopHome;
   installDesktopLog(octopHome);
   desktopLog().info(`desktop ${appVersion} home=${octopHome}`);
   await installSystemTray();
@@ -1086,16 +1477,76 @@ app.on("activate", () => {
   revealAppWindow();
 });
 
+/**
+ * Ask once, before a user quit throws away running work or unsaved content.
+ * Update installs and signals skip the guard; the shell must not stand between
+ * the user and an exit.
+ */
+async function confirmQuitIfNeeded(): Promise<void> {
+  const decision = await inspectBeforeQuit({
+    reason: quitReason,
+    backendPort: apiAdmissionClosed ? 0 : backendPort,
+    unsaved: rendererUnsaved,
+  });
+  const prompt = quitPrompt(decision, app.getLocale());
+  if (!prompt) {
+    quitConfirmed = true;
+    app.quit();
+    return;
+  }
+  const zh = app.getLocale().toLowerCase().startsWith("zh");
+  const options = {
+    type: "question" as const,
+    title: "退出 HappyClaw",
+    message: prompt.message,
+    detail: prompt.detail,
+    buttons: zh ? ["再等等", "仍然退出"] : ["Keep running", "Quit anyway"],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true,
+  };
+  const owner = BrowserWindow.getFocusedWindow() ?? dashboardWindow;
+  const { response } =
+    owner && !owner.isDestroyed()
+      ? await dialog.showMessageBox(owner, options)
+      : await dialog.showMessageBox(options);
+  if (response !== 1) {
+    quitGuardRunning = false;
+    return;
+  }
+  quitConfirmed = true;
+  quitGuardRunning = false;
+  app.quit();
+}
+
 app.on("before-quit", (event) => {
   if (quitting) return;
-  destroySystemTray();
-  const sidecar = supervisor;
-  const relay = wsRelay;
-  if (!sidecar && !relay) return;
+  if (
+    quitReason === "user" &&
+    !quitConfirmed &&
+    !quitGuardRunning &&
+    (rendererUnsaved || supervisor !== null)
+  ) {
+    event.preventDefault();
+    quitGuardRunning = true;
+    void confirmQuitIfNeeded().catch((err) => {
+      // A broken dialog must not trap the user in the app.
+      desktopLog().warn(`quit guard failed: ${errorMessageOf(err)}`);
+      quitGuardRunning = false;
+      quitConfirmed = true;
+      app.quit();
+    });
+    return;
+  }
+
   // §3.4: the sidecar runs in its own process group, so quitting without
   // waiting would orphan Python. Give it the grace window, then really quit.
   event.preventDefault();
+  destroySystemTray();
+  if (quitReason !== "signal") markCleanExit();
   quitting = true;
+  const sidecar = supervisor;
+  const relay = wsRelay;
   // Close the relay first: nothing may attach to a sidecar that is shutting
   // down, and its listening socket would keep the process alive otherwise.
   void (async () => {
@@ -1109,6 +1560,10 @@ app.on("before-quit", (event) => {
       ),
     )
     .finally(() => app.quit());
+});
+
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
 });
 
 app.on("window-all-closed", () => {

@@ -1,0 +1,345 @@
+/*
+ * First-run guide. Two screens in a 560×600 window: a short explanation of the
+ * single-user data model, then the system-integration basics. Editorial layout
+ * (left aligned, hairlines, one accent) rather than a stack of cards.
+ *
+ * 顶部 58px 交给 base.less 的拖动热区，正文从它下面开始。
+ */
+.shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0 32px 26px;
+  background: var(--page);
+  user-select: none;
+}
+
+.top {
+  flex: none;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.logo {
+  display: block;
+  height: 19px;
+  width: auto;
+  max-width: 180px;
+  object-fit: contain;
+}
+
+.logoDark {
+  display: none;
+}
+
+:global(html[data-theme="dark"]) {
+  .logoLight {
+    display: none;
+  }
+
+  .logoDark {
+    display: block;
+  }
+}
+
+.counter {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 26px;
+  animation: step-in 260ms ease-out both;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+
+  &::before {
+    content: "";
+    width: 12px;
+    height: 1px;
+    background: var(--brand);
+  }
+}
+
+.title {
+  margin: 12px 0 0;
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 1.32;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.body {
+  margin: 12px 0 0;
+  max-width: 44ch;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.dataBlock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: 24px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.dataLabel {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.dataPath {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  user-select: text;
+}
+
+.textButton {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--brand-strong);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.keys {
+  margin: 24px 0 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.keyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 42px;
+
+  & + & {
+    border-top: 1px solid var(--border);
+  }
+
+  dt {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.kbd {
+  display: inline-block;
+  padding: 3px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--surface-sunken);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.keyNote {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.switchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.switchCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.switchTitle {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.switchHint {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+
+.switchTrack,
+.switchTrackOn {
+  flex: none;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition: background-color 160ms ease;
+}
+
+.switchTrackOn {
+  background: var(--brand);
+}
+
+.switchThumb,
+.switchThumbOn {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.18);
+  transition: transform 160ms ease;
+}
+
+.switchThumbOn {
+  transform: translateX(16px);
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.footerRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot,
+.dotActive {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.dotActive {
+  background: var(--brand);
+}
+
+.skip {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.primary {
+  height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--brand);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+
+  &:hover {
+    background: var(--brand-strong);
+  }
+}
+
+button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand) 55%, transparent);
+  outline-offset: 2px;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .switchTrack,
+  .switchTrackOn,
+  .switchThumb,
+  .switchThumbOn {
+    animation: none;
+    transition: none;
+  }
+}

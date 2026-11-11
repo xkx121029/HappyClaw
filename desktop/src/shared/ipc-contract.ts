@@ -15,6 +15,28 @@ export interface ClientSettings {
   themeBackground: "system" | "light" | "dark";
   /** Whether the shell update check should follow the stable channel only. */
   stableOnly: boolean;
+  /** The two-step first-run guide has been seen (or skipped). */
+  onboardingCompleted: boolean;
+}
+
+/**
+ * Everything the shell knows about this machine. Single-user build: there is
+ * exactly one data root and no account chooser behind it.
+ */
+export interface DesktopInfo {
+  appVersion: string;
+  platform: "darwin" | "win32" | "linux";
+  /** OCTOP_HOME — database, credentials, workspaces and the log all live here. */
+  dataDirectory: string;
+  /** Stored backup archives under the data root. */
+  backupsDirectory: string;
+  logFile: string;
+  /** Human-readable accelerators shown by the first-run guide. */
+  shortcuts: {
+    showWindow: string;
+    newSession: string;
+  };
+  singleUser: true;
 }
 
 export interface PlatformInfo {
@@ -79,4 +101,11 @@ export const IPC_CHANNELS = {
   sessionRegister: "octop:session:register",
   sessionRenew: "octop:session:renew",
   sessionRevoke: "octop:session:revoke",
+  desktopInfo: "octop:desktop-info",
+  openDataDirectory: "octop:open-data-directory",
+  openOnboarding: "octop:open-onboarding",
+  /** Renderer reports whether it holds unsaved work, so quitting can confirm. */
+  unsavedContent: "octop:unsaved-content",
+  /** Global accelerator asked for a fresh conversation. */
+  newSessionShortcut: "octop:shortcut:new-session",
 } as const;

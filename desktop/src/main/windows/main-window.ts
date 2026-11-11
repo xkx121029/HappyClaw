@@ -59,15 +59,19 @@ export function createMainWindow(options: {
   /** Origin that may navigate in-app. Anything else opens in the OS browser. */
   appOrigin: string;
   onNavigate: (url: string) => void;
+  /** Last on-screen bounds, already validated against the attached displays. */
+  bounds?: { x: number; y: number; width: number; height: number } | null;
+  maximized?: boolean;
 }): BrowserWindow {
   const win = new BrowserWindow({
-    title: "Octop",
+    title: "HappyClaw",
     width: DEFAULT_WINDOW_SIZE.width,
     height: DEFAULT_WINDOW_SIZE.height,
     // The Dashboard stops being usable below its desktop breakpoint, so the
     // window refuses to shrink past it instead of letting the user do it.
     minWidth: MIN_WINDOW_SIZE.width,
     minHeight: MIN_WINDOW_SIZE.height,
+    ...(options.bounds ?? {}),
     show: false,
     // macOS pins traffic lights over the page. Windows overlays transparent
     // caption buttons on the menu row. Linux keeps that hidden title bar, and
@@ -88,6 +92,7 @@ export function createMainWindow(options: {
   // The boot splash (#octop-boot) is still the loading page. The page menu
   // appears only after React replaces that splash.
   concealWindowsMenuBar(win);
+  if (options.maximized && options.bounds) win.maximize();
   win.once("ready-to-show", () => {
     concealWindowsMenuBar(win);
     win.show();

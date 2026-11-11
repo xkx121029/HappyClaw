@@ -31,6 +31,10 @@ export interface EarlyWindowOptions {
   theme: WindowChromeTheme;
   /** ``preload/early.js`` — the one-method bridge these pages are allowed. */
   preload?: string;
+  /** Last on-screen bounds, already validated against the attached displays. */
+  bounds?: { x: number; y: number; width: number; height: number } | null;
+  /** Reopen maximized if the window was maximized when it was last closed. */
+  maximized?: boolean;
 }
 
 export interface EarlyWindow {
@@ -46,13 +50,14 @@ export function createEarlyWindow(options: EarlyWindowOptions): EarlyWindow {
   const mode = options.theme.mode;
 
   const win = new BrowserWindow({
-    title: "Octop",
+    title: "HappyClaw",
     width: DEFAULT_WINDOW_SIZE.width,
     height: DEFAULT_WINDOW_SIZE.height,
     // Same floor as the Dashboard: this window becomes the Dashboard, so a
     // size the page would refuse has to be refused here too.
     minWidth: MIN_WINDOW_SIZE.width,
     minHeight: MIN_WINDOW_SIZE.height,
+    ...(options.bounds ?? {}),
     show: false,
     // Same native chrome as the Dashboard window, so the swap from splash to
     // Dashboard does not move the traffic lights / caption buttons. Glyph colour
@@ -68,6 +73,8 @@ export function createEarlyWindow(options: EarlyWindowOptions): EarlyWindow {
   });
   // Before the first paint: the splash is a loading page and draws no menu.
   concealWindowsMenuBar(win);
+  // Maximize before showing, or the window paints restored and then jumps.
+  if (options.maximized && options.bounds) win.maximize();
   win.once("ready-to-show", () => {
     concealWindowsMenuBar(win);
     win.show();

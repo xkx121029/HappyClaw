@@ -53,13 +53,18 @@ export function trayExecutableFallback(candidates: readonly string[]): string | 
 }
 
 export interface TrayMenuLabels {
-  show: string;
+  open: string;
+  backup: string;
   quit: string;
 }
 
+/**
+ * Single-user tray menu: open the window, take a backup now, or leave. No
+ * account/team entries — the shell has no notion of either.
+ */
 export function trayMenuLabels(locale: string): TrayMenuLabels {
   if (locale.toLowerCase().startsWith("zh")) {
-    return { show: "显示窗口", quit: "退出" };
+    return { open: "打开窗口", backup: "立即备份", quit: "退出" };
   }
-  return { show: "Show window", quit: "Quit" };
+  return { open: "Open window", backup: "Back up now", quit: "Quit" };
 }

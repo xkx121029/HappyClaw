@@ -70,6 +70,14 @@ test("the tray image is the ico, never the executable", () => {
 });
 
 test("tray menu follows the OS locale", () => {
-  assert.deepEqual(trayMenuLabels("zh-CN"), { show: "显示窗口", quit: "退出" });
-  assert.deepEqual(trayMenuLabels("en-US"), { show: "Show window", quit: "Quit" });
+  assert.deepEqual(trayMenuLabels("zh-CN"), {
+    open: "打开窗口",
+    backup: "立即备份",
+    quit: "退出",
+  });
+  assert.deepEqual(trayMenuLabels("en-US"), {
+    open: "Open window",
+    backup: "Back up now",
+    quit: "Quit",
+  });
 });

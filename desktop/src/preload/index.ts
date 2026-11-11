@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 import {
   IPC_CHANNELS,
   type ClientSettings,
+  type DesktopInfo,
   type IssuedSession,
   type PlatformInfo,
   type UpdateCheckResult,
@@ -129,6 +130,30 @@ const bridge = {
     revoke(accessToken: string): Promise<boolean> {
       return ipcRenderer.invoke(IPC_CHANNELS.sessionRevoke, accessToken);
     },
+  },
+  /**
+   * Single-user machine facts: one data directory, its backups, the log, and
+   * the accelerators the guide shows.
+   */
+  desktopInfo(): Promise<DesktopInfo> {
+    return ipcRenderer.invoke(IPC_CHANNELS.desktopInfo);
+  },
+  openDataDirectory(): Promise<boolean> {
+    return ipcRenderer.invoke(IPC_CHANNELS.openDataDirectory);
+  },
+  /** Reopen the two-step guide (Help → 首次引导). */
+  openOnboarding(): Promise<void> {
+    return ipcRenderer.invoke(IPC_CHANNELS.openOnboarding);
+  },
+  /**
+   * Tell the shell whether quitting would discard work. Only a `true` report
+   * earns a confirmation dialog.
+   */
+  setUnsavedContent(dirty: boolean): void {
+    ipcRenderer.send(IPC_CHANNELS.unsavedContent, dirty === true);
+  },
+  onNewSessionShortcut(callback: () => void): () => void {
+    return subscribe(IPC_CHANNELS.newSessionShortcut, callback);
   },
 } as const;
 
