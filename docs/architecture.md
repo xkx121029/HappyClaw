@@ -1,6 +1,6 @@
 # Architecture
 
-Octop is a self-hosted AI assistant platform for multiple users and agents,
+HappyClaw is a single-user, local AI assistant workspace with multiple agents,
 delivered as a single Python process.
 It glues three reusable libraries — `octop-harness` (LangGraph-based
 chat runtime), `octop-gateway` (IM channel pipeline), and a React
@@ -21,7 +21,7 @@ HTTP/WebSocket API, and a web UI.
 │  API layer        │  FastAPI routers       WS / SSE / JSON        │
 ├──────────────────────────────────────────────────────────────────┤
 │  Domain layer     │  AgentManager   Gateway   GlobalProcessor     │
-│                   │  CronManager    UserManager   SharedServices │
+│                   │  CronManager    LocalOwner  SharedServices    │
 ├──────────────────────────────────────────────────────────────────┤
 │  Reusable libs    │  octop-harness   octop-gateway            │
 ├──────────────────────────────────────────────────────────────────┤
@@ -47,7 +47,7 @@ OctopServer.start()
  ├─ open_database()                  (SQLite WAL or PostgreSQL via PostgresPool)
  ├─ run_migrations()                 (infra/db/migrations/*.sql, versioned)
  ├─ SharedServices (repos + factories)
- ├─ WizardTokenStore                 (5-min TTL setup tokens)
+ ├─ LocalOwner                       (resolve-or-create the single owner row)
  ├─ ExpertCatalog  / SubagentCatalog (bundled MD libraries)
  ├─ PluginManager.seed_bundled() then load_installed()  (~/.octop/plugins/*; bundled default off)
  ├─ AgentManager (global registry — one per process)
@@ -59,22 +59,22 @@ OctopServer.start()
  │    ├─ ChannelManager (one per agent that has a channel row)
  │    └─ WebSocketHub  (dashboard + CLI channel)
  ├─ CronManager (process-wide APScheduler)
- └─ UserManager (auth + per-user lookups)
+ └─ CronManager (process-wide APScheduler)
 ```
 
 The `AppRuntime` dataclass holds the four live singletons that
 `api/routers/*` reach via `server.app_runtime.<thing>`.
 
-### Per-user isolation
+### Single local user
 
-Every request is authenticated via JWT and resolved to a `User` row.
-Agent ownership is enforced at the **row** level (`agents.user_id`
-matched against the caller; admin bypass allowed) — there is no longer
-a separate per-user `AgentManager`. The single global registry
-dispatches to whichever harness runtime matches the row, which keeps
-admin tooling (`/api/admin/*`) and cross-user diagnostics simple.
+HappyClaw binds every request to one `local` owner row created on first boot.
+There is no login, JWT verification, role check, or per-user isolation: the
+auth middleware injects the owner, and the legacy `user_id` columns stay for
+schema compatibility and imported data. All agents belong to that owner, and
+the global `AgentManager` registry dispatches to whichever harness runtime
+matches the row.
 
-The dashboard always talks to Octop over `/api` HTTP/WebSocket; the
+The dashboard always talks to HappyClaw over `/api` HTTP/WebSocket; the
 React SPA never imports a Python module and never opens the SQLite
 file directly.
 
@@ -84,8 +84,8 @@ Three surfaces share the same agent runtime:
 
 | Surface | Wire | Session key (default) | Notes |
 |---------|------|-----------------------|-------|
-| Web UI | WebSocket `/api/agents/{aid}/chat/ws` | `<aid>:dashboard:<user_id>:dm` | Dashboard turn endpoint |
-| CLI | Embedded `OctopServer` (REPL) or WebSocket | `<aid>:cli:<user_id>:dm` | `octop chats send` / `chats repl` |
+| Web UI | WebSocket `/api/agents/{aid}/chat/ws` | `<aid>:dashboard:local:dm` | Dashboard turn endpoint |
+| CLI | Embedded `OctopServer` (REPL) or WebSocket | `<aid>:cli:local:dm` | `octop chats send` / `chats repl` |
 | IM channel | gateway `ChannelManager` | `<aid>:<channel_kind>:<platform_session>:<dm\|group>` | See `infra/gateway/process/message_keys.py` |
 | Cron job | APScheduler trigger → `Gateway.push_text_from_session` | row's `session_key` (defaults to `dashboard_key` of the owner) | `task_type=text\|agent` chooses direct-push vs run-AI-then-push |
 
@@ -102,12 +102,12 @@ see `infra/gateway/threads.py` for the full state machine.
 
 ## 4. Storage
 
-The **control plane** (users, agents, providers, channels, cron,
-sessions, audit, JWT secret) lives in either:
+The **control plane** (local owner, agents, providers, channels, cron,
+sessions, audit) lives in either:
 
 * SQLite — default file under `~/.octop/` (legacy `octop.db` or
   `config.json` → `database.sqlite_path`), or
-* PostgreSQL — `config.json` / `OCTOP_DATABASE_*` / Setup wizard database step.
+* PostgreSQL — `config.json` / `OCTOP_DATABASE_*` / first-boot database config.
 
 Migrations: `src/octop/infra/db/migrations/NNN_*.sql` (SQLite) and
 `NNN_*.pg.sql` (PostgreSQL). Connection PRAGMAs live on the SQLite pool;
@@ -123,7 +123,7 @@ read and written through the agent's `BackendWorkspace`
 (`octop.infra.backend` → `octop_harness.backends`). The default
 backend is a `filesystem` adapter rooted at
 `~/.octop/agents/<agent_id>/`; remote backends (S3, COS) are mounted
-on top of the same root_dir and the Octop service never reads
+on top of the same root_dir and the HappyClaw service never reads
 content files via `Path.write_text` / `read_text` (see
 [agent-backend-file-io.md](./agent-backend-file-io.md) for the full
 rules). Checkpointing, langgraph state, and the
@@ -136,7 +136,7 @@ Server-owned strings (slash replies, IM status, API error messages,
 tool display names, CLI output) come from the bundles in
 `src/octop/i18n/{en,zh}.json` and helpers under
 `src/octop/i18n/domains/`. Locale resolution lives in
-`infra/utils/locale.py`: stored user preference → `Accept-Language`
+`infra/utils/locale.py`: local owner preference → `Accept-Language`
 header → channel-type hint. The dashboard mirrors the codes under
 `dashboard/src/locales/{en,zh}.json → apiErrors.*` and may hydrate
 tool labels from `GET /api/i18n/tools`.
@@ -147,8 +147,8 @@ tool labels from `GET /api/i18n/tools`.
 (InboxManager + GlobalProcessor) — see
 [agent-interop-mailbox.md](./agent-interop-mailbox.md) for the queue
 contract and [agent-call-agent.md](./agent-call-agent.md) /
-[agent-delegation.md](./agent-delegation.md) for the two user-side
-entry points. Octop's `GlobalProcessor` implements the
+[agent-delegation.md](./agent-delegation.md) for the two user-facing
+entry points. HappyClaw's `GlobalProcessor` implements the
 `TeamProcessor` protocol so replies land back in the parent thread
 checkpoint and are pushed to the dashboard / IM channel by
 `on_reply`.

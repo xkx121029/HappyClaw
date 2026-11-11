@@ -1,19 +1,21 @@
-# Bridge（Octop ↔ Octop 实例桥）
+# Bridge（HappyClaw ↔ HappyClaw 实例桥）
 
 > 状态：实现中（Phase 0–3 骨架已落地）。命名与范围以本文为准；实现落在 `infra/bridge/`。  
 > 与同机 Agent 互调无关：见 [agent-call-agent.md](./agent-call-agent.md)（`ask_agent` 不参与跨实例）。
 
-用户级连接另一台 Octop（云端或另一台本地），在本机 Dashboard 查看对端专家列表、按需拉取对话记录，并像选择本地专家一样与对端专家对话（对称：对端也可经同一桥访问本机）。对话只在**专家所在实例**执行；发起侧不落库完整历史。
+用户级连接另一台 HappyClaw（云端或另一台本地），在本机 Dashboard 查看对端专家列表、按需拉取对话记录，并像选择本地专家一样与对端专家对话（对称：对端也可经同一桥访问本机）。对话只在**专家所在实例**执行；发起侧不落库完整历史。
+
+> **单人模式说明**：本机与对端都按「本机使用者」运行。连接仍保留地址 / 用户名 / 密码字段用于兼容旧部署；对端为单人模式时任意用户名与密码都会被视作对端本机使用者，对端为旧版多用户时仍需填写有效账号。
 
 ## 1. 需求结论
 
 | 项 | 结论 |
 |----|------|
-| 连接粒度 | 用户级：地址 + 用户名 + 密码；密码加密存储便于自动重连 |
-| 多节点 | 同一用户可同时连接多个远程 Octop |
+| 连接粒度 | 本机使用者级：地址 + 用户名 + 密码（字段保留用于兼容；单人模式下对端忽略凭证） |
+| 多节点 | 本机可同时连接多个远程 HappyClaw |
 | 拓扑 | 两边均可主动建连；同一逻辑连接共用一个 `connection_id` |
 | 专家 | 在线拉取列表；影子入口；不复制 workspace；不安装为本地 runnable agent |
-| 可见范围 | 与该账号在对端本机可见范围一致（无额外「联邦可见」勾选） |
+| 可见范围 | 单人模式：对端全部专家均可见（无额外「联邦可见」勾选） |
 | UI | 远程单独入口/分组，不与本地专家混排 |
 | 对话执行 | 仅在专家所在侧跑 harness；发起侧不改 harness |
 | 历史 | 按需拉取；权威在专家所在侧；发起侧仅临时会话、不写本机 threads |
@@ -27,7 +29,7 @@
 
 ```
 ┌─────────────────────┐         Bridge WS（双向可发起）        ┌─────────────────────┐
-│ 本机 Octop          │◄─────────────────────────────────────►│ 对端 Octop          │
+│ 本机 HappyClaw          │◄─────────────────────────────────────►│ 对端 HappyClaw          │
 │                     │   HTTP 隧道 + turn 流式多路复用         │                     │
 │ Dashboard ──HTTP──► │                                       │ ◄──HTTP── Dashboard │
 │   localhost API     │                                       │   peer API          │
@@ -40,8 +42,8 @@
 └─────────────────────┘                                       └─────────────────────┘
 ```
 
-![图 2-1 总体架构：两台 Octop 经 Bridge WebSocket 互联](./assets/bridge-architecture.png)
-<!-- 生图建议：扁平化技术架构示意图，16:9。左侧一台服务器图标标「本机 Octop」，右侧标「对端 Octop」，中间一条加粗双向箭头标「Bridge WebSocket（双向可发起）」，细注「HTTP 隧道 + turn 流式多路复用」。两侧各自画出：Dashboard（浏览器仅连本机）、localhost/peer API、infra/bridge 模块、本地/对端 agent+harness。强调机机总线是独立 Bridge WS，不复用浏览器 Hub。现代 SaaS 蓝灰配色、等宽无衬线、留白充足。（注意：含精确文字的架构图建议用 Mermaid/Excalidraw 生成；AI 生图只作概念示意图，文字以图注补充） -->
+![图 2-1 总体架构：两台 HappyClaw 经 Bridge WebSocket 互联](./assets/bridge-architecture.png)
+<!-- 生图建议：扁平化技术架构示意图，16:9。左侧一台服务器图标标「本机 HappyClaw」，右侧标「对端 HappyClaw」，中间一条加粗双向箭头标「Bridge WebSocket（双向可发起）」，细注「HTTP 隧道 + turn 流式多路复用」。两侧各自画出：Dashboard（浏览器仅连本机）、localhost/peer API、infra/bridge 模块、本地/对端 agent+harness。强调机机总线是独立 Bridge WS，不复用浏览器 Hub。现代 SaaS 蓝灰配色、等宽无衬线、留白充足。（注意：含精确文字的架构图建议用 Mermaid/Excalidraw 生成；AI 生图只作概念示意图，文字以图注补充） -->
 
 - **Harness / GlobalProcessor** 保持单机语义；桥只负责把请求送到对端执行并把响应送回。
 - Dashboard 的 `WebSocketHub` 仅服务浏览器↔本机；**机机总线是独立的 Bridge WS**，不要复用 Hub。
@@ -63,7 +65,7 @@
 
 添加连接前可先 `POST /api/bridge/probe`：用填写的 `peer_base_url` + 用户名/密码对端 HTTP 登录，再拉 `GET /api/agents?scope=mine`，返回专家摘要列表（`agent_id` / `name` / `description` / 绝对 `icon_url` 等）。**不**写入 `bridge_connections`，**不**建立 Bridge WS。Dashboard 添加抽屉里的「探测」按钮走此接口。
 
-「保存并连接」仅在登录 + Bridge WS `hello_ack` 成功后落库；失败回滚。管理 API 按连接所有者鉴权（登录用户即可管理自己的桥）。入站隧道允许 **agent 范围内** 的读写（聊天、工作区、定时任务、状态，以及个性化里标记为 limited 的工具 / 插件 / 渠道，含 `PATCH …/tool-settings` 与 `POST …/reload`），外加只读 composer：`GET /api/providers/resolved`、`GET /api/providers/active-model`、`GET /api/knowledge-bases`、`GET /api/knowledge-bases/capability`，以及 Chat dock 浏览器 viewer：`GET /api/browser/env-status`、`GET /api/browser/harness-sessions`、`POST /api/browser/sessions/{id}/handoff`。技能包、全局 ACP、连接器管理、知识库管理在 Dashboard 标为 peer-only，应在对端操作。管理 / 认证 / Bridge 控制面不入隧道。`history-migration` 仅本机处理。入站 hello 不得抢占他人 `connection_id`。旧入口 `/admin/advanced?tab=bridge` 会重定向到 `/bridge`。
+「保存并连接」仅在探测与 Bridge WS `hello_ack` 成功后落库；失败回滚。管理 API 按本机使用者管理（单人模式下即当前用户，可管理全部桥）。入站隧道允许 **agent 范围内** 的读写（聊天、工作区、定时任务、状态，以及个性化里标记为 limited 的工具 / 插件 / 渠道，含 `PATCH …/tool-settings` 与 `POST …/reload`），外加只读 composer：`GET /api/providers/resolved`、`GET /api/providers/active-model`、`GET /api/knowledge-bases`、`GET /api/knowledge-bases/capability`，以及 Chat dock 浏览器 viewer：`GET /api/browser/env-status`、`GET /api/browser/harness-sessions`、`POST /api/browser/sessions/{id}/handoff`。技能包、全局 ACP、连接器管理、知识库管理在 Dashboard 标为 peer-only，应在对端操作。管理 / 认证 / Bridge 控制面不入隧道。`history-migration` 仅本机处理。入站 hello 不得抢占他人 `connection_id`。旧入口 `/admin/advanced?tab=bridge` 会重定向到 `/bridge`。
 
 
 依赖：`api` → `infra/bridge` → 现有 `infra`（对端登录、对端执行 agents/history/upload）。  
@@ -77,7 +79,7 @@
 2. 发起方用 HTTP 调对端 `POST /api/auth/login` 换 token（**首次配对假定发起方能 HTTP 打到对端**；若不可达需由另一侧发起或另做配对码——实现前写死一种冷启动路径）。
 3. 生成 `connection_id`（ULID）；握手帧确认后**两边各存同一 id**。
 4. 建立 Bridge WS；之后业务优先走隧道（尤其反向访问 NAT 后实例）。
-5. 密码与 token **加密落库**；重连优先 refresh，失败再用密码登录。
+5. 密码与 token **加密落库**；单人模式下对端不校验凭证，字段仅用于兼容旧部署。
 
 ![图 4-1 配对流程：从填表到建立 Bridge WS](./assets/bridge-pairing-flow.png)
 <!-- 生图建议：横向步骤/时序图。①用户填 base_url+用户名+密码；②本机发 HTTP 登录对端换 token（箭头指向对端）；③生成 ULID connection_id；④握手帧确认后两边各存同一 id（两个数据库图标显示相同 id）；⑤建立 Bridge WS，业务优先走隧道。编号圆点或泳道呈现，蓝灰科技风。（精确流程图建议用 Mermaid，AI 生图作概念示意） -->
@@ -91,7 +93,7 @@
 | `connection_id` | 双方一致的逻辑连接 id |
 | `owner_user_id` | 本机用户 |
 | `peer_base_url` | 对端地址 |
-| `peer_username` | 对端登录名 |
+| `peer_username` | 对端用户名（兼容字段；单人模式忽略） |
 | `display_name` | **必填**、同一用户下唯一；聊天页分组切换用的显示名 |
 | `notes` | 可选备注，仅本机展示 |
 | `password_encrypted` | 加密密码 |
@@ -102,7 +104,7 @@
 
 ### 4.3 鉴权与可见性
 
-- 隧道内请求以**对端该登录用户**身份执行。
+- 隧道内请求以**对端本机使用者**身份执行。
 - 专家可见范围 = 该用户在对端本机可见范围。
 - 本机用户 id 与对端用户 id **无对应关系**。
 
@@ -185,7 +187,7 @@
 | `GlobalProcessor` / harness | 只在专家所在侧跑 |
 | `ask_agent` / Team | 不参与跨实例 |
 | `POST …/upload` + `inbound/` | 对端执行；发起侧代理 |
-| 用户 JWT | 本机≠对端；隧道用对端登录态 |
+| 访问凭证 | 本机与对端各自独立；单人模式隧道直接使用对端本机使用者 |
 | Connector（OAuth/MCP） | 无关；勿与 `bridge` 混名 |
 
 ## 8. 分期

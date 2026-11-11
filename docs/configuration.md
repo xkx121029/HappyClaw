@@ -1,6 +1,6 @@
 # Configuration
 
-Octop stores all of its state under `~/.octop/`. The directory is created
+HappyClaw stores all of its state under `~/.octop/`. The directory is created
 on first server start (or by `octop init` / `octop run`).
 
 ## Filesystem layout
@@ -9,11 +9,11 @@ on first server start (or by `octop init` / `octop run`).
 ~/.octop/
 ├── config.json              # process-level settings (host, port, CORS, DB, TLS, …)
 ├── env                      # optional dotenv (OCTOP_DATABASE_*, API keys, …); loaded at server start
-├── octop.db                 # SQLite — users, agents, providers, sessions, audit
-├── cli_state.json           # CLI token + pinned defaults (`octop user login`)
+├── octop.db                 # SQLite — local owner, agents, providers, sessions, audit
+├── cli_state.json           # CLI defaults (base URL, pinned agent)
 ├── repl_history             # readline-style history for `octop chats repl`
 ├── secrets/
-│   └── jwt_secret           # 32-byte random; rotate with `octop admin rotate-jwt-secret`
+│   └── jwt_secret           # legacy file; kept for compatibility, not used for auth
 ├── agents/<agent_id>/       # per-agent workspace (LangGraph state, attachments, …)
 ├── plugins/                 # installed third-party plugins
 ├── ssl/                     # self-signed certs when `octop run --ssl` is used without --cert/--key
@@ -32,8 +32,8 @@ file are left alone). Every running agent inherits those keys:
   cannot be overridden from `.env`). New agents store that file at
   `{workspace}/.octop/.env`; existing agents keep `{workspace}/.env` when
   their stored internal system-files prefix uses the legacy layout. Remote
-  object-store workspaces are not read from the host path — Octop/harness
-  also reads `.env` through the agent backend on each execute. Octop also
+  object-store workspaces are not read from the host path — HappyClaw/harness
+  also reads `.env` through the agent backend on each execute. HappyClaw also
   injects `OCTOP_AGENT_ID`, `OCTOP_AUTH_DIR` (under `{workspace}/.octop/auth`
   for new agents; legacy agents keep `{workspace}/.octop-auth`),
   and `OCTOP_HOME` into shell/sandbox env.
@@ -98,14 +98,10 @@ on each start. Schema (`OctopConfig` in `octop/config.py`):
   "bind_host": "127.0.0.1",
   "port": 8088,
   "log_level": "info",
-  "access_token_ttl_seconds": 86400,
-  "login_max_attempts": 5,
-  "login_lockout_seconds": 900,
   "cors_origins": [],
   "default_timezone": "Asia/Shanghai",
   "enable_dashboard": true,
   "enable_api_docs": false,
-  "require_setup_password": true,
   "max_upload_mb": 100,
   "database": {
     "driver": "sqlite",
@@ -145,9 +141,9 @@ Notes:
   same-named setting in the file.
 - `enable_api_docs=false` keeps `/api/docs` (Scalar) off in production
   while still serving `/api/openapi.json` to the dashboard.
-- `require_setup_password=true` adds the wizard password gate to the
-  first-run setup flow; set `false` for unattended bootstraps via
-  `OCTOP_ADMIN_USERNAME` / `OCTOP_ADMIN_PASSWORD`.
+- `access_token_ttl_seconds`, `login_max_attempts`, `login_lockout_seconds`,
+  and `require_setup_password` are legacy keys: they are still parsed so old
+  `config.json` files load, but they have no effect in single-user mode.
 - `max_upload_mb` is the process-wide ceiling for dashboard chat
   attachments, IM inbound files, and knowledge-base documents (default
   100). Existing `config.json` files that omit the key pick up the
@@ -174,20 +170,10 @@ Each variable, when set, takes precedence over the matching key in
 | `OCTOP_LOG_RETENTION_DAYS` | int | `14` | Keep rotated `octop.YYYY-MM-DD.log` files for this many days |
 | `OCTOP_LOG_MAX_BYTES` | int | `104857600` (100 MiB) | Roll the active log when it exceeds this size (in addition to daily rotation) |
 | `OCTOP_LOG_COMPRESS` | bool | `true` | logrotate-style `compress` + `delaycompress`: gzip prior rotated plains on the next cycle (`octop.YYYY-MM-DD.log.gz`); the newest rotated file stays uncompressed until then |
-| `OCTOP_ACCESS_TOKEN_TTL` | int (seconds) | `86400` | JWT access-token lifetime |
-| `OCTOP_LOGIN_MAX_ATTEMPTS` | int | `5` | Failed-login attempts before lockout |
-| `OCTOP_LOGIN_LOCKOUT_SECONDS` | int | `900` | Lockout duration after `OCTOP_LOGIN_MAX_ATTEMPTS` failures |
-| `OCTOP_CAPTCHA_PROVIDER` | slug | `slider` | Login captcha (`slider`, `turnstile`, `hcaptcha`, `recaptcha-v3`, `tencent`, `geetest-v4`; `recaptcha` v2 stays resolvable for existing configs but is unlisted). Boot snapshot; restart after change |
-| `OCTOP_CAPTCHA_SITE_KEY` | string | empty | Public site key (Tencent: CaptchaAppId; required when the env snapshot is a strong provider) |
-| `OCTOP_CAPTCHA_SECRET` | string | empty | Siteverify secret (Tencent: AppSecretKey; never logged; `GET /api/envs` redacts it) |
-| `OCTOP_CAPTCHA_CAM_SECRET_ID` | string | empty | Tencent only: CAM API SecretId signing `DescribeCaptchaResult`; required when the env snapshot is `tencent` |
-| `OCTOP_CAPTCHA_CAM_SECRET_KEY` | string | empty | Tencent only: CAM API SecretKey; never logged; `GET /api/envs` redacts it |
-| `OCTOP_CAPTCHA_V3_MIN_SCORE` | float | `0.5` | Minimum `recaptcha-v3` score; admin UI is read-only |
 | `OCTOP_DEFAULT_TIMEZONE` | IANA tz | `Asia/Shanghai` | Default timezone for display, scheduling, and harness (`cron_timezone` / `OCTOP_CRON_TIMEZONE` still accepted) |
 | `OCTOP_CORS_ORIGINS` | comma-sep list | empty | Permitted CORS origins for the dashboard / external callers |
 | `OCTOP_ENABLE_DASHBOARD` | bool | `true` | Serve the built React SPA at `/` |
 | `OCTOP_ENABLE_API_DOCS` | bool | `false` | Expose Scalar API docs at `/api/docs` |
-| `OCTOP_REQUIRE_SETUP_PASSWORD` | bool | `true` | Require wizard password during initial setup |
 | `OCTOP_MAX_UPLOAD_MB` | int | `100` | Max upload size in MiB for chat attachments, IM inbound, and knowledge documents (1–1024) |
 | `OCTOP_DATABASE_URL` | string | empty | Full DSN — overrides the `OCTOP_DATABASE_*` fields below |
 | `OCTOP_DATABASE_DRIVER` | `sqlite` \| `postgresql` | `sqlite` | Storage backend |
@@ -197,10 +183,7 @@ Each variable, when set, takes precedence over the matching key in
 | `OCTOP_DATABASE_NAME` | string | `octop` | PostgreSQL database name |
 | `OCTOP_DATABASE_USER` | string | `octop` | PostgreSQL user |
 | `OCTOP_DATABASE_PASSWORD` | string | empty | PostgreSQL password (overrides file; prefer env in production) |
-| `OCTOP_ADMIN_USERNAME` | string | empty | Pre-fills the first-admin username in `octop init` |
-| `OCTOP_ADMIN_PASSWORD` | string | empty | Pre-fills the first-admin password in `octop init` |
-| `OCTOP_ADMIN_DISPLAY_NAME` | string | empty | Pre-fills the admin display name |
-| `OCTOP_USER` | string | empty | Default `--user` for CLI subcommands |
+| `OCTOP_USER` | string | empty | Compatibility flag; ignored in single-user mode |
 | `OCTOP_AGENT` | string | empty | Default `--agent` for CLI subcommands |
 | `OCTOP_SERVICE_MODE` | `systemd` \| `launchd` | auto | Override the service backend (used by `octop service`) |
 | `OCTOP_SERVICE_SCOPE` | `user` \| `system` | auto | systemd `--user` vs system unit (Linux only) |
@@ -224,7 +207,7 @@ originals are stored in that same database (`public.skill_package_files` and
 `public.knowledge_files`), and knowledge vectors use pgvector
 (`public.knowledge_chunks`). Names sit next to `skill_packages` and
 `knowledge_bases`. SQLite keeps the local `skill-packages/` and
-`knowledge/` directories. The `vector` extension is not created by Octop
+`knowledge/` directories. The `vector` extension is not created by HappyClaw
 migrations; enable it with `docker/postgres/init-vector.sql` or
 `CREATE EXTENSION vector` before indexing knowledge. There is no sqlite→PostgreSQL
 content migration in this release — pick the driver at install time.
@@ -273,56 +256,35 @@ disable backup creation. Unrecognized values fall back to `first` with a warning
 `OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS` defaults to 7. Set it to 0 to disable
 automatic expiration. Expiration leaves the marker in place.
 
-## First-boot wizard
+## First boot
 
-The first request to a fresh install lands on the setup page. Greenfield
-SQLite installs **defer** opening the control-plane DB until the database
-step; password verification works without a pool. The modern flow uses
-`/api/setup/*`:
+HappyClaw is a single-user local tool. On the first `octop run` it creates the
+data directory, opens (or migrates) the control-plane database, and resolves a
+local owner row named `local`. No wizard, password, or account creation is
+involved; the dashboard opens directly on the chat page.
 
-1. `POST /api/setup/begin` (or `POST /api/setup/verify-password` when
-   `require_setup_password=true`) — issues a short-lived wizard token.
-2. `POST /api/setup/test-database` / `POST /api/setup/database` — choose
-   SQLite or PostgreSQL, probe, persist `config.json`, bind pool + migrate.
-3. `POST /api/setup/initial-admin` — creates the seed admin (requires DB).
-4. `POST /api/setup/test-provider` — pings an optional provider draft.
-5. `POST /api/setup/finish` — bootstraps default `main` agent and unlocks
-   the rest of the API.
+- `GET /api/health` → `{ok: true, started_at, db, users_loaded, agents_running, channels}`
+  is reachable immediately.
+- `GET /api/setup/status` always returns
+  `{required: false, completed: true, has_admin: true}`.
+- `/api/setup/*`, `/api/auth/login`, `/api/auth/me`, and the `/api/users/*`
+  routes are kept for compatibility. Login returns a placeholder token and
+  the owner; account writes return `400` with a Chinese explanation.
 
-`GET /api/setup/status` returns `setup_required`, wizard password fields,
-plus `database_bound` / `database_driver`. `setup_lockdown` middleware
-blocks non-setup routes until the wizard completes.
+Database selection still happens at boot: SQLite is the default, and
+PostgreSQL is chosen with `OCTOP_DATABASE_URL` or the `database` block in
+`config.json`. Pointing at an existing database migrates it in place.
 
-With `OCTOP_REQUIRE_SETUP_PASSWORD=false` there is no CLI password; the
-dashboard learns this from `wizard_password_required` and skips both that
-step and the password fields of the admin step. `POST /api/setup/initial-admin`
-then accepts a body without `password` and mints an unguessable one, so the
-row keeps a real hash while the JWT returned by the same call is the actual
-credential. The desktop shell pins that variable for the sidecar it owns, and
-neither `~/.octop/env` nor `PUT /api/envs` can override it while it runs.
-
-Because nobody knows that password, the shell also holds a device credential
-(encrypted per-install secret at `<OCTOP_HOME>/desktop-device.json`) and
-exchanges it for a fresh JWT at `POST /api/auth/device/token` when the session
-expires, so `OCTOP_ACCESS_TOKEN_TTL` stays at its default `86400` instead of
-being stretched. See `desktop/README.md` → *Accounts (no sign-in wall)*.
-
-For unattended installs, use `octop init --yes` with
-`OCTOP_ADMIN_USERNAME` / `OCTOP_ADMIN_PASSWORD` (and
-`OCTOP_REQUIRE_SETUP_PASSWORD=false` if the env-var path is used). This
-runs the same migrations + admin creation without the HTTP wizard.
+For unattended installs, `octop init --yes` prepares the directory and runs
+migrations. `OCTOP_ADMIN_USERNAME` / `OCTOP_ADMIN_PASSWORD` and
+`OCTOP_REQUIRE_SETUP_PASSWORD` are legacy variables: accepted, ignored, and
+safe to leave in old environment files.
 
 ## Secrets
 
-The JWT secret is generated on first start and stored in
-`~/.octop/secrets/jwt_secret`. Rotate it with:
-
-```bash
-octop admin rotate-jwt-secret
-```
-
-Rotation invalidates every outstanding access token immediately. The
-old secret is overwritten in place — no zero-downtime rotation today.
+`~/.octop/secrets/jwt_secret` and `octop admin rotate-jwt-secret` are kept for
+compatibility. Single-user mode does not check tokens, so the file is unused;
+it remains so older backups restore cleanly.
 
 Per-agent provider credentials (e.g. API keys) live in the SQLite
 `providers` table and are surfaced through
@@ -330,12 +292,12 @@ Per-agent provider credentials (e.g. API keys) live in the SQLite
 
 ## Retired segmented history archive
 
-Octop ignores the former `history_v2_enabled` and `OCTOP_HISTORY_V2_ENABLED` settings.
-At startup, Octop migrates existing archive messages and supported trajectory events into the
+HappyClaw ignores the former `history_v2_enabled` and `OCTOP_HISTORY_V2_ENABLED` settings.
+At startup, HappyClaw migrates existing archive messages and supported trajectory events into the
 control-plane database before starting agents. Successful migrations retain the original
 `history_v2.sqlite` and `history_v2.required` with a `.migrated-<timestamp>` suffix.
 If a message or checkpoint anchor cannot be read, startup reports the affected thread and
 leaves the source archive in place so the data can be recovered and migration retried.
 Stop the old server before upgrading an installation with a v2 archive. Keep checkpoint
 retention disabled if the old server must run with the new Harness before migration.
-Restore a system backup containing a v2 archive with the offline backup CLI, then start Octop.
+Restore a system backup containing a v2 archive with the offline backup CLI, then start HappyClaw.

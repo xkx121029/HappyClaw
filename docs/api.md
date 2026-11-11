@@ -10,117 +10,63 @@ described in [Chat (WebSocket)](#chat-websocket).
 
 ## Authentication
 
-| Header | Value |
-|--------|-------|
-| `Authorization` | `Bearer <access_token>` from `POST /api/auth/login` |
+HappyClaw runs as a **single local user**. There is no login, registration,
+token, or role check: every request is resolved to the local owner on the
+server side, and `/api/auth/me` returns that owner with `role: "admin"` so the
+dashboard exposes the full surface.
 
-Tokens expire after `OCTOP_ACCESS_TOKEN_TTL` seconds (default 24 h).
-An authenticated request renews the token once less than two-thirds of that
-lifetime remains, so active use extends the session from the last renewal.
-Changing the password invalidates outstanding tokens; the change-password
-response returns a replacement in `X-Octop-Access-Token`.
-Rotating the JWT secret (`octop admin rotate-jwt-secret`) invalidates
-every outstanding token immediately. Login attempts are rate-limited
-(`OCTOP_LOGIN_MAX_ATTEMPTS` / `OCTOP_LOGIN_LOCKOUT_SECONDS`); the
-admin can clear the lockout with `POST /api/users/{id}/unlock-login`.
+No `Authorization` header is required. Older clients may still send a bearer
+token or call `POST /api/auth/login`; the response keeps the historical shape
+(`{access_token, token_type, expires_in, user}`) with a placeholder token so
+existing integrations do not break. Tokens are ignored.
 
 ### Auth column legend
 
-- **public** — no token required.
-- **user** — any logged-in account.
-- **owner** — same user that owns the resource (or admin).
-- **admin** — admin role required.
+The tables below keep the historical labels for compatibility:
 
-### Public endpoints (no token)
+- **public** — reachable without any credential.
+- **user** / **owner** / **admin** — all resolve to the local owner; no
+  permission check is performed.
+
+### Endpoints with no credential
 
 `/api/docs`, `/api/openapi.json`, `/api/health`, `/api/setup/*`,
-`/api/auth/login`, `/api/auth/captcha`, `/api/auth/oidc/status`, `/api/auth/oidc/start`,
-`/api/auth/oidc/callback`, `/api/auth/oidc/exchange`, `/api/auth/oauth/status`,
-`/api/auth/oauth/start`, `/api/auth/oauth/callback`, `/api/auth/oauth/exchange`,
-`/api/auth/ldap/status`, `/api/auth/passkey/status`,
-`/api/connectors/oauth/callback`, and `/api/internal/mcp/*`. All other routes are JWT-gated by
-`api/middleware/jwt_auth.py`; the setup lockdown middleware
-(`api/middleware/setup_lockdown.py`) additionally blocks non-setup
-routes until the wizard finishes.
+`/api/auth/*`, `/api/connectors/oauth/callback`, and `/api/internal/mcp/*`
+are always reachable. Every other route is also reachable because the local
+owner is injected by `api/middleware/jwt_auth.py`; the setup lockdown
+middleware is no longer mounted.
 
-Password login may require a vendor captcha token. `GET /api/auth/captcha`
-returns `{provider: "slider"}` by default (dashboard slider only; no server
-check). When a strong provider is active (`turnstile`, `hcaptcha`,
-`recaptcha`, `recaptcha-v3`, `tencent`), `POST /api/auth/login` must include
-`captcha_token` (max 4096 characters; for `tencent` the dashboard sends the
-callback pair as `ticket:randstr`, verified via GET with the client IP).
-Captcha failures do not increment
-login lockout. OIDC login is unchanged. A request for an unknown username
-with a garbage token still triggers one outbound siteverify request (bounded
-by a 10s timeout and the token length limit); a known locked user is
-rejected before siteverify.
-
-Offline recovery: delete the `captcha.settings` row via local CLI /
-`settings_repo` if a settings-sourced strong provider is unreachable. If
-the process refused to start because `OCTOP_CAPTCHA_PROVIDER` is strong
-without both keys and no readable settings blob, edit `~/.octop/env` on
-disk — the dashboard and `PUT /api/envs` are unreachable until the
-process starts. `GET /api/envs` redacts `OCTOP_CAPTCHA_SECRET` as
-`********`; sending that sentinel on PUT keeps the on-disk value.
+Captcha, OIDC, OAuth, LDAP, passkey, and MFA endpoints are retained for
+compatibility and report `enabled: false`; starting any of those flows returns
+a Chinese message explaining that single-user mode does not support it.
 
 If you serve the dashboard behind a CSP, allow
 `challenges.cloudflare.com`; `js.hcaptcha.com`, `newassets.hcaptcha.com`,
 `api.hcaptcha.com`; `www.google.com`, `www.gstatic.com`;
-`turing.captcha.qcloud.com`, `captcha.qq.com`, `ssl.captcha.qq.com`. Octop
+`turing.captcha.qcloud.com`, `captcha.qq.com`, `ssl.captcha.qq.com`. HappyClaw
 does not set these headers itself.
 
-## Setup & auth
+## Setup & local user
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `GET`    | `/setup/status` | public | `{required, completed, has_admin}` |
-| `GET`    | `/setup/presets` | public | Provider templates for the wizard |
-| `POST`   | `/setup/begin` | public | Begin a wizard session (no password) |
-| `POST`   | `/setup/verify-password` | public | Exchange the wizard password for a session token |
-| `GET`    | `/setup/validate-token` | public | Check a wizard session token |
-| `POST`   | `/setup/initial-admin` | public | body `{username, password, display_name?, email?}` → `201` |
-| `POST`   | `/setup/test-provider` | public | Ping a provider draft (kind/base_url/api_key/model) |
-| `POST`   | `/setup/finish` | public | Finalise setup and unlock the rest of the API |
-| `GET`    | `/auth/captcha` | public | `{provider, site_key?}` for the login widget; 503 while setup is required |
-| `POST`   | `/auth/login` | public | body `{username, password, captcha_token?}` (`username` may be email) → `{access_token, role, user, ...}`. When no local password matches, the credentials are retried against the configured LDAP directory; a first directory login provisions an Octop account (unless `auto_provision` is off) and derives the role from `admin_groups` |
-| `GET`    | `/auth/oidc/status` | public | OIDC login availability and provider display name |
-| `POST`   | `/auth/oidc/start` | public | body `{redirect_after?}` → identity-provider authorization URL |
-| `GET`    | `/auth/oidc/callback` | public | Identity-provider callback; redirects to dashboard login completion |
-| `POST`   | `/auth/oidc/exchange` | public | body `{code}` → same JWT response as `/auth/login` |
-| `GET`    | `/auth/oidc/config` | admin | OIDC provider configuration and callback URL; client secret is omitted |
-| `PUT`    | `/auth/oidc/config` | admin | Write OIDC provider configuration; `client_secret` is write-only |
-| `POST`   | `/auth/oidc/config/test` | admin | Verify configured discovery metadata and JWKS endpoint |
-| `GET`    | `/auth/oauth/status` | public | `{providers:[{kind, display_name, enabled}]}` |
-| `POST`   | `/auth/oauth/start` | public | body `{kind, redirect_after?}` → authorization URL |
-| `GET`    | `/auth/oauth/callback` | public | App OAuth callback (`code` or DingTalk `authCode`); same completion page as OIDC |
-| `POST`   | `/auth/oauth/exchange` | public | Same one-time code exchange as `/auth/oidc/exchange` |
-| `POST`   | `/auth/oauth/bind/start` | user | body `{kind, redirect_after?}` → bind the identity to the current user |
-| `POST`   | `/auth/oauth/unbind` | user | Unlink one SSO identity by `kind` (requires a local password when it is the last login method) |
-| `GET`    | `/auth/oauth/providers/{kind}` | admin | Provider config; `kind` is `oidc`, `feishu`, `dingtalk`, or `wecom` |
-| `PUT`    | `/auth/oauth/providers/{kind}` | admin | Upsert provider config; `client_secret` is write-only; WeCom uses `extra.agent_id` |
-| `POST`   | `/auth/oauth/providers/{kind}/test` | admin | Test provider credentials |
-| `GET`    | `/auth/ldap/status` | public | `{enabled, display_name}` for the login page hint |
-| `GET`    | `/auth/passkey/status` | public | `{passwordless_login}` — whether the login page offers “Sign in with a passkey”. Default `false` until an admin enables it |
-| `GET`    | `/auth/ldap/config` | admin | Directory settings; `bind_password` is never returned (`has_bind_password` instead) |
-| `PUT`    | `/auth/ldap/config` | admin | Upsert directory settings; `bind_password` is write-only (omit to keep the stored one) |
-| `POST`   | `/auth/ldap/config/test` | admin | Service bind + probe of `user_base_dn` → `{ok, detail}` |
-| `POST`   | `/auth/logout` | user | `204` |
-| `GET`    | `/auth/me` | user | `{id, username, role, display_name, locale, ...}` |
-| `PATCH`  | `/auth/me` | user | body `{display_name?, locale?, ...}` |
-| `POST`   | `/auth/change-password` | user | body `{old_password, new_password}` → `204`, with a replacement access token in `X-Octop-Access-Token`. Outstanding tokens stop working. Accounts without a local password (directory/SSO-provisioned) get `PASSWORD_NOT_SET` |
-| `GET`    | `/health` | public | `{status: "ok", version}` |
-
-## Users (admin)
-
-| Method | Path | Auth | Notes |
-|--------|------|------|-------|
-| `GET`    | `/users` | admin | `[{id, username, role, display_name, email, enabled, ...}]` |
-| `POST`   | `/users` | admin | body `{username, password, role, display_name?, email?, permissions?, workspace_root_dir?, token_quota?}` → `201` |
-| `GET`    | `/users/{id}` | admin | full user row |
-| `PATCH`  | `/users/{id}` | admin | body subset of `{role, display_name, email, enabled, locale}` |
-| `POST`   | `/users/{id}/reset-password` | admin | body `{new_password}` → `204` |
-| `POST`   | `/users/{id}/unlock-login` | admin | `204` (clears the lockout) |
-| `DELETE` | `/users/{id}` | admin | `204` |
+| `GET`    | `/health` | public | `{ok: true, started_at, db, users_loaded, agents_running, channels}` |
+| `GET`    | `/setup/status` | public | `{required: false, completed: true, has_admin: true}` in single-user mode |
+| `POST`   | `/setup/finish` | public | Kept for the dashboard; completes immediately |
+| `POST`   | `/auth/login` | public | Returns a placeholder token plus the local owner; credentials are ignored |
+| `GET`    | `/auth/me` | public | `{id, username, role: "admin", display_name, locale, permissions, ...}` for the local owner |
+| `PATCH`  | `/auth/me` | public | body `{display_name?, locale?, ...}` — updates the local owner |
+| `POST`   | `/auth/logout` | public | `204` — no session to clear |
+| `POST`   | `/auth/change-password` | public | `400` — single-user mode has no password |
+| `GET`    | `/auth/captcha` | public | `{provider: "none"}`; captcha is disabled |
+| `GET`    | `/auth/oidc/status`, `/auth/oauth/status`, `/auth/ldap/status`, `/auth/passkey/status` | public | `{enabled: false}` |
+| `POST`   | `/auth/oidc/start`, `/auth/oauth/start`, `/auth/ldap/config/test` | public | `400` with a Chinese message |
+| `GET`    | `/users` | public | Only the local owner |
+| `POST`   | `/users` | public | `400` — single-user mode does not support multiple accounts |
+| `GET`    | `/users/{id}` | public | The local owner |
+| `PATCH`  | `/users/{id}` | public | `400` — single-user mode does not support multiple accounts |
+| `POST`   | `/users/{id}/reset-password`, `/users/{id}/unlock-login` | public | `400` — no password or lockout in single-user mode |
+| `DELETE` | `/users/{id}` | public | `400` — single-user mode does not support multiple accounts |
 
 ## Agents
 
@@ -146,17 +92,17 @@ does not set these headers itself.
 Skill copy operations create snapshots; they do not keep the source and
 destination synchronized after the request completes.
 
-Packages default to private (`shared=false`): only the creator (and admins) can
-list or open them. When `shared=true`, other users with the `skill_packages`
-permission can view and mount them; only the creator/admin can edit. `copy_policy`
-and `allow_download` still apply to users who can already view the package.
+Packages default to private (`shared=false`). Single-user mode has only the
+local owner, so `shared` is kept for compatibility with imported data and has
+no effect: the owner can list, open, edit, and mount every package.
+`copy_policy` and `allow_download` still apply.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `GET` | `/skill-packages` | user (`skill_packages`) | Own packages + shared packages; admins see all |
-| `GET` | `/skill-packages?writable_only=true` | user (`skill_packages`) | List only packages the current user may modify; admins may modify all packages |
-| `POST` | `/agents/{id}/skill-packages/{package_id}/copy` | owner (`skill_packages`) | body `{skill_slugs: string[], overwrite?: boolean}`; copy selected package skills into the workspace |
-| `POST` | `/agents/{id}/skills/{slug}/push-to-package` | owner (`skill_packages`) | body `{package_id, overwrite?: boolean}`; copy a workspace skill into a package created by the user (or any package for admins) |
+| `GET` | `/skill-packages` | public | All packages (only the local owner exists) |
+| `GET` | `/skill-packages?writable_only=true` | public | Same list; the owner may modify every package |
+| `POST` | `/agents/{id}/skill-packages/{package_id}/copy` | public | body `{skill_slugs: string[], overwrite?: boolean}`; copy selected package skills into the workspace |
+| `POST` | `/agents/{id}/skills/{slug}/push-to-package` | public | body `{package_id, overwrite?: boolean}`; copy a workspace skill into a package |
 
 ## Chat (WebSocket)
 
@@ -299,7 +245,7 @@ an optional display label; when omitted, the server derives one from
 | `PATCH`  | `/providers/{id}` | owner | body subset → updated row |
 | `DELETE` | `/providers/{id}` | owner | `204` (refuses if any agent references it) |
 | `POST`   | `/providers/{id}/test` | user | `{ok, latency_ms?, error?}` (one-token ping with 10 s timeout) |
-| `POST`   | `/admin/providers` | admin | same body as user POST; row has `user_id = NULL` |
+| `POST`   | `/admin/providers` | admin | same body as user POST; creates a global provider row (`user_id = NULL`) |
 | `PATCH`  | `/admin/providers/{id}` | admin | as user PATCH but works on shared rows |
 | `DELETE` | `/admin/providers/{id}` | admin | `204` |
 
@@ -542,7 +488,7 @@ for non-`/` paths.
 | `GET`    | `/connectors/oauth/callback` | public | OAuth redirect target |
 | `GET`    | `/connectors/oauth/pending/{state_id}` | user | poll the OAuth result |
 
-Custom MCP OAuth (streamable HTTP, public HTTPS URL only): Octop discovers the authorization
+Custom MCP OAuth (streamable HTTP, public HTTPS URL only): HappyClaw discovers the authorization
 server from the MCP URL (401 / RFC 9728 protected-resource metadata), registers a client
 dynamically (DCR), stores encrypted tokens in the custom MCP spec, and injects `Authorization:
 Bearer` when loading tools. Loopback and LAN MCP URLs may use HTTP and do not use remote OAuth
@@ -578,9 +524,9 @@ the client drops the stored tokens, so the server asks for authorization again.
 |--------|------|------|-------|
 | `POST`/`GET`/… | `/internal/mcp/*` | public (mTLS / network-isolated) | MCP gateway used by octop-harness agents (not the dashboard) |
 
-## Octop Agent MCP Gateway
+## HappyClaw Agent MCP Gateway
 
-External agents call installed Octop experts through the authenticated
+External agents call installed HappyClaw experts through the authenticated
 Streamable HTTP endpoint:
 
 `POST/GET/DELETE /mcp/agents`
@@ -597,7 +543,7 @@ The server exposes three tools:
 | `resume_octop_expert` | Resume a call that stopped for tool approval or user input |
 
 `call_octop_expert` returns `thread_id`. Store this value in the external
-agent's working state. Pass it only when the next task must use the same Octop
+agent's working state. Pass it only when the next task must use the same HappyClaw
 conversation. Omit it for a new task. MCP threads cannot attach to dashboard,
 CLI, or IM threads.
 
