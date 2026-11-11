@@ -17,18 +17,14 @@ def resolve_sqlite_db_path(config: OctopConfig, paths: PathLayout) -> Path:
     return paths.db
 
 
-def should_defer_control_plane_db(config: OctopConfig, paths: PathLayout) -> bool:
-    """True when first-run setup should delay opening the control-plane DB.
+def should_defer_control_plane_db(config: OctopConfig, paths: PathLayout) -> bool:  # noqa: ARG001
+    """Deprecated: single-user mode always opens the default SQLite control plane.
 
-    Defer only for greenfield SQLite installs with no existing DB file and no
-    ``OCTOP_DATABASE_*`` / PostgreSQL configuration. Password verification and
-    early wizard steps then run without a pool.
+    Kept as a public name for older callers/tests. Deferring the DB made a clean
+    ``OCTOP_HOME`` wait for the setup wizard, which left ``/api/health``
+    unreachable for up to 90s on first launch.
     """
-    if config.database.is_postgresql:
-        return False
-    if database_env_configured():
-        return False
-    return not resolve_sqlite_db_path(config, paths).exists()
+    return False
 
 
 def open_database(config: OctopConfig, paths: PathLayout) -> DatabasePool:

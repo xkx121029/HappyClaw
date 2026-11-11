@@ -327,6 +327,7 @@ class OctopServer:
         self.wizard_tokens = WizardTokenStore(ttl_seconds=300)
         self._started = False
         self._started_at: int | None = None
+        self._default_agent_task: asyncio.Task[None] | None = None
         self.instance_id = uuid.uuid4().hex
         self._serve_background = True
         self._sso_service: SsoService | None = None
@@ -338,6 +339,19 @@ class OctopServer:
     @property
     def user_manager(self) -> UserManager | None:
         return self.app_runtime.user_manager if self.app_runtime else None
+
+    @property
+    def owner_identity(self) -> Any:
+        """The single local user for this installation."""
+        if self.services is None:
+            from octop.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
+
+            raise OctopError(
+                ErrorCode.SINGLE_USER_INIT_FAILED,
+                "control-plane database is not available",
+                status=503,
+            )
+        return self.services.owner
 
     @property
     def sso_service(self) -> SsoService:
@@ -439,16 +453,10 @@ class OctopServer:
         self._started_at = int(time.time())
 
         if should_defer_control_plane_db(config, self.paths):
-            from octop.infra.history.retire_v2 import has_history_v2  # noqa: PLC0415
-
-            if has_history_v2(self.paths):
-                raise ValueError(
-                    "Cannot migrate history v2 without its original control-plane database"
-                )
-            self._started = True
-            self._emit_wizard_password(user_count=0)
-            logger.info("control-plane database deferred until setup wizard chooses a backend")
-            return
+            # Deprecated: single-user mode always binds the default SQLite DB at
+            # boot. The branch stays empty on purpose so a stale config cannot
+            # defer the control plane and block /api/health on first launch.
+            logger.info("single-user mode: ignoring deferred control-plane setup")
 
         db = open_database(config, self.paths)
         run_migrations(db)
@@ -457,10 +465,44 @@ class OctopServer:
 
         boot_from_services(self.services.settings_repo, self.services.secret_repo)
         self._ensure_jwt_secret()
+        # Resolve (and create when the DB is empty) the one local owner before
+        # serving traffic so every request maps to the same identity.
+        self.services.owner.ensure()
         await self._boot_runtime(config)
         self._started = True
         assert self.user_manager is not None
         self._emit_wizard_password(user_count=self.user_manager.count())
+        self._schedule_default_agent_bootstrap()
+
+    def _schedule_default_agent_bootstrap(self) -> None:
+        """Create the default ``main`` expert right after the server starts.
+
+        Fire-and-forget on purpose: first paint (``/api/health``) must never
+        wait for market pulls or workspace seeding. Any failure is logged and
+        ignored — the user can still create an expert by hand. Tests opt out
+        with ``OCTOP_DISABLE_DEFAULT_AGENT=1``.
+        """
+        disabled = os.environ.get("OCTOP_DISABLE_DEFAULT_AGENT", "").strip().lower()
+        if disabled in {"1", "true", "yes", "on"}:
+            return
+        self._default_agent_task = asyncio.create_task(self._bootstrap_default_agent())
+
+    async def _bootstrap_default_agent(self) -> None:
+        try:
+            if self.services is None:
+                return
+            from octop.infra.agents.experts.default_agent import (  # noqa: PLC0415
+                SETUP_DEFAULT_AGENT_ID,
+                try_bootstrap_default_agent,
+            )
+
+            await try_bootstrap_default_agent(
+                self,
+                user_id=self.services.owner.owner_id(),
+                agent_id=SETUP_DEFAULT_AGENT_ID,
+            )
+        except Exception:  # pragma: no cover - non-fatal by design
+            logger.exception("default agent bootstrap failed (non-fatal)")
 
     async def bind_control_plane(self) -> None:
         """Open the configured control-plane DB and boot runtime (first-run wizard).
@@ -743,6 +785,12 @@ class OctopServer:
             logger.exception("applying plugin channel kinds failed")
 
     def _emit_wizard_password(self, *, user_count: int) -> None:
+        # Single-user mode: no setup wizard account and no one-time password
+        # file. Existing ``octop-login.txt`` files stay on disk untouched.
+        logger.info("single-user mode: skipping first-run wizard password (user_count=%s)", user_count)
+        return
+
+    def _legacy_emit_wizard_password(self, *, user_count: int) -> None:
         config = self.config
         if config is None:
             return
@@ -772,7 +820,7 @@ class OctopServer:
             banner = (
                 "\n\033[33m"
                 "╔══════════════════════════════════════════════════════════╗\n"
-                "║  Octop first-run wizard password (one-time use):          ║\n"
+                "║  HappyClaw first-run wizard password (one-time use):          ║\n"
                 f"║  {new_pw:<54}  ║\n"
                 "║  Open the dashboard and paste it into the setup wizard.  ║\n"
                 f"║  {file_label:<54}  ║\n"
@@ -788,6 +836,12 @@ class OctopServer:
     async def stop(self) -> None:
         if not self._started:
             return
+        task = self._default_agent_task
+        if task is not None and not task.done():
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+        self._default_agent_task = None
         try:
             from octop.infra.connectors.gateway import agently_auth
 
