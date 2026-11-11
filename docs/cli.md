@@ -83,15 +83,19 @@ Usage: octop init [OPTIONS]
   Bootstrap a HappyClaw server (~/.octop dir, DB migrations).
 
 Options:
-  --force                     Delete HappyClaw data under ~/.octop. Keeps venv/ and bin/.
-  --yes                       Skip all interactive prompts.
-  -h, --help                  Show this message and exit.
+  --admin-username TEXT      [legacy] First admin username.
+  --admin-password TEXT      [legacy] First admin password.
+  --admin-display-name TEXT  [legacy] Optional display name.
+  --force                    Delete HappyClaw data under ~/.octop. Keeps venv/ and bin/.
+  --yes                      Skip all interactive prompts.
+  -h, --help                 Show this message and exit.
 ```
 
 Single-user mode has no account to create. `octop init` only prepares the
 directory and database; the local owner is created on the first `octop run`.
-`--admin-username` / `--admin-password` / `--admin-display-name` are accepted
-for compatibility and ignored.
+The `--admin-*` flags are kept for compatibility with existing install scripts
+and databases: they may still seed a row, but single-user mode never asks for
+those credentials and binds every request to the local owner.
 
 ## `octop run`
 

@@ -183,7 +183,7 @@ octop backup auto run            # 立即执行一次自动备份
 
 自动备份在 `octop run` 进程内按计划执行，默认每天 04:00，保留份数可配置；自动归档文件名以 `octop-auto-backup-` 开头，不会删除手动备份。
 
-> SQLite 与 PostgreSQL 的备份不能跨引擎互恢。恢复前请确认运行中的数据库引擎与备份一致。
+> 默认归档不含聊天历史；迁移完整会话时使用 `octop backup create --include-chats`。SQLite 与 PostgreSQL 的备份不能跨引擎互恢，恢复前请确认运行中的数据库引擎与备份一致。
 
 ## 📖 CLI 速查
 

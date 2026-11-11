@@ -61,11 +61,23 @@ function Resolve-Octop {
 
     $venvPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
     if (Test-Path $venvPython) {
-        & $venvPython -c "import octop" 2>$null
-        if ($LASTEXITCODE -eq 0) { return @{ File = $venvPython; Args = @("-m", "octop") } }
+        $prevEap = $ErrorActionPreference
+        $ErrorActionPreference = "SilentlyContinue"
+        & $venvPython -c "import octop" 2>$null | Out-Null
+        $importOk = ($LASTEXITCODE -eq 0)
+        $ErrorActionPreference = $prevEap
+        if ($importOk) { return @{ File = $venvPython; Args = @("-m", "octop") } }
     }
 
     $uv = Get-Command uv -ErrorAction SilentlyContinue
+    if (-not $uv) {
+        foreach ($candidate in @(
+            (Join-Path $env:USERPROFILE ".local\bin\uv.exe"),
+            (Join-Path $env:USERPROFILE ".cargo\bin\uv.exe")
+        )) {
+            if (Test-Path $candidate) { $uv = Get-Item $candidate; break }
+        }
+    }
     if ($uv) { return @{ File = $uv.Source; Args = @("run", "--no-sync", "octop") } }
 
     return $null

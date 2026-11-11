@@ -180,7 +180,7 @@ octop backup auto run            # run one automatic backup now
 
 Automatic backups run inside the `octop run` process (default 04:00 daily). Retention only prunes `octop-auto-backup-*` archives; manual backups are never deleted.
 
-> SQLite and PostgreSQL backups are not interchangeable. Restore with the same database engine that produced the archive.
+> Archives exclude chat history by default; add `--include-chats` for a full migration. SQLite and PostgreSQL backups are not interchangeable. Restore with the same database engine that produced the archive.
 
 ## 📖 CLI Reference
 
