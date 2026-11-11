@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { OctopAgent } from "../../../context/AgentContext";
 import AgentNotReadyScreen from "./AgentNotReadyScreen";
 
@@ -24,12 +24,17 @@ function agentWith(overrides: Partial<OctopAgent>): OctopAgent {
   };
 }
 
-function renderScreen(agent: OctopAgent, canConfigureModels?: boolean) {
+function renderScreen(
+  agent: OctopAgent,
+  canConfigureModels?: boolean,
+  hasUsableModels?: boolean,
+) {
   return render(
     <MemoryRouter initialEntries={["/chat"]}>
       <AgentNotReadyScreen
         agent={agent}
         canConfigureModels={canConfigureModels}
+        hasUsableModels={hasUsableModels}
       />
     </MemoryRouter>,
   );
@@ -87,5 +92,38 @@ describe("AgentNotReadyScreen", () => {
     expect(
       screen.getByText("chat.remoteExpert.disconnectedTitle"),
     ).toBeInTheDocument();
+  });
+
+  it("offers a one-click enable when a model is already configured", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response("{}", {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("BASE_URL", "");
+
+    renderScreen(agentWith({ state: "stopped" }), true, true);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "启用这个专家" }),
+    );
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+      "/agents/a1/start",
+    );
+  });
+
+  it("sends an expert without a model to model configuration first", () => {
+    renderScreen(agentWith({ state: "stopped" }), true, false);
+
+    expect(screen.getByText("modelConfig.promptTitle")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "启用这个专家" }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -338,6 +338,32 @@
   padding: 24px 16px;
 }
 
+/* 首次进入：专家已创建但未启用，就地给一个启动入口。 */
+.agentEnableCard {
+  width: 100%;
+  max-width: 400px;
+  padding: 32px 28px;
+  border: 1px solid var(--fn-border-secondary);
+  border-radius: 16px;
+  background: var(--fn-bg-elevated, var(--fn-bg-primary));
+  text-align: center;
+}
+
+.agentEnableTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--fn-text-primary);
+}
+
+.agentEnableHint {
+  margin: 8px 0 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fn-text-secondary);
+}
+
 .noAgentsEmpty {
   flex: 1;
   min-height: 0;

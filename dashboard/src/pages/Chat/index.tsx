@@ -1673,6 +1673,9 @@ function ChatPageInner() {
                   noAgents={noAgents}
                   loading={agentsLoading}
                   canConfigureModels={canConfigureModels}
+                  hasUsableModels={
+                    modelsReady ? availableModels.length > 0 : undefined
+                  }
                 />
               ) : showWelcome && modelsReady && availableModels.length === 0 ? (
                 <ModelConfigEmpty canConfigure={canConfigureModels} />

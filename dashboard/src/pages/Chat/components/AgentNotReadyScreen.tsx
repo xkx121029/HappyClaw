@@ -1,7 +1,11 @@
-import { Button, Result } from "antd";
+import { useCallback, useState } from "react";
+import { Button, message, Result } from "antd";
 import cx from "classnames";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { request } from "../../../api/request";
+import { apiErrorMessage } from "../../../utils/apiError";
+import { useAgent } from "../../../context/AgentContext";
 import { OctopEmptyMascot } from "../../../components/EmptyState";
 import type { OctopAgent } from "../../../context/AgentContext";
 import {
@@ -17,6 +21,12 @@ interface AgentNotReadyScreenProps {
   loading?: boolean;
   /** Whether this user may open the model settings themselves. */
   canConfigureModels?: boolean;
+  /**
+   * Whether at least one usable model exists. ``undefined`` means the list is
+   * not known yet, so the screen keeps the enable card instead of claiming the
+   * setup is incomplete.
+   */
+  hasUsableModels?: boolean;
 }
 
 export default function AgentNotReadyScreen({
@@ -24,9 +34,32 @@ export default function AgentNotReadyScreen({
   noAgents = false,
   loading = false,
   canConfigureModels = true,
+  hasUsableModels,
 }: AgentNotReadyScreenProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { refresh } = useAgent();
+  const [enabling, setEnabling] = useState(false);
+
+  const handleEnable = useCallback(async () => {
+    if (!agent) return;
+    setEnabling(true);
+    try {
+      await request(`/agents/${agent.agent_id}/start`, { method: "POST" });
+      message.success(t("chat.enableExpertStarted", { name: agent.name }));
+      await refresh({ silent: true, force: true });
+    } catch (error) {
+      message.error(
+        apiErrorMessage(
+          error,
+          t("chat.enableExpertFailed", "启用专家失败，请重试。"),
+          t,
+        ),
+      );
+    } finally {
+      setEnabling(false);
+    }
+  }, [agent, refresh, t]);
 
   if (loading) {
     return (
@@ -114,6 +147,42 @@ export default function AgentNotReadyScreen({
    */
   if (state === "failed" && isModelError && !disconnected) {
     return <ModelConfigEmpty canConfigure={canConfigureModels} />;
+  }
+
+  /**
+   * First launch often has an expert created but not started. Two distinct
+   * setup steps deserve two distinct answers: no model at all sends the user
+   * to model settings, while a configured model offers a one-click start
+   * right here instead of bouncing to the experts page.
+   */
+  if (hasUsableModels === false && !disconnected) {
+    return <ModelConfigEmpty canConfigure={canConfigureModels} />;
+  }
+
+  if ((state === "stopped" || state === "created") && !disconnected) {
+    return (
+      <div className={styles.agentNotReady}>
+        <div className={styles.agentEnableCard}>
+          <h1 className={styles.agentEnableTitle}>
+            {t("chat.enableExpertTitle", "这个专家还没启用")}
+          </h1>
+          <p className={styles.agentEnableHint}>
+            {t(
+              "chat.enableExpertHint",
+              "启用后就能开始对话，已有的配置和会话都会保留。",
+            )}
+          </p>
+          <Button
+            type="primary"
+            size="large"
+            loading={enabling}
+            onClick={handleEnable}
+          >
+            {t("chat.enableExpert", "启用这个专家")}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   let title = t("chat.agentNotRunning");
