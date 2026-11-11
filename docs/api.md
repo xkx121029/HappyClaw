@@ -15,11 +15,12 @@ token, or role check: every request is resolved to the local owner on the
 server side, and `/api/auth/me` returns that owner with `role: "admin"` so the
 dashboard exposes the full surface.
 
-> **Verification status (2026-11-11):** the single-user behavior on this page is
-> the target contract, not an observed one. The backend line is still changing
-> `/api/auth/*` and `/api/users/*`; rows that promise a `400` response have not
-> been confirmed against a running server. Re-check them against actual
-> responses and update this page before release.
+> **Verification status (2026-11-12 07:06, local smoke):** verified against a
+> running server on a temporary `OCTOP_HOME` (fresh database, port 7462).
+> Observed: no credential is required for `/api/users` or `/api/teams`;
+> `/api/auth/me` returns the pre-provisioned `local-owner`; `/api/setup/status`
+> reports `setup_required: false`. Remaining schema differences are called out
+> in the table below and tracked in `RELEASE-CHECKLIST.md` 7.5.
 
 No `Authorization` header is required. Older clients may still send a bearer
 token or call `POST /api/auth/login`; the response keeps the historical shape
@@ -38,13 +39,14 @@ The tables below keep the historical labels for compatibility:
 
 `/api/docs`, `/api/openapi.json`, `/api/health`, `/api/setup/*`,
 `/api/auth/*`, `/api/connectors/oauth/callback`, and `/api/internal/mcp/*`
-are always reachable. Every other route is also reachable because the local
-owner is injected by `api/middleware/jwt_auth.py`; the setup lockdown
-middleware is no longer mounted.
+are always reachable. Every other route is also reachable: the local owner is
+injected before the JWT middleware, which is why `GET /api/users` and
+`GET /api/teams` return `200` without an `Authorization` header (verified
+2026-11-12 07:06).
 
 Captcha, OIDC, OAuth, LDAP, passkey, and MFA endpoints are retained for
-compatibility and report `enabled: false`; starting any of those flows returns
-a Chinese message explaining that single-user mode does not support it.
+compatibility and report disabled; starting any of those flows returns `400`.
+Observed values are in the table below.
 
 If you serve the dashboard behind a CSP, allow
 `challenges.cloudflare.com`; `js.hcaptcha.com`, `newassets.hcaptcha.com`,
@@ -56,23 +58,27 @@ does not set these headers itself.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `GET`    | `/health` | public | `{ok: true, started_at, db, users_loaded, agents_running, channels}` |
-| `GET`    | `/setup/status` | public | `{required: false, completed: true, has_admin: true}` in single-user mode |
-| `POST`   | `/setup/finish` | public | Kept for the dashboard; completes immediately |
-| `POST`   | `/auth/login` | public | Returns a placeholder token plus the local owner; credentials are ignored |
-| `GET`    | `/auth/me` | public | `{id, username, role: "admin", display_name, locale, permissions, ...}` for the local owner |
-| `PATCH`  | `/auth/me` | public | body `{display_name?, locale?, ...}` — updates the local owner |
+| `GET`    | `/health` | public | `200` — `{ok, started_at, db, users_loaded, agents_running, channels}` |
+| `GET`    | `/setup/status` | public | `200` — `{setup_required: false, local_account: true, single_user: true, database_driver, database_bound, wizard_password_required: false, wizard_password_exists, wizard_password_path}` |
+| `POST`   | `/setup/begin` | public | `400` — setup flow is not used; a `local-owner` already exists |
+| `POST`   | `/setup/finish` | public | `400` — kept for the dashboard, but there is nothing to finish |
+| `POST`   | `/auth/login` | public | `200` — `{access_token: "local-owner", token_type: "Bearer", expires_in: 0, user}`; credentials are ignored |
+| `GET`    | `/auth/me` | public | `200` — `{id, username: "local-owner", role: "local", is_local_owner: true, display_name, locale, ...}` |
+| `PATCH`  | `/auth/me` | public | `200` — body `{display_name?, locale?, ...}` updates the local owner |
 | `POST`   | `/auth/logout` | public | `204` — no session to clear |
 | `POST`   | `/auth/change-password` | public | `400` — single-user mode has no password |
-| `GET`    | `/auth/captcha` | public | `{provider: "none"}`; captcha is disabled |
-| `GET`    | `/auth/oidc/status`, `/auth/oauth/status`, `/auth/ldap/status`, `/auth/passkey/status` | public | `{enabled: false}` |
-| `POST`   | `/auth/oidc/start`, `/auth/oauth/start`, `/auth/ldap/config/test` | public | `400` with a Chinese message |
-| `GET`    | `/users` | public | Only the local owner |
+| `GET`    | `/auth/captcha` | public | `200` — `{provider: "none"}` |
+| `GET`    | `/auth/oidc/status`, `/auth/ldap/status` | public | `200` — `{enabled: false, display_name: ""}` |
+| `GET`    | `/auth/oauth/status` | public | `200` — `{providers: [{kind, display_name, enabled: false}, ...]}` |
+| `GET`    | `/auth/passkey/status` | public | `200` — `{passwordless_login: false}` |
+| `POST`   | `/auth/oidc/start`, `/auth/oauth/start`, `/auth/ldap/config/test` | public | `400` — single-user mode does not support these flows |
+| `GET`    | `/users` | public | `200` — a single-element list for the local owner (rendered with `role: "admin"`; `/auth/me` reports `role: "local"`) |
 | `POST`   | `/users` | public | `400` — single-user mode does not support multiple accounts |
-| `GET`    | `/users/{id}` | public | The local owner |
+| `GET`    | `/users/{id}` | public | `200` for the local owner |
 | `PATCH`  | `/users/{id}` | public | `400` — single-user mode does not support multiple accounts |
 | `POST`   | `/users/{id}/reset-password`, `/users/{id}/unlock-login` | public | `400` — no password or lockout in single-user mode |
 | `DELETE` | `/users/{id}` | public | `400` — single-user mode does not support multiple accounts |
+| `GET`    | `/teams` | public | `200` — `[]` when no teams exist; no credential required |
 
 ## Agents
 

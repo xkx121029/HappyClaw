@@ -30,8 +30,13 @@
 - `~/.octop/secrets/` 注释更正为「腾讯云授权缓存（`cloud/`、`cloud.key`）」，不再描述为全部通道 Token
 - `docs/personas.md` 删除旧版 `Authorization: Bearer` 调用示例；`docs/acp.md` 的 `octop user login` 改为 `octop agent use`
 - `docs/bridge.md` 中 6 处指向不存在 `docs/assets/*.png` 的图片链接改为文字图注；ADR 文档中的仓外源码链接改为行内路径引用
-- `docs/api.md` 的账号接口描述标注为「单人化目标态、尚未与后端实际响应对齐」；`docs/RELEASE-CHECKLIST.md` 第 7.5 项改为待核对，并预留核对时间记录
-- 发布清单新增 7.8：本机无可用 bash，`install.sh` / `install-octop.sh` / `build-fpk.sh` / `scripts/fnos/*.sh` 的改动未经 `bash -n`，明确标注「未做语法校验」
+- `docs/api.md` 的账号接口段按 2026-11-12 07:06 实测回填：`/api/setup/status` 返回 `setup_required:false`、无 `Authorization` 可访问 `/api/users` 与 `/api/teams`、`/auth/me` 为 `local-owner`（`role:"local"`）；澄清 `role`、`passwordless_login`、`providers` 等字段差异
+- 发布清单 7.8 已补 `bash -n`：用 Git Bash 5.2.37 校验 12 个仓库内脚本，全部通过；记录于 7.8 说明
+- 发布清单 7.9 更新复核进展：`setup` 与 JWT 已实测达成，`/api/auth/*` 兼容端点行为与文档一致；`/api/admin` 与旧 `infra/users` 内部面仍未实测
+- 发布清单 7.2 冒烟记录填入真实结果：`release-check.ps1` 11 通过 / 0 警告 / 0 失败（退出码 0）；`smoke_local.ps1` 首次 `/api/health` 52.1s（临时 home、端口 3320）
+- `docs/user-guide.md` 新增 5.9「单人使用技巧」：会话/模型搜索入口、运行轨迹 JSONL 导出、备份恢复命令与图形入口、`mod+K` 等快捷键表
+- 发布清单 5.2 日志路径更正为 `~/.octop/logs/octop.log`（按天轮转），并说明旧路径首次启动自动迁移
+- `scripts/smoke_local.ps1` 在健康检查通过后输出首次可用耗时，便于记录冷启动表现
 
 ## [1.0.3b5] - 2026-11-11
 

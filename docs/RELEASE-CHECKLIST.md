@@ -56,7 +56,7 @@
 | # | 检查项 | 判据 | 自动 | 结果 |
 |---|--------|------|------|------|
 | 5.1 | 前台日志 | `octop run` 终端可见启动、监听地址与错误 | ☐ | ☐ |
-| 5.2 | 文件日志 | 日志写入 `~/.octop/octop.log`；系统服务写入 `~/.octop/logs/` | ☐ | ☐ |
+| 5.2 | 文件日志 | 日志写入 `~/.octop/logs/octop.log`，按天轮转为 `octop.YYYY-MM-DD.log`；旧版 `~/.octop/octop.log` 首次启动时迁移 | ☐ | ☐ |
 | 5.3 | 日志不含密钥 | 抽查日志无 `sk-`、Bearer Token、通道 Secret 明文 | ✅ | ☐ |
 | 5.4 | 关键错误可诊断 | 模型连接失败、通道认证失败在日志中有可定位的中文/英文提示 | ☐ | ☐ |
 
@@ -79,15 +79,34 @@
 | 7.2 | 快速开始 | `docs/quickstart.md` 命令逐条在本机执行通过 | ☐ | ☐ |
 | 7.3 | 帮助文档 | `docs/user-guide.md` 的安装、启动、模型、备份、卸载章节与实际行为一致 | ☐ | ☐ |
 | 7.4 | 配置文档 | `docs/configuration.md` 已标注 legacy 变量无效 | ✅ | ☐ |
-| 7.5 | API 文档 | `docs/api.md` 的账号接口描述与后端实际响应一致（当前按目标态编写，未核对） | ☐ | ☐ 待核对 |
+| 7.5 | API 文档 | `docs/api.md` 的账号接口描述与后端实际响应一致（2026-11-12 07:06 实测核对，差异见下方记录） | ☐ | ☑ 已达成（差异已回填） |
 | 7.6 | 废弃文档 | LDAP、旧版 HTML 指南已加停用 / 快照标注，未直接删除 | ✅ | ☐ |
 | 7.7 | 死链 | README 与 docs 中相对链接均可打开 | ☐ | ☐ |
-| 7.8 | Shell 语法 | `install.sh` / `install-octop.sh` / `build-fpk.sh` / `scripts/fnos/*.sh` 通过 `bash -n` | ☐ | ☐ 未做语法校验 |
+| 7.8 | Shell 语法 | `install.sh` / `install-octop.sh` / `build-fpk.sh` / `scripts/fnos/*.sh` 通过 `bash -n` | ☐ | ☑ 通过（2026-11-12） |
 
-> 7.8 说明：本机只有 WSL 且 `/bin/bash` 缺失，2026-11-11 的脚本改动仅做了字符串级修改，**未做 `bash -n` 校验**；有 bash 环境时补跑并回填结果，不得当作已验证。
+### 7.9 代码里仍存在、但文档已按单人化描述的部分（待后端落地后复核）
 
-> 7.2 冒烟记录：待 `.venv` 依赖就绪后执行 `scripts/smoke_local.ps1`，把真实输出附在本节。
-> 7.5 核对记录：待后端单人化接口落地后，实测 `/api/auth/*` 与 `/api/users/*`，以实际响应为准修改 `docs/api.md`，并在此填写核对时间（`YYYY-MM-DD HH:mm`）与结论。当前文档中的账号写接口 `400` 属于目标态，未经实测确认。
+> 2026-11-12 静态核对 `src/octop/api/` 与 `src/octop/cli/` 得出。2026-11-12 07:06 运行时复核：setup 已固定为无需初始化、JWT 已放宽，7.9.1–7.9.5 的对外行为与文档一致（代码保留为兼容层）；7.9.6、7.9.7 尚未实测，仍按待复核处理。
+
+| # | 代码事实 | 与文档的差异 | 状态 |
+|---|----------|--------------|------|
+| 7.9.1 | `auth.py` 仍注册 `POST /api/auth/login`、`POST /api/auth/logout`、`GET /api/auth/me`、`POST /api/auth/change-password`、`GET /api/auth/captcha` | `docs/api.md` 与 `docs/user-guide.md` 按「无登录」描述 | ☑ 已达成（实测 login 200 占位 token、me 200、logout 204、change-password 400、captcha 200 `provider:none`） |
+| 7.9.2 | `auth_device.py`、`auth_mfa.py`、`auth_oauth.py`、`auth_oidc.py`、`auth_ldap.py` 仍挂在 `/api/auth` | 文档已不再提及这些登录方式 | ◐ oidc/oauth/ldap/passkey 已核实（status 200 且禁用、start/config-test 400）；device/mfa 未测 |
+| 7.9.3 | `users.py`、`invites.py`、`user_roles.py`、`user_groups.py` 仍挂载（`/api/users`、`/api/users/invites`、`/api/users/roles`、`/api/user-groups`） | 文档声明账号 / 邀请 / 角色已移除 | ◐ `/api/users` 已核实（读 200、写 400）；invites / roles / user-groups 未测 |
+| 7.9.4 | `setup.py` 挂在 `/api`，`setup_lockdown` 中间件仍安装；无初始用户时抛 `SETUP_REQUIRED` | 快速开始与帮助文档已不包含 setup 向导 | ☑ 已达成（干净 `OCTOP_HOME` 下 `setup_required:false`、本地 owner 自动创建、begin/finish 400） |
+| 7.9.5 | `middleware/jwt_auth.py` 全局校验 `/api/*`，仅放行 health、login、captcha、MFA、OIDC/OAuth、LDAP 等白名单 | 文档按「直接调用 API、无需 Authorization」描述 | ☑ 已达成（无 token 时 `/api/users`、`/api/teams` 均 200） |
+| 7.9.6 | `admin.py` / `backup.py` 挂在 `/api/admin`；`octop user` 系列 CLI 仍注册但标注 deprecated | 文档把多用户管理描述为纯兼容层 | ☐ 待后端落地后复核 |
+| 7.9.7 | `src/octop/infra/users/`（`manager.py`、`invites.py`、`password.py`、`permissions.py`、`groups.py` 等）仍存在；`api/common/sso_cookie.py`、`user_manager.count()`、`~/.octop/users/` 旧目录仍在代码路径中 | 文档未描述这些兼容面 | ☐ 待后端落地后复核 |
+
+> 7.8 记录（2026-11-12 07:10）：WSL 仍缺 `/bin/bash`，改用 Git Bash `GNU bash 5.2.37(1)-release` 执行 `bash -n`，以下 12 个脚本全部通过：`scripts/install.sh`、`scripts/install-octop.sh`、`scripts/build-fpk.sh`、`scripts/fnos/common.sh`、`scripts/fnos/slim-site-packages.sh`、`scripts/fnos/store_version.sh`、`scripts/wheel_build.sh`、`scripts/ci/upload_release_cos.sh`、`scripts/run-discord-local.sh`、`docker/docker_build.sh`、`docker/docker-entrypoint.sh`、`docker/bake-desktop.sh`。仅做语法校验，未在 POSIX 上执行。
+
+> 7.2 冒烟记录（2026-11-12 07:03）：`scripts/release-check.ps1` → 11 通过 / 0 警告 / 0 失败，退出码 `0`。`scripts/smoke_local.ps1` 用临时 `OCTOP_HOME`、空闲端口 3320 → `/api/health` 首次可用耗时 **52.1s**，响应 `{"ok":true,"db":true,"users_loaded":1,"agents_running":0}`，退出码 `0`。另两次接口探测的 health 就绪时间分别为 49.2s、48.1s（冷启动波动区间 48–53s）。
+> 7.5 核对记录（2026-11-12 07:06；临时 `OCTOP_HOME` + 空闲端口 7462，`.venv\Scripts\octop.exe run`）：
+> - **已达成** — setup 固定为不需要初始化：`GET /api/setup/status` 返回 `200 {setup_required:false, local_account:true, single_user:true}`；`POST /api/setup/begin`、`POST /api/setup/finish` 均返回 `400`（单人模式无需向导）。
+> - **已达成** — JWT 放宽：不带 `Authorization` 时 `GET /api/users` 返回 `200`（仅 local-owner 一条）、`GET /api/teams` 返回 `200 []`、`GET /api/auth/me` 返回 `200` 的 local-owner。
+> - **差异（已按实测回填 `docs/api.md`）**：① `/setup/status` 字段名为 `setup_required` / `local_account` / `single_user`，不是旧文里的 `required` / `completed` / `has_admin`；② `/auth/me` 的 `role` 为 `"local"`，而 `/users` 列表里同一账号渲染为 `"admin"`；③ passkey 状态字段是 `passwordless_login`，不是 `enabled`；④ oauth 状态返回 `providers` 数组。
+> - 其余实测：`POST /auth/login` → `200`（占位 token `local-owner`，`expires_in:0`）、`POST /auth/logout` → `204`、`PATCH /auth/me` → `200`、`POST /auth/change-password` → `400`；oidc/ldap 状态 `200 {enabled:false}`、oauth 状态 `200` 且各 provider `enabled:false`、对应 `start` / `config/test` → `400`；`GET /users/{id}` → `200`，`POST /users`、`PATCH /users/{id}`、`DELETE /users/{id}` → `400`。
+> - 结论：对外行为与 `docs/api.md` 的单人化描述一致，仅字段名/角色取值有上述差异，已在文档中按实际响应写明。
 > 7.7 静态校验记录：2026-11-11 扫描 `docs/`（含 `docs/adr/`）、根目录与 `docker/`、`scripts/`、`fnos/` 的 Markdown，151 条相对链接与锚点全部可解析。`docs/bridge.md` 6 张缺失图片已改为文字图注，ADR 的仓外源码引用已改为行内路径。发布前需在最终提交上复跑一次。
 
 ## 八、安全与边界
