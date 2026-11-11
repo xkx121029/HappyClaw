@@ -6,6 +6,11 @@ import type { OctopAgent } from "../../../context/AgentContext";
 import { octopThreadsApi } from "../../../api/modules/octopThreads";
 import MinimalAgentSessionNav from "./MinimalAgentSessionNav";
 import SessionList from "./SessionList";
+import { hiddenExpertsStorageKey } from "../utils/hiddenExpertsPrefs";
+import { pinnedExpertsStorageKey } from "../utils/pinnedExpertsPrefs";
+
+// 本机单人模式的用户 id 固定为 1，偏好键会带上该后缀。
+const LOCAL_USER_ID = 1;
 
 // 编辑专家抽屉会把 PDF / 浏览器预览整条链路带进 jsdom，
 // 这些用例只覆盖导航范围，替身掉抽屉即可。
@@ -138,11 +143,11 @@ describe("SessionList nav scopes", () => {
     const user = userEvent.setup();
     const onAgentSelect = vi.fn();
     localStorage.setItem(
-      "octop:pinned-experts",
+      pinnedExpertsStorageKey(LOCAL_USER_ID),
       JSON.stringify(["local-expert"]),
     );
     localStorage.setItem(
-      "octop:hidden-shared-experts",
+      hiddenExpertsStorageKey(LOCAL_USER_ID),
       JSON.stringify(["shared-expert", "idle-expert"]),
     );
     const shared = {
@@ -199,7 +204,7 @@ describe("SessionList nav scopes", () => {
   it("leaves the active hidden expert in the hidden group", async () => {
     const user = userEvent.setup();
     localStorage.setItem(
-      "octop:hidden-shared-experts",
+      hiddenExpertsStorageKey(LOCAL_USER_ID),
       JSON.stringify(["idle-expert"]),
     );
     render(
