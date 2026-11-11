@@ -28,7 +28,7 @@
 
 ---
 
-**HappyClaw** is a local AI workbench for one person. There is no account system, no login page, and no team or permission setup: install it, start it, open the browser, and you are working as the local user.
+**HappyClaw** is a local AI workbench for one person. There is no account system, no login page, and no member accounts or permission setup: install it, start it, open the browser, and you are working as the local user.
 
 One process serves the web console, the CLI, IM channels, and scheduled jobs. Everything stays on your machine under `~/.octop/`. You can create multiple experts, each with its own model, workspace, skills, and channels — chat in the browser, or connect Feishu, DingTalk, QQ, WeChat, WeCom, Telegram, and Discord.
 

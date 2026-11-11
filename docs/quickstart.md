@@ -166,7 +166,7 @@ octop backup create --include-chats -o D:\backup\happyclaw-full.tar.gz
 
 把它复制到其他磁盘或网盘即可。
 
-> 默认备份不含聊天历史，需要完整迁移时加 `--include-chats`。
+> 手动 `octop backup create` 默认不含聊天历史，需要完整迁移时加 `--include-chats`；自动备份与托盘「立即备份」默认包含。
 
 ---
 

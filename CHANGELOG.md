@@ -21,12 +21,14 @@
   - 新增 `docs/migration-and-restore.md`：数据目录与归档范围、备份校验、换机步骤、恢复参数、失败回退（含手工提取 `db/octop.db`）与自检清单
   - `README.md` / `README_CN.md` 增加文档索引，指向 quickstart、user-guide、迁移手册、配置、CLI、API、架构、Connector 与发布清单
   - 新增 `docs/release-notes-1.0.3b5.md`：面向使用者的单人版发布说明（去掉什么、首次启动、升级数据、新功能、已知边界），并挂到 1.0.3b5 版本下
-  - 新增 `docs/copy-audit-multi-user-terms.md`：扫描 docs、README 与 dashboard 文案中的「团队/邀请/成员/角色/管理员」，区分建议改、历史兼容与产品功能语义
+  - 新增 `docs/copy-audit-multi-user-terms.md`：扫描 docs、README 与 dashboard 文案中的「团队/邀请/成员/角色/管理员」，区分建议改、历史兼容与产品功能语义；末尾附按责任方拆分的派活清单（FE-P0/P1/P2、DOC、DESK、BE）
+  - `README.md` / `README_CN.md` 第 31 行由「没有团队」改为「没有成员账号与权限配置」，保留专家团队介绍
+  - `docs/projects.md` 的准入、可见性、任务归属与知识库/连接器授权整体改为单人语义，并加设计说明
 - 安装脚本说明补充：Windows 无 `-Mirror`，需通过 `UV_DEFAULT_INDEX` 指定镜像
 
 ### 修复
 - 文档中的健康检查示例改为实际返回结构（`{"ok": true, ...}`）
-- 备份文档补充「默认不含聊天历史，需 `--include-chats`」
+- 备份文档区分手动与自动：`octop backup create` 默认不含会话，需 `--include-chats`；自动备份与托盘「立即备份」默认包含（`backup.include_chats: true`）
 - 更正备份归档目录与命名：默认 `~/.octop/backups/octop-backup-<UTC>.tar.gz`；日志位置改为 `~/.octop/logs/octop.log`（轮转 `octop.YYYY-MM-DD.log`）
 - 更正自动备份默认值：`backup.auto_enabled` 默认 `false`，开启后默认每天 04:00、保留 7 份
 - `~/.octop/secrets/` 注释更正为「腾讯云授权缓存（`cloud/`、`cloud.key`）」，不再描述为全部通道 Token

@@ -9,8 +9,8 @@
 | 位置 | 命中 | 其中建议改 | 说明 |
 |------|------|-----------|------|
 | `dashboard/src/locales/zh.json` | 200 | 约 40 个 key | 大部分是「专家团队」产品词；多用户残留集中在分享面板、插件/知识库错误提示、已下线页面 |
-| `docs/` | 130（12 个文件） | 2 个文件需处理 | `ldap.md`、`user-guide.html` 已标注历史；`projects.md` 部分段落仍按多用户写 |
-| `README.md` / `README_CN.md` | 7 | 2 行 | 第 31 行「没有团队」与「专家团队」功能冲突 |
+| `docs/` | 130（12 个文件） | ✅ 已处理 | `ldap.md`、`user-guide.html`、`octop-introduction.html` 已标注历史；`projects.md` 已整体改为单人语义 |
+| `README.md` / `README_CN.md` | 7 | ✅ 已改 | 第 31 行已改为「成员账号与权限配置」，不再与专家团队冲突 |
 
 最重要的判断：**「团队」「成员」「角色」有三种含义，不能一律删**——
 
@@ -38,7 +38,7 @@
 | `common.noPermissionHint` | `你没有访问此页面的权限，请联系管理员开通。` | 单人不应出现权限页 | 若保留，改为「当前操作不可用」 |
 | `/admin/audit` 审计页 | `adminAudit.actorAdmin=管理员`、`actions.user.set_role=设置角色` | 路由仍可达（不在侧栏）；单人下“管理员”标签会误导 | 标签改为「本机使用者」「修改角色（历史）」或直接隐藏该页 |
 | `README.md:31` / `README_CN.md:31` | 「没有账号体系……也没有团队与权限配置」 | 与 `README.md:61` 的「AgentTeams / 专家团队」直接冲突 | 改为「没有成员账号与权限配置」，保留专家团队 |
-| `docs/projects.md:26,82,96,101` | 「准入不是点名用户」「用户分组」「不点名用户，不用第二张成员表」 | 团队本身是 AI 专家团队（保留），但这几句是旧多用户准入语义 | 标注“历史设计”，或改成单人下的可见性说明 |
+| `docs/projects.md`（原第 26/82/96/101 行） | 「准入不是点名用户」「用户分组」「不点名用户，不用第二张成员表」 | 团队本身是 AI 专家团队（保留），但这几句是旧多用户准入语义 | ✅ 2026-11-12 已改为单人语义 |
 
 ## 二、不可达页面 / 死代码（历史兼容，可保留，下版建议删）
 
@@ -75,8 +75,8 @@
 | `docs/expert-teams.md` | 52 | 全部为 AI 专家团队语义，保留 |
 | `docs/ldap.md` | 25 | 顶部已标注「单人模式下已停用」，历史兼容，保留 |
 | `docs/user-guide.html` | 17 | 第 134 行已有「旧版多用户文档的 HTML 快照」横幅；但正文第 397 行仍写默认管理员密码 `octop`。已标注失效，建议不再对外发布或直接删除 |
-| `docs/projects.md` | 13 | 团队=AI 专家团队，主体保留；第 26/82/96/101 行的准入与分组表述需改写（见上表） |
-| `docs/octop-introduction.html` | 5 | **没有快照横幅**；第 526 行「团队披露」、第 742 行「团队治理」容易被读成多用户能力。建议加历史横幅或改写 |
+| `docs/projects.md` | 13 | 团队=AI 专家团队；已整体改为单人语义（准入、可见性、任务归属、知识库/连接器授权），并在开头加了设计说明 |
+| `docs/octop-introduction.html` | 5 | 第 463–465 行已有「产品定位已更新 / 旧版介绍快照」横幅；第 526 行「团队披露」、第 742 行「团队治理」仍建议改为「专家团队」语义 |
 | `docs/RELEASE-CHECKLIST.md` | 5 | 检查项中的「管理员密码 / 账号」，属于历史检查项，保留 |
 | `docs/plugin-package.md` / `expert-package.md` | 4 / 3 | 「成员」指包内条目，保留 |
 | `docs/discord-channel.md` | 2 | Discord 的邀请与角色，保留 |
@@ -87,10 +87,76 @@
 
 `desktop/src/renderer/src/onboarding.tsx:66` 首次引导写着「HappyClaw 没有账号、邀请和团队」，与「专家团队」功能冲突。建议把「团队」改为「成员账号与权限配置」。desktop 归桌面壳线，交回对应负责人。
 
-## 六、给前端线的处理顺序
+## 六、派活清单（2026-11-12）
 
-1. 先改分享面板（`ResourceVisibilityFields` + 三个 `visibilityHint`）：这是用户最常看到、也最容易困惑的一处。
-2. 再改「去管理员化」的报错与空状态（模型、连接器、知识库、插件、通行密钥、流式超时）。
-3. 删除已重定向页面的语言包（`adminUsers`、`invite`、`wizard`、`adminSso`、`login`），顺带移除 `AvatarPicker` 未使用的 user/role 预设。
-4. 最后处理 `/admin/audit` 的标签；若确定不开放，直接隐藏入口。
-5. 英文 `en.json` 同步改，避免中英不一致。
+责任方：**FE** 前端线、**DOC** 文档线、**DESK** 桌面壳线、**BE** 后端线。每条都可单独派发、单独验收。
+
+### FE-P0 改文案（用户可达，必须改）
+
+| ID | 位置 | 动作 | 验收 |
+|----|------|------|------|
+| FE-01 | `resourceVisibility.*`（10 条，`ResourceVisibilityFields`） | 删除 `groups` / `groupPlaceholder` / `needGroup` 选项与提示；`label` 改「谁可以使用」，只留「仅自己 / 所有人」；`groupAccessHint` 改为「本机只有你一个使用者，两种范围效果相同」 | 分享面板不再出现「用户分组 / 管理员 / 其他登录用户」 |
+| FE-02 | `experts.visibilityHint`、`connectors.visibilityHint`、`skillPackages.visibilityHint` | 按 FE-01 同步改写，去掉「管理员 / 其他登录用户 / 分组」 | `grep` 三个 key 无上述词 |
+| FE-03 | `experts.noModelsWarning` | 改为「当前未配置任何模型，请前往设置 → 模型配置供应商」 | 文案无「管理员页面」 |
+| FE-04 | `modelConfig.promptMessageNoPermission` | 改为「当前没有可用模型，请先在设置 → 模型中配置供应商」 | 同上 |
+| FE-05 | `connectors.cliInstallAdminOnly`、`oauthNeedAdmin`、`oauthNeedAdminHint` | 改为「需在本机终端安装 / 需先在本机配置 OAuth 应用」，删除「交给管理员 / 联系管理员」 | 连接器页无「管理员」 |
+| FE-06 | `knowledgeBases.unavailableDescriptionNonAdmin` | 改为「知识库尚未启用或未配置向量模型，请先在设置中启用」 | 文案无「管理员」 |
+| FE-07 | `plugins.globalDisabledHint`、`plugins.noPlugins` | 改为「已在全局设置中关闭」「可在设置 → 插件中安装」 | 文案无「管理员」 |
+| FE-08 | `stream_errors.stream_stall` | 改为「请检查供应商状态或流式超时设置」 | 文案无「管理员」 |
+| FE-09 | `apiErrors.KNOWLEDGE_FEATURE_DISABLED`、`WEBAUTHN_CONFIG_INVALID`、`WEBAUTHN_LOGIN_DISABLED`、`AGENT_QUOTA_EXCEEDED`、`TOKEN_QUOTA_EXCEEDED` | 去掉「管理员」，改为指向设置页的自助表述 | 五条 key 无「管理员」 |
+| FE-10 | `account.securityPasskeyUnconfigured`、`common.noPermissionHint` | 分别改为「请在本机设置 → 通行密钥中填写」「当前操作不可用」 | 文案无「管理员 / 联系管理员」 |
+| FE-11 | `adminAudit.actorAdmin`、`actions.user.set_role` | `/admin/audit` 仍可直接访问；标签改为「本机使用者」「修改角色（历史）」，或直接隐藏页面入口 | 页面标签与实际身份一致 |
+
+### FE-P1 删死代码（先确认无引用再删）
+
+| ID | 位置 | 依据 | 验收 |
+|----|------|------|------|
+| FE-12 | `adminUsers.*`（64 条） | `/admin/users` 已重定向 `/chat`；`AvatarPicker` 的 user/role 预设无消费方 | 删除后 `tsc --noEmit` 通过；全站搜索无残留引用 |
+| FE-13 | `invite.*`（7 条）、`apiErrors.INVITE_*`（6 条） | `/invite` 不存在；邀请接口返回 400 | 同上 |
+| FE-14 | `wizard.*`（8 条） | setup 固定为无需初始化 | 同上 |
+| FE-15 | `adminSso.*`（11 条）、`apiErrors.LDAP_*`（2 条） | `/admin/sso` 已重定向；LDAP 停用 | 同上 |
+| FE-16 | `login.forgotPasswordHelp` | 登录页不存在 | 同上 |
+| FE-17 | `apiErrors.USER_ROLE_*`（3 条） | 角色管理不可达 | 同上 |
+| FE-18 | `account.role`、`account.roleAdmin` | 仅测试引用 | 删除测试断言中的引用 |
+| FE-19 | `models.cannotDeleteSharedDesc`、`models.sharedProviders`、`models.groupAccessHint` | 仅语言包，无界面引用 | `zh.json` / `en.json` 同步删除 |
+| FE-20 | `storage.featureAccessHint`、`remoteDesktop.adminOnlyTitle/Desc`、`toolFeedback.actions.contact_administrator`、`memory.storage.blocked_postgres` | 检索不到直接引用；若功能恢复需先改文案 | 同上 |
+| FE-21 | `adminProviders.pageDescription` 及 `Settings/octop/Providers.tsx` | 组件未被任何路由引用 | 删除组件与语言包，或补路由前先改文案 |
+
+### FE-P2 保留（勿删）
+
+- `experts.teams.*`、`experts.myTeams`、`teamId`、`copyTeamId`
+- `chat.*` 的 `teamBadge`、`membersResponding`、`teamProfile.members`、`decisionMember`
+- `agentSelector.teamsGroup`、`chatWelcome.*Team`
+- `advancedSettings.bridge.*`
+- `models.decision*`
+- `tokenUsage.callRole`、`subagents.newBodyTemplate`
+- `apiErrors.TEAM_*`
+- 文档：`expert-teams.md`、`plugin-package.md`、`expert-package.md`、`discord-channel.md`、`bridge.md`
+
+### DOC 文档线
+
+| ID | 事项 | 状态 |
+|----|------|------|
+| DOC-01 | `README.md:31` / `README_CN.md:31` 改为「成员账号与权限配置」 | ✅ 2026-11-12 已改 |
+| DOC-02 | `projects.md` 准入与分组语义改单人 | ✅ 已整体改为单人语义（原第 26/82/96/101 行及关联段落） |
+| DOC-03 | `octop-introduction.html` 历史快照横幅 | ✅ 已有（463–465 行），无需新增 |
+| DOC-04 | 发布说明挂 CHANGELOG | ✅ 见 `docs/release-notes-1.0.3b5.md` |
+| DOC-05 | `user-guide.md` / `quickstart.md` 的「无需预置管理员密码」 | 待办，低优先级，可改为「无需账号」 |
+
+### DESK 桌面壳线
+
+| ID | 事项 | 状态 |
+|----|------|------|
+| DESK-01 | `desktop/src/renderer/src/onboarding.tsx:66`「没有账号、邀请和团队」改为「没有成员账号与权限配置」 | 用户已转交壳线，本轮未改 |
+
+### BE 后端线
+
+无需改动。`/api/auth/*`、`/api/users`、`/api/teams` 的兼容响应继续保留，供旧客户端使用。
+
+### 统一验收口径
+
+1. `grep -rn "管理员\|用户分组\|其他登录用户" dashboard/src` 只剩 FE-P2 的合理用法（Bridge 对端、团队说明）。
+2. `zh.json` 与 `en.json` 的 key 集合一致，无新增缺失。
+3. `npx tsc --noEmit` 与前端构建通过；删除死代码后无未引用告警。
+4. 文档侧链接检查 0 缺失。
+5. 不新增依赖，不改 `src/` 与桌面端行为。
