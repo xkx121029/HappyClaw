@@ -109,6 +109,7 @@ $env:OCTOP_BIND_HOST = "127.0.0.1"
 $env:OCTOP_PORT = "$Port"
 
 $process = $null
+$startedAt = Get-Date
 try {
     $argList = @($octop.Args) + @("run", "--host", "127.0.0.1", "--port", "$Port")
     $process = Start-Process -FilePath $octop.File `
@@ -143,7 +144,8 @@ try {
         exit 1
     }
 
-    Write-Host "[PASS] /api/health 响应：" -ForegroundColor Green
+    $elapsed = [math]::Round(((Get-Date) - $startedAt).TotalSeconds, 1)
+    Write-Host "[PASS] /api/health 响应（首次可用耗时 ${elapsed}s）：" -ForegroundColor Green
     $health | ConvertTo-Json -Depth 5
 
     Write-Host "[INFO] 临时数据目录内容：" -ForegroundColor Cyan
