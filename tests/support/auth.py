@@ -1,4 +1,10 @@
-"""Auth and bootstrap helpers for HTTP integration tests."""
+"""Auth and bootstrap helpers for HTTP integration tests.
+
+Single-user mode deleted the setup wizard: the local owner exists before the
+server starts listening. These helpers keep their historical signatures so the
+existing integration suite does not need to change, but they no longer create
+accounts or check passwords.
+"""
 
 from __future__ import annotations
 
@@ -6,27 +12,20 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-
-from octop.infra.setup.password_file import WIZARD_FILE_NAME, read_password
+import pytest
 
 # Meets ``validate_password_policy`` (letter + digit, length ≥ 8).
 TEST_PASSWORD = "TestPass12"
 
 
-def _wizard_password_home(home: Path) -> Path:
-    """Resolve wizard password dir: file lives at ``~/octop-login.txt``, not under ``~/.octop/``."""
-    for cand in (home, home.parent, Path.home()):
-        if (cand / WIZARD_FILE_NAME).exists():
-            return cand
-    return home
+def _server_from_client(client: httpx.AsyncClient) -> Any:
+    app = getattr(client, "_octop_app", None)
+    return getattr(getattr(app, "state", None), "octop_server", None)
 
 
-async def wizard_token(client: httpx.AsyncClient, home: Path) -> str:
-    pw = read_password(_wizard_password_home(home))
-    assert pw is not None
-    r = await client.post("/api/setup/verify-password", json={"password": pw})
-    r.raise_for_status()
-    return r.json()["wizard_token"]
+async def wizard_token(client: httpx.AsyncClient, home: Path) -> str:  # noqa: ARG001
+    """Deprecated: wizard tokens do not exist; return the placeholder token."""
+    return "local-owner"
 
 
 async def bootstrap_admin(
@@ -36,24 +35,29 @@ async def bootstrap_admin(
     username: str = "admin",
     password: str = TEST_PASSWORD,
 ) -> httpx.Response:
-    """Run verify-password → initial-admin → finish (creates default ``main`` agent)."""
-    pw = read_password(_wizard_password_home(home))
-    assert pw is not None, "wizard password file missing"
-    tok_resp = await client.post("/api/setup/verify-password", json={"password": pw})
-    tok = tok_resp.json()["wizard_token"]
-    r = await client.post(
-        "/api/setup/initial-admin",
-        json={"username": username, "password": password},
-        headers={"Authorization": f"Bearer {tok}"},
+    """Single-user bootstrap: create the default ``main`` agent if missing.
+
+    Historically this ran verify-password → initial-admin → finish. The local
+    owner is now created at startup, so this only needs to materialise the
+    default expert (which most integration tests expect to exist).
+    """
+    server = _server_from_client(client)
+    if server is not None and getattr(server, "services", None) is not None:
+        from octop.infra.agents.experts.default_agent import (
+            SETUP_DEFAULT_AGENT_ID,
+            try_bootstrap_default_agent,
+        )
+
+        await try_bootstrap_default_agent(
+            server,
+            user_id=server.services.owner.owner_id(),
+            agent_id=SETUP_DEFAULT_AGENT_ID,
+        )
+    return httpx.Response(
+        status_code=201,
+        json={"username": username, "local": True},
+        request=httpx.Request("POST", "http://testserver/api/setup/initial-admin"),
     )
-    r.raise_for_status()
-    finish = await client.post(
-        "/api/setup/finish",
-        json={"provider_draft": None},
-        headers={"Authorization": f"Bearer {tok}"},
-    )
-    finish.raise_for_status()
-    return r
 
 
 async def login(
@@ -135,23 +139,13 @@ async def create_user(
     role: str = "user",
     permissions: list[str] | None = None,
 ) -> dict[str, str]:
-    from octop.infra.users.permissions import BASELINE_PERMISSIONS
+    """Obsolete in single-user mode: there is no second account.
 
-    body: dict[str, object] = {
-        "username": username,
-        "password": password,
-        "role": role,
-        "permissions": (
-            list(permissions) if permissions is not None else sorted(BASELINE_PERMISSIONS)
-        ),
-    }
-    r = await client.post(
-        "/api/users",
-        headers=admin_auth,
-        json=body,
-    )
-    r.raise_for_status()
-    return await auth_header(client, username=username, password=password)
+    Multi-account integration tests still call this helper; skipping at the
+    call site keeps them visible as "not applicable" instead of drowning the
+    suite in 400s.
+    """
+    pytest.skip("single-user mode removed multi-account creation")
 
 
 async def ensure_users(

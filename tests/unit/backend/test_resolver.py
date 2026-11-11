@@ -179,3 +179,46 @@ def test_windows_neutralize_composite_healthy_default_kept(tmp_path: Path) -> No
     with patch("octop.infra.backend.resolver.os", SimpleNamespace(name="nt")):
         out = windows_neutralize_host_root(spec, workspace_dir=tmp_path)
     assert out == spec
+
+
+def test_windows_neutralize_foreign_drive_root_scopes_to_workspace() -> None:
+    """Persisted ``C:/`` on an E: workspace can never contain the agent workspace."""
+    ws = Path("E:/HAPPYclaw/.octop/agents/AGT001")
+    with patch("octop.infra.backend.resolver.os", SimpleNamespace(name="nt")):
+        out = windows_neutralize_host_root(
+            {"type": "local_shell", "root_dir": "C:/", "virtual_mode": True},
+            workspace_dir=ws,
+            agent_id="AGT001",
+        )
+    assert out["root_dir"] == str(ws.resolve())
+    assert out["type"] == "local_shell"
+
+
+def test_windows_neutralize_same_drive_root_kept(tmp_path: Path) -> None:
+    """A drive root on the workspace's own drive is reachable and stays as-is."""
+    spec = {"type": "local_shell", "root_dir": "C:/", "virtual_mode": True}
+    with patch("octop.infra.backend.resolver.os", SimpleNamespace(name="nt")):
+        out = windows_neutralize_host_root(spec, workspace_dir=tmp_path)
+    assert out == spec
+
+
+def test_windows_neutralize_foreign_drive_subdir_kept() -> None:
+    """Only bare drive roots are rewritten; explicit subdirectories are user intent."""
+    spec = {"type": "local_shell", "root_dir": "C:/Users/me", "virtual_mode": True}
+    ws = Path("E:/HAPPYclaw/.octop/agents/AGT001")
+    with patch("octop.infra.backend.resolver.os", SimpleNamespace(name="nt")):
+        out = windows_neutralize_host_root(spec, workspace_dir=ws)
+    assert out == spec
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows-only default root derivation")
+def test_default_local_root_follows_octop_home_drive(tmp_path: Path) -> None:
+    from octop.infra.agents.experts.default_agent import _default_local_root
+
+    fake_layout = SimpleNamespace(root=Path("E:/HAPPYclaw/.octop"))
+    with patch(
+        "octop.infra.utils.paths.PathLayout.from_env", return_value=fake_layout
+    ):
+        root = _default_local_root()
+    assert root.lower().startswith("e:")
+    assert root.endswith("/")

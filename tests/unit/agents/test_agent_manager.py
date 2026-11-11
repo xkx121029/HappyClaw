@@ -3128,6 +3128,33 @@ def test_memory_extract_settings_preserves_zero_retries() -> None:
     assert _memory_extract_settings({"memory": memory}, supported_fields=frozenset()) == {}
 
 
+def _bare_manager() -> AgentManager:
+    """Manager shell for pure helpers that only touch a couple of attributes."""
+    return object.__new__(AgentManager)
+
+
+def test_unavailable_error_reports_missing_model_on_first_run() -> None:
+    manager = _bare_manager()
+    manager._harness_manager = SimpleNamespace(shared_factory=None)  # type: ignore[assignment]
+    row = SimpleNamespace(agent_id="main", last_state="created", default_model=None)
+    manager.get_row = lambda agent_id: row  # type: ignore[method-assign]
+
+    err = manager._unavailable_error("main")
+
+    assert err.code is ErrorCode.AGENT_NO_MODEL
+
+
+def test_unavailable_error_keeps_not_running_when_model_present() -> None:
+    manager = _bare_manager()
+    manager._harness_manager = SimpleNamespace(shared_factory=object())  # type: ignore[assignment]
+    row = SimpleNamespace(agent_id="main", last_state="created", default_model=None)
+    manager.get_row = lambda agent_id: row  # type: ignore[method-assign]
+
+    err = manager._unavailable_error("main")
+
+    assert err.code is ErrorCode.AGENT_NOT_RUNNING
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("legacy_runtime", [False, True])
 async def test_restore_respects_runtime_capability_and_expert_scope(

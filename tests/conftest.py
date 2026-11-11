@@ -83,6 +83,10 @@ def _isolated_user_home(
     home = tmp_path_factory.mktemp("user-home")
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("USERPROFILE", str(home))
+    # Single-user boot schedules an async default-agent creation. Keep tests
+    # deterministic (and fast): tests that need ``main`` call
+    # ``tests.support.auth.bootstrap_admin`` explicitly.
+    monkeypatch.setenv("OCTOP_DISABLE_DEFAULT_AGENT", "1")
     for key in (
         "OCTOP_CAPTCHA_PROVIDER",
         "OCTOP_CAPTCHA_SITE_KEY",

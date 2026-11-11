@@ -1,4 +1,9 @@
-"""Unit tests for JWT auth middleware."""
+"""Single-user access tests (replaces the historical JWT middleware suite).
+
+HappyClaw is a single-user local tool: every ``/api/*`` request is served as
+the one local owner. These tests pin that contract — no token is required, an
+invalid token is ignored, and ``/api/health`` stays anonymous.
+"""
 
 from __future__ import annotations
 
@@ -6,54 +11,35 @@ from pathlib import Path
 
 import httpx
 import pytest
-from tests.support.app import ensure_control_plane_bound, write_octop_config
-from tests.support.auth import bearer, bootstrap_admin, login
+from tests.support.app import ensure_control_plane_bound
 
 from octop.api.app import build_app
 from octop.api.deps import (
     ACCESS_TOKEN_RESPONSE_HEADER,
-    decode_token,
     is_jwt_exempt_path,
+    is_jwt_exempt_request,
     maybe_sliding_renew_token,
-    sign_token,
 )
-from octop.infra.auth.tokens import PURPOSE_ACCESS
 from octop.infra.server import OctopServer
 
 
-def test_exempt_paths() -> None:
-    assert is_jwt_exempt_path("/api/health")
-    assert is_jwt_exempt_path("/api/health/")
-    assert is_jwt_exempt_path("/api/setup/status")
-    assert is_jwt_exempt_path("/api/auth/login")
-    assert is_jwt_exempt_path("/api/auth/captcha")
-    assert is_jwt_exempt_path("/api/auth/mfa/verify")
-    assert is_jwt_exempt_path("/api/auth/mfa/passkey/options")
-    assert is_jwt_exempt_path("/api/auth/passkey/status")
-    assert is_jwt_exempt_path("/api/auth/passkey/login/options")
-    assert is_jwt_exempt_path("/api/auth/passkey/login/verify")
-    assert not is_jwt_exempt_path("/api/auth/mfa/status")
-    assert is_jwt_exempt_path("/api/auth/oidc/status")
-    assert is_jwt_exempt_path("/api/auth/oidc/start")
-    assert is_jwt_exempt_path("/api/auth/oidc/callback")
-    assert is_jwt_exempt_path("/api/auth/oidc/exchange")
-    assert is_jwt_exempt_path("/api/auth/oauth/status")
-    assert is_jwt_exempt_path("/api/auth/oauth/start")
-    assert is_jwt_exempt_path("/api/auth/oauth/callback")
-    assert is_jwt_exempt_path("/api/auth/oauth/exchange")
-    assert is_jwt_exempt_path("/api/auth/invite/validate")
-    assert is_jwt_exempt_path("/api/auth/invite/redeem")
-    assert is_jwt_exempt_path("/api/docs")
-    assert is_jwt_exempt_path("/api/openapi.json")
-    assert is_jwt_exempt_path("/api/downloads/link/abc")
-    assert not is_jwt_exempt_path("/api/auth/oidc/config")
-    assert not is_jwt_exempt_path("/api/auth/oauth/providers/feishu")
-    assert not is_jwt_exempt_path("/api/auth/oauth/bind/start")
-    assert not is_jwt_exempt_path("/api/users/invites")
-    assert not is_jwt_exempt_path("/api/auth/oidc/config/test")
-    assert not is_jwt_exempt_path("/api/auth/me")
-    assert not is_jwt_exempt_path("/api/agents")
-    assert not is_jwt_exempt_path("/api/downloads/link")
+def test_every_path_is_exempt_in_single_user_mode() -> None:
+    for path in (
+        "/api/health",
+        "/api/setup/status",
+        "/api/auth/me",
+        "/api/sessions",
+        "/api/tasks",
+        "/api/preferences",
+        "/api/agents",
+        "/api/providers",
+    ):
+        assert is_jwt_exempt_path(path) is True
+
+
+def test_is_jwt_exempt_request_always_true() -> None:
+    request = httpx.Request("GET", "http://testserver/api/agents")
+    assert is_jwt_exempt_request(request) is True  # type: ignore[arg-type]
 
 
 @pytest.fixture
@@ -69,22 +55,76 @@ async def client(tmp_path: Path):
     await srv.stop()
 
 
-async def test_middleware_blocks_unauthenticated_api(client) -> None:
-    c, _srv, home = client
-    await bootstrap_admin(c, home)
-    r = await c.get("/api/agents")
-    assert r.status_code == 401
-    assert r.json()["error"]["code"] == "AUTH_FAILED"
-
-
-async def test_middleware_allows_login_without_token(client) -> None:
-    c, _srv, home = client
-    await bootstrap_admin(c, home)
-    r = await c.post("/api/auth/login", json={"username": "admin", "password": "TestPass12"})
+async def test_health_is_anonymous(client) -> None:
+    c, _srv, _home = client
+    r = await c.get("/api/health")
     assert r.status_code == 200
 
 
-async def test_middleware_allows_api_docs_without_token(tmp_path: Path) -> None:
+async def test_api_without_token_is_served_as_owner(client) -> None:
+    c, srv, _home = client
+    r = await c.get("/api/agents")
+    assert r.status_code == 200
+    assert isinstance(r.json(), (list, dict))
+    # The request was resolved to the local owner, not rejected.
+    assert srv.services is not None
+    assert srv.services.owner.owner().username
+
+
+async def test_invalid_and_expired_tokens_are_ignored(client) -> None:
+    c, _srv, _home = client
+    for header in ("Bearer not-a-token", "Bearer ", "Basic abc"):
+        r = await c.get("/api/agents", headers={"Authorization": header})
+        assert r.status_code == 200, header
+
+
+async def test_auth_me_returns_minimal_local_profile(client) -> None:
+    c, _srv, _home = client
+    r = await c.get("/api/auth/me")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["role"] == "local"
+    assert body["is_local_owner"] is True
+    assert "permissions" not in body
+    assert not any(key.startswith("sso_") for key in body)
+
+
+async def test_logout_is_noop(client) -> None:
+    c, _srv, _home = client
+    r = await c.post("/api/auth/logout")
+    assert r.status_code == 204
+
+
+async def test_setup_status_reports_complete(client) -> None:
+    c, _srv, _home = client
+    body = (await c.get("/api/setup/status")).json()
+    assert body["setup_required"] is False
+    assert body["wizard_password_required"] is False
+    assert body["single_user"] is True
+
+
+async def test_login_returns_placeholder_token(client) -> None:
+    c, _srv, _home = client
+    r = await c.post("/api/auth/login", json={"username": "any", "password": "any"})
+    assert r.status_code == 200
+    assert r.json()["access_token"] == "local-owner"
+
+
+async def test_no_sliding_renew_header(client) -> None:
+    c, _srv, _home = client
+    r = await c.get("/api/auth/me")
+    assert r.status_code == 200
+    assert ACCESS_TOKEN_RESPONSE_HEADER not in r.headers
+
+
+async def test_maybe_sliding_renew_is_noop(client) -> None:
+    _c, srv, _home = client
+    assert maybe_sliding_renew_token(srv, "anything") is None
+
+
+async def test_api_docs_can_be_opened_without_token(tmp_path: Path) -> None:
+    from tests.support.app import write_octop_config
+
     write_octop_config(tmp_path, enable_api_docs=True)
     srv = OctopServer(home=tmp_path)
     await srv.start()
@@ -94,148 +134,7 @@ async def test_middleware_allows_api_docs_without_token(tmp_path: Path) -> None:
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=app), base_url="http://testserver"
         ) as c:
-            await bootstrap_admin(c, tmp_path)
-            r = await c.get("/api/docs")
-            assert r.status_code == 200
-            spec = await c.get("/api/openapi.json")
-            assert spec.status_code == 200
+            assert (await c.get("/api/docs")).status_code == 200
+            assert (await c.get("/api/openapi.json")).status_code == 200
     finally:
         await srv.stop()
-
-
-async def test_fresh_token_does_not_sliding_renew(client) -> None:
-    c, _srv, home = client
-    await bootstrap_admin(c, home)
-    token = await login(c)
-    r = await c.get("/api/auth/me", headers=bearer(token))
-    assert r.status_code == 200
-    assert ACCESS_TOKEN_RESPONSE_HEADER not in r.headers
-
-
-async def test_near_expiry_token_gets_sliding_renew(client) -> None:
-    c, srv, home = client
-    await bootstrap_admin(c, home)
-    assert srv.user_manager is not None
-    assert srv.services is not None
-    user = srv.user_manager.get("admin")
-    assert user is not None
-    secret = srv.services.secret_repo.get("jwt")
-    assert secret is not None
-    # Remaining life (~60s) is below two-thirds of the default TTL → renew.
-    short = sign_token(
-        secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
-        purpose=PURPOSE_ACCESS,
-        ttl_seconds=60,
-    )
-    r = await c.get("/api/auth/me", headers=bearer(short))
-    assert r.status_code == 200
-    renewed = r.headers.get(ACCESS_TOKEN_RESPONSE_HEADER)
-    assert renewed
-    assert renewed != short
-    payload = decode_token(secret, renewed)
-    assert int(payload["exp"]) - int(payload["iat"]) == srv.services.config.access_token_ttl_seconds
-
-
-async def test_maybe_sliding_renew_helper_threshold(client) -> None:
-    _c, srv, home = client
-    await bootstrap_admin(_c, home)
-    assert srv.user_manager is not None
-    assert srv.services is not None
-    user = srv.user_manager.get("admin")
-    assert user is not None
-    secret = srv.services.secret_repo.get("jwt")
-    assert secret is not None
-    ttl = srv.services.config.access_token_ttl_seconds
-    fresh = sign_token(
-        secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
-        purpose=PURPOSE_ACCESS,
-        ttl_seconds=ttl,
-    )
-    assert maybe_sliding_renew_token(srv, fresh, user) is None
-    short = sign_token(
-        secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
-        purpose=PURPOSE_ACCESS,
-        ttl_seconds=60,
-    )
-    renewed = maybe_sliding_renew_token(srv, short, user)
-    assert renewed is not None
-    assert renewed != short
-    # Halfway through the TTL is inside the renew window (remaining < 2/3).
-    # Four-fifths remaining is still outside it.
-    halfway = sign_token(
-        secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
-        purpose=PURPOSE_ACCESS,
-        ttl_seconds=ttl // 2,
-    )
-    assert maybe_sliding_renew_token(srv, halfway, user) is not None
-    mostly_fresh = sign_token(
-        secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
-        purpose=PURPOSE_ACCESS,
-        ttl_seconds=(ttl * 4) // 5,
-    )
-    assert maybe_sliding_renew_token(srv, mostly_fresh, user) is None
-
-
-async def test_middleware_localizes_auth_errors_by_accept_language(client) -> None:
-    c, _srv, home = client
-    await bootstrap_admin(c, home)
-
-    # Missing credentials: zh / en / no header fallback.
-    r = await c.get("/api/agents", headers={"Accept-Language": "zh-CN,zh;q=0.9"})
-    assert r.status_code == 401
-    assert r.json()["error"]["code"] == "AUTH_FAILED"
-    assert r.json()["error"]["message"] == "认证失败。"
-
-    r = await c.get("/api/agents", headers={"Accept-Language": "en-US,en;q=0.9"})
-    assert r.status_code == 401
-    assert r.json()["error"]["message"] == "Authentication failed."
-
-    r = await c.get("/api/agents")
-    assert r.status_code == 401
-    assert r.json()["error"]["message"] == "认证失败。"  # no header: DEFAULT_LOCALE (zh)
-
-    # Invalid token follows the same localization.
-    r = await c.get(
-        "/api/agents",
-        headers={"Authorization": "Bearer not-a-token", "Accept-Language": "zh-CN"},
-    )
-    assert r.status_code == 401
-    assert r.json()["error"]["message"] == "认证失败。"
-
-    # Expired token follows the same localization.
-    srv = _srv
-    assert srv.user_manager is not None and srv.services is not None
-    user = srv.user_manager.get("admin")
-    assert user is not None
-    secret = srv.services.secret_repo.get("jwt")
-    assert secret is not None
-    expired = sign_token(
-        secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
-        purpose=PURPOSE_ACCESS,
-        ttl_seconds=-3600,
-    )
-    r = await c.get(
-        "/api/agents",
-        headers={"Authorization": f"Bearer {expired}", "Accept-Language": "zh-CN"},
-    )
-    assert r.status_code == 401
-    assert r.json()["error"]["code"] == "TOKEN_EXPIRED"
-    assert r.json()["error"]["message"] == "登录已过期，请重新登录。"
