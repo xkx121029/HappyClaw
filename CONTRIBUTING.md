@@ -1,6 +1,6 @@
-# Contributing to Octop
+# Contributing to HappyClaw
 
-Thank you for your interest in contributing! Octop is the control-plane application in the [Octop Harness](https://github.com/TencentCloud) ecosystem.
+Thank you for your interest in contributing! HappyClaw is the self-hosted AI workspace for a single local user in the [HappyClaw Harness](https://github.com/TencentCloud) ecosystem.
 
 ## Getting started
 
@@ -164,7 +164,7 @@ Branch from `main` → PR into `main` (tag if shipping a patch) → PR into `dev
 
 # 贡献指南
 
-感谢你对 Octop 的关注！Octop 是 [Octop Harness](https://github.com/TencentCloud) 生态中的可自托管 AI 助手平台，支持多用户与多 Agent。
+感谢你对 HappyClaw 的关注！HappyClaw 是 [HappyClaw Harness](https://github.com/TencentCloud) 生态中的自托管 AI 工作台，面向本机单人使用，可同时运行多个 Agent。
 
 ## 环境搭建
 

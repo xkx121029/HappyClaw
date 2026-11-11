@@ -35,13 +35,13 @@ Navigation guide for AI coding agents working in this repository.
 
 ## 2. What this is
 
-**Octop** — self-hosted AI assistant platform (multi-user, multi-agent).
+**HappyClaw** — self-hosted, single-user AI assistant workspace (one local owner, multiple agents).
 One Python wheel: FastAPI backend + React dashboard + Click CLI.
 No external queue. No required services beyond an LLM provider.
 
 ### Runtime libraries
 
-Octop hosts four libraries. Put the change in the library that owns the behavior. This repo only wires users, the control-plane database, HTTP, CLI, dashboard, and cron.
+HappyClaw hosts four libraries. Put the change in the library that owns the behavior. This repo only wires the local owner, the database, HTTP, CLI, dashboard, and cron.
 
 | Change | Repository |
 |--------|------------|
@@ -49,7 +49,7 @@ Octop hosts four libraries. Put the change in the library that owns the behavior
 | IM platform protocol, media upload, group activation | [octop-gateway](https://github.com/TencentCloud/octop-gateway) |
 | Memory capture, recall, ranking, schema, storage | [octop-memory](https://github.com/TencentCloud/octop-memory) |
 | Chrome CDP, profiles, DOM, `browser_tool` | [octop-browser](https://github.com/TencentCloud/octop-browser) |
-| Users, auth, threads, cron, experts, dashboard | this repo |
+| Local owner, auth compatibility, threads, cron, experts, dashboard | this repo |
 
 Do not copy that behavior into `src/octop/`. Follow the library's `AGENTS.md`. When the library releases, bump its pin in `pyproject.toml`.
 
@@ -74,7 +74,7 @@ Do not copy that behavior into `src/octop/`. Follow the library's `AGENTS.md`. W
 High-level tree — see [§5 Module boundaries](#5-module-boundaries) for what each folder owns and what it may import.
 
 ```
-Octop (`octop/` workspace directory)     Python package root (`src/octop/`)
+HappyClaw (`octop/` workspace directory)     Python package root (`src/octop/`)
   config.py
   launch.py                   composition root: OctopServer + FastAPI + uvicorn
   i18n/                       locale JSON bundles + tr() + domain helpers
@@ -134,7 +134,7 @@ cli/ ──► launch.py ──► api/ + infra/
 | `infra/history/` | Versioned message archive, trajectory, turn projection (`projection.py`) | `gateway/`, `api/routers/chat`, `cron/`, `agents/teams` |
 | `infra/setup/` | First-run wizard, system service install, TLS / Let's Encrypt | `server.py`, `launch.py`, `api/routers/setup.py`, `api/routers/tls.py` |
 | `infra/skills/` | Skill packages, SkillHub HTTP client (`skillhub_market`, `skillhub_common`) | `api/routers/skills.py`, `agents/experts` |
-| `infra/users/` | Users, roles, password hashing, `UserManager` | `server.py`, `api/routers/auth.py`, `users.py` |
+| `infra/users/` | Legacy user tables, password hashing, `UserManager` — single local owner, kept for compatibility | `server.py`, `api/routers/auth.py`, `users.py` |
 | `infra/errors.py` | `OctopError`, `ErrorCode` — shared exception types | everywhere in `infra/` and `api/` |
 | `infra/metrics.py` | In-process counters (`METRICS`) | lazy-import inside hot paths |
 | `infra/server.py` | `OctopServer.start()` — wires infra singletons | `launch.py`, `api/app.py` |
@@ -181,9 +181,9 @@ Only `launch.py` may import both `infra/server` and `api/app` in the same module
 | **Offline** | Read/write local `~/.octop` SQLite only | `user *`, `provider *`, `cron` list/create/delete, `agent list/delete`, `chats` CRUD, `models` presets/list/active, `channel` CRUD, `admin`, `skills` enable/disable, `bridge` list/get |
 | **Embedded** | Needs harness/gateway runtime; boots in-process `OctopServer` | `chats send/repl`, `chats get` (history), `cron run-now`, `agent` create/start/stop/reload, `provider test`, `channel test`, `skills list`, `acp` |
 | **Embedded (bridge)** | In-process `BridgeManager` (no full server); CLI cannot keep Bridge WS after exit | `bridge` probe/create/patch/delete/connect/disconnect/agents |
-| **External** | Talks to OS/daemon directly, no Octop HTTP | `models ollama-*`, channel QR bind (WeCom/WeChat), Feishu bot-creator subprocess |
+| **External** | Talks to OS/daemon directly, no HappyClaw HTTP | `models ollama-*`, channel QR bind (WeCom/WeChat), Feishu bot-creator subprocess |
 
-No `octop user login` — CLI trusts local filesystem access to `~/.octop`. Pin acting user with `octop config set-user` or root `--user`; pin agent with `octop agent use` or root `--agent`. If `octop run` is already running, config CLI writes take effect after server restart (cron, channels loaded at boot).
+Single local user: no login. Every CLI and HTTP call resolves to the local owner, and the CLI trusts local filesystem access to `~/.octop`. Root `--user`, `octop config set-user`, and `cli_state.json` remain as compatibility no-ops. Pin the agent with `octop agent use` or root `--agent`. If `octop run` is already running, config CLI writes take effect after server restart (cron, channels loaded at boot).
 
 ### `dashboard/src/` layout
 
@@ -198,7 +198,7 @@ No `octop user login` — CLI trusts local filesystem access to `~/.octop`. Pin 
 | `locales/` | i18n strings | — |
 | `utils/` | Frontend pure helpers | API or server knowledge |
 
-Frontend talks to Octop **only** via `/api` HTTP — never import or assume Python module layout.
+Frontend talks to HappyClaw **only** via `/api` HTTP — never import or assume Python module layout.
 
 ## 6. Run commands
 
@@ -225,7 +225,7 @@ make build-frontend                     # dashboard/ → src/octop/dashboard/
 
 **Agent scope:** Most agent routes use `/api/agents/{agent_id}/…` in the URL. A few legacy endpoints (e.g. MBTI) still take `X-Octop-Agent-Id`. Always validate ownership: load the agent row → `_assert_agent_owner(row, user)` (or admin bypass).
 
-**Agent workspace I/O:** All reads/writes of agent workspace **content files** go through `HarnessAgent.workspace` (`BackendWorkspace` from `octop-harness`). Do **not** use `agent.backend` directly, `resolve_harness_backend`, or `Path.write_text` / `read_text` on `~/.octop/agents/<id>/` for workspace content. Do **not** branch on backend type or `virtual_mode` in Octop — path rules live in `BackendWorkspace`.
+**Agent workspace I/O:** All reads/writes of agent workspace **content files** go through `HarnessAgent.workspace` (`BackendWorkspace` from `octop-harness`). Do **not** use `agent.backend` directly, `resolve_harness_backend`, or `Path.write_text` / `read_text` on `~/.octop/agents/<id>/` for workspace content. Do **not** branch on backend type or `virtual_mode` in HappyClaw — path rules live in `BackendWorkspace`.
 
 New agents additionally keep system-scoped files under `{workspace}/.octop/` (e.g. sessions/sqlite, skills/agents system trees, auth tokens under `.octop/auth`). `system_files_path` is internal and not user-configurable; the `.octop` directory is created on first harness workspace init. Legacy agents keep auth at `{workspace}/.octop-auth`.
 
@@ -327,7 +327,7 @@ User-facing datetime display and cron/scheduling defaults MUST use the server ti
 
 **Language:** Keep the existing locale resolution (user preference → `Accept-Language` / dashboard i18n → channel hints → `DEFAULT_LOCALE`). Language is **not** a `config.json` key — do not add one unless explicitly requested.
 
-**Workspace storage:** `infra/backend/resolver.py` resolves harness `BackendProtocol` from agent config; remote backends use `probe.py` for fast tree listing. Docker sandbox (`type: "docker"` / storage `kind=docker`) uses `sandbox_scope` + `sandbox_prefix` (Octop default `octop_sandbox`) — see `docs/agent-backend-file-io.md` §13.
+**Workspace storage:** `infra/backend/resolver.py` resolves harness `BackendProtocol` from agent config; remote backends use `probe.py` for fast tree listing. Docker sandbox (`type: "docker"` / storage `kind=docker`) uses `sandbox_scope` + `sandbox_prefix` (HappyClaw default `octop_sandbox`) — see `docs/agent-backend-file-io.md` §13.
 
 **Connectors:** `infra/connectors/` — catalog, OAuth registry, MCP gateway; HTTP surface in `api/routers/connectors.py`.
 
@@ -341,7 +341,7 @@ User-facing datetime display and cron/scheduling defaults MUST use the server ti
 - Document non-obvious fields with `Field(..., description="…")`; name models clearly.
 - Spot-check `/api/docs` after API changes — a route that renders as an empty card or untyped blob is unfinished.
 
-**Cross-platform tests:** Octop CI runs on both Linux and Windows, so tests must not assume a single platform:
+**Cross-platform tests:** HappyClaw CI runs on both Linux and Windows, so tests must not assume a single platform:
 
 - Guard POSIX-only behavior with the repo convention `@pytest.mark.skipif(os.name != "posix", reason="…")`; prefer a module-level `posix_only = pytest.mark.skipif(os.name != "posix", reason="…")` alias. Use `pytest.mark.skipif(os.name == "nt", reason="…")` when a case is Linux/macOS-only for a different reason (e.g. forbidden path characters).
 - Do not hard-code POSIX paths (`/`, `/proc`, `/etc`, `/root`, `/usr/bin/…`, `~` → HOME) in assertions that run on every platform — they resolve differently on Windows (e.g. `/` → `D:\`). Prefer opaque mock tokens via `tests.support.fakes.fake_bin_path("tool")` (uses `pathlib` / `os.sep`) when stubbing `shutil.which` / `resolve_binary`.
@@ -373,9 +373,9 @@ Boundary rules are in [§5](#5-module-boundaries). Additionally:
 
 | Question | Location |
 |----------|----------|
-| How does auth work? | `api/deps.py`, `api/middleware/jwt_auth.py`, `api/routers/auth.py` |
+| How does auth work? | Single local owner; no token check. Compatibility paths: `api/deps.py`, `api/middleware/jwt_auth.py`, `api/routers/auth.py` |
 | LDAP (directory) login | `infra/auth/ldap/`, `api/routers/auth_ldap.py`; config row is `sso_providers.kind='ldap'`; guide: `docs/ldap.md` |
-| Setup wizard (password file, tokens) | `infra/setup/`, `api/routers/setup.py` |
+| First boot / setup compatibility (auto-created local owner) | `infra/setup/`, `api/routers/setup.py` |
 | TLS / Let's Encrypt | `infra/setup/tls/`, `api/routers/tls.py` |
 | `octop run` boot sequence | `launch.py`, `cli/run_cmd.py` |
 | How is a message processed? | `infra/gateway/processor.py` → harness agent |

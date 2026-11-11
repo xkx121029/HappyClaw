@@ -1,14 +1,12 @@
-# Octop — 飞牛 FnOS 安装包
+# HappyClaw — 飞牛 FnOS 安装包
 
 本目录包含将 [TencentCloud/Octop](https://github.com/TencentCloud/Octop) 打包为飞牛 fnOS `.fpk` 安装包所需的全部文件，并附带自动同步上游 + 自动构建的 GitHub Actions。
 
-## 首次使用（初始账号）
+## 首次使用
 
-安装向导中设置管理员账号：用户名与密码必填，显示名称、邮箱可选。密码至少 8 位，且必须同时包含字母和数字（与应用侧密码策略一致；过于常见的密码如 `Octop123` 会被拒绝，无效输入会在安装时直接提示）。
+HappyClaw 单人版启动后即绑定本机使用者：没有注册、登录、邀请，也没有团队成员与角色，打开 Web 控制台就能用。
 
-密码由用户自己设定，不再自动生成。忘记时打开飞牛「文件管理」，进入应用共享里的 Octop 数据目录，查看 `octop-login.txt`（应用「设置」窗口会显示当前目录）。该文件只备份安装或应用「设置」改密时的密码，**网页改密后不会自动更新**。
-
-> 若你在 Web 控制台「头像菜单 → 修改密码」中改过密码，请用网页密码登录。
+> FnOS 安装包目前仍沿用旧版账号向导（兼容保留）：向导里填写的用户名与密码，是这台设备唯一本机账号的兼容凭据，不会创建多用户体系。密码至少 8 位，且必须同时包含字母和数字（过于常见的密码如 `Octop123` 会被拒绝，无效输入会在安装时直接提示）。旧版会把初始凭据写到应用共享数据目录的 `octop-login.txt`；单人化接口落地后不再需要登录。
 
 ### 官方命令行管理
 
@@ -19,11 +17,11 @@ octop --help            # 官方 CLI 全部子命令
 octop version
 octop provider list     # 模型 provider
 octop agent list        # 专家/Agent
-octop user list         # 用户管理
-octop user passwd <用户名> --password <新密码>   # 离线改密（应用「设置」窗口改密也走这一命令）
 octop skills --help     # 技能管理
 octop backup --help     # 备份/恢复
 ```
+
+> `octop user` 系列属于旧版多用户兼容命令，单人版不再需要账号管理，`octop user passwd` 也不再是改密入口。
 
 > 注意：不要手动执行 `octop run`（会与飞牛应用中心托管的服务实例抢 8089 端口）；Web 服务一律由应用中心启停。
 
@@ -39,7 +37,7 @@ octop backup --help     # 备份/恢复
 | **本地版 ARM64** | `Octop-fnos-native-arm64-<ver>.fpk` | ~200 MB | 同上，site-packages 为 aarch64；勿装到 x86 | 无需 Docker；ARM 飞牛无 Docker 时再用 |
 
 - **Docker 版**实现为 FnOS `docker-project`：包体只含 `docker-compose.yaml` 与向导配置，运行时由飞牛从 GHCR 拉取镜像。x86 / ARM 飞牛各用同一份 FPK，Docker 按本机架构拉对应镜像层。需要虚拟桌面、OCR 或本地向量时选完整版；否则选精简版。两份镜像都带前端和 Node.js 20（`node` / `npm` / `npx`）。完整版内置 `desktop` 桌面控制但不会自动启动；Playwright Chromium 不预装，可在控制台按需安装。精简版不含桌面、OCR 和本地向量。
-- **本地版**实现为 FnOS 原生 `app`：解释器复用飞牛「Python 3.12」开发工具；包内是 Octop 核心依赖与前端。专家 shell / 技能若要跑 `node` / `npx`，会复用飞牛已装的 Node.js（不强制安装）。扩展里的 `.so` 与 CPU 架构绑定，因此 x86 与 ARM 各打一份；装错架构会在安装或启动时报错。
+- **本地版**实现为 FnOS 原生 `app`：解释器复用飞牛「Python 3.12」开发工具；包内是 HappyClaw 核心依赖与前端。专家 shell / 技能若要跑 `node` / `npx`，会复用飞牛已装的 Node.js（不强制安装）。扩展里的 `.so` 与 CPU 架构绑定，因此 x86 与 ARM 各打一份；装错架构会在安装或启动时报错。
 
 > 上述包随正式版一起挂在 **`v*` GitHub Release** 上（例如 [v0.9.31](https://github.com/TencentCloud/Octop/releases/latest)）：`Octop-fnos-docker-lite-<ver>.fpk` / `Octop-fnos-docker-<ver>.fpk` / `Octop-fnos-native-amd64-<ver>.fpk` / `Octop-fnos-native-arm64-<ver>.fpk`。
 
@@ -57,8 +55,8 @@ fnos/
 │   │   ├── privilege       # 权限声明（docker-octop 用户）
 │   │   └── resource        # 资源声明（docker-project + 数据共享目录）
 │   ├── wizard/
-│   │   ├── install       # 安装向导（建账号 + 接下来怎么用）
-│   │   ├── config        # 应用「设置」窗口（仅改密，不展示明文密码）
+│   │   ├── install       # 安装向导（旧版账号兼容表单 + 接下来怎么用）
+│   │   ├── config        # 应用「设置」窗口（旧版改密入口，不展示明文密码）
 │   │   ├── upgrade       # 升级说明（不改网页密码）
 │   │   └── uninstall     # 卸载向导（数据清理方式）
 │   ├── app/
@@ -85,14 +83,14 @@ fnos/
 
 飞牛应用中心比较 `manifest` 的 `version` 时只保留开头的 `x.y.z`。[社区文档](https://github.com/ckcoding/fnnas-docs/blob/main/docs/core-concepts/manifest.md)里的示例包括 `1.0.0` 和 `2.1.3-beta`，但 `1.0.2b6` 与 `1.0.2b7` 都会被看成 `1.0.2`，商店判定已安装相同或更高版本，无法升级。第四段构建号也不参与这次比较。
 
-Octop 发版号是 PEP 440，beta 写成 `X.Y.ZbN`。`scripts/fnos/store_version.sh` 在打包时把 beta 编进 patch，只写进 FPK 的 `manifest`。beta 序号 N 为 1–99：
+HappyClaw 发版号是 PEP 440，beta 写成 `X.Y.ZbN`。`scripts/fnos/store_version.sh` 在打包时把 beta 编进 patch，只写进 FPK 的 `manifest`。beta 序号 N 为 1–99：
 
-| Octop（`pyproject.toml`） | 应用中心版本 |
+| HappyClaw（`pyproject.toml`） | 应用中心版本 |
 |---------------------------|----------------|
 | `X.Y.ZbN` | `X.Y.(Z×100+N)` |
 | `X.Y.Z` | `X.Y.(Z×100+100)` |
 
-| Octop | 应用中心版本 |
+| HappyClaw | 应用中心版本 |
 |-------|----------------|
 | `1.0.2b8` | `1.0.208` |
 | `1.0.2b10` | `1.0.210` |
@@ -132,8 +130,8 @@ FPK_ARCH=arm64 bash scripts/build-fpk.sh native   # ARM 本地版（需已放入
    - 已装 Docker，需要这些能力 → `Octop-fnos-docker-<version>.fpk`（x86 / ARM 通用）
    - 不想依赖 Docker、x86_64 飞牛 → `Octop-fnos-native-amd64-<version>.fpk`
    - 不想依赖 Docker、ARM64 飞牛 → `Octop-fnos-native-arm64-<version>.fpk`（不要装到 x86）
-2. 安装向导中设置管理员用户名与密码（显示名称、邮箱可选），并阅读「接下来怎么用」。
-3. 等到应用中心显示「运行中」再点「打开」，或用浏览器访问 Docker 版 `http://<设备IP>:8088` / 本地版 `http://<设备IP>:8089`，用刚才设置的账号登录。
-4. 登录后到控制台「设置 → 模型」配置 API Key。Docker 版首次会从 `ghcr.io` 拉取与本包版本相同的镜像（设备需能访问 GitHub Container Registry），请等下载完成；之后重启不会重拉。容器数据挂在飞牛 `data-share`（`TRIM_DATA_SHARE_PATHS`，一般为 `/volX/@appshare/octop/data`），应用重启后保留。本地版无需联网拉镜像。Playwright Chromium 不预装，需要远程浏览器时在控制台按需安装。
+2. 安装向导里的账号表单是旧版兼容项；单人版不创建多用户体系，启动后直接使用本机使用者。
+3. 等到应用中心显示「运行中」再点「打开」，或用浏览器访问 Docker 版 `http://<设备IP>:8088` / 本地版 `http://<设备IP>:8089`。
+4. 打开控制台后到「设置 → 模型」配置 API Key。Docker 版首次会从 `ghcr.io` 拉取与本包版本相同的镜像（设备需能访问 GitHub Container Registry），请等下载完成；之后重启不会重拉。容器数据挂在飞牛 `data-share`（`TRIM_DATA_SHARE_PATHS`，一般为 `/volX/@appshare/octop/data`），应用重启后保留。本地版无需联网拉镜像。Playwright Chromium 不预装，需要远程浏览器时在控制台按需安装。
 
 > Docker 版端口 `8088`，本地版端口 `8089`（飞牛端口映射与桌面图标均据此）。`desktop` 桌面控制只装在完整版 Docker 镜像里，启用前不会启动。
