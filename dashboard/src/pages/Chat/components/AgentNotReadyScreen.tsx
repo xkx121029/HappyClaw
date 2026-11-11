@@ -1,4 +1,5 @@
-import { Button, Result, Spin } from "antd";
+import { Button, Result } from "antd";
+import cx from "classnames";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { OctopEmptyMascot } from "../../../components/EmptyState";
@@ -30,7 +31,39 @@ export default function AgentNotReadyScreen({
   if (loading) {
     return (
       <div className={styles.agentNotReady}>
-        <Spin />
+        <div
+          className={styles.messageSkeleton}
+          role="status"
+          aria-busy="true"
+          aria-label={t("chat.loadingAgents", "正在加载专家")}
+        >
+          <div className={styles.messageSkeletonRow}>
+            <div className={styles.messageSkeletonAvatar} />
+            <div className={styles.messageSkeletonBody}>
+              <div
+                className={styles.messageSkeletonLine}
+                style={{ width: "70%" }}
+              />
+              <div
+                className={styles.messageSkeletonLine}
+                style={{ width: "48%" }}
+              />
+            </div>
+          </div>
+          <div
+            className={cx(
+              styles.messageSkeletonRow,
+              styles.messageSkeletonRowUser,
+            )}
+          >
+            <div className={styles.messageSkeletonBody}>
+              <div
+                className={styles.messageSkeletonBubble}
+                style={{ width: "42%", marginLeft: "58%", height: 30 }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

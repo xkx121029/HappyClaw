@@ -62,6 +62,23 @@ import {
 import styles from "../index.module.less";
 import { openAgentUnread } from "../utils/openUnreadSession";
 
+/** 会话目录首屏加载：与真实行同高的骨架，避免列表从空白跳变成内容。 */
+function SessionListSkeleton({ rows = 4 }: { rows?: number }) {
+  return (
+    <div className={styles.sessionSkeleton} aria-hidden="true">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div key={index} className={styles.sessionSkeletonRow}>
+          <span className={styles.sessionSkeletonAvatar} />
+          <span
+            className={styles.sessionSkeletonLine}
+            style={{ width: `${82 - index * 11}%` }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface SessionItemProps {
   session: Session;
   isActive: boolean;
@@ -891,11 +908,13 @@ export default function SessionList({
           {listedAgents.length === 0 &&
           (searching || catalog.loading || hiddenAgents.length === 0) ? (
             searching || catalog.loading ? (
-              <div className={styles.agentCardSessionsEmpty}>
-                {catalog.loading
-                  ? t("common.loading")
-                  : t("chat.noSearchResults", "没有匹配的会话")}
-              </div>
+              catalog.loading ? (
+                <SessionListSkeleton />
+              ) : (
+                <div className={styles.agentCardSessionsEmpty}>
+                  {t("chat.noSearchResults", "没有匹配的会话")}
+                </div>
+              )
             ) : (
               <ChatNavScopeEmpty scope={navScope} />
             )

@@ -855,8 +855,38 @@ export default function MessageList(props: MessageListProps) {
 
   if (loading && messages.length === 0) {
     return (
-      <div className={styles.messageListLoading}>
-        <Spin />
+      <div className={styles.messageListWrapper}>
+        <div
+          className={styles.messageSkeleton}
+          role="status"
+          aria-busy="true"
+          aria-label={t("chat.loadingMessages", "正在加载消息")}
+        >
+          <div className={cx(styles.messageSkeletonRow, styles.messageSkeletonRowUser)}>
+            <div className={styles.messageSkeletonBody}>
+              <div
+                className={styles.messageSkeletonBubble}
+                style={{ width: "64%", marginLeft: "36%" }}
+              />
+            </div>
+          </div>
+          <div className={styles.messageSkeletonRow}>
+            <div className={styles.messageSkeletonAvatar} />
+            <div className={styles.messageSkeletonBody}>
+              <div className={styles.messageSkeletonLine} style={{ width: "92%" }} />
+              <div className={styles.messageSkeletonLine} style={{ width: "78%" }} />
+              <div className={styles.messageSkeletonLine} style={{ width: "46%" }} />
+            </div>
+          </div>
+          <div className={cx(styles.messageSkeletonRow, styles.messageSkeletonRowUser)}>
+            <div className={styles.messageSkeletonBody}>
+              <div
+                className={styles.messageSkeletonBubble}
+                style={{ width: "48%", marginLeft: "52%", height: 30 }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
