@@ -21,7 +21,6 @@ const RemoteDesktopPage = lazy(() => import("../pages/Control/RemoteDesktop"));
 const ModelsPage = lazy(() => import("../pages/Settings/Models"));
 
 // Lazy-loaded pages — Admin
-const OctopAdminUsersPage = lazy(() => import("../pages/Admin/Users"));
 const AdminSecurityPage = lazy(() => import("../pages/Settings/Security"));
 const AdvancedSettingsPage = lazy(
   () => import("../pages/Settings/AdvancedSettings"),
@@ -88,7 +87,6 @@ export const pathToKey: Record<string, string> = {
   // Admin
   "/admin/models": "models",
   // Admin
-  "/admin/users": "admin-users",
   "/admin/backend": "admin-storage",
   "/admin/plugins": "admin-plugins",
   "/admin/advanced": "admin-advanced",
@@ -218,12 +216,9 @@ export const routeConfigs: RouteConfig[] = [
   // Settings
   { path: "/admin/models", element: <ModelsPage /> },
 
-  // Admin (RequirePermission wrapper applied in MainLayout)
-  { path: "/admin/users", element: <OctopAdminUsersPage /> },
-  {
-    path: "/admin/sso",
-    element: <Navigate to="/admin/users?tab=oidc" replace />,
-  },
+  // 单人模式：成员 / 邀请 / SSO 管理入口已移除，旧链接回首页。
+  { path: "/admin/users", element: <Navigate to="/chat" replace /> },
+  { path: "/admin/sso", element: <Navigate to="/chat" replace /> },
   {
     path: "/admin/shared-models",
     element: <Navigate to="/admin/models" replace />,
@@ -234,7 +229,7 @@ export const routeConfigs: RouteConfig[] = [
     path: "/admin/audit",
     element: <Navigate to="/admin/security?tab=audit" replace />,
   },
-  { path: "/admin/agents", element: <Navigate to="/admin/users" replace /> },
+  { path: "/admin/agents", element: <Navigate to="/chat" replace /> },
   { path: "/admin/plugins", element: <AdminPluginsPage /> },
   { path: "/admin/advanced", element: <AdvancedSettingsPage /> },
   { path: "/admin/security", element: <AdminSecurityPage /> },
@@ -253,7 +248,7 @@ export const routeConfigs: RouteConfig[] = [
   { path: "/orca/channels", element: <Navigate to="/channels" replace /> },
   {
     path: "/orca/admin/users",
-    element: <Navigate to="/admin/users" replace />,
+    element: <Navigate to="/chat" replace />,
   },
   {
     path: "/orca/admin/audit",
@@ -263,7 +258,7 @@ export const routeConfigs: RouteConfig[] = [
   { path: "/octop/channels", element: <Navigate to="/channels" replace /> },
   {
     path: "/octop/admin/users",
-    element: <Navigate to="/admin/users" replace />,
+    element: <Navigate to="/chat" replace />,
   },
   {
     path: "/octop/admin/audit",

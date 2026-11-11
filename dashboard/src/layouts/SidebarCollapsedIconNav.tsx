@@ -9,14 +9,12 @@ export default function SidebarCollapsedIconNav({
   items,
   selectedKey,
   onNavigate,
-  role,
   hasUpdate,
   t,
 }: {
   items: NavItem[];
   selectedKey: string;
   onNavigate: (path: string) => void;
-  role: string | null;
   hasUpdate: boolean;
   t: TFunction<"translation", undefined>;
 }) {
@@ -24,8 +22,7 @@ export default function SidebarCollapsedIconNav({
     <div className={styles.collapsedNav}>
       {items.map((item) => {
         const active = selectedKey === item.key;
-        const showUpdateBadge =
-          item.key === "admin-advanced" && role === "admin" && hasUpdate;
+        const showUpdateBadge = item.key === "admin-advanced" && hasUpdate;
         return (
           <Tooltip
             key={item.key}

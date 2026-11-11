@@ -10,14 +10,11 @@ import {
   useDesktopChrome,
 } from "./hooks/useDesktopChrome";
 import { useNativeWindowChrome } from "./hooks/useNativeWindowChrome";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { routerBasename } from "./utils/publicUrl";
 import { useTranslation } from "react-i18next";
 import MainLayout from "./layouts/MainLayout";
-import LoginPage from "./pages/Login";
-import OidcComplete from "./pages/Login/OidcComplete";
 import SetupPage from "./pages/Setup";
-import InvitePage from "./pages/Invite";
 import AuthGuard from "./components/AuthGuard";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt";
 import DesktopWindowDragBand from "./components/DesktopWindowDragBand";
@@ -31,7 +28,6 @@ import { AgentProvider } from "./context/AgentContext";
 import { LayoutModeProvider } from "./context/LayoutModeContext";
 import { VoiceOutputProvider } from "./context/VoiceOutputContext";
 import { useIsMobile } from "./hooks/useIsMobile";
-import { useUnauthorizedRedirect } from "./hooks/useUnauthorizedRedirect";
 import { brandTokensFor } from "./styles/themePalettes";
 import "./styles/theme-vars.css";
 import "./styles/layout.css";
@@ -59,8 +55,6 @@ function ThemedApp() {
   const isZh = i18n.language?.toLowerCase().startsWith("zh") ?? false;
   const antdLocale = isZh ? zhCN : enUS;
   dayjs.locale(isZh ? "zh-cn" : "en");
-
-  useUnauthorizedRedirect();
 
   // Set document title based on current language
   useEffect(() => {
@@ -134,15 +128,15 @@ function ThemedApp() {
       <AntdAppProvider>
         <DesktopChromeProvider value={desktopChrome}>
           <PwaUpdatePrompt />
-          {/* Login, setup and invite sit outside MainLayout, so the drag
-              strip has to live above the router, not only inside the shell. */}
+          {/* 单人本机模式：登录 / 邀请入口已移除，旧书签直接回主页。
+              首次使用的服务端初始化向导仍保留在 /setup。 */}
           <DesktopWindowDragBand />
           <WindowsAppMenu />
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/login/oidc/complete" element={<OidcComplete />} />
+            <Route path="/login" element={<Navigate to="/chat" replace />} />
+            <Route path="/login/*" element={<Navigate to="/chat" replace />} />
+            <Route path="/invite" element={<Navigate to="/chat" replace />} />
             <Route path="/setup" element={<SetupPage />} />
-            <Route path="/invite" element={<InvitePage />} />
             <Route
               path="/*"
               element={

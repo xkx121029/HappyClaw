@@ -1,19 +1,8 @@
-import { useState, useCallback, useEffect, type ReactNode } from "react";
-import {
-  Drawer,
-  Form,
-  Input,
-  Button,
-  Tag,
-  Divider,
-  Segmented,
-  Tooltip,
-  Popover,
-} from "antd";
+import { useState } from "react";
+import { Drawer, Form, Input, Button, Segmented, Tooltip, Popover } from "antd";
 import { message } from "@/utils/antdMessage";
 
 import {
-  LogOut,
   ChevronDown,
   ChevronUp,
   Settings,
@@ -21,59 +10,27 @@ import {
   CircleHelp,
   Github,
   RefreshCw,
-  KeyRound,
-  ShieldCheck,
   SlidersHorizontal,
+  DatabaseBackup,
+  HardDrive,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import cx from "classnames";
-import { authApi } from "../api/modules/auth";
-import { preferencesApi } from "../api/modules/preferences";
-import { holdDesktopLocalAutoLogin } from "../api/desktopSession";
-import { clearAuthToken } from "../api/request";
-import { isDesktopShell } from "../utils/desktopBridge";
-import { applyGuestLocale, applyUserLocale } from "../utils/locale";
-import { apiErrorMessage } from "../utils/apiError";
-import { isSsoPopupMessage, openSsoPopup } from "../utils/ssoPopup";
-import { useUserRole } from "../hooks/useUserRole";
+import { useCurrentUser, updateLocalProfile } from "../hooks/useCurrentUser";
+import { applyUserLocale } from "../utils/locale";
 import { useIsMobile } from "../hooks/useIsMobile";
 import ThemeSwitcher from "./ThemeSwitcher";
 import PaletteSwitcher from "./PaletteSwitcher";
-import type { OctopUser } from "../api/modules/auth";
 import { useLayoutMode } from "../context/LayoutModeContext";
 import type { LayoutMode } from "../layouts/layoutModeStorage";
-import { userCan } from "../utils/permissions";
-import feishuIcon from "../assets/channels/feishu.svg";
-import dingtalkIcon from "../assets/channels/dingtalk.svg";
-import wecomIcon from "../assets/channels/wecom.svg";
-import {
-  ProfileAvatar,
-  ProfileAvatarPicker,
-} from "../pages/Admin/Users/ProfileAvatar";
-import AccountSecurityDrawer from "./AccountSecurityDrawer";
+import { ProfileAvatar, ProfileAvatarPicker } from "../pages/Admin/Users/ProfileAvatar";
 import styles from "./AvatarDropdown.module.less";
 
 const GITHUB_URL = "https://github.com/TencentCloud/Octop";
 const HELP_FEEDBACK_URL = "https://octop.cloud";
-const APP_OAUTH_KINDS = new Set(["feishu", "dingtalk", "wecom"]);
-
-function oauthProviderIcon(kind: string): ReactNode {
-  const src =
-    kind === "feishu"
-      ? feishuIcon
-      : kind === "dingtalk"
-      ? dingtalkIcon
-      : kind === "wecom"
-      ? wecomIcon
-      : null;
-  if (!src) return <KeyRound size={18} />;
-  return <img src={src} alt="" width={20} height={20} draggable={false} />;
-}
+const LOCAL_PROFILE_NAME_MAX = 32;
 
 interface AvatarDropdownProps {
-  user: OctopUser | null;
-  onUserChange?: (u: OctopUser) => void;
   /**
    * ``sidebar`` — brand-rail footer trigger (avatar [+ name when expanded]).
    * Default keeps a plain avatar button (legacy header style).
@@ -81,15 +38,19 @@ interface AvatarDropdownProps {
   placement?: "default" | "sidebar";
   /** When placement is sidebar and true, show avatar only (collapsed rail). */
   compact?: boolean;
-  /** Called before opening settings or account security (e.g. close mobile nav drawer). */
+  /** Called before opening settings (e.g. close mobile nav drawer). */
   onBeforeOpenSettings?: () => void;
   /** Opens the sidebar layout editor. Omitted when that editor is unavailable. */
   onCustomizeNav?: () => void;
 }
 
+/**
+ * 本机设置入口。
+ *
+ * 单人模式下这里不再有账号、角色、SSO 绑定与退出登录：只保留
+ * 外观、语言、布局、本机头像 / 显示名，以及数据备份和更新入口。
+ */
 export default function AvatarDropdown({
-  user,
-  onUserChange,
   placement = "default",
   compact = false,
   onBeforeOpenSettings,
@@ -97,131 +58,16 @@ export default function AvatarDropdown({
 }: AvatarDropdownProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const role = useUserRole();
+  const profile = useCurrentUser();
   const isMobile = useIsMobile();
   const { layoutMode, setLayoutMode } = useLayoutMode();
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [securityOpen, setSecurityOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [ssoProviders, setSsoProviders] = useState<
-    { kind: string; display_name: string; enabled: boolean }[]
-  >([]);
-  const [ssoBindingKind, setSsoBindingKind] = useState<string | null>(null);
   const [profileForm] = Form.useForm<{ display_name: string }>();
 
-  const handleLogout = useCallback(async () => {
-    setMenuOpen(false);
-    if (isDesktopShell() && user?.username === "local") {
-      holdDesktopLocalAutoLogin();
-    }
-    await authApi.logout();
-    clearAuthToken();
-    await applyGuestLocale();
-    navigate("/login", { replace: true });
-  }, [navigate, user?.username]);
-
-  const handleSaveProfile = async (values: { display_name: string }) => {
-    setSaving(true);
-    try {
-      const updated = await authApi.updateProfile(
-        values.display_name?.trim() || null,
-      );
-      onUserChange?.(updated);
-      message.success(t("account.savedSuccess"));
-    } catch (e) {
-      message.error(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleLocaleChange = (val: string) => {
-    void preferencesApi
-      .setLocale(val)
-      .then(async (prefs) => {
-        await applyUserLocale(prefs.locale);
-        if (user) onUserChange?.({ ...user, locale: prefs.locale });
-      })
-      .catch((e) => {
-        message.error(e instanceof Error ? e.message : String(e));
-      });
-  };
-
-  const bindableProviders = ssoProviders.filter((item) =>
-    APP_OAUTH_KINDS.has(item.kind),
-  );
-  const linkedKinds = new Set(
-    (user?.sso_identities ?? [])
-      .map((item) => item.kind)
-      .concat(user?.sso_kind ? [user.sso_kind] : []),
-  );
-  const providerDisplayName = (kind: string, displayName?: string) =>
-    displayName?.trim() ||
-    t(`login.providerKind.${kind}`, { defaultValue: kind });
-  const canUnbindKind = (kind: string) =>
-    linkedKinds.has(kind) &&
-    (user?.has_password !== false || linkedKinds.size > 1);
-
-  const ssoRows: { kind: string; display_name: string }[] = [];
-  const seenSsoKinds = new Set<string>();
-  for (const provider of bindableProviders) {
-    ssoRows.push({
-      kind: provider.kind,
-      display_name: provider.display_name,
-    });
-    seenSsoKinds.add(provider.kind);
-  }
-  for (const kind of linkedKinds) {
-    if (!APP_OAUTH_KINDS.has(kind) || seenSsoKinds.has(kind)) continue;
-    ssoRows.push({ kind, display_name: "" });
-  }
-
-  const handleBindOauth = async (kind: string) => {
-    const popup = openSsoPopup();
-    setSsoBindingKind(kind);
-    try {
-      const { authorization_url } = await authApi.startOauthBind(kind, "/chat");
-      if (popup && !popup.closed) {
-        popup.location.href = authorization_url;
-        const timer = window.setInterval(() => {
-          if (!popup || popup.closed) {
-            window.clearInterval(timer);
-            setSsoBindingKind(null);
-          }
-        }, 400);
-      } else {
-        popup?.close();
-        message.error(t("account.ssoPopupBlocked"));
-        setSsoBindingKind(null);
-      }
-    } catch (err) {
-      popup?.close();
-      message.error(apiErrorMessage(err, t("account.ssoBindFailed"), t));
-      setSsoBindingKind(null);
-    }
-  };
-
-  const handleUnbindOauth = async (kind: string) => {
-    setSsoBindingKind(kind);
-    try {
-      const next = await authApi.unbindOauth(kind);
-      onUserChange?.(next);
-      message.success(t("account.ssoUnbindSuccess"));
-    } catch (err) {
-      message.error(apiErrorMessage(err, t("account.ssoUnbindFailed"), t));
-    } finally {
-      setSsoBindingKind(null);
-    }
-  };
-
   const currentLang = i18n.language?.startsWith("zh") ? "zh" : "en";
-  const roleLabel =
-    role === "admin" ? t("account.roleAdmin") : t("account.roleUser");
+  const displayName = profile.display_name || t("account.me", "我");
 
-  const displayName = user?.display_name || user?.username || "—";
-
-  /** Defer panel open so the account Popover / mobile sidebar can unmount first. */
   const deferOpen = (open: () => void) => {
     window.setTimeout(open, 0);
   };
@@ -229,14 +75,8 @@ export default function AvatarDropdown({
   const openSettings = () => {
     setMenuOpen(false);
     onBeforeOpenSettings?.();
-    profileForm.setFieldsValue({ display_name: user?.display_name || "" });
+    profileForm.setFieldsValue({ display_name: profile.display_name || "" });
     deferOpen(() => setSettingsOpen(true));
-  };
-
-  const openSecurity = () => {
-    setMenuOpen(false);
-    onBeforeOpenSettings?.();
-    deferOpen(() => setSecurityOpen(true));
   };
 
   const openCustomizeNav = () => {
@@ -245,52 +85,28 @@ export default function AvatarDropdown({
     deferOpen(() => onCustomizeNav?.());
   };
 
-  const closeSettings = () => setSettingsOpen(false);
+  const goBackup = () => {
+    setMenuOpen(false);
+    navigate("/admin/advanced?tab=backup");
+  };
 
-  useEffect(() => {
-    if (!settingsOpen) return;
-    void authApi
-      .me()
-      .then((next) => onUserChange?.(next))
-      .catch(() => undefined);
-    void authApi
-      .getOauthStatus()
-      .then((status) =>
-        setSsoProviders(status.providers.filter((item) => item.enabled)),
-      )
-      .catch(() => undefined);
-  }, [onUserChange, settingsOpen]);
+  const handleSaveProfile = (values: { display_name: string }) => {
+    const name = values.display_name?.trim().slice(0, LOCAL_PROFILE_NAME_MAX);
+    updateLocalProfile({ display_name: name || t("account.me", "我") });
+    message.success(t("account.savedLocal", "已保存到本机"));
+  };
 
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (!isSsoPopupMessage(event, window.location.origin)) return;
-      setSsoBindingKind(null);
-      if (!event.data.ok) {
-        const code = event.data.error || "generic";
-        message.error(
-          t(`login.oidcError.${code}`, {
-            defaultValue: t("login.oidcError.generic"),
-          }),
-        );
-        return;
-      }
-      void authApi
-        .me()
-        .then((next) => {
-          onUserChange?.(next);
-          message.success(t("account.ssoBindSuccess"));
-        })
-        .catch(() => undefined);
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [onUserChange, t]);
+  const handleLocaleChange = (val: string) => {
+    void applyUserLocale(val).catch(() => {
+      message.error(t("account.localeFailed", "语言切换失败，请重试"));
+    });
+  };
 
   const avatar = (
     <ProfileAvatar
-      key={`${user?.avatar_icon ?? ""}:${user?.avatar_url ?? ""}`}
-      url={user?.avatar_url}
-      icon={user?.avatar_icon}
+      key={`${profile.avatar_icon ?? ""}:${profile.avatar_url ?? ""}`}
+      url={profile.avatar_url}
+      icon={profile.avatar_icon}
       kind="user"
       className={styles.accountAvatar}
     />
@@ -301,19 +117,11 @@ export default function AvatarDropdown({
       <div className={styles.menuHeader}>
         <div className={styles.menuHeaderTop}>
           <span className={styles.menuDisplayName}>{displayName}</span>
-          <Tag
-            color={role === "admin" ? "blue" : "default"}
-            className={styles.roleTag}
-          >
-            {roleLabel}
-          </Tag>
         </div>
-        {user?.username && (
-          <span className={styles.menuHandle}>@{user.username}</span>
-        )}
+        <span className={styles.menuHandle}>
+          {t("account.localOnly", "本机 · 单人模式")}
+        </span>
       </div>
-
-      <Divider className={styles.menuDivider} />
 
       <div className={styles.menuItemRow}>
         <div className={styles.menuItemLabel}>
@@ -322,6 +130,39 @@ export default function AvatarDropdown({
         </div>
         <ThemeSwitcher compact />
       </div>
+
+      <button type="button" className={styles.menuItem} onClick={openSettings}>
+        <Settings size={16} strokeWidth={1.8} />
+        <span>{t("account.settings")}</span>
+      </button>
+
+      <button type="button" className={styles.menuItem} onClick={goBackup}>
+        <DatabaseBackup size={16} strokeWidth={1.8} />
+        <span>{t("account.backup", "本机数据备份与恢复")}</span>
+      </button>
+
+      {onCustomizeNav ? (
+        <button
+          type="button"
+          className={styles.menuItem}
+          onClick={openCustomizeNav}
+        >
+          <SlidersHorizontal size={16} strokeWidth={1.8} />
+          <span>{t("nav.customize")}</span>
+        </button>
+      ) : null}
+
+      <button
+        type="button"
+        className={styles.menuItem}
+        onClick={() => {
+          setMenuOpen(false);
+          navigate("/admin/advanced?tab=updates");
+        }}
+      >
+        <RefreshCw size={16} strokeWidth={1.8} />
+        <span>{t("account.checkUpdates")}</span>
+      </button>
 
       <a
         className={styles.menuItem}
@@ -344,67 +185,12 @@ export default function AvatarDropdown({
         <Github size={16} strokeWidth={1.8} />
         <span>{t("account.projectUrl")}</span>
       </a>
-
-      {onCustomizeNav ? (
-        <button
-          type="button"
-          className={styles.menuItem}
-          onClick={openCustomizeNav}
-        >
-          <SlidersHorizontal size={16} strokeWidth={1.8} />
-          <span>{t("nav.customize")}</span>
-        </button>
-      ) : null}
-
-      <button type="button" className={styles.menuItem} onClick={openSettings}>
-        <Settings size={16} strokeWidth={1.8} />
-        <span>{t("account.settings")}</span>
-      </button>
-
-      <button type="button" className={styles.menuItem} onClick={openSecurity}>
-        <ShieldCheck size={16} strokeWidth={1.8} />
-        <span>{t("account.security")}</span>
-      </button>
-
-      {userCan(user, "update") && (
-        <button
-          type="button"
-          className={styles.menuItem}
-          onClick={() => {
-            setMenuOpen(false);
-            navigate("/admin/advanced?tab=updates");
-          }}
-        >
-          <RefreshCw size={16} strokeWidth={1.8} />
-          <span>{t("account.checkUpdates")}</span>
-        </button>
-      )}
-
-      <Divider className={styles.menuDivider} />
-
-      <button
-        type="button"
-        className={cx(styles.menuItem, styles.menuItemDanger)}
-        onClick={() => void handleLogout()}
-      >
-        <LogOut size={16} strokeWidth={1.8} />
-        <span>{t("auth.logout")}</span>
-      </button>
     </div>
   );
 
   const triggerButton =
     placement === "sidebar" && !compact ? (
-      <button
-        type="button"
-        className={styles.triggerExpanded}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "var(--fn-sidebar-item-hover)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-        }}
-      >
+      <button type="button" className={styles.triggerExpanded}>
         {avatar}
         <span className={styles.triggerName}>{displayName}</span>
         {menuOpen ? (
@@ -437,77 +223,42 @@ export default function AvatarDropdown({
     <div className={styles.settingsBody}>
       <div className={styles.settingsIdentity}>
         <span className={styles.settingsIdentityName}>{displayName}</span>
-        {user?.username ? (
-          <span className={styles.settingsIdentityHandle}>
-            @{user.username}
-          </span>
-        ) : null}
-        <Tag
-          color={role === "admin" ? "blue" : "default"}
-          className={styles.roleTag}
-        >
-          {roleLabel}
-        </Tag>
+        <span className={styles.settingsIdentityHandle}>
+          {t("account.localOnly", "本机 · 单人模式")}
+        </span>
       </div>
 
       <section className={styles.settingsSection}>
         <div className={styles.settingsSectionHead}>
           <h3 className={styles.settingsSectionTitle}>{t("account.avatar")}</h3>
           <p className={styles.settingsSectionDesc}>
-            {t("account.avatarHint")}
+            {t("account.avatarLocalHint", "头像只保存在本机浏览器。")}
           </p>
         </div>
-        {user ? (
-          <div className={styles.settingsAvatarPicker}>
-            <ProfileAvatarPicker
-              kind="user"
-              avatarUrl={user.avatar_url}
-              icon={user.avatar_icon}
-              onSelectIcon={async (icon) => {
-                if (user) {
-                  onUserChange?.({
-                    ...user,
-                    avatar_icon: icon,
-                    avatar_url: null,
-                  });
-                }
-                try {
-                  onUserChange?.(await authApi.setAvatarIcon(icon));
-                } catch (err) {
-                  message.error(
-                    apiErrorMessage(err, t("experts.avatarUploadFailed"), t),
-                  );
-                  throw err;
-                }
-              }}
-              onPick={async (file) => {
-                try {
-                  const result = await authApi.uploadAvatar(file);
-                  onUserChange?.({ ...user, avatar_url: result.avatar_url });
-                } catch (err) {
-                  message.error(
-                    apiErrorMessage(err, t("experts.avatarUploadFailed"), t),
-                  );
-                  throw err;
-                }
-              }}
-              onRemove={async () => {
-                try {
-                  await authApi.deleteAvatar();
-                  onUserChange?.({ ...user, avatar_url: null });
-                } catch (err) {
-                  message.error(
-                    apiErrorMessage(err, t("experts.avatarRemoveFailed"), t),
-                  );
-                  throw err;
-                }
-              }}
-            />
-          </div>
-        ) : null}
+        <div className={styles.settingsAvatarPicker}>
+          <ProfileAvatarPicker
+            kind="user"
+            avatarUrl={profile.avatar_url}
+            icon={profile.avatar_icon}
+            onSelectIcon={(icon) => {
+              updateLocalProfile({ avatar_icon: icon, avatar_url: null });
+            }}
+            onPick={() => {
+              message.info(
+                t(
+                  "account.avatarUploadLocalOnly",
+                  "单人模式暂不支持上传图片，请选择一个内置头像。",
+                ),
+              );
+            }}
+            onRemove={() => {
+              updateLocalProfile({ avatar_icon: null, avatar_url: null });
+            }}
+          />
+        </div>
       </section>
 
-      <Divider className={styles.settingsDivider} />
+      <div className={styles.settingsDivider} />
 
       <section className={styles.settingsSection}>
         <div className={styles.settingsSectionHead}>
@@ -515,7 +266,7 @@ export default function AvatarDropdown({
             {t("account.displayName")}
           </h3>
           <p className={styles.settingsSectionDesc}>
-            {t("account.displayNameHint")}
+            {t("account.displayNameLocalHint", "只影响这台设备上的显示，不涉及账号。")}
           </p>
         </div>
         <Form
@@ -523,7 +274,7 @@ export default function AvatarDropdown({
           onFinish={handleSaveProfile}
           layout="vertical"
           requiredMark={false}
-          initialValues={{ display_name: user?.display_name || "" }}
+          initialValues={{ display_name: profile.display_name || "" }}
           className={styles.settingsForm}
         >
           <Form.Item
@@ -531,20 +282,20 @@ export default function AvatarDropdown({
             style={{ marginBottom: 0 }}
             rules={[
               {
-                max: 64,
+                max: LOCAL_PROFILE_NAME_MAX,
                 message: t("account.displayNameTooLong"),
               },
             ]}
           >
             <Input
               placeholder={t("account.displayNamePlaceholder")}
-              maxLength={64}
+              maxLength={LOCAL_PROFILE_NAME_MAX}
             />
           </Form.Item>
         </Form>
       </section>
 
-      <Divider className={styles.settingsDivider} />
+      <div className={styles.settingsDivider} />
 
       <section className={styles.settingsSection}>
         <div className={styles.settingsSectionHead}>
@@ -566,7 +317,7 @@ export default function AvatarDropdown({
         />
       </section>
 
-      <Divider className={styles.settingsDivider} />
+      <div className={styles.settingsDivider} />
 
       <section className={styles.settingsSection}>
         <div className={styles.settingsSectionHead}>
@@ -588,7 +339,7 @@ export default function AvatarDropdown({
         />
       </section>
 
-      <Divider className={styles.settingsDivider} />
+      <div className={styles.settingsDivider} />
 
       <section className={styles.settingsSection}>
         <div className={styles.settingsSectionHead}>
@@ -602,69 +353,24 @@ export default function AvatarDropdown({
         <PaletteSwitcher />
       </section>
 
-      {ssoRows.length > 0 && (
-        <>
-          <Divider className={styles.settingsDivider} />
-          <section className={styles.settingsSection}>
-            <div className={styles.settingsSectionHead}>
-              <h3 className={styles.settingsSectionTitle}>
-                {t("account.ssoTitle")}
-              </h3>
-              <p className={styles.settingsSectionDesc}>
-                {t("account.ssoHint")}
-              </p>
-            </div>
-            <ul className={styles.ssoList}>
-              {ssoRows.map((provider) => {
-                const name = providerDisplayName(
-                  provider.kind,
-                  provider.display_name,
-                );
-                const linked = linkedKinds.has(provider.kind);
-                const busy = ssoBindingKind === provider.kind;
-                return (
-                  <li key={provider.kind} className={styles.ssoRow}>
-                    <span className={styles.ssoIcon} aria-hidden>
-                      {oauthProviderIcon(provider.kind)}
-                    </span>
-                    <div className={styles.ssoMeta}>
-                      <span className={styles.ssoName}>{name}</span>
-                      <span className={styles.ssoStatus}>
-                        {linked
-                          ? t("account.ssoStatusLinked")
-                          : t("account.ssoStatusUnlinked")}
-                      </span>
-                    </div>
-                    {linked ? (
-                      canUnbindKind(provider.kind) ? (
-                        <Button
-                          size="small"
-                          danger
-                          loading={busy}
-                          disabled={ssoBindingKind !== null && !busy}
-                          onClick={() => void handleUnbindOauth(provider.kind)}
-                        >
-                          {t("account.ssoDisconnect")}
-                        </Button>
-                      ) : null
-                    ) : (
-                      <Button
-                        size="small"
-                        type="primary"
-                        loading={busy}
-                        disabled={ssoBindingKind !== null && !busy}
-                        onClick={() => void handleBindOauth(provider.kind)}
-                      >
-                        {t("account.ssoConnect")}
-                      </Button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        </>
-      )}
+      <div className={styles.settingsDivider} />
+
+      <section className={styles.settingsSection}>
+        <div className={styles.settingsSectionHead}>
+          <h3 className={styles.settingsSectionTitle}>
+            {t("account.localData", "本机数据")}
+          </h3>
+          <p className={styles.settingsSectionDesc}>
+            {t(
+              "account.localDataHint",
+              "导出或导入会话、配置与进度；数据只在这台设备上流转。",
+            )}
+          </p>
+        </div>
+        <Button icon={<HardDrive size={16} strokeWidth={1.8} />} onClick={goBackup}>
+          {t("account.openBackup", "打开备份与恢复")}
+        </Button>
+      </section>
     </div>
   );
 
@@ -687,19 +393,17 @@ export default function AvatarDropdown({
       <Drawer
         title={t("account.settings")}
         open={settingsOpen}
-        onClose={closeSettings}
+        onClose={() => setSettingsOpen(false)}
         placement="right"
         width={isMobile ? "100%" : 480}
         destroyOnHidden
         className={styles.settingsDrawer}
         footer={
           <div className={styles.settingsDrawerFooter}>
-            <Button onClick={closeSettings}>{t("common.cancel")}</Button>
-            <Button
-              type="primary"
-              loading={saving}
-              onClick={() => profileForm.submit()}
-            >
+            <Button onClick={() => setSettingsOpen(false)}>
+              {t("common.close", "关闭")}
+            </Button>
+            <Button type="primary" onClick={() => profileForm.submit()}>
               {t("common.save")}
             </Button>
           </div>
@@ -707,11 +411,6 @@ export default function AvatarDropdown({
       >
         {settingsBody}
       </Drawer>
-
-      <AccountSecurityDrawer
-        open={securityOpen}
-        onClose={() => setSecurityOpen(false)}
-      />
     </>
   );
 }

@@ -28,8 +28,6 @@ import {
 } from "../../utils/railShortcuts";
 import { useTranslation } from "react-i18next";
 import DesktopWindowDragBand from "../../components/DesktopWindowDragBand";
-import RequirePermission from "../../components/RequirePermission";
-import { routeNeedsPermission } from "../../utils/permissions";
 import { useLayoutMode } from "../../context/LayoutModeContext";
 import { useDashboardPushToast } from "../../hooks/useDashboardPushToast";
 import { useRailShortcuts } from "../../hooks/useRailShortcuts";
@@ -232,10 +230,7 @@ export default function MainLayout() {
     <Suspense fallback={<PageLoading />}>
       <Routes>
         {routeConfigs.map((rc) => {
-          let el = rc.useWrapper ? <ChatWithKey /> : rc.element;
-          if (!rc.useWrapper && routeNeedsPermission(rc.path)) {
-            el = <RequirePermission>{el}</RequirePermission>;
-          }
+          const el = rc.useWrapper ? <ChatWithKey /> : rc.element;
           return <Route key={rc.path} path={rc.path} element={el} />;
         })}
       </Routes>
@@ -411,11 +406,9 @@ export default function MainLayout() {
                         flexDirection: "column",
                       }}
                     >
-                      <RequirePermission>
-                        <Suspense fallback={<PageLoading />}>
-                          <WorkbenchPage isVisible={onWorkbench} />
-                        </Suspense>
-                      </RequirePermission>
+                      <Suspense fallback={<PageLoading />}>
+                        <WorkbenchPage isVisible={onWorkbench} />
+                      </Suspense>
                     </div>
                   )}
 

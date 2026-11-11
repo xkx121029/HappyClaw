@@ -150,197 +150,64 @@ export const SECURITY_TAB_PERMISSIONS = {
   audit: "admin_console",
 } as const;
 
-/** True when the user may access the module ``key`` (admin bypasses). */
+/**
+ * 单人本机模式：控制台不再有角色与模块权限。
+ *
+ * 下面这些函数保留原有签名，避免大量历史调用点同时改动；判断逻辑已收口为
+ * 「本机只有一个使用者，全部功能都对自己开放」。新增界面不应再调用它们。
+ */
 export function userCan(
-  user: PermissionHolder | null | undefined,
-  key: string,
+  _user: PermissionHolder | null | undefined,
+  _key: string,
 ): boolean {
-  if (!user) return false;
-  if (user.role === "admin") return true;
-  return (user.permissions ?? []).includes(key);
+  return true;
 }
 
 /** True when the user holds any of the given keys (admin bypasses). */
 export function userCanAny(
-  user: PermissionHolder | null | undefined,
-  keys: readonly string[],
+  _user: PermissionHolder | null | undefined,
+  _keys: readonly string[],
 ): boolean {
-  if (!user) return false;
-  if (user.role === "admin") return true;
-  const held = new Set(user.permissions ?? []);
-  return keys.some((k) => held.has(k));
+  return true;
 }
 
 export function canAccessKeys(
-  user: PermissionHolder | null | undefined,
-  keys: PermissionKeys,
+  _user: PermissionHolder | null | undefined,
+  _keys: PermissionKeys,
 ): boolean {
-  if (keys === "admin") return Boolean(user && user.role === "admin");
-  return userCanAny(user, keys);
+  return true;
 }
 
 export function navAllowed(
-  user: PermissionHolder | null | undefined,
-  navKey: NavPermissionKey,
+  _user: PermissionHolder | null | undefined,
+  _navKey: NavPermissionKey,
 ): boolean {
-  return canAccessKeys(user, NAV_PERMISSIONS[navKey]);
+  return true;
 }
 
 export function userCanKey(
-  user: PermissionHolder | null | undefined,
-  key: string | readonly string[],
+  _user: PermissionHolder | null | undefined,
+  _key: string | readonly string[],
 ): boolean {
-  return typeof key === "string" ? userCan(user, key) : userCanAny(user, key);
+  return true;
 }
 
 /**
  * Permissions that unlock a dashboard path (any-of).
- * ``"admin"`` means role===admin only (no module key this round).
- * ``null`` means no special gate.
+ * 单人本机模式下没有受限路径，恒返回 ``null``。
  */
-export function pathPermissionKeys(pathname: string): PermissionKeys | null {
-  if (pathname.startsWith("/admin/users") || pathname === "/admin/sso") {
-    return PERM.usersPage;
-  }
-  if (
-    pathname.startsWith("/admin/models") ||
-    pathname === "/models" ||
-    pathname.startsWith("/admin/voice")
-  ) {
-    return PERM.modelsPage;
-  }
-  if (pathname.startsWith("/admin/backend")) {
-    return PERM.storage;
-  }
-  if (
-    pathname.startsWith("/admin/plugins") ||
-    pathname === "/plugins" ||
-    pathname.startsWith("/plugins/")
-  ) {
-    return PERM.plugins;
-  }
-  if (
-    pathname.startsWith("/admin/security") ||
-    pathname.startsWith("/admin/audit")
-  ) {
-    return PERM.securityPage;
-  }
-  if (
-    pathname.startsWith("/admin/advanced") ||
-    pathname.startsWith("/admin/updates")
-  ) {
-    return PERM.advancedPage;
-  }
-  if (pathname.startsWith("/admin/")) {
-    return "admin";
-  }
-  if (pathname === "/channels" || pathname.startsWith("/channels/")) {
-    return PERM.channels;
-  }
-  if (
-    pathname === "/personalization" ||
-    pathname.startsWith("/personalization/") ||
-    pathname === "/skills" ||
-    pathname === "/subagents" ||
-    pathname === "/mbti" ||
-    pathname === "/memory"
-  ) {
-    const tab =
-      pathname === "/skills"
-        ? "skills"
-        : pathname === "/subagents"
-        ? "subagents"
-        : pathname === "/mbti"
-        ? "mbti"
-        : pathname === "/memory"
-        ? "memory"
-        : pathname.split("/")[2] ?? "";
-    const key =
-      PERSONALIZATION_TAB_PERMISSIONS[
-        tab as keyof typeof PERSONALIZATION_TAB_PERMISSIONS
-      ];
-    if (key) return typeof key === "string" ? [key] : [...key];
-    if (tab) return null;
-    return [...PERM.personalization, ...PERM.channels];
-  }
-  if (pathname === "/connectors" || pathname.startsWith("/connectors/")) {
-    return PERM.connectors;
-  }
-  if (
-    pathname === "/skill-packages" ||
-    pathname.startsWith("/skill-packages/")
-  ) {
-    return PERM.skillPackages;
-  }
-  if (
-    pathname === "/knowledge-bases" ||
-    pathname.startsWith("/knowledge-bases/")
-  ) {
-    return PERM.knowledgeBasesPage;
-  }
-  if (pathname === "/bridge" || pathname.startsWith("/bridge/")) {
-    return PERM.bridge;
-  }
-  if (pathname === "/remote-desktop/desktop") {
-    return PERM.desktop;
-  }
-  if (
-    pathname === "/remote-desktop/phone" ||
-    pathname === "/remote-phone" ||
-    pathname.startsWith("/remote-phone/") ||
-    pathname === "/remote-android" ||
-    pathname.startsWith("/remote-android/")
-  ) {
-    return PERM.mobile;
-  }
-  if (
-    pathname === "/remote-desktop" ||
-    pathname.startsWith("/remote-desktop/")
-  ) {
-    return ["desktop", "mobile"];
-  }
-  if (pathname === "/workbench/terminal" || pathname === "/terminal") {
-    return PERM.terminal;
-  }
-  if (pathname === "/workbench/browser" || pathname === "/remote-browser") {
-    return PERM.browser;
-  }
-  if (pathname === "/workbench" || pathname.startsWith("/workbench/")) {
-    return PERM.workbench;
-  }
-  // ACP: no module key this round — admin role only.
-  if (pathname === "/acp" || pathname.startsWith("/acp/")) {
-    return "admin";
-  }
-  if (pathname === "/experts" || pathname.startsWith("/experts/")) {
-    return PERM.experts;
-  }
-  if (pathname === "/tasks" || pathname.startsWith("/tasks/")) {
-    return PERM.tasks;
-  }
-  if (pathname === "/token-usage" || pathname.startsWith("/token-usage/")) {
-    return PERM.tokenUsage;
-  }
+export function pathPermissionKeys(_pathname: string): PermissionKeys | null {
   return null;
 }
 
 /** True when this route config path should be wrapped in RequirePermission. */
-export function routeNeedsPermission(routePath: string): boolean {
-  const probe = routePath.replace(/\/\*$/, "").replace(/\/:[^/]+/g, "");
-  if (pathPermissionKeys(probe) !== null) return true;
-  if (probe === "/personalization" || probe.startsWith("/personalization/")) {
-    return true;
-  }
-  if (probe === "/workbench" || probe.startsWith("/workbench/")) return true;
-  if (probe.startsWith("/admin")) return true;
+export function routeNeedsPermission(_routePath: string): boolean {
   return false;
 }
 
 export function canAccessPath(
-  user: PermissionHolder | null | undefined,
-  pathname: string,
+  _user: PermissionHolder | null | undefined,
+  _pathname: string,
 ): boolean {
-  const req = pathPermissionKeys(pathname);
-  if (req === null) return true;
-  return canAccessKeys(user, req);
+  return true;
 }

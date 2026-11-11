@@ -81,7 +81,7 @@ export default function SetupPage() {
         if (cancelled) return;
         if (!status.setup_required && !localAccount) {
           wizardSession.clearAll();
-          navigate("/login", { replace: true });
+          navigate("/chat", { replace: true });
           return;
         }
 
@@ -162,7 +162,7 @@ export default function SetupPage() {
 
   const handleDatabaseAdopted = () => {
     wizardSession.clearAll();
-    navigate("/login", { replace: true });
+    navigate("/chat", { replace: true });
   };
 
   const handleDatabaseContinue = async () => {
@@ -272,7 +272,7 @@ export default function SetupPage() {
                     ? publicUrl("logo_horizontal_white.png")
                     : publicUrl("logo_horizontal_dark.png")
                 }
-                alt="Octop"
+                alt="HappyClaw"
                 className={styles.wizardHeaderLogo}
               />
               <div className={styles.wizardHeaderBrandText}>

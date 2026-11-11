@@ -5,7 +5,6 @@ import {
   renewDesktopSession,
 } from "./desktopSession";
 import i18n from "../i18n";
-import { markNavigatingAway } from "../utils/reloadOnStaleChunk";
 
 const AUTH_TOKEN_KEY = "auth_token";
 /** sessionStorage handoff for SSO redirects / popups (default = remember). */
@@ -311,27 +310,17 @@ let _redirectingToLogin = false;
 const SESSION_UNAUTHORIZED_CODES = new Set(["AUTH_FAILED", "TOKEN_EXPIRED"]);
 
 /**
- * Send the user to the login screen exactly once, no matter how many parallel
- * requests report an expired session.
+ * 单人本机模式没有登录页。会话失效时不再整页跳转，只广播事件让调用方
+ * 展示可读错误；避免用户正在看的页面被刷新掉。
  */
 function handleUnauthorized(): void {
   if (_redirectingToLogin) return;
-  const path = window.location.pathname;
-  if (
-    path.startsWith("/setup") ||
-    path.startsWith("/login") ||
-    path.startsWith("/invite")
-  )
-    return;
   _redirectingToLogin = true;
-
-  const takenOver = !window.dispatchEvent(
-    new CustomEvent(UNAUTHORIZED_EVENT, { cancelable: true }),
-  );
-  if (takenOver) return;
-
-  markNavigatingAway();
-  window.location.replace("/login");
+  window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT, { cancelable: true }));
+  // 同一个页面继续用旧 token 重试没有意义，但也不需要踢回登录页。
+  window.setTimeout(() => {
+    _redirectingToLogin = false;
+  }, 3000);
 }
 
 /**

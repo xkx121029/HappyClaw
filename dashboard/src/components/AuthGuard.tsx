@@ -1,11 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { clearAuthToken, getAuthToken } from "../api/request";
-import { authApi, type OctopUser } from "../api/modules/auth";
-import { applyUserLocale } from "../utils/locale";
+import { useEffect, useState } from "react";
+import { getApiUrl } from "../api/config";
 import { isNetworkFetchError } from "../utils/networkError";
-import { CurrentUserProvider } from "../hooks/useCurrentUser";
-import { useTheme } from "../context/ThemeContext";
 import BootOfflinePanel from "./BootOfflinePanel";
 import BrandLoading from "./BrandLoading";
 
@@ -14,106 +9,40 @@ interface AuthGuardProps {
 }
 
 /**
- * Gate every protected route on (a) the initial admin existing and
- * (b) a valid JWT in localStorage. Octop always requires auth — there is
- * no "password protection disabled" mode like finnie had.
+ * 单人本机模式的入口关卡。
  *
- * Always wait for ``/api/setup/status`` (and ``/auth/me`` when a token
- * exists) before mounting children. Optimistic shell render with a stale
- * token would fire ``/api/agents`` / capabilities / update probes and get
- * 503'd by setup lockdown on first boot.
- *
- * When unauthenticated we must NOT render children: MainLayout / AgentProvider
- * would fire authenticated APIs, trip the 401 interceptor, and race the
- * navigate back to ``/login``.
- *
- * When the backend is unreachable (offline / Failed to fetch), show an
- * explicit offline panel with Retry instead of mounting a blank shell.
- *
- * Auth is checked on mount and on explicit offline retry only. Do not put
- * ``navigate`` in the effect deps: under ``BrowserRouter``, React Router's
- * navigate identity changes with the location, which would re-run the gate
- * on every sidebar click and flash a full-page spinner.
+ * 不再校验登录态、不再请求 ``/auth/me``：只要能连上本机后端就直接进入
+ * 控制台。唯一保留的检查是「后端能不能连上」，连不上时给出可重试的
+ * 离线面板，而不是白屏。
  */
 export default function AuthGuard({ children }: AuthGuardProps) {
-  const navigate = useNavigate();
-  const navigateRef = useRef(navigate);
-  navigateRef.current = navigate;
-
   const [checking, setChecking] = useState(true);
-  const [authed, setAuthed] = useState(false);
-  const [user, setUser] = useState<OctopUser | null>(null);
-  const { bindUser } = useTheme();
-  useEffect(() => {
-    bindUser(user?.id ?? null);
-    return () => bindUser(null);
-  }, [user?.id, bindUser]);
   const [offline, setOffline] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-
-    const check = async () => {
+    const probe = async () => {
       setOffline(false);
       try {
-        const status = await authApi.getAuthStatus();
-
-        // No admin yet → push to setup wizard; drop any leftover JWT from a
-        // previous install so background prefetch cannot stampede lockdown.
-        if (status.setup_required) {
-          clearAuthToken();
-          if (!cancelled) navigateRef.current("/setup", { replace: true });
-          return;
-        }
-
-        // Setup done. Need a token.
-        const token = getAuthToken();
-        if (!token) {
-          if (!cancelled) {
-            setAuthed(false);
-            // Stay on the spinner until navigation away completes — do not
-            // flip ``checking`` off or children would mount and 401→/login.
-            navigateRef.current("/login", { replace: true });
-          }
-          return;
-        }
-
-        // Validate the token by hitting /auth/me. On 401 the request.ts
-        // interceptor already kicks the user back to /login, so we just
-        // need to swallow the throw here.
-        try {
-          const me = await authApi.me();
-          await applyUserLocale(me.locale);
-          if (!cancelled) {
-            setUser(me);
-            setAuthed(true);
-            setChecking(false);
-          }
-        } catch (err) {
-          if (cancelled) return;
-          if (isNetworkFetchError(err)) {
-            setOffline(true);
-            setChecking(false);
-            setAuthed(false);
-            return;
-          }
-          setAuthed(false);
-          navigateRef.current("/login", { replace: true });
-        }
+        const response = await fetch(getApiUrl("/health"), {
+          headers: { Accept: "application/json" },
+        });
+        // 任何 HTTP 响应都说明本机后端在线；404 也算（旧版本可能没有 /health）。
+        void response;
+        if (!cancelled) setChecking(false);
       } catch (err) {
         if (cancelled) return;
-        // Backend unreachable (or setup/status otherwise failed) — do not
-        // mount MainLayout with a null user (that produced a blank white
-        // shell with no recovery action).
-        void err;
-        setOffline(true);
+        if (isNetworkFetchError(err)) {
+          setOffline(true);
+          setChecking(false);
+          return;
+        }
+        // 其他异常不阻断进入，交给具体页面报错。
         setChecking(false);
-        setAuthed(false);
       }
     };
-
-    void check();
+    void probe();
     return () => {
       cancelled = true;
     };
@@ -124,21 +53,16 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       <BootOfflinePanel
         onRetry={() => {
           setChecking(true);
-          setAuthed(false);
           setOffline(false);
-          setRetryKey((k) => k + 1);
+          setRetryKey((key) => key + 1);
         }}
       />
     );
   }
 
-  if (checking || !authed) {
+  if (checking) {
     return <BrandLoading viewport />;
   }
 
-  return (
-    <CurrentUserProvider user={user} setUser={setUser}>
-      {children}
-    </CurrentUserProvider>
-  );
+  return <>{children}</>;
 }

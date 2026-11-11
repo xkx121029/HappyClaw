@@ -127,7 +127,7 @@ export default function FinishStep({ adminCreds, providerDraft }: Props) {
         block
         onClick={() => {
           wizardSession.clearAll();
-          navigate("/login", { replace: true });
+          navigate("/chat", { replace: true });
         }}
       >
         {t("wizard.finish.fallbackToLogin")}

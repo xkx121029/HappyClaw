@@ -10,8 +10,6 @@ import cx from "classnames";
 import { useTheme } from "../context/ThemeContext";
 import { useLayoutMode } from "../context/LayoutModeContext";
 import { useDesktopChromeStyle } from "../hooks/useDesktopChrome";
-import { useUserRole } from "../hooks/useUserRole";
-import { useCurrentUser, useSetCurrentUser } from "../hooks/useCurrentUser";
 import { useUpdateStatus } from "../hooks/useUpdateStatus";
 import { prefetchRoute } from "../routes/prefetch";
 import { useServerCapabilities } from "../hooks/useServerCapabilities";
@@ -148,7 +146,6 @@ function NavItemButton({
   onToggleChatRail,
   showChatRailToggle,
   chatRailOpen,
-  role,
   hasUpdate,
   t,
 }: {
@@ -159,7 +156,6 @@ function NavItemButton({
   onToggleChatRail?: () => void;
   showChatRailToggle?: boolean;
   chatRailOpen?: boolean;
-  role: string | null;
   hasUpdate: boolean;
   t: TFunction<"translation", undefined>;
 }) {
@@ -226,7 +222,7 @@ function NavItemButton({
           }}
         >
           {t(item.labelKey)}
-          {item.key === "admin-advanced" && role === "admin" && hasUpdate ? (
+          {item.key === "admin-advanced" && hasUpdate ? (
             <span className={styles.navUpdateBadge}>
               {t("nav.newVersionBadge", "有新版本")}
             </span>
@@ -299,7 +295,6 @@ function NavList({
   hideHeaderIds?: ReadonlySet<string>;
 }) {
   const { t } = useTranslation();
-  const role = useUserRole();
   const { hasUpdate } = useUpdateStatus();
   const navSections = sections.filter((section) => {
     if (sectionFilter === "primary") return !section.id;
@@ -349,7 +344,6 @@ function NavList({
                     onToggleChatRail={onToggleChatRail}
                     showChatRailToggle={showChatRailToggle}
                     chatRailOpen={chatRailOpen}
-                    role={role}
                     hasUpdate={hasUpdate}
                     t={t}
                   />
@@ -393,7 +387,6 @@ function NavList({
                     onToggleChatRail={onToggleChatRail}
                     showChatRailToggle={showChatRailToggle}
                     chatRailOpen={chatRailOpen}
-                    role={role}
                     hasUpdate={hasUpdate}
                     t={t}
                   />
@@ -417,9 +410,6 @@ export default function Sidebar({
   const location = useLocation();
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const role = useUserRole();
-  const user = useCurrentUser();
-  const setUser = useSetCurrentUser();
   const { hasUpdate } = useUpdateStatus();
   const { mobileEnabled } = useServerCapabilities();
   const { layoutMode, minimalPane, setMinimalPane } = useLayoutMode();
@@ -429,8 +419,8 @@ export default function Sidebar({
   const showChatRailToggle = !isMinimal;
   const chatRailOpen = showChatRailToggle && onChatPath && chatSidebarOpen;
   const catalog = useMemo(
-    () => buildNavSections(user, { mobileEnabled }),
-    [user, mobileEnabled],
+    () => buildNavSections({ mobileEnabled }),
+    [mobileEnabled],
   );
   const [savedLayout, setSavedLayout] = useState<SidebarNavLayout | null>(null);
   const [customizerOpen, setCustomizerOpen] = useState(false);
@@ -444,7 +434,6 @@ export default function Sidebar({
   );
 
   useEffect(() => {
-    if (!user) return;
     let cancelled = false;
     void preferencesApi
       .get()
@@ -457,7 +446,7 @@ export default function Sidebar({
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, []);
   const isRailCollapsed = collapsed && !isMobile;
   const desktopChrome = useDesktopChromeStyle();
   // macOS traffic lights sit above the brand; Windows already has its own
@@ -508,7 +497,7 @@ export default function Sidebar({
     <>
       <img
         src={isRailCollapsed ? publicUrl("logo_mark.svg") : wordmarkSrc}
-        alt="Octop"
+        alt="HappyClaw"
         className={isRailCollapsed ? styles.brandMarkCollapsed : undefined}
         style={{
           height: isRailCollapsed ? 26 : isMobile ? 38 : 36,
@@ -544,8 +533,6 @@ export default function Sidebar({
       }}
     >
       <AvatarDropdown
-        user={user}
-        onUserChange={setUser}
         placement="sidebar"
         compact={isRailCollapsed}
         onBeforeOpenSettings={isMobile && !collapsed ? onToggle : undefined}
@@ -607,7 +594,6 @@ export default function Sidebar({
       })}
       selectedKey={selectedKey}
       onNavigate={handleNavigate}
-      role={role}
       hasUpdate={hasUpdate}
       t={t}
     />
@@ -633,7 +619,6 @@ export default function Sidebar({
             items={primaryItems}
             selectedKey={selectedKey}
             onNavigate={handleNavigate}
-            role={role}
             hasUpdate={hasUpdate}
             t={t}
           />
@@ -643,7 +628,6 @@ export default function Sidebar({
               items={groupedItems}
               selectedKey={selectedKey}
               onNavigate={handleNavigate}
-              role={role}
               hasUpdate={hasUpdate}
               t={t}
             />

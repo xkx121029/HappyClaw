@@ -8,7 +8,6 @@ import {
   Link2,
   Database,
   Cpu,
-  Users as UsersIcon,
   Activity,
   Share2,
   Cloudy,
@@ -20,8 +19,6 @@ import {
   Shield,
   PanelsTopLeft,
 } from "lucide-react";
-import type { OctopUser } from "../api/modules/auth";
-import { navAllowed, userCan } from "../utils/permissions";
 
 export const EXPANDED_WIDTH = 220;
 export const COLLAPSED_WIDTH = 56;
@@ -38,10 +35,8 @@ const PERSONALIZATION_NAV_TABS = [
   { key: "memory", path: "/personalization/memory" },
 ] as const;
 
-function personalizationNavPath(user: OctopUser | null): string {
-  for (const tab of PERSONALIZATION_NAV_TABS) {
-    if (userCan(user, tab.key)) return tab.path;
-  }
+/** 单人模式默认落在第一个可用分区；不再按权限挑选。 */
+function personalizationNavPath(): string {
   return PERSONALIZATION_NAV_TABS[0].path;
 }
 
@@ -78,7 +73,6 @@ export const SIDEBAR_NAV_KEYS = [
   "workbench",
   "remote-desktop",
   "acp",
-  "admin-users",
   "models",
   "admin-storage",
   "admin-plugins",
@@ -132,7 +126,6 @@ export const SIDEBAR_GROUPED_NAV_KEYS = [
   "workbench",
   "remote-desktop",
   "acp",
-  "admin-users",
   "models",
   "admin-storage",
   "admin-plugins",
@@ -147,10 +140,9 @@ export function isGroupedNavKey(key: string): boolean {
   return GROUPED_NAV_KEY_SET.has(key);
 }
 
-export function buildNavSections(
-  user: OctopUser | null,
-  opts?: { mobileEnabled?: boolean },
-): NavSection[] {
+export function buildNavSections(_opts?: {
+  mobileEnabled?: boolean;
+}): NavSection[] {
   const topItems: NavItem[] = [
     {
       key: "chat",
@@ -158,179 +150,130 @@ export function buildNavSections(
       icon: <MessageSquareText size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.chat",
     },
-  ];
-  if (navAllowed(user, "experts")) {
-    topItems.push({
+    {
       key: "experts",
       path: "/experts",
       icon: <GraduationCap size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.experts",
-    });
-  }
-  if (navAllowed(user, "tasks")) {
-    topItems.push({
+    },
+    {
       key: "tasks",
       path: "/tasks",
       icon: <Timer size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.tasks",
-    });
-  }
-  if (navAllowed(user, "token-usage")) {
-    topItems.push({
+    },
+    {
       key: "token-usage",
       path: "/token-usage",
       icon: <Activity size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.tokenUsage",
-    });
-  }
+    },
+  ];
   const sections: NavSection[] = [{ items: topItems }];
 
-  const settingsItems: NavItem[] = [];
-  if (navAllowed(user, "personalization")) {
-    settingsItems.push({
+  const settingsItems: NavItem[] = [
+    {
       key: "personalization",
-      path: personalizationNavPath(user),
+      path: personalizationNavPath(),
       icon: <Sparkles size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.personalization",
-    });
-  }
-  if (navAllowed(user, "channels")) {
-    settingsItems.push({
+    },
+    {
       key: "channels",
       path: "/personalization/channels",
       icon: <Waypoints size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.channels",
-    });
-  }
-  if (navAllowed(user, "connectors")) {
-    settingsItems.push({
+    },
+    {
       key: "connectors",
       path: "/connectors",
       icon: <Link2 size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.connectors",
-    });
-  }
-  if (navAllowed(user, "skill-packages")) {
-    settingsItems.push({
+    },
+    {
       key: "skill-packages",
       path: "/skill-packages",
       icon: <Package size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.skillPackages",
-    });
-  }
-  if (navAllowed(user, "knowledge-bases")) {
-    settingsItems.push({
+    },
+    {
       key: "knowledge-bases",
       path: "/knowledge-bases",
       icon: <Database size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.knowledgeBases",
-    });
-  }
-  if (navAllowed(user, "bridge")) {
-    settingsItems.push({
+    },
+    {
       key: "bridge",
       path: "/bridge",
       icon: <Cloudy size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.bridge",
-    });
-  }
-  if (settingsItems.length > 0) {
-    sections.push({
-      id: "settings",
-      groupKey: "nav.settings",
-      items: settingsItems,
-    });
-  }
+    },
+  ];
+  sections.push({
+    id: "settings",
+    groupKey: "nav.settings",
+    items: settingsItems,
+  });
 
-  const controlItems: NavItem[] = [];
-  if (navAllowed(user, "workbench")) {
-    controlItems.push({
+  const controlItems: NavItem[] = [
+    {
       key: "workbench",
       path: "/workbench",
       icon: <PanelsTopLeft size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.workbench",
-    });
-  }
-  // Server desktop + phone share one nav entry; phone tab also needs host capability.
-  if (
-    userCan(user, "desktop") ||
-    (opts?.mobileEnabled && userCan(user, "mobile"))
-  ) {
-    controlItems.push({
-      key: "remote-desktop",
-      path: "/remote-desktop",
-      icon: <Monitor size={iconSize} strokeWidth={iconStroke} />,
-      labelKey: "nav.remoteDesktop",
-    });
-  }
-  // ACP: no module key this round — admin role only.
-  if (navAllowed(user, "acp")) {
-    controlItems.push({
-      key: "acp",
-      path: "/acp",
-      icon: <Share2 size={iconSize} strokeWidth={iconStroke} />,
-      labelKey: "nav.acp",
-    });
-  }
-  if (controlItems.length > 0) {
-    sections.push({
-      id: "control",
-      groupKey: "nav.control",
-      items: controlItems,
-    });
-  }
+    },
+  ];
+  // 本机远控：桌面端与手机端共用一个入口。
+  controlItems.push({
+    key: "remote-desktop",
+    path: "/remote-desktop",
+    icon: <Monitor size={iconSize} strokeWidth={iconStroke} />,
+    labelKey: "nav.remoteDesktop",
+  });
+  controlItems.push({
+    key: "acp",
+    path: "/acp",
+    icon: <Share2 size={iconSize} strokeWidth={iconStroke} />,
+    labelKey: "nav.acp",
+  });
+  sections.push({
+    id: "control",
+    groupKey: "nav.control",
+    items: controlItems,
+  });
 
-  const adminItems: NavItem[] = [];
-  if (navAllowed(user, "admin-users")) {
-    adminItems.push({
-      key: "admin-users",
-      path: "/admin/users",
-      icon: <UsersIcon size={iconSize} strokeWidth={iconStroke} />,
-      labelKey: "nav.adminUsers",
-    });
-  }
-  if (navAllowed(user, "models")) {
-    adminItems.push({
+  const adminItems: NavItem[] = [
+    {
       key: "models",
       path: "/admin/models",
       icon: <Cpu size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.models",
-    });
-  }
-  if (navAllowed(user, "admin-storage")) {
-    adminItems.push({
+    },
+    {
       key: "admin-storage",
       path: "/admin/backend",
       icon: <HardDrive size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.adminStorage",
-    });
-  }
-  if (navAllowed(user, "admin-plugins")) {
-    adminItems.push({
+    },
+    {
       key: "admin-plugins",
       path: "/admin/plugins",
       icon: <Puzzle size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.adminPlugins",
-    });
-  }
-  if (navAllowed(user, "admin-security")) {
-    adminItems.push({
+    },
+    {
       key: "admin-security",
       path: "/admin/security",
       icon: <Shield size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.security",
-    });
-  }
-  if (navAllowed(user, "admin-advanced")) {
-    adminItems.push({
+    },
+    {
       key: "admin-advanced",
       path: "/admin/advanced",
       icon: <SlidersHorizontal size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.adminAdvanced",
-    });
-  }
-  if (adminItems.length > 0) {
-    sections.push({ id: "admin", groupKey: "nav.admin", items: adminItems });
-  }
+    },
+  ];
+  sections.push({ id: "admin", groupKey: "nav.admin", items: adminItems });
   return sections;
 }
