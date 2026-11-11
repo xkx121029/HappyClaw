@@ -149,6 +149,10 @@ interface ChatInputProps {
   decisionSaved?: number;
 }
 
+/** 一次插入超过这个长度就视为「粘贴长文本」，折叠成单行显示。 */
+const LONG_PASTE_THRESHOLD = 1200;
+const FOLDED_TEXTAREA_HEIGHT = 42;
+
 const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
   function ChatInput(
     {
@@ -237,6 +241,8 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       () => initialText || readInputDraft(agentId, threadId),
     );
     const [polishing, setPolishing] = useState(false);
+    // 粘贴超长文本时折叠成一行，避免输入框被整段文字撑满；发送内容不受影响。
+    const [pasteFolded, setPasteFolded] = useState(false);
     // Track whether the user has manually edited the text after a prefill.
     // Once they start editing, we must not overwrite their input with a new
     // initialText value (e.g. from a parent re-render or a stale effect).
@@ -400,6 +406,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       ignoreInitialTextRef.current = null;
       prevInitialTextRef.current = "";
       setText(readInputDraft(agentId, threadId));
+      setPasteFolded(false);
       const pendingAttachments = consumePendingPrefillAttachments();
       if (pendingAttachments.length > 0) {
         restoreAttachments(pendingAttachments);
@@ -592,6 +599,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const resetComposerAfterSubmit = useCallback(
       (prevHeight: number, submittedText: string) => {
         setText("");
+        setPasteFolded(false);
         writeInputDraft(agentId, threadId, "");
         clearAttachments();
         userHasEditedRef.current = false;
@@ -805,8 +813,16 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     }, [MIN_TEXTAREA_HEIGHT]);
 
     useEffect(() => {
+      if (pasteFolded) {
+        const ta = textareaRef.current;
+        if (ta) {
+          ta.style.transition = "none";
+          ta.style.height = `${FOLDED_TEXTAREA_HEIGHT}px`;
+        }
+        return;
+      }
       adjustHeight();
-    }, [text, adjustHeight]);
+    }, [text, adjustHeight, pasteFolded]);
 
     const handlePolish = useCallback(async () => {
       const draft = text.trim();
@@ -908,14 +924,37 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             onModelChange={onModelChange}
           />
 
+          {pasteFolded && (
+            <div className={styles.longPasteNotice}>
+              <span>
+                {t("chat.longPasteFolded", "长文本已折叠（{{count}} 字），发送时仍为完整内容", {
+                  count: text.length,
+                })}
+              </span>
+              <button
+                type="button"
+                className={styles.longPasteExpand}
+                onClick={() => setPasteFolded(false)}
+              >
+                {t("chat.longPasteExpand", "展开编辑")}
+              </button>
+            </div>
+          )}
           <div className={styles.inputRow} style={{ position: "relative" }}>
             <textarea
               ref={textareaRef}
-              className={styles.textarea}
+              className={cx(styles.textarea, pasteFolded && styles.textareaFolded)}
               value={text}
               onChange={(e) => {
                 userHasEditedRef.current = true;
-                handleTextChange(e.target.value);
+                const next = e.target.value;
+                const delta = next.length - text.length;
+                if (delta >= LONG_PASTE_THRESHOLD) {
+                  setPasteFolded(true);
+                } else if (next.length < LONG_PASTE_THRESHOLD / 2) {
+                  setPasteFolded(false);
+                }
+                handleTextChange(next);
               }}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
@@ -1088,7 +1127,14 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           />
         </div>
         {!isMobile && (
-          <p className={styles.aiDisclaimer}>{t("chatWelcome.aiDisclaimer")}</p>
+          <div className={styles.composerFooter}>
+            <span className={styles.composerHint}>
+              {t("chat.composerHint")}
+            </span>
+            <span className={styles.aiDisclaimer}>
+              {t("chatWelcome.aiDisclaimer")}
+            </span>
+          </div>
         )}
       </div>
     );
