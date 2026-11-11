@@ -15,6 +15,12 @@ token, or role check: every request is resolved to the local owner on the
 server side, and `/api/auth/me` returns that owner with `role: "admin"` so the
 dashboard exposes the full surface.
 
+> **Verification status (2026-11-11):** the single-user behavior on this page is
+> the target contract, not an observed one. The backend line is still changing
+> `/api/auth/*` and `/api/users/*`; rows that promise a `400` response have not
+> been confirmed against a running server. Re-check them against actual
+> responses and update this page before release.
+
 No `Authorization` header is required. Older clients may still send a bearer
 token or call `POST /api/auth/login`; the response keeps the historical shape
 (`{access_token, token_type, expires_in, user}`) with a placeholder token so

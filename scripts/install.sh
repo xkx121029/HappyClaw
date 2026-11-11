@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Octop installer (macOS / Linux)
+# HappyClaw installer (macOS / Linux)
 # Usage: bash scripts/install.sh                 # install from PyPI (default)
 #    or: bash scripts/install.sh --from-source   # install from a local checkout
 #    or: curl -fsSL <url>/install.sh | bash      # remote install
 #
-# Installs Octop into ~/.octop and uses uv to manage the Python environment.
+# Installs HappyClaw into ~/.octop and uses uv to manage the Python environment.
 # Python does not need to be installed first; uv handles that.
 # After install, octop is linked into a directory already on PATH (such as
 # /usr/local/bin) so the current terminal can run it without sourcing a profile.
@@ -76,7 +76,7 @@ while [[ $# -gt 0 ]]; do
             PYPI_MIRROR="$2"; shift 2 ;;
         -h|--help)
             cat <<EOF
-Octop installer (macOS / Linux)
+HappyClaw installer (macOS / Linux)
 
 Usage: bash install.sh [OPTIONS]
 
@@ -123,7 +123,7 @@ case "$OS" in
     *) die "Unsupported OS: $OS. Use install.ps1 or install.bat on Windows." ;;
 esac
 
-printf "${GREEN}[octop]${RESET} Installing Octop into ${BOLD}%s${RESET}\n" "$OCTOP_HOME"
+printf "${GREEN}[octop]${RESET} Installing HappyClaw into ${BOLD}%s${RESET}\n" "$OCTOP_HOME"
 
 # ── Step 1: ensure uv is available ────────────────────────────────────────────────────
 _install_uv_via_pip() {
@@ -562,7 +562,7 @@ if [ "$OS" = "Linux" ]; then
 fi
 _ensure_old_glibc_build_toolchain
 
-# ── Step 3: install Octop ───────────────────────────────────────────────────────
+# ── Step 3: install HappyClaw ───────────────────────────────────────────────────
 # The playwright Python package is a core dependency. Chromium is downloaded only with --extras browser.
 _merge_install_extras() {
     local result="browser"
@@ -623,7 +623,7 @@ prepare_console() {
 # TEMP: mcp 2.x removed RequestContext and is incompatible with langchain-mcp-adapters.
 # octop-harness>=0.9.18 already pins this. Pin again before verification so an
 # older harness or a lagging mirror still gets a compatible mcp.
-# Remove this once an Octop release carries the pin on its own.
+# Remove this once a HappyClaw release carries the pin on its own.
 _pin_mcp_compat() {
     info "Pinning mcp<2 (langchain-mcp-adapters compatibility; temporary)..."
     if ! _uv_pip_install_with_mirror_fallback "mcp>=1.27.1,<2"; then
@@ -645,7 +645,7 @@ _clone_source_workspace() {
     local workdir="$1"
     command -v git &>/dev/null || die "git is required to clone the repos. Install git or use --from-pypi."
     mkdir -p "$workdir"
-    info "Cloning octop-harness / octop-gateway / Octop sources..."
+    info "Cloning octop-harness / octop-gateway / HappyClaw sources..."
     git clone --depth 1 "$HARNESS_AGENT_REPO" "$workdir/octop-harness"
     git clone --depth 1 "$HARNESS_GATEWAY_REPO" "$workdir/octop-gateway"
     git clone --depth 1 "$HARNESS_BROWSER_REPO" "$workdir/octop-browser"

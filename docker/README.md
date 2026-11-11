@@ -2,7 +2,7 @@
 
 ---
 
-This directory contains the Docker build and deployment assets for Octop.
+This directory contains the Docker build and deployment assets for HappyClaw.
 
 ### Files
 

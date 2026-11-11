@@ -16,11 +16,13 @@
   - `docs/ldap.md` 与旧版 HTML 指南加停用/快照标注，未删除文件
   - `docker/`：Compose 与部署文档改为单人默认路径；`OCTOP_DEFAULT_PASSWORD`、`OCTOP_ADMIN_USERNAME` 等标注为 legacy，入口脚本逻辑暂不动以避免与镜像启动冲突（后续单独提交）
   - `scripts/`：新增 `release-check.ps1`（版本一致性、文案残留、端口、数据目录、脚本语法、Compose、明文密钥）与 `smoke_local.ps1`（临时数据目录启动并检查 `/api/health`）
+  - 品牌收口：各安装脚本（`install.ps1` / `install.bat` / `install.sh` / `install-octop.sh` / FnOS 脚本）与 Docker 元数据里面向用户的 `Octop` 文案改为 `HappyClaw`；`octop` 命令、`~/.octop/`、`OCTOP_*` 环境变量与发布产物名保持不变
 - 安装脚本说明补充：Windows 无 `-Mirror`，需通过 `UV_DEFAULT_INDEX` 指定镜像
 
 ### 修复
 - 文档中的健康检查示例改为实际返回结构（`{"ok": true, ...}`）
 - 备份文档补充「默认不含聊天历史，需 `--include-chats`」
+- `docs/api.md` 的账号接口描述标注为「单人化目标态、尚未与后端实际响应对齐」；`docs/RELEASE-CHECKLIST.md` 第 7.5 项改为待核对，并预留核对时间记录
 
 ## [1.0.3b5] - 2026-11-11
 
