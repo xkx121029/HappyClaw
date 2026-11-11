@@ -1491,6 +1491,7 @@
     "scrollForEarlierMessages": "Scroll up for earlier messages",
     "refreshingMessages": "Refreshing messages…",
     "streamResumed": "Connection restored. Pull down to refresh if anything looks incomplete.",
+    "modelSaveFailed": "The model is switched, but saving it to this chat failed. It may fall back to the default next time. Switch again or check the backend connection.",
     "palette": {
       "placeholder": "Search chats, switch models, or type a command…",
       "newChat": "New chat",

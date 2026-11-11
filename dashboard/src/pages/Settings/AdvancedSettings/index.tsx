@@ -2,10 +2,8 @@ import { useTranslation } from "react-i18next";
 import { Navigate, useSearchParams } from "react-router-dom";
 import {
   Archive,
-  KeyRound,
   Lock,
   RefreshCw,
-  ShieldCheck,
   Variable,
   Activity,
 } from "lucide-react";
@@ -14,8 +12,6 @@ import { ObservabilitySettingsPanel } from "../Observability";
 import BackupRestorePanel from "../BackupRestore";
 import { HttpsSettingsPanel } from "../HttpsSettings";
 import UpdateConfig from "./UpdateConfig";
-import CaptchaSettingsPanel from "./CaptchaSettings";
-import WebauthnSettingsPanel from "./WebauthnSettings";
 import PageShell from "../../../layouts/PageShell";
 import TabBar, { type TabBarItem } from "../../../components/TabLabel/TabBar";
 import tabStyles from "./tabContent.module.less";
@@ -28,17 +24,13 @@ type TabKey =
   | "observability"
   | "backup"
   | "https"
-  | "updates"
-  | "captcha"
-  | "webauthn";
+  | "updates";
 
 const TABS: TabBarItem<TabKey>[] = [
   { key: "env-vars", labelKey: "nav.environments", icon: Variable },
   { key: "observability", labelKey: "nav.observability", icon: Activity },
   { key: "backup", labelKey: "nav.backupRestore", icon: Archive },
   { key: "https", labelKey: "nav.https", icon: Lock },
-  { key: "captcha", labelKey: "nav.loginCaptcha", icon: ShieldCheck },
-  { key: "webauthn", labelKey: "nav.passkeys", icon: KeyRound },
   { key: "updates", labelKey: "nav.checkUpdates", icon: RefreshCw },
 ];
 
@@ -47,12 +39,11 @@ function parseTab(raw: string | null): TabKey {
     raw === "observability" ||
     raw === "backup" ||
     raw === "https" ||
-    raw === "updates" ||
-    raw === "captcha" ||
-    raw === "webauthn"
+    raw === "updates"
   ) {
     return raw;
   }
+  // 单人模式不再有登录验证码 / passkey 配置，旧链接回落到环境变量。
   return "env-vars";
 }
 
@@ -88,10 +79,6 @@ export default function AdvancedSettingsPage() {
         return <HttpsSettingsPanel />;
       case "updates":
         return <UpdateConfig />;
-      case "captcha":
-        return <CaptchaSettingsPanel />;
-      case "webauthn":
-        return <WebauthnSettingsPanel />;
     }
   };
 

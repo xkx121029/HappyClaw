@@ -1491,6 +1491,7 @@
     "scrollForEarlierMessages": "向上滚动加载更早的消息",
     "refreshingMessages": "正在刷新消息…",
     "streamResumed": "连接已恢复。若内容不完整，可下拉刷新。",
+    "modelSaveFailed": "模型已切换，但未能保存到本会话；下次打开可能恢复默认模型。可重新切换一次或检查后端连接。",
     "palette": {
       "placeholder": "搜索会话、切换模型，或输入命令…",
       "newChat": "新建会话",

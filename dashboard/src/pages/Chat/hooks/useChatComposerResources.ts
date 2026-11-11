@@ -10,6 +10,8 @@ import {
 } from "../../../api/modules/knowledgeBases";
 import type { ResolvedModel } from "../../../api/types";
 import { CONNECTORS_CHANGED_EVENT } from "../../Agent/Connectors/customMcpUtils";
+import i18n from "../../../i18n";
+import { message as appMessage } from "@/utils/antdMessage";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import { useAgent } from "../../../context/AgentContext";
 import { activeModelToRef } from "./useChatContextWindow";
@@ -549,11 +551,21 @@ export function useChatComposerResources(
         activeThreadId &&
         !isPendingThread(activeThreadId)
       ) {
-        void octopThreadsApi.patch(resolvedAgentId, activeThreadId, {
-          model_ref: model,
-          reasoning_mode: nextMode,
-          reasoning_effort: nextEffort,
-        });
+        void octopThreadsApi
+          .patch(resolvedAgentId, activeThreadId, {
+            model_ref: model,
+            reasoning_mode: nextMode,
+            reasoning_effort: nextEffort,
+          })
+          .catch(() => {
+            // 切换已经生效；只是这次没写进会话。给出可执行的下一步说明。
+            appMessage.warning(
+              i18n.t(
+                "chat.modelSaveFailed",
+                "模型已切换，但未能保存到本会话；下次打开可能恢复默认模型。可重新切换一次或检查后端连接。",
+              ),
+            );
+          });
       }
     },
     [
