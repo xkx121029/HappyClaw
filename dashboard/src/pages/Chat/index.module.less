@@ -371,6 +371,19 @@
   -webkit-user-drag: none;
 }
 
+/* 缺少模型配置：用几何图标区分于「没有专家」的吉祥物空态。 */
+.emptyGlyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border: 1px solid var(--fn-border-secondary);
+  border-radius: 20px;
+  background: var(--fn-bg-secondary, rgba(0, 0, 0, 0.03));
+  color: var(--fn-text-secondary);
+}
+
 .noAgentsEmptyTitle {
   margin: 8px 0 0;
   font-size: 22px;
