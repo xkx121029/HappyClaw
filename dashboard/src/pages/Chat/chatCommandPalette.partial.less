@@ -121,6 +121,43 @@
   line-height: 1.5;
 }
 
+.cpEmptyText {
+  margin: 0;
+}
+
+.cpEmptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cpEmptyAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--fn-border-secondary);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fn-text-primary);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--fn-brand);
+    color: var(--fn-brand);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-brand);
+    outline-offset: 1px;
+  }
+}
+
 .cpFooter {
   display: flex;
   align-items: center;

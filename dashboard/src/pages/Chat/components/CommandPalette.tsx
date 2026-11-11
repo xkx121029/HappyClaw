@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "antd";
 import {
   Cpu,
+  DatabaseBackup,
   MessageSquareText,
   Plus,
   Search,
@@ -31,6 +32,7 @@ interface CommandPaletteProps {
   onSelectSession: (id: string) => void;
   onSelectModel: (value: string | null) => void;
   onOpenSettings: () => void;
+  onOpenBackup: () => void;
 }
 
 interface PaletteCommand {
@@ -61,6 +63,7 @@ export default function CommandPalette({
   onSelectSession,
   onSelectModel,
   onOpenSettings,
+  onOpenBackup,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -92,6 +95,14 @@ export default function CommandPalette({
         meta: t("chat.palette.openSettingsHint", "Ctrl/Cmd + ,"),
         icon: Settings,
         run: onOpenSettings,
+      },
+      {
+        kind: "action",
+        id: "backup",
+        label: t("chat.palette.backup", "本机数据备份与恢复"),
+        meta: t("chat.palette.backupHint", "导出 / 导入"),
+        icon: DatabaseBackup,
+        run: onOpenBackup,
       },
     ];
 
@@ -128,6 +139,7 @@ export default function CommandPalette({
     models,
     modelsReady,
     onNewChat,
+    onOpenBackup,
     onOpenSettings,
     onSelectModel,
     onSelectSession,
@@ -209,7 +221,31 @@ export default function CommandPalette({
         <div className={styles.cpList} role="listbox">
           {filtered.length === 0 ? (
             <div className={styles.cpEmpty}>
-              {t("chat.palette.noResults", "没有匹配项，换个关键词试试。")}
+              <p className={styles.cpEmptyText}>
+                {t("chat.palette.noResults", "没有匹配项，换个关键词试试。")}
+              </p>
+              <div className={styles.cpEmptyActions}>
+                <button
+                  type="button"
+                  className={styles.cpEmptyAction}
+                  onClick={() =>
+                    runCommand(commands.find((cmd) => cmd.id === "new-chat"))
+                  }
+                >
+                  <Plus size={14} strokeWidth={1.8} aria-hidden />
+                  {t("chat.palette.newChat", "新建会话")}
+                </button>
+                <button
+                  type="button"
+                  className={styles.cpEmptyAction}
+                  onClick={() =>
+                    runCommand(commands.find((cmd) => cmd.id === "settings"))
+                  }
+                >
+                  <Settings size={14} strokeWidth={1.8} aria-hidden />
+                  {t("chat.palette.openSettings", "打开本机设置")}
+                </button>
+              </div>
             </div>
           ) : (
             filtered.map((cmd) => {
