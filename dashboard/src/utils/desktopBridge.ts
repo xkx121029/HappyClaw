@@ -120,6 +120,16 @@ export interface OctopDesktopBridge {
   checkForUpdates(): Promise<DesktopUpdateCheckResult>;
   /** Start the shell install. Takes no arguments; the page confirms first. */
   installUpdate(): Promise<void>;
+  /**
+   * Quit guard handshake: true while the composer holds unsent text or files.
+   * Optional so an older shell and the browser build keep working.
+   */
+  setUnsavedContent?(hasUnsaved: boolean): void;
+  /**
+   * Shell-level Ctrl/Cmd+Shift+N. The page owns "new session", so the shell
+   * forwards the accelerator here and returns an unsubscribe function.
+   */
+  onNewSessionShortcut?(callback: () => void): () => void;
 }
 
 declare global {

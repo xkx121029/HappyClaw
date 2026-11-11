@@ -85,6 +85,7 @@ import {
   isSharedExpertViewer,
 } from "../../utils/sharedExpert";
 import { isTeamAgent } from "../../utils/teamAgent";
+import { getDesktopBridge } from "../../utils/desktopBridge";
 import ChatDockPanels from "./components/ChatDockPanels";
 import type { ChatDockAddTabHandlers } from "./components/ChatDockPanel";
 import { ChatFilePreviewProvider } from "./ChatFilePreviewContext";
@@ -1014,6 +1015,10 @@ function ChatPageInner() {
     window.dispatchEvent(new CustomEvent("octop:open-settings"));
   }, []);
 
+  const openLocalBackup = useCallback(() => {
+    navigate("/admin/advanced?tab=backup");
+  }, [navigate]);
+
   // 单人本机快捷键：命令面板 / 新建会话 / 模型切换 / 本机设置。
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1043,6 +1048,24 @@ function ChatPageInner() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleNewChat, openLocalSettings]);
+
+  // 桌面壳退出守卫：输入框有未发送内容时告知壳层，浏览器里不存在桥接则跳过。
+  const [composerDirty, setComposerDirty] = useState(false);
+  useEffect(() => {
+    getDesktopBridge()?.setUnsavedContent?.(composerDirty);
+  }, [composerDirty]);
+  useEffect(() => {
+    return () => {
+      getDesktopBridge()?.setUnsavedContent?.(false);
+    };
+  }, []);
+
+  // 桌面壳的全局 Ctrl/Cmd+Shift+N：由壳层转发，渲染层负责真正的新建会话。
+  useEffect(() => {
+    const bridge = getDesktopBridge();
+    if (!bridge?.onNewSessionShortcut) return;
+    return bridge.onNewSessionShortcut(handleNewChat);
+  }, [handleNewChat]);
 
   useEffect(() => {
     return chatStore.onSlashAction((ev) => {
@@ -1976,6 +1999,7 @@ function ChatPageInner() {
               onComposerCleared={() => {
                 prefillInputRef.current = "";
               }}
+              onDirtyChange={setComposerDirty}
               availableModels={availableModels}
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
@@ -2072,6 +2096,7 @@ function ChatPageInner() {
             onSelectSession={handleSelectSession}
             onSelectModel={setSelectedModel}
             onOpenSettings={openLocalSettings}
+            onOpenBackup={openLocalBackup}
           />
         </div>
       </ChatToolDockProvider>

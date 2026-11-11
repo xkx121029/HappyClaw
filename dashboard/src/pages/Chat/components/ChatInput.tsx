@@ -101,6 +101,11 @@ interface ChatInputProps {
   initialText?: string;
   /** Called when the composer is cleared after a successful send/queue. */
   onComposerCleared?: () => void;
+  /**
+   * Whether the composer currently holds unsent content. The desktop shell
+   * uses this for its quit guard; browsers ignore it.
+   */
+  onDirtyChange?: (dirty: boolean) => void;
   availableModels?: ResolvedModel[];
   selectedModel?: string | null;
   onModelChange?: (model: string | null) => void;
@@ -168,6 +173,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       disabled,
       initialText = "",
       onComposerCleared,
+      onDirtyChange,
       availableModels,
       selectedModel,
       onModelChange,
@@ -465,6 +471,11 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       }, 250);
       return () => window.clearTimeout(timer);
     }, [text, agentId, threadId]);
+
+    // Desktop quit guard: report whether there is unsent text or an attachment.
+    useEffect(() => {
+      onDirtyChange?.(text.trim().length > 0 || attachments.length > 0);
+    }, [text, attachments, onDirtyChange]);
     const submitRef = useRef<() => void>(() => {});
 
     const MIN_TEXTAREA_HEIGHT = isMobile ? 42 : 78;
@@ -914,7 +925,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       "chat.steer.placeholder",
                       "Keep typing to queue a mid-turn steer…",
                     )
-                  : t("chatWelcome.inputPlaceholder", "Message Octop...")
+                  : t("chatWelcome.inputPlaceholder", "Message HappyClaw...")
               }
               rows={1}
               disabled={disabled}
