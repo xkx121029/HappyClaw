@@ -513,12 +513,9 @@ async def terminal_ws(
     """
     server = websocket.app.state.octop_server
 
-    # --- auth (token query param + agent ownership) ---------------------
-    if not token:
-        await websocket.close(code=4001, reason="missing token")
-        return
+    # --- auth (token optional in single-user mode) ----------------------
     try:
-        user = resolve_user_from_token(server, token)
+        user = resolve_user_from_token(server, token or "")
     except OctopError as exc:
         await websocket.close(code=4001, reason=f"auth: {exc.code.value}")
         return

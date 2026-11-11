@@ -129,7 +129,7 @@ def _validate_bridge_visibility(
 
 
 class BridgeCreateBody(BaseModel):
-    peer_base_url: str = Field(..., description="Remote Octop base URL, e.g. https://cloud.example")
+    peer_base_url: str = Field(..., description="Remote HappyClaw base URL, e.g. https://cloud.example")
     peer_username: str = Field(..., min_length=1)
     password: str = Field(..., min_length=1)
     display_name: str = Field(
@@ -157,13 +157,13 @@ class BridgeCreateBody(BaseModel):
 
 
 class BridgeProbeBody(BaseModel):
-    peer_base_url: str = Field(..., description="Remote Octop base URL")
+    peer_base_url: str = Field(..., description="Remote HappyClaw base URL")
     peer_username: str = Field(..., min_length=1)
     password: str = Field(..., min_length=1)
 
 
 class BridgeConnectionProbeBody(BaseModel):
-    peer_base_url: str = Field(..., description="Remote Octop base URL")
+    peer_base_url: str = Field(..., description="Remote HappyClaw base URL")
     peer_username: str = Field(..., min_length=1)
     password: str | None = Field(
         default=None,
@@ -178,7 +178,7 @@ def _bridge(server: Any) -> Any:
     return rt.bridge_manager
 
 
-@router.post("/bridge/probe", summary="Probe a remote Octop (login + list experts)")
+@router.post("/bridge/probe", summary="Probe a remote HappyClaw (login + list experts)")
 async def probe_peer(
     body: BridgeProbeBody,
     user: Any = Depends(require_permission("bridge")),
@@ -350,7 +350,7 @@ class BridgePatchBody(BaseModel):
     peer_base_url: str | None = Field(
         default=None,
         min_length=1,
-        description="Remote Octop base URL (re-login when changed)",
+        description="Remote HappyClaw base URL (re-login when changed)",
     )
     peer_username: str | None = Field(
         default=None,
@@ -655,11 +655,9 @@ async def bridge_browser_stream_ws(
     """Dashboard screencast WS relayed to the peer browser harness."""
     server = websocket.app.state.octop_server
     raw_token = websocket.query_params.get("token")
-    if not raw_token:
-        await websocket.close(code=4001, reason="missing token")
-        return
+    # Single-user mode: token optional; the resolver returns the local owner.
     try:
-        user = resolve_user_from_token(server, raw_token)
+        user = resolve_user_from_token(server, raw_token or "")
     except OctopError as exc:
         await websocket.close(code=4001, reason=f"auth: {exc.code.value}")
         return
@@ -751,11 +749,9 @@ async def bridge_inbound_ws(
         header = websocket.headers.get("authorization") or ""
         if header.lower().startswith("bearer "):
             raw = header[7:].strip()
-    if not raw:
-        await websocket.close(code=4001, reason="missing token")
-        return
+    # Single-user mode: token optional; the resolver returns the local owner.
     try:
-        user = resolve_user_from_token(server, raw)
+        user = resolve_user_from_token(server, raw or "")
     except OctopError as exc:
         await websocket.close(code=4001, reason=f"auth: {exc.code.value}")
         return

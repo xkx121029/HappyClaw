@@ -271,14 +271,9 @@ async def desktop_stream_ws(
             return
 
         auth_token = _auth_token_from_start(start_msg, token)
-        if not auth_token:
-            await _send_json(
-                websocket, {"type": "error", "code": "AUTH_FAILED", "message": "missing token"}
-            )
-            await websocket.close(code=4001, reason="missing token")
-            return
+        # Single-user mode: token optional; the resolver returns the local owner.
         try:
-            user = resolve_user_from_token(server, auth_token)
+            user = resolve_user_from_token(server, auth_token or "")
         except Exception as exc:
             await _send_json(
                 websocket, {"type": "error", "code": "AUTH_FAILED", "message": str(exc)}

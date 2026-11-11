@@ -65,12 +65,9 @@ async def adb_shell_ws(
 
     await websocket.accept()
 
-    if not token or not token.strip():
-        await _send_json(websocket, {"type": "error", "message": "missing token"})
-        await websocket.close(code=4001, reason="missing token")
-        return
+    # Single-user mode: token optional; the resolver returns the local owner.
     try:
-        user: User = resolve_user_from_token(server, token.strip())
+        user: User = resolve_user_from_token(server, (token or "").strip())
     except Exception as exc:
         await _send_json(websocket, {"type": "error", "message": f"auth failed: {exc}"})
         await websocket.close(code=4001, reason=f"auth failed: {exc}")

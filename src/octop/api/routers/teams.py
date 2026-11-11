@@ -75,6 +75,13 @@ async def list_teams(
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> list[dict[str, Any]]:
+    """List expert teams owned by the local user.
+
+    Note for maintainers: "team" here means a *grouping of expert agents* that
+    one person assembles for a job — it is **not** a tenant / org / multi-user
+    concept. Single-user mode keeps it fully functional; the owner-passed
+    ``user.id`` is always the local owner.
+    """
     return cast(list[dict[str, Any]], _teams(server).list_for_user(user.id))
 
 

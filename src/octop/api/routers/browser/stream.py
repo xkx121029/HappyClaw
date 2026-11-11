@@ -393,11 +393,9 @@ async def browser_stream_ws(
     height: int = Query(default=800),
 ) -> None:
     server = websocket.app.state.octop_server
-    if not token:
-        await websocket.close(code=4001, reason="missing token")
-        return
+    # Single-user mode: token optional; the resolver returns the local owner.
     try:
-        user = resolve_user_from_token(server, token)
+        user = resolve_user_from_token(server, token or "")
     except Exception as exc:
         await websocket.close(code=4001, reason=f"auth failed: {exc}")
         return

@@ -266,11 +266,9 @@ async def stream_transcription(
     ``interim`` / ``final`` / ``done`` / ``error`` JSON messages.
     """
     server = websocket.app.state.octop_server
-    if not token:
-        await websocket.close(code=4001, reason="missing token")
-        return
+    # Single-user mode: token optional; the resolver returns the local owner.
     try:
-        resolve_user_from_token(server, token)
+        resolve_user_from_token(server, token or "")
     except OctopError as exc:
         await websocket.close(code=4001, reason=f"auth failed: {exc.code.value}")
         return

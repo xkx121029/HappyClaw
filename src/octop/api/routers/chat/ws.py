@@ -47,12 +47,11 @@ async def dashboard_chat_ws(
 ) -> None:
     """Bidirectional Dashboard chat. Wire protocol mirrors harness stream chunks."""
     server = websocket.app.state.octop_server
-    if not token:
-        await websocket.close(code=4001, reason="missing token")
-        return
-
+    # Single-user mode: the token is optional. ``resolve_user_from_token``
+    # always returns the local owner, so an empty token must not close the
+    # socket (the dashboard no longer signs in).
     try:
-        user = resolve_user_from_token(server, token)
+        user = resolve_user_from_token(server, token or "")
     except OctopError as exc:
         await websocket.close(code=4001, reason=f"auth: {exc.code.value}")
         return
