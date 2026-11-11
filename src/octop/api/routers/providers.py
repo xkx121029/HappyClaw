@@ -183,7 +183,13 @@ def _provider_patch_updates(
     if "base_url" in fields:
         updates["base_url"] = _blank_to_none(body.base_url)
     if "api_key" in fields:
-        updates["api_key"] = _blank_to_none(body.api_key)
+        # Clients may echo the masked value from GET /providers; treating that
+        # as a new key would overwrite the real secret with "****1234".
+        raw = _blank_to_none(body.api_key)
+        if raw is None:
+            updates["api_key"] = None
+        elif not raw.startswith("****"):
+            updates["api_key"] = raw
     if (
         "extra_json" in fields
         or "stream_usage" in fields
@@ -275,6 +281,19 @@ def _saved_default_model(extra: dict[str, Any]) -> str | None:
     return cleaned or None
 
 
+def mask_api_key(key: str | None) -> str | None:
+    """Return a display-safe API key: ``****`` plus the last four characters.
+
+    The dashboard only needs to know *whether* a key is configured; returning
+    the secret made every provider list a credential leak.
+    """
+    if not key:
+        return None
+    if len(key) <= 4:
+        return "****"
+    return "****" + key[-4:]
+
+
 def _row_to_dict(r: Any) -> dict[str, Any]:
     models: list[dict[str, Any]] = []
     for stored in r.get_models():
@@ -290,7 +309,10 @@ def _row_to_dict(r: Any) -> dict[str, Any]:
         "name": r.name,
         "kind": r.kind,
         "base_url": r.base_url,
-        "api_key": r.api_key,
+        # Never return the raw secret. ``api_key_set`` keeps the UI able to show
+        # "configured" without exposing the value.
+        "api_key": mask_api_key(r.api_key),
+        "api_key_set": bool(r.api_key),
         "models": models,
         "note": r.note,
         "enabled": bool(r.enabled),
