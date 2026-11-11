@@ -84,10 +84,11 @@ persona-equipped agent from another at the prompt level.
 
 ## Selecting a persona
 
+Single-user mode has no authentication: call the API directly, no `Authorization` header.
+
 ```bash
 # create an agent with the INTJ persona
 curl -X POST http://127.0.0.1:8088/api/agents \
-  -H "Authorization: Bearer $TOK" \
   -H "Content-Type: application/json" \
   -d '{
         "name": "architect",
@@ -96,17 +97,16 @@ curl -X POST http://127.0.0.1:8088/api/agents \
       }'
 
 # list available codes
-curl http://127.0.0.1:8088/api/mbti/codes -H "Authorization: Bearer $TOK"
+curl http://127.0.0.1:8088/api/mbti/codes
 
 # inspect the full profile (dimensions, behaviour, UI metadata)
-curl http://127.0.0.1:8088/api/mbti/codes/INTJ -H "Authorization: Bearer $TOK"
+curl http://127.0.0.1:8088/api/mbti/codes/INTJ
 
 # rendered template (the legacy /api/personas/{code} shim still works)
-curl http://127.0.0.1:8088/api/mbti/preview/INTJ -H "Authorization: Bearer $TOK"
+curl http://127.0.0.1:8088/api/mbti/preview/INTJ
 
 # apply a persona and reload the agent runtime
 curl -X PUT http://127.0.0.1:8088/api/agents/architect/mbti \
-  -H "Authorization: Bearer $TOK" \
   -H "Content-Type: application/json" \
   -d '{ "code": "INTJ" }'
 ```

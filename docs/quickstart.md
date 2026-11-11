@@ -148,7 +148,7 @@ curl -s http://127.0.0.1:8088/api/health
 Get-ChildItem $env:USERPROFILE\.octop
 ```
 
-应能看到 `config.json`、`octop.db`、`agents`、`logs` 等条目。
+应能看到 `config.json`、`octop.db`、`agents`、`backups`、`logs` 等条目。
 
 ---
 
@@ -158,7 +158,13 @@ Get-ChildItem $env:USERPROFILE\.octop
 octop backup create --include-chats
 ```
 
-归档默认写到当前目录，文件名形如 `octop-backup-20261111-120000.tar.gz`。把它复制到其他磁盘或网盘即可。
+归档默认写到 `%USERPROFILE%\.octop\backups\`，文件名形如 `octop-backup-20261111T120000Z.tar.gz`（UTC 时间）。需要放到指定位置时用 `-o`：
+
+```powershell
+octop backup create --include-chats -o D:\backup\happyclaw-full.tar.gz
+```
+
+把它复制到其他磁盘或网盘即可。
 
 > 默认备份不含聊天历史，需要完整迁移时加 `--include-chats`。
 
@@ -168,10 +174,12 @@ octop backup create --include-chats
 
 ```powershell
 # 停止：在运行的窗口按 Ctrl+C
+
+# 再次启动
 octop run
 
-# 需要后台常驻（Windows 建议用任务计划程序；Linux/macOS 用系统服务）
-octop service start
+# 后台常驻：Linux / macOS 用 octop service start；Windows 用「任务计划程序」开机启动 octop run
+# octop service start
 ```
 
 ---
@@ -181,7 +189,7 @@ octop service start
 | 现象 | 原因 | 处理 |
 |------|------|------|
 | `octop` 不是内部或外部命令 | 安装后没有重开终端 | 重开 PowerShell，或检查 `%USERPROFILE%\.octop\bin` 是否在 PATH |
-| 8088 被占用 | 其他程序占用端口 | `octop run --port 8090`，再用新端口访问 |
+| 8088 被占用 | 其他程序占用端口 | `octop run --port 8090`，再用新端口访问（端口会写回 `config.json`，之后直接 `octop run` 也是 8090） |
 | 页面能开但对话报错 | 模型未配置或 Key 无效 | 设置 → 模型 → 测试连接 |
 | 模型测试超时 | 网络不通 / Base URL 错 | 检查代理与 URL 路径（通常以 `/v1` 结尾） |
 | 想从别的设备访问 | 默认只监听本机 | `octop run --host 0.0.0.0 --port 8088`，注意局域网暴露风险 |

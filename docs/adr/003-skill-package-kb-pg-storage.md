@@ -42,7 +42,7 @@
 
 ### 4. PG 文件存储：复用 PostgresBackend 形态，分表隔离
 
-不新造 zip 整包或平行 bytea 协议。技能包源、知识库原文均按 harness [`PostgresBackend`](../../../octop-harness/src/octop_harness/backends/postgres.py) 的方式入库（`path` + `content` JSONB 等），并与专家 workspace 表隔离，例如：
+不新造 zip 整包或平行 bytea 协议。技能包源、知识库原文均按 harness `PostgresBackend`（`octop-harness/src/octop_harness/backends/postgres.py`）的方式入库（`path` + `content` JSONB 等），并与专家 workspace 表隔离，例如：
 
 - `public.skill_package_files`
 - `public.knowledge_files`
@@ -60,7 +60,7 @@
 
 ### 6. 明确不在本期
 
-- 多 Octop 实例的 Cron/任务租约、专家晚加载/offload、无粘滞网关下的 turn 迁移
+- 多 HappyClaw 实例的 Cron/任务租约、专家晚加载/offload、无粘滞网关下的 turn 迁移
 - IM 通道多活
 - 技能包/KB 的对象存储（S3/COS）——Store 接口可留扩展点，一期只实现本地与 PG
 - sqlite↔PG 数据迁移工具

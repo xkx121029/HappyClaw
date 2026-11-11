@@ -162,9 +162,10 @@ octop cron list                  # 定时任务
 ├── config.json                    # 进程配置（端口、TLS、数据库等）
 ├── env                            # 可选环境变量（API Key 等）
 ├── octop.db                       # SQLite 控制面（专家、通道、定时任务 …）
-├── secrets/                       # 本机密钥与通道 Token
+├── secrets/                       # 腾讯云授权缓存（cloud/、cloud.key）
 ├── agents/<agent_id>/             # 各专家工作区（SOUL.md、skills …）
 ├── security/tool_guard/           # Shell 命令允许/拒绝规则
+├── backups/                       # octop backup create 生成的归档
 ├── logs/                          # 运行日志
 ├── venv/                          # 安装脚本创建的 Python 环境
 └── bin/octop                      # 命令入口
@@ -181,9 +182,11 @@ octop backup auto status         # 自动备份配置
 octop backup auto run            # 立即执行一次自动备份
 ```
 
-自动备份在 `octop run` 进程内按计划执行，默认每天 04:00，保留份数可配置；自动归档文件名以 `octop-auto-backup-` 开头，不会删除手动备份。
+自动备份默认**关闭**（`backup.auto_enabled`）。开启后在 `octop run` 进程内每天 04:00 执行，默认保留 7 份；只清理 `octop-auto-backup-*` 旧归档，不会删除手动备份。
 
 > 默认归档不含聊天历史；迁移完整会话时使用 `octop backup create --include-chats`。SQLite 与 PostgreSQL 的备份不能跨引擎互恢，恢复前请确认运行中的数据库引擎与备份一致。
+
+换机、回退的逐步命令见 [docs/migration-and-restore.md](docs/migration-and-restore.md)。
 
 ## 📖 CLI 速查
 
@@ -205,6 +208,20 @@ octop backup auto run            # 立即执行一次自动备份
 | `octop clean` | 清理 CLI 状态或清空 `~/.octop/` |
 
 完整参数见 [docs/cli.md](docs/cli.md)。
+
+## 📚 文档索引
+
+| 文档 | 内容 |
+|------|------|
+| [docs/quickstart.md](docs/quickstart.md) | Windows 优先的 5 分钟上手 |
+| [docs/user-guide.md](docs/user-guide.md) | 安装、模型、专家、通道、定时任务、常见问题 |
+| [docs/migration-and-restore.md](docs/migration-and-restore.md) | 备份、换机器迁移、恢复失败回退 |
+| [docs/configuration.md](docs/configuration.md) | 环境变量与 `config.json` 字段 |
+| [docs/cli.md](docs/cli.md) | 全部 CLI 命令与参数 |
+| [docs/api.md](docs/api.md) | HTTP API 参考 |
+| [docs/architecture.md](docs/architecture.md) | 运行结构与模块边界 |
+| [docs/connectors.md](docs/connectors.md) | OAuth / MCP Connector 目录 |
+| [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md) | 发布前检查清单 |
 
 ## 🖥️ Web 控制台
 
@@ -294,7 +311,7 @@ make build-frontend        # 生产构建 → src/octop/dashboard/
 检查 API Key、Base URL、网络连通性与账户配额；本地模型确认 Ollama 已在运行。
 
 **数据在哪里？怎么迁移到新机器？**
-全部在 `~/.octop/`。用 `octop backup create` 生成归档，把归档拷到新机器后执行 `octop backup restore <归档>`。
+全部在 `~/.octop/`。用 `octop backup create --include-chats -o <路径>` 生成归档，把归档拷到新机器后执行 `octop backup restore <归档> --yes`。完整步骤与回退方式见 [docs/migration-and-restore.md](docs/migration-and-restore.md)。
 
 **忘记端口或被别的程序占用？**
 换端口启动：`octop run --port 8090`；或修改 `~/.octop/config.json` 的 `port`。

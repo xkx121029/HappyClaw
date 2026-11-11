@@ -272,10 +272,11 @@ octop provider --help     # 供应商增删改查
 ├── config.json              # 进程配置（地址、端口、TLS、database …）
 ├── env                      # 可选环境变量（API Key 等）
 ├── octop.db                 # 默认 SQLite 控制面（专家、通道、定时任务 …）
-├── secrets/                 # 本机密钥与通道 Token
+├── secrets/                 # 腾讯云授权缓存（cloud/、cloud.key）
 ├── agents/<agent_id>/       # 各专家工作区（SOUL.md、skills …）
 ├── security/tool_guard/     # Shell 命令允许 / 拒绝规则
 ├── logs/                    # 运行日志
+├── backups/                 # octop backup create 的归档
 ├── venv/                    # 安装脚本创建的 Python 环境
 └── bin/octop                # 命令入口
 ```
@@ -285,26 +286,36 @@ octop provider --help     # 供应商增删改查
 ### 6.2 备份
 
 ```bash
-octop backup create                 # 生成归档（数据库 + 工作区 + 配置）
-octop backup auto status            # 查看自动备份配置
-octop backup auto run               # 立即执行一次自动备份
+octop backup create                                # 生成归档（数据库 + 工作区 + 配置）
+octop backup create --include-chats                # 连聊天历史一起打包
+octop backup create -o ~/backup/happyclaw.tar.gz   # 指定输出位置
+octop backup auto status                           # 查看自动备份配置
+octop backup auto run                              # 立即执行一次自动备份
 ```
 
-自动备份在 `octop run` 进程内按计划执行，默认每天 04:00，保留份数可配置。自动归档以 `octop-auto-backup-` 开头，保留策略不会删除手动备份。
+默认输出到 `~/.octop/backups/`，文件名形如 `octop-backup-20261111T120000Z.tar.gz`（UTC）。归档包含数据库、`config.json`、`env`、专家工作区、技能包、插件与知识库；`secrets/`、`security/`、`ssl/`、`logs/` 不进归档，需要时手工复制。默认不含聊天历史，完整迁移加 `--include-chats`。
+
+自动备份默认**关闭**（`backup.auto_enabled: false`），开启后在 `octop run` 进程内按 `backup.schedule` 执行，默认每天 04:00，默认保留 7 份。自动归档以 `octop-auto-backup-` 开头，保留策略不会删除手动备份。用 `octop backup auto status` 查看当前值。
 
 ### 6.3 恢复
 
 ```bash
-octop backup restore <归档文件>
+octop backup create -o ~/backup/before-restore.tar.gz   # 恢复前先留一份现场
+octop backup restore <归档文件>                          # 会先要求确认
+octop backup restore <归档文件> --yes                    # 跳过确认
 ```
 
-恢复前建议先关闭正在运行的服务。SQLite 与 PostgreSQL 的备份不能跨引擎互恢，恢复时使用的引擎必须与备份一致。
+恢复前必须停止正在运行的服务（前台 Ctrl+C，或 `octop service stop`）。恢复会替换数据库；归档里没有聊天历史时，当前聊天记录会先保存再写回。SQLite 与 PostgreSQL 的备份不能跨引擎互恢；归档 schema 版本高于当前程序时会被拒绝，需要先升级 HappyClaw。PostgreSQL 的备份与恢复还要求 `pg_dump` / `pg_restore` 在 PATH 中。
+
+逐步命令与失败回退见 [单机迁移与恢复](migration-and-restore.md)。
 
 ### 6.4 迁移到新机器
 
-1. 旧机器执行 `octop backup create`。
+完整步骤（含换目录、PostgreSQL、失败回退）见 [单机迁移与恢复](migration-and-restore.md)。最短路径：
+
+1. 旧机器 `octop backup create --include-chats -o D:\backup\happyclaw-full.tar.gz`。
 2. 把归档文件拷贝到新机器。
-3. 新机器安装 HappyClaw，然后执行 `octop backup restore <归档文件>`。
+3. 新机器安装 HappyClaw，停止服务，执行 `octop backup restore D:\backup\happyclaw-full.tar.gz --yes`。
 4. 启动 `octop run`，检查专家、通道与模型配置是否完整。
 
 ---
@@ -313,8 +324,8 @@ octop backup restore <归档文件>
 
 ### 7.1 日志位置
 
-- 前台运行：直接输出到终端，同时写入 `~/.octop/octop.log`。
-- 系统服务：`~/.octop/logs/` 下按日期轮转。
+- 前台运行：直接输出到终端，同时写入 `~/.octop/logs/octop.log`。
+- 系统服务：日志同样在 `~/.octop/logs/`，按日期轮转为 `octop.YYYY-MM-DD.log`。
 - Linux 可查看 journal：`journalctl --user -u octop -f`。
 
 ### 7.2 停止服务

@@ -159,9 +159,10 @@ Environment variables and the full `config.json` schema: [docs/configuration.md]
 ├── config.json                    # process settings (port, TLS, database, …)
 ├── env                            # optional environment variables (API keys, …)
 ├── octop.db                       # SQLite control plane
-├── secrets/                       # local secrets and channel tokens
+├── secrets/                       # Tencent Cloud authorization cache (cloud/, cloud.key)
 ├── agents/<agent_id>/             # per-expert workspace
 ├── security/tool_guard/           # shell allow / deny rules
+├── backups/                       # archives written by octop backup create
 ├── logs/                          # runtime logs
 ├── venv/                          # Python environment created by the installer
 └── bin/octop                      # command wrapper
@@ -178,9 +179,11 @@ octop backup auto status         # automatic backup settings
 octop backup auto run            # run one automatic backup now
 ```
 
-Automatic backups run inside the `octop run` process (default 04:00 daily). Retention only prunes `octop-auto-backup-*` archives; manual backups are never deleted.
+Automatic backups are **off by default** (`backup.auto_enabled`). Once enabled, they run inside the `octop run` process daily at 04:00 and keep 7 archives by default. Retention only prunes `octop-auto-backup-*` archives; manual backups are never deleted.
 
 > Archives exclude chat history by default; add `--include-chats` for a full migration. SQLite and PostgreSQL backups are not interchangeable. Restore with the same database engine that produced the archive.
+
+Step-by-step move / rollback commands: [docs/migration-and-restore.md](docs/migration-and-restore.md).
 
 ## 📖 CLI Reference
 
@@ -202,6 +205,20 @@ Automatic backups run inside the `octop run` process (default 04:00 daily). Rete
 | `octop clean` | Clear CLI state or wipe `~/.octop/` |
 
 Full reference: [docs/cli.md](docs/cli.md).
+
+## 📚 Documentation
+
+| Document | What it covers |
+|----------|----------------|
+| [docs/quickstart.md](docs/quickstart.md) | 5-minute Windows-first walkthrough |
+| [docs/user-guide.md](docs/user-guide.md) | Install, models, experts, channels, cron, FAQ |
+| [docs/migration-and-restore.md](docs/migration-and-restore.md) | Back up, move to another machine, roll back a failed restore |
+| [docs/configuration.md](docs/configuration.md) | Environment variables and `config.json` |
+| [docs/cli.md](docs/cli.md) | Every CLI command and flag |
+| [docs/api.md](docs/api.md) | HTTP API reference |
+| [docs/architecture.md](docs/architecture.md) | Runtime layout and module boundaries |
+| [docs/connectors.md](docs/connectors.md) | OAuth / MCP connector catalog |
+| [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md) | Pre-release verification checklist |
 
 ## 🖥️ Web Console
 
@@ -291,7 +308,7 @@ No. Single-user mode has no login page and no account system; the console opens 
 Check the API key, base URL, network access, and account quota. For local models, confirm Ollama is running.
 
 **Where is my data, and how do I move it?**
-Everything is under `~/.octop/`. Run `octop backup create`, copy the archive to the new machine, then `octop backup restore <archive>`.
+Everything is under `~/.octop/`. Run `octop backup create --include-chats -o <path>`, copy the archive to the new machine, then `octop backup restore <archive> --yes`. Full steps and rollback: [docs/migration-and-restore.md](docs/migration-and-restore.md).
 
 **Port already in use?**
 Start on another port with `octop run --port 8090`, or edit `port` in `~/.octop/config.json`.

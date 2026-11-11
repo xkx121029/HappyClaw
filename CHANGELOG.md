@@ -18,11 +18,18 @@
   - `scripts/`：新增 `release-check.ps1`（版本一致性、文案残留、端口、数据目录、脚本语法、Compose、明文密钥）与 `smoke_local.ps1`（临时数据目录启动并检查 `/api/health`）
   - 品牌收口：各安装脚本（`install.ps1` / `install.bat` / `install.sh` / `install-octop.sh` / FnOS 脚本）与 Docker 元数据里面向用户的 `Octop` 文案改为 `HappyClaw`；`octop` 命令、`~/.octop/`、`OCTOP_*` 环境变量与发布产物名保持不变
   - 根目录 `AGENTS.md` / `CONTRIBUTING.md` / `SECURITY.md` 与 `fnos/README.md` 改为单人语义：去掉多用户定位、管理员账号与 JWT / 改密职责，FnOS 向导账号标注为旧版兼容
+  - 新增 `docs/migration-and-restore.md`：数据目录与归档范围、备份校验、换机步骤、恢复参数、失败回退（含手工提取 `db/octop.db`）与自检清单
+  - `README.md` / `README_CN.md` 增加文档索引，指向 quickstart、user-guide、迁移手册、配置、CLI、API、架构、Connector 与发布清单
 - 安装脚本说明补充：Windows 无 `-Mirror`，需通过 `UV_DEFAULT_INDEX` 指定镜像
 
 ### 修复
 - 文档中的健康检查示例改为实际返回结构（`{"ok": true, ...}`）
 - 备份文档补充「默认不含聊天历史，需 `--include-chats`」
+- 更正备份归档目录与命名：默认 `~/.octop/backups/octop-backup-<UTC>.tar.gz`；日志位置改为 `~/.octop/logs/octop.log`（轮转 `octop.YYYY-MM-DD.log`）
+- 更正自动备份默认值：`backup.auto_enabled` 默认 `false`，开启后默认每天 04:00、保留 7 份
+- `~/.octop/secrets/` 注释更正为「腾讯云授权缓存（`cloud/`、`cloud.key`）」，不再描述为全部通道 Token
+- `docs/personas.md` 删除旧版 `Authorization: Bearer` 调用示例；`docs/acp.md` 的 `octop user login` 改为 `octop agent use`
+- `docs/bridge.md` 中 6 处指向不存在 `docs/assets/*.png` 的图片链接改为文字图注；ADR 文档中的仓外源码链接改为行内路径引用
 - `docs/api.md` 的账号接口描述标注为「单人化目标态、尚未与后端实际响应对齐」；`docs/RELEASE-CHECKLIST.md` 第 7.5 项改为待核对，并预留核对时间记录
 - 发布清单新增 7.8：本机无可用 bash，`install.sh` / `install-octop.sh` / `build-fpk.sh` / `scripts/fnos/*.sh` 的改动未经 `bash -n`，明确标注「未做语法校验」
 

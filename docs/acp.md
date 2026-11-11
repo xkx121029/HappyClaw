@@ -1,13 +1,13 @@
 # ACP (Agent Client Protocol)
 
-Octop integrates [ACP](https://agentclientprotocol.com/) in two directions:
+HappyClaw integrates [ACP](https://agentclientprotocol.com/) in two directions:
 
 | Direction | ACP server | ACP client | Typical use |
 |-----------|------------|------------|-------------|
-| **Inbound** | Octop (`octop acp`) | Zed, OpenCode, … | External IDE drives your Octop agent |
-| **Outbound** | OpenCode, CodeBuddy, … | Octop (`acp_runner` tool) | Octop agent delegates coding tasks |
+| **Inbound** | HappyClaw (`octop acp`) | Zed, OpenCode, … | External IDE drives your HappyClaw agent |
+| **Outbound** | OpenCode, CodeBuddy, … | HappyClaw (`acp_runner` tool) | HappyClaw agent delegates coding tasks |
 
-Both use **stdio** JSON-RPC today. Octop does not expose an HTTP ACP endpoint.
+Both use **stdio** JSON-RPC today. HappyClaw does not expose an HTTP ACP endpoint.
 
 ---
 
@@ -63,13 +63,13 @@ Use acp_runner: action=start, runner=opencode, message=find the README in the wo
 
 Permission prompts from the external agent appear in chat; pick an option or instruct the agent to call `action=respond` with the option id.
 
-After changing global runners, Octop reloads your agents automatically. Changing only `tool_enabled` reloads that agent.
+After changing global runners, HappyClaw reloads your agents automatically. Changing only `tool_enabled` reloads that agent.
 
 ---
 
-## CLI: inbound — expose Octop as an ACP server
+## CLI: inbound — expose HappyClaw as an ACP server
 
-Let external clients (e.g. Zed) use an Octop agent as their coding agent:
+Let external clients (e.g. Zed) use a HappyClaw agent as their coding agent:
 
 ```bash
 octop acp --agent main
@@ -85,8 +85,8 @@ This starts a **standalone** `OctopServer` (reads `~/.octop`), boots the agent, 
 Pin the default agent for convenience:
 
 ```bash
-octop user login --username you
-# set default_agent in ~/.octop/cli_state.json, or:
+octop agent use main
+# or pass it per invocation:
 octop --agent main acp
 ```
 
@@ -97,7 +97,7 @@ octop --agent main acp
 ```json
 {
   "agent_servers": {
-    "Octop": {
+    "HappyClaw": {
       "command": "octop",
       "args": ["acp", "--agent", "main"],
       "env": {}
@@ -111,7 +111,7 @@ From a dev checkout:
 ```json
 {
   "agent_servers": {
-    "Octop": {
+    "HappyClaw": {
       "command": "uv",
       "args": ["run", "octop", "acp", "--agent", "main"],
       "env": {}
@@ -164,7 +164,7 @@ Runner shape:
 
 ## Prerequisites
 
-- **octop-harness `[acp]` extra** — pulls in `agent-client-protocol` (included in the Octop wheel dependency on octop-harness).
+- **octop-harness `[acp]` extra** — pulls in `agent-client-protocol` (included in the HappyClaw wheel dependency on octop-harness).
 - **Outbound:** install external CLIs (`opencode`, `codebuddy`, …) on the machine running `octop run`.
 - **Inbound:** agent must start successfully (provider + model configured).
 
