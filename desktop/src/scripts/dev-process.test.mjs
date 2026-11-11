@@ -379,8 +379,9 @@ test("CLI 缺少命令时退出 1", async (t) => {
 
 for (const [option, code, output] of [["--help", 0, /Usage:/], ["--not-a-valid-option", 2, /unknown option/]]) {
   // Option parsing happens before the supervisor is entered, so this must work
-  // even where the process table is unreadable.
-  test(`run-dev.sh ${option} 在进入监督器前就返回 ${code}`, async (t) => {
+  // even where the process table is unreadable. Still needs a working bash:
+  // on Windows `bash` is the WSL forwarder, which never runs this script.
+  test(`run-dev.sh ${option} 在进入监督器前就返回 ${code}`, { skip: process.platform === "win32" ? "Windows 的 bash 是 WSL 转发，跑不了该脚本" : false }, async (t) => {
     const run = await spawnCase(t, () => ({ command: "bash", args: [shellPath, option] }));
     await exited(run, code);
     assert.match(run.stdout + run.stderr, output);

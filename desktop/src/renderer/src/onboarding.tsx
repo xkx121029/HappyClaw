@@ -63,7 +63,7 @@ function FirstStep({
         只有你一个人
       </h1>
       <p className={styles.body}>
-        HappyClaw 没有账号、邀请和团队。打开就是主界面，对话、密钥与工作区都留在本机。
+        HappyClaw 没有成员账号与权限配置。打开就是主界面，对话、密钥与工作区都留在本机。
       </p>
 
       <div className={styles.dataBlock}>
