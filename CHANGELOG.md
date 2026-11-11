@@ -20,6 +20,8 @@
   - 根目录 `AGENTS.md` / `CONTRIBUTING.md` / `SECURITY.md` 与 `fnos/README.md` 改为单人语义：去掉多用户定位、管理员账号与 JWT / 改密职责，FnOS 向导账号标注为旧版兼容
   - 新增 `docs/migration-and-restore.md`：数据目录与归档范围、备份校验、换机步骤、恢复参数、失败回退（含手工提取 `db/octop.db`）与自检清单
   - `README.md` / `README_CN.md` 增加文档索引，指向 quickstart、user-guide、迁移手册、配置、CLI、API、架构、Connector 与发布清单
+  - 新增 `docs/release-notes-1.0.3b5.md`：面向使用者的单人版发布说明（去掉什么、首次启动、升级数据、新功能、已知边界），并挂到 1.0.3b5 版本下
+  - 新增 `docs/copy-audit-multi-user-terms.md`：扫描 docs、README 与 dashboard 文案中的「团队/邀请/成员/角色/管理员」，区分建议改、历史兼容与产品功能语义
 - 安装脚本说明补充：Windows 无 `-Mirror`，需通过 `UV_DEFAULT_INDEX` 指定镜像
 
 ### 修复
@@ -39,6 +41,13 @@
 - `scripts/smoke_local.ps1` 在健康检查通过后输出首次可用耗时，便于记录冷启动表现
 
 ## [1.0.3b5] - 2026-11-11
+
+### 发布说明（单人版，面向用户）
+用户向说明见 [docs/release-notes-1.0.3b5.md](docs/release-notes-1.0.3b5.md)：
+- 去掉账号、登录、邀请、成员与角色权限、JWT；首次启动直接进入工作台，自动创建本机使用者
+- 升级保留 `~/.octop` 数据并自动迁移；旧账号表与兼容接口保留但不再参与登录
+- 自动备份与托盘「立即备份」默认包含会话历史；命令行 `octop backup create` 仍需 `--include-chats`
+- 新增退出守卫、托盘菜单（含立即备份）、工作台快捷键与「打开数据目录」入口
 
 ### 新增
 - 桌面客户端改为 Electron 壳，登录过期后自动续上
