@@ -17,7 +17,7 @@ from octop.api.common.sso_cookie import (
     delete_sso_state_cookie,
     set_sso_state_cookie,
 )
-from octop.api.deps import current_user, get_server
+from octop.api.deps import current_user, get_server, single_user_read_only
 from octop.api.routers.auth_oidc import exchange_login_code_response
 from octop.infra.auth.sso.service import SsoService
 from octop.infra.errors import ErrorCode, OctopError
@@ -42,7 +42,7 @@ def _require_sso_kind(user: User, kind: str) -> None:
         )
 
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(single_user_read_only)])
 
 SsoKind = Literal["oidc", "feishu", "dingtalk", "wecom"]
 

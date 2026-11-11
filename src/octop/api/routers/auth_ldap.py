@@ -8,14 +8,14 @@ from typing import Any, cast
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
-from octop.api.deps import get_server, require_permission
+from octop.api.deps import get_server, require_permission, single_user_read_only
 from octop.i18n import tr
 from octop.infra.auth.ldap.service import LdapAuthService
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.users.identity import User
 from octop.infra.utils.locale import resolve_request_locale
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(single_user_read_only)])
 
 
 class LdapConfigBody(BaseModel):
@@ -70,7 +70,7 @@ class LdapConfigBody(BaseModel):
     admin_groups: str | None = Field(
         default=None,
         description=(
-            "Comma-separated group CNs or DNs whose members become Octop admins. "
+            "Comma-separated group CNs or DNs whose members become HappyClaw admins. "
             "Only applied when the account is first provisioned."
         ),
     )
@@ -79,7 +79,7 @@ class LdapConfigBody(BaseModel):
         description="When set, only members of these groups may sign in through the directory.",
     )
     auto_provision: bool | None = Field(
-        default=None, description="Create an Octop account on a first directory login."
+        default=None, description="Create an HappyClaw account on a first directory login."
     )
     timeout_seconds: int | None = Field(default=None, ge=1, le=60)
 

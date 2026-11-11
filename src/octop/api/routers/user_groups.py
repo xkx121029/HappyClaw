@@ -13,7 +13,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, Field
 
-from octop.api.deps import current_user, get_server, require_permission
+from octop.api.deps import (
+    current_user,
+    get_server,
+    require_permission,
+    single_user_read_only,
+)
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.users.groups import empty_group_access, group_access_by_group
 from octop.infra.users.identity import User
@@ -26,7 +31,7 @@ from octop.infra.users.profile_avatar import (
     write_profile_avatar,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(single_user_read_only)])
 
 _CATALOG_KEYS = (
     "users",
@@ -166,15 +171,9 @@ def _require_group(server: Any, user_group_id: str) -> Any:
 async def sharing_audience(
     server: Any = Depends(get_server),
     _: User = Depends(current_user),
-) -> SharingAudienceResponse:
-    """Enabled-account and user-group counts.
-
-    Any signed-in user may call this. The dashboard hides the picker when
-    there is a single account, and hides the user-group choice when none exist.
-    """
-    users = server.user_manager.list_all(include_disabled=False)
-    groups = server.services.repos.user_group_repo.list_all()
-    return SharingAudienceResponse(user_count=len(users), group_count=len(groups))
+) -> list[Any]:
+    """Single-user mode: there is no audience to choose, so the picker is empty."""
+    return []
 
 
 @router.get("", summary="List user groups")

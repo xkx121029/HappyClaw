@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
 from octop.api.common.client_ip import resolve_client_ip
-from octop.api.deps import get_server, require_permission, sign_token
+from octop.api.deps import get_server, require_permission, sign_token, single_user_read_only
 from octop.api.routers.auth import _user_json
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.users.identity import User
@@ -23,8 +23,8 @@ from octop.infra.users.invites import (
 )
 from octop.infra.utils.locale import resolve_request_locale
 
-admin_router = APIRouter()
-public_router = APIRouter()
+admin_router = APIRouter(dependencies=[Depends(single_user_read_only)])
+public_router = APIRouter(dependencies=[Depends(single_user_read_only)])
 
 
 def _service(server: Any) -> InviteService:

@@ -13,7 +13,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, Field
 
-from octop.api.deps import get_server, require_any_permission, require_permission
+from octop.api.deps import (
+    get_server,
+    require_any_permission,
+    require_permission,
+    single_user_read_only,
+)
 from octop.api.routers.users import _assert_can_assign
 from octop.infra.db.repos.user_roles import (
     BUILTIN_USER_ROLE_IDS,
@@ -39,7 +44,7 @@ from octop.infra.users.resource_policy import (
     workspace_root_dir_of,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(single_user_read_only)])
 
 _KNOWN_POLICIES = {
     POLICY_WORKSPACE_ROOT_DIR,

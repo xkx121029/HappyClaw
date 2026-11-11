@@ -13,10 +13,25 @@ from octop.api.deps import current_user, get_server
 from octop.api.routers.auth import _user_json, me_payload
 from octop.infra.auth.mfa import MfaService
 from octop.infra.auth.mfa import reauth as reauth_mod
-from octop.infra.auth.mfa.settings import passkey_block_reason, passwordless_login_enabled
 from octop.infra.errors import ErrorCode, OctopError
 
 router = APIRouter()
+
+
+def _single_user_mfa_guard(request: Request) -> None:
+    """Single-user mode has no MFA; only the read-only status probes stay."""
+    if request.method == "GET" and request.url.path in {
+        "/api/auth/mfa/status",
+        "/api/auth/passkey/status",
+    }:
+        return
+    raise OctopError(
+        ErrorCode.SINGLE_USER_UNSUPPORTED,
+        "single-user mode has no second factor",
+    )
+
+
+router = APIRouter(dependencies=[Depends(_single_user_mfa_guard)])
 
 
 def _mfa(server: Any) -> MfaService:
@@ -163,10 +178,8 @@ async def mfa_passkey_options(
 async def passkey_login_status(
     server: Any = Depends(get_server),
 ) -> PasskeyLoginStatusResponse:
-    """Public flag for the login page. Off until an admin enables it."""
-    return PasskeyLoginStatusResponse(
-        passwordless_login=passwordless_login_enabled(server.services.settings_repo)
-    )
+    """Single-user mode: passwordless login is gone."""
+    return PasskeyLoginStatusResponse(passwordless_login=False)
 
 
 @router.post("/passkey/login/options", summary="Passwordless passkey options")
@@ -200,12 +213,14 @@ async def mfa_status(
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
-    body = _mfa(server).status(user.id)
-    body["passkey_block"] = passkey_block_reason(
-        server.services.settings_repo,
-        _page_origin(request),
-    )
-    return body
+    """Single-user mode: MFA is permanently unavailable."""
+    return {
+        "enabled": False,
+        "totp_enabled": False,
+        "passkey_count": 0,
+        "recovery_codes_remaining": 0,
+        "available": False,
+    }
 
 
 @router.post("/mfa/totp/begin", summary="Begin TOTP enrollment")

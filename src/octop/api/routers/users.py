@@ -26,8 +26,21 @@ from octop.infra.users.resource_policy import (
 )
 from octop.infra.utils.locale import resolve_request_locale
 
-router = APIRouter()
 logger = logging.getLogger(__name__)
+
+_SINGLE_USER_WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+
+def _single_user_read_only(request: Request) -> None:
+    """Single-user mode keeps account endpoints readable but not writable."""
+    if request.method in _SINGLE_USER_WRITE_METHODS:
+        raise OctopError(
+            ErrorCode.SINGLE_USER_UNSUPPORTED,
+            "single-user mode does not support account management",
+        )
+
+
+router = APIRouter(dependencies=[Depends(_single_user_read_only)])
 
 UserBatchAction = Literal["enable", "disable", "delete", "set_token_quota", "set_max_agents"]
 
@@ -319,12 +332,13 @@ async def list_permission_catalog(
 async def list_users(
     _: Any = Depends(require_permission("users")), server: Any = Depends(get_server)
 ) -> list[dict[str, Any]]:
-    rows = server.user_manager.list_all(include_disabled=True)
-    policy_map = server.services.user_policy_repo.list_by_user_ids([r.id for r in rows])
-    ldap_id = _directory_provider_id(server)
-    return [
-        _row_to_dict(r, policy_map.get(r.id), server, directory_provider_id=ldap_id) for r in rows
-    ]
+    """Single-user mode: the only account is the local owner."""
+    owner = server.services.owner.owner()
+    row = server.services.user_repo.get(owner.id)
+    if row is None:
+        return []
+    policy_map = server.services.user_policy_repo.list_by_user_ids([row.id])
+    return [_row_to_dict(row, policy_map.get(row.id), server, directory_provider_id=None)]
 
 
 def _expert_template_id(body: UserCreateBody) -> str | None:
