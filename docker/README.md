@@ -27,7 +27,9 @@ From the repository root:
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-Open `http://localhost:8088`. A valid `OCTOP_DEFAULT_PASSWORD` (≥8 characters with letters and digits) creates the admin on first boot and writes credentials to `/data/.octop/credential.txt`. If the variable is unset, or the password fails policy (too short, missing letters/digits, or a common password), **no** admin is created — open the dashboard and complete the setup wizard. The wizard unlock password is in `/data/.octop/octop-login.txt` (also noted in `credential.txt`).
+Open `http://localhost:8088`. Single-user mode needs no administrator password and no setup wizard: the first boot initializes the database and binds the local owner automatically, and the dashboard opens straight into the workspace.
+
+> **Compatibility:** `OCTOP_DEFAULT_PASSWORD`, `OCTOP_ADMIN_USERNAME`, and `OCTOP_ADMIN_DISPLAY_NAME` are still read by the entrypoint for older deployments. They no longer drive account creation in single-user mode. Cleaning them out of the entrypoint will be a separate commit after the backend single-user wiring lands, so the current image boot path keeps working.
 
 Compose sets the open-file limit to 65535 for multi-agent workloads. Server startup also raises the soft limit up to 65535 within the inherited hard limit and logs the effective limits. Recreate existing containers to apply changed Compose limits; a restart alone does not change their hard limit.
 
@@ -64,8 +66,9 @@ bash docker/docker_build.sh
 |----------|---------|-------------|
 | `HOME` | `/data` | Must be `/data` so `~/.octop` maps to the data volume |
 | `OCTOP_PORT` | `8088` | HTTP listen port |
-| `OCTOP_DEFAULT_PASSWORD` | _(unset)_ | First-run admin password (≥8 chars, letters + digits). Valid → `octop init`; unset or rejected → web setup wizard |
-| `OCTOP_ADMIN_USERNAME` | `admin` | Initial admin username |
+| `OCTOP_DATA` | `~/.octop` | Host data directory (mounted at `/data/.octop`) |
+| `OCTOP_DEFAULT_PASSWORD` | _(unset)_ | **Legacy**: first-run admin password for older deployments; ignored by single-user account logic |
+| `OCTOP_ADMIN_USERNAME` | `admin` | **Legacy**: initial admin username; ignored in single-user mode |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN (or other `OCTOP_DATABASE_*`; see [configuration.md](../docs/configuration.md)) |
 | `OCTOP_DATABASE_DRIVER` | — | `sqlite` \| `postgresql` when overriding defaults via env |
 | `OPENAI_API_KEY` | — | OpenAI-compatible API key |
@@ -95,7 +98,9 @@ image to receive these dependencies; restarting an older image is insufficient.
 
 - Compose mounts host `~/.octop` → container `/data/.octop`
 - `docker run` example uses named volume `octop-data`
-- First boot: a valid `OCTOP_DEFAULT_PASSWORD` runs `octop init` and writes `credential.txt`; unset or rejected passwords skip admin creation and write the wizard unlock password to `/data/.octop/octop-login.txt`. The container does not exit because of a weak default.
+- First boot: initializes the runtime directory and database, then creates the local owner; no password, wizard, or `credential.txt`
+- Upgrade: keep the data volume and rebuild the image; schema migrations run at startup
+- Backup: `docker exec -it octop octop backup create --include-chats`, then `docker cp` the archive out
 
 ### Health check
 

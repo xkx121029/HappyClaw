@@ -7,7 +7,8 @@
 # 用法（在仓库根目录执行）:
 #   docker compose -f docker/docker-compose.cn.yml up -d
 #   OCTOP_PORT=9090 docker compose -f docker/docker-compose.cn.yml up -d
-#   OCTOP_DEFAULT_PASSWORD=<your-strong-password> docker compose -f docker/docker-compose.cn.yml up -d
+#   OCTOP_PORT=9090 docker compose -f docker/docker-compose.cn.yml up -d
+#   (single-user: no admin password needed; OCTOP_DEFAULT_PASSWORD is legacy)
 #
 # 环境变量与 docker-compose.yml 相同。docker/.env 仅用于 Compose 插值；
 # 变量必须列在下方 environment 才会进入容器。

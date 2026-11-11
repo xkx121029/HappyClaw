@@ -1,8 +1,8 @@
-# Octop Docker 部署
+# HappyClaw Docker 部署（本机单人版）
 
 ---
 
-本目录包含 Octop 的 Docker 构建与部署相关文件。
+本目录包含 HappyClaw 的 Docker 构建与部署相关文件。默认按**单机、单人、单实例**运行：一个容器、一个数据卷、一个本机使用者。
 
 ### 文件说明
 
@@ -27,7 +27,9 @@
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-访问 `http://localhost:8088`。设置了合格的 `OCTOP_DEFAULT_PASSWORD`（≥8 位且同时包含字母和数字）时，首次启动会创建管理员，并把凭据写入 `/data/.octop/credential.txt`。未设置，或密码被策略拒绝（过短、缺字母/数字、常见弱密码）时，**不**自动建账号，打开页面走设置向导；向导口令在 `/data/.octop/octop-login.txt`（`credential.txt` 里也有说明）。在向导里自行设置管理员密码。
+访问 `http://localhost:8088`。单人模式不需要预置管理员密码，也不需要走设置向导：首次启动会初始化数据库并自动绑定本机使用者，打开页面直接进入工作台。
+
+> **兼容说明**：`OCTOP_DEFAULT_PASSWORD`、`OCTOP_ADMIN_USERNAME`、`OCTOP_ADMIN_DISPLAY_NAME` 仍被入口脚本读取，仅用于兼容旧部署。单人版启动后这些账号不会被使用；如需复用旧数据卷，保留原值即可。入口脚本的清理将在后端单人化接线完成后单独提交，避免与当前镜像启动流程冲突。
 
 Compose 将多 agent 服务的文件描述符限制设为 65535。服务启动时也会在继承的 hard limit 内将 soft limit 提升至最多 65535，并记录实际限额。已有容器需重新创建才能应用 Compose 限额变化；仅重启不会改变容器的 hard limit。
 
@@ -64,8 +66,9 @@ bash docker/docker_build.sh
 |------|--------|------|
 | `HOME` | `/data` | 必须为 `/data`，数据目录映射到 `~/.octop` |
 | `OCTOP_PORT` | `8088` | HTTP 服务端口 |
-| `OCTOP_DEFAULT_PASSWORD` | _(未设置)_ | 首次管理员密码（≥8 位，字母+数字）。合格则 `octop init` 建账号；未设置或不合格则走 Web 设置向导 |
-| `OCTOP_ADMIN_USERNAME` | `admin` | 首次管理员用户名 |
+| `OCTOP_DATA` | `~/.octop` | 宿主机数据目录（Compose 挂载到 `/data/.octop`） |
+| `OCTOP_DEFAULT_PASSWORD` | _(未设置)_ | **Legacy**：旧版首次管理员密码，单人版不读取账号逻辑，保留仅为兼容 |
+| `OCTOP_ADMIN_USERNAME` | `admin` | **Legacy**：旧版管理员用户名，单人版忽略 |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN（或其他 `OCTOP_DATABASE_*`，见 [configuration.md](../docs/configuration.md)） |
 | `OCTOP_DATABASE_DRIVER` | — | 通过环境变量覆盖时：`sqlite` \| `postgresql` |
 | `OPENAI_API_KEY` | — | OpenAI 兼容 API Key |
@@ -92,7 +95,9 @@ Compose 可在 `docker/.env` 中配置上述变量。注意：`.env` 只参与 C
 
 - Compose 默认将宿主机 `~/.octop` 挂载到容器 `/data/.octop`
 - `docker run` 示例使用命名卷 `octop-data`
-- 首次启动：`OCTOP_DEFAULT_PASSWORD` 合格则执行 `octop init` 并写入 `credential.txt`；未设置或不合格则不建管理员，向导口令写入 `/data/.octop/octop-login.txt`，打开页面完成设置（容器不会因弱密码退出）。
+- 首次启动：初始化运行目录与数据库，自动创建本机使用者；不需要密码、向导或 `credential.txt`
+- 升级：保留数据卷、重新构建镜像即可，数据库结构在启动时迁移
+- 备份：`docker exec -it octop octop backup create --include-chats`，归档保存在容器内，需 `docker cp` 取出
 
 ### 健康检查
 
