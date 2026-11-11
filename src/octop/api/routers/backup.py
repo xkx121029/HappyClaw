@@ -56,7 +56,7 @@ class AutoBackupSettingsBody(BaseModel):
     include_skill_packages: bool = True
     include_plugins: bool = True
     include_knowledge: bool = True
-    include_chats: bool = False
+    include_chats: bool = True
 
 
 class CreateBackupBody(BaseModel):
@@ -65,7 +65,7 @@ class CreateBackupBody(BaseModel):
     include_skill_packages: bool = True
     include_plugins: bool = True
     include_knowledge: bool = True
-    include_chats: bool = False
+    include_chats: bool = True
 
 
 def _agent_rows(server: Any) -> list[Any]:
@@ -382,7 +382,7 @@ async def export_backup(
     include_skill_packages: bool = Query(default=True),
     include_plugins: bool = Query(default=True),
     include_knowledge: bool = Query(default=True),
-    include_chats: bool = Query(default=False),
+    include_chats: bool = Query(default=True),
     _: Any = Depends(require_permission("backup")),
     server: Any = Depends(get_server),
 ) -> FileResponse:

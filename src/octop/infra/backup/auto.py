@@ -160,7 +160,7 @@ def create_and_store_auto_backup(
     include_skill_packages: bool = True,
     include_plugins: bool = True,
     include_knowledge: bool = True,
-    include_chats: bool = False,
+    include_chats: bool = True,
 ) -> tuple[BackupFileInfo, list[str]]:
     """Create a selected-content system backup with the auto prefix and prune."""
     with tempfile.TemporaryDirectory() as tmp:

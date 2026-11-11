@@ -196,15 +196,14 @@ def create_system_backup(
     include_skill_packages: bool = True,
     include_plugins: bool = True,
     include_knowledge: bool = True,
-    include_chats: bool = False,
+    include_chats: bool = True,
 ) -> str:
     """Write a ``.tar.gz`` archive to *dest* (streamed to disk).
 
     Configuration, agent workspaces, skill packages, plugins, and knowledge
-    files can be omitted independently. ``include_chats`` defaults to False
-    because thread/session history usually dominates archive size. Restore
-    keeps live chats and omitted directories when the manifest says they were
-    not packed.
+    files can be omitted independently. ``include_chats`` defaults to True in
+    single-user mode: a backup is the complete local state. Restore keeps live
+    chats and omitted directories when the manifest says they were not packed.
 
     Returns the suggested basename (``octop-backup-….tar.gz``). Callers that
     need a different name should rename/move *dest* afterward.
@@ -456,7 +455,7 @@ def restore_system_backup(
         if archive_history.is_file() and not allow_legacy_history:
             raise OctopError(
                 ErrorCode.SLASH_BAD_ARGS,
-                "Stop Octop and use the backup restore CLI for a history v2 archive",
+                "Stop HappyClaw and use the backup restore CLI for a history v2 archive",
             )
         is_migration = _is_migration_backup(manifest)
 

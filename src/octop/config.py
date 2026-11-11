@@ -101,7 +101,9 @@ class BackupConfig:
     include_skill_packages: bool = True
     include_plugins: bool = True
     include_knowledge: bool = True
-    include_chats: bool = False
+    # Single-user local tool: a backup means the complete local state, so chat
+    # history is included unless a config explicitly saved ``false``.
+    include_chats: bool = True
 
 
 _VALID_MOBILE_BACKENDS = frozenset({"physical", "redroid", "emulator", "none"})
