@@ -1049,11 +1049,13 @@ function ChatPageInner() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleNewChat, openLocalSettings]);
 
-  // 桌面壳退出守卫：输入框有未发送内容时告知壳层，浏览器里不存在桥接则跳过。
+  // 桌面壳退出守卫：输入框内容与排队中的消息都算「未保存」；
+  // 流式生成不算，由壳的「后端繁忙」判断覆盖，避免每次生成都弹窗。
   const [composerDirty, setComposerDirty] = useState(false);
+  const hasUnsavedContent = composerDirty || displayQueuedItems.length > 0;
   useEffect(() => {
-    getDesktopBridge()?.setUnsavedContent?.(composerDirty);
-  }, [composerDirty]);
+    getDesktopBridge()?.setUnsavedContent?.(hasUnsavedContent);
+  }, [hasUnsavedContent]);
   useEffect(() => {
     return () => {
       getDesktopBridge()?.setUnsavedContent?.(false);
