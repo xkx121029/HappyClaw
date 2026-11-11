@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Any
 
 from octop.config import OctopConfig
@@ -263,6 +264,17 @@ class SharedServices:
     @property
     def control_file_repo(self) -> ControlFileRepo:
         return self.repos.control_file_repo
+
+    @cached_property
+    def owner(self) -> Any:
+        """Single-user owner resolver (see ``infra.users.owner``).
+
+        Cached for the lifetime of this services bundle so the owner row is
+        resolved once per control-plane DB.
+        """
+        from octop.infra.users.owner import OwnerIdentityService
+
+        return OwnerIdentityService(self)
 
     def avatars(self, kind: str) -> Any:
         from octop.infra.users.profile_avatar import AvatarNamespace

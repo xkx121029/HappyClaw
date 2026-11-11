@@ -14,7 +14,6 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTex
 from scalar_fastapi import get_scalar_api_reference
 
 from octop.api.middleware.jwt_auth import install as install_jwt_auth
-from octop.api.middleware.setup_lockdown import install as install_setup_lockdown
 from octop.api.openapi_meta import API_DESCRIPTION, OPENAPI_TAGS, configure_openapi
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.server import OctopServer
@@ -116,7 +115,7 @@ def build_app(server: OctopServer) -> FastAPI:
     )
 
     app = FastAPI(
-        title="Octop API",
+        title="HappyClaw API",
         version="0.1.0",
         description=API_DESCRIPTION,
         openapi_url="/api/openapi.json" if enable_api_docs else None,
@@ -140,11 +139,13 @@ def build_app(server: OctopServer) -> FastAPI:
 
     from octop.api.middleware.bridge_proxy import install as install_bridge_proxy
 
-    # Bridge proxy must sit inside JWT auth so ``request.state.octop_user`` is set
-    # (Starlette runs the last-added middleware first).
+    # Bridge proxy must sit inside the identity middleware so
+    # ``request.state.octop_user`` is set (Starlette runs the last-added
+    # middleware first).
     install_bridge_proxy(app, server)
+    # Single-user mode: no JWT gate, no setup lockdown. The middleware below
+    # only attaches the local owner to ``request.state``.
     install_jwt_auth(app, server)
-    install_setup_lockdown(app, server)
 
     if server.app_runtime is not None and server.app_runtime.bridge_manager is not None:
         from octop.api.bridge_peer import prepare_peer_dashboard_turn
@@ -206,6 +207,7 @@ def build_app(server: OctopServer) -> FastAPI:
         preferences,
         proactive_care,
         providers,
+        runtime,
         search,
         settings,
         setup,
@@ -249,6 +251,7 @@ def build_app(server: OctopServer) -> FastAPI:
             _RouterMount(preferences.router, "/api", ["auth"]),
             _RouterMount(i18n.router, "/api", ["i18n"]),
             _RouterMount(health.router, "/api/health", ["health"]),
+            _RouterMount(runtime.router, "/api/runtime", ["health"]),
             _RouterMount(invites.admin_router, "/api/users/invites", ["users"]),
             _RouterMount(user_roles.router, "/api/users/roles", ["users"]),
             _RouterMount(user_groups.router, "/api/user-groups", ["users"]),
@@ -329,7 +332,7 @@ def build_app(server: OctopServer) -> FastAPI:
         async def api_docs() -> HTMLResponse:
             return get_scalar_api_reference(
                 openapi_url=app.openapi_url,
-                title="Octop API",
+                title="HappyClaw API",
             )
 
     if enable_dashboard:
