@@ -37,6 +37,7 @@ import {
   shortAgentError,
 } from "../../../utils/agentError";
 import { apiErrorMessage } from "../../../utils/apiError";
+import { reportAgentStartFailure } from "../utils/agentStartFailure";
 import { TEAM_ICON_NAME, teamPortraitUrl } from "../../../utils/teamAgent";
 import { SharedAvatarMark } from "../../../components/SharedResourceBadge";
 import RemoteExpertHint from "../../Chat/components/RemoteExpertHint";
@@ -196,20 +197,18 @@ export const TeamCard = memo(function TeamCard({
           message.success(t("experts.agentStopped", { name: agent.name }));
         }
       } catch (error) {
-        message.error(
-          apiErrorMessage(
-            error,
-            checked
-              ? t("experts.agentStartFailed")
-              : t("experts.agentStopFailed"),
-            t,
-          ),
-        );
+        if (checked) {
+          reportAgentStartFailure(error, t, navigate);
+        } else {
+          message.error(
+            apiErrorMessage(error, t("experts.agentStopFailed"), t),
+          );
+        }
       } finally {
         setActionLoading(false);
       }
     },
-    [agent.agent_id, agent.name, t, onStateChange],
+    [agent.agent_id, agent.name, t, onStateChange, navigate],
   );
 
   const handleDelete = useCallback(async () => {

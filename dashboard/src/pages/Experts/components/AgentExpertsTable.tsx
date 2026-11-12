@@ -46,6 +46,7 @@ import {
   isAgentModelConfigError,
 } from "../../../utils/agentError";
 import { apiErrorMessage } from "../../../utils/apiError";
+import { reportAgentStartFailure } from "../utils/agentStartFailure";
 import styles from "../index.module.less";
 import RemoteExpertHint from "../../Chat/components/RemoteExpertHint";
 import { expertDeleteConfirm } from "../../../utils/remoteExpert";
@@ -224,20 +225,18 @@ export default function AgentExpertsTable({
           message.success(t("experts.agentStopped", { name: agent.name }));
         }
       } catch (error) {
-        message.error(
-          apiErrorMessage(
-            error,
-            checked
-              ? t("experts.agentStartFailed")
-              : t("experts.agentStopFailed"),
-            t,
-          ),
-        );
+        if (checked) {
+          reportAgentStartFailure(error, t, navigate);
+        } else {
+          message.error(
+            apiErrorMessage(error, t("experts.agentStopFailed"), t),
+          );
+        }
       } finally {
         setActionLoadingId(null);
       }
     },
-    [t, onStateChange],
+    [t, onStateChange, navigate],
   );
 
   const handleDelete = useCallback(

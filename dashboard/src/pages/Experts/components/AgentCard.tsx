@@ -38,6 +38,7 @@ import {
   shortAgentError,
 } from "../../../utils/agentError";
 import { apiErrorMessage } from "../../../utils/apiError";
+import { reportAgentStartFailure } from "../utils/agentStartFailure";
 import styles from "../index.module.less";
 import RemoteExpertHint from "../../Chat/components/RemoteExpertHint";
 import { expertDeleteConfirm } from "../../../utils/remoteExpert";
@@ -229,20 +230,20 @@ export const AgentCard = memo(function AgentCard({
           message.success(t("experts.agentStopped", { name: agent.name }));
         }
       } catch (error) {
-        message.error(
-          apiErrorMessage(
-            error,
-            checked
-              ? t("experts.agentStartFailed")
-              : t("experts.agentStopFailed"),
-            t,
-          ),
-        );
+        if (checked) {
+          // 没有模型时后端返回 AGENT_NO_MODEL；给可点的模型设置入口，
+          // 而不是只把开关弹回去。
+          reportAgentStartFailure(error, t, navigate);
+        } else {
+          message.error(
+            apiErrorMessage(error, t("experts.agentStopFailed"), t),
+          );
+        }
       } finally {
         setActionLoading(false);
       }
     },
-    [agent.agent_id, agent.name, t, onStateChange],
+    [agent.agent_id, agent.name, t, onStateChange, navigate],
   );
 
   const handleDelete = useCallback(async () => {
