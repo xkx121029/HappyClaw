@@ -161,14 +161,14 @@ async def test_materialize_returns_false_when_market_disabled(
     catalog = ExpertCatalog(tmp_path)
     catalog.refresh()
     server = MagicMock()
-    server.expert_catalog = catalog
+    server.expert_catalog_lazy = catalog
     server.paths.expert_market_dir = tmp_path / "cache"
     assert await materialize_market_expert(server, "missing-template") is False
 
 
 async def test_materialize_uses_catalog_without_network(catalog: ExpertCatalog) -> None:
     server = MagicMock()
-    server.expert_catalog = catalog
+    server.expert_catalog_lazy = catalog
     assert await materialize_market_expert(server, DEFAULT_EXPERT_ID) is True
 
 

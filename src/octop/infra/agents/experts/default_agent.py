@@ -141,7 +141,7 @@ async def materialize_market_expert(server: Any, template_id: str) -> bool:
     template_id = template_id.strip()
     if not template_id:
         return False
-    catalog = getattr(server, "expert_catalog", None)
+    catalog = getattr(server, "expert_catalog_lazy", None)
     if catalog is not None and catalog.get(template_id) is not None:
         return True
     from octop.infra.market.http import portal_base  # noqa: PLC0415
@@ -188,7 +188,7 @@ async def bootstrap_first_expert(
         return None
     return await bootstrap_default_agent(
         server.app_runtime.agent_registry,
-        server.expert_catalog,
+        server.expert_catalog_lazy,
         user_id=user_id,
         locale=locale,
         agent_id=agent_id,

@@ -58,7 +58,7 @@ async def get_chat_welcome(
     assert_agent_access(server, agent_id, user)
     assert server.app_runtime is not None
     registry = server.app_runtime.agent_registry
-    catalog = server.expert_catalog
+    catalog = server.expert_catalog_lazy
     row = registry.get_row(agent_id)
     if is_team_agent(row):
         team_payload = await team_host_welcome_payload(row, registry, catalog)

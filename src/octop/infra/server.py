@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import shutil
+import threading
 import time
 import uuid
 from collections.abc import Iterator
@@ -310,6 +311,24 @@ class AppRuntime:
             self.trajectory_service.replace_store(TrajectoryStore(services.trajectory_event_repo))
 
 
+class _LazyCatalogProxy:
+    """Catalog handle that loads the real one on first attribute use.
+
+    ``AgentManager`` only reads the expert catalog when an agent is created
+    from a template, so holding this proxy keeps the catalog import and its
+    directory scan off both the listen path and the first-turn path.
+    """
+
+    __slots__ = ("_server", "_attr")
+
+    def __init__(self, server: OctopServer, attr: str) -> None:
+        self._server = server
+        self._attr = attr
+
+    def __getattr__(self, item: str) -> Any:
+        return getattr(getattr(self._server, self._attr), item)
+
+
 class OctopServer:
     def __init__(self, home: Path | None = None) -> None:
         self._home = home or PathLayout.from_env().root
@@ -317,8 +336,9 @@ class OctopServer:
         self.config: OctopConfig | None = None
         self.services: SharedServices | None = None
         self.app_runtime: AppRuntime | None = None
-        self.expert_catalog: ExpertCatalog | None = None
-        self.subagent_catalog: SubagentCatalog | None = None
+        self._expert_catalog: ExpertCatalog | None = None
+        self._subagent_catalog: SubagentCatalog | None = None
+        self._catalog_lock = threading.Lock()
         self.plugin_manager: PluginManager | None = None
         self.wizard_tokens = WizardTokenStore(ttl_seconds=300)
         self._started = False
@@ -336,6 +356,32 @@ class OctopServer:
     @property
     def user_manager(self) -> UserManager | None:
         return self.app_runtime.user_manager if self.app_runtime else None
+
+    @property
+    def expert_catalog(self) -> ExpertCatalog:
+        """Expert catalog, loaded on first use (import + directory scan ~5–11s)."""
+        self.ensure_catalogs()
+        assert self._expert_catalog is not None
+        return self._expert_catalog
+
+    @property
+    def subagent_catalog(self) -> SubagentCatalog:
+        self.ensure_catalogs()
+        assert self._subagent_catalog is not None
+        return self._subagent_catalog
+
+    @property
+    def expert_catalog_lazy(self) -> Any:
+        """Handle for callers that can defer until the first real lookup."""
+        return _LazyCatalogProxy(self, "expert_catalog")
+
+    def ensure_catalogs(self) -> None:
+        """Load catalogs once; safe to call from the event loop or a thread."""
+        if self._expert_catalog is not None and self._subagent_catalog is not None:
+            return
+        with self._catalog_lock:
+            if self._expert_catalog is None or self._subagent_catalog is None:
+                self._load_catalogs()
 
     @property
     def owner_identity(self) -> Any:
@@ -527,7 +573,7 @@ class OctopServer:
         if self.services is None:
             raise RuntimeError("start_runtime() called before the database is bound")
 
-        with _timing.segment("runtime.catalogs"):
+        with _timing.segment("runtime.prepare"):
             await asyncio.to_thread(self._prepare_runtime)
 
         with _timing.segment("runtime"):
@@ -556,7 +602,6 @@ class OctopServer:
         from octop.infra.connectors.gateway.cli_install import ensure_cli_path  # noqa: PLC0415
 
         ensure_cli_path()
-        self._load_catalogs()
         self._load_plugins()
 
     async def _deferred_runtime_warmup(self, config: OctopConfig) -> None:
@@ -593,24 +638,27 @@ class OctopServer:
             logger.exception("deferred runtime warmup failed (non-fatal)")
 
     def _load_catalogs(self) -> None:
-        from octop.infra.agents.experts.catalog import (  # noqa: PLC0415
-            ExpertCatalog,
-            default_library_root,
-        )
-        from octop.infra.agents.subagents.catalog import (  # noqa: PLC0415
-            SubagentCatalog,
-            default_package_root,
-        )
+        from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
 
-        expert_catalog = ExpertCatalog(
-            default_library_root(),
-            extra_roots=[self.paths.expert_market_dir],
-        )
-        expert_catalog.refresh()
-        subagent_catalog = SubagentCatalog(default_package_root())
-        subagent_catalog.refresh()
-        self.expert_catalog = expert_catalog
-        self.subagent_catalog = subagent_catalog
+        with _timing.segment("catalogs.load"):
+            from octop.infra.agents.experts.catalog import (  # noqa: PLC0415
+                ExpertCatalog,
+                default_library_root,
+            )
+            from octop.infra.agents.subagents.catalog import (  # noqa: PLC0415
+                SubagentCatalog,
+                default_package_root,
+            )
+
+            expert_catalog = ExpertCatalog(
+                default_library_root(),
+                extra_roots=[self.paths.expert_market_dir],
+            )
+            expert_catalog.refresh()
+            subagent_catalog = SubagentCatalog(default_package_root())
+            subagent_catalog.refresh()
+            self._expert_catalog = expert_catalog
+            self._subagent_catalog = subagent_catalog
 
     def _load_plugins(self, *, install_deps: bool = False) -> None:
         """Discover bundled + on-disk plugins.
@@ -689,8 +737,6 @@ class OctopServer:
         from octop.infra.db.migrate import run_migrations  # noqa: PLC0415
         from octop.infra.db.services import build_shared_services  # noqa: PLC0415
 
-        if self.expert_catalog is None:
-            await asyncio.to_thread(self._load_catalogs)
         if self.plugin_manager is None:
             self._load_plugins()
         db = open_database(config, self.paths)
@@ -712,7 +758,6 @@ class OctopServer:
 
     async def _boot_runtime(self, config: OctopConfig) -> None:
         assert self.services is not None
-        assert self.expert_catalog is not None
         assert self.plugin_manager is not None
 
         from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
@@ -755,7 +800,7 @@ class OctopServer:
             repos=self.services.repos,
             paths=self.paths,
             config=config,
-            expert_catalog=self.expert_catalog,
+            expert_catalog=self.expert_catalog_lazy,
             plugin_manager=self.plugin_manager,
         )
 

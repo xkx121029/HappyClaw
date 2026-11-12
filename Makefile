@@ -43,6 +43,7 @@ help:
 	@echo "  build            Build frontend + Python wheel (full package)"
 	@echo "  build-frontend   Build React dashboard only → $(DASHBOARD_DEST)"
 	@echo "  build-wheel      Build Python wheel only (assumes frontend built)"
+	@echo "  precompile       Byte-compile src/octop into __pycache__ (ship with the app)"
 	@echo ""
 	@echo "Publish targets:"
 	@echo "  publish          Build + upload to PyPI (PYPI_TOKEN or prompt)"
@@ -100,6 +101,18 @@ build-frontend:
 	# Render peaks above 2GB (Full GC, then OOM at 2048 on GitHub runners).
 	cd $(DASHBOARD_DIR) && NODE_ENV=production NODE_OPTIONS="--max-old-space-size=4096" npm run build
 	@echo "[build-frontend] Done."
+
+# Byte-compile the backend so a directory-copy deployment (desktop shell, installer
+# that copies src/ into place) starts without compiling ~2400 modules on first boot.
+# pip already byte-compiles on `pip install`; this covers the copy/zip paths.
+# Timestamp-based pyc are used: copying preserves mtime only when the packager says
+# so, therefore run this AFTER the copy lands (or use --invalidation-mode
+# unchecked-hash when the archive is built before the copy).
+.PHONY: precompile
+precompile:
+	@echo "[precompile] Compiling src/octop (-q -j 0)..."
+	$(PYTHON) -m compileall -q -j 0 $(REPO_ROOT)/src/octop
+	@echo "[precompile] Done."
 
 .PHONY: build-wheel
 build-wheel:
