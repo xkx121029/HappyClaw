@@ -422,6 +422,10 @@ class OctopServer:
         from octop.infra.utils.env_file import apply_env_file, env_file_path  # noqa: PLC0415
 
         apply_env_file(env_file_path(self.paths.root))
+        from octop.infra.utils.proxy_env import ensure_loopback_no_proxy  # noqa: PLC0415
+
+        # Local model servers must never be routed through a system proxy.
+        ensure_loopback_no_proxy()
         self._setup_logging()
         ensure_nofile_limit()
         from octop.infra.backend.grep_safety import install_safe_grep_fallback  # noqa: PLC0415

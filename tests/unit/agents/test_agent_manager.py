@@ -3101,7 +3101,11 @@ async def test_stream_and_resume_hitl_serialize_per_thread(
         inside -= 1
         yield {"type": "token", "content": "resumed"}
 
-    manager._harness_manager = SimpleNamespace(stream=_stream, resume_hitl=_resume)
+    manager._harness_manager = SimpleNamespace(
+        stream=_stream,
+        resume_hitl=_resume,
+        get_agent=lambda agent_id: SimpleNamespace(agent=object()),
+    )
 
     turn = asyncio.create_task(_collect_async(manager.stream("01AGENT", {"thread_id": "thr-1"})))
     await entered.wait()
@@ -3153,6 +3157,27 @@ def test_unavailable_error_keeps_not_running_when_model_present() -> None:
     err = manager._unavailable_error("main")
 
     assert err.code is ErrorCode.AGENT_NOT_RUNNING
+
+
+def test_require_live_agent_converts_harness_keyerror_to_no_model() -> None:
+    """A turn for an unstarted agent must fail before octop_harness sees it."""
+
+    class _EmptyRegistry:
+        def get_agent(self, agent_id: str) -> None:
+            raise KeyError(agent_id)
+
+    manager = _bare_manager()
+    manager._harness_manager = SimpleNamespace(  # type: ignore[assignment]
+        get_agent=_EmptyRegistry().get_agent,
+        shared_factory=None,
+    )
+    row = SimpleNamespace(agent_id="main", last_state="created", default_model=None)
+    manager.get_row = lambda agent_id: row  # type: ignore[method-assign]
+
+    with pytest.raises(OctopError) as exc_info:
+        manager._require_live_agent("main")
+
+    assert exc_info.value.code is ErrorCode.AGENT_NO_MODEL
 
 
 @pytest.mark.asyncio

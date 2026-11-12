@@ -1693,6 +1693,21 @@ class AgentManager:
             )
         return OctopError(ErrorCode.AGENT_NOT_RUNNING, f"agent {agent_id!r} not running")
 
+    def ensure_dispatchable(self, agent_id: str) -> None:
+        """Fail before the harness registry raises ``KeyError``.
+
+        ``octop_harness`` indexes its registry directly when a turn is
+        dispatched, so an agent that never started surfaces as
+        ``KeyError: 'main'`` and the UI shows a raw model error. Callers check
+        here before enqueueing a turn to convert that into the public
+        ``AGENT_NO_MODEL`` / ``AGENT_NOT_RUNNING`` 409 with actionable copy.
+        """
+        self.get_agent(agent_id)
+
+    def _require_live_agent(self, agent_id: str) -> None:
+        """Last-moment guard inside ``stream`` / ``call`` / ``resume_hitl``."""
+        self.ensure_dispatchable(agent_id)
+
     def _has_usable_model(self, row: AgentRow) -> bool:
         if self._harness_manager is not None and self._harness_manager.shared_factory is not None:
             return True
@@ -2025,6 +2040,7 @@ class AgentManager:
         """Stream harness chunks (Langfuse tracing handled inside octop-harness)."""
         if self._harness_manager is None:
             raise self._unavailable_error(agent_id)
+        self._require_live_agent(agent_id)
 
         thread_id = str(request.get("thread_id") or "")
         async with (
@@ -2045,6 +2061,7 @@ class AgentManager:
         """Non-streaming harness invocation (one-shot agent call)."""
         if self._harness_manager is None:
             raise self._unavailable_error(agent_id)
+        self._require_live_agent(agent_id)
         async with self._track_invocation(agent_id):
             self._apply_pending_bootstrap_graph_refresh(agent_id)
             req = self._prepare_stream_request(agent_id, request)
@@ -2068,6 +2085,7 @@ class AgentManager:
         """Resume a paused HITL interrupt for *thread_id*."""
         if self._harness_manager is None:
             raise self._unavailable_error(agent_id)
+        self._require_live_agent(agent_id)
         async with (
             self._thread_execution_lock(agent_id, thread_id),
             self._track_invocation(agent_id),

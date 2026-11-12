@@ -29,6 +29,7 @@ from octop.infra.gateway.steer import SteerAdmitOk, SteerAdmitReject, SteerCoord
 from octop.infra.gateway.steer.types import preview_text
 from octop.infra.gateway.threads import thread_visible_to
 from octop.infra.gateway.ws import WS_CHANNEL_ID
+from octop.infra.utils.locale import resolve_user_locale
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,18 @@ router = APIRouter()
 
 def _ws_thread_visible(row: Any, agent_id: str, user_id: int) -> bool:
     return row is not None and row.agent_id == agent_id and thread_visible_to(row, user_id)
+
+
+def _ws_locale(server: Any, user: Any) -> str:
+    """Best-effort locale for localized WS error frames."""
+    try:
+        return resolve_user_locale(
+            user_repo=server.services.user_repo if server.services is not None else None,
+            user_id=user.id,
+            channel_type="dashboard",
+        )
+    except Exception:  # pragma: no cover - locale must never break a turn
+        return "en"
 
 
 @router.websocket("/agents/{agent_id}/chat/ws")
@@ -212,7 +225,13 @@ async def dashboard_chat_ws(
                     turn=turn,
                 )
             except OctopError as exc:
-                await send_frame({"type": "error", "message": str(exc)})
+                await send_frame(
+                    {
+                        "type": "error",
+                        "message": exc.localized_message(_ws_locale(server, user)),
+                        "error_code": exc.code.value,
+                    }
+                )
                 await send_frame({"type": "done"})
                 continue
 
