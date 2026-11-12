@@ -1452,7 +1452,7 @@ function ConnectorConfigDrawer({
                 <span className={styles.feishuUserAuthHint}>
                   {t(
                     "connectors.cliInstallAdminOnly",
-                    "主机 CLI 需管理员安装；可复制命令交给管理员执行",
+                    "需在本机终端安装，可复制命令直接执行",
                   )}
                 </span>
               )}
