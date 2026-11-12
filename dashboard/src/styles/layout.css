@@ -578,6 +578,19 @@ html[data-theme="dark"] .octop-tag-green {
   border-color: rgba(149, 222, 100, 0.35) !important;
 }
 
+/* Primary buttons keep white labels; the dark palette's light brand tone
+   would drop them to 3.1:1, so use the deeper brand surface in dark. */
+html[data-theme="dark"] .octop-btn-primary:not(:disabled) {
+  background: #b93b52;
+  border-color: #b93b52;
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .octop-btn-primary:not(:disabled):hover {
+  background: #c9435c;
+  border-color: #c9435c;
+}
+
 /* Switch */
 html[data-theme="dark"] .ant-switch,
 html[data-theme="dark"] .octop-ant-switch {

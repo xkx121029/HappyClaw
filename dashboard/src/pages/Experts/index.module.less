@@ -2759,3 +2759,10 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* Dark mode: white label needs a deeper brand surface than the light accent. */
+:global(html[data-theme="dark"]) .toolbarBtnPrimary {
+  background: #b93b52;
+  border-color: #b93b52;
+  color: #ffffff;
+}

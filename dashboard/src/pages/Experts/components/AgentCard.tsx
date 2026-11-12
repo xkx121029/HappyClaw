@@ -51,6 +51,7 @@ import {
   isSharedExpertViewer,
 } from "../../../utils/sharedExpert";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
+import { useTheme } from "../../../context/ThemeContext";
 import type { PublishedExpert } from "../../../api/modules/publishedExperts";
 import PublishTemplateButton from "./PublishTemplateButton";
 import AgentMoreActions from "./AgentMoreActions";
@@ -67,8 +68,21 @@ const STATE_META: Record<
   stopping: { color: "#0958d9", bg: "rgba(22,119,255,0.10)", spin: true },
 };
 
-function getStateMeta(state: string) {
-  return STATE_META[state] ?? STATE_META.stopped;
+const STATE_META_DARK: Record<
+  string,
+  { color: string; bg: string; spin?: boolean }
+> = {
+  running: { color: "#95de64", bg: "rgba(82,196,26,0.16)" },
+  stopped: { color: "#bfbfbf", bg: "rgba(140,140,140,0.16)" },
+  created: { color: "#bfbfbf", bg: "rgba(140,140,140,0.16)" },
+  failed: { color: "#ff7875", bg: "rgba(255,77,79,0.16)" },
+  starting: { color: "#69b1ff", bg: "rgba(22,119,255,0.16)", spin: true },
+  stopping: { color: "#69b1ff", bg: "rgba(22,119,255,0.16)", spin: true },
+};
+
+function getStateMeta(state: string, isDark: boolean) {
+  const table = isDark ? STATE_META_DARK : STATE_META;
+  return table[state] ?? table.stopped;
 }
 
 const TRANSIENT = new Set(["starting", "stopping"]);
@@ -102,6 +116,7 @@ export const AgentCard = memo(function AgentCard({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useCurrentUser();
+  const { isDark } = useTheme();
   const { setActiveAgent, refresh: refreshAgents } = useAgent();
   const statusReadable = canReadAgentRuntimeStatus(agent, user);
 
@@ -300,7 +315,7 @@ export const AgentCard = memo(function AgentCard({
   }, [reloadInstalledSubagents]);
 
   const accent = accentColor || "#6366f1";
-  const meta = getStateMeta(localState);
+  const meta = getStateMeta(localState, isDark);
   const friendlyError = formatAgentError(localError, t);
   const cardError = shortAgentError(localError, t);
   const modelConfigError = isAgentModelConfigError(localError);

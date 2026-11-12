@@ -225,7 +225,7 @@ html[data-theme="dark"] {
 
   /* ---- Text ---- */
   --fn-text-primary: rgba(255, 255, 255, 0.9);
-  --fn-text-secondary: rgba(255, 255, 255, 0.6);
+  --fn-text-secondary: rgba(255, 255, 255, 0.72);
   --fn-text-tertiary: rgba(255, 255, 255, 0.62);
   --fn-text-quaternary: rgba(255, 255, 255, 0.52);
   --fn-text-placeholder: rgba(255, 255, 255, 0.16);
