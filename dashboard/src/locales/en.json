@@ -1660,6 +1660,14 @@
     "navScopeCreateTeam": "Create your first team",
     "navScopeCreateCloud": "Add cloud collab",
     "expandMore": "Show more",
+    "sessionGroup": {
+      "pinned": "Pinned",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "week": "Last 7 days",
+      "month": "Last 30 days",
+      "older": "Earlier"
+    },
     "pin": "Pin",
     "unpin": "Unpin",
     "contribute": "Share conversation",

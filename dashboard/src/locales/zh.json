@@ -1660,6 +1660,14 @@
     "navScopeCreateTeam": "创建第一个团队",
     "navScopeCreateCloud": "添加云端协同",
     "expandMore": "展开更多",
+    "sessionGroup": {
+      "pinned": "置顶",
+      "today": "今天",
+      "yesterday": "昨天",
+      "week": "过去 7 天",
+      "month": "过去 30 天",
+      "older": "更早"
+    },
     "pin": "置顶",
     "unpin": "取消置顶",
     "contribute": "共享会话",

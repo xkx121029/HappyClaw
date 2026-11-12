@@ -50,6 +50,11 @@ import {
   type SessionSortMode,
 } from "../utils/sessionSortPrefs";
 import {
+  groupSessionsByRecency,
+  type SessionGroupKey,
+} from "../utils/sessionGroups";
+import { useServerTimezone } from "../../../hooks/useServerTimezone";
+import {
   initialChatNavScope,
   matchesChatNavScope,
   type ChatNavScope,
@@ -429,6 +434,7 @@ function ActiveAgentCard({
 }: AgentCardProps) {
   const { t, i18n } = useTranslation();
   const accent = agent.color || "#6366f1";
+  const serverTimezone = useServerTimezone();
 
   const filteredSessions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -439,13 +445,37 @@ function ActiveAgentCard({
   }, [sessions, searchQuery, sortMode, i18n.language]);
 
   // 单个专家下可能有几百条会话，先挂一页，滚动到底再追加。
-  const [visibleSessionCount, setVisibleSessionCount] = useState(
-    LIST_PAGE_SIZE,
-  );
+  const [visibleSessionCount, setVisibleSessionCount] =
+    useState(LIST_PAGE_SIZE);
   useEffect(() => {
     setVisibleSessionCount(LIST_PAGE_SIZE);
   }, [searchQuery, sessions]);
   const visibleSessions = filteredSessions.slice(0, visibleSessionCount);
+
+  // 最近排序时按「置顶/今天/昨天/过去 7 天/过去 30 天/更早」插入分组标题行。
+  const showGroupHeaders = sortMode === "recent";
+  const sessionRows = useMemo<
+    Array<{ key: string; groupKey?: SessionGroupKey; session?: Session }>
+  >(() => {
+    if (!showGroupHeaders) {
+      return visibleSessions.map((session) => ({ key: session.id, session }));
+    }
+    const rows: Array<{
+      key: string;
+      groupKey?: SessionGroupKey;
+      session?: Session;
+    }> = [];
+    for (const group of groupSessionsByRecency(
+      visibleSessions,
+      serverTimezone,
+    )) {
+      rows.push({ key: `group-${group.key}`, groupKey: group.key });
+      for (const session of group.sessions) {
+        rows.push({ key: session.id, session });
+      }
+    }
+    return rows;
+  }, [showGroupHeaders, visibleSessions, serverTimezone]);
   const revealMoreSessions = useCallback(() => {
     setVisibleSessionCount((count) => count + LIST_PAGE_SIZE);
   }, []);
@@ -553,27 +583,43 @@ function ActiveAgentCard({
           </div>
         ) : (
           <>
-            {visibleSessions.map((s) => (
-              <SessionItem
-                key={s.id}
-                session={s}
-                isActive={activeId === s.id}
-                workStatus={resolveSessionWorkStatus(s, liveWorkingIds)}
-                onSelect={(id) => onSelect(id, agent.agent_id)}
-                onDelete={onDelete}
-                onRename={onRename}
-                onPin={onPin}
-                onContribute={onContribute}
-                shareable={Boolean(agent.is_shared)}
-                onFork={(id) => onFork(id, agent.agent_id)}
-                forkDisabled={
-                  activeId === s.id ? activeForkDisabled : undefined
-                }
-                forkDisabledHint={
-                  activeId === s.id ? activeForkDisabledHint : undefined
-                }
-              />
-            ))}
+            {sessionRows.map((row) => {
+              if (row.groupKey && !row.session) {
+                const [labelKey, fallback] = GROUP_LABELS[row.groupKey];
+                return (
+                  <div
+                    key={row.key}
+                    className={styles.sessionGroupLabel}
+                    aria-hidden="true"
+                  >
+                    {t(labelKey, fallback)}
+                  </div>
+                );
+              }
+              if (!row.session) return null;
+              const s = row.session;
+              return (
+                <SessionItem
+                  key={s.id}
+                  session={s}
+                  isActive={activeId === s.id}
+                  workStatus={resolveSessionWorkStatus(s, liveWorkingIds)}
+                  onSelect={(id) => onSelect(id, agent.agent_id)}
+                  onDelete={onDelete}
+                  onRename={onRename}
+                  onPin={onPin}
+                  onContribute={onContribute}
+                  shareable={Boolean(agent.is_shared)}
+                  onFork={(id) => onFork(id, agent.agent_id)}
+                  forkDisabled={
+                    activeId === s.id ? activeForkDisabled : undefined
+                  }
+                  forkDisabledHint={
+                    activeId === s.id ? activeForkDisabledHint : undefined
+                  }
+                />
+              );
+            })}
             {filteredSessions.length > visibleSessions.length ? (
               <RevealMore
                 label={t("chat.expandMore", "展开更多")}
@@ -683,6 +729,16 @@ function InactiveAgentRow({
   );
 }
 
+/** 会话时间分组标题文案（键, 兜底文案）。 */
+const GROUP_LABELS: Record<SessionGroupKey, [string, string]> = {
+  pinned: ["chat.sessionGroup.pinned", "置顶"],
+  today: ["chat.sessionGroup.today", "今天"],
+  yesterday: ["chat.sessionGroup.yesterday", "昨天"],
+  week: ["chat.sessionGroup.week", "过去 7 天"],
+  month: ["chat.sessionGroup.month", "过去 30 天"],
+  older: ["chat.sessionGroup.older", "更早"],
+};
+
 interface SessionListProps {
   agents: OctopAgent[];
   /**
@@ -736,7 +792,8 @@ export default function SessionList({
   const navigate = useNavigate();
   const liveWorkingIds = useSessionWorkIds();
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortMode, setSortMode] = useState<SessionSortMode>(readSessionSortMode);
+  const [sortMode, setSortMode] =
+    useState<SessionSortMode>(readSessionSortMode);
   const changeSortMode = useCallback((mode: SessionSortMode) => {
     setSortMode(mode);
     writeSessionSortMode(mode);
