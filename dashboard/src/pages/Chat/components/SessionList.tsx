@@ -67,6 +67,82 @@ import {
 } from "../utils/sessionWorkStatus";
 import styles from "../index.module.less";
 import { openAgentUnread } from "../utils/openUnreadSession";
+import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
+
+/** 侧栏一次最多挂到 DOM 的行数，避免几百条时首屏一次性渲染。 */
+const LIST_PAGE_SIZE = 40;
+
+/** 搜索框自己持有即时输入，父级只接收防抖后的值，输入不被长列表阻塞。 */
+function NavSearchInput({
+  onQueryChange,
+  placeholder,
+  ariaLabel,
+}: {
+  onQueryChange: (value: string) => void;
+  placeholder: string;
+  ariaLabel: string;
+}) {
+  const [value, setValue] = useState("");
+  const debounced = useDebouncedValue(value, 180);
+
+  useEffect(() => {
+    onQueryChange(debounced);
+  }, [debounced, onQueryChange]);
+
+  return (
+    <div className={styles.sessionSearchWrap} data-octop-no-drag>
+      <Search size={14} className={styles.sessionSearchIcon} strokeWidth={2} />
+      <input
+        type="search"
+        className={styles.sessionSearchInput}
+        value={value}
+        onChange={(event) => {
+          const next = event.target.value;
+          setValue(next);
+          // 清空立即生效，不等防抖。
+          if (!next) onQueryChange("");
+        }}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+      />
+    </div>
+  );
+}
+
+/** 滚到底部附近再追加一页；IntersectionObserver 不可用时保留可点按钮。 */
+function RevealMore({
+  label,
+  onReveal,
+}: {
+  label: string;
+  onReveal: () => void;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) onReveal();
+      },
+      { rootMargin: "160px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onReveal]);
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className={styles.sessionLoadMore}
+      onClick={onReveal}
+    >
+      {label}
+    </button>
+  );
+}
 
 /** 会话目录首屏加载：与真实行同高的骨架，避免列表从空白跳变成内容。 */
 function SessionListSkeleton({ rows = 4 }: { rows?: number }) {
@@ -362,6 +438,18 @@ function ActiveAgentCard({
     return sortSessionsForDisplay(base, sortMode, i18n.language);
   }, [sessions, searchQuery, sortMode, i18n.language]);
 
+  // 单个专家下可能有几百条会话，先挂一页，滚动到底再追加。
+  const [visibleSessionCount, setVisibleSessionCount] = useState(
+    LIST_PAGE_SIZE,
+  );
+  useEffect(() => {
+    setVisibleSessionCount(LIST_PAGE_SIZE);
+  }, [searchQuery, sessions]);
+  const visibleSessions = filteredSessions.slice(0, visibleSessionCount);
+  const revealMoreSessions = useCallback(() => {
+    setVisibleSessionCount((count) => count + LIST_PAGE_SIZE);
+  }, []);
+
   const fetchAllRequestedRef = useRef(false);
   useEffect(() => {
     const searching = Boolean(searchQuery.trim());
@@ -465,7 +553,7 @@ function ActiveAgentCard({
           </div>
         ) : (
           <>
-            {filteredSessions.map((s) => (
+            {visibleSessions.map((s) => (
               <SessionItem
                 key={s.id}
                 session={s}
@@ -486,7 +574,12 @@ function ActiveAgentCard({
                 }
               />
             ))}
-            {showExpandMore ? (
+            {filteredSessions.length > visibleSessions.length ? (
+              <RevealMore
+                label={t("chat.expandMore", "展开更多")}
+                onReveal={revealMoreSessions}
+              />
+            ) : showExpandMore ? (
               <button
                 type="button"
                 className={styles.sessionLoadMore}
@@ -719,6 +812,16 @@ export default function SessionList({
       ),
     );
   }, [searchQuery, searching, sessionsFor, sortedAgents]);
+
+  // 专家数量多时同样先挂一页，滚动到底再追加。
+  const [visibleAgentCount, setVisibleAgentCount] = useState(LIST_PAGE_SIZE);
+  useEffect(() => {
+    setVisibleAgentCount(LIST_PAGE_SIZE);
+  }, [searchQuery]);
+  const visibleAgents = listedAgents.slice(0, visibleAgentCount);
+  const revealMoreAgents = useCallback(() => {
+    setVisibleAgentCount((count) => count + LIST_PAGE_SIZE);
+  }, []);
   const listedHiddenAgents = useMemo(() => {
     if (!showingHidden) return [];
     const shown = new Set(listedAgents.map((agent) => agent.agent_id));
@@ -891,21 +994,11 @@ export default function SessionList({
       />
       {agents.length > 0 ? (
         <div className={styles.sessionHeaderRow}>
-          <div className={styles.sessionSearchWrap} data-octop-no-drag>
-            <Search
-              size={14}
-              className={styles.sessionSearchIcon}
-              strokeWidth={2}
-            />
-            <input
-              type="search"
-              className={styles.sessionSearchInput}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t("chat.searchSessions", "搜索会话")}
-              aria-label={t("chat.searchSessions", "搜索会话")}
-            />
-          </div>
+          <NavSearchInput
+            onQueryChange={setSearchQuery}
+            placeholder={t("chat.searchSessions", "搜索会话")}
+            ariaLabel={t("chat.searchSessions", "搜索会话")}
+          />
           <div
             className={styles.sessionSortSwitch}
             role="group"
@@ -970,7 +1063,15 @@ export default function SessionList({
               <ChatNavScopeEmpty scope={navScope} />
             )
           ) : (
-            listedAgents.map((agent) => renderAgentRow(agent, false))
+            <>
+              {visibleAgents.map((agent) => renderAgentRow(agent, false))}
+              {listedAgents.length > visibleAgents.length ? (
+                <RevealMore
+                  label={t("chat.expandMore", "展开更多")}
+                  onReveal={revealMoreAgents}
+                />
+              ) : null}
+            </>
           )}
           {hiddenAgents.length > 0 ? (
             <>

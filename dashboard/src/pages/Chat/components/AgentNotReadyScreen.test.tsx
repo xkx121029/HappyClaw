@@ -126,4 +126,20 @@ describe("AgentNotReadyScreen", () => {
       screen.queryByRole("button", { name: "启用这个专家" }),
     ).not.toBeInTheDocument();
   });
+
+  it("gives a fresh install two steps instead of an empty screen", () => {
+    render(
+      <MemoryRouter initialEntries={["/chat"]}>
+        <AgentNotReadyScreen agent={null} noAgents hasUsableModels={false} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("两步就能开始对话")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "去配置模型" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "去创建专家" }),
+    ).toBeInTheDocument();
+  });
 });

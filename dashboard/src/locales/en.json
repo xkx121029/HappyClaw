@@ -6003,7 +6003,7 @@
     "needGroup": "Choose at least one user group",
     "groupAccess": "Group access",
     "hideGroupAccess": "Hide group access",
-    "groupAccessHint": "Available to everyone by default. Limit to user groups when needed. Admins always pass."
+    "groupAccessHint": "Only you use this device, so both visibility scopes behave the same."
   },
   "adminUsers": {
     "newUser": "New user",
@@ -6337,7 +6337,7 @@
       "user.unlock_login": "Unlock User Login",
       "user.password_changed": "Password Changed",
       "user.password_reset": "Password Reset",
-      "user.set_role": "Set Role"
+      "user.set_role": "Change role (legacy)"
     }
   },
   "connectors": {
@@ -7090,7 +7090,7 @@
     "MFA_LOCKED": "Too many MFA attempts. Try again later.",
     "MFA_REAUTH_REQUIRED": "Re-enter your password to continue.",
     "MFA_LAST_FACTOR": "Cannot remove the last MFA factor.",
-    "WEBAUTHN_CONFIG_INVALID": "Passkeys are not available on this address yet. An administrator needs to enter this site’s domain and full URL under App settings → Passkeys. If that is already saved, open the exact URL that was registered. localhost does not need this setup.",
+    "WEBAUTHN_CONFIG_INVALID": "Passkeys are not available on this address yet. Enter this site’s domain and full URL under Settings → Passkeys. If that is already saved, open the exact URL that was registered. localhost does not need this setup.",
     "details": "Technical details"
   },
   "adminProviders": {

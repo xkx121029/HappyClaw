@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { useWelcomeQuickCardsLayout } from "../hooks/useWelcomeQuickCardsLayout";
 import WelcomeQuickCards, { WelcomeQuickCardProbe } from "./WelcomeQuickCards";
@@ -36,6 +37,8 @@ interface WelcomeScreenProps {
   quickCards: WelcomeQuickCard[];
   hideMascot?: boolean;
   isTeam?: boolean;
+  /** 没有任何推荐卡片时，给一个直接聚焦输入框的动作。 */
+  onStartChat?: () => void;
 }
 
 export default function WelcomeScreen({
@@ -45,6 +48,7 @@ export default function WelcomeScreen({
   quickCards,
   hideMascot = false,
   isTeam = false,
+  onStartChat,
 }: WelcomeScreenProps) {
   const { t } = useTranslation();
   const [mascotSrc, setMascotSrc] = useState(MASCOT_PEEK);
@@ -80,7 +84,7 @@ export default function WelcomeScreen({
               role="button"
               tabIndex={0}
               title={t("chatWelcome.mascotSwitchHint")}
-              aria-label="Octop mascot"
+              aria-label="HappyClaw mascot"
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -118,7 +122,7 @@ export default function WelcomeScreen({
           </p>
         </div>
 
-        {quickCards.length > 0 && (
+        {quickCards.length > 0 ? (
           <WelcomeQuickCards
             cards={cards}
             showToggle={showToggle}
@@ -127,7 +131,19 @@ export default function WelcomeScreen({
             onPromptClick={onPromptClick}
             sectionTitleRef={sectionTitleRef}
           />
-        )}
+        ) : onStartChat ? (
+          <div className={styles.welcomeStart}>
+            <Button type="primary" size="large" onClick={onStartChat}>
+              {t("chatWelcome.startFirstChat", "开始第一个对话")}
+            </Button>
+            <p className={styles.welcomeStartHint}>
+              {t(
+                "chatWelcome.startFirstChatHint",
+                "在下面的输入框里说一句话就行，之后可以随时新建会话。",
+              )}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {quickCards.length > 0 && <WelcomeQuickCardProbe probeRef={probeRef} />}

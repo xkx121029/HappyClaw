@@ -102,6 +102,40 @@ export default function AgentNotReadyScreen({
   }
 
   if (noAgents) {
+    // 全新安装：既没有模型也没有专家。先给一个两步引导，
+    // 避免用户先建了专家却在启动时撞上「没有模型」。
+    if (hasUsableModels === false) {
+      return (
+        <div className={styles.noAgentsEmpty}>
+          <div className={styles.noAgentsEmptyInner}>
+            <div className={styles.noAgentsEmptyIcon}>
+              <OctopEmptyMascot className={styles.noAgentsEmptyMascot} />
+            </div>
+            <h1 className={styles.noAgentsEmptyTitle}>
+              {t("chat.onboardingTitle", "两步就能开始对话")}
+            </h1>
+            <p className={styles.noAgentsEmptyHint}>
+              {t(
+                "chat.onboardingHint",
+                "先添加一个模型，再创建一位专家。两步完成后就能直接聊天。",
+              )}
+            </p>
+            <div className={styles.noAgentsEmptyActions}>
+              <Button
+                type="primary"
+                size="large"
+                onClick={() => navigate("/admin/models?tab=chat")}
+              >
+                {t("modelConfig.configureButton", "去配置模型")}
+              </Button>
+              <Button size="large" onClick={() => navigate("/experts")}>
+                {t("chat.createExpert", "去创建专家")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className={styles.noAgentsEmpty}>
         <div className={styles.noAgentsEmptyInner}>

@@ -1685,6 +1685,7 @@ function ChatPageInner() {
                   welcomeSuffix={welcomeSuffix}
                   quickCards={expertQuickCards}
                   onPromptClick={handlePromptClick}
+                  onStartChat={() => chatInputRef.current?.focusComposer()}
                   hideMascot={isStreaming || liveSpeakers.length > 0}
                   isTeam={isTeamChat}
                 />

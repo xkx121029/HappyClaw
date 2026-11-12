@@ -39,6 +39,7 @@ import PageShell from "../../layouts/PageShell";
 import TabLabel from "../../components/TabLabel";
 import StreamSetupGuide from "../../components/StreamSetupGuide/StreamSetupGuide";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { request } from "../../api/request";
 import {
   publishedExpertsApi,
@@ -114,6 +115,36 @@ function installedExpertIdsFromAgents(
     }
   }
   return ids;
+}
+
+/** 输入框自己持有即时值，父级只接收防抖后的关键词，避免每次按键重排整个列表。 */
+function ExpertsSearchBox({
+  onQueryChange,
+}: {
+  onQueryChange: (value: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [value, setValue] = useState("");
+  const debounced = useDebouncedValue(value, 180);
+
+  useEffect(() => {
+    onQueryChange(debounced);
+  }, [debounced, onQueryChange]);
+
+  return (
+    <Input
+      className={styles.toolbarSearch}
+      prefix={<Search size={14} />}
+      allowClear
+      value={value}
+      placeholder={t("experts.searchPlaceholder")}
+      onChange={(event) => {
+        const next = event.target.value;
+        setValue(next);
+        if (!next) onQueryChange("");
+      }}
+    />
+  );
 }
 
 export default function ExpertsPage() {
@@ -413,18 +444,19 @@ export default function ExpertsPage() {
     [handleRefresh, refreshing, t],
   );
 
+  const [visibleCardCount, setVisibleCardCount] = useState(40);
+  useEffect(() => {
+    setVisibleCardCount(40);
+  }, [searchNeedle, locationFilter]);
+  const revealMoreCards = useCallback(() => {
+    setVisibleCardCount((count) => count + 40);
+  }, []);
+
   const toolbarSearch = useMemo(
-    () => (
-      <Input
-        className={styles.toolbarSearch}
-        prefix={<Search size={14} />}
-        allowClear
-        value={searchQuery}
-        placeholder={t("experts.searchPlaceholder")}
-        onChange={(event) => setSearchQuery(event.target.value)}
-      />
-    ),
-    [searchQuery, t],
+    () => <ExpertsSearchBox onQueryChange={setSearchQuery} />,
+    // setSearchQuery 来自 useState，引用稳定；输入值由搜索框自己持有。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   // ── Render helpers ─────────────────────────────────────────────
@@ -559,7 +591,7 @@ export default function ExpertsPage() {
           </div>
         ) : showCardView ? (
           <div className={styles.cardGrid}>
-            {visibleExpertAgents.map((agent) => (
+            {visibleExpertAgents.slice(0, visibleCardCount).map((agent) => (
               <div
                 key={agent.agent_id}
                 className={
@@ -587,6 +619,15 @@ export default function ExpertsPage() {
                 />
               </div>
             ))}
+            {visibleExpertAgents.length > visibleCardCount ? (
+              <button
+                type="button"
+                className={styles.gridRevealMore}
+                onClick={revealMoreCards}
+              >
+                {t("chat.expandMore", "展开更多")}
+              </button>
+            ) : null}
           </div>
         ) : (
           <AgentExpertsTable
@@ -625,6 +666,8 @@ export default function ExpertsPage() {
     showCardView,
     t,
     toolbarSearch,
+    revealMoreCards,
+    visibleCardCount,
     visibleExpertAgents,
   ]);
 
@@ -699,7 +742,7 @@ export default function ExpertsPage() {
           </div>
         ) : (
           <div className={styles.cardGrid}>
-            {visibleTeamAgents.map((agent) => (
+            {visibleTeamAgents.slice(0, visibleCardCount).map((agent) => (
               <div key={agent.agent_id}>
                 <TeamCard
                   agent={agent}
@@ -717,6 +760,15 @@ export default function ExpertsPage() {
                 />
               </div>
             ))}
+            {visibleTeamAgents.length > visibleCardCount ? (
+              <button
+                type="button"
+                className={styles.gridRevealMore}
+                onClick={revealMoreCards}
+              >
+                {t("chat.expandMore", "展开更多")}
+              </button>
+            ) : null}
           </div>
         )}
       </>
@@ -734,6 +786,8 @@ export default function ExpertsPage() {
     t,
     teamAgents,
     toolbarSearch,
+    revealMoreCards,
+    visibleCardCount,
     visibleTeamAgents,
   ]);
 

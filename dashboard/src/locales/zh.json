@@ -6003,7 +6003,7 @@
     "needGroup": "至少选择一个用户分组",
     "groupAccess": "分组使用",
     "hideGroupAccess": "收起分组使用",
-    "groupAccessHint": "默认所有人可用。需要限制时，指定用户分组；管理员不受限制。"
+    "groupAccessHint": "本机只有你一个使用者，两种范围效果相同。"
   },
   "adminUsers": {
     "newUser": "新建用户",
@@ -6337,7 +6337,7 @@
       "user.unlock_login": "解锁用户登录",
       "user.password_changed": "修改密码",
       "user.password_reset": "重置密码",
-      "user.set_role": "设置角色"
+      "user.set_role": "修改角色（历史）"
     }
   },
   "connectors": {
@@ -7090,7 +7090,7 @@
     "MFA_LOCKED": "二次验证尝试次数过多，请稍后再试。",
     "MFA_REAUTH_REQUIRED": "请重新输入密码以继续。",
     "MFA_LAST_FACTOR": "无法移除最后一个二次验证方式。",
-    "WEBAUTHN_CONFIG_INVALID": "还不能使用通行密钥。请管理员在「应用设置 → 通行密钥」填写本站域名和完整网址。如果已经填过，请改用登记的那个网址打开。用 localhost 打开则不用填。",
+    "WEBAUTHN_CONFIG_INVALID": "还不能使用通行密钥。请在本机「设置 → 通行密钥」中填写本站域名和完整网址。如果已经填过，请改用登记的那个网址打开。用 localhost 打开则不用填。",
     "details": "技术详情"
   },
   "adminProviders": {

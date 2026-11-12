@@ -294,6 +294,9 @@
   color: var(--fn-text-secondary);
   transition: background 0.15s;
   min-height: 0;
+  /* 几百条时跳过视口外行的布局与绘制。 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 34px;
 
   &:hover {
     background: color-mix(in srgb, var(--fn-text-primary) 4%, transparent);
@@ -539,6 +542,8 @@
   background: transparent;
   cursor: pointer;
   text-align: left;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 56px;
   transition:
     background 0.15s,
     border-color 0.15s;

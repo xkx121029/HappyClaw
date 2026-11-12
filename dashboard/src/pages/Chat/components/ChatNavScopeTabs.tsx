@@ -39,6 +39,11 @@ export function chatNavScopeEmptyCopy(scope: ChatNavScope): {
 const NAV_SCOPE_CREATE: Partial<
   Record<ChatNavScope, { key: string; fallback: string; to: string }>
 > = {
+  experts: {
+    key: "chat.navScopeCreateExpert",
+    fallback: "创建第一个专家",
+    to: "/experts",
+  },
   teams: {
     key: "chat.navScopeCreateTeam",
     fallback: "创建第一个团队",
