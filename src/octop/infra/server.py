@@ -328,6 +328,7 @@ class OctopServer:
         self._started = False
         self._started_at: int | None = None
         self._default_agent_task: asyncio.Task[None] | None = None
+        self._agent_restore_task: asyncio.Task[None] | None = None
         self.instance_id = uuid.uuid4().hex
         self._serve_background = True
         self._sso_service: SsoService | None = None
@@ -412,6 +413,9 @@ class OctopServer:
     async def start(self, *, serve_background: bool = True) -> None:
         if self._started:
             return
+        from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
+
+        _timing.mark("start.enter")
         self._serve_background = serve_background
         self.paths.ensure_root()
         # fnOS/容器内非 root 用户场景：把用户级 npm 全局 bin 目录（~/.npm-global）
@@ -427,30 +431,36 @@ class OctopServer:
         # Local model servers must never be routed through a system proxy.
         ensure_loopback_no_proxy()
         self._setup_logging()
+        # Logged only now: the file handler does not exist before _setup_logging().
+        _timing.emit_process()
         ensure_nofile_limit()
         from octop.infra.backend.grep_safety import install_safe_grep_fallback  # noqa: PLC0415
         from octop.infra.backend.shell_output import install_shell_output_decoding  # noqa: PLC0415
 
         install_safe_grep_fallback()
         install_shell_output_decoding()
-        config = ensure_mobile_capabilities_probed(self.paths.config)
-        self.config = config
+        with _timing.segment("config"):
+            with _timing.segment("config.load"):
+                config = ensure_mobile_capabilities_probed(self.paths.config)
+            self.config = config
 
-        self.expert_catalog = ExpertCatalog(
-            default_library_root(),
-            extra_roots=[self.paths.expert_market_dir],
-        )
-        self.expert_catalog.refresh()
-        self.subagent_catalog = SubagentCatalog(default_package_root())
-        self.subagent_catalog.refresh()
+            with _timing.segment("config.catalogs"):
+                self.expert_catalog = ExpertCatalog(
+                    default_library_root(),
+                    extra_roots=[self.paths.expert_market_dir],
+                )
+                self.expert_catalog.refresh()
+                self.subagent_catalog = SubagentCatalog(default_package_root())
+                self.subagent_catalog.refresh()
 
-        self.plugin_manager = PluginManager(
-            plugins_dir=self.paths.plugins_dir,
-            config_path=self.paths.config,
-        )
-        self.plugin_manager.seed_bundled()
-        self.plugin_manager.load_installed(install_deps=True)
-        self._apply_plugin_channels()
+            with _timing.segment("config.plugins"):
+                self.plugin_manager = PluginManager(
+                    plugins_dir=self.paths.plugins_dir,
+                    config_path=self.paths.config,
+                )
+                self.plugin_manager.seed_bundled()
+                self.plugin_manager.load_installed(install_deps=True)
+                self._apply_plugin_channels()
 
         import time  # noqa: PLC0415
 
@@ -462,18 +472,21 @@ class OctopServer:
             # defer the control plane and block /api/health on first launch.
             logger.info("single-user mode: ignoring deferred control-plane setup")
 
-        db = open_database(config, self.paths)
-        run_migrations(db)
-        self.services = build_shared_services(db=db, paths=self.paths, config=config)
-        from octop.infra.auth.captcha import boot_from_services  # noqa: PLC0415
+        with _timing.segment("db"):
+            db = open_database(config, self.paths)
+            run_migrations(db)
+        with _timing.segment("services"):
+            self.services = build_shared_services(db=db, paths=self.paths, config=config)
+            from octop.infra.auth.captcha import boot_from_services  # noqa: PLC0415
 
-        boot_from_services(self.services.settings_repo, self.services.secret_repo)
-        self._ensure_jwt_secret()
-        # Resolve (and create when the DB is empty) the one local owner before
-        # serving traffic so every request maps to the same identity.
-        self.services.owner.ensure()
-        await self._boot_runtime(config)
+            boot_from_services(self.services.settings_repo, self.services.secret_repo)
+            self._ensure_jwt_secret()
+            # Resolve (and create when the DB is empty) the one local owner before
+            # serving traffic so every request maps to the same identity.
+            self.services.owner.ensure()
+            await self._boot_runtime(config)
         self._started = True
+        _timing.mark("services.done")
         assert self.user_manager is not None
         self._emit_wizard_password(user_count=self.user_manager.count())
         self._schedule_default_agent_bootstrap()
@@ -492,6 +505,11 @@ class OctopServer:
         self._default_agent_task = asyncio.create_task(self._bootstrap_default_agent())
 
     async def _bootstrap_default_agent(self) -> None:
+        from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
+
+        started = time.perf_counter()
+        queued_ms = _timing.since_mark_ms("services.done")
+        status = "ok"
         try:
             if self.services is None:
                 return
@@ -506,7 +524,15 @@ class OctopServer:
                 agent_id=SETUP_DEFAULT_AGENT_ID,
             )
         except Exception:  # pragma: no cover - non-fatal by design
+            status = "failed"
             logger.exception("default agent bootstrap failed (non-fatal)")
+        finally:
+            _timing.emit(
+                "default_agent",
+                (time.perf_counter() - started) * 1000.0,
+                status=status,
+                queued_after_boot_ms=None if queued_ms is None else round(queued_ms, 1),
+            )
 
     async def bind_control_plane(self) -> None:
         """Open the configured control-plane DB and boot runtime (first-run wizard).
@@ -541,9 +567,12 @@ class OctopServer:
         assert self.expert_catalog is not None
         assert self.plugin_manager is not None
 
-        added = await asyncio.get_running_loop().run_in_executor(
-            None, sync_provider_preset_models, self.services.provider_repo
-        )
+        from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
+
+        with _timing.segment("services.providers"):
+            added = await asyncio.get_running_loop().run_in_executor(
+                None, sync_provider_preset_models, self.services.provider_repo
+            )
         if added:
             logger.info("Added %d newly bundled provider models", added)
 
@@ -586,7 +615,8 @@ class OctopServer:
         from octop.infra.history.retire_v2 import migrate_history_v2  # noqa: PLC0415
 
         try:
-            await asyncio.to_thread(migrate_history_v2, self.paths, self.services.db, registry)
+            with _timing.segment("services.history_migrate"):
+                await asyncio.to_thread(migrate_history_v2, self.paths, self.services.db, registry)
         except Exception:
             self.services.db.close()
             self.services = None
@@ -607,7 +637,8 @@ class OctopServer:
             trajectory_service=trajectory_service,
             instance_id=self.instance_id,
         )
-        await gateway.boot(serve_background=self._serve_background)
+        with _timing.segment("services.gateway_boot"):
+            await gateway.boot(serve_background=self._serve_background)
 
         from octop import __version__  # noqa: PLC0415
 
@@ -669,7 +700,10 @@ class OctopServer:
         )
         registry.set_proactive_scheduler(proactive_scheduler)
 
-        await registry.boot()
+        with _timing.segment("services.agents"):
+            # Wiring only: agent graph compilation is deferred to
+            # ``_restore_agents_background`` so the socket binds first.
+            await registry.boot(restore_agents=False)
         registry.schedule_idle_reclaim_sweep()
         await gateway.refresh_media_backends()
 
@@ -747,6 +781,23 @@ class OctopServer:
                 await bridge_mgr.resume_auto_connections()
 
         asyncio.create_task(_resume_bridges(), name="bridge-auto-resume")
+        self._agent_restore_task = asyncio.create_task(
+            self._restore_agents_background(registry), name="agent-restore"
+        )
+
+    async def _restore_agents_background(self, registry: AgentManager) -> None:
+        """Start persisted agents after the socket is bound (never raise)."""
+        from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
+
+        started = time.perf_counter()
+        try:
+            await registry.restore_agents()
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # pragma: no cover - boot must survive any agent failure
+            logger.exception("background agent restore failed (non-fatal)")
+        finally:
+            _timing.emit("agents.restored", (time.perf_counter() - started) * 1000.0)
 
     async def refresh_plugin_channels(self) -> None:
         """Reconcile only changed kinds and report registration failures to callers."""
@@ -846,6 +897,12 @@ class OctopServer:
             with suppress(asyncio.CancelledError):
                 await task
         self._default_agent_task = None
+        restore = self._agent_restore_task
+        if restore is not None and not restore.done():
+            restore.cancel()
+            with suppress(asyncio.CancelledError):
+                await restore
+        self._agent_restore_task = None
         try:
             from octop.infra.connectors.gateway import agently_auth
 

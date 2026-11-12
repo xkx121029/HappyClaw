@@ -85,6 +85,9 @@ async def run_foreground(
 
     srv = OctopServer()
     await srv.start()
+    from octop.infra.utils import startup_timing as _timing
+
+    _timing.mark("listen.begin")
     bwrap_task = _schedule_linux_bubblewrap_ensure()
     # Greenfield deferral leaves services unset until /setup/database binds.
     cfg = srv.services.config if srv.services is not None else srv.config
@@ -115,7 +118,27 @@ async def run_foreground(
         reload = False
 
     app = build_app(srv)
+    _timing.emit("listen.build_app", _timing.since_mark_ms("listen.begin") or 0.0)
+    _timing.mark("listen.bind")
     servers: list[uvicorn.Server] = []
+    listen_logged = [False]
+
+    class _TimedServer(uvicorn.Server):
+        """Records the moment the socket accepts traffic (the real "usable")."""
+
+        async def startup(self, sockets: Any = None) -> None:
+            await super().startup(sockets=sockets)
+            if listen_logged[0]:
+                return
+            listen_logged[0] = True
+            listen_ms = _timing.since_mark_ms("listen.begin")
+            bind_ms = _timing.since_mark_ms("listen.bind")
+            _timing.emit(
+                "listen",
+                listen_ms if listen_ms is not None else 0.0,
+                bind_ms=None if bind_ms is None else round(bind_ms, 1),
+                since_process_ms=round(_timing.since_process_ms(), 1),
+            )
 
     if plan.dual_listeners:
         assert plan.https_port is not None
@@ -142,8 +165,8 @@ async def run_foreground(
             workers=1,
             reload=False,
         )
-        servers.append(uvicorn.Server(https_config))
-        servers.append(uvicorn.Server(http_config))
+        servers.append(_TimedServer(https_config))
+        servers.append(_TimedServer(http_config))
         logger.info(
             "Listening on https://%s:%s and http://%s:%s (ACME + redirect)",
             plan.bind_host,
@@ -165,14 +188,15 @@ async def run_foreground(
             ws_ping_interval=_WS_PING_INTERVAL,
             ws_ping_timeout=_WS_PING_TIMEOUT,
         )
-        servers.append(uvicorn.Server(single_config))
+        servers.append(_TimedServer(single_config))
 
     from octop.infra.agents.memory.slim_control import MemorySlimControl
 
     memory_control = MemorySlimControl(srv)
     with coalesce_accept_errors(asyncio.get_running_loop()):
         try:
-            await memory_control.start()
+            with _timing.segment("listen.memory_control"):
+                await memory_control.start()
             await asyncio.gather(*(_serve(s) for s in servers))
         finally:
             await memory_control.close()

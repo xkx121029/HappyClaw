@@ -662,7 +662,14 @@ class AgentManager:
     def teams(self) -> Any:
         return self._teams
 
-    async def boot(self) -> None:
+    async def boot(self, *, restore_agents: bool = True) -> None:
+        """Wire the harness, then (optionally) start every persisted agent.
+
+        ``restore_agents=False`` leaves agent start-up to :meth:`restore_agents`
+        so ``octop run`` can bind the socket first: a harness graph compile can
+        take tens of seconds (and hard-times-out at 60s), which used to delay
+        ``/api/health`` by the same amount.
+        """
         self._tool_guard_rules.ensure_seeded()
         providers = self._providers.build_harness_configs()
         self._harness_manager = HarnessAgentManager(
@@ -692,6 +699,16 @@ class AgentManager:
             )
             self._harness_manager.set_security_policy(self._security.harness_policy())
 
+        if restore_agents:
+            await self.restore_agents()
+
+    async def restore_agents(self) -> None:
+        """Start every persisted agent that is not explicitly stopped.
+
+        Each start is bounded by ``_AGENT_BOOT_START_TIMEOUT``; a timeout marks
+        the row ``failed`` and boot continues. Safe to call after the socket is
+        bound — ``_start_agent`` is guarded by a per-agent lifecycle lock.
+        """
         rows = self._repos.agent_repo.list_all(include_disabled=False)
         for row in rows:
             if row.last_state == "stopped":
@@ -3684,14 +3701,18 @@ class AgentManager:
                 # Team hosts already have AGENTS/SOUL/MEMORY from seed_team_template.
                 # Never let harness copy builtin skills just to strip them later.
                 seed_workspace = init_workspace and not is_team_agent(row)
-                entry = await self._harness_manager.acreate_agent(
-                    cfg,
-                    agent_id=row.agent_id,
-                    metadata=metadata,
-                    tags=tags,
-                    init_workspace=seed_workspace,
-                )
-                await self._post_start_agent(row, entry.agent, cfg, user_display=user_display)
+                from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
+
+                with _timing.segment("agent.create", agent_id=row.agent_id):
+                    entry = await self._harness_manager.acreate_agent(
+                        cfg,
+                        agent_id=row.agent_id,
+                        metadata=metadata,
+                        tags=tags,
+                        init_workspace=seed_workspace,
+                    )
+                with _timing.segment("agent.post_start", agent_id=row.agent_id):
+                    await self._post_start_agent(row, entry.agent, cfg, user_display=user_display)
                 self._repos.agent_repo.set_state(row.agent_id, "running", error=None)
                 logger.info("Agent %s (%s) started", row.agent_id, row.name)
                 return entry.agent
