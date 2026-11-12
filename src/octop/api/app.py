@@ -276,6 +276,10 @@ def build_app(server: OctopServer) -> FastAPI:
             _RouterMount(providers.router, "/api/providers", ["providers"]),
             _RouterMount(voice.router, "/api/voice", ["voice"]),
             _RouterMount(admin.router, "/api/admin", ["admin"]),
+            # Public single-user prefix. The desktop shell / tray calls
+            # ``POST /api/backup/create``; the same router is mounted under
+            # ``/api/admin`` below as a compatibility alias.
+            _RouterMount(backup.router, "/api", ["backup"]),
             _RouterMount(backup.router, "/api/admin", ["admin"]),
             _RouterMount(admin_providers_router, "/api/admin/providers", ["admin"]),
             _RouterMount(admin_voice_router, "/api/admin/voice/providers", ["admin"]),
