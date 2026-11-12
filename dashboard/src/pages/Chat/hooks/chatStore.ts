@@ -218,46 +218,7 @@ export function consumePendingPrefillAttachments(): ChatAttachment[] {
   return val.map((attachment) => ({ ...attachment }));
 }
 
-// ── Composer draft (sessionStorage) ───────────────────────────────────────
-// Survives navigating away from /chat and back; keyed per agent + thread.
-
-const DRAFT_STORAGE_PREFIX = "octop:chat-draft:";
-
-function draftStorageKey(
-  agentId: string,
-  threadId: string | null | undefined,
-): string {
-  return `${DRAFT_STORAGE_PREFIX}${agentId}:${threadId ?? "__new__"}`;
-}
-
-/** Read a saved composer draft for *(agentId, threadId)*. */
-export function readInputDraft(
-  agentId: string | null | undefined,
-  threadId: string | null | undefined,
-): string {
-  if (!agentId) return "";
-  try {
-    return sessionStorage.getItem(draftStorageKey(agentId, threadId)) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-/** Persist or clear the composer draft for *(agentId, threadId)*. */
-export function writeInputDraft(
-  agentId: string | null | undefined,
-  threadId: string | null | undefined,
-  text: string,
-): void {
-  if (!agentId) return;
-  try {
-    const key = draftStorageKey(agentId, threadId);
-    if (text) sessionStorage.setItem(key, text);
-    else sessionStorage.removeItem(key);
-  } catch {
-    // sessionStorage unavailable or quota exceeded
-  }
-}
+// 输入框草稿改由 utils/composerDraft.ts 以 localStorage 持久化（含附件）。
 
 // ── Re-export types so external consumers don't need changes ──────────────
 export type {

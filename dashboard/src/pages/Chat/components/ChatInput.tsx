@@ -47,11 +47,12 @@ import {
   type SkillTokenRef,
 } from "../utils/skillSlash";
 import { useSkillDisplayName } from "../../Agent/Skills/skillDisplayNames";
+import { consumePendingPrefillAttachments } from "../hooks/chatStore";
 import {
-  consumePendingPrefillAttachments,
-  readInputDraft,
-  writeInputDraft,
-} from "../hooks/chatStore";
+  clearComposerDraft,
+  readComposerDraft,
+  writeComposerDraft,
+} from "../utils/composerDraft";
 import {
   buildComposerContext,
   resolveTurnModelRef,
@@ -238,7 +239,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       (isMobile || needsComposerVisualViewportFix());
     useKeepInVisualViewport(shellRef, keepComposerInView);
     const [text, setText] = useState(
-      () => initialText || readInputDraft(agentId, threadId),
+      () => initialText || readComposerDraft(agentId, threadId).text,
     );
     const [polishing, setPolishing] = useState(false);
     // 粘贴超长文本时折叠成一行，避免输入框被整段文字撑满；发送内容不受影响。
@@ -397,7 +398,20 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       }
     }, [initialText]);
 
-    // Restore per-thread draft when switching conversations or remounting.
+    // 首次挂载时恢复该会话未发送的附件（文本已在 state 初始化时读取）。
+    useEffect(() => {
+      const pendingAttachments = consumePendingPrefillAttachments();
+      if (pendingAttachments.length > 0) {
+        restoreAttachments(pendingAttachments);
+        return;
+      }
+      const draft = readComposerDraft(agentId, threadId);
+      if (draft.attachments.length > 0) restoreAttachments(draft.attachments);
+      // 只在挂载时跑一次；后续会话切换由下面的 composerKey effect 负责。
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Restore per-thread draft (text + attachments) when switching conversations.
     useEffect(() => {
       const composerKey = `${agentId ?? ""}:${threadId ?? ""}`;
       if (composerKey === prevComposerKeyRef.current) return;
@@ -405,11 +419,14 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       userHasEditedRef.current = false;
       ignoreInitialTextRef.current = null;
       prevInitialTextRef.current = "";
-      setText(readInputDraft(agentId, threadId));
+      const draft = readComposerDraft(agentId, threadId);
+      setText(draft.text);
       setPasteFolded(false);
       const pendingAttachments = consumePendingPrefillAttachments();
       if (pendingAttachments.length > 0) {
         restoreAttachments(pendingAttachments);
+      } else if (draft.attachments.length > 0) {
+        restoreAttachments(draft.attachments);
       } else {
         clearAttachments();
       }
@@ -470,14 +487,15 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       });
     }, [threadId, text, attachments, t, antMessage, modal, restoreAttachments]);
 
-    // Persist draft while typing so leaving /chat and returning keeps content.
+    // Persist draft (text + attachments) so leaving /chat, reloading or
+    // restarting the app keeps unsent content for this session.
     useEffect(() => {
       if (!agentId) return;
       const timer = window.setTimeout(() => {
-        writeInputDraft(agentId, threadId, text);
+        writeComposerDraft(agentId, threadId, { text, attachments });
       }, 250);
       return () => window.clearTimeout(timer);
-    }, [text, agentId, threadId]);
+    }, [text, attachments, agentId, threadId]);
 
     // Desktop quit guard: report whether there is unsent text or an attachment.
     useEffect(() => {
@@ -600,7 +618,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       (prevHeight: number, submittedText: string) => {
         setText("");
         setPasteFolded(false);
-        writeInputDraft(agentId, threadId, "");
+        clearComposerDraft(agentId, threadId);
         clearAttachments();
         userHasEditedRef.current = false;
         // Parent may re-pass the same prefill as initialText on the next render

@@ -56,9 +56,16 @@ vi.mock("../hooks/useChatAttachments", () => ({
 
 vi.mock("../hooks/chatStore", () => ({
   consumePendingPrefillAttachments: () => [],
-  readInputDraft: (agentId: string) =>
-    agentId === "agent-2" ? "target expert draft" : "",
-  writeInputDraft: vi.fn(),
+  onSteerRestore: () => () => {},
+}));
+
+vi.mock("../utils/composerDraft", () => ({
+  readComposerDraft: (agentId?: string | null) => ({
+    text: agentId === "agent-2" ? "target expert draft" : "",
+    attachments: [],
+  }),
+  writeComposerDraft: vi.fn(),
+  clearComposerDraft: vi.fn(),
 }));
 
 vi.mock("./ChatInputPreviewBar", () => ({

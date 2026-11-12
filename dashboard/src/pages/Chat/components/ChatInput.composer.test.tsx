@@ -7,7 +7,27 @@ const attachments = vi.hoisted(() => ({
   handleDragEnter: vi.fn(),
   handleDragLeave: vi.fn(),
   handleDragOver: vi.fn(),
+  clearAttachments: vi.fn(),
+  restoreAttachments: vi.fn(),
 }));
+
+// 按 (agentId:threadId) 保存的草稿，供「按会话恢复草稿」用例使用。
+const drafts = vi.hoisted(
+  () =>
+    new Map<
+      string,
+      {
+        text: string;
+        attachments: {
+          url: string;
+          filename?: string;
+          mediaType?: string;
+          workspacePath?: string;
+          kind: "image" | "file" | "video" | "audio";
+        }[];
+      }
+    >(),
+);
 
 vi.mock("../../../hooks/useIsMobile", () => ({
   useIsMobile: () => false,
@@ -51,8 +71,8 @@ vi.mock("../hooks/useChatAttachments", () => ({
     handleFolderSelect: vi.fn(),
     handleFileChange: vi.fn(),
     removeAttachment: vi.fn(),
-    clearAttachments: vi.fn(),
-    restoreAttachments: vi.fn(),
+    clearAttachments: attachments.clearAttachments,
+    restoreAttachments: attachments.restoreAttachments,
     handlePaste: vi.fn(),
     handleDragEnter: attachments.handleDragEnter,
     handleDragLeave: attachments.handleDragLeave,
@@ -63,8 +83,17 @@ vi.mock("../hooks/useChatAttachments", () => ({
 
 vi.mock("../hooks/chatStore", () => ({
   consumePendingPrefillAttachments: () => [],
-  readInputDraft: () => "",
-  writeInputDraft: vi.fn(),
+  onSteerRestore: () => () => {},
+}));
+
+vi.mock("../utils/composerDraft", () => ({
+  readComposerDraft: (agentId?: string | null, threadId?: string | null) =>
+    drafts.get(`${agentId ?? ""}:${threadId ?? ""}`) ?? {
+      text: "",
+      attachments: [],
+    },
+  writeComposerDraft: vi.fn(),
+  clearComposerDraft: vi.fn(),
 }));
 
 vi.mock("./ChatInputPreviewBar", () => ({
@@ -129,9 +158,10 @@ import ChatInput from "./ChatInput";
 beforeEach(() => {
   vi.clearAllMocks();
   attachments.dragOver.value = false;
+  drafts.clear();
 });
 
-function renderComposer(onSend = vi.fn()) {
+function renderComposer(onSend = vi.fn(), threadId = "thread-1") {
   const utils = render(
     <ChatInput
       onSend={onSend}
@@ -139,7 +169,7 @@ function renderComposer(onSend = vi.fn()) {
       onNewChat={vi.fn()}
       isStreaming={false}
       agentId="agent-1"
-      threadId="thread-1"
+      threadId={threadId}
     />,
   );
   return { ...utils, onSend, textarea: screen.getByRole("textbox") };
@@ -150,7 +180,7 @@ describe("ChatInput composer affordances", () => {
     renderComposer();
 
     expect(
-      screen.getByText("Enter 发送 / Shift+Enter 换行"),
+      screen.getByText(/chat\.composerHint|Enter 发送 \/ Shift\+Enter 换行/),
     ).toBeInTheDocument();
   });
 
@@ -198,5 +228,55 @@ describe("ChatInput composer affordances", () => {
       dataTransfer: { files: [] },
     });
     expect(attachments.handleDrop).toHaveBeenCalled();
+  });
+
+  it("restores each session's draft text and attachments", () => {
+    const image = {
+      url: "https://example.test/pic.png",
+      filename: "pic.png",
+      mediaType: "image/png",
+      kind: "image" as const,
+    };
+    drafts.set("agent-1:thread-1", {
+      text: "会话一草稿",
+      attachments: [image],
+    });
+    drafts.set("agent-1:thread-2", { text: "会话二草稿", attachments: [] });
+
+    const { rerender, textarea } = renderComposer();
+    expect((textarea as HTMLTextAreaElement).value).toBe("会话一草稿");
+    expect(attachments.restoreAttachments).toHaveBeenCalledWith([image]);
+
+    rerender(
+      <ChatInput
+        onSend={vi.fn()}
+        onCancel={vi.fn()}
+        onNewChat={vi.fn()}
+        isStreaming={false}
+        agentId="agent-1"
+        threadId="thread-2"
+      />,
+    );
+
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
+      "会话二草稿",
+    );
+    expect(attachments.clearAttachments).toHaveBeenCalled();
+
+    rerender(
+      <ChatInput
+        onSend={vi.fn()}
+        onCancel={vi.fn()}
+        onNewChat={vi.fn()}
+        isStreaming={false}
+        agentId="agent-1"
+        threadId="thread-1"
+      />,
+    );
+
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
+      "会话一草稿",
+    );
+    expect(attachments.restoreAttachments).toHaveBeenLastCalledWith([image]);
   });
 });
