@@ -76,10 +76,10 @@ export const ANTD_BRAND_TOKENS: Record<
 > = {
   rose: {
     light: {
-      colorPrimary: "#E85D75",
-      colorPrimaryHover: "#D14A62",
-      colorPrimaryActive: "#B83A50",
-      colorLink: "#E85D75",
+      colorPrimary: "#C9435C",
+      colorPrimaryHover: "#B93B52",
+      colorPrimaryActive: "#A63348",
+      colorLink: "#B93B52",
     },
     dark: {
       colorPrimary: "#F08B9A",

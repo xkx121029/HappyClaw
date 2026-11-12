@@ -565,6 +565,19 @@ html[data-theme="dark"] .octop-ant-tag {
   border-color: var(--fn-border-primary) !important;
 }
 
+/* Green status tags: preset antd green fails AA at 12px, deepen the text. */
+.octop-tag-green {
+  color: #237804 !important;
+  background: #f6ffed !important;
+  border-color: #b7eb8f !important;
+}
+
+html[data-theme="dark"] .octop-tag-green {
+  color: #95de64 !important;
+  background: rgba(35, 120, 4, 0.18) !important;
+  border-color: rgba(149, 222, 100, 0.35) !important;
+}
+
 /* Switch */
 html[data-theme="dark"] .ant-switch,
 html[data-theme="dark"] .octop-ant-switch {

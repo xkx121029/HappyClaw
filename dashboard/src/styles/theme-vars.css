@@ -42,13 +42,13 @@ html[data-theme="light"] {
   /* ---- Text ---- */
   --fn-text-primary: #111827;
   --fn-text-secondary: #4b5563;
-  --fn-text-tertiary: #9ca3af;
-  --fn-text-quaternary: #d1d5db;
+  --fn-text-tertiary: #5b6470;
+  --fn-text-quaternary: #6b7280;
   --fn-text-placeholder: #c0c5ce;
   --fn-text-disabled: #d1d5db;
   --fn-text-inverse: #ffffff;
-  --fn-text-brand: #e85d75;
-  --fn-text-danger: #ef4444;
+  --fn-text-brand: #b93b52;
+  --fn-text-danger: #c81e1e;
   --fn-text-link: var(--fn-text-brand);
   --fn-logo-color: #e05040;
   --fn-logo-filter: none;
@@ -68,9 +68,9 @@ html[data-theme="light"] {
   --fn-border-success: #6ee7b7;
 
   /* ---- Brand (rose) ---- */
-  --fn-color-brand: #e85d75;
-  --fn-color-brand-hover: #d14a62;
-  --fn-color-brand-soft: #d14a62;
+  --fn-color-brand: #c9435c;
+  --fn-color-brand-hover: #b93b52;
+  --fn-color-brand-soft: #b93b52;
   --fn-accent: var(--fn-color-brand);
   --fn-primary: var(--fn-color-brand);
   --fn-primary-bg: color-mix(in srgb, var(--fn-color-brand) 12%, transparent);
@@ -128,7 +128,7 @@ html[data-theme="light"] {
   --fn-tag-remote-bg: #fff7ed;
   --fn-tag-remote-text: #f97316;
   --fn-tag-remote-border: #fed7aa;
-  --fn-tag-channel-text: #e85d75;
+  --fn-tag-channel-text: #b93b52;
 
   /* ---- Shadows ---- */
   --fn-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -161,8 +161,8 @@ html[data-theme="light"] {
   --fn-sidebar-item-hover: #f5f5f5;
   --fn-sidebar-item-active-bg: #fde8ec;
   --fn-sidebar-item-active: rgba(232, 93, 117, 0.08);
-  --fn-sidebar-item-active-text: #e85d75;
-  --fn-sidebar-group-text: #b0b5be;
+  --fn-sidebar-item-active-text: #b93b52;
+  --fn-sidebar-group-text: #6b7280;
 
   /* ---- Header ---- */
   --fn-header-height: 56px;
@@ -226,8 +226,8 @@ html[data-theme="dark"] {
   /* ---- Text ---- */
   --fn-text-primary: rgba(255, 255, 255, 0.9);
   --fn-text-secondary: rgba(255, 255, 255, 0.6);
-  --fn-text-tertiary: rgba(255, 255, 255, 0.35);
-  --fn-text-quaternary: rgba(255, 255, 255, 0.2);
+  --fn-text-tertiary: rgba(255, 255, 255, 0.62);
+  --fn-text-quaternary: rgba(255, 255, 255, 0.52);
   --fn-text-placeholder: rgba(255, 255, 255, 0.16);
   --fn-text-disabled: rgba(255, 255, 255, 0.16);
   --fn-text-inverse: #0e0e0e;
@@ -343,7 +343,7 @@ html[data-theme="dark"] {
   --fn-sidebar-item-active-bg: rgba(232, 93, 117, 0.14);
   --fn-sidebar-item-active: rgba(232, 93, 117, 0.14);
   --fn-sidebar-item-active-text: #f08b9a;
-  --fn-sidebar-group-text: rgba(255, 255, 255, 0.28);
+  --fn-sidebar-group-text: rgba(255, 255, 255, 0.52);
 
   /* ---- Header ---- */
   --fn-header-height: 56px;

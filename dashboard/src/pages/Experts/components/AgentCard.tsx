@@ -59,12 +59,12 @@ const STATE_META: Record<
   string,
   { color: string; bg: string; spin?: boolean }
 > = {
-  running: { color: "#52c41a", bg: "rgba(82,196,26,0.12)" },
-  stopped: { color: "#8c8c8c", bg: "rgba(140,140,140,0.10)" },
-  created: { color: "#8c8c8c", bg: "rgba(140,140,140,0.10)" },
-  failed: { color: "#ff4d4f", bg: "rgba(255,77,79,0.10)" },
-  starting: { color: "#1677ff", bg: "rgba(22,119,255,0.10)", spin: true },
-  stopping: { color: "#1677ff", bg: "rgba(22,119,255,0.10)", spin: true },
+  running: { color: "#237804", bg: "rgba(82,196,26,0.12)" },
+  stopped: { color: "#595959", bg: "rgba(140,140,140,0.10)" },
+  created: { color: "#595959", bg: "rgba(140,140,140,0.10)" },
+  failed: { color: "#cf1322", bg: "rgba(255,77,79,0.10)" },
+  starting: { color: "#0958d9", bg: "rgba(22,119,255,0.10)", spin: true },
+  stopping: { color: "#0958d9", bg: "rgba(22,119,255,0.10)", spin: true },
 };
 
 function getStateMeta(state: string) {

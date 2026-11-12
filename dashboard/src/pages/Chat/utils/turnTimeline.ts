@@ -6,7 +6,7 @@ export const TURN_TIMELINE_MIN_TURNS = 2;
 export const TURN_TIMELINE_MIN_WIDTH_PX = 864;
 export const TURN_TIMELINE_MAX_PREVIEW_CHARS = 220;
 export const TURN_TIMELINE_MAX_PREVIEW_PARAGRAPHS = 2;
-export const TURN_TIMELINE_ROW_PX = 14;
+export const TURN_TIMELINE_ROW_PX = 24;
 /** Window ticks when the rail grows past this many user turns. */
 export const TURN_TIMELINE_VIRTUALIZE_THRESHOLD = 40;
 export const TURN_TIMELINE_RAIL_OVERSCAN = 6;
