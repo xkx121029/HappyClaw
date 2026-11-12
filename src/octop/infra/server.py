@@ -17,34 +17,30 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from octop_harness.plugins.registry import PluginRegistry
-
 from octop.config import OctopConfig, load_config
-from octop.infra.agents.experts.catalog import ExpertCatalog, default_library_root
-from octop.infra.agents.manager import AgentManager
-from octop.infra.agents.plugins.manager import PluginManager
-from octop.infra.agents.providers.store import sync_provider_preset_models
-from octop.infra.agents.subagents.catalog import SubagentCatalog, default_package_root
-from octop.infra.control.mobile.config_probe import ensure_mobile_capabilities_probed
-from octop.infra.cron.manager import CronManager
-from octop.infra.db.factory import open_database, should_defer_control_plane_db
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.services import SharedServices, build_shared_services
-from octop.infra.gateway.gateway import Gateway
-from octop.infra.proactive.scheduler import ProactiveCareScheduler
-from octop.infra.proactive.service import ProactiveCareService
-from octop.infra.setup import password_file as _wizard_pw
 from octop.infra.setup.wizard_tokens import WizardTokenStore
-from octop.infra.users.manager import UserManager
 from octop.infra.utils.paths import PathLayout
 from octop.infra.utils.process_resources import ensure_nofile_limit
 
+# Everything below is imported lazily inside the boot phases. Importing the agent
+# stack (octop_harness → deepagents → langchain, plus the expert catalogs and the
+# scheduler) at module scope costs tens of seconds on slow volumes, and it all
+# happens again from scratch during ``start_runtime()`` — which runs *after* the
+# socket is bound. Keep this module import cheap so the listener comes up early.
 if TYPE_CHECKING:
+    from octop.infra.agents.experts.catalog import ExpertCatalog
+    from octop.infra.agents.manager import AgentManager
+    from octop.infra.agents.plugins.manager import PluginManager
+    from octop.infra.agents.subagents.catalog import SubagentCatalog
     from octop.infra.auth.ldap.service import LdapAuthService
     from octop.infra.auth.ldap.throttle import LdapBindThrottle
     from octop.infra.auth.sso.service import SsoService
+    from octop.infra.cron.manager import CronManager
     from octop.infra.db.services import SharedServices
+    from octop.infra.gateway.gateway import Gateway
     from octop.infra.history.trajectory.service import TrajectoryService
+    from octop.infra.proactive.scheduler import ProactiveCareScheduler
+    from octop.infra.users.manager import UserManager
 
 logger = logging.getLogger(__name__)
 
@@ -408,21 +404,38 @@ class OctopServer:
 
     @property
     def database_bound(self) -> bool:
-        return self.services is not None and self.app_runtime is not None
+        """True once the control-plane DB is open and shared services exist."""
+        return self.services is not None
 
-    async def start(self, *, serve_background: bool = True) -> None:
+    @property
+    def runtime_ready(self) -> bool:
+        """True once the agent runtime (gateway/cron/agents) is wired."""
+        return self.app_runtime is not None
+
+    async def start(self, *, serve_background: bool = True, boot_runtime: bool = True) -> None:
+        """Open the DB and build shared services.
+
+        ``boot_runtime=False`` leaves the agent runtime unwired so the caller can
+        bind the HTTP listener first and call :meth:`start_runtime` afterwards
+        (``octop run`` does exactly that to keep the splash screen short).
+        """
         if self._started:
             return
         from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
+
+        import time  # noqa: PLC0415
 
         _timing.mark("start.enter")
         self._serve_background = serve_background
         self.paths.ensure_root()
         # fnOS/容器内非 root 用户场景：把用户级 npm 全局 bin 目录（~/.npm-global）
         # 纳入进程 PATH，保证连接器 CLI（wecom-cli / lark-cli）可被检测与调用。
-        from octop.infra.connectors.gateway.cli_install import ensure_cli_path  # noqa: PLC0415
-
-        ensure_cli_path()
+        _preflight_t0 = time.perf_counter()
+        # ``ensure_cli_path`` lives in the connectors package, whose import chain
+        # (Feishu/WeCom/DingTalk SDKs → aiohttp) costs seconds. Nothing on the
+        # pre-listen path needs it; connector CLIs are only spawned later, so it
+        # runs in ``_prepare_runtime`` instead.
+        _preflight_cli = time.perf_counter()
         from octop.infra.utils.env_file import apply_env_file, env_file_path  # noqa: PLC0415
 
         apply_env_file(env_file_path(self.paths.root))
@@ -430,7 +443,19 @@ class OctopServer:
 
         # Local model servers must never be routed through a system proxy.
         ensure_loopback_no_proxy()
+        _preflight_env = time.perf_counter()
         self._setup_logging()
+        _preflight_log = time.perf_counter()
+        # Split the otherwise opaque "process" segment: these three lines make it
+        # obvious whether the pre-listen time is interpreter/imports or preflight.
+        _timing.emit("preflight.cli_path", (_preflight_cli - _preflight_t0) * 1000.0)
+        _timing.emit("preflight.env_file", (_preflight_env - _preflight_cli) * 1000.0)
+        _timing.emit("preflight.logging", (_preflight_log - _preflight_env) * 1000.0)
+        _timing.emit(
+            "preflight.total",
+            (_preflight_log - _preflight_t0) * 1000.0,
+            since_start_enter_ms=round(_timing.since_mark_ms("start.enter") or 0.0, 1),
+        )
         # Logged only now: the file handler does not exist before _setup_logging().
         _timing.emit_process()
         ensure_nofile_limit()
@@ -440,31 +465,22 @@ class OctopServer:
         install_safe_grep_fallback()
         install_shell_output_decoding()
         with _timing.segment("config"):
+            from octop.infra.control.mobile.config_probe import (  # noqa: PLC0415
+                ensure_mobile_capabilities_probed,
+            )
+
             with _timing.segment("config.load"):
                 config = ensure_mobile_capabilities_probed(self.paths.config)
             self.config = config
 
-            with _timing.segment("config.catalogs"):
-                self.expert_catalog = ExpertCatalog(
-                    default_library_root(),
-                    extra_roots=[self.paths.expert_market_dir],
-                )
-                self.expert_catalog.refresh()
-                self.subagent_catalog = SubagentCatalog(default_package_root())
-                self.subagent_catalog.refresh()
-
-            with _timing.segment("config.plugins"):
-                self.plugin_manager = PluginManager(
-                    plugins_dir=self.paths.plugins_dir,
-                    config_path=self.paths.config,
-                )
-                self.plugin_manager.seed_bundled()
-                self.plugin_manager.load_installed(install_deps=True)
-                self._apply_plugin_channels()
-
         import time  # noqa: PLC0415
 
         self._started_at = int(time.time())
+
+        from octop.infra.db.factory import (  # noqa: PLC0415
+            open_database,
+            should_defer_control_plane_db,
+        )
 
         if should_defer_control_plane_db(config, self.paths):
             # Deprecated: single-user mode always binds the default SQLite DB at
@@ -473,9 +489,13 @@ class OctopServer:
             logger.info("single-user mode: ignoring deferred control-plane setup")
 
         with _timing.segment("db"):
+            from octop.infra.db.migrate import run_migrations  # noqa: PLC0415
+
             db = open_database(config, self.paths)
             run_migrations(db)
         with _timing.segment("services"):
+            from octop.infra.db.services import build_shared_services  # noqa: PLC0415
+
             self.services = build_shared_services(db=db, paths=self.paths, config=config)
             from octop.infra.auth.captcha import boot_from_services  # noqa: PLC0415
 
@@ -484,12 +504,132 @@ class OctopServer:
             # Resolve (and create when the DB is empty) the one local owner before
             # serving traffic so every request maps to the same identity.
             self.services.owner.ensure()
-            await self._boot_runtime(config)
         self._started = True
         _timing.mark("services.done")
+        if boot_runtime:
+            await self.start_runtime()
+
+    async def start_runtime(self) -> None:
+        """Build catalogs and boot the agent runtime after the socket is bound.
+
+        Split out of :meth:`start` on purpose: this phase imports the agent stack
+        (harness, langchain, deepagents) and scans the expert/subagent catalogs,
+        which together dominate cold-start time. The HTTP listener is already
+        accepting connections while it runs, so ``/api/health`` answers first.
+        """
+        from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
+
+        if self.app_runtime is not None:
+            return
+        config = self.config
+        if config is None:
+            raise RuntimeError("start_runtime() called before start()")
+        if self.services is None:
+            raise RuntimeError("start_runtime() called before the database is bound")
+
+        with _timing.segment("runtime.catalogs"):
+            await asyncio.to_thread(self._prepare_runtime)
+
+        with _timing.segment("runtime"):
+            await self._boot_runtime(config)
+
         assert self.user_manager is not None
         self._emit_wizard_password(user_count=self.user_manager.count())
         self._schedule_default_agent_bootstrap()
+
+    def _prepare_runtime(self) -> None:
+        """Worker-thread half of :meth:`start_runtime`: imports, catalogs, plugins.
+
+        Runs off the event loop so ``/api/health`` keeps answering while the
+        agent stack (harness → deepagents → langchain) is being imported.
+        """
+        import octop.infra.agents.manager  # noqa: F401, PLC0415
+        import octop.infra.agents.plugins.manager  # noqa: F401, PLC0415
+        import octop.infra.agents.providers.store  # noqa: F401, PLC0415
+        import octop.infra.agents.subagents.catalog  # noqa: F401, PLC0415
+        import octop.infra.cron.manager  # noqa: F401, PLC0415
+        import octop.infra.gateway.gateway  # noqa: F401, PLC0415
+        import octop.infra.proactive.scheduler  # noqa: F401, PLC0415
+        import octop.infra.proactive.service  # noqa: F401, PLC0415
+        import octop.infra.users.manager  # noqa: F401, PLC0415
+
+        from octop.infra.connectors.gateway.cli_install import ensure_cli_path  # noqa: PLC0415
+
+        ensure_cli_path()
+        self._load_catalogs()
+        self._load_plugins()
+
+    async def _deferred_runtime_warmup(self, config: OctopConfig) -> None:
+        """Filesystem walks and config tweaks that do not gate first paint.
+
+        Runs as a fire-and-forget ``asyncio.create_task`` from ``_boot_runtime``
+        so the agent runtime keeps wiring the event loop while these happen.
+        Never raises — a failed avatar/snapshot scan must not bring the server
+        down.
+        """
+        if self.services is None:
+            return
+        from octop.infra.agents.experts.snapshot_store import (  # noqa: PLC0415
+            adopt_local_snapshots,
+        )
+        from octop.infra.users.profile_avatar import adopt_local_avatars  # noqa: PLC0415
+        from octop.infra.utils.browser_media import (  # noqa: PLC0415
+            configure_browser_idle_timeout,
+        )
+
+        try:
+            adopt_local_avatars(
+                self.services.profile_avatar_repo,
+                self.services.settings_repo,
+                self.paths,
+            )
+            adopt_local_snapshots(
+                self.services.control_file_repo,
+                self.services.settings_repo,
+                self.paths.published_experts_dir,
+            )
+            configure_browser_idle_timeout(config.browser_idle_timeout_minutes)
+        except Exception:  # pragma: no cover - best effort only
+            logger.exception("deferred runtime warmup failed (non-fatal)")
+
+    def _load_catalogs(self) -> None:
+        from octop.infra.agents.experts.catalog import (  # noqa: PLC0415
+            ExpertCatalog,
+            default_library_root,
+        )
+        from octop.infra.agents.subagents.catalog import (  # noqa: PLC0415
+            SubagentCatalog,
+            default_package_root,
+        )
+
+        expert_catalog = ExpertCatalog(
+            default_library_root(),
+            extra_roots=[self.paths.expert_market_dir],
+        )
+        expert_catalog.refresh()
+        subagent_catalog = SubagentCatalog(default_package_root())
+        subagent_catalog.refresh()
+        self.expert_catalog = expert_catalog
+        self.subagent_catalog = subagent_catalog
+
+    def _load_plugins(self, *, install_deps: bool = False) -> None:
+        """Discover bundled + on-disk plugins.
+
+        ``install_deps`` defaults to ``False`` so cold start never blocks on
+        ``pip install``. The per-plugin dependency install is triggered lazily
+        only when the user first opens the plugin management page — bundling is
+        already complete, so deferring dependencies only affects freshly
+        dropped user plugins, not the shipped demo plugins.
+        """
+        from octop.infra.agents.plugins.manager import PluginManager  # noqa: PLC0415
+
+        self.plugin_manager = PluginManager(
+            plugins_dir=self.paths.plugins_dir,
+            config_path=self.paths.config,
+        )
+        self.plugin_manager.seed_bundled()
+        self.plugin_manager.load_installed(install_deps=install_deps)
+        self._apply_plugin_channels()
 
     def _schedule_default_agent_bootstrap(self) -> None:
         """Create the default ``main`` expert right after the server starts.
@@ -545,6 +685,14 @@ class OctopServer:
             return
         config = load_config(self.paths.config)
         self.config = config
+        from octop.infra.db.factory import open_database  # noqa: PLC0415
+        from octop.infra.db.migrate import run_migrations  # noqa: PLC0415
+        from octop.infra.db.services import build_shared_services  # noqa: PLC0415
+
+        if self.expert_catalog is None:
+            await asyncio.to_thread(self._load_catalogs)
+        if self.plugin_manager is None:
+            self._load_plugins()
         db = open_database(config, self.paths)
         try:
             run_migrations(db)
@@ -568,6 +716,17 @@ class OctopServer:
         assert self.plugin_manager is not None
 
         from octop.infra.utils import startup_timing as _timing  # noqa: PLC0415
+        # Imported here, not at module scope: this is the agent stack (harness →
+        # deepagents → langchain) and it must stay off the pre-listen path.
+        from octop.infra.agents.manager import AgentManager  # noqa: PLC0415
+        from octop.infra.agents.providers.store import (  # noqa: PLC0415
+            sync_provider_preset_models,
+        )
+        from octop.infra.cron.manager import CronManager  # noqa: PLC0415
+        from octop.infra.gateway.gateway import Gateway  # noqa: PLC0415
+        from octop.infra.proactive.scheduler import ProactiveCareScheduler  # noqa: PLC0415
+        from octop.infra.proactive.service import ProactiveCareService  # noqa: PLC0415
+        from octop.infra.users.manager import UserManager  # noqa: PLC0415
 
         with _timing.segment("services.providers"):
             added = await asyncio.get_running_loop().run_in_executor(
@@ -576,33 +735,21 @@ class OctopServer:
         if added:
             logger.info("Added %d newly bundled provider models", added)
 
-        from octop.infra.agents.experts.snapshot_store import (  # noqa: PLC0415
-            adopt_local_snapshots,
+        # Deferred past a fast initial scan: avatar/snapshot adoption and
+        # browser idle-tuning are pure filesystem/config tweaks and never
+        # block the HTTP listener.
+        asyncio.create_task(
+            self._deferred_runtime_warmup(config),
+            name="deferred-runtime-warmup",
         )
-        from octop.infra.users.profile_avatar import adopt_local_avatars  # noqa: PLC0415
 
-        adopt_local_avatars(
-            self.services.profile_avatar_repo,
-            self.services.settings_repo,
-            self.paths,
-        )
-        adopt_local_snapshots(
-            self.services.control_file_repo,
-            self.services.settings_repo,
-            self.paths.published_experts_dir,
-        )
+        # attach_control_plane must run after services are bound (DB access), but
+        # seed_bundled + load_installed(install_deps=False) already ran in
+        # ``_prepare_runtime``; do not repeat the pip-less scan.
         self.plugin_manager.attach_control_plane(
             self.services.control_file_repo,
             self.services.settings_repo,
         )
-        self.plugin_manager.seed_bundled()
-        self.plugin_manager.load_installed(install_deps=True)
-
-        from octop.infra.utils.browser_media import (  # noqa: PLC0415
-            configure_browser_idle_timeout,
-        )
-
-        configure_browser_idle_timeout(config.browser_idle_timeout_minutes)
 
         registry = AgentManager(
             repos=self.services.repos,
@@ -833,6 +980,8 @@ class OctopServer:
         if self.plugin_manager is None:
             return
         try:
+            from octop_harness.plugins.registry import PluginRegistry  # noqa: PLC0415
+
             from octop.infra.gateway.plugin_channels import apply_plugin_channels  # noqa: PLC0415
 
             apply_plugin_channels(registry=PluginRegistry())
@@ -846,6 +995,8 @@ class OctopServer:
         return
 
     def _legacy_emit_wizard_password(self, *, user_count: int) -> None:
+        from octop.infra.setup import password_file as _wizard_pw  # noqa: PLC0415
+
         config = self.config
         if config is None:
             return
