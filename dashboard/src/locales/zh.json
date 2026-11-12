@@ -1482,6 +1482,8 @@
       "placeholder": "搜索会话、切换模型，或输入命令…",
       "newChat": "新建会话",
       "newChatHint": "Ctrl/Cmd + Shift + O",
+      "exportTranscript": "导出当前会话为 Markdown",
+      "exportTranscriptHint": "保存为 .md 文件",
       "openSettings": "打开本机设置",
       "openSettingsHint": "Ctrl/Cmd + ,",
       "backup": "本机数据备份与恢复",

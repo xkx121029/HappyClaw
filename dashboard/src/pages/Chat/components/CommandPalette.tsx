@@ -3,6 +3,7 @@ import { Modal } from "antd";
 import {
   Cpu,
   DatabaseBackup,
+  FileDown,
   Keyboard,
   MessageSquareText,
   Plus,
@@ -36,6 +37,8 @@ interface CommandPaletteProps {
   onOpenSettings: () => void;
   onOpenBackup: () => void;
   onOpenShortcuts: () => void;
+  /** 当前会话有可导出消息时传入；未传则隐藏导出动作。 */
+  onExportTranscript?: () => void;
 }
 
 interface PaletteCommand {
@@ -50,7 +53,7 @@ interface PaletteCommand {
 /**
  * 单人本机命令面板（Ctrl/Cmd + K）。
  *
- * 只做四件事：新建会话、跳到最近会话、切换模型、打开本机设置。
+ * 只做五件事：新建会话、导出当前会话、跳到最近会话、切换模型、打开本机设置。
  * 不引入全局状态层，数据全部由聊天页现有 hooks 提供。
  */
 export default function CommandPalette({
@@ -66,6 +69,7 @@ export default function CommandPalette({
   onOpenSettings,
   onOpenBackup,
   onOpenShortcuts,
+  onExportTranscript,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -95,6 +99,21 @@ export default function CommandPalette({
         icon: Plus,
         run: onNewChat,
       },
+      ...(onExportTranscript
+        ? [
+            {
+              kind: "action" as const,
+              id: "export-transcript",
+              label: t(
+                "chat.palette.exportTranscript",
+                "导出当前会话为 Markdown",
+              ),
+              meta: t("chat.palette.exportTranscriptHint", "保存为 .md 文件"),
+              icon: FileDown,
+              run: onExportTranscript,
+            },
+          ]
+        : []),
       {
         kind: "action",
         id: "settings",
@@ -152,6 +171,7 @@ export default function CommandPalette({
     models,
     modelsReady,
     onNewChat,
+    onExportTranscript,
     onOpenBackup,
     onOpenSettings,
     onOpenShortcuts,

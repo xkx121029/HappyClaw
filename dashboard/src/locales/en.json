@@ -1482,6 +1482,8 @@
       "placeholder": "Search chats, switch models, or type a command…",
       "newChat": "New chat",
       "newChatHint": "Ctrl/Cmd + Shift + O",
+      "exportTranscript": "Export current chat as Markdown",
+      "exportTranscriptHint": "Save as a .md file",
       "openSettings": "Open local settings",
       "openSettingsHint": "Ctrl/Cmd + ,",
       "backup": "Local data backup & restore",

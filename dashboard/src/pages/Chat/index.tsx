@@ -2231,6 +2231,9 @@ function ChatPageInner() {
             onSelectModel={setSelectedModel}
             onOpenSettings={openLocalSettings}
             onOpenBackup={openLocalBackup}
+            onExportTranscript={
+              hasMessages ? handleExportTranscript : undefined
+            }
             onOpenShortcuts={() => {
               setPaletteOpen(false);
               setShortcutHelpOpen(true);

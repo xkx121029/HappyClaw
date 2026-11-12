@@ -24,7 +24,9 @@ const models = [
   { value: "qwen3", label: "Qwen3", provider: "local" },
 ];
 
-function renderPalette(overrides: Partial<Parameters<typeof CommandPalette>[0]> = {}) {
+function renderPalette(
+  overrides: Partial<Parameters<typeof CommandPalette>[0]> = {},
+) {
   const props = {
     open: true,
     sessions,
@@ -37,6 +39,7 @@ function renderPalette(overrides: Partial<Parameters<typeof CommandPalette>[0]> 
     onSelectModel: vi.fn(),
     onOpenSettings: vi.fn(),
     onOpenBackup: vi.fn(),
+    onOpenShortcuts: vi.fn(),
     ...overrides,
   };
   render(<CommandPalette {...props} />);
@@ -62,15 +65,38 @@ describe("CommandPalette", () => {
     const { onSelectModel } = renderPalette();
 
     const input = screen.getByRole("textbox");
-    // 「操作」组有 3 项，两次下移落在第一个模型上。
+    // 「操作」组有 4 项，四次下移落在第一个模型上。
+    fireEvent.keyDown(input, { key: "ArrowDown" });
     fireEvent.keyDown(input, { key: "ArrowDown" });
     fireEvent.keyDown(input, { key: "ArrowDown" });
     fireEvent.keyDown(input, { key: "ArrowDown" });
     fireEvent.keyDown(input, { key: "Enter" });
 
-    await waitFor(() =>
-      expect(onSelectModel).toHaveBeenCalledWith("gpt-5"),
-    );
+    await waitFor(() => expect(onSelectModel).toHaveBeenCalledWith("gpt-5"));
+  });
+
+  it("导出动作可被搜索并执行", async () => {
+    const onExportTranscript = vi.fn();
+    const { input, onClose } = renderPalette({ onExportTranscript });
+
+    fireEvent.change(input, { target: { value: "导出" } });
+    const item = await screen.findByRole("option", {
+      name: /导出当前会话为 Markdown/,
+    });
+    fireEvent.click(item);
+    await waitFor(() => expect(onExportTranscript).toHaveBeenCalledTimes(1));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("未传导出回调时不显示导出动作", async () => {
+    const { input } = renderPalette();
+
+    fireEvent.change(input, { target: { value: "导出" } });
+    // 「导出」只命中备份项的 meta（导出 / 导入），不出现导出会话动作。
+    expect(
+      await screen.findByRole("option", { name: /本机数据备份与恢复/ }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /导出当前会话/ })).toBeNull();
   });
 
   it("keeps no-result actions reachable from the keyboard", async () => {
