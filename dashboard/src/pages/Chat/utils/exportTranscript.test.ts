@@ -78,6 +78,16 @@ describe("buildTranscriptLines", () => {
     );
     expect(lines[0].failedNote).toBe("发送失败");
   });
+
+  it("保留代码块围栏与内容", () => {
+    const lines = buildTranscriptLines(
+      [msg({ role: "assistant", content: "说明\n```ts\nconst a = 1;\n```" })],
+      labels,
+      () => "12:30",
+    );
+    const markdown = buildTranscriptMarkdown("代码", lines);
+    expect(markdown).toContain("```ts\nconst a = 1;\n```");
+  });
 });
 
 describe("buildTranscriptMarkdown", () => {

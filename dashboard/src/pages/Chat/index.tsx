@@ -12,7 +12,7 @@ import {
   FolderOpen,
   Activity,
 } from "lucide-react";
-import { Alert, Button, Tooltip } from "antd";
+import { Alert, App, Button, Tooltip } from "antd";
 import cx from "classnames";
 import { message as antMessage } from "@/utils/antdMessage";
 import { showConfirmModal } from "../../utils/confirmModal";
@@ -138,6 +138,7 @@ export default function ChatPage() {
 
 function ChatPageInner() {
   const { t } = useTranslation();
+  const { modal } = App.useApp();
   const navigate = useNavigate();
   const location = useLocation();
   prefetchVoiceConfig();
@@ -1537,29 +1538,42 @@ function ChatPageInner() {
     if (!messages.length) return;
     const title = activeSessionTitle ?? activeThreadId ?? "";
     if (!title) return;
-    const markdown = buildTranscriptMarkdown(
-      title,
-      buildTranscriptLines(
-        messages,
-        {
-          user: t("chat.exportTranscriptUser", "我"),
-          assistant: t("chat.exportTranscriptAssistant", "助手"),
-          failed: t("chat.exportTranscriptFailed", "发送失败"),
-        },
-        (ts) => formatMessageTime(ts, serverTimezone),
+    // 导出前先说明范围：只含消息文本，不含附件原始文件。
+    modal.confirm({
+      title: t("chat.exportNoticeTitle", "导出为 Markdown"),
+      content: t(
+        "chat.exportNoticeBody",
+        "将导出当前会话已加载的消息文本，不含附件原始文件。",
       ),
-      t("chat.exportTranscriptMeta", "导出于 {{time}}", {
-        time: formatMessageTime(Date.now(), serverTimezone),
-      }),
-    );
-    downloadTextFile(
-      sanitizeTranscriptFileName(
-        title,
-        t("chat.exportTranscriptFallback", "会话导出"),
-      ),
-      markdown,
-    );
-  }, [messages, activeSessionTitle, activeThreadId, t, serverTimezone]);
+      okText: t("common.confirm", "确认"),
+      cancelText: t("common.cancel", "取消"),
+      onOk: () => {
+        const markdown = buildTranscriptMarkdown(
+          title,
+          buildTranscriptLines(
+            messages,
+            {
+              user: t("chat.exportTranscriptUser", "我"),
+              assistant: t("chat.exportTranscriptAssistant", "助手"),
+              failed: t("chat.exportTranscriptFailed", "发送失败"),
+            },
+            (ts) => formatMessageTime(ts, serverTimezone),
+          ),
+          t("chat.exportTranscriptMeta", "导出于 {{time}}", {
+            time: formatMessageTime(Date.now(), serverTimezone),
+          }),
+        );
+        downloadTextFile(
+          sanitizeTranscriptFileName(
+            title,
+            t("chat.exportTranscriptFallback", "会话导出"),
+          ),
+          markdown,
+        );
+        antMessage.success(t("chat.exportDone", "已导出 Markdown 文件"));
+      },
+    });
+  }, [messages, activeSessionTitle, activeThreadId, t, serverTimezone, modal]);
 
   const chatSidebarPanel = (
     <ChatSidebarPanel
