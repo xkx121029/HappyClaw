@@ -2231,6 +2231,9 @@ function ChatPageInner() {
             onSelectModel={setSelectedModel}
             onOpenSettings={openLocalSettings}
             onOpenBackup={openLocalBackup}
+            onOpenExperts={() => navigate("/experts")}
+            onOpenConnectors={() => navigate("/connectors")}
+            onOpenMemory={() => navigate("/memory")}
             onExportTranscript={
               hasMessages ? handleExportTranscript : undefined
             }

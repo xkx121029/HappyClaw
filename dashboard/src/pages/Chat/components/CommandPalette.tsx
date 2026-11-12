@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "antd";
 import {
+  Bot,
+  Brain,
+  Cable,
   Cpu,
   DatabaseBackup,
   FileDown,
@@ -37,6 +40,10 @@ interface CommandPaletteProps {
   onOpenSettings: () => void;
   onOpenBackup: () => void;
   onOpenShortcuts: () => void;
+  /** 打开专家 / 连接器 / 记忆页的导航动作。 */
+  onOpenExperts: () => void;
+  onOpenConnectors: () => void;
+  onOpenMemory: () => void;
   /** 当前会话有可导出消息时传入；未传则隐藏导出动作。 */
   onExportTranscript?: () => void;
 }
@@ -53,7 +60,7 @@ interface PaletteCommand {
 /**
  * 单人本机命令面板（Ctrl/Cmd + K）。
  *
- * 只做五件事：新建会话、导出当前会话、跳到最近会话、切换模型、打开本机设置。
+ * 只做这几件事：新建/导出会话、跳最近会话、切换模型、打开设置与常用页面。
  * 不引入全局状态层，数据全部由聊天页现有 hooks 提供。
  */
 export default function CommandPalette({
@@ -69,6 +76,9 @@ export default function CommandPalette({
   onOpenSettings,
   onOpenBackup,
   onOpenShortcuts,
+  onOpenExperts,
+  onOpenConnectors,
+  onOpenMemory,
   onExportTranscript,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
@@ -124,6 +134,30 @@ export default function CommandPalette({
       },
       {
         kind: "action",
+        id: "open-experts",
+        label: t("chat.palette.openExperts", "打开专家页"),
+        meta: t("chat.palette.openExpertsHint", "启用与配置专家"),
+        icon: Bot,
+        run: onOpenExperts,
+      },
+      {
+        kind: "action",
+        id: "open-connectors",
+        label: t("chat.palette.openConnectors", "打开连接器"),
+        meta: t("chat.palette.openConnectorsHint", "管理本机工具接入"),
+        icon: Cable,
+        run: onOpenConnectors,
+      },
+      {
+        kind: "action",
+        id: "open-memory",
+        label: t("chat.palette.openMemory", "打开记忆库"),
+        meta: t("chat.palette.openMemoryHint", "查看长期记忆"),
+        icon: Brain,
+        run: onOpenMemory,
+      },
+      {
+        kind: "action",
         id: "backup",
         label: t("chat.palette.backup", "本机数据备份与恢复"),
         meta: t("chat.palette.backupHint", "导出 / 导入"),
@@ -173,6 +207,9 @@ export default function CommandPalette({
     onNewChat,
     onExportTranscript,
     onOpenBackup,
+    onOpenConnectors,
+    onOpenExperts,
+    onOpenMemory,
     onOpenSettings,
     onOpenShortcuts,
     onSelectModel,

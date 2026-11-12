@@ -40,6 +40,9 @@ function renderPalette(
     onOpenSettings: vi.fn(),
     onOpenBackup: vi.fn(),
     onOpenShortcuts: vi.fn(),
+    onOpenExperts: vi.fn(),
+    onOpenConnectors: vi.fn(),
+    onOpenMemory: vi.fn(),
     ...overrides,
   };
   render(<CommandPalette {...props} />);
@@ -65,14 +68,26 @@ describe("CommandPalette", () => {
     const { onSelectModel } = renderPalette();
 
     const input = screen.getByRole("textbox");
-    // 「操作」组有 4 项，四次下移落在第一个模型上。
-    fireEvent.keyDown(input, { key: "ArrowDown" });
-    fireEvent.keyDown(input, { key: "ArrowDown" });
-    fireEvent.keyDown(input, { key: "ArrowDown" });
-    fireEvent.keyDown(input, { key: "ArrowDown" });
+    // 「操作」组有 7 项（新建/设置/专家/连接器/记忆/备份/快捷键），
+    // 七次下移落在第一个模型上。新增动作后需同步此计数。
+    for (let i = 0; i < 7; i += 1) {
+      fireEvent.keyDown(input, { key: "ArrowDown" });
+    }
     fireEvent.keyDown(input, { key: "Enter" });
 
     await waitFor(() => expect(onSelectModel).toHaveBeenCalledWith("gpt-5"));
+  });
+
+  it("导航动作可搜索并执行", async () => {
+    const { input, onOpenExperts, onOpenConnectors, onOpenMemory, onClose } =
+      renderPalette();
+
+    fireEvent.change(input, { target: { value: "打开" } });
+    fireEvent.click(await screen.findByRole("option", { name: /打开专家页/ }));
+    await waitFor(() => expect(onOpenExperts).toHaveBeenCalledTimes(1));
+    expect(onOpenConnectors).not.toHaveBeenCalled();
+    expect(onOpenMemory).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
   });
 
   it("导出动作可被搜索并执行", async () => {
