@@ -16,8 +16,6 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
 from octop.api.deps import get_server
-from octop.infra.agents.providers.presets import load_provider_presets
-from octop.infra.agents.providers.probe import make_probe_provider_row, probe_provider_row
 from octop.infra.errors import ErrorCode, OctopError
 
 logger = logging.getLogger(__name__)
@@ -64,6 +62,10 @@ def _single_user(message: str = "单人模式无需初始化账号") -> OctopErr
 @router.get("/setup/presets", summary="List provider presets")
 async def setup_presets() -> list[dict[str, Any]]:
     """Built-in LLM provider templates (kept for the model settings screen)."""
+    # Imported lazily: the providers package pulls the agent stack (harness →
+    # langchain), which must stay off the pre-listen import path.
+    from octop.infra.agents.providers.presets import load_provider_presets  # noqa: PLC0415
+
     return load_provider_presets()
 
 
@@ -141,6 +143,11 @@ async def test_provider_draft(
     """Probe LLM connectivity for an unsaved provider draft."""
     if not body.api_key.strip():
         return {"ok": False, "error": "请填写 API Key"}
+    from octop.infra.agents.providers.probe import (  # noqa: PLC0415
+        make_probe_provider_row,
+        probe_provider_row,
+    )
+
     row = make_probe_provider_row(
         name=body.name,
         kind=body.type,

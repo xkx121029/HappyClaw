@@ -23,18 +23,24 @@ async def server(tmp_octop_home: Path):
     await srv.stop()
 
 
-async def test_start_defers_db_until_bind(tmp_octop_home: Path):
+async def test_start_opens_default_db_at_boot(tmp_octop_home: Path):
+    """Single-user mode binds the default SQLite DB during ``start()``.
+
+    b16cd5c5 removed the greenfield deferral so a stale ``database`` config can
+    no longer leave ``/api/health`` waiting on a control plane that isn't there.
+    """
     srv = OctopServer(home=tmp_octop_home)
     await srv.start()
     try:
         assert tmp_octop_home.is_dir()
         assert (tmp_octop_home / "config.json").exists()
-        assert not (tmp_octop_home / "octop.db").exists()
-        assert srv.database_bound is False
-        assert srv.services is None
-        await _bind_default_sqlite(srv)
         assert (tmp_octop_home / "octop.db").exists()
         assert srv.database_bound is True
+        assert srv.services is not None
+        # Already bound: the first-run wizard path must not rebind a live pool.
+        before = srv.services
+        await _bind_default_sqlite(srv)
+        assert srv.services is before
     finally:
         await srv.stop()
 
@@ -54,7 +60,8 @@ async def test_jwt_secret_seeded(server: OctopServer):
 
 async def test_user_manager_loaded(server: OctopServer):
     assert server.user_manager is not None
-    assert server.user_manager.count() == 0
+    # Single-user mode resolves the one local owner before serving traffic.
+    assert server.user_manager.count() == 1
 
 
 async def test_boot_then_stop_idempotent(tmp_octop_home: Path):

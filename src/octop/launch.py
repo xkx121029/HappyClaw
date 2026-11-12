@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+import time
 from contextlib import suppress
 from typing import Any
 
@@ -64,6 +65,49 @@ async def _serve(server: Any) -> None:
     await server.serve()
 
 
+async def _post_listen_boot(server: Any, app: Any, holder: dict[str, Any]) -> None:
+    """Finish the boot after the socket is bound: agents, routers, memory control.
+
+    The expensive part is importing the agent stack and ~60 router modules; both
+    run in a worker thread so the event loop can keep answering ``/api/health``
+    (the desktop shell polls it every 250 ms). Never raises.
+    """
+    from octop.api.app import (
+        bind_bridge_asgi,
+        import_deferred_router_modules,
+        mount_deferred_routers,
+    )
+    from octop.infra.utils import startup_timing as timing
+
+    started = time.perf_counter()
+    try:
+        with timing.segment("post_listen.imports"):
+            await asyncio.to_thread(import_deferred_router_modules)
+
+        with timing.segment("post_listen.agents"):
+            await server.start_runtime()
+
+        with timing.segment("post_listen.routers"):
+            mount_deferred_routers(app)
+            bind_bridge_asgi(app, server)
+
+        from octop.infra.agents.memory.slim_control import MemorySlimControl
+
+        with timing.segment("listen.memory_control"):
+            memory_control = MemorySlimControl(server)
+            await memory_control.start()
+            holder["memory_control"] = memory_control
+        timing.emit(
+            "post_listen",
+            (time.perf_counter() - started) * 1000.0,
+            since_process_ms=round(timing.since_process_ms(), 1),
+        )
+    except asyncio.CancelledError:
+        raise
+    except Exception:  # pragma: no cover - boot must survive auxiliary failures
+        logger.exception("post-listen boot failed (non-fatal)")
+
+
 async def run_foreground(
     *,
     host: str | None,
@@ -84,7 +128,7 @@ async def run_foreground(
     from octop.infra.setup.tls.store import resolve_tls_paths
 
     srv = OctopServer()
-    await srv.start()
+    await srv.start(boot_runtime=False)
     from octop.infra.utils import startup_timing as _timing
 
     _timing.mark("listen.begin")
@@ -117,7 +161,7 @@ async def run_foreground(
         )
         reload = False
 
-    app = build_app(srv)
+    app = build_app(srv, defer_heavy=True)
     _timing.emit("listen.build_app", _timing.since_mark_ms("listen.begin") or 0.0)
     _timing.mark("listen.bind")
     servers: list[uvicorn.Server] = []
@@ -190,16 +234,24 @@ async def run_foreground(
         )
         servers.append(_TimedServer(single_config))
 
-    from octop.infra.agents.memory.slim_control import MemorySlimControl
+    from octop.infra.utils import startup_timing as _timing
 
-    memory_control = MemorySlimControl(srv)
+    memory_control_holder: dict[str, Any] = {}
     with coalesce_accept_errors(asyncio.get_running_loop()):
+        # The listener accepts connections as soon as ``serve()`` starts; the
+        # agent stack and the remaining routers are loaded afterwards so
+        # ``/api/health`` — and therefore the desktop splash — does not wait.
+        post_boot = asyncio.create_task(
+            _post_listen_boot(srv, app, memory_control_holder),
+            name="post-listen-boot",
+        )
         try:
-            with _timing.segment("listen.memory_control"):
-                await memory_control.start()
             await asyncio.gather(*(_serve(s) for s in servers))
         finally:
-            await memory_control.close()
+            await _cancel_background_task(post_boot)
+            memory_control = memory_control_holder.get("memory_control")
+            if memory_control is not None:
+                await memory_control.close()
             await _cancel_background_task(bwrap_task)
             await srv.stop()
 

@@ -11,7 +11,6 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
-from scalar_fastapi import get_scalar_api_reference
 
 from octop.api.middleware.jwt_auth import install as install_jwt_auth
 from octop.api.openapi_meta import API_DESCRIPTION, OPENAPI_TAGS, configure_openapi
@@ -106,7 +105,13 @@ def _install_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(status_code=err.status, content=err.to_envelope())
 
 
-def build_app(server: OctopServer) -> FastAPI:
+def build_app(server: OctopServer, *, defer_heavy: bool = False) -> FastAPI:
+    """Build the FastAPI app.
+
+    ``defer_heavy=True`` mounts only the routes needed for the first dashboard
+    paint; the caller must invoke :func:`mount_deferred_routers` later. Tests and
+    other in-process callers keep the historical "everything is mounted" shape.
+    """
     cfg = server.services.config if server.services else getattr(server, "config", None)
     enable_dashboard = cfg.enable_dashboard if cfg else True
     enable_api_docs = cfg.enable_api_docs if cfg else False
@@ -147,15 +152,7 @@ def build_app(server: OctopServer) -> FastAPI:
     # only attaches the local owner to ``request.state``.
     install_jwt_auth(app, server)
 
-    if server.app_runtime is not None and server.app_runtime.bridge_manager is not None:
-        from octop.api.bridge_peer import prepare_peer_dashboard_turn
-        from octop.api.routers.browser.stream import run_browser_stream_session
-
-        server.app_runtime.bridge_manager.bind_asgi_app(
-            app,
-            peer_turn_runner=prepare_peer_dashboard_turn,
-            peer_browser_runner=run_browser_stream_session,
-        )
+    bind_bridge_asgi(app, server)
 
     from octop.infra.setup.tls.challenge import challenge_store
 
@@ -166,171 +163,31 @@ def build_app(server: OctopServer) -> FastAPI:
             raise HTTPException(status_code=404, detail="challenge not found")
         return PlainTextResponse(body)
 
-    from octop.api.routers import (
-        acp,
-        admin,
-        agent_files,
-        agent_mcp,
-        agent_tools,
-        agents,
-        auth,
-        auth_device,
-        auth_ldap,
-        auth_mfa,
-        auth_oauth,
-        auth_oidc,
-        backup,
-        bridge,
-        browser,
-        channels,
-        chat,
-        cloud,
-        connectors,
-        cron,
-        desktop,
-        envs,
-        experts,
-        health,
-        i18n,
-        internal_mcp,
-        invites,
-        knowledge_bases,
-        mbti,
-        media_generation,
-        memory,
-        memory_portable,
-        memory_storage,
-        mobile,
-        ollama_models,
-        onnx_models,
-        plugins,
-        preferences,
-        proactive_care,
-        providers,
-        runtime,
-        search,
-        settings,
-        setup,
-        skill_packages,
-        skills,
-        slash,
-        subagents,
-        teams,
-        terminal,
-        text_assist,
-        update,
-        uploads,
-        usage,
-        user_groups,
-        user_roles,
-        users,
-        voice,
-        workspace,
-    )
-    from octop.api.routers.decision import router as decision_router
-    from octop.api.routers.filesystem import router as filesystem_router
-    from octop.api.routers.observability import router as observability_router
-    from octop.api.routers.providers import admin_router as admin_providers_router
-    from octop.api.routers.security import router as security_router
-    from octop.api.routers.storage_backends import admin_router as admin_storage_router
-    from octop.api.routers.storage_backends import user_router as storage_backends_user_router
-    from octop.api.routers.tls import router as tls_router
-    from octop.api.routers.voice import admin_router as admin_voice_router
+    # Only the routes the shell needs before the first dashboard paint are
+    # mounted here. The remaining routers cost ~20s of module import on slow
+    # volumes (langchain, aiohttp, ldap3, docx…), so ``mount_deferred_routers``
+    # adds them once the socket is already accepting connections.
+    from octop.api.routers import auth, health, i18n, preferences, runtime, setup
 
     _mount_routers(
         app,
         [
             _RouterMount(setup.router, "/api", ["setup"]),
             _RouterMount(auth.router, "/api/auth", ["auth"]),
-            _RouterMount(auth_mfa.router, "/api/auth", ["auth"]),
-            _RouterMount(auth_device.router, "/api/auth", ["auth"]),
-            _RouterMount(auth_oidc.router, "/api/auth", ["auth"]),
-            _RouterMount(auth_oauth.router, "/api/auth", ["auth"]),
-            _RouterMount(auth_ldap.router, "/api/auth", ["auth"]),
-            _RouterMount(invites.public_router, "/api/auth/invite", ["auth"]),
             _RouterMount(preferences.router, "/api", ["auth"]),
             _RouterMount(i18n.router, "/api", ["i18n"]),
             _RouterMount(health.router, "/api/health", ["health"]),
             _RouterMount(runtime.router, "/api/runtime", ["health"]),
-            _RouterMount(invites.admin_router, "/api/users/invites", ["users"]),
-            _RouterMount(user_roles.router, "/api/users/roles", ["users"]),
-            _RouterMount(user_groups.router, "/api/user-groups", ["users"]),
-            _RouterMount(users.router, "/api/users", ["users"]),
-            _RouterMount(agents.router, "/api/agents", ["agents"]),
-            _RouterMount(agent_tools.router, "/api", ["agents"]),
-            _RouterMount(acp.router, "/api", ["agents"]),
-            _RouterMount(agent_mcp.router, "/api", ["agent-mcp"]),
-            _RouterMount(chat.router, "/api", ["chat"]),
-            _RouterMount(slash.router, "/api", ["slash"]),
-            _RouterMount(connectors.router, "/api", ["connectors"]),
-            _RouterMount(bridge.router, "/api", ["bridge"]),
-            _RouterMount(knowledge_bases.router, "/api", ["knowledge"]),
-            _RouterMount(internal_mcp.router, "/api", ["internal-mcp"]),
-            _RouterMount(channels.router, "/api", ["channels"]),
-            _RouterMount(cloud.router, "/api/cloud", ["cloud"]),
-            _RouterMount(cron.router, "/api", ["cron"]),
-            _RouterMount(settings.router, "/api", ["settings"]),
-            _RouterMount(decision_router, "/api", ["settings"]),
-            _RouterMount(envs.router, "/api", ["envs"]),
-            _RouterMount(search.router, "/api", ["search"]),
-            _RouterMount(providers.router, "/api/providers", ["providers"]),
-            _RouterMount(voice.router, "/api/voice", ["voice"]),
-            _RouterMount(admin.router, "/api/admin", ["admin"]),
-            # Public single-user prefix. The desktop shell / tray calls
-            # ``POST /api/backup/create``; the same router is mounted under
-            # ``/api/admin`` below as a compatibility alias.
-            _RouterMount(backup.router, "/api", ["backup"]),
-            _RouterMount(backup.router, "/api/admin", ["admin"]),
-            _RouterMount(admin_providers_router, "/api/admin/providers", ["admin"]),
-            _RouterMount(admin_voice_router, "/api/admin/voice/providers", ["admin"]),
-            _RouterMount(observability_router, "/api/admin/observability", ["observability"]),
-            _RouterMount(
-                media_generation.router,
-                "/api/admin/media-generation",
-                ["providers"],
-            ),
-            _RouterMount(tls_router, "/api/admin/tls", ["tls"]),
-            _RouterMount(security_router, "/api/admin/security", ["security"]),
-            _RouterMount(admin_storage_router, "/api/admin/storage-backends", ["admin"]),
-            _RouterMount(
-                storage_backends_user_router, "/api/storage-backends", ["storage-backends"]
-            ),
-            _RouterMount(filesystem_router, "/api/filesystem", ["filesystem"]),
-            _RouterMount(mbti.router, "/api", ["mbti"]),
-            _RouterMount(experts.router, "/api", ["experts"]),
-            _RouterMount(teams.router, "/api", ["teams"]),
-            _RouterMount(text_assist.router, "/api", ["text-assist"]),
-            _RouterMount(workspace.router, "/api", ["workspace"]),
-            _RouterMount(agent_files.router, "/api", ["agent_files"]),
-            _RouterMount(memory.router, "/api", ["memory"]),
-            _RouterMount(memory_portable.router, "/api", ["memory"]),
-            _RouterMount(memory_storage.router, "/api", ["memory"]),
-            _RouterMount(proactive_care.router, "/api", ["proactive-care"]),
-            _RouterMount(usage.router, "/api", ["usage"]),
-            _RouterMount(usage.admin_router, "/api/admin", ["admin"]),
-            _RouterMount(skill_packages.router, "/api", ["skill-packages"]),
-            _RouterMount(skills.router, "/api", ["skills"]),
-            _RouterMount(subagents.router, "/api", ["subagents"]),
-            _RouterMount(terminal.router, "/api", ["terminal"]),
-            _RouterMount(uploads.router, "/api", ["chat"]),
-            _RouterMount(update.router, "/api", ["update"]),
-            _RouterMount(browser.router, "/api", ["browser"]),
-            _RouterMount(desktop.router, "/api", ["desktop"]),
-            _RouterMount(ollama_models.router, "/api", ["ollama"]),
-            _RouterMount(onnx_models.router, "/api", ["onnx"]),
-            _RouterMount(plugins.router, "/api", ["plugins"]),
         ],
     )
-
-    if enable_mobile:
-        _mount_routers(
-            app,
-            [
-                _RouterMount(mobile.router, "/api", ["mobile"]),
-            ],
-        )
+    app.state.octop_enable_mobile = enable_mobile
+    if not defer_heavy:
+        mount_deferred_routers(app)
 
     if enable_api_docs:
+        # Documentation-only dependency; importing it pulls the whole openapi
+        # model tree, so keep it out of the default (docs disabled) boot path.
+        from scalar_fastapi import get_scalar_api_reference  # noqa: PLC0415
 
         @app.get("/api/docs", include_in_schema=False)
         async def api_docs() -> HTMLResponse:
@@ -343,6 +200,9 @@ def build_app(server: OctopServer) -> FastAPI:
         dashboard_dir = Path(__file__).parent.parent / "dashboard"
         index_file = dashboard_dir / "index.html"
         if index_file.exists():
+            # Everything mounted after this point must be inserted *before* the
+            # SPA catch-all, otherwise Starlette never reaches it.
+            app.state.octop_spa_index = len(app.router.routes)
 
             @app.get("/{full_path:path}", include_in_schema=False)
             async def spa_fallback(full_path: str) -> FileResponse:
@@ -365,3 +225,200 @@ def build_app(server: OctopServer) -> FastAPI:
                 return _dashboard_fallback(index_file, full_path)
 
     return app
+
+
+def bind_bridge_asgi(app: FastAPI, server: OctopServer) -> None:
+    """Attach the bridge peer ASGI app once the runtime exists (no-op before)."""
+    runtime = server.app_runtime
+    if runtime is None or runtime.bridge_manager is None:
+        return
+    from octop.api.bridge_peer import prepare_peer_dashboard_turn
+    from octop.api.routers.browser.stream import run_browser_stream_session
+
+    runtime.bridge_manager.bind_asgi_app(
+        app,
+        peer_turn_runner=prepare_peer_dashboard_turn,
+        peer_browser_runner=run_browser_stream_session,
+    )
+
+
+def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
+    """Import and describe every router that is not needed for first paint.
+
+    Kept in the same relative order as the historical single-shot mount list so
+    route resolution does not change once the deferred mount happens.
+    """
+    from octop.api.routers import (  # noqa: PLC0415
+        acp,
+        admin,
+        agent_files,
+        agent_mcp,
+        agent_tools,
+        agents,
+        auth_device,
+        auth_ldap,
+        auth_mfa,
+        auth_oauth,
+        auth_oidc,
+        backup,
+        bridge,
+        browser,
+        channels,
+        chat,
+        cloud,
+        connectors,
+        cron,
+        desktop,
+        envs,
+        experts,
+        internal_mcp,
+        invites,
+        knowledge_bases,
+        mbti,
+        media_generation,
+        memory,
+        memory_portable,
+        memory_storage,
+        mobile,
+        ollama_models,
+        onnx_models,
+        plugins,
+        proactive_care,
+        providers,
+        search,
+        settings,
+        skill_packages,
+        skills,
+        slash,
+        subagents,
+        teams,
+        terminal,
+        text_assist,
+        update,
+        uploads,
+        usage,
+        user_groups,
+        user_roles,
+        users,
+        voice,
+        workspace,
+    )
+    from octop.api.routers.decision import router as decision_router  # noqa: PLC0415
+    from octop.api.routers.filesystem import router as filesystem_router  # noqa: PLC0415
+    from octop.api.routers.observability import router as observability_router  # noqa: PLC0415
+    from octop.api.routers.providers import admin_router as admin_providers_router  # noqa: PLC0415
+    from octop.api.routers.security import router as security_router  # noqa: PLC0415
+    from octop.api.routers.storage_backends import (  # noqa: PLC0415
+        admin_router as admin_storage_router,
+    )
+    from octop.api.routers.storage_backends import (  # noqa: PLC0415
+        user_router as storage_backends_user_router,
+    )
+    from octop.api.routers.tls import router as tls_router  # noqa: PLC0415
+    from octop.api.routers.voice import admin_router as admin_voice_router  # noqa: PLC0415
+
+    specs = [
+        _RouterMount(auth_mfa.router, "/api/auth", ["auth"]),
+        _RouterMount(auth_device.router, "/api/auth", ["auth"]),
+        _RouterMount(auth_oidc.router, "/api/auth", ["auth"]),
+        _RouterMount(auth_oauth.router, "/api/auth", ["auth"]),
+        _RouterMount(auth_ldap.router, "/api/auth", ["auth"]),
+        _RouterMount(invites.public_router, "/api/auth/invite", ["auth"]),
+        _RouterMount(invites.admin_router, "/api/users/invites", ["users"]),
+        _RouterMount(user_roles.router, "/api/users/roles", ["users"]),
+        _RouterMount(user_groups.router, "/api/user-groups", ["users"]),
+        _RouterMount(users.router, "/api/users", ["users"]),
+        _RouterMount(agents.router, "/api/agents", ["agents"]),
+        _RouterMount(agent_tools.router, "/api", ["agents"]),
+        _RouterMount(acp.router, "/api", ["agents"]),
+        _RouterMount(agent_mcp.router, "/api", ["agent-mcp"]),
+        _RouterMount(chat.router, "/api", ["chat"]),
+        _RouterMount(slash.router, "/api", ["slash"]),
+        _RouterMount(connectors.router, "/api", ["connectors"]),
+        _RouterMount(bridge.router, "/api", ["bridge"]),
+        _RouterMount(knowledge_bases.router, "/api", ["knowledge"]),
+        _RouterMount(internal_mcp.router, "/api", ["internal-mcp"]),
+        _RouterMount(channels.router, "/api", ["channels"]),
+        _RouterMount(cloud.router, "/api/cloud", ["cloud"]),
+        _RouterMount(cron.router, "/api", ["cron"]),
+        _RouterMount(settings.router, "/api", ["settings"]),
+        _RouterMount(decision_router, "/api", ["settings"]),
+        _RouterMount(envs.router, "/api", ["envs"]),
+        _RouterMount(search.router, "/api", ["search"]),
+        _RouterMount(providers.router, "/api/providers", ["providers"]),
+        _RouterMount(voice.router, "/api/voice", ["voice"]),
+        _RouterMount(admin.router, "/api/admin", ["admin"]),
+        # Public single-user prefix. The desktop shell / tray calls
+        # ``POST /api/backup/create``; the same router is mounted under
+        # ``/api/admin`` below as a compatibility alias.
+        _RouterMount(backup.router, "/api", ["backup"]),
+        _RouterMount(backup.router, "/api/admin", ["admin"]),
+        _RouterMount(admin_providers_router, "/api/admin/providers", ["admin"]),
+        _RouterMount(admin_voice_router, "/api/admin/voice/providers", ["admin"]),
+        _RouterMount(observability_router, "/api/admin/observability", ["observability"]),
+        _RouterMount(media_generation.router, "/api/admin/media-generation", ["providers"]),
+        _RouterMount(tls_router, "/api/admin/tls", ["tls"]),
+        _RouterMount(security_router, "/api/admin/security", ["security"]),
+        _RouterMount(admin_storage_router, "/api/admin/storage-backends", ["admin"]),
+        _RouterMount(
+            storage_backends_user_router, "/api/storage-backends", ["storage-backends"]
+        ),
+        _RouterMount(filesystem_router, "/api/filesystem", ["filesystem"]),
+        _RouterMount(mbti.router, "/api", ["mbti"]),
+        _RouterMount(experts.router, "/api", ["experts"]),
+        _RouterMount(teams.router, "/api", ["teams"]),
+        _RouterMount(text_assist.router, "/api", ["text-assist"]),
+        _RouterMount(workspace.router, "/api", ["workspace"]),
+        _RouterMount(agent_files.router, "/api", ["agent_files"]),
+        _RouterMount(memory.router, "/api", ["memory"]),
+        _RouterMount(memory_portable.router, "/api", ["memory"]),
+        _RouterMount(memory_storage.router, "/api", ["memory"]),
+        _RouterMount(proactive_care.router, "/api", ["proactive-care"]),
+        _RouterMount(usage.router, "/api", ["usage"]),
+        _RouterMount(usage.admin_router, "/api/admin", ["admin"]),
+        _RouterMount(skill_packages.router, "/api", ["skill-packages"]),
+        _RouterMount(skills.router, "/api", ["skills"]),
+        _RouterMount(subagents.router, "/api", ["subagents"]),
+        _RouterMount(terminal.router, "/api", ["terminal"]),
+        _RouterMount(uploads.router, "/api", ["chat"]),
+        _RouterMount(update.router, "/api", ["update"]),
+        _RouterMount(browser.router, "/api", ["browser"]),
+        _RouterMount(desktop.router, "/api", ["desktop"]),
+        _RouterMount(ollama_models.router, "/api", ["ollama"]),
+        _RouterMount(onnx_models.router, "/api", ["onnx"]),
+        _RouterMount(plugins.router, "/api", ["plugins"]),
+    ]
+    if enable_mobile:
+        specs.append(_RouterMount(mobile.router, "/api", ["mobile"]))
+    return specs
+
+
+def import_deferred_router_modules() -> None:
+    """Import the deferred routers without touching the app (worker thread)."""
+    deferred_router_specs(enable_mobile=True)
+
+
+def mount_deferred_routers(app: FastAPI) -> None:
+    """Mount the remaining routers ahead of the SPA catch-all.
+
+    The heavy import work happens inside :func:`deferred_router_specs`; call this
+    from the event loop only after :func:`import_deferred_router_modules` has run
+    in a worker thread, so the loop is not blocked for tens of seconds.
+    """
+    if getattr(app.state, "octop_deferred_mounted", False):
+        return
+    app.state.octop_deferred_mounted = True
+    specs = deferred_router_specs(
+        enable_mobile=bool(getattr(app.state, "octop_enable_mobile", False))
+    )
+    start = len(app.router.routes)
+    _mount_routers(app, specs)
+    added = app.router.routes[start:]
+    if not added:
+        return
+    del app.router.routes[start:]
+    index = getattr(app.state, "octop_spa_index", None)
+    if index is None or index > len(app.router.routes):
+        index = len(app.router.routes)
+    app.router.routes[index:index] = added
+    app.openapi_schema = None
