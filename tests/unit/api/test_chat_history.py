@@ -227,7 +227,13 @@ async def test_list_threads_derives_has_messages_from_db() -> None:
 
     user = MagicMock(id=1, is_admin=False)
 
-    out = await history_mod.list_threads("agt_1", limit=10, user=user, server=server)
+    out = await history_mod.list_threads(
+        "agt_1",
+        request=SimpleNamespace(headers={}),
+        limit=10,
+        user=user,
+        server=server,
+    )
 
     assert len(out) == 2
     assert out[0]["has_messages"] is False
@@ -238,6 +244,78 @@ async def test_list_threads_derives_has_messages_from_db() -> None:
     assert out[1]["awaiting_user"] is False
     assert out[0]["unread_count"] == 0
     assert out[1]["unread_count"] == 3
+
+
+def _list_threads_server(rows: list[ThreadRow]) -> MagicMock:
+    thread_registry = MagicMock()
+    thread_registry.list_visible_threads.return_value = rows
+    thread_registry.get_bound_thread_id.return_value = None
+    thread_registry.unread_counts_for_threads.return_value = {}
+
+    server = MagicMock()
+    server.app_runtime.agent_registry.get_row.return_value = MagicMock(user_id=1)
+    server.app_runtime.gateway.thread_registry = thread_registry
+    server.app_runtime.gateway.ws_hub.is_turn_active.return_value = False
+    server.app_runtime.gateway.processor.hitl_coordinator.store.pending_thread_ids.return_value = (
+        frozenset()
+    )
+    return server
+
+
+def _untitled_row() -> ThreadRow:
+    return ThreadRow(
+        id=1,
+        thread_id="thr_empty",
+        agent_id="agt_1",
+        user_id=1,
+        channel_type="dashboard",
+        session_key="sk",
+        title=None,
+        last_active=0,
+        created_at=1,
+    )
+
+
+@pytest.mark.asyncio
+async def test_list_threads_localizes_untitled_placeholder() -> None:
+    """A title-less thread must not surface the English "New Chat" in a zh UI."""
+    rows = [
+        _untitled_row(),
+        ThreadRow(
+            id=2,
+            thread_id="thr_titled",
+            agent_id="agt_1",
+            user_id=1,
+            channel_type="dashboard",
+            session_key="sk2",
+            title="hello",
+            last_active=5,
+            created_at=1,
+        ),
+    ]
+    user = MagicMock(id=1, is_admin=False)
+
+    zh = await history_mod.list_threads(
+        "agt_1",
+        request=SimpleNamespace(headers={"accept-language": "zh-CN,zh;q=0.9"}),
+        limit=10,
+        user=user,
+        server=_list_threads_server(rows),
+    )
+    assert zh[0]["title"] != "New Chat"
+    assert zh[0]["title"] == "新会话"
+    # A stored title is never replaced by the placeholder.
+    assert zh[1]["title"] == "hello"
+
+    en = await history_mod.list_threads(
+        "agt_1",
+        request=SimpleNamespace(headers={"accept-language": "en-US,en;q=0.9"}),
+        limit=10,
+        user=user,
+        server=_list_threads_server(rows),
+    )
+    assert en[0]["title"] == "New Chat"
+    assert en[1]["title"] == "hello"
 
 
 @pytest.mark.asyncio

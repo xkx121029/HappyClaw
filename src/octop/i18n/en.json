@@ -745,7 +745,8 @@
   },
   "threads": {
     "fork_title_suffix": " (fork)",
-    "fork_default_title": "Forked chat"
+    "fork_default_title": "Forked chat",
+    "new_chat_title": "New Chat"
   },
   "cron": {
     "history": {

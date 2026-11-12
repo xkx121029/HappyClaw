@@ -745,7 +745,8 @@
   },
   "threads": {
     "fork_title_suffix": "（分叉）",
-    "fork_default_title": "分叉对话"
+    "fork_default_title": "分叉对话",
+    "new_chat_title": "新会话"
   },
   "cron": {
     "history": {

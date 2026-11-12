@@ -20,7 +20,7 @@ from octop.api.routers.chat.serialize import (
     _clamp_history_limit,
     _load_projected_thread_messages,
 )
-from octop.i18n import error_message
+from octop.i18n import error_message, tr
 from octop.infra.agents.security.hitl_session import parse_hitl_session_policy
 from octop.infra.agents.threads.artifact import thread_artifacts_payload
 from octop.infra.agents.threads.context_breakdown import SEGMENT_KEYS, compute_context_breakdown
@@ -170,6 +170,7 @@ def _require_thread(
 @router.get("/agents/{agent_id}/threads", summary="List threads")
 async def list_threads(
     agent_id: str,
+    request: Request,
     limit: int = 50,
     as_user: int | None = None,
     user: Any = Depends(current_user),
@@ -201,6 +202,10 @@ async def list_threads(
     message_repo = server.services.thread_message_repo
     ids_with_messages = message_repo.threads_with_messages([r.thread_id for r in rows])
     unread = thread_registry.unread_counts_for_threads([r.thread_id for r in rows])
+    # Untitled threads get the localized placeholder instead of letting the
+    # client fall back to an English literal. Stored titles are left untouched
+    # so renaming and auto-titling keep working.
+    untitled = tr("threads.new_chat_title", resolve_request_locale(request))
 
     def _has_messages(row: Any) -> bool:
         if not thread_row_has_messages(row):
@@ -213,7 +218,7 @@ async def list_threads(
     return [
         {
             "thread_id": r.thread_id,
-            "title": r.title,
+            "title": r.title if isinstance(r.title, str) and r.title.strip() else untitled,
             "channel_type": r.channel_type,
             "session_key": r.session_key,
             "last_active": r.last_active,
