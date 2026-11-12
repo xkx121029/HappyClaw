@@ -1491,10 +1491,31 @@
       "session": "Chat",
       "groupActions": "Actions",
       "groupModels": "Models",
-      "groupSessions": "Recent chats",
+      "groupSessions": "Recent {{total}} chats",
       "noResults": "No matches. Try another keyword.",
       "footer": "↑↓ select · ↵ run · Esc close",
-      "localOnly": "Local only"
+      "localOnly": "Local only",
+      "shortcuts": "Keyboard shortcuts",
+      "shortcutsHint": "Ctrl/Cmd + /"
+    },
+    "search": {
+      "placeholder": "Find in this chat",
+      "count": "{{current}} / {{total}}",
+      "noResults": "No matches",
+      "previous": "Previous match (Shift + Enter)",
+      "next": "Next match (Enter)",
+      "close": "Close (Esc)"
+    },
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "send": "Send message",
+      "newline": "New line",
+      "newChat": "New chat",
+      "palette": "Command palette",
+      "search": "Find in chat",
+      "help": "Shortcut help",
+      "close": "Close current panel",
+      "note": "On desktop Enter sends and Shift + Enter starts a new line; on mobile Enter starts a new line."
     },
     "regenerate": "Regenerate",
     "fork": "Fork",

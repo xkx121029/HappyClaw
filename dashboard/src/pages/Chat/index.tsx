@@ -25,6 +25,7 @@ import { useChat } from "./hooks/useChat";
 import { useSessions, fetchAndSyncSessionArtifacts } from "./hooks/useSessions";
 import * as chatStore from "./hooks/chatStore";
 import { formatRunUsage, assistantTurnsFromEnd } from "./utils/chatMessages";
+import { findMessageHits } from "./utils/messageSearch";
 import { useChatSidebarState } from "./hooks/useChatSidebarState";
 import { useChatHistoryRail } from "./hooks/useChatHistoryRail";
 import { useChatDockPanel } from "./hooks/useChatDockPanel";
@@ -61,6 +62,8 @@ import { octopThreadsApi } from "../../api/modules/octopThreads";
 import type { TokenUsage } from "../../api/types";
 import type { ChatAttachment } from "./hooks/useChat";
 import MessageList from "./components/MessageList";
+import MessageSearchBar from "./components/MessageSearchBar";
+import ShortcutHelpDialog from "./components/ShortcutHelpDialog";
 import ChatInput, { type ChatInputHandle } from "./components/ChatInput";
 import WelcomeScreen from "./components/WelcomeScreen";
 import AgentNotReadyScreen from "./components/AgentNotReadyScreen";
@@ -395,6 +398,39 @@ function ChatPageInner() {
   );
   const pendingAsk = useMemo(() => findPendingAsk(messages), [messages]);
   const autoResumedApprovalRef = useRef<string | null>(null);
+
+  // ---- 会话内搜索（Ctrl/Cmd + F）与快捷键帮助 ----
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchHitIndex, setSearchHitIndex] = useState(0);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+  const searchHits = useMemo(
+    () => findMessageHits(messages, searchQuery),
+    [messages, searchQuery],
+  );
+  const activeSearchHit =
+    searchHits.length === 0
+      ? null
+      : searchHits[Math.min(searchHitIndex, searchHits.length - 1)] ?? null;
+
+  // 改查询词就回到第一处命中。
+  useEffect(() => {
+    setSearchHitIndex(0);
+  }, [searchQuery]);
+
+  const closeMessageSearch = useCallback(() => {
+    setSearchOpen(false);
+    setSearchHitIndex(0);
+  }, []);
+
+  const stepMessageSearch = useCallback(
+    (delta: 1 | -1) => {
+      const total = searchHits.length;
+      if (total === 0) return;
+      setSearchHitIndex((current) => (current + delta + total) % total);
+    },
+    [searchHits.length],
+  );
 
   const refreshBrowserRef = useRef<() => void>(() => {});
 
@@ -1019,12 +1055,26 @@ function ChatPageInner() {
     navigate("/admin/advanced?tab=backup");
   }, [navigate]);
 
-  // 单人本机快捷键：命令面板 / 新建会话 / 模型切换 / 本机设置。
+  // 单人本机快捷键：命令面板 / 会话内搜索 / 快捷键帮助 / 新建会话 / 本机设置。
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const mod = event.metaKey || event.ctrlKey;
-      if (!mod) return;
+      if (!mod || event.defaultPrevented) return;
       const key = event.key.toLowerCase();
+      // Ctrl/Cmd+F 与浏览器查找撞车：只有在有消息、且没有弹层时接管。
+      if (key === "f" && !event.shiftKey && !event.altKey) {
+        if (paletteOpen || shortcutHelpOpen || messages.length === 0) return;
+        event.preventDefault();
+        setSearchOpen(true);
+        setSearchHitIndex(0);
+        return;
+      }
+      if (event.key === "/") {
+        if (paletteOpen) return;
+        event.preventDefault();
+        setShortcutHelpOpen((open) => !open);
+        return;
+      }
       if (key === "k" && !event.shiftKey) {
         event.preventDefault();
         setPaletteOpen(true);
@@ -1047,7 +1097,27 @@ function ChatPageInner() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleNewChat, openLocalSettings]);
+  }, [
+    handleNewChat,
+    openLocalSettings,
+    paletteOpen,
+    shortcutHelpOpen,
+    messages.length,
+  ]);
+
+  // 搜索条失焦后仍能用 Esc 退出；弹层自己的 Esc 优先级更高。
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (paletteOpen || shortcutHelpOpen) return;
+      // 先关搜索，别让同一次 Esc 顺带收起移动端侧栏。
+      event.preventDefault();
+      closeMessageSearch();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [searchOpen, paletteOpen, shortcutHelpOpen, closeMessageSearch]);
 
   // 桌面壳退出守卫：输入框内容与排队中的消息都算「未保存」；
   // 流式生成不算，由壳的「后端繁忙」判断覆盖，避免每次生成都弹窗。
@@ -1725,6 +1795,9 @@ function ChatPageInner() {
                       onAcpPermissionSelect={handleAcpPermissionSelect}
                       onHitlDecision={handleHitlDecision}
                       onTurnRailVisibilityChange={setTurnRailVisible}
+                      searchOpen={searchOpen}
+                      searchQuery={searchQuery}
+                      searchHit={activeSearchHit}
                       onOpenBrowser={
                         hasBrowserTool ? openBrowserTab : undefined
                       }
@@ -2046,6 +2119,20 @@ function ChatPageInner() {
               contextMaxTokens={contextMaxTokens}
               decisionSaved={decisionSaved}
             />
+            {searchOpen && !showWelcome ? (
+              <MessageSearchBar
+                query={searchQuery}
+                total={searchHits.length}
+                activeIndex={Math.min(
+                  searchHitIndex,
+                  Math.max(0, searchHits.length - 1),
+                )}
+                onQueryChange={setSearchQuery}
+                onPrev={() => stepMessageSearch(-1)}
+                onNext={() => stepMessageSearch(1)}
+                onClose={closeMessageSearch}
+              />
+            ) : null}
           </div>
 
           <ChatDockPanels
@@ -2103,6 +2190,14 @@ function ChatPageInner() {
             onSelectModel={setSelectedModel}
             onOpenSettings={openLocalSettings}
             onOpenBackup={openLocalBackup}
+            onOpenShortcuts={() => {
+              setPaletteOpen(false);
+              setShortcutHelpOpen(true);
+            }}
+          />
+          <ShortcutHelpDialog
+            open={shortcutHelpOpen}
+            onClose={() => setShortcutHelpOpen(false)}
           />
         </div>
       </ChatToolDockProvider>

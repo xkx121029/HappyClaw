@@ -3,6 +3,7 @@ import { Modal } from "antd";
 import {
   Cpu,
   DatabaseBackup,
+  Keyboard,
   MessageSquareText,
   Plus,
   Search,
@@ -14,6 +15,7 @@ import { useTranslation } from "react-i18next";
 
 import styles from "../index.module.less";
 import type { Session } from "../hooks/useSessions";
+import { pickRecentSessions } from "../utils/recentSessions";
 
 export interface PaletteModelOption {
   value: string;
@@ -33,6 +35,7 @@ interface CommandPaletteProps {
   onSelectModel: (value: string | null) => void;
   onOpenSettings: () => void;
   onOpenBackup: () => void;
+  onOpenShortcuts: () => void;
 }
 
 interface PaletteCommand {
@@ -43,8 +46,6 @@ interface PaletteCommand {
   icon: LucideIcon;
   run: () => void;
 }
-
-const MAX_SESSIONS = 8;
 
 /**
  * 单人本机命令面板（Ctrl/Cmd + K）。
@@ -64,11 +65,17 @@ export default function CommandPalette({
   onSelectModel,
   onOpenSettings,
   onOpenBackup,
+  onOpenShortcuts,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // 只用已加载的会话列表，不额外请求；按最近访问而不是侧栏的收藏置顶顺序。
+  const recentSessions = useMemo(
+    () => pickRecentSessions(sessions),
+    [sessions],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -104,6 +111,14 @@ export default function CommandPalette({
         icon: DatabaseBackup,
         run: onOpenBackup,
       },
+      {
+        kind: "action",
+        id: "shortcuts",
+        label: t("chat.palette.shortcuts", "键盘快捷键"),
+        meta: t("chat.palette.shortcutsHint", "Ctrl/Cmd + /"),
+        icon: Keyboard,
+        run: onOpenShortcuts,
+      },
     ];
 
     const modelCommands: PaletteCommand[] = modelsReady
@@ -120,18 +135,16 @@ export default function CommandPalette({
         }))
       : [];
 
-    const sessionCommands: PaletteCommand[] = sessions
-      .slice(0, MAX_SESSIONS)
-      .map((session) => ({
-        kind: "session" as const,
-        id: `session:${session.id}`,
-        label: session.name,
-        meta: session.pinned
-          ? t("chat.palette.pinned", "已收藏")
-          : t("chat.palette.session", "会话"),
-        icon: MessageSquareText,
-        run: () => onSelectSession(session.id),
-      }));
+    const sessionCommands: PaletteCommand[] = recentSessions.map((session) => ({
+      kind: "session" as const,
+      id: `session:${session.id}`,
+      label: session.name,
+      meta: session.pinned
+        ? t("chat.palette.pinned", "已收藏")
+        : t("chat.palette.session", "会话"),
+      icon: MessageSquareText,
+      run: () => onSelectSession(session.id),
+    }));
 
     return [...actions, ...modelCommands, ...sessionCommands];
   }, [
@@ -141,9 +154,10 @@ export default function CommandPalette({
     onNewChat,
     onOpenBackup,
     onOpenSettings,
+    onOpenShortcuts,
     onSelectModel,
     onSelectSession,
-    sessions,
+    recentSessions,
     t,
   ]);
 
@@ -161,7 +175,8 @@ export default function CommandPalette({
   // 否则 Enter 变成了死键。把这两个动作接进同一套上下键选择。
   const noResults = filtered.length === 0;
   const emptyActions = useMemo(
-    () => commands.filter((cmd) => cmd.id === "new-chat" || cmd.id === "settings"),
+    () =>
+      commands.filter((cmd) => cmd.id === "new-chat" || cmd.id === "settings"),
     [commands],
   );
   const navigable = noResults ? emptyActions : filtered;
@@ -221,7 +236,10 @@ export default function CommandPalette({
               "chat.palette.placeholder",
               "搜索会话、切换模型，或输入命令…",
             )}
-            aria-label={t("chat.palette.placeholder", "搜索会话、切换模型，或输入命令…")}
+            aria-label={t(
+              "chat.palette.placeholder",
+              "搜索会话、切换模型，或输入命令…",
+            )}
             spellCheck={false}
           />
           <kbd className={styles.cpKbd}>Esc</kbd>
@@ -268,8 +286,11 @@ export default function CommandPalette({
                       {cmd.kind === "action"
                         ? t("chat.palette.groupActions", "操作")
                         : cmd.kind === "model"
-                          ? t("chat.palette.groupModels", "模型")
-                          : t("chat.palette.groupSessions", "最近会话")}
+                        ? t("chat.palette.groupModels", "模型")
+                        : t("chat.palette.groupSessions", {
+                            total: recentSessions.length,
+                            defaultValue: "最近 {{total}} 条会话",
+                          })}
                     </div>
                   ) : null}
                   <button

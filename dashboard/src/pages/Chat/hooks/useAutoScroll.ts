@@ -82,6 +82,11 @@ export interface UseAutoScrollOptions {
   overscrollBottomThreshold?: number;
   /** When true on a deps tick, skip the automatic instant follow scroll. */
   skipNextDepsScrollRef?: React.MutableRefObject<boolean>;
+  /**
+   * Pause follow while an overlay (e.g. in-thread search) owns the viewport.
+   * Streaming appends still land in the DOM, they just no longer yank scroll.
+   */
+  followSuspended?: boolean;
 }
 
 export interface UseAutoScrollReturn {
@@ -115,6 +120,7 @@ export function useAutoScroll({
   onOverscrollBottom,
   overscrollBottomThreshold = OVERSCROLL_BOTTOM_THRESHOLD,
   skipNextDepsScrollRef,
+  followSuspended = false,
 }: UseAutoScrollOptions = {}): UseAutoScrollReturn {
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const internalEndRef = useRef<HTMLDivElement>(null);
@@ -138,6 +144,8 @@ export function useAutoScroll({
 
   const virtualRef = useRef(virtual);
   virtualRef.current = virtual;
+  const followSuspendedRef = useRef(followSuspended);
+  followSuspendedRef.current = followSuspended;
 
   const getScroller = useCallback((): HTMLElement | null => {
     if (virtualRef.current?.scrollerRef.current) {
@@ -215,9 +223,12 @@ export function useAutoScroll({
   const scrollToBottomInFollowMode = useCallback(
     (instant = false, sync = false) => {
       if (scrollModeRef.current !== "follow") return;
+      // Search overlay owns the viewport — no auto-follow until it closes.
+      if (followSuspendedRef.current) return;
 
       const run = () => {
         if (scrollModeRef.current !== "follow") return;
+        if (followSuspendedRef.current) return;
 
         const v = virtualRef.current;
         const itemCount = v?.itemCountRef.current ?? 0;

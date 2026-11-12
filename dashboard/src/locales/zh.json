@@ -1491,10 +1491,31 @@
       "session": "会话",
       "groupActions": "操作",
       "groupModels": "模型",
-      "groupSessions": "最近会话",
+      "groupSessions": "最近 {{total}} 条会话",
       "noResults": "没有匹配项，换个关键词试试。",
       "footer": "↑↓ 选择 · ↵ 执行 · Esc 关闭",
-      "localOnly": "仅本机"
+      "localOnly": "仅本机",
+      "shortcuts": "键盘快捷键",
+      "shortcutsHint": "Ctrl/Cmd + /"
+    },
+    "search": {
+      "placeholder": "在对话中查找",
+      "count": "{{current}} / {{total}}",
+      "noResults": "无匹配",
+      "previous": "上一处（Shift + Enter）",
+      "next": "下一处（Enter）",
+      "close": "关闭（Esc）"
+    },
+    "shortcuts": {
+      "title": "键盘快捷键",
+      "send": "发送消息",
+      "newline": "换行",
+      "newChat": "新建会话",
+      "palette": "命令面板",
+      "search": "会话内搜索",
+      "help": "快捷键帮助",
+      "close": "关闭当前面板",
+      "note": "桌面端 Enter 发送、Shift + Enter 换行；移动端 Enter 换行。"
     },
     "regenerate": "重新生成",
     "fork": "分叉",

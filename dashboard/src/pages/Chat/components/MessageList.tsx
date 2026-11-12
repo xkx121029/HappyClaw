@@ -40,6 +40,12 @@ import {
   shouldReleaseLoadMoreLatch,
 } from "./loadOlderGate";
 import { prependAnchorShift } from "../utils/prependAnchor";
+import type { MessageSearchHit } from "../utils/messageSearch";
+import {
+  applySearchHighlights,
+  clearSearchHighlights,
+  findOccurrenceRect,
+} from "../utils/chatSearchHighlights";
 import * as chatStore from "../hooks/chatStore";
 import { shouldBlockHistoryRefresh } from "../hooks/wsResumeGate";
 import styles from "../index.module.less";
@@ -119,6 +125,12 @@ interface MessageListProps {
   compactProcess?: boolean;
   /** Notify chat chrome when the in-thread turn rail is shown (for gutter align). */
   onTurnRailVisibilityChange?: (visible: boolean) => void;
+  /** 会话内搜索的查询词；虚拟列表只高亮已渲染的行。 */
+  searchQuery?: string;
+  /** 当前命中，驱动定位滚动。 */
+  searchHit?: MessageSearchHit | null;
+  /** 搜索条展开时记录滚动位置，关闭后还原。 */
+  searchOpen?: boolean;
 }
 
 interface GroupRenderContext {
@@ -288,6 +300,9 @@ export default function MessageList(props: MessageListProps) {
     shellCommandDisabledTitle,
     compactProcess,
     onTurnRailVisibilityChange,
+    searchQuery = "",
+    searchHit = null,
+    searchOpen = false,
   } = props;
 
   const { t } = useTranslation();
@@ -511,6 +526,8 @@ export default function MessageList(props: MessageListProps) {
     onOverscrollBottom: requestRefreshMessages,
     deps: [scrollFollowToken],
     skipNextDepsScrollRef,
+    // 搜索打开时由搜索条接管视口，流式追加不再把视口拽回底部。
+    followSuspended: searchOpen,
   });
 
   const handleAtTopStateChange = useCallback(
@@ -642,6 +659,170 @@ export default function MessageList(props: MessageListProps) {
     },
     [],
   );
+
+  // ---- 会话内搜索（Ctrl/Cmd + F）----
+  const searchScrollTopRef = useRef<number | null>(null);
+  // 定位时只读最新值：消息增长不应该把视口重新拽回命中处。
+  const searchNavRef = useRef({ groups: messageGroups, firstItemIndex });
+  searchNavRef.current = { groups: messageGroups, firstItemIndex };
+  /** 分组渲染时 data-message-id 挂在首条消息上，命中后面几条时要换算到容器。 */
+  const searchContainerId = useMemo(() => {
+    if (!searchHit) return null;
+    const group = messageGroups.find((item) =>
+      item.messages.some((message) => message.id === searchHit.messageId),
+    );
+    return group?.messages[0]?.id ?? searchHit.messageId;
+  }, [messageGroups, searchHit]);
+
+  // 打开时记住滚动位置，关闭（Esc 或按钮）后原样还原。
+  useEffect(() => {
+    if (!searchOpen) return;
+    const root = useVirtual ? scrollerRef.current : containerRef.current;
+    if (root instanceof HTMLElement) {
+      searchScrollTopRef.current = root.scrollTop;
+    }
+    return () => {
+      const saved = searchScrollTopRef.current;
+      searchScrollTopRef.current = null;
+      const current = useVirtual ? scrollerRef.current : containerRef.current;
+      if (saved === null || !(current instanceof HTMLElement)) return;
+      armProgrammaticGuard(320);
+      current.scrollTop = saved;
+    };
+  }, [searchOpen, useVirtual, armProgrammaticGuard]);
+
+  const searchHitMessageId = searchHit?.messageId ?? null;
+  const searchHitOccurrence = searchHit?.occurrence ?? -1;
+
+  // 上下切换命中：先把消息滚进视口，再把第 n 处命中挪到中间。
+  // 虚拟列表要先等目标行挂载，所以按帧重试几次，而不是只等一帧。
+  useEffect(() => {
+    if (!searchOpen || !searchHitMessageId) return;
+    // 只依赖命中坐标：流式追加消息会让 searchHit 换新对象，
+    // 那不该把视口重新拽回命中处。
+    const messageId = searchHitMessageId;
+    const occurrence = searchHitOccurrence;
+    const { groups, firstItemIndex: startIndex } = searchNavRef.current;
+    const groupIndex = groups.findIndex((group) =>
+      group.messages.some((message) => message.id === messageId),
+    );
+    if (groupIndex < 0) return;
+
+    const root = useVirtual ? scrollerRef.current : containerRef.current;
+    let frame = 0;
+    let attempts = 0;
+    let cancelled = false;
+
+    const centerOnHit = (): boolean => {
+      if (!(root instanceof HTMLElement)) return true;
+      const rect = findOccurrenceRect(
+        root,
+        searchQuery,
+        searchContainerId,
+        occurrence,
+      );
+      if (!rect) return false;
+      const box = root.getBoundingClientRect();
+      const delta = rect.top - box.top - box.height / 2 + rect.height / 2;
+      if (Math.abs(delta) > 24) {
+        armProgrammaticGuard(400);
+        root.scrollTop += delta;
+      }
+      return true;
+    };
+
+    // 先把目标行交给列表定位；Virtuoso 会在下一帧挂载它。
+    armProgrammaticGuard(400);
+    if (useVirtual) {
+      virtuosoRef.current?.scrollToIndex({
+        index: startIndex + groupIndex,
+        align: "center",
+        behavior: "auto",
+      });
+    } else {
+      bubbleRefsMap.current
+        .get(searchContainerId ?? messageId)
+        ?.scrollIntoView({ block: "center" });
+    }
+
+    const tick = () => {
+      if (cancelled) return;
+      attempts += 1;
+      if (centerOnHit() || attempts >= 12) return;
+      // Virtuoso 偶尔第一次测量落空，过半程再请求一次。
+      if (useVirtual && attempts === 6) {
+        virtuosoRef.current?.scrollToIndex({
+          index: startIndex + groupIndex,
+          align: "center",
+          behavior: "auto",
+        });
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
+  }, [
+    searchOpen,
+    searchHitMessageId,
+    searchHitOccurrence,
+    searchQuery,
+    searchContainerId,
+    useVirtual,
+    armProgrammaticGuard,
+  ]);
+
+  // 高亮：虚拟列表滚动会复用节点，所以每次滚动都重算一遍 Range。
+  useEffect(() => {
+    if (!searchOpen) {
+      clearSearchHighlights();
+      return;
+    }
+    const root = (
+      useVirtual ? scrollerRef.current : containerRef.current
+    ) as HTMLElement | null;
+    if (!root || !searchQuery.trim()) {
+      clearSearchHighlights();
+      return;
+    }
+    let frame = 0;
+    const paint = () => {
+      frame = 0;
+      applySearchHighlights(
+        root,
+        searchQuery,
+        searchContainerId,
+        searchHitOccurrence,
+      );
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    paint();
+    root.addEventListener("scroll", schedule, { passive: true });
+    // 虚拟列表滚动时新行是「挂载」而不是滚动触发的，光监听 scroll 会漏掉高亮。
+    const observer = new MutationObserver(schedule);
+    observer.observe(root, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      observer.disconnect();
+      root.removeEventListener("scroll", schedule);
+      clearSearchHighlights();
+    };
+  }, [
+    searchOpen,
+    searchQuery,
+    searchHitOccurrence,
+    searchContainerId,
+    useVirtual,
+    scrollerMountKey,
+  ]);
 
   // Keep scrollToBottom identity out of session-reset deps: virtual itemCount
   // changes every message and would re-disarm canLoadOlder permanently.
@@ -862,7 +1043,12 @@ export default function MessageList(props: MessageListProps) {
           aria-busy="true"
           aria-label={t("chat.loadingMessages", "正在加载消息")}
         >
-          <div className={cx(styles.messageSkeletonRow, styles.messageSkeletonRowUser)}>
+          <div
+            className={cx(
+              styles.messageSkeletonRow,
+              styles.messageSkeletonRowUser,
+            )}
+          >
             <div className={styles.messageSkeletonBody}>
               <div
                 className={styles.messageSkeletonBubble}
@@ -873,12 +1059,26 @@ export default function MessageList(props: MessageListProps) {
           <div className={styles.messageSkeletonRow}>
             <div className={styles.messageSkeletonAvatar} />
             <div className={styles.messageSkeletonBody}>
-              <div className={styles.messageSkeletonLine} style={{ width: "92%" }} />
-              <div className={styles.messageSkeletonLine} style={{ width: "78%" }} />
-              <div className={styles.messageSkeletonLine} style={{ width: "46%" }} />
+              <div
+                className={styles.messageSkeletonLine}
+                style={{ width: "92%" }}
+              />
+              <div
+                className={styles.messageSkeletonLine}
+                style={{ width: "78%" }}
+              />
+              <div
+                className={styles.messageSkeletonLine}
+                style={{ width: "46%" }}
+              />
             </div>
           </div>
-          <div className={cx(styles.messageSkeletonRow, styles.messageSkeletonRowUser)}>
+          <div
+            className={cx(
+              styles.messageSkeletonRow,
+              styles.messageSkeletonRowUser,
+            )}
+          >
             <div className={styles.messageSkeletonBody}>
               <div
                 className={styles.messageSkeletonBubble}
