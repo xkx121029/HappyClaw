@@ -66,37 +66,69 @@ async def _serve(server: Any) -> None:
 
 
 async def _post_listen_boot(server: Any, app: Any, holder: dict[str, Any]) -> None:
-    """Finish the boot after the socket is bound: agents, routers, memory control.
+    """Make the first chat turn possible, then load everything else in the back.
 
-    The expensive part is importing the agent stack and ~60 router modules; both
-    run in a worker thread so the event loop can keep answering ``/api/health``
-    (the desktop shell polls it every 250 ms). Never raises.
+    Split on purpose: ``agents`` + ``chat`` is all a turn needs, while the other
+    ~58 routers (``agent_files`` alone costs 13.7s, ``agent_tools`` 9.1s,
+    ``agent_mcp`` 7.8s, ``acp`` 3.7s) are only needed when the user opens those
+    panels. They keep loading after :func:`_post_listen_rest` is spawned, so the
+    dashboard can open the conversation much earlier. Never raises.
     """
     from octop.api.app import (
         bind_bridge_asgi,
-        import_deferred_router_modules,
-        mount_deferred_routers,
+        import_critical_router_modules,
+        mount_critical_routers,
     )
     from octop.infra.utils import startup_timing as timing
 
     started = time.perf_counter()
     try:
-        with timing.segment("post_listen.imports"):
-            await asyncio.to_thread(import_deferred_router_modules)
+        with timing.segment("post_listen.imports_critical"):
+            await asyncio.to_thread(import_critical_router_modules)
 
         with timing.segment("post_listen.agents"):
             await server.start_runtime()
 
-        with timing.segment("post_listen.routers"):
-            mount_deferred_routers(app)
+        with timing.segment("post_listen.routers_critical"):
+            mount_critical_routers(app)
             bind_bridge_asgi(app, server)
+        timing.emit(
+            "chat_ready",
+            (time.perf_counter() - started) * 1000.0,
+            since_process_ms=round(timing.since_process_ms(), 1),
+        )
+        holder["rest_task"] = asyncio.create_task(
+            _post_listen_rest(server, app, holder), name="post-listen-rest"
+        )
+    except asyncio.CancelledError:
+        raise
+    except Exception:  # pragma: no cover - boot must survive auxiliary failures
+        logger.exception("post-listen boot failed (non-fatal)")
 
+
+async def _post_listen_rest(server: Any, app: Any, holder: dict[str, Any]) -> None:
+    """Load the panels that are not needed to send a message.
+
+    Runs after ``chat_ready``; memory control is up first (2.5s) so the local CLI
+    can drive the agent, then the remaining routers are imported and mounted.
+    """
+    from octop.api.app import import_deferred_router_modules, mount_deferred_routers
+    from octop.infra.utils import startup_timing as timing
+
+    started = time.perf_counter()
+    try:
         from octop.infra.agents.memory.slim_control import MemorySlimControl
 
         with timing.segment("listen.memory_control"):
             memory_control = MemorySlimControl(server)
             await memory_control.start()
             holder["memory_control"] = memory_control
+
+        with timing.segment("post_listen.imports"):
+            await asyncio.to_thread(import_deferred_router_modules)
+
+        with timing.segment("post_listen.routers"):
+            mount_deferred_routers(app)
         timing.emit(
             "post_listen",
             (time.perf_counter() - started) * 1000.0,
@@ -105,7 +137,7 @@ async def _post_listen_boot(server: Any, app: Any, holder: dict[str, Any]) -> No
     except asyncio.CancelledError:
         raise
     except Exception:  # pragma: no cover - boot must survive auxiliary failures
-        logger.exception("post-listen boot failed (non-fatal)")
+        logger.exception("post-listen rest failed (non-fatal)")
 
 
 async def run_foreground(
@@ -249,6 +281,9 @@ async def run_foreground(
             await asyncio.gather(*(_serve(s) for s in servers))
         finally:
             await _cancel_background_task(post_boot)
+            rest_task = memory_control_holder.get("rest_task")
+            if rest_task is not None:
+                await _cancel_background_task(rest_task)
             memory_control = memory_control_holder.get("memory_control")
             if memory_control is not None:
                 await memory_control.close()

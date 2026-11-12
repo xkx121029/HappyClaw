@@ -811,7 +811,8 @@ class OctopServer:
             timezone=config.default_timezone,
             instance_id=self.instance_id,
         )
-        await cron_mgr.boot(serve_background=self._serve_background)
+        with _timing.segment("services.cron"):
+            await cron_mgr.boot(serve_background=self._serve_background)
 
         if self._serve_background:
             from octop.infra.setup.tls.renewal import install_auto_renewal_job
@@ -852,15 +853,19 @@ class OctopServer:
             # ``_restore_agents_background`` so the socket binds first.
             await registry.boot(restore_agents=False)
         registry.schedule_idle_reclaim_sweep()
-        await gateway.refresh_media_backends()
+        with _timing.segment("services.media"):
+            await gateway.refresh_media_backends()
 
         user_mgr = UserManager(self.services)
-        await user_mgr.boot()
-        await proactive_scheduler.start_all()
+        with _timing.segment("services.users"):
+            await user_mgr.boot()
+        with _timing.segment("services.proactive"):
+            await proactive_scheduler.start_all()
 
         from octop.infra.auth.mfa import MfaService
 
-        MfaService(self.services).prune()
+        with _timing.segment("services.mfa"):
+            MfaService(self.services).prune()
 
         from octop.infra.auth.tokens import PURPOSE_ACCESS, sign_token
         from octop.infra.bridge.manager import BridgeManager, public_base_url_from_config

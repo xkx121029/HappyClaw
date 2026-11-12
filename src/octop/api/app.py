@@ -182,6 +182,8 @@ def build_app(server: OctopServer, *, defer_heavy: bool = False) -> FastAPI:
     )
     app.state.octop_enable_mobile = enable_mobile
     if not defer_heavy:
+        # Historical shape for tests and in-process callers: everything mounted.
+        mount_critical_routers(app)
         mount_deferred_routers(app)
 
     if enable_api_docs:
@@ -242,6 +244,54 @@ def bind_bridge_asgi(app: FastAPI, server: OctopServer) -> None:
     )
 
 
+def _mount_before_spa(app: FastAPI, specs: Sequence[_RouterMount]) -> None:
+    """Mount *specs* ahead of the SPA catch-all, keeping later batches behind.
+
+    ``octop_spa_index`` moves forward with every batch so a second mount does
+    not slide the new routes in front of routes that were already usable.
+    """
+    start = len(app.router.routes)
+    _mount_routers(app, specs)
+    added = app.router.routes[start:]
+    if not added:
+        return
+    del app.router.routes[start:]
+    index = getattr(app.state, "octop_spa_index", None)
+    if index is None or index > len(app.router.routes):
+        index = len(app.router.routes)
+    app.router.routes[index:index] = added
+    app.state.octop_spa_index = index + len(added)
+    app.openapi_schema = None
+
+
+def critical_router_specs() -> list[_RouterMount]:
+    """Routers without which the first chat turn cannot be served.
+
+    Measured import cost on the slow volume: chat ~0.85s, agents ~0.33s,
+    slash ~0.04s. Everything else waits for :func:`deferred_router_specs`.
+    """
+    from octop.api.routers import agents, chat, slash  # noqa: PLC0415
+
+    return [
+        _RouterMount(agents.router, "/api/agents", ["agents"]),
+        _RouterMount(chat.router, "/api", ["chat"]),
+        _RouterMount(slash.router, "/api", ["slash"]),
+    ]
+
+
+def import_critical_router_modules() -> None:
+    """Warm the first-turn routers without touching the app (worker thread)."""
+    critical_router_specs()
+
+
+def mount_critical_routers(app: FastAPI) -> None:
+    """Mount agents/chat/slash so a user can send the first message."""
+    if getattr(app.state, "octop_critical_mounted", False):
+        return
+    app.state.octop_critical_mounted = True
+    _mount_before_spa(app, critical_router_specs())
+
+
 def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
     """Import and describe every router that is not needed for first paint.
 
@@ -253,8 +303,8 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         admin,
         agent_files,
         agent_mcp,
+        agent_mcp,
         agent_tools,
-        agents,
         auth_device,
         auth_ldap,
         auth_mfa,
@@ -264,7 +314,6 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         bridge,
         browser,
         channels,
-        chat,
         cloud,
         connectors,
         cron,
@@ -289,7 +338,6 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         settings,
         skill_packages,
         skills,
-        slash,
         subagents,
         teams,
         terminal,
@@ -328,12 +376,9 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         _RouterMount(user_roles.router, "/api/users/roles", ["users"]),
         _RouterMount(user_groups.router, "/api/user-groups", ["users"]),
         _RouterMount(users.router, "/api/users", ["users"]),
-        _RouterMount(agents.router, "/api/agents", ["agents"]),
         _RouterMount(agent_tools.router, "/api", ["agents"]),
         _RouterMount(acp.router, "/api", ["agents"]),
         _RouterMount(agent_mcp.router, "/api", ["agent-mcp"]),
-        _RouterMount(chat.router, "/api", ["chat"]),
-        _RouterMount(slash.router, "/api", ["slash"]),
         _RouterMount(connectors.router, "/api", ["connectors"]),
         _RouterMount(bridge.router, "/api", ["bridge"]),
         _RouterMount(knowledge_bases.router, "/api", ["knowledge"]),
@@ -411,14 +456,4 @@ def mount_deferred_routers(app: FastAPI) -> None:
     specs = deferred_router_specs(
         enable_mobile=bool(getattr(app.state, "octop_enable_mobile", False))
     )
-    start = len(app.router.routes)
-    _mount_routers(app, specs)
-    added = app.router.routes[start:]
-    if not added:
-        return
-    del app.router.routes[start:]
-    index = getattr(app.state, "octop_spa_index", None)
-    if index is None or index > len(app.router.routes):
-        index = len(app.router.routes)
-    app.router.routes[index:index] = added
-    app.openapi_schema = None
+    _mount_before_spa(app, specs)
