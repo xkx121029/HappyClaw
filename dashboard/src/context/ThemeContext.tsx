@@ -20,6 +20,7 @@ import {
   normalizeHexColor,
   type ThemePalette,
 } from "../styles/themePalettes";
+import { initFontScale } from "../styles/fontScaleStorage";
 
 export type { ThemePreference };
 
@@ -79,6 +80,7 @@ export function isDarkMode(mode: ThemeMode): boolean {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>(() => {
     const stored = loadAppearanceOnBoot();
+    initFontScale();
     document.documentElement.setAttribute("data-palette", stored.palette);
     document.documentElement.setAttribute(
       "data-theme",

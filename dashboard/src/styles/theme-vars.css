@@ -889,3 +889,23 @@ html[data-theme="dark"] body {
   background: var(--fn-color-brand);
   color: #ffffff;
 }
+
+/* ---------- READING FONT SCALE (小 / 标准 / 大) ----------
+   Only typography tokens change; layout breakpoints and spacing stay put. */
+:root {
+  --octop-reading-font-size: 15px;
+  --octop-message-font-size: 14px;
+  --octop-list-font-size: 13px;
+}
+
+html[data-font-scale="small"] {
+  --octop-reading-font-size: 14px;
+  --octop-message-font-size: 13px;
+  --octop-list-font-size: 12px;
+}
+
+html[data-font-scale="large"] {
+  --octop-reading-font-size: 17px;
+  --octop-message-font-size: 16px;
+  --octop-list-font-size: 14.5px;
+}

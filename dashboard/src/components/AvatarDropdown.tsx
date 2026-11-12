@@ -23,6 +23,11 @@ import ThemeSwitcher from "./ThemeSwitcher";
 import PaletteSwitcher from "./PaletteSwitcher";
 import { useLayoutMode } from "../context/LayoutModeContext";
 import type { LayoutMode } from "../layouts/layoutModeStorage";
+import {
+  readFontScale,
+  writeFontScale,
+  type FontScale,
+} from "../styles/fontScaleStorage";
 import { ProfileAvatar, ProfileAvatarPicker } from "../pages/Admin/Users/ProfileAvatar";
 import styles from "./AvatarDropdown.module.less";
 
@@ -61,6 +66,7 @@ export default function AvatarDropdown({
   const profile = useCurrentUser();
   const isMobile = useIsMobile();
   const { layoutMode, setLayoutMode } = useLayoutMode();
+  const [fontScale, setFontScale] = useState<FontScale>(() => readFontScale());
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileForm] = Form.useForm<{ display_name: string }>();
@@ -361,6 +367,36 @@ export default function AvatarDropdown({
           </p>
         </div>
         <PaletteSwitcher />
+      </section>
+
+      <div className={styles.settingsDivider} />
+
+      <section className={styles.settingsSection}>
+        <div className={styles.settingsSectionHead}>
+          <h3 className={styles.settingsSectionTitle}>
+            {t("account.fontSize", "字号")}
+          </h3>
+          <p className={styles.settingsSectionDesc}>
+            {t(
+              "account.fontSizeHint",
+              "影响聊天正文与会话列表，适合长时间阅读或低分辨率屏幕。",
+            )}
+          </p>
+        </div>
+        <Segmented
+          block
+          value={fontScale}
+          options={[
+            { label: t("account.fontSizeSmall", "小"), value: "small" },
+            { label: t("account.fontSizeStandard", "标准"), value: "standard" },
+            { label: t("account.fontSizeLarge", "大"), value: "large" },
+          ]}
+          onChange={(val) => {
+            const next = val as FontScale;
+            setFontScale(next);
+            writeFontScale(next);
+          }}
+        />
       </section>
 
       <div className={styles.settingsDivider} />
