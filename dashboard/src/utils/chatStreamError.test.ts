@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  chatErrorActionByCode,
   chatStreamErrorAction,
   classifyChatStreamError,
+  formatChatErrorByCode,
   formatChatStreamError,
   isChatStreamError,
 } from "./chatStreamError";
@@ -153,5 +155,44 @@ describe("classifyChatStreamError", () => {
         "If you see Error code: 429 or rate_limit, wait and retry.",
       ),
     ).toBe("stream_errors.rate_limit");
+  });
+});
+
+describe("code-first error copy", () => {
+  it("AGENT_NO_MODEL wins over a stale stored sentence", () => {
+    const stale = "此专家未启用，请先在专家页面启用此专家后再开始对话。";
+    expect(formatChatErrorByCode("AGENT_NO_MODEL", stale, t)).toBe(
+      "translated:chat.agentNoModel",
+    );
+    expect(chatErrorActionByCode("AGENT_NO_MODEL", stale)).toEqual({
+      path: "/admin/models",
+      labelKey: "modelConfig.configureButton",
+    });
+  });
+
+  it("does not assert 'not enabled' for AGENT_NOT_RUNNING", () => {
+    const text = formatChatErrorByCode(
+      "AGENT_NOT_RUNNING",
+      "此专家未启用。",
+      t,
+    );
+    expect(text).toBe("translated:chat.agentNotChattable");
+    expect(text).not.toContain("未启用");
+  });
+
+  it("normalizes codes and falls back to text classification", () => {
+    expect(
+      formatChatErrorByCode(" agent_no_model ", "whatever", t),
+    ).toBe("translated:chat.agentNoModel");
+    expect(
+      formatChatErrorByCode("SOMETHING_ELSE", "Error code: 429", t),
+    ).toBe("translated:stream_errors.rate_limit");
+  });
+
+  it("keeps the backend message for unknown codes without a match", () => {
+    expect(formatChatErrorByCode("SOMETHING_ELSE", "机器坏了", t)).toBe(
+      "机器坏了",
+    );
+    expect(chatErrorActionByCode("SOMETHING_ELSE", "机器坏了")).toBeNull();
   });
 });

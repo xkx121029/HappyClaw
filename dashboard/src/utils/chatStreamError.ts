@@ -269,3 +269,49 @@ export function chatStreamErrorAction(
   if (!key) return null;
   return STREAM_ERROR_ACTIONS[key] ?? null;
 }
+
+/**
+ * Backend codes are authoritative: they say why a turn failed, while the
+ * stored text may be a stale guess (e.g. "expert is not enabled" when the
+ * real cause is a missing model). Code-based copy wins over text matching.
+ */
+const ERROR_CODE_COPY: Record<string, string> = {
+  AGENT_NO_MODEL: "chat.agentNoModel",
+  AGENT_NOT_RUNNING: "chat.agentNotChattable",
+};
+
+const ERROR_CODE_ACTIONS: Record<string, StreamErrorAction> = {
+  AGENT_NO_MODEL: {
+    path: "/admin/models",
+    labelKey: "modelConfig.configureButton",
+  },
+};
+
+export function normalizeChatErrorCode(
+  code: string | number | null | undefined,
+): string {
+  return String(code ?? "")
+    .trim()
+    .toUpperCase();
+}
+
+/** Localized bubble copy, preferring the backend code over the stored text. */
+export function formatChatErrorByCode(
+  code: string | number | null | undefined,
+  message: string | null | undefined,
+  t: TFunction,
+): string {
+  const copyKey = ERROR_CODE_COPY[normalizeChatErrorCode(code)];
+  if (copyKey) return t(copyKey, { defaultValue: message ?? "" });
+  return formatChatStreamError(message, t);
+}
+
+/** Deep-link for a failure, preferring the backend code over the text. */
+export function chatErrorActionByCode(
+  code: string | number | null | undefined,
+  message: string | null | undefined,
+): StreamErrorAction | null {
+  const action = ERROR_CODE_ACTIONS[normalizeChatErrorCode(code)];
+  if (action) return action;
+  return chatStreamErrorAction(message);
+}

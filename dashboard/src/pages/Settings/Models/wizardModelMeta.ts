@@ -58,15 +58,15 @@ export function enrichWizardModel(
   let description = model.description?.trim() || undefined;
   if (!description) {
     if (reasoning) {
-      description = t("wizard.model.hintReasoning");
+      description = t("models.hintReasoning");
     } else if (input.includes("image") && input.length > 1) {
-      description = t("wizard.model.hintMultimodal");
+      description = t("models.hintMultimodal");
     } else if (context) {
-      description = t("wizard.model.hintContext", {
+      description = t("models.hintContext", {
         value: formatTokenCount(context),
       });
     } else {
-      description = t("wizard.model.hintDefault");
+      description = t("models.hintDefault");
     }
   }
 

@@ -38,8 +38,8 @@ import { useServerTimezone } from "../../../hooks/useServerTimezone";
 import { useVoiceOutputContext } from "../../../context/VoiceOutputContext";
 import { prepareSpeechText } from "../../../utils/plainTextForSpeech";
 import {
-  chatStreamErrorAction,
-  formatChatStreamError,
+  chatErrorActionByCode,
+  formatChatErrorByCode,
 } from "../../../utils/chatStreamError";
 import { MessageFileCard } from "./MessageFileCard";
 import AskQuestionCard from "./AskQuestionCard";
@@ -742,13 +742,17 @@ function MessageBubble({
   const isStreaming = message.status === "streaming";
   const hasToolData = !!message.toolData;
   const isError = message.status === "error";
+  const errorCode = isError ? message.errorInfo?.code : undefined;
   const errorSource = isError
     ? message.errorInfo?.message?.trim() || textContent
     : textContent;
   const errorBodyText = isError
-    ? formatChatStreamError(errorSource, t)
+    ? formatChatErrorByCode(errorCode, errorSource, t) ||
+      t("chat.errorGeneric", "这条消息没有发送成功，请重试。")
     : textContent;
-  const errorAction = isError ? chatStreamErrorAction(errorSource) : null;
+  const errorAction = isError
+    ? chatErrorActionByCode(errorCode, errorSource)
+    : null;
   const attachments = message.attachments || [];
   const imageAttachments = attachments.filter(
     (attachment) =>
