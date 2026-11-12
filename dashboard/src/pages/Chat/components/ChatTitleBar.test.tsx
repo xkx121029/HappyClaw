@@ -71,9 +71,7 @@ describe("ChatTitleBar", () => {
     expect(titleBar).toContain("display: flex");
     expect(titleBar).toContain("padding: 0 var(--chat-title-pad-x)");
     expect(titleBar).not.toContain("window-controls-inset-end");
-    expect(css).not.toMatch(
-      /\.chatTitleBar \{[^}]*window-controls-inset-end/,
-    );
+    expect(css).not.toMatch(/\.chatTitleBar \{[^}]*window-controls-inset-end/);
     expect(titleBar).not.toMatch(/^\s*max-width:|chatTitleEditBtn/m);
     expect(left).toContain("flex: 1");
     expect(left).toContain("min-width: 0");
@@ -352,6 +350,46 @@ describe("ChatTitleBar", () => {
       }
     },
   );
+
+  it("更多菜单包含导出 Markdown 入口并在点击时触发", async () => {
+    const onExportTranscript = vi.fn();
+    render(
+      <ChatTitleBar
+        session={session}
+        title="Weekly recap"
+        onRename={noop}
+        onPin={noop}
+        onFork={noop}
+        onDelete={noop}
+        onExportTranscript={onExportTranscript}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "更多" }));
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "导出为 Markdown" }),
+    );
+    expect(onExportTranscript).toHaveBeenCalledTimes(1);
+  });
+
+  it("未传导出回调时菜单不出现导出入口", async () => {
+    render(
+      <ChatTitleBar
+        session={session}
+        title="Weekly recap"
+        onRename={noop}
+        onPin={noop}
+        onFork={noop}
+        onDelete={noop}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "更多" }));
+    await screen.findByRole("menuitem", { name: "分叉" });
+    expect(
+      screen.queryByRole("menuitem", { name: "导出为 Markdown" }),
+    ).toBeNull();
+  });
 
   it.each([false, true])(
     "更多菜单删除前要求确认：compact=%s",

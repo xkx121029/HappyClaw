@@ -26,6 +26,14 @@ import { useSessions, fetchAndSyncSessionArtifacts } from "./hooks/useSessions";
 import * as chatStore from "./hooks/chatStore";
 import { formatRunUsage, assistantTurnsFromEnd } from "./utils/chatMessages";
 import { findMessageHits } from "./utils/messageSearch";
+import {
+  buildTranscriptLines,
+  buildTranscriptMarkdown,
+  downloadTextFile,
+  sanitizeTranscriptFileName,
+} from "./utils/exportTranscript";
+import { formatMessageTime } from "../../utils/formatMessageTime";
+import { useServerTimezone } from "../../hooks/useServerTimezone";
 import { useChatSidebarState } from "./hooks/useChatSidebarState";
 import { useChatHistoryRail } from "./hooks/useChatHistoryRail";
 import { useChatDockPanel } from "./hooks/useChatDockPanel";
@@ -1523,6 +1531,36 @@ function ChatPageInner() {
     return name;
   }, [activeSession, t]);
 
+  // 导出当前会话为 Markdown（标题栏“更多”菜单入口）。
+  const serverTimezone = useServerTimezone();
+  const handleExportTranscript = useCallback(() => {
+    if (!messages.length) return;
+    const title = activeSessionTitle ?? activeThreadId ?? "";
+    if (!title) return;
+    const markdown = buildTranscriptMarkdown(
+      title,
+      buildTranscriptLines(
+        messages,
+        {
+          user: t("chat.exportTranscriptUser", "我"),
+          assistant: t("chat.exportTranscriptAssistant", "助手"),
+          failed: t("chat.exportTranscriptFailed", "发送失败"),
+        },
+        (ts) => formatMessageTime(ts, serverTimezone),
+      ),
+      t("chat.exportTranscriptMeta", "导出于 {{time}}", {
+        time: formatMessageTime(Date.now(), serverTimezone),
+      }),
+    );
+    downloadTextFile(
+      sanitizeTranscriptFileName(
+        title,
+        t("chat.exportTranscriptFallback", "会话导出"),
+      ),
+      markdown,
+    );
+  }, [messages, activeSessionTitle, activeThreadId, t, serverTimezone]);
+
   const chatSidebarPanel = (
     <ChatSidebarPanel
       isMobile={isMobile}
@@ -1692,6 +1730,9 @@ function ChatPageInner() {
                   onDelete={handleDeleteSession}
                   forkDisabled={sessionForkDisabled}
                   forkDisabledHint={sessionForkDisabledHint}
+                  onExportTranscript={
+                    hasMessages ? handleExportTranscript : undefined
+                  }
                   isTeam={isTeamChat}
                   agent={activeAgent}
                 />

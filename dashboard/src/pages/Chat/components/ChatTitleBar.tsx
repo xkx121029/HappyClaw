@@ -9,6 +9,7 @@ import {
   Pencil,
   Trash2,
   GitFork,
+  Download,
 } from "lucide-react";
 import { confirmDeleteConversation } from "../utils/deleteConversation";
 import type { Session } from "../hooks/useSessions";
@@ -32,6 +33,8 @@ interface ChatTitleBarProps {
   ) => void | Promise<boolean | null | void>;
   forkDisabled?: boolean;
   forkDisabledHint?: string;
+  /** 有可导出消息时由父组件传入；未传则隐藏导出入口。 */
+  onExportTranscript?: () => void;
   isTeam?: boolean;
   agent?: {
     bridge?: boolean | null;
@@ -49,6 +52,7 @@ export default function ChatTitleBar({
   onDelete,
   forkDisabled,
   forkDisabledHint,
+  onExportTranscript,
   isTeam = false,
   agent = null,
 }: ChatTitleBarProps) {
@@ -112,6 +116,20 @@ export default function ChatTitleBar({
         title: forkDisabled && forkDisabledHint ? forkDisabledHint : undefined,
         onClick: () => onFork(session.id),
       },
+      ...(onExportTranscript
+        ? [
+            {
+              key: "export-transcript",
+              label: t("chat.exportTranscript", "导出为 Markdown"),
+              title: t(
+                "chat.exportTranscriptHint",
+                "把当前会话保存为 Markdown 文件",
+              ),
+              icon: <Download size={14} />,
+              onClick: () => onExportTranscript(),
+            },
+          ]
+        : []),
       {
         key: "delete",
         label: t("common.delete"),
@@ -131,6 +149,7 @@ export default function ChatTitleBar({
       session.pinned,
       onPin,
       onFork,
+      onExportTranscript,
       onDelete,
       forkDisabled,
       forkDisabledHint,
