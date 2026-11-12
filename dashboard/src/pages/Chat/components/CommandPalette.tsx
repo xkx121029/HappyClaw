@@ -157,6 +157,15 @@ export default function CommandPalette({
     );
   }, [commands, query]);
 
+  // 空结果时列表里没有可选行，键盘仍要能落到「新建会话 / 打开设置」上，
+  // 否则 Enter 变成了死键。把这两个动作接进同一套上下键选择。
+  const noResults = filtered.length === 0;
+  const emptyActions = useMemo(
+    () => commands.filter((cmd) => cmd.id === "new-chat" || cmd.id === "settings"),
+    [commands],
+  );
+  const navigable = noResults ? emptyActions : filtered;
+
   useEffect(() => {
     setActiveIndex(0);
   }, [query]);
@@ -171,7 +180,7 @@ export default function CommandPalette({
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveIndex((index) => Math.min(index + 1, filtered.length - 1));
+      setActiveIndex((index) => Math.min(index + 1, navigable.length - 1));
       return;
     }
     if (event.key === "ArrowUp") {
@@ -181,7 +190,7 @@ export default function CommandPalette({
     }
     if (event.key === "Enter") {
       event.preventDefault();
-      runCommand(filtered[activeIndex]);
+      runCommand(navigable[activeIndex]);
     }
   };
 
@@ -225,26 +234,24 @@ export default function CommandPalette({
                 {t("chat.palette.noResults", "没有匹配项，换个关键词试试。")}
               </p>
               <div className={styles.cpEmptyActions}>
-                <button
-                  type="button"
-                  className={styles.cpEmptyAction}
-                  onClick={() =>
-                    runCommand(commands.find((cmd) => cmd.id === "new-chat"))
-                  }
-                >
-                  <Plus size={14} strokeWidth={1.8} aria-hidden />
-                  {t("chat.palette.newChat", "新建会话")}
-                </button>
-                <button
-                  type="button"
-                  className={styles.cpEmptyAction}
-                  onClick={() =>
-                    runCommand(commands.find((cmd) => cmd.id === "settings"))
-                  }
-                >
-                  <Settings size={14} strokeWidth={1.8} aria-hidden />
-                  {t("chat.palette.openSettings", "打开本机设置")}
-                </button>
+                {emptyActions.map((cmd, index) => {
+                  const Icon = cmd.icon;
+                  return (
+                    <button
+                      key={cmd.id}
+                      type="button"
+                      className={cx(
+                        styles.cpEmptyAction,
+                        index === activeIndex && styles.cpEmptyActionActive,
+                      )}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      onClick={() => runCommand(cmd)}
+                    >
+                      <Icon size={14} strokeWidth={1.8} aria-hidden />
+                      {cmd.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : (
