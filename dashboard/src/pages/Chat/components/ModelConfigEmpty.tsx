@@ -34,7 +34,7 @@ export default function ModelConfigEmpty({
           <Button
             type="primary"
             size="large"
-            onClick={() => navigate("/admin/models")}
+            onClick={() => navigate("/admin/models?tab=chat")}
           >
             {t("modelConfig.configureButton")}
           </Button>
