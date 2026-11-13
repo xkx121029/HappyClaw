@@ -270,19 +270,21 @@ async def test_grep_after_seeding(env: Any) -> None:
 
 
 async def test_non_owner_cannot_access_workspace(env: Any) -> None:
-    """Non-owners cannot read another user's agent workspace."""
+    """There is no non-owner: every token resolves the local owner."""
     c, _srv, admin_auth, _aid = env
-    await c.post(
+    created = await c.post(
         "/api/users",
         headers=admin_auth,
         json={"username": "bob", "password": "TestPass12", "role": "user"},
     )
+    assert created.status_code == 400
     bob_tok = (
         await c.post(
             "/api/auth/login",
             json={"username": "bob", "password": "TestPass12"},
         )
     ).json()["access_token"]
+    assert bob_tok == "local-owner"
     bob_auth = {"Authorization": f"Bearer {bob_tok}"}
 
     admin_agent_id = (await c.get("/api/agents", headers=admin_auth)).json()[0]["agent_id"]
@@ -291,7 +293,7 @@ async def test_non_owner_cannot_access_workspace(env: Any) -> None:
         f"/api/agents/{admin_agent_id}/workspace/tree",
         headers=bob_auth,
     )
-    assert r.status_code == 403
+    assert r.status_code == 200, r.text
 
 
 # --- delete + move ----------------------------------------------------------

@@ -22,12 +22,14 @@ async def test_admin_create_and_list(env):
 
 
 async def test_admin_only_admin_can_create(env):
+    """Roles are gone: the single local owner always may create providers."""
     c, _, admin_auth = env
-    await c.post(
+    created_user = await c.post(
         "/api/users",
         headers=admin_auth,
         json={"username": "regular", "password": "TestPass12", "role": "user"},
     )
+    assert created_user.status_code == 400
     tok = (
         await c.post("/api/auth/login", json={"username": "regular", "password": "TestPass12"})
     ).json()["access_token"]
@@ -38,7 +40,7 @@ async def test_admin_only_admin_can_create(env):
         headers=user_auth,
         json={"name": "should-fail", "kind": "openai"},
     )
-    assert r.status_code == 403
+    assert r.status_code == 201, r.text
 
 
 async def test_admin_delete(env):

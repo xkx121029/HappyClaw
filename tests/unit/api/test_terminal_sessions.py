@@ -236,12 +236,18 @@ def _patch_spawn(monkeypatch, spawned: list[terminal._PtySession]) -> None:
     monkeypatch.setattr(terminal, "_start_session_pump", lambda _s: None)
 
 
-async def test_ws_missing_token_closes_4001(monkeypatch) -> None:
+async def test_ws_missing_token_uses_local_owner(monkeypatch) -> None:
+    """Single-user mode: ``token`` is optional and the local owner is used."""
     server, _ = _make_server()
+    _patch_user(monkeypatch)
+    monkeypatch.setattr(terminal, "terminal_supported", lambda: (True, ""))
+    spawned: list[terminal._PtySession] = []
+    _patch_spawn(monkeypatch, spawned)
     ws = _FakeWS(server)
-    await terminal.terminal_ws(ws, agent_id="a1", token=None, cols=80, rows=24)
-    assert ws.close_code == 4001
-    assert not ws.accepted
+    await terminal.terminal_ws(ws, agent_id="a1", token=None, session_id=None, cols=80, rows=24)
+    assert ws.accepted
+    assert ws.close_code in (None, 1000)
+    assert len(spawned) == 1
 
 
 async def test_ws_bad_token_closes_4001(monkeypatch) -> None:

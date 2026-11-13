@@ -45,16 +45,18 @@ async def test_duplicate_provider_name_is_conflict(env):
 
 
 async def test_regular_user_cannot_create_provider(env):
-    """POST /admin/providers is admin-only."""
+    """Every caller is the local owner, so creating a provider succeeds."""
     c, _, admin_auth = env
-    await c.post(
+    created_user = await c.post(
         "/api/users",
         headers=admin_auth,
         json={"username": "regular", "password": "TestPass12", "role": "user"},
     )
+    assert created_user.status_code == 400
     tok = (
         await c.post("/api/auth/login", json={"username": "regular", "password": "TestPass12"})
     ).json()["access_token"]
+    assert tok == "local-owner"
     user_auth = {"Authorization": f"Bearer {tok}"}
 
     r = await c.post(
@@ -62,7 +64,7 @@ async def test_regular_user_cannot_create_provider(env):
         headers=user_auth,
         json={"name": "should-fail", "kind": "openai"},
     )
-    assert r.status_code == 403
+    assert r.status_code == 201, r.text
 
 
 async def test_admin_delete_provider(env):

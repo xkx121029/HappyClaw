@@ -21,7 +21,6 @@ GATED_FILES = [
     "routers/settings.py",
     "routers/observability.py",
     "routers/tls.py",
-    "routers/auth_oidc.py",
     "routers/update.py",
     "routers/search.py",
     "routers/ollama_models.py",

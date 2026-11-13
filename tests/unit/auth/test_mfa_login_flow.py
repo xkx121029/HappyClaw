@@ -1,17 +1,15 @@
-"""Password login returns mfa_required when a verified factor exists."""
+"""Single-user login is a no-op; the MFA login surface is retired."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 import httpx
-import pyotp
 import pytest
 from tests.support.app import ensure_control_plane_bound
 from tests.support.auth import TEST_PASSWORD, bootstrap_admin
 
 from octop.api.app import build_app
-from octop.infra.auth.mfa import totp as totp_mod
 from octop.infra.auth.mfa.service import MfaService
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.server import OctopServer
@@ -31,32 +29,13 @@ async def env(tmp_path: Path):
     await server.stop()
 
 
-def _enroll_totp(server: OctopServer, user_id: int, username: str) -> str:
-    assert server.services is not None
-    begun = totp_mod.begin_enroll(
-        server.services.user_totp_repo,
-        server.services.secret_repo,
-        user_id,
-        username=username,
-    )
-    secret = str(begun["secret"])
-    code = pyotp.TOTP(secret).now()
-    assert totp_mod.confirm_enroll(
-        server.services.user_totp_repo,
-        server.services.secret_repo,
-        user_id,
-        code,
-    )
-    return secret
-
-
 @pytest.mark.asyncio
-async def test_login_mfa_required_then_verify(env) -> None:
-    server, client = env
-    assert server.user_manager is not None and server.services is not None
-    user = server.user_manager.get("admin")
-    assert user is not None
-    secret = _enroll_totp(server, user.id, user.username)
+async def test_login_returns_local_owner_and_mfa_verify_is_retired(env) -> None:
+    """``POST /api/auth/login`` hands back the local owner; MFA endpoints are gone."""
+    _server, client = env
+    me = await client.get("/api/auth/me")
+    assert me.status_code == 200
+    owner = me.json()
 
     r = await client.post(
         "/api/auth/login",
@@ -64,32 +43,24 @@ async def test_login_mfa_required_then_verify(env) -> None:
     )
     assert r.status_code == 200
     body = r.json()
-    assert body.get("mfa_required") is True
-    assert "access_token" not in body
-    assert "mfa_token" in body
-    assert "totp" in body["methods"]
+    assert body["access_token"] == "local-owner"
+    assert body["token_type"] == "Bearer"
+    assert "mfa_required" not in body
+    assert body["user"]["username"] == owner["username"]
 
-    code = pyotp.TOTP(secret).now()
     vr = await client.post(
         "/api/auth/mfa/verify",
-        json={"mfa_token": body["mfa_token"], "method": "totp", "code": code},
+        json={"mfa_token": body["access_token"], "method": "totp", "code": "000000"},
     )
-    assert vr.status_code == 200
-    assert "access_token" in vr.json()
-    me = await client.get(
-        "/api/auth/me",
-        headers={"Authorization": f"Bearer {vr.json()['access_token']}"},
-    )
-    assert me.status_code == 200
-    assert me.json()["username"] == "admin"
+    assert vr.status_code == 404
+    assert vr.json()["error"]["code"] == "NOT_FOUND"
 
 
 @pytest.mark.asyncio
 async def test_mfa_throttle_does_not_set_login_lock(env) -> None:
     server, _client = env
-    assert server.services is not None and server.user_manager is not None
-    user = server.user_manager.get("admin")
-    assert user is not None
+    assert server.services is not None
+    user = server.services.owner.owner()
     row_before = server.services.user_repo.get(user.id)
     assert row_before is not None
     login_locked = row_before.login_locked_until
@@ -104,9 +75,8 @@ async def test_mfa_throttle_does_not_set_login_lock(env) -> None:
 @pytest.mark.asyncio
 async def test_recovery_refused_without_verified_factor(env) -> None:
     server, _client = env
-    assert server.services is not None and server.user_manager is not None
-    user = server.user_manager.get("admin")
-    assert user is not None
+    assert server.services is not None
+    user = server.services.owner.owner()
     mfa = MfaService(server.services)
     assert not mfa.has_verified_factor(user.id)
     with pytest.raises(OctopError) as ei:

@@ -110,6 +110,8 @@ async def test_runtime_activity_shape(client) -> None:
         "busy",
         "counts",
         "active_turns",
+        "dashboard_connections",
+        "threads_with_subscribers",
         "terminal_sessions",
         "running_agents",
         "running_jobs",
@@ -187,3 +189,44 @@ async def test_agent_payload_has_no_user_scope_fields(client) -> None:
     for row in rows:
         for key in ("user_id", "visibility", "group_ids"):
             assert key not in row
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/auth/oidc/callback?code=abc&state=xyz",
+        "/api/auth/oauth/callback?code=abc&state=xyz",
+    ],
+)
+async def test_sso_callbacks_cannot_complete_login(client, path: str) -> None:
+    """Browser-redirect callbacks are unmounted, so they cannot mint a session."""
+    c, _srv = client
+    r = await c.get(path, follow_redirects=False)
+    assert r.status_code == 404, f"{path} -> {r.status_code} {r.text[:200]}"
+    err = r.json()["error"]
+    assert err["code"] == "NOT_FOUND"
+    # No JWT is minted and no SSO state cookie is issued.
+    assert "access_token" not in r.text
+    assert "set-cookie" not in {k.lower() for k in r.headers}
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/auth/mfa/status",
+        "/api/auth/mfa/verify",
+        "/api/auth/mfa/totp/begin",
+        "/api/auth/passkey/status",
+        "/api/auth/passkey/login/options",
+    ],
+)
+async def test_mfa_and_passkey_routes_are_removed(client, path: str) -> None:
+    """Second factors are unmounted in single-user mode."""
+    c, _srv = client
+    r = await c.get(path)
+    if r.status_code == 405:
+        r = await c.post(path, json={})
+    assert r.status_code == 404, f"{path} -> {r.status_code} {r.text[:200]}"
+    assert r.json()["error"]["code"] == "NOT_FOUND"
+
+

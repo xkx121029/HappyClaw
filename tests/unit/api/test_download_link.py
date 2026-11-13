@@ -47,14 +47,16 @@ async def test_download_link_opens_without_credentials(client) -> None:
     assert opened.headers["cache-control"] == "no-store"
 
 
-async def test_download_link_requires_login_to_create(client) -> None:
+async def test_download_link_create_needs_no_login(client) -> None:
+    """Single-user mode has no login: the local owner creates links directly."""
     c, home = client
     await bootstrap_admin(c, home)
     response = await c.post(
         "/api/downloads/link",
         files={"file": ("note.txt", b"hello", "text/plain")},
     )
-    assert response.status_code == 401
+    assert response.status_code == 200, response.text
+    assert response.json()["url"].startswith("/api/downloads/link/")
 
 
 async def test_unknown_download_link_is_not_found(client) -> None:

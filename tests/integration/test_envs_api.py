@@ -77,14 +77,16 @@ async def test_envs_redacts_captcha_secret_and_put_keeps_sentinel(env: Any) -> N
 
 
 async def test_envs_non_admin_forbidden(env: Any) -> None:
+    """No admin gate: any local caller reads envs as the owner."""
     c, _srv, admin_auth = env
-    await c.post(
+    created = await c.post(
         "/api/users",
         headers=admin_auth,
         json={"username": "bob", "password": "TestPass12", "role": "user"},
     )
+    assert created.status_code == 400
     bob_tok = (
         await c.post("/api/auth/login", json={"username": "bob", "password": "TestPass12"})
     ).json()["access_token"]
     r = await c.get("/api/envs", headers={"Authorization": f"Bearer {bob_tok}"})
-    assert r.status_code == 403
+    assert r.status_code == 200, r.text

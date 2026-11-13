@@ -42,7 +42,30 @@ async def test_upload_pdf_workspace_path(env_with_agent: Any) -> None:
 
 
 async def test_upload_requires_auth(env: Any) -> None:
-    client, _srv, _auth = env
+    """Uploads need no bearer: the request resolves the local owner."""
+    client, _srv, auth = env
+    provider = await client.post(
+        "/api/admin/providers",
+        headers=auth,
+        json={
+            "name": "upload-openai",
+            "kind": "openai",
+            "base_url": "https://api.openai.com/v1",
+            "api_key": "sk-x",
+            "models": [
+                {"id": "gpt-4o", "name": "GPT-4o", "enabled": True, "input": ["text"]}
+            ],
+        },
+    )
+    assert provider.status_code == 201, provider.text
+    created = await client.post(
+        "/api/agents",
+        headers=auth,
+        json={"name": "upload-bot", "default_model": "openai:gpt-4o"},
+    )
+    assert created.status_code == 201, created.text
+    aid = created.json()["agent_id"]
+
     files = {"file": ("note.txt", b"x", "text/plain")}
-    r = await client.post("/api/agents/NOPE/upload", files=files)
-    assert r.status_code == 401, r.text
+    r = await client.post(f"/api/agents/{aid}/upload", files=files)
+    assert r.status_code == 200, r.text

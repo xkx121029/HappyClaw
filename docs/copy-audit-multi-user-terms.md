@@ -50,7 +50,7 @@
 | `adminSso.*` | 11 | `/admin/sso` 已重定向；LDAP 停用 |
 | `login.forgotPasswordHelp` | 1 | 登录页已重定向 |
 | `apiErrors.INVITE_*` | 6 | 邀请流程不可达 |
-| `apiErrors.USER_ROLE_*` | 3 | 角色管理不可达 |
+| `apiErrors.USER_ROLE_*` | 3 | ~~角色管理不可达~~ **改为保留**：`/api/users/roles` 仍挂载（`api/app.py:448`），三码仍被 `api/routers/user_roles.py` 真实抛出，见「七、错误码对齐记录」 |
 | `apiErrors.LDAP_*` | 2 | LDAP 停用 |
 | `account.role` / `account.roleAdmin` | 2 | 仅测试引用；账号抽屉不展示角色 |
 | `models.cannotDeleteSharedDesc` / `models.sharedProviders` / `models.groupAccessHint` | 3 | 仅语言包，无界面引用 |
@@ -151,7 +151,7 @@
 
 ### BE 后端线
 
-无需改动。`/api/auth/*`、`/api/users`、`/api/teams` 的兼容响应继续保留，供旧客户端使用。
+无需改动业务逻辑。`/api/auth/*`、`/api/users`、`/api/teams` 的兼容响应继续保留，供旧客户端使用。错误码对齐见第七节。
 
 ### 统一验收口径
 
@@ -160,3 +160,31 @@
 3. `npx tsc --noEmit` 与前端构建通过；删除死代码后无未引用告警。
 4. 文档侧链接检查 0 缺失。
 5. 不新增依赖，不改 `src/` 与桌面端行为。
+
+## 七、错误码对齐记录（2026-11-12）
+
+`tests/unit/i18n/test_errors.py` 要求 `dashboard/src/locales/*.json` 的 `apiErrors` 与后端 `src/octop/i18n/*.json` 的 `errors` 键集完全一致。此前两侧差 17 个键，处理方式如下。
+
+### 保留（未删，仍被真实抛出）
+
+| 错误码 | 抛出点 | 结论 |
+|--------|--------|------|
+| `USER_ROLE_ID_INVALID` | `api/routers/user_roles.py:119` | 保留 |
+| `USER_ROLE_ID_TAKEN` | `api/routers/user_roles.py:222` | 保留 |
+| `USER_ROLE_IN_USE` | `api/routers/user_roles.py:351` | 保留 |
+
+依据：`api/app.py:448` 仍将 `user_roles.router` 挂载到 `/api/users/roles`，三条错误码有真实业务抛出点（`tests/integration/test_user_roles_api.py` 亦覆盖），不是死代码，故不按「单人化删码」处理。
+
+**语义变更备注**：单人化后实例只有一个本机使用者，这三条码不再描述「多成员的角色分配」场景，实际只剩旧客户端 / 兼容路由访问 `/api/users/roles` 时可能触发；文案中的「仍有用户使用此角色」「该角色 ID 已被使用」应理解为兼容语义，不应据此在前端恢复角色管理界面。
+
+### 补齐（dashboard 侧）
+
+后端有、dashboard 缺的 17 个键已按后端文案补入 `dashboard/src/locales/{en,zh}.json` 的 `apiErrors`（`LDAP_BAD_REQUEST` 的 `{detail}` 按 i18next 规则改写为 `{{detail}}`）：
+
+`AGENT_NO_MODEL`、`INVITE_EXPIRED`、`INVITE_INVALID`、`INVITE_RATE_LIMITED`、`INVITE_REVOKED`、`INVITE_ROLE_MISSING`、`INVITE_USED`、`LDAP_BAD_REQUEST`、`LDAP_GROUP_NOT_ALLOWED`、`LDAP_NOT_CONFIGURED`、`LDAP_UNAVAILABLE`、`LDAP_USER_NOT_PROVISIONED`、`SINGLE_USER_INIT_FAILED`、`SINGLE_USER_UNSUPPORTED`、`USER_ROLE_ID_INVALID`、`USER_ROLE_ID_TAKEN`、`USER_ROLE_IN_USE`
+
+`SINGLE_USER_INIT_FAILED` 在后端早已存在（`infra/errors.py:38`，由 `infra/users/owner.py:76`、`infra/server.py:393`、`api/deps.py:55,64` 抛出，`i18n/{en,zh}.json:400` 有文案），本次只是补 dashboard 侧；后端 `ErrorCode` 与 locale 均未新增。
+
+校验：两侧各 165 键，双向差集为空；`pytest tests/unit/i18n -q` → 82 passed。
+
+> 因此第二节「`apiErrors.LDAP_*` / `INVITE_*` 可删」的 FE-13/FE-15 仍成立（界面不可达），但删除前必须先处理 `test_errors.py` 的键集对齐约束，不能单侧删。

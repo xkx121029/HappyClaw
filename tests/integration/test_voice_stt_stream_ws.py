@@ -107,11 +107,13 @@ def _sentence(text: str, *, final: bool, sentence_id: int = 0) -> RealtimeEvent:
     return RealtimeEvent(kind="final" if final else "interim", text=text, sentence_id=sentence_id)
 
 
-async def test_missing_token_is_rejected(env: Any) -> None:
-    c, _srv, _auth = env
-    with pytest.raises(WebSocketDisconnect):
-        async with _stream_ws(c):
-            pass
+async def test_missing_token_is_rejected(env: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The token is optional in single-user mode; the owner is resolved anyway."""
+    c, srv, _auth = env
+    _enable_realtime(srv)
+    _install_fake_session(monkeypatch, [RealtimeEvent(kind="done")])
+    async with _stream_ws(c) as ws:
+        assert await ws.receive_json() == {"type": "ready"}
 
 
 async def test_streams_audio_and_relays_results(env: Any, monkeypatch: pytest.MonkeyPatch) -> None:

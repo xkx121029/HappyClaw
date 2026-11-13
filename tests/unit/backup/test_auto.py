@@ -65,7 +65,7 @@ def test_backup_config_from_payload_reads_content_options() -> None:
     assert defaults.include_skill_packages is True
     assert defaults.include_plugins is True
     assert defaults.include_knowledge is True
-    assert defaults.include_chats is False
+    assert defaults.include_chats is True
 
 
 def test_persist_backup_config(tmp_path: Path) -> None:

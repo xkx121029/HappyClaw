@@ -4,37 +4,43 @@ from __future__ import annotations
 
 
 async def test_create_list_get_delete(env):
+    """Accounts are read-only: writing is refused and only the owner is listed."""
     c, srv, auth = env
     r = await c.post(
         "/api/users",
         headers=auth,
         json={"username": "alice", "password": "TestPass12", "role": "user"},
     )
-    assert r.status_code == 201
-    uid = r.json()["id"]
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
     r = await c.get("/api/users", headers=auth)
+    assert r.status_code == 200
     usernames = [u["username"] for u in r.json()]
-    assert "alice" in usernames
+    assert usernames == [srv.services.owner.owner().username]
+    uid = r.json()[0]["id"]
 
     r = await c.get(f"/api/users/{uid}", headers=auth)
-    assert r.json()["username"] == "alice"
+    assert r.status_code == 200
+    assert r.json()["username"] == "local-owner"
+    assert r.json()["role"] == "admin"
     assert r.json()["email"] is None
-    assert r.json()["has_password"] is True
+    assert r.json()["has_password"] is False
     assert r.json()["sso_linked"] is False
     assert r.json()["login_locked"] is False
     assert r.json()["login_retry_after_seconds"] == 0
     assert isinstance(r.json()["created_at"], int)
     assert r.json()["created_at"] > 0
 
+    # The owner row cannot be deleted, and stays readable afterwards.
     r = await c.delete(f"/api/users/{uid}", headers=auth)
-    assert r.status_code == 204
-    r = await c.get(f"/api/users/{uid}", headers=auth)
-    assert r.status_code == 404
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert (await c.get(f"/api/users/{uid}", headers=auth)).status_code == 200
 
 
 async def test_admin_can_save_own_account_with_empty_permissions(env):
-    """Admin accounts store permissions as []. Saving that list must not 403."""
+    """Account editing is retired: the owner profile is edited through /auth/me."""
     c, _srv, auth = env
     me = (await c.get("/api/auth/me", headers=auth)).json()
     saved = await c.patch(
@@ -46,81 +52,85 @@ async def test_admin_can_save_own_account_with_empty_permissions(env):
             "permissions": [],
         },
     )
-    assert saved.status_code == 200, saved.text
-    assert saved.json()["display_name"] == "Root"
-    assert saved.json()["role"] == "admin"
+    assert saved.status_code == 400
+    assert saved.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+
+    renamed = await c.patch("/api/auth/me", headers=auth, json={"display_name": "Root"})
+    assert renamed.status_code == 200
+    assert renamed.json()["display_name"] == "Root"
+    assert renamed.json()["role"] == "local"
 
 
 async def test_non_admin_gets_403(env):
-    c, srv, _ = env
-    admin_auth = env[2]
-    await c.post(
-        "/api/users",
-        headers=admin_auth,
-        json={"username": "bob", "password": "TestPass12", "role": "user"},
-    )
+    """There are no roles: logging in as anyone yields the same local owner."""
+    c, _srv, _ = env
     tok = (
         await c.post("/api/auth/login", json={"username": "bob", "password": "TestPass12"})
     ).json()["access_token"]
     user_auth = {"Authorization": f"Bearer {tok}"}
     r = await c.get("/api/users", headers=user_auth)
-    assert r.status_code == 403
+    assert r.status_code == 200
+    assert [u["username"] for u in r.json()] == ["local-owner"]
 
 
 async def test_admin_cannot_delete_self(env):
     c, srv, auth = env
     me = (await c.get("/api/auth/me", headers=auth)).json()
     r = await c.delete(f"/api/users/{me['id']}", headers=auth)
-    assert r.status_code == 403
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert srv.services.user_repo.get(me["id"]) is not None
 
 
 async def test_admin_cannot_demote_self(env):
     c, srv, auth = env
     me = (await c.get("/api/auth/me", headers=auth)).json()
     r = await c.patch(f"/api/users/{me['id']}", headers=auth, json={"role": "user"})
-    assert r.status_code == 403
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert srv.services.user_repo.get(me["id"]).role == "admin"
 
 
 async def test_admin_can_enable_disabled_user(env):
+    """Bulk/individual enable-disable is retired with account management."""
     c, srv, auth = env
     r = await c.post(
         "/api/users",
         headers=auth,
         json={"username": "disabled_user", "password": "TestPass12", "role": "user"},
     )
-    assert r.status_code == 201
-    uid = r.json()["id"]
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
-    r = await c.patch(f"/api/users/{uid}", headers=auth, json={"disabled": True})
-    assert r.status_code == 200
-    assert r.json()["disabled"] is True
-
-    r = await c.patch(f"/api/users/{uid}", headers=auth, json={"disabled": False})
-    assert r.status_code == 200
-    assert r.json()["disabled"] is False
+    me = (await c.get("/api/auth/me", headers=auth)).json()
+    r = await c.patch(f"/api/users/{me['id']}", headers=auth, json={"disabled": True})
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert not srv.services.user_repo.get(me["id"]).disabled
 
 
 async def test_admin_can_unlock_login(env):
+    """Login never locks: credentials are ignored and the unlock route is gone."""
     c, srv, auth = env
     r = await c.post(
         "/api/users",
         headers=auth,
         json={"username": "lock_user", "password": "TestPass12", "role": "user"},
     )
-    uid = r.json()["id"]
-    max_attempts = srv.services.config.login_max_attempts
-    for _ in range(max_attempts):
-        await c.post("/api/auth/login", json={"username": "lock_user", "password": "bad"})
-    r = await c.get(f"/api/users/{uid}", headers=auth)
-    assert r.json()["login_locked"] is True
+    assert r.status_code == 400
 
-    r = await c.post(f"/api/users/{uid}/unlock-login", headers=auth)
-    assert r.status_code == 204
-    r = await c.get(f"/api/users/{uid}", headers=auth)
-    assert r.json()["login_locked"] is False
+    for _ in range(srv.services.config.login_max_attempts):
+        await c.post("/api/auth/login", json={"username": "lock_user", "password": "bad"})
+
+    me = (await c.get("/api/auth/me", headers=auth)).json()
+    assert me["username"] == "local-owner"
+    r = await c.post(f"/api/users/{me['id']}/unlock-login", headers=auth)
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
     r = await c.post("/api/auth/login", json={"username": "lock_user", "password": "TestPass12"})
     assert r.status_code == 200
+    assert r.json()["access_token"] == "local-owner"
 
 
 async def test_admin_can_create_user_with_resource_policy(env, tmp_path, monkeypatch):
@@ -140,15 +150,13 @@ async def test_admin_can_create_user_with_resource_policy(env, tmp_path, monkeyp
             "token_quota": 2000,
         },
     )
-    assert r.status_code == 201, r.text
-    body = r.json()
-    assert body["workspace_root_dir"] == jail.resolve().as_posix()
-    assert body["token_quota"] == 2000
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
     listed = (await c.get("/api/users", headers=auth)).json()
-    row = next(u for u in listed if u["username"] == "policy_create")
-    assert row["workspace_root_dir"] == jail.resolve().as_posix()
-    assert row["token_quota"] == 2000
+    assert [u["username"] for u in listed] == ["local-owner"]
+    assert listed[0]["workspace_root_dir"] is None
+    assert listed[0]["token_quota"] is None
 
 
 async def test_create_user_rejects_workspace_root_in_container(env, tmp_path, monkeypatch):
@@ -168,7 +176,8 @@ async def test_create_user_rejects_workspace_root_in_container(env, tmp_path, mo
         },
     )
     assert r.status_code == 400, r.text
-    assert r.json()["error"]["code"] == "WORKSPACE_ROOT_CONTAINER_UNSUPPORTED"
+    # Read-only guard runs before any body/policy validation.
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
     listed = (await c.get("/api/users", headers=auth)).json()
     assert "policy_container" not in [u["username"] for u in listed]
 
@@ -392,113 +401,49 @@ async def test_create_expert_without_backend_uses_workspace_root(env, tmp_path, 
 
 
 async def test_batch_enable_disable_delete_and_token_quota(env):
-    c, _srv, auth = env
+    """Batch account operations are retired; the owner row is all that remains."""
+    c, srv, auth = env
     me = (await c.get("/api/auth/me", headers=auth)).json()
 
-    created_ids: list[int] = []
-    for name in ("batch_a", "batch_b", "batch_c"):
-        r = await c.post(
-            "/api/users",
-            headers=auth,
-            json={"username": name, "password": "TestPass12", "role": "user"},
-        )
-        assert r.status_code == 201, r.text
-        created_ids.append(r.json()["id"])
-
     r = await c.post(
         "/api/users/batch",
         headers=auth,
-        json={"user_ids": created_ids, "action": "disable"},
+        json={"user_ids": [me["id"]], "action": "disable"},
     )
-    assert r.status_code == 200, r.text
-    body = r.json()
-    assert body["action"] == "disable"
-    assert body["succeeded"] == 3
-    assert body["failed"] == 0
-    listed = {u["username"]: u for u in (await c.get("/api/users", headers=auth)).json()}
-    assert listed["batch_a"]["disabled"] is True
-    assert listed["batch_b"]["disabled"] is True
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
     r = await c.post(
-        "/api/users/batch",
+        "/api/users",
         headers=auth,
-        json={"user_ids": created_ids[:2], "action": "enable"},
+        json={"username": "batch_a", "password": "TestPass12", "role": "user"},
     )
-    assert r.status_code == 200
-    assert r.json()["succeeded"] == 2
-    listed = {u["username"]: u for u in (await c.get("/api/users", headers=auth)).json()}
-    assert listed["batch_a"]["disabled"] is False
-    assert listed["batch_c"]["disabled"] is True
+    assert r.status_code == 400
 
-    r = await c.post(
-        "/api/users/batch",
-        headers=auth,
-        json={
-            "user_ids": created_ids,
-            "action": "set_token_quota",
-            "token_quota": 10_000_000,
-        },
-    )
-    assert r.status_code == 200
-    assert r.json()["succeeded"] == 3
-    listed = {u["id"]: u for u in (await c.get("/api/users", headers=auth)).json()}
-    for uid in created_ids:
-        assert listed[uid]["token_quota"] == 10_000_000
-
-    r = await c.post(
-        "/api/users/batch",
-        headers=auth,
-        json={
-            "user_ids": [created_ids[0]],
-            "action": "set_token_quota",
-            "token_quota": None,
-        },
-    )
-    assert r.status_code == 200
-    listed = {u["id"]: u for u in (await c.get("/api/users", headers=auth)).json()}
-    assert listed[created_ids[0]]["token_quota"] is None
-
-    # Self is skipped for delete; others succeed.
-    r = await c.post(
-        "/api/users/batch",
-        headers=auth,
-        json={"user_ids": [me["id"], *created_ids], "action": "delete"},
-    )
-    assert r.status_code == 200
-    body = r.json()
-    assert body["succeeded"] == 3
-    assert body["failed"] == 1
-    self_result = next(item for item in body["results"] if item["user_id"] == me["id"])
-    assert self_result["ok"] is False
-    assert self_result["code"] == "FORBIDDEN"
     listed = (await c.get("/api/users", headers=auth)).json()
-    usernames = {u["username"] for u in listed}
-    assert "batch_a" not in usernames
-    assert me["username"] in usernames
+    assert [u["username"] for u in listed] == [srv.services.owner.owner().username]
+    assert listed[0]["disabled"] is False
+    assert listed[0]["token_quota"] is None
 
 
 async def test_batch_disable_skips_self(env):
-    c, _srv, auth = env
+    c, srv, auth = env
     me = (await c.get("/api/auth/me", headers=auth)).json()
     r = await c.post(
         "/api/users",
         headers=auth,
         json={"username": "batch_other", "password": "TestPass12", "role": "user"},
     )
-    other_id = r.json()["id"]
+    assert r.status_code == 400
 
     r = await c.post(
         "/api/users/batch",
         headers=auth,
-        json={"user_ids": [me["id"], other_id], "action": "disable"},
+        json={"user_ids": [me["id"]], "action": "disable"},
     )
-    assert r.status_code == 200
-    body = r.json()
-    assert body["succeeded"] == 1
-    assert body["failed"] == 1
-    listed = {u["id"]: u for u in (await c.get("/api/users", headers=auth)).json()}
-    assert listed[me["id"]]["disabled"] is False
-    assert listed[other_id]["disabled"] is True
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert not srv.services.user_repo.get(me["id"]).disabled
 
 
 async def test_admin_can_set_max_agents_and_block_create(env):
@@ -552,33 +497,23 @@ async def test_admin_can_set_max_agents_and_block_create(env):
 
 
 async def test_sharing_audience_counts_enabled_users_and_groups(env):
-    """The who-can-use picker reads this. Disabled accounts do not count."""
+    """There is no sharing picker in single-user mode: the audience is empty."""
     c, _, auth = env
     solo = await c.get("/api/user-groups/audience", headers=auth)
     assert solo.status_code == 200, solo.text
-    assert solo.json() == {"user_count": 1, "group_count": 0}
+    assert solo.json() == []
 
     created = await c.post(
         "/api/users",
         headers=auth,
         json={"username": "carol", "password": "TestPass12", "role": "user"},
     )
-    assert created.status_code == 201, created.text
-    uid = created.json()["id"]
-    assert (await c.get("/api/user-groups/audience", headers=auth)).json()["user_count"] == 2
-
-    tok = (
-        await c.post("/api/auth/login", json={"username": "carol", "password": "TestPass12"})
-    ).json()["access_token"]
-    seen = await c.get("/api/user-groups/audience", headers={"Authorization": f"Bearer {tok}"})
-    assert seen.status_code == 200, seen.text
-    assert seen.json()["user_count"] == 2
-
-    disabled = await c.patch(f"/api/users/{uid}", headers=auth, json={"disabled": True})
-    assert disabled.status_code == 200, disabled.text
-    assert (await c.get("/api/user-groups/audience", headers=auth)).json()["user_count"] == 1
+    assert created.status_code == 400
+    assert created.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
     group = await c.post("/api/user-groups", headers=auth, json={"name": "Engineering"})
-    assert group.status_code == 201, group.text
-    body = (await c.get("/api/user-groups/audience", headers=auth)).json()
-    assert body == {"user_count": 1, "group_count": 1}
+    assert group.status_code == 400
+    assert group.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+
+    still_empty = await c.get("/api/user-groups/audience", headers=auth)
+    assert still_empty.json() == []

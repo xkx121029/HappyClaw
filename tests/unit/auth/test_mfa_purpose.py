@@ -1,4 +1,4 @@
-"""Purpose-aware JWT rejection and mfa_version checks."""
+"""Single-user mode never validates bearer tokens: purpose/version claims are ignored."""
 
 from __future__ import annotations
 
@@ -17,7 +17,6 @@ from octop.infra.auth.tokens import (
     PURPOSE_REAUTH,
     sign_token,
 )
-from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.server import OctopServer
 
 
@@ -36,18 +35,17 @@ async def srv(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-async def test_mfa_and_reauth_purpose_rejected(srv) -> None:
+async def test_mfa_and_reauth_purpose_are_ignored(srv) -> None:
     server, _client = srv
-    assert server.user_manager is not None and server.services is not None
-    user = server.user_manager.get("admin")
-    assert user is not None
+    assert server.services is not None
+    owner = server.services.owner.owner()
     secret = server.services.secret_repo.get("jwt")
     assert secret is not None
     mfa = sign_token(
         secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
+        sub=owner.id,
+        uname=owner.username,
+        role=owner.role,
         purpose=PURPOSE_MFA,
         ttl_seconds=60,
         amr="password",
@@ -55,81 +53,70 @@ async def test_mfa_and_reauth_purpose_rejected(srv) -> None:
     )
     reauth = sign_token(
         secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
+        sub=owner.id,
+        uname=owner.username,
+        role=owner.role,
         purpose=PURPOSE_REAUTH,
         ttl_seconds=60,
     )
-    with pytest.raises(OctopError) as ei:
-        resolve_user_from_token(server, mfa)
-    assert ei.value.code is ErrorCode.AUTH_FAILED
-    with pytest.raises(OctopError) as ei2:
-        resolve_user_from_token(server, reauth)
-    assert ei2.value.code is ErrorCode.AUTH_FAILED
+    assert resolve_user_from_token(server, mfa).id == owner.id
+    assert resolve_user_from_token(server, reauth).id == owner.id
 
 
 @pytest.mark.asyncio
-async def test_mfa_version_mismatch_rejects_access(srv) -> None:
+async def test_mfa_version_mismatch_is_ignored(srv) -> None:
     server, _client = srv
-    assert server.user_manager is not None and server.services is not None
-    user = server.user_manager.get("admin")
-    assert user is not None
+    assert server.services is not None
+    owner = server.services.owner.owner()
     secret = server.services.secret_repo.get("jwt")
     assert secret is not None
     token = sign_token(
         secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
+        sub=owner.id,
+        uname=owner.username,
+        role=owner.role,
         purpose=PURPOSE_ACCESS,
         mfa_version=0,
     )
-    server.services.user_repo.bump_mfa_version(user.id)
-    with pytest.raises(OctopError) as ei:
-        resolve_user_from_token(server, token)
-    assert ei.value.code is ErrorCode.AUTH_FAILED
+    server.services.user_repo.bump_mfa_version(owner.id)
+    assert resolve_user_from_token(server, token).id == owner.id
 
 
 @pytest.mark.asyncio
-async def test_password_version_mismatch_rejects_access(srv) -> None:
+async def test_password_version_mismatch_is_ignored(srv) -> None:
     server, _client = srv
-    assert server.user_manager is not None and server.services is not None
-    user = server.user_manager.get("admin")
-    assert user is not None
+    assert server.services is not None
+    owner = server.services.owner.owner()
     secret = server.services.secret_repo.get("jwt")
     assert secret is not None
     token = sign_token(
         secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
+        sub=owner.id,
+        uname=owner.username,
+        role=owner.role,
         purpose=PURPOSE_ACCESS,
         password_version=0,
     )
-    server.services.user_repo.set_password_hash(user.id, "rotated-hash")
-    with pytest.raises(OctopError) as ei:
-        resolve_user_from_token(server, token)
-    assert ei.value.code is ErrorCode.AUTH_FAILED
+    server.services.user_repo.set_password_hash(owner.id, "rotated-hash")
+    assert resolve_user_from_token(server, token).id == owner.id
 
 
 @pytest.mark.asyncio
-async def test_query_access_token_rejects_mfa_purpose(srv) -> None:
+async def test_query_access_token_is_ignored(srv) -> None:
     server, client = srv
-    assert server.user_manager is not None and server.services is not None
-    user = server.user_manager.get("admin")
-    assert user is not None
+    assert server.services is not None
+    owner = server.services.owner.owner()
     secret = server.services.secret_repo.get("jwt")
     assert secret is not None
     mfa = sign_token(
         secret,
-        sub=user.id,
-        uname=user.username,
-        role=user.role,
+        sub=owner.id,
+        uname=owner.username,
+        role=owner.role,
         purpose=PURPOSE_MFA,
         ttl_seconds=60,
         amr="password",
     )
     r = await client.get("/api/auth/me", params={"access_token": mfa})
-    assert r.status_code == 401
-    assert r.json()["error"]["code"] == "AUTH_FAILED"
+    assert r.status_code == 200
+    assert r.json()["username"] == owner.username

@@ -1,54 +1,53 @@
-"""Integration tests for the 4-step wizard backend.
+"""Integration tests for the retired 4-step setup wizard.
 
-Covers: verify-password, token-protected initial-admin, finish endpoint,
-and the 410 behavior on completed setups.
+Single-user mode deleted the wizard: a clean ``OCTOP_HOME`` binds the default
+SQLite control plane at boot and the local owner is created automatically. The
+historical routes stay mounted so an older dashboard/desktop build gets a clear
+Chinese refusal (``SINGLE_USER_UNSUPPORTED``, HTTP 400) instead of a 404. These
+tests pin that retirement contract; the cases keep their historical names where
+the covered endpoint still exists.
 """
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 from typing import Any
-
-import pytest
 
 from octop.infra.setup.password_file import WIZARD_FILE_NAME, read_password
 from tests.support.app import octop_client, write_octop_config
 
+RETIRED_CODE = "SINGLE_USER_UNSUPPORTED"
 
-@pytest.fixture
-async def env(patched_app_client):
-    yield patched_app_client
+
+async def _assert_retired(response: Any) -> None:
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == RETIRED_CODE
 
 
 # ─── verify-password ────────────────────────────────────────────────
 
 
 async def test_verify_password_returns_token_on_match(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    assert pw is not None
-    r = await c.post("/api/setup/verify-password", json={"password": pw})
-    assert r.status_code == 200
-    body = r.json()
-    assert isinstance(body["wizard_token"], str)
-    assert body["expires_in"] > 0
+    """The route is retired: no token is ever minted, whatever the password."""
+    c, srv, _auth = env
+    home = srv.paths.root
+    assert read_password(home) is None
+    r = await c.post("/api/setup/verify-password", json={"password": "anything"})
+    await _assert_retired(r)
+    assert "wizard_token" not in r.json()
 
 
 async def test_verify_password_rejects_mismatch(env: Any) -> None:
     c, _srv, _home = env
-    r = await c.post("/api/setup/verify-password", json={"password": "wrong"})
-    assert r.status_code == 401
-    assert r.json()["error"]["code"] == "SETUP_PASSWORD_WRONG"
+    await _assert_retired(await c.post("/api/setup/verify-password", json={"password": "wrong"}))
 
 
 async def test_verify_password_rate_limited(env: Any) -> None:
+    """No verification happens, so no lockout counter exists either."""
     c, _srv, _home = env
     for _ in range(5):
-        await c.post("/api/setup/verify-password", json={"password": "x"})
-    r = await c.post("/api/setup/verify-password", json={"password": "x"})
-    assert r.status_code == 429
-    assert r.json()["error"]["code"] == "SETUP_RATE_LIMITED"
+        await _assert_retired(await c.post("/api/setup/verify-password", json={"password": "x"}))
+    await _assert_retired(await c.post("/api/setup/verify-password", json={"password": "x"}))
 
 
 # ─── initial-admin token guard ──────────────────────────────────────
@@ -56,131 +55,103 @@ async def test_verify_password_rate_limited(env: Any) -> None:
 
 async def test_initial_admin_requires_wizard_token(env: Any) -> None:
     c, _srv, _home = env
-    r = await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "TestPass12"},
+    await _assert_retired(
+        await c.post(
+            "/api/setup/initial-admin",
+            json={"username": "admin", "password": "TestPass12"},
+        )
     )
-    assert r.status_code == 401
-    assert r.json()["error"]["code"] == "SETUP_TOKEN_INVALID"
 
 
 async def test_initial_admin_succeeds_with_token(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    r = await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "TestPass12"},
-        headers={"Authorization": f"Bearer {tok}"},
+    """Even with a bearer header the route refuses: the local owner already exists."""
+    c, _srv, _home = env
+    await _assert_retired(
+        await c.post(
+            "/api/setup/initial-admin",
+            json={"username": "admin", "password": "TestPass12"},
+            headers={"Authorization": "Bearer local-owner"},
+        )
     )
-    assert r.status_code == 201
-    body = r.json()
-    assert isinstance(body["access_token"], str)
-    # The wizard password file is kept permanently, even after setup completes.
-    assert (home / WIZARD_FILE_NAME).exists()
 
 
 async def test_initial_admin_rejects_weak_password(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    r = await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "pw"},
-        headers={"Authorization": f"Bearer {tok}"},
+    c, _srv, _home = env
+    await _assert_retired(
+        await c.post(
+            "/api/setup/initial-admin",
+            json={"username": "admin", "password": "pw"},
+            headers={"Authorization": "Bearer local-owner"},
+        )
     )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "PASSWORD_TOO_WEAK"
 
 
 async def test_initial_admin_requires_password_while_the_gate_is_on(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    r = await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin"},
-        headers={"Authorization": f"Bearer {tok}"},
+    c, _srv, _home = env
+    await _assert_retired(
+        await c.post(
+            "/api/setup/initial-admin",
+            json={"username": "admin"},
+            headers={"Authorization": "Bearer local-owner"},
+        )
     )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SLASH_BAD_ARGS"
 
 
 async def test_initial_admin_without_password_when_the_gate_is_off(
     tmp_octop_home: Path,
 ) -> None:
-    """Desktop builds: the client sends no password; the minted JWT is the session."""
+    """Disabling the wizard password gate no longer re-opens account creation."""
     write_octop_config(tmp_octop_home, require_setup_password=False)
 
-    async with octop_client(tmp_octop_home) as (c, srv):
-        tok = (await c.post("/api/setup/begin")).json()["wizard_token"]
-        r = await c.post(
-            "/api/setup/initial-admin",
-            json={"username": "local"},
-            headers={"Authorization": f"Bearer {tok}"},
+    async with octop_client(tmp_octop_home) as (c, _srv):
+        await _assert_retired(
+            await c.post(
+                "/api/setup/initial-admin",
+                json={"username": "local"},
+                headers={"Authorization": "Bearer local-owner"},
+            )
         )
-        assert r.status_code == 201
-        body = r.json()
-        assert body["username"] == "local"
-        assert body["role"] == "admin"
-
-        # The row keeps a hashed credential nobody knows, so empty-password
-        # login cannot walk in; the issued token is the only way to /auth/me.
-        assert srv.user_manager.get("local") is not None
-        r = await c.post("/api/auth/login", json={"username": "local", "password": ""})
-        assert r.status_code != 200
-
-        r = await c.get(
-            "/api/auth/me",
-            headers={"Authorization": f"Bearer {body['access_token']}"},
-        )
-        assert r.status_code == 200
-        assert r.json()["username"] == "local"
 
 
 async def test_initial_admin_respects_locale_body(env: Any) -> None:
-    c, srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    r = await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "TestPass12", "locale": "en"},
-        headers={"Authorization": f"Bearer {tok}"},
+    """No account is written, so the posted ``locale`` never reaches user storage."""
+    c, srv, _home = env
+    await _assert_retired(
+        await c.post(
+            "/api/setup/initial-admin",
+            json={"username": "admin", "password": "TestPass12", "locale": "en"},
+            headers={"Authorization": "Bearer local-owner"},
+        )
     )
-    assert r.status_code == 201
-    assert r.json()["locale"] == "en"
-    user = srv.user_manager.get("admin")
-    assert user is not None
-    assert user.locale == "en"
+    assert srv.user_manager.get("admin") is None
 
 
 # ─── /setup/status ─────────────────────────────────────────────────
 
 
 async def test_status_reports_wizard_password_exists(env: Any) -> None:
-    c, _srv, home = env
-    r = await c.get("/api/setup/status")
-    body = r.json()
-    assert body["setup_required"] is True
-    assert body["wizard_password_required"] is True
-    assert body["wizard_password_exists"] is True
-    assert body["wizard_password_path"] == str(home / WIZARD_FILE_NAME)
-    assert body["local_account"] is False
+    c, srv, _auth = env
+    home = srv.paths.root
+    body = (await c.get("/api/setup/status")).json()
+    assert body["setup_required"] is False
+    assert body["wizard_password_required"] is False
+    assert body["wizard_password_exists"] is False
+    assert "wizard_password_path" not in body
+    assert body["local_account"] is True
+    assert body["single_user"] is True
+    assert not (home / WIZARD_FILE_NAME).exists()
 
 
 async def test_begin_issues_token_when_password_not_required(tmp_octop_home: Path) -> None:
     write_octop_config(tmp_octop_home, require_setup_password=False)
 
     async with octop_client(tmp_octop_home) as (c, _srv):
-        r = await c.get("/api/setup/status")
-        body = r.json()
+        body = (await c.get("/api/setup/status")).json()
         assert body["wizard_password_required"] is False
         assert body["wizard_password_exists"] is False
-        assert body["wizard_password_path"] is None
+        assert "wizard_password_path" not in body
 
-        r = await c.post("/api/setup/begin")
-        assert r.status_code == 200
-        assert r.json()["wizard_token"]
+        await _assert_retired(await c.post("/api/setup/begin"))
 
 
 async def test_validate_token_rejects_missing_header(env: Any) -> None:
@@ -191,15 +162,14 @@ async def test_validate_token_rejects_missing_header(env: Any) -> None:
 
 
 async def test_validate_token_accepts_fresh_token(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
+    """There is no token store any more: every token is invalid."""
+    c, _srv, _home = env
     r = await c.get(
         "/api/setup/validate-token",
-        headers={"Authorization": f"Bearer {tok}"},
+        headers={"Authorization": "Bearer local-owner"},
     )
     assert r.status_code == 200
-    assert r.json()["valid"] is True
+    assert r.json()["valid"] is False
 
 
 async def test_validate_token_rejects_stale_token(env: Any) -> None:
@@ -217,85 +187,67 @@ async def test_validate_token_rejects_stale_token(env: Any) -> None:
 
 async def test_finish_requires_wizard_token(env: Any) -> None:
     c, _srv, _home = env
-    r = await c.post("/api/setup/finish", json={"provider_draft": None})
-    assert r.status_code == 401
+    await _assert_retired(await c.post("/api/setup/finish", json={"provider_draft": None}))
 
 
 async def test_finish_returns_ok_with_valid_token(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    r = await c.post(
-        "/api/setup/finish",
-        json={"provider_draft": None},
-        headers={"Authorization": f"Bearer {tok}"},
+    c, _srv, _home = env
+    await _assert_retired(
+        await c.post(
+            "/api/setup/finish",
+            json={"provider_draft": None},
+            headers={"Authorization": "Bearer local-owner"},
+        )
     )
-    assert r.status_code == 200
-    assert r.json()["ok"] is True
 
 
 async def test_finish_works_after_admin_created(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "TestPass12"},
-        headers={"Authorization": f"Bearer {tok}"},
+    c, _srv, _home = env
+    await _assert_retired(
+        await c.post(
+            "/api/setup/finish",
+            json={"provider_draft": None},
+            headers={"Authorization": "Bearer local-owner"},
+        )
     )
-    r = await c.post(
-        "/api/setup/finish",
-        json={"provider_draft": None},
-        headers={"Authorization": f"Bearer {tok}"},
-    )
-    assert r.status_code == 200
-    assert r.json()["ok"] is True
 
 
 async def test_validate_token_still_valid_after_admin_created(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "TestPass12"},
-        headers={"Authorization": f"Bearer {tok}"},
-    )
+    c, _srv, _home = env
     r = await c.get(
         "/api/setup/validate-token",
-        headers={"Authorization": f"Bearer {tok}"},
+        headers={"Authorization": "Bearer local-owner"},
     )
     assert r.status_code == 200
-    assert r.json()["valid"] is True
+    assert r.json()["valid"] is False
 
 
 async def test_test_provider_requires_wizard_token(env: Any) -> None:
+    """Provider drafting stays usable and needs no wizard token any more."""
     c, _srv, _home = env
     r = await c.post(
         "/api/setup/test-provider",
         json={
             "name": "OpenAI",
             "type": "openai",
-            "api_key": "sk-test",
+            "api_key": "",
             "model_id": "gpt-4o-mini",
         },
     )
-    assert r.status_code == 401
+    assert r.status_code == 200
+    assert r.json()["ok"] is False
 
 
-async def test_test_provider_returns_error_for_bad_key(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
+async def test_test_provider_returns_error_for_empty_key(env: Any) -> None:
+    c, _srv, _home = env
     r = await c.post(
         "/api/setup/test-provider",
         json={
             "name": "OpenAI",
             "type": "openai",
-            "api_key": "sk-invalid",
+            "api_key": "  ",
             "model_id": "gpt-4o-mini",
         },
-        headers={"Authorization": f"Bearer {tok}"},
     )
     assert r.status_code == 200
     assert r.json()["ok"] is False
@@ -308,193 +260,100 @@ def _assert_resume_wizard_absent(response: Any) -> None:
 
 
 async def test_resume_wizard_does_not_issue_token(env: Any) -> None:
-    c, _srv, home = env
+    c, _srv, _home = env
     _assert_resume_wizard_absent(await c.post("/api/setup/resume-wizard"))
-
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "TestPass12"},
-        headers={"Authorization": f"Bearer {tok}"},
-    )
     _assert_resume_wizard_absent(await c.post("/api/setup/resume-wizard"))
-    still = await c.get(
-        "/api/setup/validate-token",
-        headers={"Authorization": f"Bearer {tok}"},
-    )
-    assert still.status_code == 200
-    assert still.json()["valid"] is True
 
 
 async def test_test_provider_accepts_admin_jwt_after_admin_created(env: Any) -> None:
-    c, srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    admin = (
-        await c.post(
-            "/api/setup/initial-admin",
-            json={"username": "admin", "password": "TestPass12"},
-            headers={"Authorization": f"Bearer {tok}"},
-        )
-    ).json()
-    assert "access_token" in admin
-    srv.wizard_tokens.clear()
+    c, _srv, _home = env
     r = await c.post(
         "/api/setup/test-provider",
         json={
             "name": "OpenAI",
             "type": "openai",
-            "api_key": "sk-invalid",
+            "api_key": "",
             "model_id": "gpt-4o-mini",
         },
-        headers={"Authorization": f"Bearer {admin['access_token']}"},
+        headers={"Authorization": "Bearer local-jwt"},
     )
     assert r.status_code == 200
     assert r.json()["ok"] is False
 
 
 async def test_finish_saves_provider_with_admin_jwt(env: Any) -> None:
-    c, srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    admin = (
+    """The retired route must not persist a provider draft as a side effect."""
+    c, srv, _home = env
+    await _assert_retired(
         await c.post(
-            "/api/setup/initial-admin",
-            json={"username": "admin", "password": "TestPass12"},
-            headers={"Authorization": f"Bearer {tok}"},
+            "/api/setup/finish",
+            json={
+                "provider_draft": {
+                    "name": "HAI",
+                    "type": "openai",
+                    "api_key": "sk-test",
+                    "base_url": "https://api.example.com/v1",
+                    "models": [
+                        {
+                            "id": "MiniMax-M2.7",
+                            "name": "MiniMax",
+                            "enabled": True,
+                            "input": ["text"],
+                        }
+                    ],
+                }
+            },
+            headers={"Authorization": "Bearer local-jwt"},
         )
-    ).json()
-    srv.wizard_tokens.clear()
-    r = await c.post(
-        "/api/setup/finish",
-        json={
-            "provider_draft": {
-                "name": "HAI",
-                "type": "openai",
-                "api_key": "sk-test",
-                "base_url": "https://api.example.com/v1",
-                "models": [
-                    {
-                        "id": "MiniMax-M2.7",
-                        "name": "MiniMax",
-                        "enabled": True,
-                        "input": ["text"],
-                    }
-                ],
-            }
-        },
-        headers={"Authorization": f"Bearer {admin['access_token']}"},
     )
-    assert r.status_code == 200, r.text
-    providers = srv.services.provider_repo.list_all()
-    assert len(providers) == 1
-    assert providers[0].api_key == "sk-test"
-    provider_name, model_id = srv.services.settings_repo.get_active_model()
-    assert provider_name == "HAI"
-    assert model_id == "MiniMax-M2.7"
-    registry = srv.app_runtime.agent_registry
-    assert registry._harness_manager is not None
-    assert registry._harness_manager.shared_factory is not None
-    main = srv.services.repos.agent_repo.get("main")
-    assert main is not None
-    # The default agent boots asynchronously after finish(); wait for it to settle.
-    last_state = main.last_state
-    for _ in range(50):
-        await asyncio.sleep(0.1)
-        if (
-            current := srv.services.repos.agent_repo.get("main")
-        ) and current.last_state == "running":
-            last_state = current.last_state
-            break
-        if current is not None:
-            last_state = current.last_state
-    assert last_state == "running"
+    assert srv.services.provider_repo.list_all() == []
 
 
-# ─── 410 guard ─────────────────────────────────────────────────────
+# ─── retired 410 guard ─────────────────────────────────────────────
 
 
 async def test_setup_410_after_admin_exists(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "TestPass12"},
-        headers={"Authorization": f"Bearer {tok}"},
-    )
-    # Plant a stale file to verify the 410 guard does not touch it.
-    (home / WIZARD_FILE_NAME).write_text("stale\n", encoding="utf-8")
+    """The wizard is gone for every install; there is no completed-setup 410."""
+    c, srv, _auth = env
+    home = srv.paths.root
     r = await c.post("/api/setup/verify-password", json={"password": "stale"})
-    assert r.status_code == 410
-    # The wizard password file is never deleted by the app, even on the 410 path.
-    assert (home / WIZARD_FILE_NAME).exists()
+    await _assert_retired(r)
+    # No password file is created or deleted by the app any more.
+    assert not (home / WIZARD_FILE_NAME).exists()
 
 
 async def test_desktop_can_add_local_account_beside_existing_users(
-    tmp_octop_home: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_octop_home: Path, monkeypatch: Any
 ) -> None:
-    """Old installs keep their password account. The desktop guide may add ``local``."""
+    """The desktop-only account path is retired together with multi-account support."""
     write_octop_config(tmp_octop_home, require_setup_password=False)
     monkeypatch.setenv("OCTOP_DESKTOP_SHELL", "1")
 
-    async with octop_client(tmp_octop_home) as (c, srv):
-        tok = (await c.post("/api/setup/begin")).json()["wizard_token"]
-        created = await c.post(
-            "/api/setup/initial-admin",
-            json={"username": "admin"},
-            headers={"Authorization": f"Bearer {tok}"},
+    async with octop_client(tmp_octop_home) as (c, _srv):
+        await _assert_retired(await c.post("/api/setup/begin"))
+        await _assert_retired(
+            await c.post(
+                "/api/setup/initial-admin",
+                json={"username": "admin"},
+                headers={"Authorization": "Bearer local-owner"},
+            )
         )
-        assert created.status_code == 201
-        before_local = await c.get("/api/setup/status")
-        assert before_local.json()["local_account"] is False
+        visible = (await c.get("/api/setup/status")).json()
+        assert visible["local_account"] is True
 
         monkeypatch.delenv("OCTOP_DESKTOP_SHELL", raising=False)
-        refused = await c.post("/api/setup/begin")
-        assert refused.status_code == 410
-
-        monkeypatch.setenv("OCTOP_DESKTOP_SHELL", "1")
-        begin = await c.post("/api/setup/begin")
-        assert begin.status_code == 200
-        local_tok = begin.json()["wizard_token"]
-        other = await c.post(
-            "/api/setup/initial-admin",
-            json={"username": "admin2"},
-            headers={"Authorization": f"Bearer {local_tok}"},
-        )
-        assert other.status_code == 410
-        added = await c.post(
-            "/api/setup/initial-admin",
-            json={"username": "local"},
-            headers={"Authorization": f"Bearer {local_tok}"},
-        )
-        assert added.status_code == 201
-        assert added.json()["username"] == "local"
-        finished = await c.post(
-            "/api/setup/finish",
-            json={"provider_draft": None},
-            headers={"Authorization": f"Bearer {local_tok}"},
-        )
-        assert finished.status_code == 200
-        assert srv.user_manager.get("admin") is not None
-        assert srv.user_manager.get("local") is not None
-        visible = await c.get("/api/setup/status")
-        assert visible.json()["local_account"] is True
-        monkeypatch.delenv("OCTOP_DESKTOP_SHELL", raising=False)
-        hidden = await c.get("/api/setup/status")
-        assert hidden.json()["local_account"] is False
+        hidden = (await c.get("/api/setup/status")).json()
+        assert hidden["local_account"] is True
 
 
 # ─── lockdown middleware ───────────────────────────────────────────
 
 
 async def test_lockdown_blocks_non_setup_endpoints_when_no_users(env: Any) -> None:
+    """No users-exist gate: the local owner always exists, so agents stay reachable."""
     c, _srv, _home = env
     r = await c.get("/api/agents")
-    assert r.status_code == 503
-    body = r.json()
-    assert body.get("setup_required") is True
+    assert r.status_code == 200
 
 
 async def test_lockdown_allows_setup_endpoints(env: Any) -> None:
@@ -510,39 +369,27 @@ async def test_lockdown_allows_health_path(env: Any) -> None:
 
 
 async def test_lockdown_lifts_after_admin_created(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "TestPass12"},
-        headers={"Authorization": f"Bearer {tok}"},
-    )
+    """Single-user requests resolve to the local owner even without a JWT."""
+    c, _srv, _home = env
     r = await c.get("/api/agents")
-    # No JWT ⇒ 401 (auth, not lockdown).
-    assert r.status_code == 401
+    assert r.status_code == 200
 
 
 async def test_finish_rejects_invalid_token_after_admin_exists(env: Any) -> None:
-    c, _srv, home = env
-    pw = read_password(home)
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    await c.post(
-        "/api/setup/initial-admin",
-        json={"username": "admin", "password": "TestPass12"},
-        headers={"Authorization": f"Bearer {tok}"},
+    c, _srv, _home = env
+    await _assert_retired(
+        await c.post(
+            "/api/setup/finish",
+            json={"provider_draft": None},
+            headers={"Authorization": "Bearer faketoken"},
+        )
     )
-    r = await c.post(
-        "/api/setup/finish",
-        json={"provider_draft": None},
-        headers={"Authorization": "Bearer faketoken"},
-    )
-    assert r.status_code == 401
 
 
 async def test_wizard_password_relocated_to_octop_home(env: Any) -> None:
-    _c, srv, home = env
-    assert srv.paths.root == home
-    assert (home / WIZARD_FILE_NAME).is_file()
+    """Single-user mode never writes ``octop-login.txt`` into any home."""
+    _c, srv, _auth = env
+    home = srv.paths.root
+    assert not (home / WIZARD_FILE_NAME).exists()
     assert not (Path.home() / WIZARD_FILE_NAME).exists()
-    assert read_password(home) is not None
+    assert read_password(home) is None

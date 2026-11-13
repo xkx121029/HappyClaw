@@ -31,7 +31,7 @@ def test_defaults_when_missing(tmp_path: Path):
     assert cfg.backup.include_skill_packages is True
     assert cfg.backup.include_plugins is True
     assert cfg.backup.include_knowledge is True
-    assert cfg.backup.include_chats is False
+    assert cfg.backup.include_chats is True
     assert cfg.max_upload_mb == 100
     assert cfg.max_upload_bytes == 100 * 1024 * 1024
     assert cfg_path.exists()  # file written with defaults

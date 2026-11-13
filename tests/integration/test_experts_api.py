@@ -7,6 +7,7 @@ shape matches production exactly.
 
 from __future__ import annotations
 
+import os
 from types import SimpleNamespace
 from typing import Any
 
@@ -50,7 +51,7 @@ async def test_create_agent_from_expert(env: Any) -> None:
       - not copy expert markdown into ``system_prompt`` (persona lives in workspace)
       - be in a non-running state (autostart=False; no provider)
     """
-    c, _srv, auth = env
+    c, srv, auth = env
 
     r = await c.post(
         "/api/agents/from-expert/default",
@@ -60,14 +61,14 @@ async def test_create_agent_from_expert(env: Any) -> None:
     assert r.status_code == 201, r.text
     body = r.json()
     assert body["expert_id"] == "default"
-    assert body.get("user_id") == 1
+    assert body["user_id"] == srv.services.owner.owner().id
     assert body["state"] in {"running", "failed", "stopped", "unknown", "starting"}
     new_id = body["agent_id"]
 
     # Listed under /api/agents
     rows = (await c.get("/api/agents", headers=auth)).json()
     created = next(a for a in rows if a["agent_id"] == new_id and a["name"] == "default-bot")
-    assert created["user_id"] == 1
+    assert created["is_owner"] is True
     assert any(a["agent_id"] == new_id and a["name"] == "default-bot" for a in rows)
 
     detail_row = (await c.get(f"/api/agents/{new_id}", headers=auth)).json()
@@ -445,9 +446,19 @@ async def test_create_from_expert_stores_backend(env: Any) -> None:
     )
     assert r.status_code == 201
     agent_id = r.json()["id"]
+    agent_key = r.json()["agent_id"]
     rows = (await c.get("/api/agents", headers=auth)).json()
     agent = next(a for a in rows if a["id"] == agent_id)
-    assert agent["config"].get("backend") == backend_spec
+    stored = agent["config"].get("backend")
+    assert stored["type"] == "local_shell"
+    assert stored["virtual_mode"] is True
+    if os.name == "nt":
+        # A "/" root cannot reach the Windows workspace, so the resolver scopes
+        # the backend to the agent workspace instead.
+        assert stored["root_dir"] != "/"
+        assert stored["root_dir"].endswith(agent_key)
+    else:
+        assert stored["root_dir"] == "/"
 
 
 async def test_create_agent_from_expert_stores_composer_defaults(env: Any) -> None:

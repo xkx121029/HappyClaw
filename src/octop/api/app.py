@@ -28,6 +28,41 @@ class _RouterMount:
     tags: Sequence[str]
 
 
+# Multi-account surfaces are no longer mounted. Their prefixes still collide
+# with live routers (``/api/users/{user_id}`` would answer ``roles`` with 422)
+# and with the GET-only SPA catch-all (405), so answer them explicitly.
+_RETIRED_MULTI_USER_PREFIXES = (
+    "/users/roles",
+    "/users/invites",
+    "/auth/invite",
+    "/auth/ldap",
+    "/auth/oidc",
+    "/auth/oauth",
+    "/auth/mfa",
+    "/auth/passkey",
+)
+
+
+def _retired_multi_user_router() -> Any:
+    from fastapi import APIRouter  # noqa: PLC0415
+
+    router = APIRouter(include_in_schema=False)
+    methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+
+    async def retired_multi_user_endpoint(rest: str = "") -> None:
+        _ = rest
+        raise OctopError(
+            ErrorCode.NOT_FOUND,
+            "this endpoint was removed in single-user mode",
+        )
+
+    for prefix in _RETIRED_MULTI_USER_PREFIXES:
+        router.add_api_route(prefix, retired_multi_user_endpoint, methods=methods)
+        router.add_api_route(f"{prefix}/{{rest:path}}", retired_multi_user_endpoint, methods=methods)
+
+    return router
+
+
 _NO_CACHE_DASHBOARD_NAMES = frozenset({"sw.js", "manifest.json", "index.html"})
 
 
@@ -306,10 +341,6 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         agent_mcp,
         agent_tools,
         auth_device,
-        auth_ldap,
-        auth_mfa,
-        auth_oauth,
-        auth_oidc,
         backup,
         bridge,
         browser,
@@ -321,7 +352,6 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         envs,
         experts,
         internal_mcp,
-        invites,
         knowledge_bases,
         mbti,
         media_generation,
@@ -346,7 +376,6 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         uploads,
         usage,
         user_groups,
-        user_roles,
         users,
         voice,
         workspace,
@@ -366,14 +395,8 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
     from octop.api.routers.voice import admin_router as admin_voice_router  # noqa: PLC0415
 
     specs = [
-        _RouterMount(auth_mfa.router, "/api/auth", ["auth"]),
+        _RouterMount(_retired_multi_user_router(), "/api", []),
         _RouterMount(auth_device.router, "/api/auth", ["auth"]),
-        _RouterMount(auth_oidc.router, "/api/auth", ["auth"]),
-        _RouterMount(auth_oauth.router, "/api/auth", ["auth"]),
-        _RouterMount(auth_ldap.router, "/api/auth", ["auth"]),
-        _RouterMount(invites.public_router, "/api/auth/invite", ["auth"]),
-        _RouterMount(invites.admin_router, "/api/users/invites", ["users"]),
-        _RouterMount(user_roles.router, "/api/users/roles", ["users"]),
         _RouterMount(user_groups.router, "/api/user-groups", ["users"]),
         _RouterMount(users.router, "/api/users", ["users"]),
         _RouterMount(agent_tools.router, "/api", ["agents"]),

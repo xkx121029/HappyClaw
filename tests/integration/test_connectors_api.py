@@ -729,7 +729,7 @@ async def test_private_custom_mcp_is_hidden_from_other_users(env):
 
 async def test_custom_mcp_oauth_callback_applies_tokens(env):
     c, srv, auth, _ = env
-    user_id = await resolve_user_id(c, auth, "admin")
+    user_id = await resolve_user_id(c, auth, "local-owner")
 
     put = await c.put(
         "/api/connectors/custom-mcp",
@@ -849,7 +849,7 @@ async def test_custom_mcp_oauth_start_unified(env):
 
 async def test_custom_mcp_oauth_client_is_saved_redacted_and_used(env):
     c, srv, auth, _ = env
-    user_id = await resolve_user_id(c, auth, "admin")
+    user_id = await resolve_user_id(c, auth, "local-owner")
     server = {
         "transport": "streamable_http",
         "url": "https://mcp.example.com/mcp",
@@ -1012,7 +1012,7 @@ async def test_qcc_gateway_auth_five_resources_and_disconnect(env, monkeypatch, 
 )
 async def test_oauth_callback_safely_renders_stored_redirect(env, redirect_after, expected_path):
     c, srv, auth, _ = env
-    user_id = await resolve_user_id(c, auth, "admin")
+    user_id = await resolve_user_id(c, auth, "local-owner")
     state_id = new_ulid()
     srv.services.repos.connector_repo.create_oauth_state(
         state_id=state_id,
@@ -1054,7 +1054,7 @@ async def test_oauth_callback_safely_renders_stored_redirect(env, redirect_after
 async def test_oauth_callback_escapes_error_html(env, exchange_error):
     c, srv, auth, _ = env
     payload = '<img src=x onerror="alert(1)">'
-    user_id = await resolve_user_id(c, auth, "admin")
+    user_id = await resolve_user_id(c, auth, "local-owner")
     state_id = new_ulid()
     srv.services.repos.connector_repo.create_oauth_state(
         state_id=state_id,

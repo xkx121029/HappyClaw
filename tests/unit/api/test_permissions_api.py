@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from octop.api.deps import require_permission
-from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.users.identity import Role, User
 
 
@@ -24,12 +23,11 @@ def test_unknown_key_raises_at_construction() -> None:
         require_permission("not_a_real_key")
 
 
-async def test_dependency_denies_without_permission() -> None:
+async def test_dependency_no_longer_enforces_permissions() -> None:
+    """Single-user mode: the owner is always allowed, permission lists are ignored."""
     dep = require_permission("browser")
-    with pytest.raises(OctopError) as exc:
-        await dep(_user(False, []))
-    assert exc.value.code is ErrorCode.FORBIDDEN
-    assert exc.value.details.get("permission") == "browser"
+    user = _user(False, [])
+    assert await dep(user) is user
 
 
 async def test_dependency_allows_admin_and_holder() -> None:

@@ -104,15 +104,14 @@ async def test_login_without_token_still_works_on_slider(client: Any) -> None:
 
 
 async def test_strong_login_requires_token_before_password(client: Any) -> None:
+    """Captcha was part of the removed login flow; login never challenges."""
     c, srv, home = client
     await bootstrap_admin(c, home, username="alice", password="TestPass12")
     _enable_turnstile(srv)
     r = await c.post("/api/auth/login", json={"username": "alice", "password": "wrong"})
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "CAPTCHA_REQUIRED"
-    row = srv.services.user_repo.get_by_username("alice")
-    assert row is not None
-    assert int(row.login_failed_count or 0) == 0
+    assert r.status_code == 200
+    assert r.json()["access_token"] == "local-owner"
+    assert int(srv.services.user_repo.get(srv.services.owner.owner().id).login_failed_count or 0) == 0
 
 
 async def test_strong_login_mocked_ok_token_returns_jwt(client: Any, siteverify: Any) -> None:
@@ -127,8 +126,9 @@ async def test_strong_login_mocked_ok_token_returns_jwt(client: Any, siteverify:
         json={"username": "alice", "password": "TestPass12", "captcha_token": "ok-token"},
     )
     assert r.status_code == 200
-    assert r.json()["access_token"]
-    assert handler.hits == 1
+    assert r.json()["access_token"] == "local-owner"
+    # Stored captcha settings are never consulted by login any more.
+    assert handler.hits == 0
 
 
 async def test_captcha_fail_does_not_increment_lockout(client: Any, siteverify: Any) -> None:
@@ -142,11 +142,9 @@ async def test_captcha_fail_does_not_increment_lockout(client: Any, siteverify: 
         "/api/auth/login",
         json={"username": "alice", "password": "wrong", "captcha_token": "bad"},
     )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "CAPTCHA_FAILED"
-    row = srv.services.user_repo.get_by_username("alice")
-    assert row is not None
-    assert int(row.login_failed_count or 0) == 0
+    assert r.status_code == 200
+    assert handler.hits == 0
+    assert int(srv.services.user_repo.get(srv.services.owner.owner().id).login_failed_count or 0) == 0
 
 
 async def test_tencent_login_mocked_ok_returns_jwt(client: Any, siteverify: Any) -> None:
@@ -164,7 +162,7 @@ async def test_tencent_login_mocked_ok_returns_jwt(client: Any, siteverify: Any)
         cam_key="camkey",
     )
     pub = await c.get("/api/auth/captcha")
-    assert pub.json() == {"provider": "tencent", "site_key": "195642000"}
+    assert pub.json() == {"provider": "none"}
     r = await c.post(
         "/api/auth/login",
         json={
@@ -174,8 +172,8 @@ async def test_tencent_login_mocked_ok_returns_jwt(client: Any, siteverify: Any)
         },
     )
     assert r.status_code == 200
-    assert r.json()["access_token"]
-    assert handler.hits == 1
+    assert r.json()["access_token"] == "local-owner"
+    assert handler.hits == 0
 
 
 async def test_tencent_login_without_cam_keys_fails(client: Any, siteverify: Any) -> None:
@@ -193,8 +191,8 @@ async def test_tencent_login_without_cam_keys_fails(client: Any, siteverify: Any
             "captcha_token": "tr03ticket:@rand",
         },
     )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "CAPTCHA_FAILED"
+    assert r.status_code == 200
+    assert r.json()["access_token"] == "local-owner"
     assert handler.hits == 0
 
 
@@ -220,9 +218,8 @@ async def test_tencent_login_rejects_reused_ticket_code(client: Any, siteverify:
             "captcha_token": "tr03ticket:@rand",
         },
     )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "CAPTCHA_FAILED"
-    assert handler.hits == 1
+    assert r.status_code == 200
+    assert handler.hits == 0
 
 
 async def test_known_locked_user_skips_siteverify(client: Any, siteverify: Any) -> None:
@@ -232,19 +229,19 @@ async def test_known_locked_user_skips_siteverify(client: Any, siteverify: Any) 
     c, srv, home = client
     await bootstrap_admin(c, home, username="alice", password="TestPass12")
     _enable_turnstile(srv)
-    row = srv.services.user_repo.get_by_username("alice")
-    assert row is not None
-    srv.services.user_repo.record_failed_login(row.id, max_attempts=1, lockout_seconds=600)
+    owner = srv.services.owner.owner()
+    srv.services.user_repo.record_failed_login(owner.id, max_attempts=1, lockout_seconds=600)
     r = await c.post(
         "/api/auth/login",
         json={"username": "alice", "password": "TestPass12", "captcha_token": "ok-token"},
     )
-    assert r.status_code == 429 or r.json()["error"]["code"] == "LOGIN_LOCKED"
-    assert r.json()["error"]["code"] == "LOGIN_LOCKED"
+    # Login no longer checks lockout state at all.
+    assert r.status_code == 200
     assert handler.hits == 0
 
 
 async def test_overlong_captcha_token_is_422(client: Any) -> None:
+    """The body is ignored by login, so the length guard no longer applies."""
     c, srv, home = client
     await bootstrap_admin(c, home, username="alice", password="TestPass12")
     _enable_turnstile(srv)
@@ -256,7 +253,8 @@ async def test_overlong_captcha_token_is_422(client: Any) -> None:
             "captcha_token": "x" * 4097,
         },
     )
-    assert r.status_code == 422
+    assert r.status_code == 200
+    assert r.json()["access_token"] == "local-owner"
 
 
 async def test_admin_captcha_get_put_and_null_delete(env: Any) -> None:
@@ -328,7 +326,7 @@ async def test_admin_captcha_get_put_and_null_delete(env: Any) -> None:
     assert "camkey" not in str(r.json())
 
     pub = await c.get("/api/auth/captcha")
-    assert pub.json() == {"provider": "turnstile", "site_key": "0xsite"}
+    assert pub.json() == {"provider": "none"}
 
     r = await c.put(
         "/api/settings/captcha",
@@ -338,18 +336,20 @@ async def test_admin_captcha_get_put_and_null_delete(env: Any) -> None:
     assert r.status_code == 200
     assert "turnstile" not in r.json()["providers"]
     pub = await c.get("/api/auth/captcha")
-    assert pub.json() == {"provider": "slider"}
+    assert pub.json() == {"provider": "none"}
 
 
 async def test_admin_captcha_forbidden_without_permission(env: Any) -> None:
+    """Permissions are not enforced: any local request can read settings."""
     c, _srv, admin_auth = env
-    await c.post(
+    created = await c.post(
         "/api/users",
         headers=admin_auth,
         json={"username": "bob", "password": "TestPass12", "role": "user"},
     )
-    bob_tok = (
-        await c.post("/api/auth/login", json={"username": "bob", "password": "TestPass12"})
-    ).json()["access_token"]
-    r = await c.get("/api/settings/captcha", headers={"Authorization": f"Bearer {bob_tok}"})
-    assert r.status_code == 403
+    assert created.status_code == 400
+    assert created.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+
+    r = await c.get("/api/settings/captcha", headers={"Authorization": "Bearer bob"})
+    assert r.status_code == 200
+    assert r.json()["active"] == "slider"

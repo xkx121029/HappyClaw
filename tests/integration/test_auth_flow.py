@@ -13,64 +13,68 @@ async def client(app_client):
 
 
 async def test_setup_required_then_login(client):
-    c, srv, home = client
+    """There is no login gate: every request is the local owner, token ignored."""
+    c, srv, _home = client
     r = await c.get("/api/setup/status")
-    assert r.json()["setup_required"] is True
+    assert r.json()["setup_required"] is False
+
     r = await c.post("/api/auth/login", json={"username": "x", "password": "y"})
-    assert r.status_code == 503 and r.json()["setup_required"] is True
-    r = await bootstrap_admin(c, home, username="alice", password="TestPass12")
-    assert r.status_code == 201
-    r = await c.post("/api/auth/login", json={"username": "alice", "password": "TestPass12"})
     assert r.status_code == 200
-    token = r.json()["access_token"]
+    body = r.json()
+    assert body["access_token"] == "local-owner"
+    assert body["user"]["username"] == "local-owner"
+    assert body["user"]["is_local_owner"] is True
 
-    r = await c.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
-    assert r.json()["username"] == "alice"
+    r = await c.get(
+        "/api/auth/me",
+        headers={"Authorization": f"Bearer {body['access_token']}"},
+    )
+    assert r.json()["username"] == srv.services.owner.owner().username
 
-    r = await c.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"})
+    r = await c.post("/api/auth/logout", headers={"Authorization": "Bearer local-owner"})
     assert r.status_code == 204
 
 
 async def test_setup_again_410(client):
+    """The wizard is retired, so a repeated bootstrap is refused with 400."""
     c, _, home = client
-    await bootstrap_admin(c, home, username="a", password="TestPass12")
     r = await c.post("/api/setup/initial-admin", json={"username": "b", "password": "TestPass12"})
-    assert r.status_code == 410
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert home.exists()
 
 
 async def test_change_password(client):
-    c, _, home = client
-    await bootstrap_admin(c, home, username="a", password="OldPass12")
-    tok = (await c.post("/api/auth/login", json={"username": "a", "password": "OldPass12"})).json()[
-        "access_token"
-    ]
+    """Passwords were removed with login; the placeholder token stays usable."""
+    c, _, _home = client
+    tok = (
+        await c.post("/api/auth/login", json={"username": "a", "password": "OldPass12"})
+    ).json()["access_token"]
     r = await c.post(
         "/api/auth/change-password",
         headers={"Authorization": f"Bearer {tok}"},
         json={"old_password": "OldPass12", "new_password": "NewPass12"},
     )
-    assert r.status_code == 204
-    renewed = r.headers.get("X-Octop-Access-Token")
-    assert renewed
-    assert renewed != tok
-    stale = await c.get("/api/auth/me", headers={"Authorization": f"Bearer {tok}"})
-    assert stale.status_code == 401
-    assert stale.json()["error"]["code"] == "AUTH_FAILED"
-    current = await c.get("/api/auth/me", headers={"Authorization": f"Bearer {renewed}"})
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert "X-Octop-Access-Token" not in r.headers
+
+    current = await c.get("/api/auth/me", headers={"Authorization": f"Bearer {tok}"})
     assert current.status_code == 200
-    assert (
-        await c.post("/api/auth/login", json={"username": "a", "password": "OldPass12"})
-    ).status_code == 401
-    assert (
-        await c.post("/api/auth/login", json={"username": "a", "password": "NewPass12"})
-    ).status_code == 200
+    assert current.json()["username"] == "local-owner"
+
+    for password in ("OldPass12", "NewPass12"):
+        again = await c.post("/api/auth/login", json={"username": "a", "password": password})
+        assert again.status_code == 200
+        assert again.json()["access_token"] == "local-owner"
 
 
 async def test_invalid_token_401(client):
-    c, _, home = client
-    await bootstrap_admin(c, home, username="a", password="TestPass12")
+    """Tokens are never validated: a malformed bearer still resolves the owner."""
+    c, _, _home = client
     r = await c.get("/api/auth/me", headers={"Authorization": "Bearer not.a.token"})
-    assert r.status_code == 401
+    assert r.status_code == 200
+    assert r.json()["username"] == "local-owner"
 
 
 async def test_health_no_auth_required(client):
@@ -83,19 +87,15 @@ async def test_health_no_auth_required(client):
 
 
 async def test_captcha_public_is_setup_locked_then_slider(client):
-    c, _, home = client
-    r = await c.get("/api/auth/captcha")
-    assert r.status_code == 503
-    assert r.json()["setup_required"] is True
-    await bootstrap_admin(c, home, username="alice", password="TestPass12")
+    """Captcha belonged to the removed login flow: it is always ``none``."""
+    c, _, _home = client
     r = await c.get("/api/auth/captcha")
     assert r.status_code == 200
-    assert r.json() == {"provider": "slider"}
+    assert r.json() == {"provider": "none"}
 
 
 async def test_patch_me_updates_display_name(client) -> None:
-    c, _srv, home = client
-    await bootstrap_admin(c, home)
+    c, _srv, _home = client
     tok = (
         await c.post("/api/auth/login", json={"username": "admin", "password": "TestPass12"})
     ).json()["access_token"]
@@ -105,7 +105,7 @@ async def test_patch_me_updates_display_name(client) -> None:
     assert r.status_code == 200
     body = r.json()
     assert body["display_name"] == "Alice"
-    assert body["username"] == "admin"
+    assert body["username"] == "local-owner"
 
     r2 = await c.get("/api/auth/me", headers=auth)
     assert r2.json()["display_name"] == "Alice"
@@ -126,10 +126,13 @@ async def test_patch_me_clears_display_name(client) -> None:
 
 
 async def test_patch_me_requires_auth(client) -> None:
+    """No auth gate: anonymous PATCH still edits the local owner."""
     c, _srv, home = client
     await bootstrap_admin(c, home)
     r = await c.patch("/api/auth/me", json={"display_name": "Alice"})
-    assert r.status_code == 401
+    assert r.status_code == 200
+    assert r.json()["display_name"] == "Alice"
+    assert r.json()["username"] == "local-owner"
 
 
 _PNG = (

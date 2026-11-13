@@ -234,7 +234,7 @@ def test_backup_skips_junk_directories(layout: PathLayout, tmp_path: Path) -> No
     assert "workspaces/agent01/.git/config" not in names
 
 
-def test_default_backup_omits_chats_and_restore_preserves_current_chats(
+def test_backup_excluding_chats_and_restore_preserves_current_chats(
     tmp_path: Path,
 ) -> None:
     source_layout = PathLayout(tmp_path / "source")
@@ -273,6 +273,7 @@ def test_default_backup_omits_chats_and_restore_preserves_current_chats(
         pool=source_pool,
         db_config=DatabaseConfig(),
         dest=archive,
+        include_chats=False,
     )
     source_pool.close()
 
@@ -373,6 +374,7 @@ def test_restore_without_chats_remaps_user_ids_by_username(tmp_path: Path) -> No
         pool=source_pool,
         db_config=DatabaseConfig(),
         dest=archive,
+        include_chats=False,
     )
     source_pool.close()
 
@@ -1178,7 +1180,7 @@ def test_restore_repairs_old_physical_schema_with_current_watermark(tmp_path: Pa
             "SELECT instance_id, shared FROM connectors WHERE instance_id = 'instance-1'"
         ).fetchone()
 
-    assert result["schema_version"] == 25
+    assert result["schema_version"] == 26
     assert "shared" in columns
     assert connector is not None
     assert connector["shared"] == 0
@@ -1232,7 +1234,7 @@ def test_refuse_newer_schema_backup_before_database_replace(
     assert excinfo.value.code == ErrorCode.BACKUP_SCHEMA_INCOMPATIBLE
     assert excinfo.value.details == {
         "archive_schema_version": 999,
-        "runtime_schema_version": 25,
+        "runtime_schema_version": 26,
     }
     with pool.connect() as conn:
         assert (

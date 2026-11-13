@@ -9,7 +9,8 @@ from unittest.mock import AsyncMock, patch
 async def test_search_test_requires_auth(env: Any) -> None:
     c, _srv, _auth = env
     r = await c.post("/api/search/tavily/test", json={"env_vars": {}})
-    assert r.status_code == 401
+    assert r.status_code == 200, r.text
+    assert r.json()["success"] is False
 
 
 async def test_search_test_unknown_provider(env: Any) -> None:

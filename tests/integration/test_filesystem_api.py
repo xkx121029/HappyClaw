@@ -13,12 +13,12 @@ posix_only = pytest.mark.skipif(os.name != "posix", reason="POSIX root '/' probe
 
 
 @pytest.mark.asyncio
-async def test_list_host_dirs_requires_auth(
+async def test_list_host_dirs_without_token_resolves_owner(
     env: tuple[httpx.AsyncClient, Any, dict[str, str]],
 ) -> None:
     client, _srv, _auth = env
     r = await client.get("/api/filesystem/dirs")
-    assert r.status_code == 401, r.text
+    assert r.status_code == 200, r.text
 
 
 @pytest.mark.asyncio
@@ -59,21 +59,22 @@ async def test_list_host_dirs_rejects_proc(
 
 
 @pytest.mark.asyncio
-async def test_probe_host_dir_requires_auth(
+async def test_probe_host_dir_without_token_resolves_owner(
     env: tuple[httpx.AsyncClient, Any, dict[str, str]],
 ) -> None:
     client, _srv, _auth = env
     r = await client.post("/api/filesystem/probe", json={"path": "/"})
-    assert r.status_code == 401, r.text
+    assert r.status_code == 200, r.text
 
 
 @pytest.mark.asyncio
-async def test_ensure_bwrap_requires_auth(
+async def test_ensure_bwrap_without_token_resolves_owner(
     env: tuple[httpx.AsyncClient, Any, dict[str, str]],
 ) -> None:
     client, _srv, _auth = env
     r = await client.post("/api/filesystem/ensure-bwrap")
-    assert r.status_code == 401, r.text
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] in {"skipped", "ready", "failed"}
 
 
 @pytest.mark.asyncio
@@ -158,12 +159,13 @@ async def test_filesystem_roots_lists_every_drive_not_just_home_drive(
 
 
 @pytest.mark.asyncio
-async def test_filesystem_roots_requires_auth(
+async def test_filesystem_roots_without_token_resolves_owner(
     env: tuple[httpx.AsyncClient, Any, dict[str, str]],
 ) -> None:
     client, _srv, _auth = env
     r = await client.get("/api/filesystem/roots")
-    assert r.status_code == 401, r.text
+    assert r.status_code == 200, r.text
+    assert isinstance(r.json()["roots"], list)
 
 
 @pytest.mark.asyncio
@@ -297,12 +299,22 @@ async def test_probe_host_dir_rejects_file(
 
 
 @pytest.mark.asyncio
-async def test_mkdir_host_dir_requires_auth(
+async def test_mkdir_host_dir_without_token_resolves_owner(
     env: tuple[httpx.AsyncClient, Any, dict[str, str]],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client, _srv, _auth = env
-    r = await client.post("/api/filesystem/mkdir", json={"path": "/"})
-    assert r.status_code == 401, r.text
+    monkeypatch.setattr(
+        "octop.infra.utils.host_dirs.normalize_host_path",
+        lambda path: Path(path).resolve(),
+    )
+    r = await client.post(
+        "/api/filesystem/mkdir",
+        json={"path": str(tmp_path), "base_name": "New Folder"},
+    )
+    assert r.status_code == 200, r.text
+    assert (tmp_path / "New Folder").is_dir()
 
 
 @pytest.mark.asyncio

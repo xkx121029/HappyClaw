@@ -7,16 +7,16 @@ from pathlib import Path
 from typing import Any
 
 from octop.infra.server import OctopServer
-from octop.infra.setup.password_file import read_password
 from tests.support.app import write_octop_config
 from tests.support.auth import auth_header, bootstrap_admin
 
 
 async def test_setup_status_flips_after_bootstrap(patched_app_client: Any) -> None:
+    """Setup is always complete in single-user mode; bootstrap only adds the expert."""
     c, _srv, home = patched_app_client
     r = await c.get("/api/setup/status")
     assert r.status_code == 200
-    assert r.json()["setup_required"] is True
+    assert r.json()["setup_required"] is False
 
     r = await bootstrap_admin(c, home)
     assert r.status_code == 201
@@ -40,34 +40,22 @@ async def test_bootstrap_creates_default_main_agent(patched_app_client: Any) -> 
 
 
 async def test_main_not_created_until_finish(patched_app_client: Any) -> None:
+    """The wizard ``finish`` step is gone; bootstrap is what materialises ``main``."""
     c, _srv, home = patched_app_client
-    pw = read_password(home)
-    assert pw is not None
-    tok = (await c.post("/api/setup/verify-password", json={"password": pw})).json()["wizard_token"]
-    admin = (
-        await c.post(
-            "/api/setup/initial-admin",
-            json={"username": "admin", "password": "TestPass12"},
-            headers={"Authorization": f"Bearer {tok}"},
-        )
-    ).json()
-    auth = {"Authorization": f"Bearer {admin['access_token']}"}
-    r = await c.get("/api/agents", headers=auth)
-    assert r.status_code == 200
-    assert r.json() == []
+    before = await c.get("/api/agents")
+    assert before.status_code == 200
+    assert before.json() == []
 
-    finish = await c.post(
-        "/api/setup/finish",
-        json={"provider_draft": None},
-        headers={"Authorization": f"Bearer {tok}"},
-    )
-    assert finish.status_code == 200
-    r = await c.get("/api/agents", headers=auth)
-    assert len(r.json()) == 1
-    assert r.json()[0]["agent_id"] == "main"
+    await bootstrap_admin(c, home)
+
+    after = await c.get("/api/agents")
+    assert after.status_code == 200
+    assert len(after.json()) == 1
+    assert after.json()[0]["agent_id"] == "main"
 
 
 async def test_double_bootstrap_returns_410(patched_app_client: Any) -> None:
+    """The historical retry now gets the single-user refusal instead of 410."""
     c, _srv, home = patched_app_client
     r = await bootstrap_admin(c, home)
     assert r.status_code == 201
@@ -75,15 +63,16 @@ async def test_double_bootstrap_returns_410(patched_app_client: Any) -> None:
         "/api/setup/initial-admin",
         json={"username": "admin2", "password": "TestPass12"},
     )
-    assert r.status_code == 410
-    assert r.json()["error"]["code"] == "SETUP_REQUIRED"
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
 
 async def test_start_writes_wizard_password_when_no_users(tmp_octop_home: Path) -> None:
+    """Single-user boot never writes ``octop-login.txt``."""
     srv = OctopServer(home=tmp_octop_home)
     await srv.start()
     try:
-        assert (tmp_octop_home / "octop-login.txt").exists()
+        assert not (tmp_octop_home / "octop-login.txt").exists()
         assert not (tmp_octop_home.parent / "octop-login.txt").exists()
     finally:
         await srv.stop()

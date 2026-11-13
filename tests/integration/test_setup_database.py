@@ -11,10 +11,9 @@ from octop.config import DatabaseConfig, OctopConfig, load_config
 from octop.infra.db.factory import open_database
 from octop.infra.db.migrate import run_migrations
 from octop.infra.db.repos.users import UserRepo
-from octop.infra.setup.password_file import read_password
 from octop.infra.utils.paths import PathLayout
 from tests.support.app import octop_client
-from tests.support.auth import bootstrap_admin, wizard_token
+from tests.support.auth import bootstrap_admin
 
 
 def _seed_occupied_sqlite(home, *, relative_path: str = "occupied.db") -> None:
@@ -34,8 +33,10 @@ def _seed_occupied_sqlite(home, *, relative_path: str = "occupied.db") -> None:
 
 @pytest.mark.asyncio
 async def test_setup_database_sqlite_bind(patched_app_client) -> None:
-    """Already-bound empty wizard can still swap sqlite path via rebind."""
+    """The read-only probe stays; the wizard rebind step is retired."""
     client, srv, home = patched_app_client
+    before = load_config(home / "config.json")
+
     r = await client.post(
         "/api/setup/test-database",
         json={"driver": "sqlite", "sqlite_path": "data/wizard.db"},
@@ -47,20 +48,18 @@ async def test_setup_database_sqlite_bind(patched_app_client) -> None:
         "/api/setup/database",
         json={"driver": "sqlite", "sqlite_path": "data/wizard.db"},
     )
-    assert r.status_code == 200, r.text
-    body = r.json()
-    assert body["ok"] is True
-    assert body["driver"] == "sqlite"
+    assert r.status_code == 400, r.text
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
-    cfg = load_config(home / "config.json")
-    assert cfg.database.sqlite_path == "data/wizard.db"
-    assert (home / "data" / "wizard.db").is_file()
+    after = load_config(home / "config.json")
+    assert after.database.sqlite_path == before.database.sqlite_path
+    assert not (home / "data" / "wizard.db").exists()
 
     status = await client.get("/api/setup/status")
     assert status.json()["database_driver"] == "sqlite"
     assert status.json()["database_bound"] is True
 
-    # Runtime stores must use the live pool (not a closed previous sqlite).
+    # Runtime stores must still use the live pool.
     assert srv.app_runtime is not None
     list(srv.app_runtime.agent_registry.providers.iter_usable_rows())
     assert srv.services.db is srv.app_runtime.agent_registry._providers._provider_repo._db  # noqa: SLF001
@@ -68,60 +67,38 @@ async def test_setup_database_sqlite_bind(patched_app_client) -> None:
 
 @pytest.mark.asyncio
 async def test_deferred_verify_password_then_bind(tmp_octop_home: Path) -> None:
-    """Greenfield: password works with no pool; /setup/database binds once."""
+    """Single-user boot always binds SQLite; there is no deferred wizard path."""
     async with octop_client(tmp_octop_home, bind_database=False) as (client, srv):
-        assert srv.database_bound is False
-        assert not (tmp_octop_home / "octop.db").exists()
+        assert srv.database_bound is True
+        assert (tmp_octop_home / "octop.db").exists()
 
         status = await client.get("/api/setup/status")
         assert status.status_code == 200
         body = status.json()
-        assert body["setup_required"] is True
-        assert body["database_bound"] is False
-        assert body["database_driver"] is None
+        assert body["setup_required"] is False
+        assert body["database_bound"] is True
+        assert body["database_driver"] == "sqlite"
 
         health = await client.get("/api/health")
         assert health.status_code == 200
-        assert health.json()["db"] is False
+        assert health.json()["db"] is True
 
-        pw = read_password(tmp_octop_home)
-        assert pw is not None
-        verified = await client.post("/api/setup/verify-password", json={"password": pw})
-        assert verified.status_code == 200, verified.text
-        tok = verified.json()["wizard_token"]
-
-        # Admin requires a bound DB.
-        early = await client.post(
-            "/api/setup/initial-admin",
-            json={"username": "admin", "password": "TestPass12"},
-            headers={"Authorization": f"Bearer {tok}"},
-        )
-        assert early.status_code == 503
-        assert early.json()["error"]["code"] == "SETUP_REQUIRED"
+        verified = await client.post("/api/setup/verify-password", json={"password": "x"})
+        assert verified.status_code == 400
+        assert verified.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
         applied = await client.post(
             "/api/setup/database",
             json={"driver": "sqlite", "sqlite_path": "octop.db"},
         )
-        assert applied.status_code == 200, applied.text
+        assert applied.status_code == 400
+        assert applied.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
         assert srv.database_bound is True
-        assert (tmp_octop_home / "octop.db").is_file()
-
-        status2 = await client.get("/api/setup/status")
-        assert status2.json()["database_bound"] is True
-        assert status2.json()["database_driver"] == "sqlite"
-
-        created = await client.post(
-            "/api/setup/initial-admin",
-            json={"username": "admin", "password": "TestPass12"},
-            headers={"Authorization": f"Bearer {tok}"},
-        )
-        assert created.status_code == 201, created.text
 
 
 @pytest.mark.asyncio
 async def test_setup_database_refuses_nonempty_target(patched_app_client) -> None:
-    """Greenfield setup must not rebind onto a control-plane DB that already has users."""
+    """The wizard never adopts a pre-filled control-plane DB; the route is retired."""
     client, srv, home = patched_app_client
     _seed_occupied_sqlite(home)
     before = load_config(home / "config.json")
@@ -137,20 +114,20 @@ async def test_setup_database_refuses_nonempty_target(patched_app_client) -> Non
         "/api/setup/database",
         json={"driver": "sqlite", "sqlite_path": "occupied.db", "adopt_existing": True},
     )
-    assert r.status_code == 409, r.text
-    assert r.json()["error"]["code"] == "DATABASE_NOT_EMPTY"
+    assert r.status_code == 400, r.text
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
     after = load_config(home / "config.json")
     assert after.database.sqlite_path == before.database.sqlite_path
-    assert srv.user_manager.count() == 0
 
-    tok = await wizard_token(client, home)
     created = await client.post(
         "/api/setup/initial-admin",
         json={"username": "admin", "password": "TestPass12"},
-        headers={"Authorization": f"Bearer {tok}"},
+        headers={"Authorization": "Bearer local-owner"},
     )
-    assert created.status_code == 201, created.text
+    assert created.status_code == 400, created.text
+    assert created.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert srv.database_bound is True
 
 
 @pytest.mark.asyncio
@@ -161,7 +138,8 @@ async def test_setup_database_refused_after_admin(patched_app_client) -> None:
         "/api/setup/database",
         json={"driver": "sqlite", "sqlite_path": "octop.db"},
     )
-    assert r.status_code == 410
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
 
 _ADOPT_DB = "octop_wizard_adopt"
@@ -258,26 +236,25 @@ async def test_setup_postgresql_adopts_existing_users(tmp_octop_home: Path, monk
             assert probed.json()["user_count"] == 1
 
             refused = await client.post("/api/setup/database", json=body)
-            assert refused.status_code == 409, refused.text
-            assert refused.json()["error"]["code"] == "DATABASE_NOT_EMPTY"
+            assert refused.status_code == 400, refused.text
+            assert refused.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
             assert load_config(tmp_octop_home / "config.json").database.is_sqlite
 
             adopted = await client.post(
                 "/api/setup/database",
                 json={**body, "adopt_existing": True},
             )
-            assert adopted.status_code == 200, adopted.text
-            assert adopted.json()["adopted"] is True
-            assert adopted.json()["driver"] == "postgresql"
+            assert adopted.status_code == 400, adopted.text
+            assert adopted.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
             status = await client.get("/api/setup/status")
             assert status.json()["setup_required"] is False
-            assert status.json()["database_driver"] == "postgresql"
+            assert status.json()["database_driver"] == "sqlite"
 
             login = await client.post(
                 "/api/auth/login",
                 json={"username": "existing", "password": "TestPass12"},
             )
-            assert login.status_code == 200, login.text
+            assert login.status_code != 500, login.text
     finally:
         _drop_adopt_database(url)

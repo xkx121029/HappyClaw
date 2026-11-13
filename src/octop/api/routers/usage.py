@@ -16,7 +16,6 @@ Query params:
 
 from __future__ import annotations
 
-import re
 from io import BytesIO
 from typing import Any, cast
 
@@ -24,245 +23,35 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
 from octop.api.common.content_disposition import content_disposition
-from octop.api.common.usage_xlsx import build_usage_xlsx
 from octop.api.deps import current_user, get_server
-from octop.i18n import tr
 from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.utils.locale import normalize_locale, resolve_request_locale
+from octop.infra.usage.report import UsageReportService
+from octop.infra.utils.locale import resolve_request_locale
 
 router = APIRouter()
 
-_SAFE_FILENAME_RE = re.compile(r"[^A-Za-z0-9._-]+")
 _XLSX_MEDIA = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-_DAY_WINDOW_RE = re.compile(r"^day:(\d{4}-\d{2}-\d{2})$")
-_MONTH_WINDOW_RE = re.compile(r"^month:(\d{4}-\d{2})$")
-_RANGE_WINDOW_RE = re.compile(r"^range:(\d{4}-\d{2}-\d{2}):(\d{4}-\d{2}-\d{2})$")
 
 
-def _resolve_user_scope(
-    *,
-    user: Any,
-    as_user: int | None,
-    server: Any,
-) -> int:
-    """Mirror of the agents router's ``?as_user=`` semantics: an admin
-    may query another user's bucket; non-admins are pinned to their own
-    id."""
-    if as_user is None or as_user == user.id:
-        return int(user.id)
-    if not user.is_admin:
-        raise OctopError(ErrorCode.FORBIDDEN, "as_user requires admin")
-    target = server.user_manager.get_by_id(as_user)
-    if target is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
-    return int(target.id)
+def build_usage_service(server: Any) -> UsageReportService:
+    """Construct a :class:`UsageReportService` bound to *server*'s runtime."""
+    assert server.services is not None
+    assert server.app_runtime is not None
 
-
-def _server_timezone(server: Any) -> str:
     config = getattr(server, "config", None)
     tz = getattr(config, "default_timezone", None) if config is not None else None
-    return str(tz or "UTC")
 
-
-def _summary_or_raise(
-    *,
-    server: Any,
-    user_id: int | None,
-    agent_id: str | None,
-    window: str,
-    granularity: str,
-) -> dict[str, Any]:
-    try:
-        return cast(
-            "dict[str, Any]",
-            server.services.usage_repo.summary(
-                user_id=user_id,
-                agent_id=agent_id,
-                window=window,
-                granularity=granularity,
-                timezone=_server_timezone(server),
-            ),
-        )
-    except ValueError as exc:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
-
-
-def _assert_agent_exists(server: Any, agent_id: str | None) -> None:
-    if agent_id is None:
-        return
-    assert server.app_runtime is not None
-    if server.app_runtime.agent_registry.get_row(agent_id) is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
-
-
-def _agent_name_map(server: Any) -> dict[str, str]:
-    rows = server.services.agent_repo.list_all(include_disabled=True)
-    return {str(row.agent_id): str(row.name or row.agent_id) for row in rows}
-
-
-def _label_agent_buckets(server: Any, payload: dict[str, Any]) -> dict[str, Any]:
-    """Replace ``by_agent`` bucket labels with expert names.
-
-    The ledger groups by ``agent_id``. The signed-in user's agent list cannot
-    name experts owned by other accounts, so the admin table would show ids.
-    """
-    if str(payload.get("granularity") or "") != "by_agent":
-        return payload
-    names = _agent_name_map(server)
-    labeled: list[Any] = []
-    for bucket in payload.get("buckets") or []:
-        if not isinstance(bucket, dict):
-            labeled.append(bucket)
-            continue
-        name = names.get(str(bucket.get("key") or ""), "").strip()
-        if name:
-            bucket = {**bucket, "label": name}
-        labeled.append(bucket)
-    return {**payload, "buckets": labeled}
-
-
-def _user_chart_labels(server: Any) -> dict[int, str]:
-    """Display name for ``by_user`` slices; disambiguate shared display names."""
-    rows: list[tuple[int, str, str]] = []
-    for user in server.user_manager.list_all(include_disabled=True):
-        uid = getattr(user, "id", None)
-        if uid is None:
-            continue
-        username = str(getattr(user, "username", None) or uid).strip() or str(uid)
-        display = getattr(user, "display_name", None)
-        preferred = display.strip() if isinstance(display, str) and display.strip() else username
-        rows.append((int(uid), preferred, username))
-    counts: dict[str, int] = {}
-    for _uid, preferred, _username in rows:
-        counts[preferred] = counts.get(preferred, 0) + 1
-    labels: dict[int, str] = {}
-    for uid, preferred, username in rows:
-        if counts[preferred] > 1 and preferred != username:
-            labels[uid] = f"{preferred} ({username})"
-        else:
-            labels[uid] = preferred
-    return labels
-
-
-def _label_user_buckets(server: Any, payload: dict[str, Any]) -> dict[str, Any]:
-    """Replace ``by_user`` bucket labels with display names."""
-    if str(payload.get("granularity") or "") != "by_user":
-        return payload
-    names = _user_chart_labels(server)
-    labeled: list[Any] = []
-    for bucket in payload.get("buckets") or []:
-        if not isinstance(bucket, dict):
-            labeled.append(bucket)
-            continue
-        raw_key = bucket.get("key")
-        if isinstance(raw_key, bool) or not isinstance(raw_key, (int, str)):
-            labeled.append(bucket)
-            continue
-        try:
-            uid = int(raw_key)
-        except ValueError:
-            labeled.append(bucket)
-            continue
-        name = names.get(uid, "").strip()
-        if name:
-            bucket = {**bucket, "label": name}
-        labeled.append(bucket)
-    return {**payload, "buckets": labeled}
-
-
-def _present_summary(server: Any, payload: dict[str, Any]) -> dict[str, Any]:
-    return _label_user_buckets(server, _label_agent_buckets(server, payload))
-
-
-def _username_map(server: Any) -> dict[int, str]:
-    out: dict[int, str] = {}
-    users = server.user_manager.list_all(include_disabled=True)
-    for user in users:
-        uid = getattr(user, "id", None)
-        if uid is None:
-            continue
-        name = getattr(user, "username", None) or getattr(user, "display_name", None) or ""
-        out[int(uid)] = str(name)
-    return out
-
-
-def _export_filename(window: str, *, locale: str) -> str:
-    """``{title}_{YYYY-MM-DD-YYYY-MM-DD}.xlsx`` (no ``range`` / preset labels)."""
-    prefix = tr("usage_export.filename_prefix", normalize_locale(locale))
-    range_match = _RANGE_WINDOW_RE.fullmatch(window)
-    if range_match is not None:
-        period = f"{range_match.group(1)}-{range_match.group(2)}"
-    else:
-        day_match = _DAY_WINDOW_RE.fullmatch(window)
-        if day_match is not None:
-            period = day_match.group(1)
-        else:
-            month_match = _MONTH_WINDOW_RE.fullmatch(window)
-            if month_match is not None:
-                period = month_match.group(1)
-            else:
-                period = _SAFE_FILENAME_RE.sub("_", window).strip("._") or "usage"
-    return f"{prefix}_{period}.xlsx"
-
-
-def _export_response(
-    *,
-    request: Request,
-    server: Any,
-    user_id: int | None,
-    agent_id: str | None,
-    window: str,
-) -> StreamingResponse:
-    timezone = _server_timezone(server)
-    locale = resolve_request_locale(request)
-    try:
-        rows = server.services.usage_repo.list_detail(
-            user_id=user_id,
-            agent_id=agent_id,
-            window=window,
-            timezone=timezone,
-        )
-    except ValueError as exc:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
-
-    by_day = _summary_or_raise(
-        server=server,
-        user_id=user_id,
-        agent_id=agent_id,
-        window=window,
-        granularity="by_day",
-    )["buckets"]
-    by_agent = _summary_or_raise(
-        server=server,
-        user_id=user_id,
-        agent_id=agent_id,
-        window=window,
-        granularity="by_agent",
-    )["buckets"]
-    by_model = _summary_or_raise(
-        server=server,
-        user_id=user_id,
-        agent_id=agent_id,
-        window=window,
-        granularity="by_model",
-    )["buckets"]
-
-    payload = build_usage_xlsx(
-        rows=rows,
-        by_day=by_day,
-        by_agent=by_agent,
-        by_model=by_model,
-        agent_names=_agent_name_map(server),
-        usernames=_username_map(server),
-        timezone=timezone,
-        locale=locale,
+    return UsageReportService(
+        usage_repo=server.services.usage_repo,
+        agent_repo=server.services.agent_repo,
+        user_manager=server.user_manager,
+        agent_exists=lambda aid: server.app_runtime.agent_registry.get_row(aid) is not None,
+        timezone=str(tz or "UTC"),
     )
-    filename = _export_filename(window, locale=locale)
-    return StreamingResponse(
-        BytesIO(payload),
-        media_type=_XLSX_MEDIA,
-        headers={"Content-Disposition": content_disposition(filename)},
-    )
+
+
+def get_usage_service(server: Any = Depends(get_server)) -> UsageReportService:
+    return build_usage_service(server)
 
 
 @router.get("/usage/summary")
@@ -272,19 +61,19 @@ async def user_summary(
     agent_id: str | None = None,
     as_user: int | None = None,
     user: Any = Depends(current_user),
-    server: Any = Depends(get_server),
+    service: UsageReportService = Depends(get_usage_service),
 ) -> dict[str, Any]:
-    user_id = _resolve_user_scope(user=user, as_user=as_user, server=server)
-    _assert_agent_exists(server, agent_id)
-    return _present_summary(
-        server,
-        _summary_or_raise(
-            server=server,
-            user_id=user_id,
-            agent_id=agent_id,
-            window=window,
-            granularity=granularity,
-        ),
+    user_id = service.resolve_user_scope(
+        user_id=int(user.id),
+        is_admin=bool(getattr(user, "is_admin", False)),
+        as_user=as_user,
+    )
+    service.assert_agent_exists(agent_id)
+    return service.summary(
+        user_id=user_id,
+        agent_id=agent_id,
+        window=window,
+        granularity=granularity,
     )
 
 
@@ -299,16 +88,25 @@ async def user_export(
     agent_id: str | None = None,
     as_user: int | None = None,
     user: Any = Depends(current_user),
-    server: Any = Depends(get_server),
+    service: UsageReportService = Depends(get_usage_service),
 ) -> StreamingResponse:
-    user_id = _resolve_user_scope(user=user, as_user=as_user, server=server)
-    _assert_agent_exists(server, agent_id)
-    return _export_response(
-        request=request,
-        server=server,
+    user_id = service.resolve_user_scope(
+        user_id=int(user.id),
+        is_admin=bool(getattr(user, "is_admin", False)),
+        as_user=as_user,
+    )
+    service.assert_agent_exists(agent_id)
+    locale = resolve_request_locale(request)
+    payload, filename = service.export_xlsx(
         user_id=user_id,
         agent_id=agent_id,
         window=window,
+        locale=locale,
+    )
+    return StreamingResponse(
+        BytesIO(payload),
+        media_type=_XLSX_MEDIA,
+        headers={"Content-Disposition": content_disposition(filename)},
     )
 
 
@@ -324,21 +122,17 @@ async def admin_summary(
     user_id: int | None = None,
     agent_id: str | None = None,
     user: Any = Depends(current_user),
-    server: Any = Depends(get_server),
+    service: UsageReportService = Depends(get_usage_service),
 ) -> dict[str, Any]:
     """Global usage roll-up. Optional ``user_id`` / ``agent_id`` narrow
     the scope; absent both fields mean *all rows*. Admin only."""
-    if not user.is_admin:
+    if not getattr(user, "is_admin", False):
         raise OctopError(ErrorCode.FORBIDDEN, "admin required")
-    return _present_summary(
-        server,
-        _summary_or_raise(
-            server=server,
-            user_id=user_id,
-            agent_id=agent_id,
-            window=window,
-            granularity=granularity,
-        ),
+    return service.summary(
+        user_id=user_id,
+        agent_id=agent_id,
+        window=window,
+        granularity=granularity,
     )
 
 
@@ -353,14 +147,19 @@ async def admin_export(
     user_id: int | None = None,
     agent_id: str | None = None,
     user: Any = Depends(current_user),
-    server: Any = Depends(get_server),
+    service: UsageReportService = Depends(get_usage_service),
 ) -> StreamingResponse:
-    if not user.is_admin:
+    if not getattr(user, "is_admin", False):
         raise OctopError(ErrorCode.FORBIDDEN, "admin required")
-    return _export_response(
-        request=request,
-        server=server,
+    locale = resolve_request_locale(request)
+    payload, filename = service.export_xlsx(
         user_id=user_id,
         agent_id=agent_id,
         window=window,
+        locale=locale,
+    )
+    return StreamingResponse(
+        BytesIO(payload),
+        media_type=_XLSX_MEDIA,
+        headers={"Content-Disposition": content_disposition(filename)},
     )

@@ -23,13 +23,13 @@ def test_legacy_config_without_database_uses_paths_db(tmp_path: Path):
     assert pool.path == paths.db
 
 
-def test_should_defer_when_sqlite_file_missing(tmp_path: Path):
+def test_single_user_never_defers_when_sqlite_file_missing(tmp_path: Path):
     root = tmp_path / ".octop"
     root.mkdir()
     (root / "config.json").write_text(json.dumps({"port": 8088}))
     paths = PathLayout(root)
     cfg = load_config(paths.config)
-    assert should_defer_control_plane_db(cfg, paths) is True
+    assert should_defer_control_plane_db(cfg, paths) is False
 
 
 def test_should_not_defer_when_sqlite_exists(tmp_path: Path):

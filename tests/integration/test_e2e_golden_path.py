@@ -24,17 +24,18 @@ async def _ws_turn(
 async def test_full_golden_path(env: Any) -> None:
     c, _srv, _fake, home = env
 
-    # 1) setup admin
+    # 1) bootstrap the local owner + default expert
     r = await bootstrap_admin(c, home)
     assert r.status_code == 201
 
-    # 2) admin login
+    # 2) login always yields the single local owner
     r = await c.post("/api/auth/login", json={"username": "admin", "password": "TestPass12"})
     assert r.status_code == 200
     tok = r.json()["access_token"]
+    assert tok == "local-owner"
     auth = {"Authorization": f"Bearer {tok}"}
 
-    # 3) admin creates a regular user
+    # 3) account creation is retired
     r = await c.post(
         "/api/users",
         headers=auth,
@@ -45,9 +46,10 @@ async def test_full_golden_path(env: Any) -> None:
             "display_name": "Alice",
         },
     )
-    assert r.status_code == 201
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
 
-    # 4) admin creates a shared provider
+    # 4) the owner creates the only provider
     r = await c.post(
         "/api/admin/providers",
         headers=auth,
@@ -68,16 +70,13 @@ async def test_full_golden_path(env: Any) -> None:
     )
     assert r.status_code == 201
 
-    # 5) alice logs in
-    r = await c.post("/api/auth/login", json={"username": "alice", "password": "TestPass12"})
-    assert r.status_code == 200
-    alice_tok = r.json()["access_token"]
-    alice_auth = {"Authorization": f"Bearer {alice_tok}"}
+    # 5) every later call is the same owner (no per-user isolation)
+    owner_auth = auth
 
-    # 6) alice creates her own agent and chats on it (must own the agent to connect)
+    # 6) create an agent and chat on it
     r = await c.post(
         "/api/agents",
-        headers=alice_auth,
+        headers=owner_auth,
         json={
             "name": "bot",
             "persona_mbti": "INTJ",
@@ -87,13 +86,13 @@ async def test_full_golden_path(env: Any) -> None:
     assert r.status_code == 201, r.text
     aid = r.json()["agent_id"]
 
-    # 7) alice opens a chat stream (WebSocket transport)
-    chunks = await _ws_turn(c, aid, alice_auth, text="Hello")
+    # 7) open a chat stream (WebSocket transport)
+    chunks = await _ws_turn(c, aid, owner_auth, text="Hello")
     assert any(ch.get("type") == "token" for ch in chunks)
     assert chunks[-1]["type"] == "done"
 
     # 8) threads list shows the row with autofilled title
-    r = await c.get(f"/api/agents/{aid}/threads", headers=alice_auth)
+    r = await c.get(f"/api/agents/{aid}/threads", headers=owner_auth)
     assert r.status_code == 200
     threads = r.json()
     assert threads

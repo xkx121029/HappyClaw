@@ -111,6 +111,11 @@ class WebSocketHub:
     def is_turn_active(self, thread_id: str) -> bool:
         return thread_id.strip() in self._active_turns
 
+    @property
+    def active_turn_count(self) -> int:
+        """Number of dashboard-driven turns currently streaming."""
+        return len(self._active_turns)
+
     def has_subscribers(self, thread_id: str) -> bool:
         """True when at least one Dashboard socket is bound to *thread_id*."""
         tid = thread_id.strip()
@@ -162,6 +167,25 @@ class WebSocketHub:
     @property
     def connection_count(self) -> int:
         return len(self._connections)
+
+    @property
+    def runtime_snapshot(self) -> dict[str, int]:
+        """Dashboard WebSocket runtime counters for ``GET /api/runtime/activity``.
+
+        Returned dict:
+
+        * ``connections`` — open Dashboard sockets (single-user mode typically 1).
+        * ``active_turns`` — Dashboard-driven agent turns currently streaming.
+        * ``threads_with_subscribers`` — distinct threads with at least one subscriber.
+
+        The dict is a shallow copy so concurrent register/unregister mutations
+        during iteration are harmless.
+        """
+        return {
+            "connections": len(self._connections),
+            "active_turns": len(self._active_turns),
+            "threads_with_subscribers": len(self._thread_subscribers),
+        }
 
 
 __all__ = ["SendFn", "WebSocketHub", "stamp_thread_id"]

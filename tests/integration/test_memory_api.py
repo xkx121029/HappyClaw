@@ -566,9 +566,9 @@ async def test_extract_config_clamps_zero_idle_time_to_one_minute(
 @pytest.mark.asyncio
 async def test_unauthenticated(env_with_main_agent) -> None:
     client, _srv, _auth, aid = env_with_main_agent
-    # No auth headers → must be rejected by the auth middleware.
+    # No auth headers → single-user mode resolves the local owner.
     r = await client.get(f"/api/agents/{aid}/memory/stats/counts")
-    assert r.status_code in (401, 403)
+    assert r.status_code == 200, r.text
 
 
 @pytest.mark.asyncio

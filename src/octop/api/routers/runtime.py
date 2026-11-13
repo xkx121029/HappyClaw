@@ -37,7 +37,7 @@ def _terminal_session_count() -> int:
 
 def _collect(server: Any) -> dict[str, Any]:
     runtime = getattr(server, "app_runtime", None)
-    active_turns = 0
+    hub_snapshot: dict[str, int] = {}
     running_agents = 0
     running_jobs = 0
 
@@ -45,7 +45,7 @@ def _collect(server: Any) -> dict[str, Any]:
         gateway = getattr(runtime, "gateway", None)
         hub = getattr(gateway, "ws_hub", None)
         if hub is not None:
-            active_turns = int(getattr(hub, "active_turn_count", 0) or 0)
+            hub_snapshot = dict(getattr(hub, "runtime_snapshot", {}) or {})
 
         registry = getattr(runtime, "agent_registry", None)
         if registry is not None and hasattr(registry, "list_rows"):
@@ -67,6 +67,9 @@ def _collect(server: Any) -> dict[str, Any]:
             except Exception:  # pragma: no cover - defensive
                 running_jobs = 0
 
+    active_turns = hub_snapshot.get("active_turns", 0)
+    dashboard_connections = hub_snapshot.get("connections", 0)
+    threads_with_subscribers = hub_snapshot.get("threads_with_subscribers", 0)
     terminals = _terminal_session_count()
 
     # ``counts`` is the contract the desktop quit guard reads. ``agent_turn`` and
@@ -81,6 +84,8 @@ def _collect(server: Any) -> dict[str, Any]:
         "busy": sum(counts.values()) > 0,
         "counts": counts,
         "active_turns": active_turns,
+        "dashboard_connections": dashboard_connections,
+        "threads_with_subscribers": threads_with_subscribers,
         "terminal_sessions": terminals,
         "running_agents": running_agents,
         "running_jobs": running_jobs,

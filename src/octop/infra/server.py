@@ -907,11 +907,10 @@ class OctopServer:
         with _timing.segment("services.proactive"):
             await proactive_scheduler.start_all()
 
-        from octop.infra.auth.mfa import MfaService
-
-        with _timing.segment("services.mfa"):
-            MfaService(self.services).prune()
-
+        # Single-user mode: login/MFA flows are retired, so nothing enqueues
+        # auth challenges or pending TOTP enrolments anymore. The startup prune
+        # was the only remaining background writer to those tables; skip it so
+        # retained legacy data is not touched.
         from octop.infra.auth.tokens import PURPOSE_ACCESS, sign_token
         from octop.infra.bridge.manager import BridgeManager, public_base_url_from_config
 

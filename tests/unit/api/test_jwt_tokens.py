@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from octop.api.deps import InvalidToken, TokenExpired, decode_token, sign_token
-from octop.infra.auth.tokens import PURPOSE_ACCESS, PURPOSE_MFA
+from octop.infra.auth.tokens import (
+    PURPOSE_ACCESS,
+    PURPOSE_MFA,
+    InvalidToken,
+    TokenExpired,
+    decode_token,
+    sign_token,
+)
 
 
 def test_sign_and_decode_roundtrip():

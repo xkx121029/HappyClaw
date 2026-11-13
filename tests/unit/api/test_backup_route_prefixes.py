@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from octop.api.deps import current_user, get_server
 from octop.api.routers import backup as backup_router
+from octop.infra.backup.service import BackupService
 from octop.infra.backup.store import BackupFileInfo
 
 
@@ -34,22 +35,25 @@ def test_create_backup_served_on_public_and_admin_prefixes(
     """``/api/backup/create`` must not require the ``/api/admin`` prefix."""
     calls: list[dict[str, Any]] = []
 
-    def _fake_create(**kwargs: Any) -> BackupFileInfo:
-        calls.append(kwargs)
-        return BackupFileInfo(
-            name="octop-backup-20260101T000000Z.tar.gz",
-            size=12,
-            modified_at="2026-01-01T00:00:00+00:00",
-            created_at="2026-01-01T00:00:00+00:00",
-        )
+    info = BackupFileInfo(
+        name="octop-backup-20260101T000000Z.tar.gz",
+        size=12,
+        modified_at="2026-01-01T00:00:00+00:00",
+        created_at="2026-01-01T00:00:00+00:00",
+    )
 
-    monkeypatch.setattr(backup_router, "_create_and_store_manual_backup", _fake_create)
-    monkeypatch.setattr(backup_router, "_agent_rows", lambda _server: [])
+    async def _fake_create(selection: Any) -> BackupFileInfo:
+        calls.append({"selection": selection})
+        return info
 
     server = MagicMock()
     server.services.db = object()
     server.services.config.database = object()
     server.paths = object()
+
+    service = MagicMock(spec=BackupService)
+    service.acreate_backup = _fake_create
+    monkeypatch.setattr(backup_router, "build_backup_service", lambda _s: service)
 
     client = _build_client(monkeypatch, server)
     public = client.post("/api/backup/create", json={})
@@ -60,6 +64,4 @@ def test_create_backup_served_on_public_and_admin_prefixes(
     # Same handler, same inputs, same package metadata.
     assert public.json() == admin.json()
     assert len(calls) == 2
-    assert calls[0]["paths"] is calls[1]["paths"]
-    assert calls[0]["pool"] is calls[1]["pool"]
     assert public.json()["item"]["name"] == "octop-backup-20260101T000000Z.tar.gz"

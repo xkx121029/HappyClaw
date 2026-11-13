@@ -25,7 +25,8 @@ async def test_openapi_has_bearer_security_and_descriptions(tmp_octop_home: Path
         login = spec["paths"]["/api/auth/login"]["post"]
         assert login["summary"] == "Sign in"
         me = spec["paths"]["/api/auth/me"]["get"]
-        assert "BearerAuth" in me["security"][0]
+        # Single-user mode: no route declares bearer security anymore.
+        assert "security" not in me
         assert "security" not in spec["paths"]["/api/setup/status"]["get"]
         extraction = spec["paths"]["/api/agents/{agent_id}/memory/extract-config"]["put"]
         ref = extraction["requestBody"]["content"]["application/json"]["schema"]["$ref"]

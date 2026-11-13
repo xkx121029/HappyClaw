@@ -204,7 +204,9 @@ async def test_backup_deletion_excludes_maintenance_and_restore(
         )
     )
     try:
-        assert await asyncio.to_thread(started.wait, 5)
+        # Generous timeout: under a loaded parallel run the request can take a while
+        # to reach ``delete_backup`` before the busy flag is observable.
+        assert await asyncio.to_thread(started.wait, 30)
         assert coordinator.busy
         for method, suffix, body in (
             ("POST", "/maintenance", {"confirmed": True}),
