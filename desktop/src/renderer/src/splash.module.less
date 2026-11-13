@@ -79,6 +79,16 @@
   color: var(--text-secondary);
 }
 
+/* The backend can take a cold-start minute; say so instead of letting the
+   counting seconds read as a hang. */
+.hint {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
 /* Same arc as dashboard OctopSpinner, sized to the status line, not the lockup. */
 .spinner {
   position: relative;

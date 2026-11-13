@@ -1,14 +1,10 @@
-; The desktop shortcut is chosen on the finish page, so installSection must
-; not create it first (createDesktopShortcut: false). Silent installs still
-; write the .lnk here.
+; electron-builder creates the start-menu and desktop shortcuts itself
+; (createDesktopShortcut: true), so this file only verifies the payload and
+; cleans up the sidecar tree.
 ;
 ; electron-builder compiles the uninstaller as a second makensis pass
-; (-DBUILD_UNINSTALLER, warnings are errors). That pass includes this file
-; but does not expand the installer macros, so these Vars must not be
+; (-DBUILD_UNINSTALLER, warnings are errors). Installer-only Vars must not be
 ; allocated there or makensis exits with warning 6001.
-!ifndef BUILD_UNINSTALLER
-Var OctopDesktopLabel
-!endif
 
 ; common.nsh sets ShowInstDetails nevershow, which removes the details button.
 ; hide keeps the log collapsed until the user expands it on the progress page.
@@ -42,61 +38,12 @@ octop_files_done:
 !macroend
 
 ; Do not define customFiles_<arch>. electron-builder emits that macro when
-; resources contain a precompressed file (resources/portable/*.zip) and uses
-; it to pack the zip. A second definition aborts makensis with
-; "macro named customFiles_x64 already exists". customInstall prints the
-; copied-files line after that macro has run.
+; resources contain a precompressed file and uses it to pack the zip. A second
+; definition aborts makensis with "macro named customFiles_x64 already exists".
+; customInstall prints the copied-files line after that macro has run.
 
-!macro octopWriteDesktopLink
-  CreateShortCut "$newDesktopLink" "$appExe" "" "$appExe" 0 "" "" "${APP_DESCRIPTION}"
-  ClearErrors
-  WinShell::SetLnkAUMI "$newDesktopLink" "${APP_ID}"
-  System::Call 'Shell32::SHChangeNotify(i 0x8000000, i 0, i 0, i 0)'
-!macroend
-
-; Finish page: keep "run" and add the desktop-shortcut checkbox.
-; Fresh installs start checked. Updates start unchecked so a removed
-; shortcut is not put back unless the user asks.
-!macro customFinishPage
-  !define MUI_PAGE_CUSTOMFUNCTION_PRE octopFinishPre
-  !define MUI_PAGE_CUSTOMFUNCTION_SHOW octopFinishShow
-  !define MUI_FINISHPAGE_RUN
-  !define MUI_FINISHPAGE_RUN_FUNCTION StartApp
-  !define MUI_FINISHPAGE_SHOWREADME
-  !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
-  !define MUI_FINISHPAGE_SHOWREADME_TEXT "$OctopDesktopLabel"
-  !define MUI_FINISHPAGE_SHOWREADME_FUNCTION octopCreateDesktopShortcut
-  !insertmacro MUI_PAGE_FINISH
-
-  Function octopFinishPre
-    IntCmp $LANGUAGE 2052 octop_fin_zh octop_fin_en octop_fin_en
-octop_fin_zh:
-    StrCpy $OctopDesktopLabel "创建桌面快捷方式"
-    Goto octop_fin_pre_end
-octop_fin_en:
-    StrCpy $OctopDesktopLabel "Create a desktop shortcut"
-octop_fin_pre_end:
-  FunctionEnd
-
-  Function octopFinishShow
-    ${IfNot} ${isUpdated}
-      ${NSD_Check} $mui.FinishPage.ShowReadme
-    ${EndIf}
-  FunctionEnd
-
-  Function StartApp
-    ${If} ${isUpdated}
-      StrCpy $1 "--updated"
-    ${Else}
-      StrCpy $1 ""
-    ${EndIf}
-    ${StdUtils.ExecShellAsUser} $0 "$launchLink" "open" "$1"
-  FunctionEnd
-
-  Function octopCreateDesktopShortcut
-    !insertmacro octopWriteDesktopLink
-  FunctionEnd
-!macroend
+; Finish page is electron-builder's default one: it offers "run" and the
+; shortcut was already created during install.
 
 ; Same rule as DeepSeek Harness customCheckAppRunning: match this install's
 ; executable, not another Octop.exe. An update waits up to 10s for the shell
@@ -156,121 +103,41 @@ octop_run_log_done:
   Pop $0
 !macroend
 
-; Expand the green portable zip while the NSIS wizard still has a progress bar.
-; The zip stays in $INSTDIR\resources\portable (installer-owned). The tree is
-; written to $INSTDIR\resources\sidecar so uninstall can delete it. tar.exe
-; (Windows 10+) writes the ~40k files; packing each one as an NSIS payload is slower.
-;
-; A 32-bit installer on 64-bit Windows is redirected out of System32, so try
-; Sysnative first. A 64-bit installer has no Sysnative and uses System32.
-
+; The onedir backend is installed with the rest of the resources
+; (resources\sidecar\backend). Nothing is extracted here; this only proves the
+; payload is complete before the wizard reports success. octop.exe resolves
+; _internal relative to itself, so a missing half is a broken install, not a
+; degraded one.
 !macro customInstall
   Push $0
   Push $1
-  Push $2
-  Push $3
-  Push $4
-  Push $5
   !insertmacro octopDetailsOn
   Call octopAppFilesCopied
   IntCmp $LANGUAGE 2052 octop_rt_log_zh octop_rt_log_en octop_rt_log_en
 octop_rt_log_zh:
-  DetailPrint "正在展开 Python 运行时…"
+  DetailPrint "正在检查本地服务文件…"
   Goto octop_rt_log_done
 octop_rt_log_en:
-  DetailPrint "Extracting the Python runtime…"
+  DetailPrint "Checking the local service files…"
 octop_rt_log_done:
-  StrCpy $0 "$INSTDIR\resources\portable"
-  IfFileExists "$0\portable-version.json" octop_rt_find octop_rt_fail
-octop_rt_find:
-  ClearErrors
-  FindFirst $1 $2 "$0\Octop-portable-*.zip"
-  IfErrors octop_rt_fail
-  StrCpy $3 "$INSTDIR\resources\sidecar"
-  RMDir /r "$3"
-  CreateDirectory "$3"
-  StrCpy $4 "$WINDIR\Sysnative\tar.exe"
-  IfFileExists "$4" octop_rt_extract 0
-  StrCpy $4 "$WINDIR\System32\tar.exe"
-  IfFileExists "$4" octop_rt_extract octop_rt_close_fail
-octop_rt_extract:
-  IntCmp $LANGUAGE 2052 octop_rt_tar_zh octop_rt_tar_en octop_rt_tar_en
-octop_rt_tar_zh:
-  DetailPrint "正在将 $2 写入 resources\sidecar…"
-  Goto octop_rt_tar_run
-octop_rt_tar_en:
-  DetailPrint "Writing $2 to resources\sidecar…"
-octop_rt_tar_run:
-  nsExec::ExecToLog '"$4" -xf "$0\$2" -C "$3" --strip-components=1'
-  Pop $5
-  FindClose $1
-  StrCmp "$5" "0" octop_rt_check octop_rt_fail_closed
-octop_rt_check:
-  IfFileExists "$3\launch.py" 0 octop_rt_fail_closed
-  IfFileExists "$3\runtime\python.exe" octop_rt_ok octop_rt_fail_closed
-octop_rt_close_fail:
-  FindClose $1
-  Goto octop_rt_fail_closed
-octop_rt_ok:
-  ; Same directory the desktop shell passes as PYTHONPYCACHEPREFIX. Compile
-  ; here so the first launch does not write bytecode. A failure only skips
-  ; the warmup; the extracted tree is already usable.
-  ReadEnvStr $5 OCTOP_HOME
-  StrCmp $5 "" 0 octop_pyc_home
-  StrCpy $5 "$PROFILE\.octop"
-octop_pyc_home:
-  CreateDirectory "$5\pyc"
-  System::Call 'Kernel32::SetEnvironmentVariable(t "PYTHONPYCACHEPREFIX", t "$5\pyc")'
-  StrCpy $4 "$3\runtime\python.exe"
-  IntCmp $LANGUAGE 2052 octop_pyc_zh octop_pyc_en octop_pyc_en
-octop_pyc_zh:
-  DetailPrint "正在编译 Python 字节码到 $5\pyc…"
-  Goto octop_pyc_run
-octop_pyc_en:
-  DetailPrint "Compiling Python bytecode into $5\pyc…"
-octop_pyc_run:
-  nsExec::ExecToLog '"$4" -m compileall -q -j0 "$3\packages"'
-  Pop $4
-  System::Call 'Kernel32::SetEnvironmentVariable(t "PYTHONPYCACHEPREFIX", p 0)'
-  StrCmp $4 "0" octop_pyc_ready octop_pyc_warn
-octop_pyc_warn:
-  IntCmp $LANGUAGE 2052 octop_pyc_warn_zh octop_pyc_warn_en octop_pyc_warn_en
-octop_pyc_warn_zh:
-  DetailPrint "字节码编译未完成（$4）。首次启动会再编译。"
-  Goto octop_pyc_ready
-octop_pyc_warn_en:
-  DetailPrint "Bytecode compile did not finish ($4). The first launch will compile it."
-octop_pyc_ready:
+  StrCpy $0 "$INSTDIR\resources\sidecar\backend"
+  IfFileExists "$0\octop.exe" 0 octop_rt_missing
+  IfFileExists "$0\_internal\octop\dashboard\index.html" 0 octop_rt_missing
   IntCmp $LANGUAGE 2052 octop_rt_ok_zh octop_rt_ok_en octop_rt_ok_en
 octop_rt_ok_zh:
-  DetailPrint "Python 运行时已就绪。"
-  Goto octop_rt_ok_done
-octop_rt_ok_en:
-  DetailPrint "Python runtime is ready."
-octop_rt_ok_done:
-  Pop $5
-  Pop $4
-  Pop $3
-  Pop $2
-  Pop $1
-  Pop $0
-  ${If} ${Silent}
-  ${AndIfNot} ${isNoDesktopShortcut}
-  ${AndIf} $keepShortcuts == "false"
-    !insertmacro octopWriteDesktopLink
-  ${EndIf}
+  DetailPrint "本地服务已就绪。"
   Goto octop_rt_end
-octop_rt_fail:
-octop_rt_fail_closed:
-  MessageBox MB_ICONSTOP "未能展开 Python 运行时（resources\sidecar）。$\r$\n安装已中止。"
-  Pop $5
-  Pop $4
-  Pop $3
-  Pop $2
+octop_rt_ok_en:
+  DetailPrint "Local service is ready."
+  Goto octop_rt_end
+octop_rt_missing:
+  MessageBox MB_ICONSTOP "安装包中缺少本地服务文件（resources\sidecar\backend）。$\r$\n安装已中止。"
   Pop $1
   Pop $0
   Abort
 octop_rt_end:
+  Pop $1
+  Pop $0
 !macroend
 
 !macro customUnInstall

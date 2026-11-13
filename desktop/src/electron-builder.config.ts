@@ -80,17 +80,27 @@ export default {
     icon: "resources/icon.ico",
     // CI passes the native runner architecture, never cross-package both here.
     target: ["nsis"],
+    // PyInstaller onedir backend: octop.exe must stay next to _internal, so the
+    // whole directory is copied as one unit into resources/sidecar/backend.
+    // It carries the built Dashboard under _internal/octop/dashboard; the shell
+    // serves that copy, so nothing is duplicated here.
+    extraResources: [{ from: "../../dist/backend/octop", to: "sidecar/backend" }],
   },
   nsis: {
+    // Assisted wizard, current user only: $LOCALAPPDATA\Programs\Octop, never
+    // Program Files and never a UAC prompt.
     oneClick: false,
     allowToChangeInstallationDirectory: true,
     perMachine: false,
+    allowElevation: false,
+    // Start-menu and desktop shortcuts are created by electron-builder itself,
+    // for silent and interactive installs alike.
+    createDesktopShortcut: true,
+    runAfterFinish: true,
+    // User data lives outside the install dir (OCTOP_HOME) and must survive an
+    // uninstall.
     deleteAppDataOnUninstall: false,
-    // The finish page creates the desktop shortcut after the user confirms.
-    // Silent installs still create it unless --no-desktop-shortcut is passed.
-    createDesktopShortcut: false,
-    // Expands resources/portable/Octop-portable-*.zip into resources/sidecar
-    // with tar.exe. The 40k-file tree is not packed as individual NSIS files.
+    // Verifies the onedir backend landed and refuses to finish a broken install.
     include: "build/installer.nsh",
   },
   linux: {

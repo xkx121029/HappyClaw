@@ -12,9 +12,12 @@ def _compose_environment_entries(compose_text: str) -> str:
     marker = "\n    environment:\n"
     env_idx = compose_text.index(marker) + len(marker)
     lines: list[str] = []
-    for line in compose_text[env_idx:].splitlines():
-        if line.startswith("      - "):
-            lines.append(line)
+    for raw in compose_text[env_idx:].splitlines():
+        if raw.startswith("      - "):
+            lines.append(raw)
+            continue
+        # Blank lines and indented comments may appear inside the list.
+        if not raw.strip() or raw.lstrip().startswith("#"):
             continue
         break
     return "\n".join(lines)

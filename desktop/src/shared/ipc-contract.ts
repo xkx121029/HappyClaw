@@ -17,6 +17,11 @@ export interface ClientSettings {
   stableOnly: boolean;
   /** The two-step first-run guide has been seen (or skipped). */
   onboardingCompleted: boolean;
+  /**
+   * Data root the guide was completed on. A different ``OCTOP_HOME`` counts as
+   * a fresh install and shows the guide again; null means "adopt on next boot".
+   */
+  onboardingHome: string | null;
 }
 
 /**

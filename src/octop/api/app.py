@@ -10,7 +10,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 
 from octop.api.middleware.jwt_auth import install as install_jwt_auth
 from octop.api.openapi_meta import API_DESCRIPTION, OPENAPI_TAGS, configure_openapi
@@ -81,12 +81,61 @@ def dashboard_cache_control(full_path: str) -> str | None:
     return None
 
 
+def default_dashboard_dir() -> Path:
+    """Directory holding the built dashboard (``_internal/octop/dashboard`` when frozen)."""
+    return Path(__file__).parent.parent / "dashboard"
+
+
 def _dashboard_response(path: Path, full_path: str) -> FileResponse:
+    # ``FileResponse`` opens the file when the response is sent, so a file that
+    # is missing by then used to escape as ``FileNotFoundError`` -> 500. A
+    # missing static file is a 404, never a server error.
+    try:
+        path.stat()
+    except OSError:
+        raise HTTPException(status_code=404, detail="Not Found") from None
     response = FileResponse(path)
     cache_control = dashboard_cache_control(full_path)
     if cache_control is not None:
         response.headers["Cache-Control"] = cache_control
     return response
+
+
+# A missing file must 404 instead of falling back to ``index.html``: answering
+# ``/sw.js`` or ``/favicon.ico`` with HTML makes the browser reject it as a
+# worker/script, which hides the real cause (a stale or partial build).
+_STATIC_FILE_SUFFIXES = frozenset(
+    {
+        ".js",
+        ".mjs",
+        ".cjs",
+        ".css",
+        ".map",
+        ".json",
+        ".txt",
+        ".xml",
+        ".wasm",
+        ".html",
+        ".ico",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".svg",
+        ".webp",
+        ".webm",
+        ".mp4",
+        ".woff",
+        ".woff2",
+        ".ttf",
+        ".otf",
+    }
+)
+
+
+def looks_like_static_file(full_path: str) -> bool:
+    """True when the path names a file (by suffix) rather than an SPA route."""
+    return Path(full_path).suffix.lower() in _STATIC_FILE_SUFFIXES
 
 
 def is_dashboard_asset_path(full_path: str) -> bool:
@@ -100,13 +149,15 @@ def is_dashboard_asset_path(full_path: str) -> bool:
 
 
 def _dashboard_fallback(index_file: Path, full_path: str) -> FileResponse:
-    """Serve the SPA shell for routes; 404 for a missing hashed asset.
+    """Serve the SPA shell for routes; 404 for a missing file.
 
     Answering ``/assets/index.<old-hash>.js`` with ``index.html`` makes the
     browser reject HTML as a module script ("not a valid JavaScript MIME
-    type"), which hides the real cause — a stale shell after an upgrade.
+    type"), which hides the real cause — a stale shell after an upgrade. The
+    same applies to any other missing file such as ``/sw.js`` or
+    ``/favicon.ico``, so file-like paths must 404 rather than return the shell.
     """
-    if is_dashboard_asset_path(full_path):
+    if is_dashboard_asset_path(full_path) or looks_like_static_file(full_path):
         raise HTTPException(status_code=404, detail="Not Found")
     return _dashboard_response(index_file, "")
 
@@ -234,9 +285,30 @@ def build_app(server: OctopServer, *, defer_heavy: bool = False) -> FastAPI:
             )
 
     if enable_dashboard:
-        dashboard_dir = Path(__file__).parent.parent / "dashboard"
+        dashboard_dir = default_dashboard_dir()
         index_file = dashboard_dir / "index.html"
         if index_file.exists():
+            @app.get("/sw.js", include_in_schema=False)
+            async def service_worker() -> Response:
+                """Serve the bundled worker; unregister when the build has none.
+
+                ``npm run build:fast`` disables the PWA plugin, so such a build
+                has no ``sw.js`` while the entry still calls ``registerSW()``.
+                A stub that unregisters keeps that path from becoming a
+                permanent 404/500 in the browser console.
+                """
+                sw_file = dashboard_dir / "sw.js"
+                if sw_file.is_file():
+                    return _dashboard_response(sw_file, "sw.js")
+                logger.warning(
+                    "dashboard 缺少 sw.js（可能是 build:fast 产物），返回注销桩：%s", dashboard_dir
+                )
+                return Response(
+                    content="self.registration.unregister();\n",
+                    media_type="application/javascript",
+                    headers={"Cache-Control": "no-cache"},
+                )
+
             # Everything mounted after this point must be inserted *before* the
             # SPA catch-all, otherwise Starlette never reaches it.
             app.state.octop_spa_index = len(app.router.routes)

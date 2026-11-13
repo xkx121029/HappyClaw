@@ -42,6 +42,27 @@ export function installedRuntimeDir(
 }
 
 /**
+ * PyInstaller onedir backend installed beside the shell:
+ * ``resources/sidecar/backend/octop.exe`` with ``_internal/`` next to it. The
+ * exe resolves ``_internal`` relative to itself, so the two cannot be split.
+ * The artifact is Windows x64 only, hence the platform gate.
+ */
+export function installedOnedirBackendDir(
+  resourcesRoot: string,
+  platform: string,
+  exists: (path: string) => boolean,
+): string | null {
+  if (platform !== "win32") return null;
+  const dir = join(resourcesRoot, "sidecar", "backend");
+  return exists(join(dir, "octop.exe")) ? dir : null;
+}
+
+/** Dashboard static files carried inside the onedir backend. */
+export function onedirDashboardDir(backendDir: string): string {
+  return join(backendDir, "_internal", "octop", "dashboard");
+}
+
+/**
  * Runtime extraction decision and safe atomic unzip for the portable Python
  * runtime (§2.2 / §2.3). The extracted runtime lives under
  * ``<OCTOP_HOME>/portable`` and is replaced atomically, never in place, so a

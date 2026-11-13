@@ -7,6 +7,8 @@ from typing import Any
 from fastapi import APIRouter, Depends
 
 from octop.api.deps import get_server
+from octop.infra.selfcheck import StartupSelfCheck
+from octop.infra.utils.build_info import dashboard_build_info
 
 router = APIRouter()
 
@@ -32,4 +34,23 @@ async def health(server: Any = Depends(get_server)) -> dict[str, Any]:
         "users_loaded": users,
         "agents_running": agents,
         "channels": channels,
+        # Which frontend is inside this install: git commit + dashboard build
+        # time + sha256 of index.html (written by scripts/packaging).
+        "build": dashboard_build_info() or {},
     }
+
+
+@router.get("/selfcheck", summary="Startup self-check (Chinese summary)")
+async def selfcheck(server: Any = Depends(get_server)) -> dict[str, Any]:
+    """Run a non-destructive self-check and return a Chinese summary.
+
+    Checks: database, home directory, backup directory, configured model
+    providers (credentials masked), and free disk space.
+    """
+    assert server.services is not None
+    checker = StartupSelfCheck(
+        paths=server.paths,
+        db_pool=server.services.db,
+        providers_provider=server.services.provider_repo,
+    )
+    return checker.run().to_dict()

@@ -14,6 +14,7 @@ const DEFAULTS: ClientSettings = {
   themeBackground: "system",
   stableOnly: true,
   onboardingCompleted: false,
+  onboardingHome: null,
 };
 
 const SETTING_KEYS = new Set(Object.keys(DEFAULTS));
@@ -33,6 +34,10 @@ export class ClientSettingsStore {
         // Basic shape validation: only accept known scalar values.
         if (BOOLEAN_KEYS.has(key)) {
           if (typeof value === "boolean") (out as Record<string, unknown>)[key] = value;
+        } else if (key === "onboardingHome") {
+          if (typeof value === "string" && value) {
+            (out as Record<string, unknown>)[key] = value;
+          }
         } else if (typeof value === "string") {
           (out as Record<string, unknown>)[key] = value;
         }
@@ -50,6 +55,8 @@ export class ClientSettingsStore {
       const value = (next as Record<string, unknown>)[key];
       if (BOOLEAN_KEYS.has(key)) {
         sanitized[key] = value === true;
+      } else if (key === "onboardingHome") {
+        sanitized[key] = typeof value === "string" && value ? value : null;
       } else if (key === "closeBehavior") {
         sanitized[key] = value === "quit" ? "quit" : "tray";
       } else if (key === "themeBackground") {
@@ -66,4 +73,23 @@ export class ClientSettingsStore {
 
 export function defaultClientSettingsPath(userDataDir: string): string {
   return join(userDataDir, "desktop-settings.json");
+}
+
+function normalizeHome(value: string): string {
+  return value.replace(/[\\/]+$/, "").toLowerCase();
+}
+
+/**
+ * Onboarding belongs to one data root. The flag used to live only in Electron's
+ * userData, so launching with another ``OCTOP_HOME`` silently skipped the guide;
+ * recording the home makes a new directory look like a fresh install.
+ *
+ * A legacy record without a home is trusted (the boot path stamps the current
+ * home on first launch after the upgrade).
+ */
+export function isOnboardingCompletedFor(settings: ClientSettings, home: string): boolean {
+  if (!settings.onboardingCompleted) return false;
+  if (!settings.onboardingHome) return true;
+  if (!home) return true;
+  return normalizeHome(settings.onboardingHome) === normalizeHome(home);
 }

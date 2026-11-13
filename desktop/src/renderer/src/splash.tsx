@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import logoDarkUrl from "./assets/logo_horizontal_dark.png";
 import logoWhiteUrl from "./assets/logo_horizontal_white.png";
 import { LinuxWindowControls } from "./linux-window-controls";
@@ -19,6 +21,15 @@ import styles from "./splash.module.less";
  */
 function Splash() {
   const version = new URLSearchParams(window.location.search).get("version");
+  // A cold sidecar can take minutes; counting seconds proves it is not stuck.
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <main className={styles.splash} role="status" aria-live="polite">
@@ -27,13 +38,13 @@ function Splash() {
         <img
           className={`${styles.logo} ${styles.logoLight}`}
           src={logoDarkUrl}
-          alt="Octop"
+          alt="HappyClaw"
           height={72}
         />
         <img
           className={`${styles.logo} ${styles.logoDark}`}
           src={logoWhiteUrl}
-          alt="Octop"
+          alt="HappyClaw"
           height={72}
         />
         <p className={styles.status}>
@@ -41,8 +52,11 @@ function Splash() {
             <span className={styles.track} />
             <span className={styles.ring} />
           </span>
-          正在启动服务…
+          正在启动本地服务…{elapsed > 0 ? `已等待 ${elapsed}s` : ""}
         </p>
+        {elapsed >= 5 ? (
+          <p className={styles.hint}>首次启动需要约 20–50 秒，请稍候</p>
+        ) : null}
       </div>
       {version ? <p className={styles.version}>{version}</p> : null}
     </main>

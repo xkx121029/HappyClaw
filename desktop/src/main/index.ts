@@ -32,8 +32,11 @@ import {
 import { createManualBackup } from "./backup/manual-backup";
 import { inspectBeforeQuit, quitPrompt, type QuitReason } from "./quit-guard";
 import {
+  chatLocation,
   readSessionSnapshot,
-  recoveryUrl,
+  restoreUrl,
+  routeOnlyUrl,
+  sessionIdOf,
   writeSessionSnapshot,
   type SessionSnapshot,
 } from "./session/session-restore";
@@ -42,7 +45,7 @@ import { desktopLog, installDesktopLog } from "./log/desktop-log";
 import { DeviceCredentialStore } from "./session/device-credential";
 import { DeviceSessionClient } from "./session/device-session";
 import { safeStorageCipher, warnIfKeychainUnavailable } from "./session/safe-storage-cipher";
-import { ClientSettingsStore, defaultClientSettingsPath } from "./storage/client-settings";
+import { ClientSettingsStore, defaultClientSettingsPath, isOnboardingCompletedFor } from "./storage/client-settings";
 import { readLoginShellEnv, resolveOctopHome } from "./supervisor/shell-env";
 import { reserveRandomPort } from "./supervisor/random-port";
 import {
@@ -50,13 +53,16 @@ import {
   classifyRuntime,
   portableZipName,
   extractPortableZip,
+  installedOnedirBackendDir,
   installedRuntimeDir,
+  onedirDashboardDir,
   type BundledPortable,
   type LocalRuntime,
 } from "./supervisor/runtime-extractor";
 import { compareVersions } from "./supervisor/version";
 import { sha256File } from "./supervisor/sha256";
 import { buildSidecarEnv } from "./supervisor/process-tree";
+import { resolveHealthTimeoutMs } from "./supervisor/health";
 import { SidecarSupervisor } from "./supervisor/sidecar";
 import { contentTypeFor, isExternalLink, resolveDashboardFile, resolveStaticPath } from "./protocol/static-handler";
 import { isApiPath, sanitizeForwardHeaders, toBackendUrl } from "./protocol/stream-proxy";
@@ -183,14 +189,25 @@ let quitConfirmed = false;
 let backupInFlight = false;
 // §5.2: WebSockets cannot ride the custom scheme, so the page dials this relay.
 let wsRelay: WsRelay | null = null;
-// Everything needed to (re)spawn the sidecar for this launch.
-let backend: {
-  interpreter: string;
-  launchScript: string;
-  cwd: string;
-  octopHome: string;
-  portableDir: string;
-} | null = null;
+// Everything needed to (re)spawn the sidecar for this launch. Two install
+// shapes are supported: a green Python runtime (`launch.py` + `runtime/`) and
+// the PyInstaller onedir build (`octop.exe` + `_internal/`).
+type BackendLaunch =
+  | {
+      kind: "python";
+      interpreter: string;
+      launchScript: string;
+      cwd: string;
+      octopHome: string;
+      portableDir: string;
+    }
+  | {
+      kind: "onedir";
+      executable: string;
+      cwd: string;
+      octopHome: string;
+    };
+let backend: BackendLaunch | null = null;
 
 // A custom scheme used as the renderer origin must be declared privileged
 // BEFORE the app is ready, otherwise `octop://app/` is not treated as a
@@ -212,10 +229,14 @@ function resourcesRoot(): string {
   return app.isPackaged ? process.resourcesPath : join(__dirname, "../../resources");
 }
 
-function dashboardRoot(portableDir: string): string {
+function dashboardRoot(launch: BackendLaunch): string {
   const override = (process.env.OCTOP_DASHBOARD_DIR ?? "").trim();
   if (override) return override;
-  return bundledDashboardDir(portableDir);
+  // The onedir backend already carries the built Dashboard under _internal,
+  // so the installer does not ship a second copy of the same files.
+  return launch.kind === "onedir"
+    ? onedirDashboardDir(launch.cwd)
+    : bundledDashboardDir(launch.portableDir);
 }
 
 /** Map to the green-pack naming used by desktop/portable (`darwin-arm64`, …). */
@@ -479,14 +500,21 @@ function registerIpcHandlers(): void {
     return linuxCaptionWindow(event.sender)?.isMaximized() ?? false;
   });
 
-  ipcMain.handle(IPC_CHANNELS.clientSettingsGet, (): ClientSettings => settingsStore.load());
+  ipcMain.handle(IPC_CHANNELS.clientSettingsGet, (): ClientSettings => {
+    const current = settingsStore.load();
+    // The guide's completion is per data root, not per Electron profile.
+    return { ...current, onboardingCompleted: isOnboardingCompletedFor(current, octopHomePath) };
+  });
   ipcMain.handle(IPC_CHANNELS.clientSettingsSet, (_e, patch: Partial<ClientSettings>) => {
-    const saved = settingsStore.save(patch);
+    const next = { ...patch };
+    // Finishing the guide pins it to the home that finished it.
+    if (next.onboardingCompleted === true) next.onboardingHome = octopHomePath;
+    const saved = settingsStore.save(next);
     closeBehavior = saved.closeBehavior;
     if (patch && Object.prototype.hasOwnProperty.call(patch, "launchAtLogin")) {
       applyAutoLaunchSetting(saved.launchAtLogin);
     }
-    return saved;
+    return { ...saved, onboardingCompleted: isOnboardingCompletedFor(saved, octopHomePath) };
   });
 
   // Synchronous on purpose: the renderer builds WebSocket URLs inside render
@@ -818,9 +846,13 @@ function rememberDashboardLocation(url: string): void {
   if (locationTimer) clearTimeout(locationTimer);
   locationTimer = setTimeout(() => {
     locationTimer = null;
-    if (!lastDashboardUrl) return;
+    if (!lastDashboardUrl || !dashboardOrigin) return;
     try {
-      writeSessionSnapshot(sessionSnapshotPath, { url: lastDashboardUrl, cleanExit: false });
+      writeSessionSnapshot(sessionSnapshotPath, {
+        url: lastDashboardUrl,
+        cleanExit: false,
+        sessionId: sessionIdOf(lastDashboardUrl, dashboardOrigin),
+      });
     } catch (err) {
       desktopLog().warn(`session snapshot save failed: ${errorMessageOf(err)}`);
     }
@@ -834,7 +866,11 @@ function markCleanExit(): void {
     locationTimer = null;
   }
   try {
-    writeSessionSnapshot(sessionSnapshotPath, { url: lastDashboardUrl, cleanExit: true });
+    writeSessionSnapshot(sessionSnapshotPath, {
+      url: lastDashboardUrl,
+      cleanExit: true,
+      sessionId: lastDashboardUrl && dashboardOrigin ? sessionIdOf(lastDashboardUrl, dashboardOrigin) : null,
+    });
   } catch (err) {
     desktopLog().warn(`clean-exit snapshot failed: ${errorMessageOf(err)}`);
   }
@@ -847,7 +883,7 @@ function entryUrlFor(
 ): string {
   const snapshot = pendingRecovery;
   pendingRecovery = null;
-  return (snapshot ? recoveryUrl(snapshot, appOrigin, theme) : null) ?? dashboardEntryUrl(theme, appOrigin);
+  return (snapshot ? restoreUrl(snapshot, appOrigin, theme) : null) ?? dashboardEntryUrl(theme, appOrigin);
 }
 
 function registerGlobalShortcuts(): void {
@@ -892,22 +928,29 @@ function installMacHelpMenu(): void {
   macHelpInstalled = true;
 }
 
-/** Spawn the Python sidecar on a fresh loopback port and wait for health. */
+/** Spawn the sidecar on a fresh loopback port and wait for health. */
 async function startBackend(): Promise<boolean> {
   if (!backend) return false;
+  // Local const so the union narrows: the module-level binding is mutable.
+  const launch = backend;
+  const onedir = launch.kind === "onedir";
   const port = await reserveRandomPort();
   const env = buildSidecarEnv(process.env, {
-    octopHome: backend.octopHome,
-    portableDir: backend.portableDir,
+    octopHome: launch.octopHome,
+    portableDir: launch.kind === "onedir" ? launch.cwd : launch.portableDir,
     port,
     bindHost: "127.0.0.1",
+    onedir,
   });
   backendPort = port;
   const sidecar = new SidecarSupervisor({
-    executable: backend.interpreter,
-    args: [backend.launchScript, "run"],
+    executable: launch.kind === "onedir" ? launch.executable : launch.interpreter,
+    args:
+      launch.kind === "onedir"
+        ? ["run", "--port", String(port)]
+        : [launch.launchScript, "run"],
     env,
-    cwd: backend.cwd,
+    cwd: launch.cwd,
     port,
     onExit: ({ code, signal, output }) => {
       const summary = `sidecar exited code=${code ?? "null"} signal=${signal ?? "null"}`;
@@ -922,9 +965,14 @@ async function startBackend(): Promise<boolean> {
     },
   });
   supervisor = sidecar;
-  desktopLog().info(`starting sidecar on 127.0.0.1:${port}`);
+  // Cold starts of the bundled runtime have needed over four minutes; the
+  // budget is wide and ``OCTOP_READY_TIMEOUT_MS`` can widen it further.
+  const readyTimeoutMs = resolveHealthTimeoutMs();
+  desktopLog().info(
+    `starting sidecar on 127.0.0.1:${port} (ready timeout ${Math.round(readyTimeoutMs / 1000)}s)`,
+  );
   sidecar.start();
-  const ready = await sidecar.waitUntilReady();
+  const ready = await sidecar.waitUntilReady(readyTimeoutMs);
   if (!ready) {
     desktopLog().error(`sidecar was not ready on 127.0.0.1:${port}`);
     // The exit handler already kept the tail when the process died. A timeout
@@ -1088,8 +1136,35 @@ function openDashboardWindow(appOrigin: string): BrowserWindow {
   return win;
 }
 
+/** A restored conversation must still exist; the first query after a cold boot can be slow. */
+const SESSION_PROBE_TIMEOUT_MS = 10_000;
+
+/**
+ * Does this data root still hold the conversation? Only a definitive 404 counts
+ * as "gone" — a timeout or server error keeps the restored URL, because a slow
+ * backend must not silently throw the user back to the agent root.
+ */
+async function chatSessionExists(agentId: string, sessionId: string): Promise<boolean> {
+  if (apiAdmissionClosed || !backendPort) return true;
+  const url = toBackendUrl(
+    backendPort,
+    `/api/agents/${encodeURIComponent(agentId)}/threads/${encodeURIComponent(sessionId)}/history`,
+    "",
+  );
+  try {
+    const response = await net.fetch(url, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(SESSION_PROBE_TIMEOUT_MS),
+    });
+    return response.status !== 404;
+  } catch (err) {
+    desktopLog().warn(`session restore probe failed: ${errorMessageOf(err)}`);
+    return true;
+  }
+}
+
 /** Keep the splash window and load the Dashboard into it. */
-function continueInEarlyWindow(early: EarlyWindow, appOrigin: string): void {
+async function continueInEarlyWindow(early: EarlyWindow, appOrigin: string): Promise<void> {
   dashboardOrigin = appOrigin;
   const win = early.browserWindow;
   if (win.isDestroyed()) {
@@ -1109,12 +1184,21 @@ function continueInEarlyWindow(early: EarlyWindow, appOrigin: string): void {
   });
   const settings = settingsStore.load();
   const chromeTheme = resolveWindowChromeTheme(settings.themeBackground);
-  if (!settings.onboardingCompleted) {
+  if (!isOnboardingCompletedFor(settings, octopHomePath)) {
     // After the Dashboard has painted, not over the splash. The guide is a
     // separate window, so the main UI is already usable behind it.
     win.webContents.once("did-finish-load", () => showOnboarding());
   }
-  void win.loadURL(entryUrlFor(appOrigin, chromeTheme.scheme ?? chromeTheme.mode));
+  const theme = chromeTheme.scheme ?? chromeTheme.mode;
+  let entryUrl = entryUrlFor(appOrigin, theme);
+  const chat = chatLocation(entryUrl, appOrigin);
+  if (chat?.sessionId && !(await chatSessionExists(chat.agentId, chat.sessionId))) {
+    // That conversation is not in this data root any more: reopen the agent
+    // route instead of letting the page create an empty session.
+    entryUrl = routeOnlyUrl(entryUrl, appOrigin, theme) ?? dashboardEntryUrl(theme, appOrigin);
+    desktopLog().info(`restored session ${chat.sessionId} is gone; opening the ${chat.agentId} route`);
+  }
+  void win.loadURL(entryUrl);
 }
 
 /**
@@ -1387,6 +1471,7 @@ async function boot(): Promise<void> {
   writeSessionSnapshot(sessionSnapshotPath, {
     url: previousSession.url,
     cleanExit: false,
+    sessionId: previousSession.sessionId,
   });
   // Apply the source before resolving, so a stored "system" reads the OS
   // preference rather than whatever an earlier explicit source left behind.
@@ -1418,6 +1503,15 @@ async function boot(): Promise<void> {
   octopHomePath = octopHome;
   installDesktopLog(octopHome);
   desktopLog().info(`desktop ${appVersion} home=${octopHome}`);
+  // The guide used to be remembered only in Electron's userData. Stamp the data
+  // root that finished it, so another OCTOP_HOME replays the guide.
+  if (settings.onboardingCompleted && !settings.onboardingHome) {
+    try {
+      settingsStore.save({ onboardingHome: octopHome });
+    } catch (err) {
+      desktopLog().warn(`onboarding home migration failed: ${errorMessageOf(err)}`);
+    }
+  }
   await installSystemTray();
 
   // Local dev escape hatch: point at an already-extracted runtime (e.g. the one
@@ -1426,7 +1520,15 @@ async function boot(): Promise<void> {
   // signing → resources/portable) already contain the tree; do not unzip again.
   const devPortableDir = (process.env.OCTOP_PORTABLE_DIR ?? "").trim();
   let portableDir = devPortableDir;
-  if (!portableDir) {
+  // Windows installer shape: one PyInstaller onedir backend under
+  // resources/sidecar/backend. No Python, no extraction, nothing to compile.
+  const onedirDir = portableDir
+    ? null
+    : installedOnedirBackendDir(resourcesRoot(), process.platform, existsSync);
+  if (onedirDir) {
+    desktopLog().info(`onedir backend installed at ${onedirDir}`);
+  }
+  if (!portableDir && !onedirDir) {
     const installed = installedRuntimeDir(resourcesRoot(), process.platform, existsSync);
     if (installed) {
       portableDir = installed;
@@ -1436,7 +1538,7 @@ async function boot(): Promise<void> {
 
   // A package that still ships only the zip (not the Win/mac/Linux installers):
   // version guard (§2.3) then atomic extract into OCTOP_HOME. Must run BEFORE spawning Python.
-  if (!portableDir) {
+  if (!portableDir && !onedirDir) {
     portableDir = join(octopHome, "portable");
     try {
       const bundled = await readBundledPortable();
@@ -1479,14 +1581,28 @@ async function boot(): Promise<void> {
     }
   }
 
-  const interpreter = join(portableDir, "runtime", process.platform === "win32" ? "python.exe" : "bin/python3");
-  backend = {
-    interpreter,
-    launchScript: join(portableDir, "launch.py"),
-    cwd: portableDir,
-    octopHome,
-    portableDir,
-  };
+  if (onedirDir) {
+    backend = {
+      kind: "onedir",
+      executable: join(onedirDir, "octop.exe"),
+      cwd: onedirDir,
+      octopHome,
+    };
+  } else {
+    const interpreter = join(
+      portableDir,
+      "runtime",
+      process.platform === "win32" ? "python.exe" : "bin/python3",
+    );
+    backend = {
+      kind: "python",
+      interpreter,
+      launchScript: join(portableDir, "launch.py"),
+      cwd: portableDir,
+      octopHome,
+      portableDir,
+    };
+  }
 
   // §7 accounts: the device credential lives in the data root, next to the
   // database it unlocks, and only the main process ever sees it.
@@ -1506,7 +1622,7 @@ async function boot(): Promise<void> {
     label: `${process.platform}-${process.arch}`,
   });
 
-  registerProtocol(dashboardRoot(portableDir));
+  registerProtocol(dashboardRoot(backend));
   registerIpcHandlers();
 
   // §5.2: the page learns only this relay's ephemeral port, never the sidecar's.
@@ -1527,11 +1643,13 @@ async function boot(): Promise<void> {
 
   const ready = await startBackend();
   if (!ready) {
+    const command =
+      backend.kind === "onedir"
+        ? `后端: ${backend.executable}`
+        : `启动器: ${backend.launchScript}`;
     early.showError({
-      message: "Python 后端未能就绪（健康检查超时或进程提前退出）。请查看日志后重试。",
-        detail: errorDetail(
-          backend ? `启动器: ${backend.launchScript}\n端口: 127.0.0.1:${backendPort}` : undefined,
-        ),
+      message: "本地服务未能就绪（健康检查超时或进程提前退出）。请查看日志后重试。",
+      detail: errorDetail(`${command}\n端口: 127.0.0.1:${backendPort}`),
     });
     return;
   }
@@ -1558,7 +1676,7 @@ async function boot(): Promise<void> {
   // Stay in the splash window. Closing it and opening another one is the
   // flash the user sees when "正在准备本地服务" finishes.
   const appOrigin = dashboardDev ? windowOrigin : PACKAGED_APP_ORIGIN;
-  continueInEarlyWindow(early, appOrigin);
+  await continueInEarlyWindow(early, appOrigin);
 }
 
 app.whenReady().then(boot).catch((err) => {

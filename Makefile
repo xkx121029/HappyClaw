@@ -18,6 +18,14 @@ REPO_ROOT     := $(shell pwd)
 DASHBOARD_DIR := $(REPO_ROOT)/dashboard
 DASHBOARD_DEST := $(REPO_ROOT)/src/octop/dashboard
 DIST_DIR      := $(REPO_ROOT)/dist
+# Backend bundle: build outputs stay outside src/ (both dirs are gitignored).
+# `make` on Windows may run under a POSIX shell, so the native CURDIR is used
+# for the paths handed to Python/PyInstaller.
+PACKAGE_ROOT        := $(subst \,/,$(CURDIR))
+PACKAGE_BACKEND_DIR := $(PACKAGE_ROOT)/dist/backend
+PACKAGE_WORK_DIR    := $(PACKAGE_ROOT)/build/pyinstaller
+PACKAGE_VENV_PY     := $(firstword $(wildcard $(PACKAGE_ROOT)/.venv/Scripts/python.exe $(PACKAGE_ROOT)/.venv/bin/python))
+PACKAGE_PYTHON      ?= $(if $(PACKAGE_VENV_PY),$(PACKAGE_VENV_PY),$(PYTHON))
 
 # PyPI repository (override: make publish PYPI_REPO=testpypi)
 PYPI_REPO  ?= pypi
@@ -44,6 +52,7 @@ help:
 	@echo "  build-frontend   Build React dashboard only → $(DASHBOARD_DEST)"
 	@echo "  build-wheel      Build Python wheel only (assumes frontend built)"
 	@echo "  precompile       Byte-compile src/octop into __pycache__ (ship with the app)"
+	@echo "  package-backend  Standalone backend (PyInstaller onedir) → dist/backend/octop"
 	@echo ""
 	@echo "Publish targets:"
 	@echo "  publish          Build + upload to PyPI (PYPI_TOKEN or prompt)"
@@ -113,6 +122,32 @@ precompile:
 	@echo "[precompile] Compiling src/octop (-q -j 0)..."
 	$(PYTHON) -m compileall -q -j 0 $(REPO_ROOT)/src/octop
 	@echo "[precompile] Done."
+
+# Standalone backend: one directory you can copy to a machine without Python.
+# onedir (not onefile) on purpose — onefile re-extracts ~183 MB into %TEMP% on
+# every launch (+73 s cold start on the test box). Numbers and caveats:
+# docs/perf/backend-cold-start-baseline.md
+.PHONY: package-backend
+.PHONY: package-dashboard
+package-backend: package-dashboard
+	@echo "[package-backend] Checking PyInstaller..."
+	@$(PACKAGE_PYTHON) -c "import PyInstaller" 2>/dev/null || $(PACKAGE_PYTHON) -m pip install "pyinstaller>=6.11"
+	@echo "[package-backend] Building onedir bundle → $(PACKAGE_BACKEND_DIR)/octop ..."
+	$(PACKAGE_PYTHON) -m PyInstaller --noconfirm --log-level WARN \
+		--distpath "$(PACKAGE_BACKEND_DIR)" \
+		--workpath "$(PACKAGE_WORK_DIR)" \
+		"$(PACKAGE_ROOT)/scripts/packaging/octop.spec"
+	@echo "[package-backend] Verifying the bundle starts and serves ..."
+	$(PACKAGE_PYTHON) "$(PACKAGE_ROOT)/scripts/packaging/verify_backend.py" \
+		--exe "$(PACKAGE_BACKEND_DIR)/octop/octop.exe" \
+		--dashboard-dir "$(PACKAGE_ROOT)/src/octop/dashboard"
+	@echo "[package-backend] Done: $(PACKAGE_BACKEND_DIR)/octop"
+
+# Always rebuild the dashboard before packaging: the bundle embeds
+# src/octop/dashboard, so a frontend-only change still requires re-packaging.
+package-dashboard:
+	@echo "[package-dashboard] Building dashboard (no stale reuse) ..."
+	$(PACKAGE_PYTHON) "$(PACKAGE_ROOT)/scripts/packaging/build_dashboard.py"
 
 .PHONY: build-wheel
 build-wheel:

@@ -9,10 +9,24 @@ export interface HealthResponse {
 
 /**
  * Cold import of the bundled Windows runtime has been observed at about 75s
- * before ``/api/health`` answers. A dead process still ends the wait at once.
+ * before ``/api/health`` answers, and real first runs have needed over 4
+ * minutes. The default is deliberately wider than the worst measured cold
+ * start; ``OCTOP_READY_TIMEOUT_MS`` overrides it between 30s and 15min.
  */
-export const HEALTH_TIMEOUT_MS = 180_000;
+export const DEFAULT_HEALTH_TIMEOUT_MS = 300_000;
+export const MAX_HEALTH_TIMEOUT_MS = 900_000;
+const MIN_HEALTH_TIMEOUT_MS = 30_000;
+export const READY_TIMEOUT_ENV = "OCTOP_READY_TIMEOUT_MS";
 const POLL_INTERVAL_MS = 250;
+
+/** Readiness budget in ms: env override, clamped, or the measured default. */
+export function resolveHealthTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = (env[READY_TIMEOUT_ENV] ?? "").trim();
+  if (!raw) return DEFAULT_HEALTH_TIMEOUT_MS;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return DEFAULT_HEALTH_TIMEOUT_MS;
+  return Math.min(Math.max(Math.floor(parsed), MIN_HEALTH_TIMEOUT_MS), MAX_HEALTH_TIMEOUT_MS);
+}
 
 export interface HealthProbe {
   (): Promise<{ ok: boolean; body?: unknown }>;
@@ -33,7 +47,7 @@ export async function waitForHealth(
     onExit?: () => boolean;
   } = {},
 ): Promise<boolean> {
-  const timeoutMs = options.timeoutMs ?? HEALTH_TIMEOUT_MS;
+  const timeoutMs = options.timeoutMs ?? resolveHealthTimeoutMs();
   const intervalMs = options.intervalMs ?? POLL_INTERVAL_MS;
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {

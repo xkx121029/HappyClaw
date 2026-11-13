@@ -43,6 +43,10 @@ def _probe_env() -> dict[str, Any]:
         "chrome_source": None,  # "system" | "playwright" | None
         "needs_enable": False,
         "error": None,
+        # Chinese, user-facing copy. Frozen bundles ship the Playwright driver
+        # but not the browser binary (that lives in %LOCALAPPDATA%\ms-playwright),
+        # so "not found" is a normal state, not a crash.
+        "hint_zh": None,
     }
 
     from octop.infra.control.browser.bundled import browser_enabled  # noqa: PLC0415
@@ -58,7 +62,13 @@ def _probe_env() -> dict[str, Any]:
         from octop_browser.cdp.launcher import find_chrome  # noqa: PLC0415
 
         out["harness_browser"] = True
-        chrome = find_chrome()
+        try:
+            chrome = find_chrome()
+        except Exception as exc:  # noqa: BLE001
+            # A broken/missing Playwright driver must degrade to "not installed",
+            # never turn /browser/env-status into a 500.
+            chrome = None
+            out["error"] = f"browser probe failed: {exc}"
         if chrome:
             out["chrome_path"] = chrome
             out["chrome_source"] = chrome_source_for_path(chrome)
@@ -74,8 +84,14 @@ def _probe_env() -> dict[str, Any]:
                 "Chrome/Chromium not found. Install Google Chrome, or run "
                 "POST /api/browser/install to download Playwright Chromium."
             )
+            out["hint_zh"] = (
+                "未找到可用的 Chrome/Chromium。可以安装本机 Chrome，或在「远程浏览器」页面点击"
+                "下载 Playwright Chromium 后重试。"
+            )
     except ImportError:
-        pass
+        out["hint_zh"] = (
+            "当前安装不包含浏览器组件（octop-browser），远程浏览器功能不可用。"
+        )
 
     try:
         import playwright  # noqa: F401, PLC0415
@@ -86,12 +102,17 @@ def _probe_env() -> dict[str, Any]:
             out["error"] = (
                 f"playwright not installed: {exc}. Install octop[browser] extras or octop-browser."
             )
+            out["hint_zh"] = "当前安装缺少 Playwright 组件，远程浏览器功能不可用。"
         return out
 
     if not out["browsers_ok"] and not out.get("error"):
         out["error"] = (
             "Chrome/Chromium not found. Install Google Chrome, or run "
             "POST /api/browser/install to download Playwright Chromium."
+        )
+        out["hint_zh"] = (
+            "未找到可用的 Chrome/Chromium。可以安装本机 Chrome，或在「远程浏览器」页面点击"
+            "下载 Playwright Chromium 后重试。"
         )
     return out
 

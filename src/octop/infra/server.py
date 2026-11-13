@@ -507,9 +507,15 @@ class OctopServer:
         ensure_nofile_limit()
         from octop.infra.backend.grep_safety import install_safe_grep_fallback  # noqa: PLC0415
         from octop.infra.backend.shell_output import install_shell_output_decoding  # noqa: PLC0415
+        from octop.infra.utils.google_discovery import (  # noqa: PLC0415
+            install_google_discovery_fallback,
+        )
 
         install_safe_grep_fallback()
         install_shell_output_decoding()
+        # The bundle drops googleapiclient's offline discovery corpus; wrap
+        # build() so Google Drive/Gmail tools fall back to the network.
+        install_google_discovery_fallback()
         with _timing.segment("config"):
             from octop.infra.control.mobile.config_probe import (  # noqa: PLC0415
                 ensure_mobile_capabilities_probed,

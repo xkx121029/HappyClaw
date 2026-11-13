@@ -124,3 +124,10 @@ scripts/lh_image_install_octop_tencentos.sh
 .tmp-mfa/
 .tmp-mfa-e2e/
 
+
+# Local runtime scratch (desktop / cold-start verification, never committed)
+.octop-*
+.el2-*
+.perf/
+.req-lock.txt
+.verify-electron.ps1

@@ -1,4 +1,4 @@
-# Octop desktop (green portable + Electron shell)
+# HappyClaw desktop (green portable + Electron shell)
 
 All desktop-client code lives here. This is **not** `src/octop/infra/control/desktop`
 (remote desktop streaming).
@@ -10,7 +10,7 @@ All desktop-client code lives here. This is **not** `src/octop/infra/control/des
 | [`docs/DESKTOP_ARCHITECTURE.zh.md`](docs/DESKTOP_ARCHITECTURE.zh.md) | Target architecture for the Electron shell |
 | [`docs/LOCAL_ACCOUNT_CLAIM.zh.md`](docs/LOCAL_ACCOUNT_CLAIM.zh.md) | Claim an existing local account when `OCTOP_HOME` already has users (not implemented) |
 
-The Electron shell owns the whole desktop lifecycle: spawn Octop on a random
+The Electron shell owns the whole desktop lifecycle: spawn HappyClaw on a random
 loopback port, own tray/window chrome, refuse self-updates. The green runtime
 is expanded before the user launches: NSIS `tar.exe` on Windows, and the tree
 `package.sh` assembled copied into the app on macOS and Linux. CI builds the
@@ -272,17 +272,17 @@ only the pinned-download-host rule is enforced.
   `shell.openPath(<OCTOP_HOME>)`; the path is also returned by
   `window.octopDesktop.desktopInfo()`.
 
-
 ## Data directory
 
-Same as the Octop CLI/server default:
+Same as the HappyClaw CLI/server default:
 
 - `OCTOP_HOME` → `~/.octop` (or the existing `OCTOP_HOME` env)
 - Green runtime → Windows `<install>\resources\sidecar`, macOS and Linux `Contents/Resources/portable` (Linux deb/rpm use the same `resources/portable` path under the install prefix)
 - Shell prefs → `~/.octop/desktop-settings.json`
+- Shell session files → Electron `userData` (`desktop-window.json`, `desktop-session.json`)
 
 The shell points `OCTOP_GREEN_PACKAGES` at the extracted `packages/` directory, so
-`octop update` upgrades it through Octop's existing `--target` logic. Newer
+`octop update` upgrades it through HappyClaw's existing `--target` logic. Newer
 extracted runtimes are never downgraded; PostgreSQL stays externally managed and
 is not copied by the shell.
 
