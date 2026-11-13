@@ -1,0 +1,8 @@
+id: profile-base
+version: 1.0.0
+name: Profile Base Fixture
+description: Dependency target for profile closure tests
+kind: tool
+entry: main.py
+permissions:
+  - fs.read

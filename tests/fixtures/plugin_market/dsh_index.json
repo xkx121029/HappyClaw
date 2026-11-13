@@ -1,0 +1,45 @@
+{
+  "format": 1,
+  "title": {"en": "DSH Plugin Market", "zh": "DSH 插件市场"},
+  "description": {"en": "Fixture index for offline tests", "zh": "离线测试用索引"},
+  "plugins": [
+    {
+      "name": "dsh-plugin-weather",
+      "title": {"en": "Weather", "zh": "天气"},
+      "description": {"en": "Weather tools", "zh": "天气工具"},
+      "homepage": "https://github.com/example/dsh-plugin-weather",
+      "metadata": {"category": "tools", "labels": ["weather", "data"]},
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1762900000,
+          "source": {"type": "npm"},
+          "engines": {"dsh": ">=0.2.0"}
+        },
+        {
+          "version": "1.1.0-beta.1",
+          "publishTimestamp": 1762910000,
+          "source": {"type": "npm"},
+          "engines": {"dsh": ">=0.2.0"}
+        }
+      ]
+    },
+    {
+      "name": "@example/dsh-git-plugin",
+      "title": {"en": "Git Plugin"},
+      "versions": [
+        {
+          "version": "0.3.0",
+          "publishTimestamp": 1762920000,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/example/monorepo",
+            "commit": "0123456789abcdef0123456789abcdef01234567",
+            "path": "packages/plugin"
+          },
+          "engines": {"dsh": "^0.2.0"}
+        }
+      ]
+    }
+  ]
+}

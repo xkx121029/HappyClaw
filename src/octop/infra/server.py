@@ -997,6 +997,8 @@ class OctopServer:
 
     async def refresh_plugin_channels(self) -> None:
         """Reconcile only changed kinds and report registration failures to callers."""
+        from octop_harness.plugins.registry import PluginRegistry  # noqa: PLC0415
+
         from octop.infra.errors import ErrorCode, OctopError
         from octop.infra.gateway.plugin_channels import (
             changed_plugin_channel_kinds,

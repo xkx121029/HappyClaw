@@ -1,0 +1,10 @@
+id: profile-dependent
+version: 1.0.0
+name: Profile Dependent Fixture
+description: Requires the base fixture plugin
+kind: tool
+entry: main.py
+permissions:
+  - network
+requires:
+  - octop:profile-base>=1.0.0

@@ -1,0 +1,7 @@
+id: fixture-octop-tool
+version: 1.0.0
+name: Fixture Octop Tool
+description: Octop-native fixture plugin for DSH integration smoke checks
+kind: tool
+capabilities: tool
+entry: main.py

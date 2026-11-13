@@ -76,6 +76,14 @@ from octop.infra.connectors.builder import (
 )
 from octop.infra.connectors.service import ConnectorService
 from octop.infra.db.repos.audit import ACTOR_SYSTEM
+from octop.infra.dsh.integration import (
+    DshPromptSessionStore,
+    compose_system_prompt,
+    dsh_skills_prompts_enabled,
+    workspace_skill_snapshot,
+)
+from octop.infra.dsh.prompts.skills_injection import SkillPromptSnapshot
+from octop.infra.dsh.switches import stage_enabled as dsh_stage_enabled
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.skills.presentation import apply_skill_presentation, localize_skill_summary
 from octop.infra.skills.skill_package_store import SkillPackageStore
@@ -153,6 +161,15 @@ _HARNESS_AGENT_CONFIG_FIELDS = frozenset(item.name for item in fields(HarnessAge
 def _memory_namespace(agent_id: str) -> str:
     return f"{_MEMORY_NS_PREFIX}{agent_id}"
 
+
+def _dsh_local_roots() -> tuple[str, ...]:
+    """Explicit local plugin directories for S2 discovery.
+
+    No default roots: scanning the home directory on every config build would be
+    a surprise, and the market install root already covers installed plugins.
+    """
+    raw = os.environ.get("OCTOP_DSH_TOOL_ROOTS", "")
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
 
 def skills_disabled_set(cfg: dict[str, Any]) -> set[str]:
     """Return the set of disabled skill slugs from agent config."""
@@ -555,6 +572,20 @@ class AgentManager:
         # drive the same checkpoint without it — two concurrent executions on
         # one thread interleave LangGraph checkpoint writes.
         self._thread_execution_locks: dict[tuple[str, str], asyncio.Lock] = {}
+        # Opt-in DSH skill/prompt state. Session cursors live on this instance
+        # (never in module globals) and are keyed by (agent_id, thread_id).
+        self._dsh_prompt_sessions = DshPromptSessionStore()
+        self._dsh_skill_snapshots: dict[str, SkillPromptSnapshot] = {}
+        # S8 model adapter: transport factory injected before boot(), plus the
+        # last install result for the read-only status query. Both stay None
+        # when the stage is off, which costs no DSH LLM import.
+        self._dsh_transport_factory: Any | None = None
+        self._dsh_llm_install: Any | None = None
+        # S2 read-only tool mounting: optional in-process tool bodies keyed by
+        # plugin id, plus the last assembly result for the status query. Both are
+        # empty/None while the stage is off, which costs no DSH tools import.
+        self._dsh_tool_providers: dict[str, Any] = {}
+        self._dsh_tools_status: Any | None = None
         self._active_invocations: dict[str, int] = {}
         self._invocation_waiters: dict[str, int] = {}
         self._history_backfills: dict[str, asyncio.Event] = {}
@@ -658,6 +689,15 @@ class AgentManager:
         """Attach the thread-scoped HITL bypass store (set before boot())."""
         self._hitl_session_store = store
 
+    def set_dsh_transport_factory(self, factory: Any | None) -> None:
+        """Override the S8 DSH transport factory (set before boot(); optional).
+
+        ``None`` means "use the built-in httpx transport" once the stage is
+        enabled; without any transport the installer reports ``skipped`` and
+        every model call keeps using the harness factory.
+        """
+        self._dsh_transport_factory = factory
+
     @property
     def teams(self) -> Any:
         return self._teams
@@ -699,8 +739,138 @@ class AgentManager:
             )
             self._harness_manager.set_security_policy(self._security.harness_policy())
 
+        self._install_dsh_llm()
+
         if restore_agents:
             await self.restore_agents()
+
+    def _install_dsh_llm(self) -> None:
+        """Wire the S8 model adapter into the harness factory when enabled.
+
+        Default-off costs one environment lookup: :mod:`octop.infra.dsh.switches`
+        is stdlib-only, and no harness/adapter module is imported until the
+        stage is on. Any failure is logged and swallowed so boot never depends
+        on the adapter; the original factory keeps serving model calls.
+        """
+        from octop.infra.dsh.switches import llm_enabled  # noqa: PLC0415
+
+        if not llm_enabled():
+            return
+        try:
+            from octop.infra.dsh.llm.factory import (  # noqa: PLC0415
+                install_dsh_model_factory,
+            )
+
+            transport_factory = self._dsh_transport_factory
+            if transport_factory is None:
+                from octop.infra.dsh.llm.http_transport import (  # noqa: PLC0415
+                    build_http_transport,
+                )
+
+                transport_factory = build_http_transport
+            self._dsh_llm_install = install_dsh_model_factory(
+                self._harness_manager,
+                transport_factory=transport_factory,
+            )
+        except Exception:
+            logger.exception(
+                "DSH LLM adapter setup failed; continuing with the harness factory"
+            )
+            self._dsh_llm_install = None
+
+    def dsh_llm_status(self) -> dict[str, Any]:
+        """Read-only snapshot of the S8 adapter wiring (which refs, why)."""
+        from octop.infra.dsh.llm.factory import describe_installation  # noqa: PLC0415
+
+        return describe_installation(
+            self._harness_manager, result=self._dsh_llm_install
+        ).as_dict()
+
+    def register_dsh_tool_provider(self, plugin_id: str, provider: Any) -> None:
+        """Register the tool body provider for one ``dsh:<native>`` plugin (S2).
+
+        Optional by design: this stage never executes plugin JavaScript, so tool
+        bodies are supplied in-process. With no provider registered, discovery
+        still reports ``no_tool_provider`` per plugin and the tool list is
+        exactly what it was before S2.
+        """
+        self._dsh_tool_providers[str(plugin_id)] = provider
+
+    def dsh_tools_status(self) -> dict[str, Any]:
+        """Read-only view of the last S2 assembly: mounted tools + skip reasons.
+
+        The ``sandbox`` block reports the posture even before any assembly, so a
+        reader can always tell whether a missing sandbox would allow or deny.
+        """
+        if self._dsh_tools_status is None:
+            # Mirrors the runtime rule without importing the sandbox package
+            # while the stage is off: unknown values are treated as strict.
+            raw = (os.environ.get("OCTOP_DSH_SANDBOX_ABSENCE") or "allow").strip().lower()
+            mode = raw if raw in {"allow", "strict"} else "strict"
+            return {
+                "enabled": dsh_stage_enabled("tools"),
+                "mounted": [],
+                "tools": [],
+                "skipped": [],
+                "sandbox": {"mode": mode, "assembled": False, "plugins": []},
+            }
+        return {"enabled": True, **self._dsh_tools_status.report()}
+
+    def _dsh_sandbox_root(self, row: Any) -> Any:
+        """Workspace the DSH sandbox confines calls to, or None if unresolvable.
+
+        ``workspace_for_agent_row`` only computes the path; it does not create
+        anything. A failure here must not stop tool assembly: the probe then
+        falls back to the absence gate, whose posture is reported by
+        ``dsh_tools_status()``.
+        """
+        try:
+            from octop.infra.agents.memory.thread_cleanup import (  # noqa: PLC0415
+                workspace_for_agent_row,
+            )
+
+            return workspace_for_agent_row(row, paths=self._paths)
+        except Exception as exc:  # noqa: BLE001 - tool assembly must not fail here
+            logger.warning("DSH sandbox workspace unavailable: %s", exc)
+            return None
+
+    def _dsh_plugin_tools(self, row: Any, *, reserved: Sequence[Any]) -> list[Any]:
+        """Assemble read-only DSH tools for one agent (called only when enabled)."""
+        from octop.infra.dsh.tools import build_dsh_plugin_tools  # noqa: PLC0415
+
+        hitl = dsh_stage_enabled("hitl")
+        approval = None
+        if hitl:
+            # S5: reuse the repository's HITL pause/resume path (interrupt →
+            # ``hitl_required`` frame → POST .../hitl/resume). No new protocol.
+            from octop.infra.plugins.bridge.hitl import (  # noqa: PLC0415
+                HitlApprovalChannel,
+            )
+
+            approval = HitlApprovalChannel()
+        build = build_dsh_plugin_tools(
+            scope=str(row.agent_id),
+            market_root=os.environ.get("OCTOP_DSH_MARKET_ROOT") or None,
+            local_roots=_dsh_local_roots(),
+            providers=self._dsh_tool_providers,
+            hitl=hitl,
+            approval=approval,
+            reserved_names=[str(getattr(tool, "name", "")) for tool in reserved],
+            # S4: the sandbox confines calls to this agent's workspace. If the
+            # path cannot be resolved the probe falls back to the absence gate,
+            # whose mode (allow / strict) is visible through dsh_tools_status().
+            sandbox_root=self._dsh_sandbox_root(row),
+            sandbox_absence=os.environ.get("OCTOP_DSH_SANDBOX_ABSENCE") or None,
+        )
+        self._dsh_tools_status = build
+        for skip in build.skipped:
+            logger.info(
+                "DSH tool skipped: %s (%s) %s",
+                skip.plugin_id,
+                skip.reason,
+                skip.detail,
+            )
+        return list(build.tools)
 
     async def restore_agents(self) -> None:
         """Start every persisted agent that is not explicitly stopped.
@@ -1240,6 +1410,9 @@ class AgentManager:
             await self._harness_manager.aremove_agent(agent_id)  # type: ignore[union-attr]
         self._bootstrap_known.pop(agent_id, None)
         self._plugin_tool_labels.pop(agent_id, None)
+        # Agent deleted: drop every DSH session cursor and its snapshot.
+        self._dsh_prompt_sessions.discard_agent(agent_id)
+        self._dsh_skill_snapshots.pop(agent_id, None)
         cfg = agent_config_from_row(row)
         await asyncio.to_thread(
             delete_agent_memory_and_checkpoints,
@@ -1316,6 +1489,9 @@ class AgentManager:
                 await asyncio.to_thread(self._quiesce_octop_memory, agent_id)
                 await self._harness_manager.aremove_agent(agent_id)  # type: ignore[union-attr]
                 self._bootstrap_known.pop(agent_id, None)
+                # Agent stopped: drop every DSH session cursor and its snapshot.
+                self._dsh_prompt_sessions.discard_agent(agent_id)
+                self._dsh_skill_snapshots.pop(agent_id, None)
                 self._repos.agent_repo.set_state(agent_id, "stopped", error=None)
 
     def _quiesce_octop_memory(self, agent_id: str) -> None:
@@ -1751,6 +1927,8 @@ class AgentManager:
         ``reclaim=False`` skips the incremental SQLite vacuum. Delete-only
         uses that so the request itself does not vacuum.
         """
+        # Session ended: drop its DSH skill cursor explicitly (never GC-driven).
+        self._dsh_prompt_sessions.discard(agent_id, thread_id)
         row = self.get_row(agent_id)
         harness = None
         try:
@@ -4212,7 +4390,29 @@ class AgentManager:
             configurable = dict(req.get("configurable") or {})
             configurable["plugin_tool_configs"] = tool_configs
             req["configurable"] = configurable
-        return apply_agent_runtime_to_stream_request(req, agent_cfg)
+        req = apply_agent_runtime_to_stream_request(req, agent_cfg)
+        if dsh_skills_prompts_enabled():
+            req = self._apply_dsh_skill_delta(agent_id, req)
+        return req
+
+    def _apply_dsh_skill_delta(self, agent_id: str, req: dict[str, Any]) -> dict[str, Any]:
+        """Attach this turn's incremental DSH skill text, if the set changed.
+
+        Pure bookkeeping over the per-agent snapshot cached at graph build time:
+        no filesystem read happens per turn.
+        """
+
+        snapshot = self._dsh_skill_snapshots.get(agent_id)
+        if snapshot is None:
+            return req
+        thread_id = str(req.get("thread_id") or "")
+        text = self._dsh_prompt_sessions.advance(agent_id, thread_id, snapshot)
+        if not text:
+            return req
+        configurable = dict(req.get("configurable") or {})
+        configurable["dsh_skills_delta"] = text
+        req["configurable"] = configurable
+        return req
 
     def _stream_model_label(self, agent_id: str, request: dict[str, Any], thread_id: str) -> str:
         raw = request.get("model")
@@ -4419,6 +4619,14 @@ class AgentManager:
             ),
             OctopUiOffloadMiddleware(),
         ]
+        if dsh_skills_prompts_enabled():
+            # Only mounts when the opt-in flag is on, so the flag-off middleware
+            # chain is byte-identical to before this integration existed.
+            from octop.infra.agents.middleware.dsh_skills_prompt import (
+                DshSkillPromptMiddleware,
+            )
+
+            agent_middleware.append(DshSkillPromptMiddleware())
 
         merged_tools: list[Any] = []
         if cron_tools:
@@ -4426,6 +4634,10 @@ class AgentManager:
         merged_tools.extend(knowledge_tools)
         merged_tools.extend(mobile_tools)
         merged_tools.extend(plugin_tools)
+        # dsh:stage-tools — the only S2 insertion point. When the switch is off
+        # this block neither imports the tools package nor touches the list.
+        if dsh_stage_enabled("tools"):
+            merged_tools.extend(self._dsh_plugin_tools(row, reserved=merged_tools))
         # agent_list / ask_agent: PeerAgentMiddleware (team_enabled=True), not config.tools.
 
         acp_section = cfg.get("acp")
@@ -4449,6 +4661,13 @@ class AgentManager:
         if not team_host and not bootstrap_marker_exists(ws):
             system_prompt = None
             memory = ()
+
+        if dsh_skills_prompts_enabled() and not team_host and system_prompt:
+            # Opt-in: fold the deterministic DSH skills section into the graph
+            # prompt. Flag off keeps the exact previous string and reads nothing.
+            snapshot = workspace_skill_snapshot(workspace_dir, agent_id=row.agent_id)
+            self._dsh_skill_snapshots[row.agent_id] = snapshot
+            system_prompt = compose_system_prompt(system_prompt, snapshot)
 
         mcp_server_configs: dict[str, Any] = {}
         if not team_host:

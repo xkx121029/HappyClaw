@@ -1,0 +1,6 @@
+id: profile-bare
+version: 1.0.0
+name: Profile Bare Fixture
+description: Declares no permissions, so it must stay least privilege
+kind: tool
+entry: main.py

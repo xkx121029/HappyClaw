@@ -1,0 +1,30 @@
+[
+  {
+    "id": "weather",
+    "version": "1.2.0",
+    "name": {"zh": "天气", "en": "Weather"},
+    "description": {"zh": "查询城市天气", "en": "Look up city weather"},
+    "kind": "tool",
+    "group": "data",
+    "requires": ["octop:http"],
+    "icon": "https://portal.example/icons/weather.png",
+    "homepage": "https://portal.example/plugins/weather",
+    "download_url": "https://mirror.example/weather-1.2.0.zip",
+    "updated_at": 1762900000
+  },
+  {
+    "id": "broken-row",
+    "version": "1.0.0",
+    "download_url": ""
+  },
+  {
+    "id": "demo-skill",
+    "version": "0.4.0",
+    "name": "演示技能",
+    "description": "最小可用的技能插件",
+    "kind": "skill",
+    "download_url": "https://mirror.example/demo-skill-0.4.0.zip",
+    "ui": {"entry": "ui/index.html"},
+    "updated_at": 1762910000
+  }
+]

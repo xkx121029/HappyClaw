@@ -1,0 +1,8 @@
+id: profile-orphan
+version: 1.0.0
+name: Profile Orphan Fixture
+description: Requires a plugin that is not installed
+kind: tool
+entry: main.py
+requires:
+  - octop:profile-missing>=1.0.0

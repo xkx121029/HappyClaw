@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple
@@ -97,6 +97,7 @@ if TYPE_CHECKING:
     from octop.infra.db.repos.agents import AgentRepo
     from octop.infra.db.repos.audit import AuditRepo
     from octop.infra.db.repos.connectors import ConnectorRepo
+    from octop.infra.db.repos.thread_messages import ThreadMessageInput
     from octop.infra.db.repos.users import UserRepo
     from octop.infra.gateway.slash.dispatcher import SlashDispatcher
     from octop.infra.gateway.threads import ThreadRegistry
@@ -2098,8 +2099,9 @@ class GlobalProcessor:
     async def _record_turn_history(self, thread_id: str, tracker: TurnHistoryTracker) -> None:
         if self._thread_message_repo is None:
             return
+        items = tuple(tracker.inputs)
         try:
-            self._thread_message_repo.append_if_ready(thread_id, tracker.inputs)
+            self._thread_message_repo.append_if_ready(thread_id, items)
         except Exception:
             # History projection is a read optimization and must never turn a
             # successful model response into a failed chat turn.
@@ -2108,6 +2110,7 @@ class GlobalProcessor:
                 thread_id,
                 exc_info=True,
             )
+        self._write_shadow_history(thread_id, items)
 
     async def _append_slash_checkpoint(
         self,
@@ -2150,17 +2153,33 @@ class GlobalProcessor:
                 return
         if self._thread_message_repo is None:
             return
+        items = tuple(message_inputs(appended, dedupe_missing_ids=True))
         try:
-            self._thread_message_repo.append_if_ready(
-                thread_id,
-                message_inputs(appended, dedupe_missing_ids=True),
-            )
+            self._thread_message_repo.append_if_ready(thread_id, items)
         except Exception:
             logger.warning(
                 "failed to append slash history projection for thread=%s",
                 thread_id,
                 exc_info=True,
             )
+        self._write_shadow_history(thread_id, items)
+
+    @staticmethod
+    def _write_shadow_history(thread_id: str, items: Sequence[ThreadMessageInput]) -> None:
+        """Mirror a turn into the DSH shadow log when the switch is on.
+
+        Default-off: the switch is checked before the session module is
+        imported, so a disabled stage performs no DSH import and no I/O. When
+        on, :func:`write_shadow_turn` swallows every failure so a shadow
+        problem can only produce a warning, never a failed chat turn.
+        """
+        from octop.infra.dsh.switches import shadow_enabled  # noqa: PLC0415
+
+        if not shadow_enabled():
+            return
+        from octop.infra.dsh.session.shadow import write_shadow_turn  # noqa: PLC0415
+
+        write_shadow_turn(thread_id, items)
 
 
 def _mcp_server_names(raw: Any) -> list[str] | None:
