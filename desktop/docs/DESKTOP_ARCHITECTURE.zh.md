@@ -1,8 +1,8 @@
-# Octop 新一代跨平台桌面客户端架构方案 (Electron + Local Python Runtime)
+# HappyClaw 新一代跨平台桌面客户端架构方案 (Electron + Local Python Runtime)
 
-本文档制定了 Octop 新一代跨平台桌面客户端（支持 Windows、macOS、Linux）的系统架构、进程模型、Python 独立运行时集成、生命周期守护与安全代理方案。
+本文档制定了 HappyClaw 新一代跨平台桌面客户端（支持 Windows、macOS、Linux）的系统架构、进程模型、Python 独立运行时集成、生命周期守护与安全代理方案。
 
-Octop Desktop 每次随壳启动自己的 Python 进程，监听回环地址上由操作系统分配的随机端口。版本更新只走壳，桌面托管的 Web 应用不能单独升级后端或前端。
+HappyClaw Desktop 每次随壳启动自己的 Python 进程，监听回环地址上由操作系统分配的随机端口。版本更新只走壳，桌面托管的 Web 应用不能单独升级后端或前端。
 
 ---
 
@@ -34,7 +34,7 @@ Octop Desktop 每次随壳启动自己的 Python 进程，监听回环地址上�
                             │ Spawn / Ready / Health Check    │ WebContents / Preload
                             ▼                                 ▼
 ┌───────────────────────────────────────────┐     ┌──────────────────────────────────────┐
-│        Python Sidecar (Octop Server)      │     │      Renderer Process (Dashboard)    │
+│        Python Sidecar (HappyClaw Server)      │     │      Renderer Process (Dashboard)    │
 │                                           │     │                                      │
 │  - Runtime: install dir, all platforms    │     │  - Origin: octop://app/              │
 │  - Win: resources/sidecar; else portable  │     │  - React 18 + TypeScript + Vite      │
@@ -202,7 +202,7 @@ $SHELL -ilc "env -0"
 ### 3.3 就绪检测（Ready Signal）
 
 - 主进程只轮询自己刚启动的进程：`http://127.0.0.1:<assigned-port>/api/health`。
-- 收到符合 Octop 健康响应结构的成功响应后，判定本次后台就绪。
+- 收到符合 HappyClaw 健康响应结构的成功响应后，判定本次后台就绪。
 - 就绪判断不依赖 stdout 文本。
 - 健康检查最多等 3 分钟。打包运行时冷导入要超过 30 秒才回答 `/api/health`。子进程提前退出时立刻失败，不等满这段时间。超时后展示可操作的诊断信息。
 
@@ -444,7 +444,7 @@ Windows 安装包使用带目录页的 NSIS 向导，对应 electron-builder 的
 - 用户确认的路径写入安装器的 `$INSTDIR`。开始菜单快捷方式和卸载登记都指向这个目录。
 - 安装完成页给出「创建桌面快捷方式」。首次安装默认勾选，升级默认不勾选。只有勾选才会创建；取消勾选不会删掉已经存在的快捷方式。静默安装仍会创建，除非传入 `--no-desktop-shortcut`。
 - 目标目录所在的盘必须已经就绪，并且安装进程对它有写权限。需要提权时由安装器申请，不因为用户选了非系统盘而失败。
-- 安装和卸载开始前，如果这个安装目录里的 `Octop.exe` 仍在运行，安装器停止并提示「正在运行，请先在系统托盘中退出应用后重试」。不结束进程。升级时先等最多 10 秒，给壳自己退出的时间。其它目录里的同名程序不算。
+- 安装和卸载开始前，如果这个安装目录里的 `HappyClaw.exe` 仍在运行，安装器停止并提示「正在运行，请先在系统托盘中退出应用后重试」。不结束进程。升级时先等最多 10 秒，给壳自己退出的时间。其它目录里的同名程序不算。
 - 后续壳更新沿用这次写入的安装目录，不把程序装回默认盘。
 - 展开 `resources\sidecar` 之后，安装器把 `packages` 预编译进 `OCTOP_HOME\pyc`（未设置时为 `%USERPROFILE%\.octop\pyc`），与外壳启动时的 `PYTHONPYCACHEPREFIX` 相同。编译失败不中止安装。
 - 卸载删除选定目录中的程序文件、开始菜单快捷方式、桌面快捷方式和安装时展开的 `resources\sidecar`，并删除 `OCTOP_HOME\pyc`（未设置时为 `%USERPROFILE%\.octop\pyc`）。同目录下的数据库、工作区、密钥和 `config.json` 保留。更早版本解压在该目录下的 `portable/` 也不删除。下次安装会再编译字节码。
@@ -467,7 +467,7 @@ Windows 安装包使用带目录页的 NSIS 向导，对应 electron-builder 的
 Electron 桌面端包位于 `desktop/src/`：
 
 ```text
-Octop/
+HappyClaw/
   desktop/
     src/                        # Electron 包根目录（pnpm 包，Node 24）
       package.json
@@ -635,7 +635,7 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 
 ## 11. 关键决策摘要
 
-1. Electron 只拥有桌面能力，Octop Python 服务继续拥有业务逻辑。
+1. Electron 只拥有桌面能力，HappyClaw Python 服务继续拥有业务逻辑。
 2. Python 运行时位于 asar 外，并复用现有绿色便携包契约。三个平台都在安装时展开到安装目录。数据根目录尊重已设置的 `OCTOP_HOME`；未设置时为 `~/.octop`。数据库、工作区和 `config.json` 都在这个根目录下。
 3. Desktop 每次随壳启动自己的 Python 进程，退出时只回收这次启动的进程树。
 4. 本次进程监听 `127.0.0.1` 和操作系统分配的随机端口；地址通过环境变量覆盖，不写回 `config.json`。

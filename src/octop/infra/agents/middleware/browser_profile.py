@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 _BROWSER_TOOL = "browser_use"
 _MISSING_USER = (
-    "browser_use blocked: the current turn has no Octop user id, "
+    "browser_use blocked: the current turn has no HappyClaw user id, "
     "so a browser profile cannot be isolated."
 )
 _NOT_ENABLED = (

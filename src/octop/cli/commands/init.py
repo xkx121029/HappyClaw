@@ -29,7 +29,7 @@ import click
     is_flag=True,
     default=False,
     help=(
-        "Delete Octop application state under ~/.octop before bootstrapping. "
+        "Delete HappyClaw application state under ~/.octop before bootstrapping. "
         "Keeps the install runtime (venv/, bin/)."
     ),
 )
@@ -77,7 +77,7 @@ def init(
                 from octop.cli.support import prompts as _prompts
 
                 if not _prompts.confirm(
-                    f"Delete Octop data under {home}? The install runtime (venv, bin) is kept.",
+                    f"Delete HappyClaw data under {home}? The install runtime (venv, bin) is kept.",
                     default=False,
                 ):
                     click.echo("aborted", err=True)
@@ -142,6 +142,6 @@ def init(
     finally:
         db.close()
 
-    click.echo(f"\u2705 Octop bootstrapped at {home}")
+    click.echo(f"\u2705 HappyClaw bootstrapped at {home}")
     click.echo(f"   admin user: {username}")
     click.echo("   next: `octop run` (optional: `octop agent use <id>` to pin default agent)")

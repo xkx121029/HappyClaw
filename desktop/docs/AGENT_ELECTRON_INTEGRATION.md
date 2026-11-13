@@ -1,6 +1,6 @@
-# Octop Electron green-package integration
+# HappyClaw Electron green-package integration
 
-This document is the contract for embedding Octop's **green portable zip**
+This document is the contract for embedding HappyClaw's **green portable zip**
 in an Electron (or other) desktop shell. Do not invent a parallel install
 path (no system Python, no `PYTHONPATH=packages`).
 
@@ -36,7 +36,7 @@ Octop-<plat>/
      with `tar.exe` into `<install>\resources\sidecar\`.
 2. Keep the tree **outside** `app.asar`. First launch uses that tree and does
    not unzip.
-3. Set `OCTOP_HOME` to Octop's default data dir (`~/.octop`, or `$OCTOP_HOME`
+3. Set `OCTOP_HOME` to HappyClaw's default data dir (`~/.octop`, or `$OCTOP_HOME`
    if already set). Do **not** use the zip's `./data` folder when launching
    from the Electron shell (`desktop/src`). User data stays there. The runtime
    does not.
@@ -49,9 +49,9 @@ Octop-<plat>/
    written back to `config.json`, so a hardcoded `127.0.0.1` undoes the user's
    `bind_host` on every start. Pass them only when the user asked to change
    the saved listen address. If `GET /api/health` on the preferred port is
-   already Octop (`ok`, `users_loaded`, and `agents_running`), do not spawn;
+   already HappyClaw (`ok`, `users_loaded`, and `agents_running`), do not spawn;
    load that URL. Also check `OCTOP_HOME/desktop-port` when the preferred port
-   is not Octop: that file is the port a previous desktop start actually bound
+   is not HappyClaw: that file is the port a previous desktop start actually bound
    after a conflict, and a live health check there means attach instead of
    starting a second server. If the port is taken by something else, set
    `OCTOP_PORT` to the next free port, then write that port to `desktop-port`.
@@ -68,7 +68,7 @@ Octop-<plat>/
    / `OCTOP_PORT` override the file for this process and are not saved).
    When `bind_host` is `0.0.0.0` or `::`, poll and load
    `http://127.0.0.1:<port>/`. Otherwise use the configured host.
-8. First run uses the **normal Octop setup wizard** (create admin). The
+8. First run uses the **normal HappyClaw setup wizard** (create admin). The
    green zip does not skip setup or mint loopback sessions.
 9. On quit, kill the process **tree** (Windows: taskkill `/T`; POSIX: process group).
 

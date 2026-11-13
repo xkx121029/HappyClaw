@@ -175,7 +175,7 @@ class LdapAuthService:
             if len(reserved) > 1:
                 raise OctopError(
                     ErrorCode.LDAP_USER_NOT_PROVISIONED,
-                    "this directory account has no Octop account yet",
+                    "this directory account has no HappyClaw account yet",
                 )
             if len(reserved) == 1:
                 account = reserved[0]
@@ -188,7 +188,7 @@ class LdapAuthService:
             if not config.auto_provision:
                 raise OctopError(
                     ErrorCode.LDAP_USER_NOT_PROVISIONED,
-                    "this directory account has no Octop account yet",
+                    "this directory account has no HappyClaw account yet",
                 )
             return self._provision(row, config, identity)
 
@@ -242,7 +242,7 @@ class LdapAuthService:
             # Worth knowing operationally: this account is keyed on its DN, so a
             # later rename in the directory will look like a brand-new user.
             logger.warning(
-                "LDAP entry for %r exposes no %s; keying the Octop account on its DN",
+                "LDAP entry for %r exposes no %s; keying the HappyClaw account on its DN",
                 identity.username,
                 config.subject_attribute,
             )

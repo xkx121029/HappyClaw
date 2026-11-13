@@ -81,7 +81,7 @@ def partition_install_root(root: Path) -> tuple[list[Path], list[Path]]:
     """Split *root* into ``(state, runtime)`` children. Missing root → empty."""
     if root_is_runtime(root):
         raise InstallResetError(
-            f"{root} is the Octop install runtime. Refusing to delete it. "
+            f"{root} is the HappyClaw install runtime. Refusing to delete it. "
             "Repair the CLI with: bash install.sh"
         )
     if not root.is_dir():

@@ -34,7 +34,7 @@ def _all_targets() -> list[Path]:
     "wipe_all",
     is_flag=True,
     default=False,
-    help="Delete Octop data under ~/.octop. Keeps the install runtime (venv/, bin/).",
+    help="Delete HappyClaw data under ~/.octop. Keeps the install runtime (venv/, bin/).",
 )
 @click.option("--yes", is_flag=True, default=False, help="Skip confirmation.")
 @click.option("--dry-run", is_flag=True, default=False, help="Show targets without deleting.")
@@ -47,7 +47,7 @@ def clean(wipe_all: bool, yes: bool, dry_run: bool) -> None:
         return
     if wipe_all and not yes:
         click.confirm(
-            "This deletes Octop data (DB, configs, agents, logs). "
+            "This deletes HappyClaw data (DB, configs, agents, logs). "
             "The install runtime (venv, bin) is kept. Continue?",
             abort=True,
         )

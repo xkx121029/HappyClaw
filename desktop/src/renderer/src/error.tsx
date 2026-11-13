@@ -24,7 +24,7 @@ type CopyState = "idle" | "copied" | "failed";
 function FailureMark() {
   return (
     <div className={styles.mark} aria-hidden="true">
-      <img className={styles.markImg} src={markUrl} alt="" width={352} height={255} />
+      <img className={styles.markImg} src={markUrl} alt="" width={120} height={120} />
       <span className={styles.badge}>
         <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
           <rect x="5.15" y="1" width="1.7" height="6.2" rx="0.85" fill="currentColor" />
@@ -84,14 +84,14 @@ function ErrorPage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const title = payload.title ?? "Octop 无法启动";
+  const title = payload.title ?? "HappyClaw 无法启动";
   const { message, detail, version } = payload;
 
   const copyLabel =
     copyState === "copied" ? "已复制" : copyState === "failed" ? "复制失败" : "复制错误信息";
 
   const handleCopy = () => {
-    const text = [title, message, detail, version ? `Octop Desktop v${version}` : ""]
+    const text = [title, message, detail, version ? `HappyClaw Desktop v${version}` : ""]
       .filter(Boolean)
       .join("\n\n");
     void writeClipboard(text).then((ok) => setCopyState(ok ? "copied" : "failed"));
@@ -164,7 +164,7 @@ function ErrorPage() {
         </div>
       </div>
 
-      {version ? <p className={styles.meta}>Octop 桌面端 v{version}</p> : null}
+      {version ? <p className={styles.meta}>HappyClaw 桌面端 v{version}</p> : null}
     </main>
   );
 }

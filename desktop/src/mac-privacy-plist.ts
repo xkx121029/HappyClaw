@@ -25,20 +25,20 @@ export type MacPrivacyUsageKey = (typeof MAC_PRIVACY_USAGE_KEYS)[number];
 export const macPrivacyUsage: Record<MacPrivacyUsageKey, { readonly en: string; readonly zh: string }> =
   {
     NSMicrophoneUsageDescription: {
-      en: "Octop uses the microphone to turn your speech into text.",
-      zh: "Octop 使用麦克风，把你说的话转成文字。",
+      en: "HappyClaw uses the microphone to turn your speech into text.",
+      zh: "HappyClaw 使用麦克风，把你说的话转成文字。",
     },
     NSSpeechRecognitionUsageDescription: {
-      en: "Octop uses speech recognition to transcribe what you say.",
-      zh: "Octop 使用语音识别，把你说的话转成文字。",
+      en: "HappyClaw uses speech recognition to transcribe what you say.",
+      zh: "HappyClaw 使用语音识别，把你说的话转成文字。",
     },
     NSScreenCaptureUsageDescription: {
-      en: "Octop records the screen so it can show and control this computer's desktop.",
-      zh: "Octop 录制屏幕，以便显示并操控这台电脑的桌面。",
+      en: "HappyClaw records the screen so it can show and control this computer's desktop.",
+      zh: "HappyClaw 录制屏幕，以便显示并操控这台电脑的桌面。",
     },
     NSLocalNetworkUsageDescription: {
-      en: "Octop connects to services on your local network, such as a local model or a device you control.",
-      zh: "Octop 连接本地网络上的服务，例如本地模型或你控制的设备。",
+      en: "HappyClaw connects to services on your local network, such as a local model or a device you control.",
+      zh: "HappyClaw 连接本地网络上的服务，例如本地模型或你控制的设备。",
     },
   };
 
