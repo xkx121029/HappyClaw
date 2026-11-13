@@ -28,6 +28,15 @@ export interface FileTreeNode {
   children: FileTreeNode[];
 }
 
+/** 单层目录列表项（``GET /agents/{id}/workspace/tree``）。 */
+export interface WorkspaceEntry {
+  /** 工作区相对路径；根目录列出的条目不带前导斜杠。 */
+  path: string;
+  is_dir?: boolean;
+  size?: number;
+  modified_at?: string | number;
+}
+
 export interface WorkspaceFileContent {
   name: string;
   path: string;

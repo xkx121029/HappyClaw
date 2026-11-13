@@ -1747,6 +1747,7 @@ function ChatPageInner() {
                   onExportTranscript={
                     hasMessages ? handleExportTranscript : undefined
                   }
+                  onOpenSolo={() => navigate("/solo")}
                   isTeam={isTeamChat}
                   agent={activeAgent}
                 />

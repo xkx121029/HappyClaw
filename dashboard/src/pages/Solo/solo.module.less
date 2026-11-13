@@ -1,0 +1,616 @@
+/* SOLO 模式：四区工作台。只用一种强调色（brand），正文对比度按 design token。 */
+
+.page {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--fn-bg-primary);
+  color: var(--fn-text-primary);
+  font-size: 13px;
+}
+
+.railSlot,
+.chatSlot,
+.treeSlot {
+  flex: 0 0 auto;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── 分栏拖拽条 ───────────────────────────────────────────── */
+
+.splitter {
+  flex: 0 0 6px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  z-index: 3;
+  touch-action: none;
+
+  &:hover .splitterGrip,
+  &:focus-visible .splitterGrip {
+    background: var(--fn-color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-border-focus);
+    outline-offset: -2px;
+  }
+}
+
+.splitterV {
+  cursor: col-resize;
+}
+
+.splitterH {
+  width: 100%;
+  cursor: row-resize;
+}
+
+.splitterActive .splitterGrip {
+  background: var(--fn-color-primary);
+}
+
+.splitterGrip {
+  width: 2px;
+  height: 28px;
+  border-radius: 2px;
+  background: var(--fn-border-primary);
+  transition: background 0.15s ease;
+}
+
+.splitterH .splitterGrip {
+  width: 28px;
+  height: 2px;
+}
+
+/* ─── 会话选择器 ───────────────────────────────────────────── */
+
+.rail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--fn-bg-secondary);
+  border-right: 1px solid var(--fn-border-primary);
+}
+
+.railCollapsed {
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  overflow: hidden;
+}
+
+.railIconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: var(--fn-radius-sm);
+  background: transparent;
+  color: var(--fn-text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fn-bg-hover);
+    color: var(--fn-text-primary);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    background: transparent;
+  }
+}
+
+.railAgentAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--fn-radius-full);
+  background: var(--fn-bg-selected);
+  color: var(--fn-text-brand);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.railCollapsedMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--fn-text-tertiary);
+}
+
+.railHead {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-bottom: 1px solid var(--fn-border-subtle);
+}
+
+.railTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.railTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--fn-text-secondary);
+}
+
+.railAgentSelect {
+  width: 100%;
+}
+
+.railNewChat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  border: 1px dashed var(--fn-border-primary);
+  border-radius: var(--fn-radius-sm);
+  background: transparent;
+  color: var(--fn-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--fn-color-primary);
+    color: var(--fn-text-brand);
+    background: var(--fn-bg-hover);
+  }
+}
+
+.railList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.railEmpty {
+  padding: 16px 8px;
+  font-size: 12px;
+  color: var(--fn-text-tertiary);
+  text-align: center;
+}
+
+.railSession {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--fn-radius-sm);
+  background: transparent;
+  color: var(--fn-text-primary);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fn-bg-hover);
+  }
+}
+
+.railSessionActive {
+  background: var(--fn-bg-selected);
+  color: var(--fn-text-brand);
+}
+
+.railSessionName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railSessionTime {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--fn-text-quaternary);
+}
+
+/* ─── 通用面板头 ───────────────────────────────────────────── */
+
+.paneHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 8px 0 10px;
+  border-bottom: 1px solid var(--fn-border-subtle);
+  background: var(--fn-bg-toolbar);
+  font-size: 12px;
+  color: var(--fn-text-secondary);
+  overflow: hidden;
+}
+
+.paneTitle {
+  font-weight: 600;
+  color: var(--fn-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panePath {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fn-text-tertiary);
+}
+
+.paneBadge {
+  margin-left: auto;
+  padding: 0 5px;
+  border: 1px solid var(--fn-border-primary);
+  border-radius: var(--fn-radius-sm);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fn-text-tertiary);
+}
+
+.headerIcon {
+  flex: 0 0 auto;
+  color: var(--fn-text-tertiary);
+}
+
+.headerSpacer {
+  flex: 1;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: var(--fn-radius-full);
+}
+
+.statusDotOn {
+  background: var(--fn-color-success, #16a34a);
+}
+
+.statusDotOff {
+  background: var(--fn-text-quaternary);
+}
+
+/* ─── 对话区 ───────────────────────────────────────────────── */
+
+.chatPane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--fn-border-primary);
+}
+
+.chatBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chatIntro {
+  margin: auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--fn-text-secondary);
+}
+
+.chatIntroTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fn-text-primary);
+}
+
+.chatIntroText {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--fn-text-secondary);
+}
+
+.chatComposer {
+  flex: 0 0 auto;
+  padding: 4px 8px 8px;
+}
+
+.noticeBlock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  background: var(--fn-bg-warning-light);
+  color: var(--fn-text-primary);
+  font-size: 12px;
+}
+
+/* ─── 编辑器 + 终端 ────────────────────────────────────────── */
+
+.mainColumn {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.editorColumn {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.editorPane {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.editorBody {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.dirtyDot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: var(--fn-radius-full);
+  background: var(--fn-color-primary);
+}
+
+.terminalPane {
+  flex: 0 0 auto;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--fn-border-subtle);
+  background: var(--fn-bg-primary);
+}
+
+.terminalBody {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.terminalWrap {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.terminalOverlay {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--fn-border-primary);
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-bg-elevated);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  color: var(--fn-text-secondary);
+}
+
+/* ─── 文件树 ───────────────────────────────────────────────── */
+
+.treePane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--fn-bg-secondary);
+  border-left: 1px solid var(--fn-border-primary);
+}
+
+.treeSearch {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+}
+
+.treeError {
+  flex: 0 0 auto;
+  margin: 0 8px 6px;
+  padding: 6px 8px;
+  border-radius: var(--fn-radius-sm);
+  background: var(--fn-bg-danger-light);
+  color: var(--fn-text-primary);
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.treeBody {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 8px;
+}
+
+.treeScroll {
+  height: 100%;
+  overflow: auto;
+}
+
+.treeRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  height: 26px;
+  padding-right: 8px;
+  border: none;
+  background: transparent;
+  color: var(--fn-text-primary);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fn-bg-hover);
+  }
+}
+
+.treeRowActive {
+  background: var(--fn-bg-selected);
+  color: var(--fn-text-brand);
+}
+
+.treeChevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  flex: 0 0 12px;
+  color: var(--fn-text-tertiary);
+}
+
+.treeDirIcon {
+  flex: 0 0 auto;
+  color: var(--fn-text-tertiary);
+}
+
+.treeFileIcon {
+  flex: 0 0 auto;
+  color: var(--fn-text-quaternary);
+}
+
+.treeName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panePlaceholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--fn-text-tertiary);
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.placeholderError {
+  margin: 0;
+  color: var(--fn-text-primary);
+  word-break: break-word;
+}
+
+/* ─── 窄屏文件树浮层 ───────────────────────────────────────── */
+
+.treeOverlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--fn-bg-elevated);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  animation: soloOverlayIn 0.16s ease-out;
+}
+
+.treeOverlayBar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 28px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--fn-border-subtle);
+}
+
+.treeOverlayClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--fn-radius-sm);
+  background: transparent;
+  color: var(--fn-text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fn-bg-hover);
+  }
+}
+
+@keyframes soloOverlayIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── 窄屏 ─────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .chatSlot {
+    /* 极窄时对话区仍保留可操作宽度，由 fitWidths 保证编辑器最小宽度。 */
+    min-width: 220px;
+  }
+}

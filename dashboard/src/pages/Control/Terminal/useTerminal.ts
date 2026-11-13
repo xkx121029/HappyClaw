@@ -542,9 +542,13 @@ function sendResize(id: string, cols: number, rows: number) {
   );
 }
 
-function createSession(): string {
+/**
+ * 新建终端 tab。``id`` 可选：调用方需要跨挂载复用同一个 shell 时传入稳定 id
+ * （例如 SOLO 页面的 ``solo-<agentId>``），普通建 tab 仍走随机 id。
+ */
+function createSession(id: string = generateId()): string {
   ensureHydrated();
-  const id = generateId();
+  if (sessions.has(id)) return id;
   sessions.set(id, emptySession(id));
   sessionIds = [...sessionIds, id];
   activeId = id;
@@ -633,7 +637,7 @@ export function useTerminal() {
     sessionIds: snap.sessionIds,
     activeId: snap.activeId,
     setActiveId: useCallback((id: string | null) => setActiveId(id), []),
-    createSession: useCallback(() => createSession(), []),
+    createSession: useCallback((id?: string) => createSession(id), []),
     ensureDefaultSession: useCallback(() => ensureDefaultSession(), []),
     reconcileAgentIds: useCallback(
       (validIds: Iterable<string>, fallbackAgentId: string) =>

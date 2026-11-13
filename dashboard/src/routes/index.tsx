@@ -16,6 +16,7 @@ const TokenUsagePage = lazy(() => import("../pages/Control/TokenUsage"));
 
 // Lazy-loaded pages — Control
 const RemoteDesktopPage = lazy(() => import("../pages/Control/RemoteDesktop"));
+const SoloPage = lazy(() => import("../pages/Solo"));
 
 // Lazy-loaded pages — Settings
 const ModelsPage = lazy(() => import("../pages/Settings/Models"));
@@ -102,6 +103,7 @@ export const FULLSCREEN_PATHS = new Set([
   "/workbench/browser",
   "/workbench/cloud",
   "/chat",
+  "/solo",
   "/remote-desktop",
   "/remote-desktop/desktop",
   "/remote-desktop/phone",
@@ -148,6 +150,9 @@ export const routeConfigs: RouteConfig[] = [
   { path: "/chat", element: null, useWrapper: true },
   { path: "/chat/:agentId", element: null, useWrapper: true },
   { path: "/chat/:agentId/:threadId", element: null, useWrapper: true },
+
+  // SOLO workspace（会话 / 对话 / 编辑器 + 终端 / 文件树）
+  { path: "/solo", element: <SoloPage /> },
 
   // Common
   { path: "/experts", element: <ExpertsPage /> },

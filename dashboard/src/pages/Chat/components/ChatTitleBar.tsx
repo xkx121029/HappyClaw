@@ -10,6 +10,7 @@ import {
   Trash2,
   GitFork,
   Download,
+  PanelsTopLeft,
 } from "lucide-react";
 import { confirmDeleteConversation } from "../utils/deleteConversation";
 import type { Session } from "../hooks/useSessions";
@@ -35,6 +36,8 @@ interface ChatTitleBarProps {
   forkDisabledHint?: string;
   /** 有可导出消息时由父组件传入；未传则隐藏导出入口。 */
   onExportTranscript?: () => void;
+  /** 传入后展示 SOLO 模式入口；未传则不渲染，避免脱离路由时依赖 useNavigate。 */
+  onOpenSolo?: () => void;
   isTeam?: boolean;
   agent?: {
     bridge?: boolean | null;
@@ -53,6 +56,7 @@ export default function ChatTitleBar({
   forkDisabled,
   forkDisabledHint,
   onExportTranscript,
+  onOpenSolo,
   isTeam = false,
   agent = null,
 }: ChatTitleBarProps) {
@@ -204,6 +208,17 @@ export default function ChatTitleBar({
         )}
       </div>
       <div className={styles.chatTitleActions}>
+        {onOpenSolo ? (
+          <button
+            type="button"
+            className={styles.chatTitleEditBtn}
+            onClick={onOpenSolo}
+            aria-label={t("solo.openSolo")}
+            title={t("solo.openSolo")}
+          >
+            <PanelsTopLeft size={14} strokeWidth={2} aria-hidden />
+          </button>
+        ) : null}
         <button
           type="button"
           className={styles.chatTitleEditBtn}

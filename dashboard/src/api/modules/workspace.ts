@@ -6,6 +6,7 @@ import type {
   MdFileContent,
   DailyMemoryFile,
   FileTreeNode,
+  WorkspaceEntry,
   WorkspaceFileContent,
   SyncFromOpenClawRequest,
   SyncFromOpenClawResponse,
@@ -119,6 +120,17 @@ export const workspaceApi = {
         `/agents/${agentId}/workspace/mkdir?path=${encodeURIComponent(path)}`,
       ),
       { method: "POST" },
+    ),
+
+  /** 单层目录列表（agent 维度），工作区相对路径。 */
+  getAgentTree: (
+    agentId: string,
+    path = "/",
+  ): Promise<WorkspaceEntry[]> =>
+    request<WorkspaceEntry[]>(
+      withFromWorkspace(
+        `/agents/${agentId}/workspace/tree?path=${encodeURIComponent(path)}`,
+      ),
     ),
 
   readWorkspaceFile: (
