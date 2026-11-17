@@ -29,10 +29,10 @@ pub fn wait_until_ready(url: &str, timeout_secs: u64, mode: ReadyMode) -> Result
     let (host, port, path) = parse_http_url(url)?;
     let started = Instant::now();
     let deadline = started + Duration::from_secs(timeout_secs);
-    let mut last_err = String::new();
+    let mut last_err: Option<String>;
 
     loop {
-        match probe(&host, port, &path) {
+        last_err = match probe(&host, port, &path) {
             Ok(body) => {
                 let satisfied = match mode {
                     ReadyMode::Liveness => true,
@@ -41,12 +41,13 @@ pub fn wait_until_ready(url: &str, timeout_secs: u64, mode: ReadyMode) -> Result
                 if satisfied {
                     return Ok(started.elapsed());
                 }
-                last_err = "health OK but agents not running yet".to_string();
+                Some("health OK but agents not running yet".to_string())
             }
-            Err(e) => last_err = e,
-        }
+            Err(e) => Some(e),
+        };
         if Instant::now() >= deadline {
-            return Err(format!("timeout after {timeout_secs}s: {last_err}"));
+            let detail = last_err.unwrap_or_else(|| "no probe attempted".to_string());
+            return Err(format!("timeout after {timeout_secs}s: {detail}"));
         }
         std::thread::sleep(POLL_INTERVAL);
     }

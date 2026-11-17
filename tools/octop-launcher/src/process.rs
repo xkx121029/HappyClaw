@@ -79,6 +79,7 @@ pub fn exit_code(status: ExitStatus) -> u8 {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
     use super::*;
 
     #[cfg(unix)]

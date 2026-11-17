@@ -55,7 +55,7 @@ fn run(cfg: Config) -> Result<u8, String> {
         } else {
             health::ReadyMode::Liveness
         };
-        match health::wait_until_ready(cfg.health_url(), timeout, mode) {
+        match health::wait_until_ready(&cfg.health_url(), timeout, mode) {
             Ok(elapsed) => {
                 println!("OCTOP_READY pid={pid} elapsed_ms={}", elapsed.as_millis());
             }
