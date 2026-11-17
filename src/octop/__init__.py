@@ -9,10 +9,12 @@ import time as _time
 PROCESS_MONO_ORIGIN = _time.perf_counter()
 PROCESS_EPOCH_ORIGIN = _time.time()
 
-from octop.infra.utils.httpx_proxy import install_httpx_cidr_no_proxy
+from octop.infra.utils.httpx_proxy import install_lazy_httpx_proxy_patch
 
 __version__ = "1.0.3b5"
 
-# httpx 0.28 treats NO_PROXY CIDR as an exact IP (see issue #1347). Patch once
-# at import so CLI, ``octop run``, and in-process harness clients all honor it.
-install_httpx_cidr_no_proxy()
+# httpx 0.28 treats NO_PROXY CIDR as an exact IP (see issue #1347). Register a
+# one-shot import hook so the patch is applied the moment httpx first loads —
+# every client still honors it, but CLI meta-commands and imports that never
+# touch the network no longer pay httpx's ~1s import cost up front.
+install_lazy_httpx_proxy_patch()
