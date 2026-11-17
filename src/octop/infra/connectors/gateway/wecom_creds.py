@@ -14,14 +14,30 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-
 from octop.infra.connectors.gateway.cli_fingerprint import credential_fingerprint
 
 _MCP_CONFIG_URL = "https://qyapi.weixin.qq.com/cgi-bin/aibot/cli/get_mcp_config"
 _FINGERPRINT_NAME = ".octop_wecom_fingerprint"
 _BIND_SOURCE_INTERACTIVE = 1
 _USER_AGENT = f"WeComCLI/0.1.9 distribution/octop {platform.system().lower()}/{platform.machine()}"
+
+_AESGCM: Any = None
+
+
+def _get_aesgcm() -> Any:
+    """Load AESGCM on first use, not at import time.
+
+    ``cryptography`` is a heavy native extension (~300ms self import). This
+    module is reachable from the gateway package at boot via adapter registry
+    imports, but its encryption helpers are only needed when a WeCom bot is
+    actually being bound — so keep the import off the cold-start path.
+    """
+    global _AESGCM
+    if _AESGCM is None:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+        _AESGCM = AESGCM
+    return _AESGCM
 
 
 def materialize_wecom_bot_config(config_dir: Path, *, bot_id: str, bot_secret: str) -> None:
@@ -77,7 +93,7 @@ def _load_or_create_key(config_dir: Path) -> bytes:
 def _encrypt_json_to(path: Path, payload: Any, key: bytes) -> None:
     plaintext = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     nonce = os.urandom(12)
-    ciphertext = AESGCM(key).encrypt(nonce, plaintext, None)
+    ciphertext = _get_aesgcm()(key).encrypt(nonce, plaintext, None)
     path.write_bytes(nonce + ciphertext)
     path.chmod(0o600)
 
@@ -93,7 +109,7 @@ def read_mcp_items_count(config_dir: Path) -> int:
         raw = mcp_path.read_bytes()
         if len(key) != 32 or len(raw) < 13:
             return 0
-        plain = AESGCM(key).decrypt(raw[:12], raw[12:], None)
+        plain = _get_aesgcm()(key).decrypt(raw[:12], raw[12:], None)
         data = json.loads(plain.decode("utf-8"))
     except Exception:
         return 0
