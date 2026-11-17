@@ -77,6 +77,35 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 不发网络的路径——CLI 元命令（`--help`/`--version`）、pytest 收集、插件扫描、
 以及任何只 import octop 做配置/检查的场景。
 
+## 3c. 第三轮：i18n domains 惰性导出（2026-11-18）
+
+继续分解 CLI 启动链发现第二条隐藏导入树：`cli/support/errors.py` →
+`octop.infra.errors` → `octop.i18n` → **`domains/stream.py` 顶层 import
+`langchain_core.exceptions`（2.25s）**。根因是 `i18n/domains/__init__.py`
+顶层 eager 导入了全部子域（含 stream），而任何错误处理/CLI 命令只需要
+`error_message`（来自轻量的 `domains/errors.py`）却被迫拉进整棵 LangChain。
+
+改动（`9f698f2b` / `3ec38030`）：
+
+- `domains/__init__.py` 改 PEP 562 `__getattr__` 惰性导出，25 个符号按映射表
+  按需加载；`slash_tr` 是 `slash.tr` 的别名，特判处理。
+- 无任何代码 `from octop.i18n.domains import X`（grep 确认为空），直接子模块
+  导入（如 `from octop.i18n.domains.stream import ...`）完全不受影响。
+
+**收益**（同环境、git worktree 隔离快照，各 3 次均值）：
+
+| 导入路径 | 改动前 | 改动后 | 收益 |
+| --- | --- | --- | --- |
+| `import octop.i18n.domains` | 1.250s | 0.785s | **-465ms** |
+| `from octop.infra.errors import OctopError` | 1.219s | 0.817s | **-401ms** |
+| `import octop.cli.commands.run` | 1.479s | 1.013s | **-466ms** |
+
+所有上述路径改造后不再加载 `langchain_core`。守卫
+`tests/unit/i18n/test_domains_lazy.py`（4 子进程断言）。跨三轮守卫全集 10 passed。
+
+**收益边界**：真正用到 stream 错误分类时（服务运行中处理模型错误）langchain
+仍会加载，但那时对启动无感。
+
 ## 4. 局限与未做项
 
 诚实说明，避免高估：
@@ -96,9 +125,14 @@ Rust 启动器 `tools/octop-launcher`：极速起进程 + 健康检查前置 + �
 .venv/Scripts/python.exe -X importtime -c "import octop.infra.connectors.gateway" 2> imports.txt
 .venv/Scripts/python.exe scripts/profile_imports.py imports.txt --top 25
 
-# 守卫测试
+# 守卫测试（三轮全部）
 .venv/Scripts/python.exe -m pytest tests/unit/test_import_lightweight.py \
-  tests/unit/test_httpx_lazy_patch.py -q
+  tests/unit/test_httpx_lazy_patch.py tests/unit/i18n/test_domains_lazy.py -q
+
+# 验证 i18n 惰性导出：导入不拉 langchain，符号仍可解析
+.venv/Scripts/python.exe -c "import sys; import octop.infra.errors; \
+  assert 'langchain_core' not in sys.modules; \
+  import octop.i18n.domains as d; assert all(hasattr(d,s) for s in d.__all__); print('OK')"
 
 # 验证 httpx 惰性补丁契约
 .venv/Scripts/python.exe -c "import sys, octop; assert 'httpx' not in sys.modules; \
