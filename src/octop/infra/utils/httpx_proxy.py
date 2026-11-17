@@ -120,6 +120,66 @@ def get_environment_proxies() -> dict[str, str | None]:
     return mounts
 
 
+_LAZY_HOOK_ATTR = "_octop_cidr_no_proxy_lazy_hook"
+
+
+class _HttpxPatchFinder:
+    """One-shot import hook that installs the CIDR patch when httpx loads.
+
+    Registering this finder is cheap (no httpx import).  The first ``import
+    httpx`` delegates spec creation to the standard finders, wraps the loader
+    so the patch is applied immediately after httpx finishes loading, then
+    removes itself from ``sys.meta_path``.  Every code path that uses httpx
+    therefore still gets the patch before any ``Client`` is constructed — the
+    same guarantee as the eager call, without paying ~1s on imports that never
+    touch the network (CLI meta-commands, pytest collection, plugin scanning).
+    """
+
+    def find_spec(self, fullname: str, path: Any = None, target: Any = None) -> Any:
+        if fullname != "httpx":
+            return None
+        from importlib.machinery import PathFinder
+
+        spec = PathFinder.find_spec(fullname, path, target)
+        if spec is None or spec.loader is None:
+            return None
+        original_exec = spec.loader.exec_module
+
+        def exec_and_patch(module: Any, _exec: Any = original_exec) -> None:
+            _exec(module)
+            install_httpx_cidr_no_proxy()
+
+        spec.loader.exec_module = exec_and_patch  # type: ignore[method-assign]
+        self.uninstall()
+        return spec
+
+    def uninstall(self) -> None:
+        import sys
+
+        sys.meta_path[:] = [f for f in sys.meta_path if f is not self]
+        if globals().get(_LAZY_HOOK_ATTR) is self:
+            del globals()[_LAZY_HOOK_ATTR]
+
+
+def install_lazy_httpx_proxy_patch() -> None:
+    """Install the CIDR patch on first httpx import (cheap at call time).
+
+    Falls back to the eager patch when httpx is already loaded, so the patch is
+    never missed.  Idempotent: repeated calls never register more than one hook.
+    """
+    import sys
+
+    if "httpx" in sys.modules:
+        install_httpx_cidr_no_proxy()
+        return
+    if globals().get(_LAZY_HOOK_ATTR) is not None:
+        return
+    hook = _HttpxPatchFinder()
+    globals()[_LAZY_HOOK_ATTR] = hook
+    # Insert before the standard finders so our spec wrapper wins.
+    sys.meta_path.insert(0, hook)
+
+
 def install_httpx_cidr_no_proxy() -> None:
     """Idempotent process-wide patch.  No-op when httpx is not installed."""
     try:
