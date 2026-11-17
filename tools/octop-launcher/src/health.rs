@@ -11,11 +11,21 @@ const POLL_INTERVAL: Duration = Duration::from_millis(250);
 const CONNECT_TIMEOUT: Duration = Duration::from_millis(800);
 const READ_TIMEOUT: Duration = Duration::from_secs(3);
 
-/// Wait until the health endpoint returns a 2xx, or `timeout_secs` elapses.
+/// What counts as "ready enough" to tell the frontend to leave the splash.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ReadyMode {
+    /// Socket accepts + health returns 2xx. Fast, but agents may still be loading.
+    Liveness,
+    /// Additionally require `"agents_running": N` with N > 0 in the JSON body.
+    /// This is when a chat turn can actually be served.
+    ChatReady,
+}
+
+/// Wait until the health endpoint satisfies `mode`, or `timeout_secs` elapses.
 ///
-/// Returns the elapsed duration on success. On timeout returns the last error
-/// so callers can decide to keep proxying a slow-but-alive child anyway.
-pub fn wait_until_ready(url: &str, timeout_secs: u64) -> Result<Duration, String> {
+/// Returns elapsed duration on success. On timeout returns the last error so
+/// callers can keep proxying a slow-but-alive child anyway.
+pub fn wait_until_ready(url: &str, timeout_secs: u64, mode: ReadyMode) -> Result<Duration, String> {
     let (host, port, path) = parse_http_url(url)?;
     let started = Instant::now();
     let deadline = started + Duration::from_secs(timeout_secs);
@@ -23,7 +33,16 @@ pub fn wait_until_ready(url: &str, timeout_secs: u64) -> Result<Duration, String
 
     loop {
         match probe(&host, port, &path) {
-            Ok(()) => return Ok(started.elapsed()),
+            Ok(body) => {
+                let satisfied = match mode {
+                    ReadyMode::Liveness => true,
+                    ReadyMode::ChatReady => agents_running(&body) > 0,
+                };
+                if satisfied {
+                    return Ok(started.elapsed());
+                }
+                last_err = "health OK but agents not running yet".to_string();
+            }
             Err(e) => last_err = e,
         }
         if Instant::now() >= deadline {
@@ -33,8 +52,8 @@ pub fn wait_until_ready(url: &str, timeout_secs: u64) -> Result<Duration, String
     }
 }
 
-/// One HTTP GET; Ok only if the status line carries a 2xx code.
-fn probe(host: &str, port: u16, path: &str) -> Result<(), String> {
+/// One HTTP GET; Ok with the response body if the status line carries a 2xx.
+fn probe(host: &str, port: u16, path: &str) -> Result<String, String> {
     let addr = (host, port)
         .to_socket_addrs()
         .map_err(|e| format!("resolve {host}:{port}: {e}"))?
@@ -57,19 +76,53 @@ fn probe(host: &str, port: u16, path: &str) -> Result<(), String> {
         .write_all(req.as_bytes())
         .map_err(|e| format!("write request: {e}"))?;
 
-    let mut buf = [0u8; 128];
-    let n = stream
-        .read(&mut buf)
-        .map_err(|e| format!("read response: {e}"))?;
-    let head = String::from_utf8_lossy(&buf[..n]);
-    let status = head.lines().next().unwrap_or("").trim();
-
-    // HTTP/1.1 200 OK / HTTP/1.1 204 No Content, etc.
-    if status.contains(" 2") {
-        Ok(())
-    } else {
-        Err(format!("unhealthy status: {status:?}"))
+    let mut raw = Vec::with_capacity(512);
+    let mut buf = [0u8; 512];
+    loop {
+        match stream.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => raw.extend_from_slice(&buf[..n]),
+            Err(e) => return Err(format!("read response: {e}")),
+        }
+        if raw.len() > 64 * 1024 {
+            break;
+        }
     }
+    let text = String::from_utf8_lossy(&raw);
+    let status = text.lines().next().unwrap_or("").trim();
+    if !status.contains(" 2") {
+        return Err(format!("unhealthy status: {status:?}"));
+    }
+    // Body is everything after the first blank line.
+    let body = text
+        .split_once("\r\n\r\n")
+        .map(|(_, b)| b)
+        .or_else(|| text.split_once("\n\n").map(|(_, b)| b))
+        .unwrap_or("")
+        .to_string();
+    Ok(body)
+}
+
+/// Extract `"agents_running": <int>` from a JSON body without a JSON crate.
+///
+/// Deliberately simple: scan for the key, then the first integer after ':'.
+/// Returns 0 if absent/unparseable (caller treats that as "not ready").
+pub fn agents_running(body: &str) -> u64 {
+    let key = "\"agents_running\"";
+    let Some(pos) = body.find(key) else {
+        return 0;
+    };
+    let rest = &body[pos + key.len()..];
+    let Some(colon) = rest.find(':') else {
+        return 0;
+    };
+    let value_part = rest[colon + 1..].trim_start();
+    let digits: String = value_part
+        .chars()
+        .skip_while(|c| c.is_whitespace())
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    digits.parse::<u64>().unwrap_or(0)
 }
 
 /// Parse `http://host:port/path` -> (host, port, path).
@@ -126,5 +179,23 @@ mod tests {
         assert!(parse_http_url("ftp://x:1/").is_err());
         assert!(parse_http_url("http://x:abc/").is_err());
         assert!(parse_http_url("http://:80/").is_err());
+    }
+
+    #[test]
+    fn extracts_agents_running() {
+        let body = r#"{"ok":true,"agents_running":3,"users_loaded":1}"#;
+        assert_eq!(agents_running(body), 3);
+    }
+
+    #[test]
+    fn agents_running_zero_and_missing() {
+        assert_eq!(agents_running(r#"{"agents_running":0}"#), 0);
+        assert_eq!(agents_running(r#"{"ok":true}"#), 0);
+        assert_eq!(agents_running("not json"), 0);
+    }
+
+    #[test]
+    fn agents_running_tolerates_spacing() {
+        assert_eq!(agents_running(r#"{ "agents_running" : 12 }"#), 12);
     }
 }

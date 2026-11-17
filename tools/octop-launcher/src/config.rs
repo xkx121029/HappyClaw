@@ -12,6 +12,8 @@ pub struct Config {
     pub port: u16,
     /// `None` disables the health gate entirely.
     pub health_timeout_secs: Option<u64>,
+    /// `true` waits for agents_running > 0 (chat-ready), else just liveness.
+    pub chat_ready: bool,
     pub workdir: Option<PathBuf>,
 }
 
@@ -23,6 +25,8 @@ impl Config {
     ///   - `--host <host>`            health-check host (default `127.0.0.1`)
     ///   - `--port <port>`            health-check port (default `8097`)
     ///   - `--health-timeout <secs>`  seconds to wait for /api/health; `0` disables
+    ///   - `--chat-ready`             also wait until agents_running > 0 (default)
+    ///   - `--liveness-only`          emit READY as soon as health returns 2xx
     ///   - `--workdir <dir>`          working directory for the child
     ///   - `-h`, `--help`             print usage
     ///   - `--`                       everything after is forwarded to the backend
@@ -35,6 +39,7 @@ impl Config {
         let mut host = "127.0.0.1".to_string();
         let mut port: u16 = 8097;
         let mut health_timeout_secs: Option<u64> = Some(90);
+        let mut chat_ready = true;
         let mut workdir: Option<PathBuf> = None;
         let mut backend_args: Vec<String> = Vec::new();
 
@@ -54,6 +59,14 @@ impl Config {
                 }
                 "-h" | "--help" => {
                     help = true;
+                    i += 1;
+                }
+                "--chat-ready" => {
+                    chat_ready = true;
+                    i += 1;
+                }
+                "--liveness-only" => {
+                    chat_ready = false;
                     i += 1;
                 }
                 "--backend" | "--host" | "--port" | "--health-timeout" | "--workdir" => {
@@ -103,6 +116,7 @@ impl Config {
             host,
             port,
             health_timeout_secs,
+            chat_ready,
             workdir,
         })
     }
@@ -124,6 +138,8 @@ LAUNCHER OPTIONS (before `--`):
     --host <host>            Health-check host (default: 127.0.0.1)
     --port <port>            Health-check port (default: 8097)
     --health-timeout <secs>  Wait seconds for /api/health; 0 disables (default: 90)
+    --chat-ready             Wait until agents_running > 0 (default)
+    --liveness-only          Emit READY as soon as health returns 2xx
     --workdir <dir>          Working directory for the backend process
     -h, --help               Show this help
 
@@ -151,7 +167,16 @@ mod tests {
         assert_eq!(c.backend, "octop");
         assert_eq!(c.health_url(), "http://127.0.0.1:8097/api/health");
         assert_eq!(c.health_timeout_secs, Some(90));
+        assert!(c.chat_ready);
         assert!(c.backend_args.is_empty());
+    }
+
+    #[test]
+    fn liveness_only_flag() {
+        let c = Config::parse(&a(&["--liveness-only"])).unwrap();
+        assert!(!c.chat_ready);
+        let c2 = Config::parse(&a(&["--liveness-only", "--chat-ready"])).unwrap();
+        assert!(c2.chat_ready);
     }
 
     #[test]

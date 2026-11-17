@@ -50,7 +50,12 @@ fn run(cfg: Config) -> Result<u8, String> {
     let pid = child.id();
 
     if let Some(timeout) = cfg.health_timeout_secs {
-        match health::wait_until_ready(cfg.health_url(), timeout) {
+        let mode = if cfg.chat_ready {
+            health::ReadyMode::ChatReady
+        } else {
+            health::ReadyMode::Liveness
+        };
+        match health::wait_until_ready(cfg.health_url(), timeout, mode) {
             Ok(elapsed) => {
                 println!("OCTOP_READY pid={pid} elapsed_ms={}", elapsed.as_millis());
             }
