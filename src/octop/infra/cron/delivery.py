@@ -6,16 +6,9 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from langchain_core.messages import AIMessage, HumanMessage
-
 from octop.i18n import tr
 from octop.infra.cron.task_type import CronTaskType, normalize_cron_task_type
-from octop.infra.gateway.process import build_harness_request
-from octop.infra.gateway.process.message_keys import COMPOSER_CTX_KEY, build_composer_context
-from octop.infra.gateway.process.usage_record import UsageTracker, record_turn_usage
 from octop.infra.gateway.threads import ThreadRegistry
-from octop.infra.history.projection import TurnHistoryTracker, message_inputs
-from octop.infra.knowledge.default_open import stamp_turn_knowledge_config
 from octop.infra.utils.llm_text import strip_thinking
 from octop.infra.utils.locale import resolve_user_locale
 from octop.infra.utils.turn_failure import log_failed_tool_results
@@ -95,6 +88,12 @@ class CronDeliveryService:
         projected: list[ThreadMessageInput] = []
         title_source = command.prompt
         if session.channel_type == ThreadRegistry.CHANNEL_DASHBOARD:
+            # Imported here: langchain_core.messages and history.projection pull the
+            # whole agent stack, which must not load just to import CronManager.
+            from langchain_core.messages import AIMessage, HumanMessage
+
+            from octop.infra.history.projection import message_inputs
+
             delivery_id = new_ulid()
             locale = resolve_user_locale(
                 user_repo=self._repos.user_repo,
@@ -136,6 +135,9 @@ class CronDeliveryService:
         command: CronDeliveryCommand,
         session: SessionRow,
     ) -> None:
+        from octop.infra.gateway.process.usage_record import UsageTracker, record_turn_usage
+        from octop.infra.history.projection import TurnHistoryTracker
+
         request = await self._build_agent_request(command, session)
         tracker = TurnHistoryTracker.from_request(request)
         usage = UsageTracker()
@@ -238,6 +240,11 @@ class CronDeliveryService:
 
         row = self._agent_manager.get_row(command.agent_id)
         default_model = (row.default_model if row is not None else None) or None
+        # Local imports keep ``import octop.infra.cron.manager`` free of the
+        # harness/deepagents import tree during server startup.
+        from octop.infra.gateway.process import build_harness_request
+        from octop.infra.gateway.process.message_keys import COMPOSER_CTX_KEY, build_composer_context
+
         composer = build_composer_context(
             mcp_servers=shown_servers or None,
             skills=None,
@@ -278,6 +285,8 @@ class CronDeliveryService:
             user_id=session.user_id,
             channel_type=session.channel_type,
         )
+        from octop.infra.knowledge.default_open import stamp_turn_knowledge_config
+
         stamp_turn_knowledge_config(
             request,
             visible_bases=bases,
