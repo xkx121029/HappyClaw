@@ -138,6 +138,40 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 上表 A/B 数据来自同环境 worktree 隔离快照的改动前后对比；分离提交后在同一台机器复测，
 绝对值随负载在 3.5–4.3s 波动，但「不拉 agent 栈」的不变式由守卫锁定。
 
+## 3e. 第五轮：auth tokens 的 jwt 惰性导入（2026-11-19 凌晨）
+
+对当前树重新 `-X importtime` 测绘发现，启动关键路径上还剩一条重链：
+`octop.api.app` → `api.deps` → `infra.auth.tokens` 顶层 `import jwt`，把
+jwt + cryptography 整棵树（`cryptography.hazmat.bindings._rust` 等 40+ 模块）
+拖进 app 工厂导入。SSO/MFA/captcha 模块不在启动链中（测绘确认无出现），
+`tokens.py` 是启动路径上唯一的 jwt 入口。
+
+改动（`src/octop/infra/auth/tokens.py`）：顶层 `import jwt` 移除，改为在
+`sign_token` / `decode_token` 内部局部导入；异常类捕获（`ExpiredSignatureError` /
+`InvalidTokenError`）随局部导入走，模块顶层只保留 stdlib。
+
+**收益**（`-X importtime` 结构对照，温态）：
+
+| 模块累计 | 改动前 | 改动后 | 收益 |
+| --- | ---: | ---: | ---: |
+| `octop.infra.auth.tokens` | 245.3ms | **4.1ms** | 树整体移出 |
+| `octop.api.deps` | 324.5ms | **110.7ms** | −213.8ms |
+
+改后捕获中 jwt/cryptography 相关行**零出现**。jwt 树连同 cryptography 不再
+进入 `import octop.api.app` 的启动路径（对冻结包冷启动收益更大——冷态测绘中
+该树累计 42.5s，几乎全是磁盘冷读；PYZ 内同样省去 40+ 模块的首次读取）。
+
+**Wall-clock 说明（诚实记录）**：本轮 A/B 期间前端 vitest 全量测试正在同一台
+机器上运行，fresh 进程 `import octop.api.app` 绝对值在 3.2–4.8s 间波动，
+前后中位数不可比；参照第四轮的处理方式，以 importtime 结构数据与守卫不变式
+为准，待机器空闲后可复测绝对值。
+
+守卫：`tests/unit/test_import_lightweight.py` 新增 2 项——「api.app 导入不拉
+jwt/cryptography 栈」与「tokens 签名/解码往返 + 篡改拒绝仍正常（jwt 首用时
+才加载）」；既有 token 功能单测 `tests/unit/auth/test_mfa_purpose.py` +
+`tests/unit/api/test_jwt_tokens.py` 10 passed。既有 gateway 重符号解析守卫在
+本轮负载下超时（与本次改动无交集，昨轮通过），待负载恢复复跑。
+
 ## 4. 局限与未做项
 
 诚实说明，避免高估：
