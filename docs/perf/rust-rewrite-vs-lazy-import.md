@@ -106,6 +106,38 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 **收益边界**：真正用到 stream 错误分类时（服务运行中处理模型错误）langchain
 仍会加载，但那时对启动无感。
 
+## 3d. 第四轮：cron 交付链惰性导入（2026-11-18）
+
+`_prepare_runtime()` 在监听后逐个 import 运行时模块，其中 `import octop.infra.cron.manager`
+实测 **7.62s**，是 `post_listen.imports` 里仅次于 harness 主树的第二块。用 `-X importtime`
+拆开发现根因不在 apscheduler（仅 ~0.28s），而在 `cron/manager.py` 顶层导入
+`CronDeliveryService` → `cron/delivery.py` 顶层导入了 `langchain_core.messages`、
+`octop.infra.gateway.process`、`octop.infra.history.projection`、`knowledge.default_open`，
+把 deepagents/langchain 整棵树拖进来（cumulative 5.3–6.3s）。
+
+改动（`src/octop/infra/cron/delivery.py`）：上述重符号全部改为在用到它们的
+`_deliver_text` / `_deliver_agent` / `_build_agent_request` / `_attach_turn_knowledge_config`
+内部局部导入；模块顶层只保留 i18n、errors、`gateway.threads`、轻量 utils。
+
+**收益**（同环境 fresh 进程，各 3 次取中位）：
+
+| 导入路径 | 改动前 | 改动后 | 收益 |
+| --- | ---: | ---: | ---: |
+| `import octop.infra.cron.delivery` | 6.88s | 1.78s | **-5.10s（-74%）** |
+| `import octop.infra.cron.manager` | 7.62s | 2.12s | **-5.50s（-72%）** |
+
+剩余 1.6s 来自 `gateway.threads` → `db.repos.sessions` → `octop_gateway.models`（aiohttp/pydantic），
+属共享基础设施，本轮不动。守卫：`tests/unit/test_import_lightweight.py` 新增
+「cron manager 不拉 agent 栈」与「惰性化后符号仍可解析」两项；`tests/unit/cron` 157 passed。
+
+**提交说明（2026-11-18）**：本轮落地时 `delivery.py` 工作区已叠加了用户的功能改动
+（cron 运行历史/重试/补跑、无模型降级 note 等）。为避免污染功能代码，优化改动在
+独立 worktree 的干净 HEAD 快照上重做，通过 `git update-index --cacheinfo` 只把
+纯优化 blob 写进 index 提交（`690be820`），工作区混合文件全程未改动——提交后
+功能改动仍是工作区的未提交 `M` 状态，两者互不干扰。守卫测试随后单独提交（`5d3ef9f6`）。
+上表 A/B 数据来自同环境 worktree 隔离快照的改动前后对比；分离提交后在同一台机器复测，
+绝对值随负载在 3.5–4.3s 波动，但「不拉 agent 栈」的不变式由守卫锁定。
+
 ## 4. 局限与未做项
 
 诚实说明，避免高估：
