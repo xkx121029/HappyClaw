@@ -11,7 +11,10 @@ from __future__ import annotations
 import subprocess
 import sys
 
-_HEAVY = ("langchain_core", "octop_harness", "cryptography")
+_HEAVY = ("langchain_core", "octop_harness", "cryptography", "deepagents")
+# Cron manager legitimately imports ``cryptography`` (credential decryption), but
+# must never drag in the agent stack that binds /api/agents during boot.
+_AGENT_STACK = ("langchain_core", "octop_harness", "deepagents")
 
 _PROBE = """
 import sys
@@ -21,8 +24,8 @@ print("HEAVY=" + ",".join(heavy))
 """
 
 
-def _imports_heavy(import_line: str) -> list[str]:
-    code = _PROBE.format(import_line=import_line, heavy=repr(_HEAVY))
+def _imports_heavy(import_line: str, heavy: tuple[str, ...] = _HEAVY) -> list[str]:
+    code = _PROBE.format(import_line=import_line, heavy=repr(heavy))
     proc = subprocess.run(
         [sys.executable, "-c", code],
         cwd=str(_project_root()),
@@ -60,6 +63,38 @@ def test_gateway_package_import_is_lightweight() -> None:
 def test_wecom_creds_import_is_lightweight() -> None:
     heavy = _imports_heavy("import octop.infra.connectors.gateway.wecom_creds")
     assert heavy == [], f"wecom_creds pulled heavy modules at import: {heavy}"
+
+
+def test_cron_manager_import_is_lightweight() -> None:
+    """``_prepare_runtime`` imports CronManager; that must not pull the agent stack."""
+    heavy = _imports_heavy("import octop.infra.cron.manager", _AGENT_STACK)
+    assert heavy == [], f"cron manager pulled heavy modules at import: {heavy}"
+
+
+def test_cron_delivery_heavy_symbols_still_resolve() -> None:
+    """Laziness must not break the symbols delivery uses at runtime."""
+    code = """
+from octop.infra.cron.delivery import (
+    CronDeliveryCommand,
+    CronDeliveryService,
+    command_from_row,
+)
+from octop.infra.cron.manager import CronCreateSpec, CronManager
+assert callable(CronDeliveryService.deliver)
+assert callable(command_from_row)
+assert CronCreateSpec is not None and CronManager is not None
+print("OK")
+"""
+    proc = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=str(_project_root()),
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=True,
+        env=_environ_with_src(),
+    )
+    assert "OK" in proc.stdout
 
 
 def test_gateway_lazy_exports_still_resolve() -> None:
