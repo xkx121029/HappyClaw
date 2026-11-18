@@ -15,6 +15,9 @@ _HEAVY = ("langchain_core", "octop_harness", "cryptography", "deepagents")
 # Cron manager legitimately imports ``cryptography`` (credential decryption), but
 # must never drag in the agent stack that binds /api/agents during boot.
 _AGENT_STACK = ("langchain_core", "octop_harness", "deepagents")
+# ``octop.api.app`` (the boot-time app factory) must not pull the JWT stack;
+# tokens defer ``jwt`` to first sign/decode call.
+_JWT_STACK = ("jwt", "cryptography")
 
 _PROBE = """
 import sys
@@ -110,6 +113,43 @@ assert callable(build_gateway_langchain_tools)
 assert callable(handle_mcp_request)
 assert callable(mcp_tools_for_kind)
 assert hasattr(agently_auth, "authorize")
+print("OK")
+"""
+    proc = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=str(_project_root()),
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=True,
+        env=_environ_with_src(),
+    )
+    assert "OK" in proc.stdout
+
+
+def test_api_app_import_is_jwt_free() -> None:
+    """The boot-time app factory must not pull the JWT/cryptography stack."""
+    heavy = _imports_heavy("import octop.api.app", _JWT_STACK)
+    assert heavy == [], f"octop.api.app pulled jwt stack at import: {heavy}"
+
+
+def test_auth_tokens_lazy_jwt_still_roundtrips() -> None:
+    """Deferral must not break sign/decode; ``jwt`` loads on first use."""
+    code = """
+import sys
+from octop.infra.auth.tokens import sign_token, decode_token, InvalidToken, TokenExpired
+secret = b"k" * 32
+token = sign_token(secret, sub=1, uname="u", role="owner", purpose="access")
+payload = decode_token(secret, token)
+assert payload["sub"] == 1 and payload["purpose"] == "access"
+try:
+    decode_token(secret, token + "x")
+except InvalidToken:
+    pass
+else:
+    raise AssertionError("tampered token must raise InvalidToken")
+import jwt
+assert "jwt" in sys.modules
 print("OK")
 """
     proc = subprocess.run(
