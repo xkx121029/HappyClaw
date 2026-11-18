@@ -6,8 +6,6 @@ import secrets
 import time
 from typing import Any, Literal, cast
 
-import jwt
-
 TokenPurpose = Literal["access", "mfa", "reauth"]
 
 PURPOSE_ACCESS: TokenPurpose = "access"
@@ -41,6 +39,8 @@ def sign_token(
     jti: str | None = None,
 ) -> str:
     """Mint a JWT. ``purpose`` is required; missing purpose must fail closed."""
+    import jwt  # local import: keeps the heavy jwt/cryptography tree off the startup path
+
     if purpose not in _VALID_PURPOSES:
         raise ValueError(f"invalid token purpose: {purpose!r}")
     now = int(time.time())
@@ -67,6 +67,8 @@ def sign_token(
 
 
 def decode_token(secret: bytes, token: str) -> dict[str, Any]:
+    import jwt  # local import: keeps the heavy jwt/cryptography tree off the startup path
+
     try:
         payload = jwt.decode(token, secret, algorithms=["HS256"])
         if "sub" in payload:
