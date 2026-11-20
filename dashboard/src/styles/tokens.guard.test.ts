@@ -100,6 +100,36 @@ describe("design tokens", () => {
     }
   });
 
+  it("equal-value font sizes reference the generated scale", () => {
+    // `scripts/codemod-tokens.mjs` replaced every hard-coded size that already
+    // sits on the scale with a 1:1 token (same computed px). A new literal with
+    // one of those values means a stylesheet opted out of the scale again.
+    // Directories with their own work streams are excluded until their batch.
+    const SKIP = [
+      "pages/Home/",
+      "pages/Admin/Plugins/",
+      "pages/Settings/SearchConfig/",
+      "mobile/",
+    ];
+    const scale = new Map<number, string>();
+    for (const line of readFileSync(GENERATED, "utf8").split("\n")) {
+      const match = /--fn-text-([\w-]+):\s*(\d+)px;\s*$/.exec(line.trim());
+      if (match) scale.set(Number(match[2]), match[1]);
+    }
+    const offenders: string[] = [];
+    for (const file of styleFiles()) {
+      const rel = relative(SRC, file).replace(/\\/g, "/");
+      if (SKIP.some((prefix) => rel.startsWith(prefix))) continue;
+      for (const match of readFileSync(file, "utf8").matchAll(
+        /(?<![\w-])font-size:\s*(\d+(?:\.\d+)?)px/g,
+      )) {
+        const token = scale.get(Number(match[1]));
+        if (token) offenders.push(`${rel}: ${match[1]}px → var(--fn-text-${token})`);
+      }
+    }
+    expect(offenders.slice(0, 20)).toEqual([]);
+  });
+
   it("dark-mode CSS does not patch what the antd theme already provides", () => {
     // `antdThemeConfig` maps semantic tokens onto antd's token names, so a
     // `html[data-theme="dark"] .ant-*` rule that only restates a background or

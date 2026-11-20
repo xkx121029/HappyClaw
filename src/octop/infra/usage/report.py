@@ -14,9 +14,9 @@ from collections.abc import Callable
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, cast
 
-from octop.api.common.usage_xlsx import build_usage_xlsx
 from octop.i18n import tr
 from octop.infra.errors import ErrorCode, OctopError
+from octop.infra.usage.xlsx import build_usage_xlsx
 from octop.infra.utils.locale import normalize_locale
 
 if TYPE_CHECKING:

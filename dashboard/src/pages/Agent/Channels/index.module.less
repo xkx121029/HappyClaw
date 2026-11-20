@@ -47,7 +47,7 @@
 
 .channelsStats {
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.4;
   min-width: 0;
 }
@@ -56,7 +56,7 @@
   display: block;
   width: 100%;
   margin-top: 16px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 }
 
 .title {
@@ -73,10 +73,10 @@
 .description {
   margin-bottom: 24px;
   color: var(--fn-text-tertiary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
 
   @media (max-width: 767px) {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
     margin-bottom: 16px;
   }
 }
@@ -159,7 +159,7 @@
 
 .cardTitle {
   flex: 1;
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -167,7 +167,7 @@
 /* Description — fixed height keeps all cards uniform */
 .cardDescription {
   margin: 0 0 16px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.55;
   color: var(--fn-text-tertiary);
   /* exactly two lines */
@@ -189,7 +189,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   padding: 3px 10px;
   border-radius: 999px;
@@ -197,7 +197,7 @@
   transition: background 0.15s ease;
 
   :global(.anticon) {
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 }
 
@@ -235,7 +235,7 @@
 }
 
 .dingtalkDocBtn {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   padding: 0 8px;
 }
 
@@ -298,7 +298,7 @@
 }
 
 .bannerDesc {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.55;
   color: var(--fn-text-secondary);
   margin-bottom: 8px;
@@ -308,7 +308,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-color-brand);
   text-decoration: none;
@@ -321,7 +321,7 @@
   }
 
   .bannerLinkArrow {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
     transition: transform var(--fn-transition-fast);
   }
 
@@ -367,13 +367,13 @@
 }
 
 .globalSettingsTitle {
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   font-weight: 600;
   margin-bottom: 16px;
   letter-spacing: -0.01em;
 
   @media (max-width: 767px) {
-    font-size: 16px;
+    font-size: var(--fn-text-lg);
     margin-bottom: 12px;
   }
 }
@@ -385,7 +385,7 @@
 }
 
 .displaySettingsTitle {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   margin-bottom: 8px;
   color: var(--fn-text-secondary);
@@ -416,12 +416,12 @@
 }
 
 .settingLabel {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 500;
 }
 
 .settingDesc {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   line-height: 1.5;
 }
@@ -454,14 +454,14 @@
 
 .qqGroupPolicyTitle {
   color: var(--fn-text-primary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
 }
 
 .qqGroupPolicyDescription {
   margin-top: 3px;
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
 }
 
@@ -483,7 +483,7 @@
   border-radius: 9px;
   background: var(--fn-bg-primary);
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 20px;
   white-space: nowrap;
   cursor: pointer;
@@ -546,7 +546,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   color: var(--fn-text-secondary);
   line-height: 1.5;
 }
@@ -560,14 +560,14 @@
   border-radius: 50%;
   background: var(--fn-color-brand);
   color: #fff;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .quickConfigBtn {
   height: 44px;
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 600;
   border-radius: var(--fn-radius-lg);
 }
@@ -593,7 +593,7 @@
 
 .qrHint {
   text-align: center;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
   font-weight: 500;
   animation: qrPulse 2s ease-in-out infinite;
@@ -645,7 +645,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   margin: 0;
 }
@@ -664,7 +664,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   background: var(--fn-bg-secondary, rgba(0, 0, 0, 0.03));
   border: 1px solid var(--fn-border-secondary, rgba(0, 0, 0, 0.07));
@@ -704,7 +704,7 @@
 }
 
 .qrPrefixLabel {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   color: var(--fn-text-secondary);
   white-space: nowrap;

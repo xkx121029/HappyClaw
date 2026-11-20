@@ -117,7 +117,7 @@
 }
 
 .welcomeTitle {
-  font-size: 24px;
+  font-size: var(--fn-text-2xl);
   font-weight: 600;
   margin: 0;
   color: var(--fn-text-primary);
@@ -138,7 +138,7 @@
 }
 
 .welcomeSubtitle {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 400;
   margin: 0;
   color: var(--fn-text-secondary);
@@ -148,11 +148,11 @@
   overflow-wrap: break-word;
 
   @media (max-width: 767px) {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
   }
 
   @media (min-width: 1200px) {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
   }
 }
 
@@ -166,7 +166,7 @@
 
 .welcomeStartHint {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.55;
   color: var(--fn-text-secondary);
   text-align: center;
@@ -213,7 +213,7 @@
 }
 
 .quickSectionTitle {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   color: var(--fn-text-quaternary, #9ca3af);
   letter-spacing: 0.06em;
@@ -302,7 +302,7 @@
 }
 
 .quickCardTitle {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
   line-height: 1.3;
@@ -313,7 +313,7 @@
 
 .quickCardExpert {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   color: var(--fn-color-brand);
   line-height: 1.3;
@@ -321,7 +321,7 @@
 }
 
 .quickCardDesc {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   line-height: 1.45;
   overflow: hidden;
@@ -399,13 +399,13 @@
 
   @media (min-width: 1200px) {
     padding: 9px 22px;
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
     border-radius: 22px;
   }
 
   @media (min-width: 1600px) {
     padding: 10px 26px;
-    font-size: 15px;
+    font-size: var(--fn-text-md);
     border-radius: 24px;
   }
 

@@ -40,7 +40,7 @@
 
 .panelTitle {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 600;
   color: var(--fn-text-primary);
   line-height: 1.35;
@@ -54,7 +54,7 @@
 
 .panelDesc {
   margin: 0 0 16px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.55;
   color: var(--fn-text-secondary);
 }
@@ -72,7 +72,7 @@
 
 .stableOnlyLabel {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
   line-height: 1.4;
@@ -80,7 +80,7 @@
 
 .stableOnlyHint {
   margin: 4px 0 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   color: var(--fn-text-secondary);
 }
@@ -130,14 +130,14 @@
 }
 
 .versionLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   letter-spacing: 0.02em;
   font-weight: 500;
 }
 
 .versionValue {
-  font-size: 20px;
+  font-size: var(--fn-text-xl);
   font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -146,7 +146,7 @@
 }
 
 .notChecked {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 400;
   color: var(--fn-text-tertiary);
 }
@@ -170,7 +170,7 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.5;
   margin-bottom: 12px;
 
@@ -238,7 +238,7 @@
   border-radius: 8px;
   background: var(--fn-bg-primary, transparent);
   color: var(--fn-text-primary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   cursor: pointer;
   transition: all var(--fn-transition-fast);
@@ -263,7 +263,7 @@
   border-radius: 8px;
   background: var(--fn-color-brand);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   cursor: pointer;
   transition: opacity var(--fn-transition-fast);
@@ -288,7 +288,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
   margin-bottom: 8px;
 }
@@ -335,12 +335,12 @@
 
 .commandSep {
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 code {
   font-family: var(--fn-font-mono, "SFMono-Regular", Consolas, monospace);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   padding: 2px 6px;
   border-radius: 4px;
   background: color-mix(in srgb, var(--fn-text-primary) 10%, transparent);
@@ -348,7 +348,7 @@ code {
 
 .manualHint {
   margin-top: 6px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   opacity: 0.75;
 }
 
@@ -358,7 +358,7 @@ code {
 
 .mirrorErrorsTitle {
   margin: 0 0 4px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   opacity: 0.9;
 }
@@ -366,7 +366,7 @@ code {
 .mirrorErrorsList {
   margin: 0;
   padding-left: 18px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.45;
   opacity: 0.85;
   word-break: break-word;
@@ -379,7 +379,7 @@ code {
 
 .restartSubHint {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   opacity: 0.75;
 }
 
@@ -428,7 +428,7 @@ code {
 
 .guideMethodTitle {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
@@ -495,13 +495,13 @@ code {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
 }
 
 .feedEmpty {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -515,13 +515,13 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 18px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
 .feedSectionTitle {
   margin: 0 0 6px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
@@ -565,13 +565,13 @@ code {
 
 .feedArtifactName {
   font-family: var(--fn-font-mono, ui-monospace, Consolas, monospace);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-primary);
   word-break: break-all;
 }
 
 .feedArtifactMeta {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 

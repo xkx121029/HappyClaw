@@ -55,11 +55,11 @@
 .sectionDesc {
   margin: 0 0 16px;
   color: var(--fn-text-tertiary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   line-height: 1.5;
 
   @media (max-width: 767px) {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
     margin-bottom: 12px;
   }
 }
@@ -89,7 +89,7 @@
 }
 
 .providerGroupTitle {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-secondary);
   margin: 0 0 14px;
@@ -97,7 +97,7 @@
   text-transform: uppercase;
 
   @media (max-width: 767px) {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
     margin-bottom: 10px;
   }
 }
@@ -120,7 +120,7 @@
   display: block;
   width: 100%;
   margin: -4px 0 12px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 }
 
 .providerCard {
@@ -246,7 +246,7 @@
 }
 
 .addProviderLabel {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   color: var(--fn-text-secondary);
   text-align: center;
@@ -255,7 +255,7 @@
 
   @media (max-width: 767px) {
     max-width: 7.5em;
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 }
 
@@ -280,7 +280,7 @@
 
 .statusPendingPill {
   margin: 0 !important;
-  font-size: 12px !important;
+  font-size: var(--fn-text-2xs) !important;
   line-height: 18px !important;
   border-radius: 4px !important;
   color: var(--fn-text-secondary) !important;
@@ -306,7 +306,7 @@
   border: 1px solid var(--fn-border-secondary);
 
   :global(.ant-steps-item-title) {
-    font-size: 12px !important;
+    font-size: var(--fn-text-2xs) !important;
     line-height: 1.3 !important;
   }
 
@@ -352,7 +352,7 @@
   }
 
   .statusText {
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
     font-weight: 500;
 
     &.enabled {
@@ -383,7 +383,7 @@
 }
 
 .cardName {
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 600;
   color: var(--fn-text-primary);
   letter-spacing: -0.01em;
@@ -394,7 +394,7 @@
   overflow: hidden;
 
   @media (max-width: 767px) {
-    font-size: 15px;
+    font-size: var(--fn-text-md);
     gap: 6px;
   }
 }
@@ -436,11 +436,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
 
   @media (max-width: 767px) {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
     gap: 6px;
     flex-wrap: wrap;
   }
@@ -451,7 +451,7 @@
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
 
   .infoLabel {
@@ -464,18 +464,18 @@
   min-width: 70px;
   flex-shrink: 0;
   font-weight: 500;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 
   @media (max-width: 767px) {
     min-width: 56px;
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 }
 
 .infoValue {
   color: var(--fn-text-primary);
   font-family: "SF Mono", "Menlo", "Consolas", monospace;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -486,7 +486,7 @@
   word-break: break-all;
 
   @media (max-width: 767px) {
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
     max-width: 100%;
     white-space: normal;
     word-break: break-word;
@@ -497,10 +497,10 @@
 .infoEmpty {
   color: var(--fn-text-quaternary);
   font-style: italic;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 
   @media (max-width: 767px) {
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 }
 
@@ -530,7 +530,7 @@
 }
 
 .cardActionsStatus {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   line-height: 1;
 }
@@ -558,7 +558,7 @@
 
 /* "Get API Key" docs link */
 .getApiKeyLink {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-color-brand, #635bff);
   text-decoration: none;
   white-space: nowrap;
@@ -570,7 +570,7 @@
   }
 
   @media (max-width: 767px) {
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 }
 
@@ -581,7 +581,7 @@
   gap: 6px;
   padding: 5px 12px;
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   cursor: pointer;
   transition: all 0.15s ease;
   line-height: 1;
@@ -593,7 +593,7 @@
   }
 
   @media (max-width: 767px) {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
     padding: 4px 8px;
     gap: 4px;
   }
@@ -688,11 +688,11 @@
   padding: 24px;
   text-align: center;
   color: var(--fn-text-tertiary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 
   @media (max-width: 767px) {
     padding: 20px 16px;
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
   }
 }
 
@@ -726,17 +726,17 @@
 }
 
 .modelListItemName {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 500;
   color: var(--fn-text-primary);
 
   @media (max-width: 767px) {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
   }
 }
 
 .modelListItemId {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   font-family: "SF Mono", "Menlo", "Consolas", monospace;
   overflow: hidden;
@@ -744,7 +744,7 @@
   white-space: nowrap;
 
   @media (max-width: 767px) {
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 }
 
@@ -772,7 +772,7 @@
 
 .providerModelName {
   color: var(--fn-text-primary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   line-height: 1.4;
   word-break: break-word;
@@ -780,7 +780,7 @@
 }
 
 .providerModelMore {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -817,7 +817,7 @@
 }
 
 .wizardPresetName {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
@@ -844,7 +844,7 @@
 }
 
 .modelVisibilityTitle {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   color: var(--fn-text-primary);
   margin-bottom: 4px;
@@ -852,7 +852,7 @@
 
 .modelVisibilityHint {
   margin: 0 0 10px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   color: var(--fn-text-tertiary);
 }
@@ -924,7 +924,7 @@
 
 .downloadTaskText {
   color: var(--fn-text-primary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -932,14 +932,14 @@
   min-width: 0;
 
   @media (max-width: 767px) {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
   }
 }
 
 /* ---- Initial Models hint (PresetProviderModal) ---- */
 
 .initialModelsHintText {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   margin-bottom: 8px;
 }
@@ -947,14 +947,14 @@
 /* ---- Active Model Pool ---- */
 
 .slotTitle {
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   font-weight: 600;
   color: var(--fn-text-primary);
   letter-spacing: -0.01em;
   margin: 0;
 
   @media (max-width: 767px) {
-    font-size: 16px;
+    font-size: var(--fn-text-lg);
   }
 }
 
@@ -1005,7 +1005,7 @@
 }
 
 .poolHeaderLink {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   text-decoration: none;
   white-space: nowrap;
@@ -1027,7 +1027,7 @@
 .poolEmptyText {
   margin: 0;
   color: var(--fn-text-tertiary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   line-height: 1.5;
 }
 
@@ -1037,23 +1037,23 @@
 
 .poolInfoIcon {
   color: var(--fn-text-tertiary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   cursor: help;
 }
 
 .poolCountTag {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
 }
 
 .poolDesc {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
   margin: 0 0 16px;
   line-height: 1.5;
 
   @media (max-width: 767px) {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
     margin-bottom: 12px;
   }
 }
@@ -1093,18 +1093,18 @@
 .poolGroupKind {
   flex-shrink: 0;
   margin: 0 !important;
-  font-size: 12px !important;
+  font-size: var(--fn-text-2xs) !important;
   line-height: 18px !important;
 }
 
 .poolGroupName {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
 
 .poolGroupCount {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -1143,7 +1143,7 @@
 .preferredBtn {
   flex-shrink: 0;
   color: var(--fn-text-quaternary) !important;
-  font-size: 16px !important;
+  font-size: var(--fn-text-lg) !important;
 
   &:hover {
     color: var(--fn-color-warning, #faad14) !important;
@@ -1183,12 +1183,12 @@
 .preferredBadge {
   flex: none;
   margin-inline-end: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 18px;
 }
 
 .poolModelName {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 500;
   color: var(--fn-text-primary);
   line-height: 1.4;
@@ -1197,7 +1197,7 @@
   min-width: 0;
 
   @media (max-width: 767px) {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
   }
 }
 
@@ -1230,7 +1230,7 @@
 }
 
 .capabilityTag {
-  font-size: 12px !important;
+  font-size: var(--fn-text-2xs) !important;
   line-height: 18px !important;
   margin: 0 !important;
   padding: 0 6px !important;
@@ -1253,7 +1253,7 @@
 }
 
 .presetGroupTitle {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
@@ -1271,7 +1271,7 @@
   color: var(--fn-text-secondary);
   border-radius: 999px;
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   cursor: pointer;
   transition: all 0.15s ease;
 
@@ -1297,7 +1297,7 @@
   border: none;
   background: transparent;
   color: var(--fn-color-brand);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   cursor: pointer;
   padding: 0;
 
@@ -1341,13 +1341,13 @@
 }
 
 .variantItemName {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
 
 .variantItemMeta {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   word-break: break-all;
 }
@@ -1433,7 +1433,7 @@
 }
 
 .presetModelName {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
   line-height: 1.35;
@@ -1463,7 +1463,7 @@
   padding: 24px 16px;
   text-align: center;
   color: var(--fn-text-tertiary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   border: 1px dashed var(--fn-border-input);
   border-radius: var(--fn-radius-md);
 }

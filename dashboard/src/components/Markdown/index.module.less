@@ -5,11 +5,11 @@
   word-break: break-word;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   color: var(--fn-text-primary);
 
   @media (max-width: 767px) {
-    font-size: 16px;
+    font-size: var(--fn-text-lg);
   }
 
   > :first-child {
@@ -121,7 +121,7 @@
   padding: 4px 12px;
   background: var(--fn-bg-tertiary, rgba(0, 0, 0, 0.04));
   border-bottom: 1px solid var(--fn-border-secondary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .codeBlockActions {
@@ -166,7 +166,7 @@
   background: transparent;
   color: var(--fn-text-tertiary);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   padding: 2px 6px;
   border-radius: 4px;
   transition:
@@ -186,7 +186,7 @@
   background: var(--fn-bg-secondary);
   border: 1px solid var(--fn-border-secondary);
   overflow-x: auto;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 
   code {
@@ -222,7 +222,7 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
 
     th,
     td {

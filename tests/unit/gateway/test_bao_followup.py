@@ -145,11 +145,11 @@ def test_redispatch_enqueues_on_the_registered_dashboard_channel(monkeypatch) ->
         user_repo=_Users(),
     )
     monkeypatch.setattr(
-        "octop.api.routers.chat.turn.prepare_dashboard_turn",
+        "octop.infra.gateway.process.dashboard_turn.prepare_dashboard_turn",
         AsyncMock(return_value="prepared"),
     )
     monkeypatch.setattr(
-        "octop.api.routers.chat.turn.build_dashboard_inbound",
+        "octop.infra.gateway.process.dashboard_turn.build_dashboard_inbound",
         lambda **kwargs: kwargs,
     )
 

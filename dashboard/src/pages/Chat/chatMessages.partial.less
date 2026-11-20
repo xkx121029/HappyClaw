@@ -71,7 +71,7 @@
   border: 1px solid var(--fn-border-secondary, var(--fn-card-border-normal));
   border-radius: 999px;
   color: var(--fn-text-secondary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -267,11 +267,11 @@
   gap: 8px;
   padding: 12px 0 16px;
   color: var(--fn-text-secondary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .historyLoadMoreBtn {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   height: auto;
   padding: 0 4px;
 }
@@ -657,7 +657,7 @@
 }
 
 .thinkingText {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
   margin-left: 4px;
   animation: thinkingFadeInOut 2s ease-in-out infinite;
@@ -680,7 +680,7 @@
   border-radius: 999px;
   background: transparent;
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   cursor: pointer;
   transition:
     color var(--fn-transition-fast),
@@ -770,7 +770,7 @@
 }
 
 .generatingText {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   margin-left: 4px;
 }
@@ -894,13 +894,13 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--fn-text-primary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .inlineToolStatus {
   margin-left: auto;
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   flex-shrink: 0;
 }
 
@@ -986,7 +986,7 @@
 
 .toolMediaFallback {
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .inlineToolSection {
@@ -1020,7 +1020,7 @@
 
 .inlineToolHint {
   margin: 0 0 4px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
 }
 
@@ -1273,7 +1273,7 @@
 }
 
 .toolUiDockPlaceholderTitle {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   color: var(--fn-text-primary);
   overflow: hidden;
@@ -1282,7 +1282,7 @@
 }
 
 .toolUiDockPlaceholderHint {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   flex-shrink: 0;
 }
@@ -1335,7 +1335,7 @@
 }
 
 .knowledgeCitationsLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   color: var(--fn-text-tertiary);
 }
@@ -1356,7 +1356,7 @@
   border-radius: 999px;
   background: var(--fn-bg-primary);
   color: var(--fn-text-secondary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.4;
   cursor: pointer;
 
@@ -1408,7 +1408,7 @@
     var(--fn-bg-primary)
   );
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   line-height: 1.4;
   cursor: pointer;
@@ -1472,7 +1472,7 @@
   border: none;
   background: transparent;
   color: var(--fn-text-tertiary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.4;
   cursor: pointer;
   text-align: left;
@@ -1559,7 +1559,7 @@
   border-left: 2px solid var(--fn-border-secondary);
   background: var(--fn-bg-subtle, rgba(0, 0, 0, 0.02));
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.55;
   word-break: break-word;
   word-wrap: break-word;
@@ -1621,7 +1621,7 @@
 .turnThinkingBody {
   margin-top: 6px;
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.6;
   word-break: break-word;
 }
@@ -1646,7 +1646,7 @@
     transparent
   );
   color: var(--fn-color-danger, #e5484d);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   white-space: nowrap;
 }
 
@@ -1684,7 +1684,7 @@
   color: var(--fn-text-tertiary, #888);
   cursor: pointer;
   text-align: left;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   transition:
     color 0.15s,
     background 0.15s;
@@ -1697,12 +1697,12 @@
 
 .thinkingLabel {
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   line-height: 1;
 }
 
 .thinkingSummaryText {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.4;
   user-select: none;
 }
@@ -1721,7 +1721,7 @@
 .thinkingPanel {
   padding: 4px 12px 10px;
   border-top: none;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   color: var(--fn-text-secondary, #555);
   opacity: 0.92;
   animation: thinkingPanelFadeIn 0.22s ease both;
@@ -1741,7 +1741,7 @@
 
 /* ---------- Message timestamp & usage ---------- */
 .msgTime {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-quaternary);
   margin-top: 0;
   padding: 0;
@@ -1764,7 +1764,7 @@
   margin-top: 6px;
   padding: 0 4px;
   opacity: 1;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   transition: opacity 0.2s;
 
   .messageBubble:hover & {
@@ -1778,7 +1778,7 @@
 }
 
 .msgUsage {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-quaternary);
   user-select: none;
 }
@@ -1798,7 +1798,7 @@
   border: 1px solid var(--fn-border-secondary);
   background: var(--fn-bg-secondary);
   color: var(--fn-text-danger, #c81e1e);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.4;
   user-select: text;
 }

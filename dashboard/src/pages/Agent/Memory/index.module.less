@@ -12,10 +12,10 @@
 .description {
   margin-bottom: 16px;
   color: var(--fn-text-tertiary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
 
   @media (max-width: 767px) {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
     margin-bottom: 12px;
   }
 }
@@ -91,7 +91,7 @@
 }
 
 .librarySwitchHint {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 
   @media (max-width: 767px) {
@@ -129,14 +129,14 @@
 }
 
 .cardTitle {
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 600;
   margin-bottom: 4px;
   letter-spacing: -0.01em;
 }
 
 .cardSubtitle {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -161,7 +161,7 @@
 
 .contentLabel {
   margin-bottom: 8px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   flex-shrink: 0;
   display: flex;
@@ -177,7 +177,7 @@
 }
 
 .toggleLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   white-space: nowrap;
 }
@@ -218,7 +218,7 @@
   justify-content: center;
   gap: 6px;
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   background: var(--fn-bg-secondary, #f5f5f5);
   border: 1px solid var(--fn-border-primary);
@@ -252,7 +252,7 @@
 
 .textarea {
   font-family: "SF Mono", "Menlo", "Consolas", monospace;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   resize: none !important;
   flex: 1;
   min-height: 0;
@@ -330,13 +330,13 @@
 
 .sectionTitle {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
 }
 
 .sectionDesc {
   margin: 0 0 12px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   flex-shrink: 0;
 }
@@ -406,7 +406,7 @@
 }
 
 .dailyDate {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   margin-bottom: 2px;
 }
@@ -450,14 +450,14 @@
 
 .conversationTitle {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .conversationDesc {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -516,7 +516,7 @@
 }
 
 .conversationTimeCell {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   white-space: nowrap;
 }
@@ -598,7 +598,7 @@
 .conversationCardTitle {
   flex: 1;
   min-width: 0;
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 600;
   color: var(--fn-text-primary);
   line-height: 1.35;
@@ -635,7 +635,7 @@
 
 .conversationCardMetaLabel {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -671,7 +671,7 @@
   }
 
   :global(.ant-drawer-header-title) {
-    font-size: 15px;
+    font-size: var(--fn-text-md);
   }
 
   :global(.ant-drawer-body) {
@@ -763,20 +763,20 @@
 }
 
 .conversationMessageBody {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.5;
   color: var(--fn-text-primary);
 }
 
 .conversationMarkdown {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.5;
   color: var(--fn-text-primary);
 
   :global {
     p {
       margin: 0 0 0.45em;
-      font-size: 13px;
+      font-size: var(--fn-text-xs);
       line-height: 1.5;
 
       &:last-child {
@@ -789,7 +789,7 @@
     h3,
     h4 {
       margin: 0.5em 0 0.35em;
-      font-size: 14px;
+      font-size: var(--fn-text-sm);
       line-height: 1.4;
     }
 
@@ -797,12 +797,12 @@
     ol {
       margin: 0.25em 0 0.45em;
       padding-left: 1.25em;
-      font-size: 13px;
+      font-size: var(--fn-text-xs);
     }
 
     pre,
     code {
-      font-size: 12px;
+      font-size: var(--fn-text-2xs);
     }
 
     pre {
@@ -817,6 +817,6 @@
   white-space: pre-wrap;
   word-break: break-word;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
 }

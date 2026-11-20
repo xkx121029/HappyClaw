@@ -15,8 +15,6 @@ import time
 from types import SimpleNamespace
 from typing import Any
 
-from octop.infra.errors import OctopError
-
 logger = logging.getLogger(__name__)
 
 MAX_FOLLOWUPS = 2
@@ -92,9 +90,7 @@ class BaoFollowupService:
     # ----------------------------------------------------------- evaluation
 
     @staticmethod
-    def _classify(
-        status: str, result_text: str | None, error_text: str | None
-    ) -> tuple[str, str]:
+    def _classify(status: str, result_text: str | None, error_text: str | None) -> tuple[str, str]:
         """Return ``(outcome, eval_status)``.
 
         ``outcome`` is one of ``done`` / ``needs_decision`` / ``failed`` /
@@ -180,9 +176,10 @@ class BaoFollowupService:
             await asyncio.sleep(0.2)
 
     async def _redispatch(self, task: Any) -> None:
-        # Lazy import keeps infra independent of the API package at import time.
-        from octop.api.routers.chat.models import ChatTurnBody
-        from octop.api.routers.chat.turn import (
+        from octop.infra.gateway.process.dashboard_turn import (
+            DashboardTurn as _DashboardTurn,
+        )
+        from octop.infra.gateway.process.dashboard_turn import (
             build_dashboard_inbound,
             prepare_dashboard_turn,
         )
@@ -204,13 +201,12 @@ class BaoFollowupService:
             is_admin=str(getattr(user_row, "role", "") or "") == "admin",
             locale="zh",
         )
-        turn = ChatTurnBody(
+        turn = _DashboardTurn(
             text=FOLLOWUP_PROMPT,
             messages=[{"role": "user", "content": FOLLOWUP_PROMPT}],
             thread_id=task.thread_id,
-            session_key=thread.session_key or ThreadRegistry.dashboard_key(
-                agent_id=task.agent_id, user_id=user.id
-            ),
+            session_key=thread.session_key
+            or ThreadRegistry.dashboard_key(agent_id=task.agent_id, user_id=user.id),
             conversation_mode=thread.conversation_mode or "craft",
         )
         prepared = await prepare_dashboard_turn(
@@ -273,9 +269,7 @@ class BaoFollowupService:
             muted=self._muted(int(task.user_id)),
         )
         if not claimed:
-            logger.info(
-                "bao push suppressed task=%s kind=%s reason=%s", task.id, kind, reason
-            )
+            logger.info("bao push suppressed task=%s kind=%s reason=%s", task.id, kind, reason)
             return
         frame = {
             "type": "dashboard_push",

@@ -229,7 +229,7 @@ html[data-theme="dark"][data-octop-desktop-chrome="windows"]
 html[data-octop-desktop-chrome="windows"] .octop-win-menu-accel {
   flex: 0 0 auto;
   color: var(--fn-text-secondary, #8a8a8a);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 html[data-octop-desktop-chrome="windows"] .octop-win-menu-sep {
@@ -622,7 +622,7 @@ html[data-theme="dark"] .octop-ant-switch-checked {
 
   .octop-confirm-modal--mobile .octop-modal-confirm-content,
   .octop-confirm-modal--mobile [class*="-modal-confirm-content"] {
-    font-size: 15px;
+    font-size: var(--fn-text-md);
     line-height: 1.5;
   }
 

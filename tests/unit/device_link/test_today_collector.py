@@ -1,4 +1,4 @@
-"""TodayCollector 单测（假设备、假网关，不依赖真机与网络）。"""
+﻿"""TodayCollector 单测（假设备、假网关，不依赖真机与网络）。"""
 
 from __future__ import annotations
 
@@ -149,7 +149,7 @@ def test_notifications_persist_and_remember_only_when_storage_memory(
 ) -> None:
     bridge = _FakeBridge()
     monkeypatch.setattr(
-        "octop.api.common.memory_client._open_memory_for_agent",
+        "octop.infra.agents.memory.client._open_memory_for_agent",
         lambda server, agent_id: (None, bridge),
     )
     manager = _FakeManager(_replies(notes=[_note("评审改到 15:00")]))
@@ -173,7 +173,7 @@ def test_notifications_persist_and_remember_only_when_storage_memory(
 
 def test_proactive_push_is_rate_limited(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "octop.api.common.memory_client._open_memory_for_agent",
+        "octop.infra.agents.memory.client._open_memory_for_agent",
         lambda server, agent_id: (None, _FakeBridge()),
     )
     gateway = _FakeGateway()
@@ -203,7 +203,7 @@ def test_proactive_push_is_rate_limited(tmp_path: Path, monkeypatch: pytest.Monk
 def test_push_prefers_agent_with_session(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """id 最小的 agent 可能没有会话，主动提醒要挑真的有会话的那个。"""
     monkeypatch.setattr(
-        "octop.api.common.memory_client._open_memory_for_agent",
+        "octop.infra.agents.memory.client._open_memory_for_agent",
         lambda server, agent_id: (None, _FakeBridge()),
     )
     gateway = _FakeGateway()
@@ -244,7 +244,7 @@ def test_push_prefers_agent_with_session(tmp_path: Path, monkeypatch: pytest.Mon
 def test_capture_note_becomes_todo_and_syncs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     bridge = _FakeBridge()
     monkeypatch.setattr(
-        "octop.api.common.memory_client._open_memory_for_agent",
+        "octop.infra.agents.memory.client._open_memory_for_agent",
         lambda server, agent_id: (None, bridge),
     )
     manager = _FakeManager(_replies())
@@ -275,3 +275,4 @@ def test_ungranted_notifications_skip_list(tmp_path: Path) -> None:
     assert "notification.status" in names
     assert "notification.list" not in names
     assert collector.store.permissions().get("notification") is False
+

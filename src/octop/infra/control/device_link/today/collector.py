@@ -486,7 +486,7 @@ class TodayCollector:
         if not candidates:
             return
         try:
-            from octop.api.common.memory_client import _open_memory_for_agent  # noqa: PLC0415
+            from octop.infra.agents.memory.client import _open_memory_for_agent  # noqa: PLC0415
         except Exception:  # noqa: BLE001
             return
         try:

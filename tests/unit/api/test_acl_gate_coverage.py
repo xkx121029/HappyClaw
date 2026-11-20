@@ -85,7 +85,7 @@ def test_gated_files_call_require_permission_with_known_keys() -> None:
 
 def test_as_user_still_requires_admin() -> None:
     """Cross-user impersonation must not become a module permission."""
-    agent = (API_ROOT / "common/agent.py").read_text(encoding="utf-8")
+    agent = (pathlib.Path("src/octop/infra/agents/access.py")).read_text(encoding="utf-8")
     usage = (API_ROOT / "routers/usage.py").read_text(encoding="utf-8")
     assert "as_user requires admin" in agent or "is_admin" in agent
     assert "as_user" in usage

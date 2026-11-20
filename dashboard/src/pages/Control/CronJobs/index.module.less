@@ -38,7 +38,7 @@
   :global(.ant-table-thead > tr > th) {
     background: var(--fn-bg-secondary, var(--fn-bg-elevated));
     color: var(--fn-text-tertiary);
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
     font-weight: 600;
     padding: 10px 12px;
     white-space: nowrap;
@@ -123,7 +123,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.4;
 }
 
@@ -147,13 +147,13 @@
 }
 
 .gridCount {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
 }
 
 .refreshHint {
   color: var(--fn-text-quaternary, var(--fn-text-tertiary));
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .listShell {
@@ -266,7 +266,7 @@
 }
 
 .cronCardName {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 400;
   color: var(--fn-text-primary);
   white-space: nowrap;
@@ -338,7 +338,7 @@
 
 /* Prompt description */
 .cronCardDesc {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   line-height: 1.55;
   margin: 0 16px 6px;
@@ -362,7 +362,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -371,7 +371,7 @@
 }
 
 .cronCardCode {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -386,7 +386,7 @@
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: #ff4d4f;
   background: #fff1f0;
   border: 1px solid #ffa39e;
@@ -449,7 +449,7 @@
   display: inline-flex;
   align-items: center;
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   border-radius: var(--fn-radius-sm);
   border: 1px solid var(--fn-border-primary);
@@ -469,7 +469,7 @@
   align-items: center;
   gap: 4px;
   padding: 5px 12px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   border-radius: var(--fn-radius-sm);
   border: 1px solid;
@@ -513,7 +513,7 @@
 }
 
 .emptyStateDesc {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
   margin: 0 0 24px;
 }
@@ -567,7 +567,7 @@
 }
 
 .emptyStateSuggestionText {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
   line-height: 1.5;
   flex: 1;
@@ -579,7 +579,7 @@
 }
 
 .emptyStateSuggestionArrow {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   color: var(--fn-text-tertiary);
   flex-shrink: 0;
   transition:
@@ -609,7 +609,7 @@
   border-radius: var(--fn-radius-md);
   background: var(--fn-surface-sunken);
   color: var(--fn-text-secondary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.6;
 }
 
@@ -633,7 +633,7 @@
 
 .executeModalDesc {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   line-height: 1.55;
   color: var(--fn-text-secondary);
 }
@@ -645,7 +645,7 @@
   border-radius: 10px;
   background: var(--fn-bg-secondary);
   border: 1px solid var(--fn-border-primary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   color: var(--fn-text-primary);
   word-break: break-word;
 }

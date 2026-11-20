@@ -7,13 +7,13 @@
 
 .settingsFieldLabel {
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 }
 
 .settingsHint {
   display: block;
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
 }
 
@@ -41,7 +41,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.6;
 }
 
@@ -101,7 +101,7 @@
 .onnxModelName {
   overflow: hidden;
   color: var(--fn-text-primary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -109,7 +109,7 @@
 
 .onnxModelMeta {
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.4;
 }
 
@@ -127,7 +127,7 @@
 
 .downloadProgressLabel {
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 }
 
 .helpIcon {
@@ -176,7 +176,7 @@
 .baseForm :global(.ant-form-item-label > label) {
   height: auto;
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 }
 
 .iconPicker {
@@ -232,7 +232,7 @@
 .iconPickerLabel {
   overflow: hidden;
   max-width: 100%;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -290,7 +290,7 @@
 
 .formOptionHint {
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
 }
 
@@ -332,7 +332,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--fn-text-primary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -464,7 +464,7 @@
   margin: 6px 0 10px;
   overflow: hidden;
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.45;
   word-break: break-word;
   -webkit-box-orient: vertical;
@@ -511,7 +511,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -546,7 +546,7 @@
   height: 20px;
   padding: 0 6px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 20px;
   white-space: nowrap;
 }
@@ -706,7 +706,7 @@
     var(--fn-color-brand, #1677ff) 18%
   );
   color: var(--fn-color-brand, #1677ff);
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
@@ -753,7 +753,7 @@
   padding: 0 12px;
   border-bottom: 1px solid var(--fn-border-secondary);
   color: var(--fn-text-secondary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   line-height: 22px;
 }
@@ -766,7 +766,7 @@
 
   :global(.ant-tree) {
     background: transparent;
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
   }
 
   :global(.ant-tree-switcher) {
@@ -954,13 +954,13 @@
   flex: 1 1 auto;
   min-width: 0;
   margin: 0 0 0 auto;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   text-align: right;
 }
 
 .docsCount {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -1066,7 +1066,7 @@
   overflow: hidden;
   color: var(--fn-text-primary);
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1087,7 +1087,7 @@
 .docCardMeta {
   margin-top: 3px;
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.35;
 }
 
@@ -1109,7 +1109,7 @@
 .docStatusTag {
   margin-inline-end: 0 !important;
   padding-inline: 6px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 18px;
 }
 
@@ -1118,7 +1118,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1205,7 +1205,7 @@
   border-radius: var(--fn-radius-md);
   background: var(--fn-bg-secondary);
   color: var(--fn-text-primary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1238,7 +1238,7 @@
 
 .chunkCardLabel {
   margin-bottom: 6px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
 }
 
@@ -1246,7 +1246,7 @@
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.6;
 }
 
@@ -1383,7 +1383,7 @@
 }
 
 .mdPreviewMeta {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   font-variant-numeric: tabular-nums;
 }
@@ -1415,7 +1415,7 @@
   border-radius: var(--fn-radius-sm, 6px);
   background: transparent;
   color: var(--fn-text-secondary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   text-align: left;
   cursor: pointer;
@@ -1473,7 +1473,7 @@
 .previewModalNavMeta {
   min-width: 48px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   font-variant-numeric: tabular-nums;
 }
@@ -1511,7 +1511,7 @@
 }
 
 .uploadProgressLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .featureBackend {
@@ -1591,7 +1591,7 @@
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-family: var(--fn-font-mono, ui-monospace, monospace);
 }
 
@@ -1695,14 +1695,14 @@
 }
 
 .textEditorTitleMain {
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   font-weight: 600;
   color: var(--fn-text-primary);
   line-height: 1.3;
 }
 
 .textEditorTitleSub {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 400;
   color: var(--fn-text-tertiary);
   font-family: var(--fn-font-mono, ui-monospace, monospace);
@@ -1769,7 +1769,7 @@
 }
 
 .textEditorToolbarLabel {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   color: var(--fn-text-secondary);
 }
@@ -1836,7 +1836,7 @@
 .mdPreviewEmpty {
   display: block;
   color: var(--fn-text-tertiary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   padding-top: 8px;
 }
 
@@ -1858,7 +1858,7 @@
 
 .moveHint {
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
 }
 

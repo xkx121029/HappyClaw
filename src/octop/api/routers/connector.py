@@ -14,7 +14,7 @@ import time
 from html import escape
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
@@ -113,7 +113,11 @@ async def poll_pairing(request_id: str, pollToken: str = Query("")) -> dict[str,
     store = connector_store()
     request = store.get_request(request_id)
     if request is None:
-        return {"ok": False, "code": "PAIR_NOT_FOUND", "message": "配对请求不存在或已清理，请重新发起"}
+        return {
+            "ok": False,
+            "code": "PAIR_NOT_FOUND",
+            "message": "配对请求不存在或已清理，请重新发起",
+        }
     if not request.poll_token or pollToken != request.poll_token:
         return {"ok": False, "code": "PAIR_INVALID_TOKEN", "message": "配对请求凭据无效"}
     include_token = request.status == STATUS_APPROVED and request.device_token is not None
@@ -198,7 +202,11 @@ async def cancel_pairing(request_id: str, body: PollBody) -> dict[str, Any]:
     return {"ok": ok, "requestId": request_id}
 
 
-@router.get("/connector/pair/{request_id}/review", response_class=HTMLResponse, summary="Pairing review page")
+@router.get(
+    "/connector/pair/{request_id}/review",
+    response_class=HTMLResponse,
+    summary="Pairing review page",
+)
 async def review_page(request_id: str, token: str = Query("")) -> HTMLResponse:
     store = connector_store()
     request = store.get_request(request_id)

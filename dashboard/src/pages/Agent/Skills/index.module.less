@@ -44,10 +44,10 @@
 .description {
   margin-bottom: 16px;
   color: var(--fn-text-tertiary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
 
   @media (max-width: 767px) {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
     margin-bottom: 12px;
   }
 }
@@ -107,7 +107,7 @@
 .packageMountHint {
   margin: 0 0 12px;
   color: var(--fn-text-tertiary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.5;
 }
 
@@ -183,7 +183,7 @@
 }
 
 .packageSkillRowEmoji {
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   line-height: 1;
 }
 
@@ -196,7 +196,7 @@
 }
 
 .packageSkillRowLabel {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
   overflow: hidden;
@@ -264,7 +264,7 @@
 }
 
 .gridCount {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -273,7 +273,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   border: 1px solid var(--fn-color-brand);
   background: transparent;
@@ -301,7 +301,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   border: 1px solid var(--fn-color-brand);
   background: var(--fn-color-brand);
@@ -371,7 +371,7 @@
   background: transparent;
   cursor: pointer;
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   transition:
     color 0.15s,
     border-color 0.15s,
@@ -390,7 +390,7 @@
 
 .kindTag {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 18px;
   padding-inline: 6px;
 }
@@ -417,7 +417,7 @@
 
 .sectionTitle {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   font-weight: 600;
   color: var(--fn-text-primary);
   letter-spacing: -0.01em;
@@ -430,7 +430,7 @@
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   color: var(--fn-text-tertiary);
   background: var(--fn-bg-tertiary);
@@ -471,13 +471,13 @@
 }
 
 .sectionHeadTitle {
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
 
 .sectionHeadDesc {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   margin-top: 2px;
   line-height: 1.5;
@@ -614,7 +614,7 @@
 }
 
 .cardTitle {
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   font-weight: 600;
   color: var(--fn-text-primary);
   letter-spacing: -0.01em;
@@ -629,7 +629,7 @@
   align-items: center;
   gap: 3px;
   padding: 2px 8px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   color: var(--fn-text-brand);
   background: var(--fn-color-brand-bg);
@@ -654,7 +654,7 @@
 
 .cardDesc {
   flex: 1;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
   line-height: 1.55;
   display: -webkit-box;
@@ -679,7 +679,7 @@
   gap: 5px;
   min-height: 24px;
   padding: 2px 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-quaternary);
   background: transparent;
   border: none;
@@ -725,7 +725,7 @@
 }
 
 .skillTransferSkillSlug {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -741,7 +741,7 @@
   width: 30px;
   height: 30px;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
   background: transparent;
   border: 1px solid var(--fn-border-primary);
@@ -766,7 +766,7 @@
 
 .applyBtn {
   padding: 6px 16px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   border-radius: var(--fn-radius-sm);
   cursor: pointer;
@@ -822,7 +822,7 @@
 }
 
 .communityNote {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-quaternary, #9ca3af);
   margin-bottom: 16px;
 }
@@ -847,7 +847,7 @@
 }
 
 .hubCardName {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   color: var(--fn-text-primary);
   flex: 1;
@@ -858,7 +858,7 @@
 }
 
 .hubCardDesc {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
   line-height: 1.55;
   flex: 1;
@@ -880,7 +880,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   white-space: nowrap;
 }
@@ -903,7 +903,7 @@
   justify-content: center;
   background: var(--fn-color-brand-bg);
   color: var(--fn-color-brand);
-  font-size: 15px;
+  font-size: var(--fn-text-md);
 }
 
 // Full-width segmented control for the 4 ranking tabs (equal quarters,
@@ -928,7 +928,7 @@
 
 .importHintTitle {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   color: var(--fn-text-secondary);
 }
@@ -949,7 +949,7 @@
 
 .importHintCode {
   display: inline-block;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   background: var(--fn-bg-primary);
   padding: 3px 10px;
@@ -966,7 +966,7 @@
   border: 1px solid var(--fn-border-input);
   border-radius: var(--fn-radius-md);
   outline: none;
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   background: var(--fn-bg-primary);
   color: var(--fn-text-primary);
   transition: all var(--fn-transition-fast);
@@ -980,12 +980,12 @@
 .importUrlError {
   margin-top: 8px;
   color: var(--fn-color-danger);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 }
 
 .importLoadingText {
   margin-top: 8px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-secondary);
 }
 
@@ -1003,7 +1003,7 @@
 
 .zipFileName {
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   word-break: break-all;
 }
 
@@ -1055,7 +1055,7 @@
 
 .zipDragDropText {
   color: var(--fn-text-secondary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   text-align: center;
 }
 

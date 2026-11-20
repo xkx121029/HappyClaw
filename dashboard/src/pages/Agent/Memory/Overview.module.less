@@ -45,7 +45,7 @@
 }
 
 .heroSubtitle {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
   line-height: 1.5;
 
@@ -137,7 +137,7 @@
 }
 
 .dossierSubtitle {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   color: var(--fn-text-tertiary);
 }
@@ -239,19 +239,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   color: var(--fn-color-brand);
   background: color-mix(in srgb, var(--fn-color-brand) 10%, transparent);
 }
 
 .groupTitle {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
 
 .groupSubtitle {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -263,7 +263,7 @@
 .groupEmpty {
   padding-top: 2px;
   padding-bottom: 2px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -306,7 +306,7 @@
 .groupRowText {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.5;
   color: var(--fn-text-primary);
   word-break: break-word;
@@ -336,7 +336,7 @@
 
 /* Inline secondary info: confidence and relative time. */
 .metaSub {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   white-space: nowrap;
 }
@@ -351,7 +351,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-color-brand);
   transition: opacity var(--fn-transition);
 
@@ -380,7 +380,7 @@
   border-radius: 999px;
   background: var(--fn-bg-secondary, rgba(0, 0, 0, 0.03));
   border: 1px solid var(--fn-border-secondary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   transition:
     border-color var(--fn-transition),
@@ -547,7 +547,7 @@
 }
 
 .kpiLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   line-height: 1.4;
 }
@@ -568,7 +568,7 @@
 }
 
 .kpiValueSuffix {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   margin-left: 1px;
   opacity: 0.7;
@@ -622,7 +622,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
   letter-spacing: -0.01em;
@@ -630,7 +630,7 @@
 
 .chartTitleIcon {
   color: var(--fn-color-brand);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
 }
 
 .chartBox {
@@ -650,7 +650,7 @@
 }
 
 .legendItem {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
 }
 
@@ -699,7 +699,7 @@
 
 .compSubtitle {
   margin-left: 2px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 400;
   color: var(--fn-text-tertiary);
 
@@ -744,7 +744,7 @@
 
 /* Dimension label. */
 .distBlockLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   color: var(--fn-text-secondary);
   letter-spacing: 0.01em;
@@ -784,7 +784,7 @@
 }
 
 .distBlockLegendValue {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--fn-text-quaternary, #bfbfbf);
@@ -793,15 +793,15 @@
 
 @media (max-width: 767px) {
   .distBlockLabel {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
   }
 
   .distBlockLegendLabel {
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 
   .distBlockLegendValue {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
   }
 }
 
@@ -832,7 +832,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 4px 12px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   font-variant-numeric: tabular-nums;
 }
@@ -896,7 +896,7 @@
 }
 
 .pipelineStageValue {
-  font-size: 20px;
+  font-size: var(--fn-text-xl);
   font-weight: 600;
   line-height: 1.2;
   color: var(--fn-text-primary);
@@ -904,19 +904,19 @@
 }
 
 .pipelineStageLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
 .pipelineArrow {
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   color: var(--fn-text-quaternary, #d9d9d9);
   flex-shrink: 0;
 }
 
 .pipelineHint {
   margin-top: 10px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.6;
   color: var(--fn-text-tertiary);
 }
@@ -953,13 +953,13 @@
   h2 {
     margin: 0;
     color: var(--fn-text-primary);
-    font-size: 20px;
+    font-size: var(--fn-text-xl);
   }
 
   p {
     margin: 5px 0 0;
     color: var(--fn-text-tertiary);
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
   }
 }
 
@@ -1068,7 +1068,7 @@
 
   > span {
     color: var(--fn-text-tertiary);
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 
   strong {
@@ -1124,13 +1124,13 @@
     align-items: center;
     gap: 7px;
     color: var(--fn-text-primary);
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
     font-weight: 600;
   }
 
   small {
     color: var(--fn-text-tertiary);
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
     font-weight: 400;
   }
 }
@@ -1153,13 +1153,13 @@
 
   strong {
     color: var(--fn-text-primary);
-    font-size: 20px;
+    font-size: var(--fn-text-xl);
     font-variant-numeric: tabular-nums;
   }
 
   span {
     color: var(--fn-text-tertiary);
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 
   &:disabled {
@@ -1218,7 +1218,7 @@
   :global(.ant-card-head-title),
   :global(.octop-card-head-title) {
     padding: 9px 0;
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
   }
 
   :global(.ant-card-body),

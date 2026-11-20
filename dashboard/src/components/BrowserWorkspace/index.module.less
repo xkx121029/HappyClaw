@@ -27,7 +27,7 @@
 .emptyHeaderTitle {
   display: flex;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-secondary, #666);
 }
@@ -88,7 +88,7 @@
 }
 
 .controlLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary, #666);
 
   &.takeoverActive {
@@ -175,7 +175,7 @@
   /* Scrim over live video content, so it stays dark-on-white in both themes. */
   background: rgba(0, 0, 0, 0.7);
   color: #fff;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   padding: 4px 12px;
   border-radius: 12px;
   white-space: nowrap;
@@ -230,14 +230,14 @@
 }
 
 .emptyTitle {
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 600;
   color: var(--fn-text-secondary, #666);
   margin-bottom: 8px;
 }
 
 .emptyDesc {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.6;
   color: var(--fn-text-tertiary, #999);
 }
@@ -275,7 +275,7 @@
 }
 
 .emptyFooterHint {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-quaternary, #999);
   font-style: italic;
 }
@@ -323,7 +323,7 @@
   padding: 8px 12px;
   background: linear-gradient(90deg, var(--fn-color-warning), #fa8c16);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   flex-shrink: 0;
   animation: authBannerSlideIn 0.3s ease-out;
@@ -338,7 +338,7 @@
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.8);
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   cursor: pointer;
   padding: 0 4px;
   line-height: 1;

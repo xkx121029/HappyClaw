@@ -109,7 +109,7 @@
   overflow: hidden;
   background: var(--solo-bg);
   color: var(--solo-tx);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", ui-sans-serif,
     system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -308,7 +308,7 @@
   background: var(--solo-card);
   border-color: var(--solo-line);
   color: var(--solo-tx);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 }
 
 .workspaceTabClose {
@@ -447,7 +447,7 @@
   gap: 11px;
   padding: 0 10px;
   border-radius: 5px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   white-space: nowrap;
   width: 100%;
   text-align: left;
@@ -466,7 +466,7 @@
 
 .tmiHint {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
@@ -651,7 +651,7 @@
 .sideMeta {
   flex: 0 0 auto;
   padding: 0 2px 8px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.6;
   color: var(--solo-tx3);
   overflow: hidden;
@@ -680,7 +680,7 @@
 
 .newTaskKey {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
@@ -692,7 +692,7 @@
   gap: 10px;
   padding: 0 10px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--solo-tx2);
   margin-top: 2px;
   background: none;
@@ -712,12 +712,12 @@
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   margin-top: 8px;
 }
 
 .sideCount {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
@@ -753,7 +753,7 @@
   border: 1px solid var(--solo-line);
   background: var(--solo-inp);
   color: var(--solo-tx);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   padding: 0 8px;
   outline: none;
 
@@ -795,7 +795,7 @@
 }
 
 .sessionName {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -817,7 +817,7 @@
 }
 
 .sessionTime {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
   padding-left: 12px;
 }
@@ -829,7 +829,7 @@
   gap: 8px;
   padding: 44px 0 0;
   color: var(--solo-tx3);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.7;
   text-align: center;
 }
@@ -853,7 +853,7 @@
   padding: 6px 10px;
   background: var(--fn-bg-warning-light);
   color: var(--solo-tx);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .chatBody {
@@ -895,7 +895,7 @@
     color: var(--solo-tx);
     padding: 9px 12px;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
     line-height: 1.6;
   }
 
@@ -904,7 +904,7 @@
     border: 0;
     border-radius: 0;
     padding: 0;
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
     line-height: 1.8;
     color: var(--solo-tx2);
     box-shadow: none;
@@ -929,7 +929,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
@@ -968,7 +968,7 @@
 
 .welcomeSub {
   margin: 0 0 24px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--solo-tx2);
   text-align: center;
 }
@@ -984,7 +984,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--solo-tx2);
 
   svg {
@@ -1222,7 +1222,7 @@
   align-items: center;
   gap: 6px;
   padding: 0 14px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
   border-bottom: 1px solid var(--solo-line2);
   overflow: hidden;
@@ -1279,7 +1279,7 @@
 
 .browserEmptyTitle {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--solo-tx);
 }
@@ -1287,14 +1287,14 @@
 .browserEmptyBody {
   margin: 0;
   max-width: 360px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.6;
 }
 
 .browserEmptyNote {
   margin: 0;
   max-width: 360px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   color: var(--solo-tx3);
 }
@@ -1342,7 +1342,7 @@
 }
 
 .paneTitle {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--solo-tx);
   white-space: nowrap;
   overflow: hidden;
@@ -1386,7 +1386,7 @@
   height: 24px;
   padding: 0 9px;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx2);
   background: var(--solo-card);
   border: 0;
@@ -1427,7 +1427,7 @@
   border-radius: 7px;
   background: var(--solo-card);
   box-shadow: 0 10px 24px var(--solo-shadow);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx2);
 }
 
@@ -1460,14 +1460,14 @@
 
 .pheadTitle {
   color: var(--solo-tx);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .pheadMeta {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
   font-variant-numeric: tabular-nums;
 }
@@ -1480,7 +1480,7 @@
 
 .sectionLabel {
   padding: 4px 2px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 400;
   line-height: 16px;
   letter-spacing: 0.04em;
@@ -1490,7 +1490,7 @@
 
 .sectionEmpty {
   padding: 4px 2px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
@@ -1567,7 +1567,7 @@
   align-items: center;
   gap: 6px;
   padding: 0 10px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
   letter-spacing: 0.04em;
 }
@@ -1597,7 +1597,7 @@
   border: 1px solid var(--solo-line);
   background: var(--solo-inp);
   color: var(--solo-tx);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   padding: 0 8px;
   outline: none;
 
@@ -1613,7 +1613,7 @@
   border-radius: 5px;
   background: var(--fn-bg-danger-light);
   color: var(--solo-tx);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   word-break: break-word;
 }
@@ -1716,7 +1716,7 @@
   padding: 0 6px;
   border-radius: 999px;
   background: var(--solo-card);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 18px;
   color: var(--solo-grn);
   font-variant-numeric: tabular-nums;
@@ -1814,7 +1814,7 @@
   max-width: 34%;
   padding: 0 6px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 18px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1933,7 +1933,7 @@
 
 .activityTime {
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
@@ -1942,7 +1942,7 @@
   align-items: center;
   gap: 3px;
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
@@ -1966,7 +1966,7 @@
   background: var(--solo-card2);
   color: var(--solo-grn);
   font-family: Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 18px;
   text-align: left;
   cursor: pointer;
@@ -1998,7 +1998,7 @@
 }
 
 .activitySummary {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   color: var(--solo-tx3);
   overflow: hidden;
@@ -2015,7 +2015,7 @@
   align-items: center;
   gap: 4px;
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 16px;
   color: var(--solo-tx3);
 }
@@ -2027,7 +2027,7 @@
   border-radius: 999px;
   background: var(--solo-card2);
   color: var(--solo-tx3);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 16px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -2057,7 +2057,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
@@ -2070,7 +2070,7 @@
   border: 0;
   background: transparent;
   color: var(--solo-grn);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 16px;
   cursor: pointer;
 
@@ -2085,7 +2085,7 @@
   border-radius: 7px;
   background: var(--solo-card2);
   font-family: Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.6;
   color: var(--solo-tx2);
   white-space: pre-wrap;
@@ -2106,7 +2106,7 @@
   border: none;
   background: transparent;
   color: var(--solo-grn);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   cursor: pointer;
 }
 
@@ -2115,7 +2115,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .activityFileLink {
@@ -2128,7 +2128,7 @@
   border-radius: 5px;
   background: transparent;
   color: var(--solo-grn);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2152,7 +2152,7 @@
   gap: 8px;
   padding: 16px;
   color: var(--solo-tx3);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   text-align: center;
 
   p {
@@ -2332,18 +2332,18 @@
 .diffTitleAdd {
   color: var(--solo-grn);
   font-family: Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .diffTitleDel {
   color: var(--solo-danger);
   font-family: Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .diffReadOnlyTag {
   margin-inline-end: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 18px;
 }
 
@@ -2360,7 +2360,7 @@
   border-bottom: 1px solid var(--solo-line2);
   background: var(--solo-card2);
   color: var(--solo-tx2);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.6;
 }
 
@@ -2377,7 +2377,7 @@
   gap: 10px;
   padding: 10px 16px 4px;
   font-family: Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
   overflow-wrap: anywhere;
 }
@@ -2393,7 +2393,7 @@
 .diffLine {
   display: flex;
   font-family: Consolas, monospace;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 22px;
   white-space: pre;
   padding: 0 16px;
@@ -2477,7 +2477,7 @@
   height: 30px;
   background: transparent;
   color: var(--solo-tx);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   outline: none;
   border: 0;
 
@@ -2493,7 +2493,7 @@
 }
 
 .commandGroup {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
   padding: 8px 10px 4px;
   letter-spacing: 0.06em;
@@ -2525,14 +2525,14 @@
 
 .commandHint {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
 .commandEmpty {
   padding: 18px 10px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 
@@ -2547,7 +2547,7 @@
   padding: 0 12px;
   background: var(--solo-bar);
   border-top: 1px solid var(--solo-line);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--solo-tx3);
 }
 

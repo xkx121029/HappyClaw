@@ -19,8 +19,8 @@ from starlette.websockets import WebSocketDisconnect
 
 from octop.api.deps import current_user, get_server
 from octop.api.middleware.access_token import _connector_public
+from octop.api.routers import connector as R
 from octop.infra.control.connector import state as S
-from octop.infra.control.connector import router as R
 from tests.support.http import ws_connect
 
 

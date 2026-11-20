@@ -482,7 +482,7 @@ def deferred_router_specs() -> list[_RouterMount]:
     )
     from octop.api.routers.decision import router as decision_router  # noqa: PLC0415
     from octop.api.routers.filesystem import router as filesystem_router  # noqa: PLC0415
-    from octop.infra.control.connector import router as connector_router  # noqa: PLC0415
+    from octop.api.routers.connector import router as connector_router  # noqa: PLC0415
     from octop.api.routers.observability import router as observability_router  # noqa: PLC0415
     from octop.api.routers.providers import admin_router as admin_providers_router  # noqa: PLC0415
     from octop.api.routers.security import router as security_router  # noqa: PLC0415
@@ -558,7 +558,7 @@ def deferred_router_specs() -> list[_RouterMount]:
         # 与已移除的 ADB 手机能力开关无关。
         _RouterMount(device_link.router, "/api", ["device-link"]),
         # 手机端连接器：手机主动拨号进来配对，再由服务端推送消息、接收回复。
-        _RouterMount(connector_router.router, "/api", ["connector"]),
+        _RouterMount(connector_router, "/api", ["connector"]),
         _RouterMount(ollama_models.router, "/api", ["ollama"]),
         _RouterMount(onnx_models.router, "/api", ["onnx"]),
         _RouterMount(plugins.router, "/api", ["plugins"]),

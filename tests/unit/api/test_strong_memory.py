@@ -1,4 +1,4 @@
-"""Strong memory editing uses the owner's workspace, including stopped agents."""
+﻿"""Strong memory editing uses the owner's workspace, including stopped agents."""
 
 from __future__ import annotations
 
@@ -152,7 +152,7 @@ def test_candidate_approval_supplies_current_workspace_documents(
     )
     bridge = SimpleNamespace(handle=MagicMock(return_value={"result": {"promoted": 0}}))
     monkeypatch.setattr(
-        "octop.api.common.memory_client._open_memory_for_agent", lambda *_: (memory, bridge)
+        "octop.infra.agents.memory.client._open_memory_for_agent", lambda *_: (memory, bridge)
     )
     call_memory_rpc(
         agent_id="a1",
@@ -166,3 +166,4 @@ def test_candidate_approval_supplies_current_workspace_documents(
         "USER.md": "Updated profile",
         "MEMORY.md": "",
     }
+

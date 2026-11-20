@@ -18,7 +18,7 @@
 
 .title {
   margin: 0 0 8px;
-  font-size: 24px;
+  font-size: var(--fn-text-2xl);
   font-weight: 700;
   color: var(--fn-text-primary);
   line-height: 1.3;
@@ -31,11 +31,11 @@
 .description {
   margin: 0;
   color: var(--fn-text-tertiary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   line-height: 1.5;
 
   @media (max-width: 767px) {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
   }
 }
 
@@ -84,12 +84,12 @@
 }
 
 .appliedLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
 .appliedValue {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   color: var(--fn-text-primary);
   word-break: break-word;
@@ -115,7 +115,7 @@
 
 .sectionTitle {
   margin: 0 0 16px;
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
@@ -183,13 +183,13 @@
 }
 
 .radioLabel {
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 500;
   color: var(--fn-text-primary);
 }
 
 .radioDesc {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
   line-height: 1.4;
 }
@@ -207,14 +207,14 @@
 }
 
 .label {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 500;
   color: var(--fn-text-primary);
 }
 
 .input {
   height: 40px;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   border-radius: var(--fn-radius-md);
 
   &:focus {
@@ -223,7 +223,7 @@
 }
 
 .hint {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-quaternary);
   line-height: 1.4;
 }
@@ -245,7 +245,7 @@
 }
 
 .statusLabel {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 500;
   color: var(--fn-text-primary);
 }
@@ -255,7 +255,7 @@
   align-items: center;
   padding: 4px 10px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   background: var(--fn-bg-tertiary);
   color: var(--fn-text-tertiary);
@@ -294,7 +294,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 12px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
 
   @media (max-width: 767px) {
@@ -307,7 +307,7 @@
   align-items: center;
   gap: 8px;
   color: #22c55e;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 }
 
 .statusError {
@@ -315,13 +315,13 @@
   align-items: center;
   gap: 8px;
   color: #ef4444;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
 }
 
 .downloadBtn {
   width: 100%;
   height: 40px;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   border-radius: var(--fn-radius-md);
 }
 
@@ -348,7 +348,7 @@
   button {
     min-width: 120px;
     height: 40px;
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
     border-radius: var(--fn-radius-md);
   }
 }

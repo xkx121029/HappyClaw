@@ -27,7 +27,7 @@
 }
 
 .menuDisplayName {
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 700;
   color: var(--fn-text-primary);
   overflow: hidden;
@@ -38,7 +38,7 @@
 .roleTag {
   margin: 0;
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.4;
   border-radius: 6px;
 }
@@ -46,7 +46,7 @@
 .menuHandle {
   display: block;
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .menuDivider {
@@ -62,7 +62,7 @@
   border: none;
   background: transparent;
   color: var(--fn-text-primary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   text-align: left;
   cursor: pointer;
   text-decoration: none;
@@ -105,7 +105,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   color: var(--fn-text-primary);
   min-width: 0;
 
@@ -157,7 +157,7 @@
 .triggerName {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -210,7 +210,7 @@
 
 .settingsIdentityHandle {
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -219,7 +219,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 650;
   color: var(--fn-text-primary);
   line-height: 1.3;
@@ -241,7 +241,7 @@
 
 .settingsSectionTitle {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 650;
   color: var(--fn-text-primary);
   line-height: 1.3;
@@ -249,7 +249,7 @@
 
 .settingsSectionDesc {
   margin: 4px 0 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.45;
   color: var(--fn-text-tertiary);
 }
@@ -260,7 +260,7 @@
   }
 
   :global(.ant-form-item-label > label) {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
     color: var(--fn-text-secondary);
   }
 }
@@ -311,14 +311,14 @@
 }
 
 .ssoName {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
   line-height: 1.3;
 }
 
 .ssoStatus {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.35;
   color: var(--fn-text-tertiary);
 }
