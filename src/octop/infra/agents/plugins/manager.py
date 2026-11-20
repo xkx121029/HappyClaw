@@ -300,7 +300,7 @@ def _node_range_satisfied(host: str, constraint: str) -> bool | None:
         for clause in clauses:
             for operator in (">=", "<=", ">", "<", "="):
                 if clause.startswith(operator):
-                    target = _node_version_tuple(clause[len(operator):])
+                    target = _node_version_tuple(clause[len(operator) :])
                     if target is None:
                         return None
                     parsed_any = True
@@ -445,9 +445,7 @@ _DEP_RESOLVE_RE = re.compile(
     r"peer dep|Could not resolve",
     re.IGNORECASE,
 )
-_MODULE_NOT_FOUND_RE = re.compile(
-    r"Cannot find package '([^']+)'|Cannot find module '([^']+)'"
-)
+_MODULE_NOT_FOUND_RE = re.compile(r"Cannot find package '([^']+)'|Cannot find module '([^']+)'")
 
 
 def _classify_dependency_failure(output: str) -> tuple[str, str]:
@@ -811,9 +809,7 @@ def _dsh_source(
 
     registry = os.environ.get("OCTOP_DSH_NPM_REGISTRY", "").strip()
     if registry:
-        return DshSource(
-            index, language=language, npm_registry=registry, transport=transport
-        )
+        return DshSource(index, language=language, npm_registry=registry, transport=transport)
     return DshSource(index, language=language, transport=transport)
 
 
@@ -854,9 +850,7 @@ class _TolerantDshSource(Source):
         result = self._source._validate_manifest(entry, release, manifest, content_root)
         return None if result is None else str(result)
 
-    def install(
-        self, entry: Any, dest: Path, *, release: Any = None
-    ) -> Any:
+    def install(self, entry: Any, dest: Path, *, release: Any = None) -> Any:
         return self._source.install(entry, dest, release=release)
 
     def verify(self, entry: Any, payload: Any, *, release: Any = None) -> None:
@@ -1566,9 +1560,7 @@ class PluginManager:
             slow = "timeout" in str(exc).lower()
             if cached_body is not None:
                 try:
-                    rows = _cached_dsh_index_entries(
-                        url, cached_body, language=language
-                    )
+                    rows = _cached_dsh_index_entries(url, cached_body, language=language)
                 except Exception:
                     rows = None
                 if rows is not None:
@@ -1634,9 +1626,7 @@ class PluginManager:
                 with self._dsh_refresh_lock:
                     self._dsh_refresh_inflight.discard(url)
 
-        threading.Thread(
-            target=run, daemon=True, name="dsh-source-refresh"
-        ).start()
+        threading.Thread(target=run, daemon=True, name="dsh-source-refresh").start()
 
     def _dsh_snapshot(
         self, urls: list[str], *, language: str, refresh: bool
@@ -1673,9 +1663,7 @@ class PluginManager:
             if urls:
                 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-                pool = ThreadPoolExecutor(
-                    max_workers=min(DSH_SOURCE_FETCH_WORKERS, len(urls))
-                )
+                pool = ThreadPoolExecutor(max_workers=min(DSH_SOURCE_FETCH_WORKERS, len(urls)))
                 futures = {
                     pool.submit(
                         self._fetch_dsh_source,
@@ -1714,9 +1702,7 @@ class PluginManager:
                     # A slow source must not hold the whole catalog hostage:
                     # render what is ready and let the reader finish in the
                     # background, where it fills the disk cache.
-                    pending_urls = [
-                        url for future, url in futures.items() if not future.done()
-                    ]
+                    pending_urls = [url for future, url in futures.items() if not future.done()]
                 finally:
                     pool.shutdown(wait=False)
                 for url in pending_urls:
@@ -1747,7 +1733,7 @@ class PluginManager:
             # position instead of matching URLs.
             order = {url: index for index, url in enumerate(urls)}
             results.sort(key=lambda item: order.get(item[1]["url"], len(order)))
-            for (rows, health) in results:
+            for rows, health in results:
                 source_rows.append(health)
                 self._dsh_source_health[health["url"]] = health
                 for entry in rows or []:
@@ -1802,15 +1788,11 @@ class PluginManager:
         size = max(1, min(int(page_size or DSH_MARKET_PAGE_SIZE), DSH_MARKET_MAX_PAGE_SIZE))
         current = max(1, int(page or 1))
         start = (current - 1) * size
-        entries = [
-            self._dsh_entry_row(entry, root=root) for entry in matched[start : start + size]
-        ]
+        entries = [self._dsh_entry_row(entry, root=root) for entry in matched[start : start + size]]
         builtin = set(DSH_DEFAULT_SOURCES)
         return {
             "market_root": str(root),
-            "sources": [
-                {**row, "builtin": row["url"] in builtin} for row in snapshot["sources"]
-            ],
+            "sources": [{**row, "builtin": row["url"] in builtin} for row in snapshot["sources"]],
             "entries": entries,
             "total": total,
             "page": current,
@@ -1828,9 +1810,7 @@ class PluginManager:
 
         releases = sorted(
             entry.releases,
-            key=cmp_to_key(
-                lambda left, right: compare_versions(right.version, left.version) or 0
-            ),
+            key=cmp_to_key(lambda left, right: compare_versions(right.version, left.version) or 0),
         )
         installed, installed_version = self._dsh_install_state(entry.plugin_id)
         runtime = self._dsh_runtime_status(entry.plugin_id)
@@ -1918,20 +1898,12 @@ class PluginManager:
 
             plugin_id = str(ledger.get("plugin_id") or plugin_id)
             row["plugin_id"] = plugin_id
-            records = [
-                item
-                for item in ledger.get("installs", [])
-                if isinstance(item, dict)
-            ]
+            records = [item for item in ledger.get("installs", []) if isinstance(item, dict)]
             row["versions"] = [
-                str(item.get("version") or "")
-                for item in records
-                if item.get("version")
+                str(item.get("version") or "") for item in records if item.get("version")
             ]
             current = ledger.get("current")
-            record = current if isinstance(current, dict) else (
-                records[-1] if records else None
-            )
+            record = current if isinstance(current, dict) else (records[-1] if records else None)
             if record is None:
                 row["error"] = "安装账本没有可读的版本记录"
                 rows.append(row)
@@ -1955,15 +1927,12 @@ class PluginManager:
                 source = envelope.get("source")
                 source = source if isinstance(source, dict) else {}
                 row["name"] = str(
-                    package.get("package_name")
-                    or metadata.get("native_id")
-                    or row["name"]
+                    package.get("package_name") or metadata.get("native_id") or row["name"]
                 )
                 row["description"] = str(metadata.get("description") or "")
                 row["entry"] = envelope.get("entry")
                 row["source_url"] = (
-                    str(market.get("index") or source.get("reference") or "")
-                    or None
+                    str(market.get("index") or source.get("reference") or "") or None
                 )
             row["runtime"] = self._dsh_runtime_status(plugin_id)
             rows.append(row)
@@ -2182,9 +2151,7 @@ class PluginManager:
             "recent_failures": recent_failures(10),
         }
 
-    def _dsh_runtime_status(
-        self, plugin_id: str, *, probe: bool = False
-    ) -> dict[str, Any]:
+    def _dsh_runtime_status(self, plugin_id: str, *, probe: bool = False) -> dict[str, Any]:
         """Readiness report for one installed DSH bundle.
 
         Static checks mirror the failures the S10 runtime would raise. With
@@ -2259,7 +2226,8 @@ class PluginManager:
                 status="not_loaded",
                 error_code="DSH_DEP_MISSING",
                 reason=(
-                    "缺少 npm 依赖闭包：" + "、".join(missing)
+                    "缺少 npm 依赖闭包："
+                    + "、".join(missing)
                     + "；在 DSH 页重新装载会执行 pnpm/npm install 补齐"
                 ),
                 notes=["静态检查仅覆盖 package.json 中的直接 dependencies"],
@@ -2304,9 +2272,7 @@ class PluginManager:
                 result = _probe_dsh_entry(slot, entry_path)
                 status["probe"] = result
                 if result["ok"]:
-                    status.update(
-                        reason="已对 Agent 可见，且入口已在 Node 中实测加载成功"
-                    )
+                    status.update(reason="已对 Agent 可见，且入口已在 Node 中实测加载成功")
                 else:
                     status.update(
                         status="not_loaded",
@@ -2316,9 +2282,7 @@ class PluginManager:
                     )
             return status
 
-        record = next(
-            (item for item in skipped if item.plugin_id == plugin_id), None
-        )
+        record = next((item for item in skipped if item.plugin_id == plugin_id), None)
         if record is None:
             status.update(
                 status="not_visible",
@@ -2418,9 +2382,7 @@ class PluginManager:
                 "progress": dict(record) if record is not None else None,
             }
 
-    def _dsh_install_dependencies(
-        self, plugin_id: str, install_dir: Path
-    ) -> dict[str, Any]:
+    def _dsh_install_dependencies(self, plugin_id: str, install_dir: Path) -> dict[str, Any]:
         """Run the dependency install for one slot and stream its progress."""
 
         try:
@@ -2444,13 +2406,9 @@ class PluginManager:
         )
 
         def on_output(line: str) -> None:
-            self._dsh_progress_update(
-                plugin_id, detail=line[:300], progress=0.6
-            )
+            self._dsh_progress_update(plugin_id, detail=line[:300], progress=0.6)
 
-        report = _install_dsh_dependencies(
-            install_dir, package, on_output=on_output
-        )
+        report = _install_dsh_dependencies(install_dir, package, on_output=on_output)
         self._dsh_progress_update(
             plugin_id,
             detail=report["message"],
@@ -2458,7 +2416,6 @@ class PluginManager:
             error_code=report.get("code"),
         )
         return report
-
 
     def install_dsh_market(
         self,
@@ -2681,9 +2638,7 @@ class PluginManager:
                     "kind": str(manifest.get("kind") or "tool"),
                     "description": pick_localized(manifest.get("description"), language),
                     "icon": icon.strip() if isinstance(icon, str) and icon.strip() else None,
-                    "group": (
-                        group.strip() if isinstance(group, str) and group.strip() else None
-                    ),
+                    "group": (group.strip() if isinstance(group, str) and group.strip() else None),
                     "requires": [],
                     "installed": installed_dir is not None,
                     "installed_version": installed_version,
@@ -2701,12 +2656,7 @@ class PluginManager:
     def install_bundled(self, plugin_id: str, *, force: bool = False) -> LoadedPlugin:
         """Install one in-package catalog plugin without touching the network."""
         cleaned = plugin_id.strip()
-        if (
-            not cleaned
-            or cleaned in {".", ".."}
-            or "/" in cleaned
-            or "\\" in cleaned
-        ):
+        if not cleaned or cleaned in {".", ".."} or "/" in cleaned or "\\" in cleaned:
             raise OctopError(ErrorCode.NOT_FOUND, f"bundled plugin {plugin_id!r} not found")
         source = default_bundled_plugins_root() / cleaned
         if not source.is_dir() or not (source / "plugin.yaml").is_file():

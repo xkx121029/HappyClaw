@@ -241,14 +241,12 @@ def builtin_tool_available(
     if name == "happysearch_search":
         effective = search_source or "happysearch"
         return (
-            effective in ("happysearch", "both")
-            and agent_cfg.get("web_search_tools") is not False
+            effective in ("happysearch", "both") and agent_cfg.get("web_search_tools") is not False
         )
     if name == "searchfree_search":
-        return (
-            (search_source or "happysearch") == "searchfree"
-            and agent_cfg.get("web_search_tools") is not False
-        )
+        return (search_source or "happysearch") == "searchfree" and agent_cfg.get(
+            "web_search_tools"
+        ) is not False
     if name in _WEB_SEARCH_TOOLS:
         return agent_cfg.get("web_search_tools") is not False
     if name == "acp_runner":

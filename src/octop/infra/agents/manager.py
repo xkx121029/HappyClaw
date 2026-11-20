@@ -28,6 +28,7 @@ from octop.i18n.domains.agents import (
 )
 from octop.infra.agents.memory.backend import memory_backend_from_agent_config
 from octop.infra.agents.memory.slim import MemorySlimCoordinator
+from octop.infra.agents.plugins.mcp_bind import bind_custom_mcp_tools
 from octop.infra.agents.providers import HostModelFactory, ProviderStore, sync_providers_to_harness
 from octop.infra.agents.providers.health import ModelHealthRegistry
 from octop.infra.agents.security import SecuritySettingsStore, ToolGuardRulesStore
@@ -73,7 +74,6 @@ from octop.infra.backend.resolver import (
 )
 from octop.infra.connectors.builder import (
     build_mcp_server_configs_for_user,
-    gateway_mcp_server_names,
     inject_missing_gateway_tools,
 )
 from octop.infra.connectors.service import ConnectorService
@@ -200,21 +200,13 @@ def _norm_path(path: Path | str) -> str:
 def _same_path(left: Path | str, right: Path | str) -> bool:
     return _norm_path(left) == _norm_path(right)
 
+
 _HARNESS_AGENT_CONFIG_FIELDS = frozenset(item.name for item in fields(HarnessAgentConfig))
 
 
 def _memory_namespace(agent_id: str) -> str:
     return f"{_MEMORY_NS_PREFIX}{agent_id}"
 
-
-def _dsh_local_roots() -> tuple[str, ...]:
-    """Explicit local plugin directories for S2 discovery.
-
-    No default roots: scanning the home directory on every config build would be
-    a surprise, and the market install root already covers installed plugins.
-    """
-    raw = os.environ.get("OCTOP_DSH_TOOL_ROOTS", "")
-    return tuple(part.strip() for part in raw.split(",") if part.strip())
 
 def skills_disabled_set(cfg: dict[str, Any]) -> set[str]:
     """Return the set of disabled skill slugs from agent config."""
@@ -510,44 +502,7 @@ def _sanitize_bound_mcp_tools(agent: Any) -> None:
         agent.replace_mcp_tools(tools)
 
 
-def _bind_custom_mcp_tools(
-    agent: Any,
-    name: str,
-    tools: list[Any],
-    *,
-    user_id: int | None,
-) -> None:
-    """Attach custom MCP tools, replacing that server when another user owns the slot.
-
-    A shared expert's harness has one short name. The owner's tools and a
-    viewer's same-named server both land on ``{name}_*``, and ``append`` keeps
-    the first set. Record who was bound so the next turn can swap.
-    """
-    prefix = f"{name}_"
-    current_names: Any = getattr(agent, "_mcp_tool_name_set", frozenset())
-    occupied = isinstance(current_names, frozenset) and any(
-        isinstance(tool_name, str) and tool_name.startswith(prefix) for tool_name in current_names
-    )
-    if occupied:
-        existing = getattr(agent, "_mcp_tools", None)
-        kept = (
-            [
-                tool
-                for tool in existing
-                if not str(getattr(tool, "name", "") or "").startswith(prefix)
-            ]
-            if isinstance(existing, list)
-            else []
-        )
-        agent.replace_mcp_tools([*kept, *tools])
-    else:
-        agent.append_mcp_tools(tools)
-    if user_id is None:
-        return
-    book = getattr(agent, "_mcp_attached_user", None)
-    attached: dict[str, int] = book if isinstance(book, dict) else {}
-    attached[name] = user_id
-    agent._mcp_attached_user = attached
+_bind_custom_mcp_tools = bind_custom_mcp_tools
 
 
 # ---------------------------------------------------------------------------
@@ -647,22 +602,11 @@ class AgentManager:
         # drive the same checkpoint without it — two concurrent executions on
         # one thread interleave LangGraph checkpoint writes.
         self._thread_execution_locks: dict[tuple[str, str], asyncio.Lock] = {}
-        # Opt-in DSH skill/prompt state. Session cursors live on this instance
-        # (never in module globals) and are keyed by (agent_id, thread_id).
-        # Built on first use so the default-off path never imports the DSH
-        # skill/integration tree during startup warm-up.
-        self._dsh_prompt_sessions: Any | None = None
-        self._dsh_skill_snapshots: dict[str, Any] = {}
-        # S8 model adapter: transport factory injected before boot(), plus the
-        # last install result for the read-only status query. Both stay None
-        # when the stage is off, which costs no DSH LLM import.
-        self._dsh_transport_factory: Any | None = None
-        self._dsh_llm_install: Any | None = None
-        # S2 read-only tool mounting: optional in-process tool bodies keyed by
-        # plugin id, plus the last assembly result for the status query. Both are
-        # empty/None while the stage is off, which costs no DSH tools import.
-        self._dsh_tool_providers: dict[str, Any] = {}
-        self._dsh_tools_status: Any | None = None
+        # Opt-in DSH stages (S8 model adapter, S2 tools, exec grants) live in
+        # their own coordinator: default-off must not import the DSH tree.
+        from octop.infra.agents.dsh_runtime import DshRuntime  # noqa: PLC0415
+
+        self.dsh = DshRuntime(self)
         self._active_invocations: dict[str, int] = {}
         self._invocation_waiters: dict[str, int] = {}
         self._history_backfills: dict[str, asyncio.Event] = {}
@@ -709,10 +653,11 @@ class AgentManager:
             settings_repo=repos.settings_repo,
             config=self._config,
         )
-        # User-scoped custom MCP tools: (user_id, server_name, fingerprint) -> tools
-        self._mcp_tool_cache: dict[tuple[int, str, str], list[Any]] = {}
-        self._mcp_tool_cache_locks: dict[tuple[int, str], asyncio.Lock] = {}
-        self._mcp_tool_cache_guard = asyncio.Lock()
+        # User-scoped MCP tool cache and pre-chat connector prep live in the
+        # connector coordinator; attach it eagerly so the first call is cheap.
+        from octop.infra.agents.connectors import ConnectorCoordinator  # noqa: PLC0415
+
+        self.connectors = ConnectorCoordinator(self)
         # Sanitized plugin tool name → original label (per agent, rebuilt on reload).
         self._plugin_tool_labels: dict[str, dict[str, str]] = {}
 
@@ -767,13 +712,20 @@ class AgentManager:
         self._hitl_session_store = store
 
     def set_dsh_transport_factory(self, factory: Any | None) -> None:
-        """Override the S8 DSH transport factory (set before boot(); optional).
+        """Override the S8 DSH transport factory (set before boot(); optional)."""
+        self._dsh().set_transport_factory(factory)
 
-        ``None`` means "use the built-in httpx transport" once the stage is
-        enabled; without any transport the installer reports ``skipped`` and
-        every model call keeps using the harness factory.
-        """
-        self._dsh_transport_factory = factory
+    def _dsh(self) -> Any:
+        """DSH coordinator, created on demand for partially built managers."""
+        from octop.infra.agents.dsh_runtime import attach_dsh_runtime  # noqa: PLC0415
+
+        return attach_dsh_runtime(self)
+
+    def _mcp(self) -> Any:
+        """Connector/MCP coordinator, created on demand for partially built managers."""
+        from octop.infra.agents.connectors import attach_connector_coordinator  # noqa: PLC0415
+
+        return attach_connector_coordinator(self)
 
     @property
     def teams(self) -> Any:
@@ -822,103 +774,33 @@ class AgentManager:
             await self.restore_agents()
 
     def _dsh_prompt_store(self) -> Any:
-        """Return the DSH session-cursor store, importing it on first use.
-
-        The store is only touched when ``OCTOP_DSH_SKILLS_PROMPTS`` is on, so
-        the default-off path never loads :mod:`octop.infra.dsh.integration`
-        (and the skill discovery tree behind it) during startup.
-        """
-        if self._dsh_prompt_sessions is None:
-            from octop.infra.dsh.integration import DshPromptSessionStore  # noqa: PLC0415
-
-            self._dsh_prompt_sessions = DshPromptSessionStore()
-        return self._dsh_prompt_sessions
+        """Return the DSH session-cursor store, importing it on first use."""
+        return self._dsh().prompt_store()
 
     def _install_dsh_llm(self) -> None:
-        """Wire the S8 model adapter into the harness factory when enabled.
-
-        Default-off costs one environment lookup: :mod:`octop.infra.dsh.switches`
-        is stdlib-only, and no harness/adapter module is imported until the
-        stage is on. Any failure is logged and swallowed so boot never depends
-        on the adapter; the original factory keeps serving model calls.
-        """
-        from octop.infra.dsh.switches import llm_enabled  # noqa: PLC0415
-
-        if not llm_enabled():
-            return
-        try:
-            from octop.infra.dsh.llm.factory import (  # noqa: PLC0415
-                install_dsh_model_factory,
-            )
-
-            transport_factory = self._dsh_transport_factory
-            if transport_factory is None:
-                from octop.infra.dsh.llm.http_transport import (  # noqa: PLC0415
-                    build_http_transport,
-                )
-
-                transport_factory = build_http_transport
-            self._dsh_llm_install = install_dsh_model_factory(
-                self._harness_manager,
-                transport_factory=transport_factory,
-            )
-        except Exception:
-            logger.exception(
-                "DSH LLM adapter setup failed; continuing with the harness factory"
-            )
-            self._dsh_llm_install = None
+        """Wire the S8 model adapter into the harness factory when enabled."""
+        self._dsh().install_llm()
 
     def dsh_llm_status(self) -> dict[str, Any]:
         """Read-only snapshot of the S8 adapter wiring (which refs, why)."""
-        from octop.infra.dsh.llm.factory import describe_installation  # noqa: PLC0415
-
-        return describe_installation(
-            self._harness_manager, result=self._dsh_llm_install
-        ).as_dict()
+        return self._dsh().llm_status()
 
     def register_dsh_tool_provider(self, plugin_id: str, provider: Any) -> None:
-        """Register the tool body provider for one ``dsh:<native>`` plugin (S2).
-
-        Optional by design: this stage never executes plugin JavaScript, so tool
-        bodies are supplied in-process. With no provider registered, discovery
-        still reports ``no_tool_provider`` per plugin and the tool list is
-        exactly what it was before S2.
-        """
-        self._dsh_tool_providers[str(plugin_id)] = provider
+        """Register the tool body provider for one ``dsh:<native>`` plugin (S2)."""
+        self._dsh().register_tool_provider(plugin_id, provider)
 
     def dsh_tools_status(self) -> dict[str, Any]:
-        """Read-only view of the last S2 assembly: mounted tools + skip reasons.
-
-        The ``sandbox`` block reports the posture even before any assembly, so a
-        reader can always tell whether a missing sandbox would allow or deny.
-        """
-        if self._dsh_tools_status is None:
-            # Mirrors the runtime rule without importing the sandbox package
-            # while the stage is off: unknown values are treated as strict.
-            raw = (os.environ.get("OCTOP_DSH_SANDBOX_ABSENCE") or "allow").strip().lower()
-            mode = raw if raw in {"allow", "strict"} else "strict"
-            return {
-                "enabled": dsh_stage_enabled("tools"),
-                "mounted": [],
-                "tools": [],
-                "skipped": [],
-                "runtime": [],
-                "sandbox": {"mode": mode, "assembled": False, "plugins": []},
-            }
-        return {"enabled": True, **self._dsh_tools_status.report()}
+        """Read-only view of the last S2 assembly: mounted tools + skip reasons."""
+        return self._dsh().tools_status()
 
     def _dsh_sandbox_root(self, row: Any) -> Any:
         """Workspace the DSH sandbox confines calls to, or None if unresolvable.
 
-        ``workspace_for_agent_row`` only computes the path; it does not create
-        anything. A failure here must not stop tool assembly: the probe then
-        falls back to the absence gate, whose posture is reported by
-        ``dsh_tools_status()``.
+        Stays on the manager (rather than the DSH coordinator) because callers
+        and tests patch this hook to simulate an unresolvable workspace.
         """
         try:
-            from octop.infra.agents.memory.thread_cleanup import (  # noqa: PLC0415
-                workspace_for_agent_row,
-            )
+            from octop.infra.agents.memory.thread_cleanup import workspace_for_agent_row  # noqa: PLC0415
 
             return workspace_for_agent_row(row, paths=self._paths)
         except Exception as exc:  # noqa: BLE001 - tool assembly must not fail here
@@ -926,89 +808,12 @@ class AgentManager:
             return None
 
     def _dsh_runtime_tools(self, sandbox_root: Any) -> dict[str, Any]:
-        """S10 exec grants for this agent; empty unless the stage is on.
-
-        Two independent opt-ins are required: ``OCTOP_DSH_EXEC`` (stage) and a
-        plugin id listed in ``OCTOP_DSH_EXEC_PLUGINS`` (grant). The DSH runtime
-        module is imported only after both checks pass.
-
-        A missing workspace root does *not* drop the grant here: it is carried
-        as ``workspace_root=None`` so the mount step can skip with
-        ``runtime_requires_workspace`` instead of the misleading
-        ``no_tool_provider`` reason.
-        """
-        if not dsh_stage_enabled("exec"):
-            return {}
-        from octop.infra.dsh.tools.runtime import (  # noqa: PLC0415
-            ENV_NODE,
-            ExecGrant,
-            RuntimeTools,
-            resolve_exec_plugins,
-        )
-
-        node = os.environ.get(ENV_NODE) or ""
-        return {
-            plugin_id: RuntimeTools(
-                grant=ExecGrant(
-                    plugin_id=plugin_id,
-                    workspace_root=sandbox_root,
-                    node_executable=node,
-                )
-            )
-            for plugin_id in sorted(resolve_exec_plugins())
-        }
+        """S10 exec grants for this agent; empty unless the stage is on."""
+        return self._dsh()._runtime_tools(sandbox_root)
 
     def _dsh_plugin_tools(self, row: Any, *, reserved: Sequence[Any]) -> list[Any]:
         """Assemble read-only DSH tools for one agent (called only when enabled)."""
-        from octop.infra.dsh.tools import build_dsh_plugin_tools  # noqa: PLC0415
-        from octop.infra.plugins.market import default_market_root  # noqa: PLC0415
-
-        hitl = dsh_stage_enabled("hitl")
-        approval = None
-        if hitl:
-            # S5: reuse the repository's HITL pause/resume path (interrupt →
-            # ``hitl_required`` frame → POST .../hitl/resume). No new protocol.
-            from octop.infra.plugins.bridge.hitl import (  # noqa: PLC0415
-                HitlApprovalChannel,
-            )
-
-            approval = HitlApprovalChannel()
-        sandbox_root = self._dsh_sandbox_root(row)
-        runtime = self._dsh_runtime_tools(sandbox_root)
-        build = build_dsh_plugin_tools(
-            scope=str(row.agent_id),
-            market_root=os.environ.get("OCTOP_DSH_MARKET_ROOT") or default_market_root(),
-            local_roots=_dsh_local_roots(),
-            providers=self._dsh_tool_providers,
-            hitl=hitl,
-            approval=approval,
-            reserved_names=[str(getattr(tool, "name", "")) for tool in reserved],
-            # S4: the sandbox confines calls to this agent's workspace. If the
-            # path cannot be resolved the probe falls back to the absence gate,
-            # whose mode (allow / strict) is visible through dsh_tools_status().
-            sandbox_root=sandbox_root,
-            sandbox_absence=os.environ.get("OCTOP_DSH_SANDBOX_ABSENCE") or None,
-            runtime=runtime,
-        )
-        self._dsh_tools_status = build
-        if build.skipped:
-            from octop.infra.dsh.diagnostics import record_failure  # noqa: PLC0415
-
-            for skip in build.skipped:
-                logger.info(
-                    "DSH tool skipped: %s (%s) %s",
-                    skip.plugin_id,
-                    skip.reason,
-                    skip.detail,
-                )
-                record_failure(
-                    kind="load",
-                    plugin_id=skip.plugin_id,
-                    code=skip.reason,
-                    reason=skip.detail or skip.reason,
-                    detail=skip.tool,
-                )
-        return list(build.tools)
+        return self._dsh().plugin_tools(row, reserved=reserved)
 
     async def restore_agents(self) -> None:
         """Start every persisted agent that is not explicitly stopped.
@@ -1550,9 +1355,7 @@ class AgentManager:
         self._bootstrap_known.pop(agent_id, None)
         self._plugin_tool_labels.pop(agent_id, None)
         # Agent deleted: drop every DSH session cursor and its snapshot.
-        if self._dsh_prompt_sessions is not None:
-            self._dsh_prompt_sessions.discard_agent(agent_id)
-        self._dsh_skill_snapshots.pop(agent_id, None)
+        self._dsh().discard_agent(agent_id)
         cfg = agent_config_from_row(row)
         await asyncio.to_thread(
             delete_agent_memory_and_checkpoints,
@@ -1631,9 +1434,7 @@ class AgentManager:
                 await self._harness_manager.aremove_agent(agent_id)  # type: ignore[union-attr]
                 self._bootstrap_known.pop(agent_id, None)
                 # Agent stopped: drop every DSH session cursor and its snapshot.
-                if self._dsh_prompt_sessions is not None:
-                    self._dsh_prompt_sessions.discard_agent(agent_id)
-                self._dsh_skill_snapshots.pop(agent_id, None)
+                self._dsh().discard_agent(agent_id)
                 self._repos.agent_repo.set_state(agent_id, "stopped", error=None)
 
     def _quiesce_octop_memory(self, agent_id: str) -> None:
@@ -2088,8 +1889,7 @@ class AgentManager:
         uses that so the request itself does not vacuum.
         """
         # Session ended: drop its DSH skill cursor explicitly (never GC-driven).
-        if self._dsh_prompt_sessions is not None:
-            self._dsh_prompt_sessions.discard(agent_id, thread_id)
+        self._dsh().discard_thread(agent_id, thread_id)
         row = self.get_row(agent_id)
         harness = None
         try:
@@ -2562,7 +2362,8 @@ class AgentManager:
 
     async def _finalize_session_workspace(self, agent_id: str, thread_id: str) -> None:
         """Bind ``sessions/<thread_id>`` after its first user file was written."""
-        middleware = self._session_workspace_mw.get(agent_id)
+        # ``getattr`` keeps partially constructed managers (tests) working.
+        middleware = getattr(self, "_session_workspace_mw", {}).get(agent_id)
         if middleware is None or not thread_id:
             return
         written = middleware.take(thread_id)
@@ -2580,9 +2381,7 @@ class AgentManager:
                 written=written,
             )
         except Exception:
-            logger.warning(
-                "Failed to enable session workspace for %s", thread_id, exc_info=True
-            )
+            logger.warning("Failed to enable session workspace for %s", thread_id, exc_info=True)
 
     async def _release_idle_pool(self) -> None:
         """Drop pooled instances idle longer than the TTL (~30 min)."""
@@ -2590,9 +2389,7 @@ class AgentManager:
             return
         now = time.monotonic()
         expired = [
-            pooled
-            for pooled, used in self._pool_last_used.items()
-            if now - used > _POOL_IDLE_TTL_S
+            pooled for pooled, used in self._pool_last_used.items() if now - used > _POOL_IDLE_TTL_S
         ]
         for pooled in expired:
             parent = self._pool_workspaces.pop(pooled, None)
@@ -2626,9 +2423,7 @@ class AgentManager:
                 turn_model_scope(self._stream_model_label(agent_id, req, thread_id)),
             ):
                 try:
-                    async for chunk in self._harness_manager.stream(
-                        dispatch_id, cast(Any, req)
-                    ):
+                    async for chunk in self._harness_manager.stream(dispatch_id, cast(Any, req)):
                         yield chunk
                 finally:
                     await self._finalize_session_workspace(agent_id, thread_id)
@@ -2639,9 +2434,7 @@ class AgentManager:
         if self._harness_manager is None:
             raise self._unavailable_error(agent_id)
         self._require_live_agent(agent_id)
-        dispatch_id = await self._dispatch_agent_id(
-            agent_id, str(request.get("thread_id") or "")
-        )
+        dispatch_id = await self._dispatch_agent_id(agent_id, str(request.get("thread_id") or ""))
         async with self._track_invocation(agent_id):
             self._apply_pending_bootstrap_graph_refresh(dispatch_id)
             req = self._prepare_stream_request(agent_id, request)
@@ -2895,59 +2688,17 @@ class AgentManager:
         connector_user_id: int | None = None,
     ) -> None:
         """Refresh connector OAuth tokens and reload harness MCP tool registrations."""
-        from octop.infra.agents.teams import is_team_agent
-
-        row = self.get_row(agent_id)
-        if row is None or is_team_agent(row):
-            return
-        uid = self._connector_uid_for(row, connector_user_id=connector_user_id)
-        if uid is None:
-            logger.warning(
-                "agent %s: skip connector reload — agent.user_id is NULL and no connector_user_id",
-                agent_id,
-            )
-            return
-        self._connector_user_override[agent_id] = uid
-        try:
-            svc = self._connector_svc
-            for inst in self._repos.connector_repo.list_visible(uid):
-                if inst.status != "active":
-                    continue
-                await svc.ensure_fresh_credentials(inst.instance_id, inst.kind)
-            await self._reload_agent(agent_id)
-        finally:
-            self._connector_user_override.pop(agent_id, None)
+        await self._mcp().reload(agent_id, connector_user_id=connector_user_id)
 
     async def reload_connectors_for_user(self, user_id: int) -> None:
-        self.invalidate_mcp_tool_cache(user_id)
-        reloaded: set[str] = set()
-        for row in self._repos.agent_repo.list_by_user(user_id, include_disabled=False):
-            await self.reload_connectors(row.agent_id, connector_user_id=user_id)
-            reloaded.add(row.agent_id)
-        # Shared agents (user_id IS NULL) still need this user's connector MCP configs.
-        for row in self._repos.agent_repo.list_all(include_disabled=False):
-            if row.user_id is not None or row.agent_id in reloaded:
-                continue
-            await self.reload_connectors(row.agent_id, connector_user_id=user_id)
+        await self._mcp().reload_for_user(user_id)
 
     def invalidate_mcp_tool_cache(self, user_id: int | None = None) -> None:
         """Drop cached custom MCP tools (one user, or all users when ``user_id`` is None)."""
-        if user_id is None:
-            self._mcp_tool_cache.clear()
-            self._mcp_tool_cache_locks.clear()
-            return
-        for cache_key in [k for k in self._mcp_tool_cache if k[0] == user_id]:
-            del self._mcp_tool_cache[cache_key]
-        for lock_key in [k for k in self._mcp_tool_cache_locks if k[0] == user_id]:
-            del self._mcp_tool_cache_locks[lock_key]
+        self._mcp().invalidate(user_id)
 
     def mcp_server_labels_for_user(self, user_id: int) -> dict[str, str]:
-        labels: dict[str, str] = {}
-        for inst in self._connector_svc.list_instances_for_api(user_id):
-            name = str(inst["mcp_server_name"])
-            display_name = str(inst.get("display_name") or name)
-            labels[name] = display_name.strip() or name
-        return labels
+        return self._mcp().server_labels_for_user(user_id)
 
     def resolve_tool_display_name_for_chat(
         self,
@@ -2957,28 +2708,15 @@ class AgentManager:
         tool_name: str,
         locale: str,
     ) -> str:
-        from octop.i18n.domains.tools import resolve_tool_display_name
-
-        uid = user_id
-        if uid is None:
-            row = self.get_row(agent_id)
-            uid = self._connector_uid_for(row) if row is not None else None
-        mcp_labels = self.mcp_server_labels_for_user(uid) if uid is not None else {}
-        return resolve_tool_display_name(
-            tool_name,
-            locale,
-            mcp_server_labels=mcp_labels,
-            plugin_labels=self._plugin_tool_labels.get(agent_id, {}),
+        return self._mcp().tool_display_name(
+            agent_id=agent_id,
+            user_id=user_id,
+            tool_name=tool_name,
+            locale=locale,
         )
 
     async def _server_lock(self, user_id: int, server_name: str) -> asyncio.Lock:
-        key = (user_id, server_name)
-        async with self._mcp_tool_cache_guard:
-            lock = self._mcp_tool_cache_locks.get(key)
-            if lock is None:
-                lock = asyncio.Lock()
-                self._mcp_tool_cache_locks[key] = lock
-            return lock
+        return await self._mcp().server_lock(user_id, server_name)
 
     async def _get_or_load_mcp_tools(
         self,
@@ -2987,64 +2725,7 @@ class AgentManager:
         spec: dict[str, Any],
     ) -> list[Any]:
         """Load custom MCP tools once per user/server/fingerprint; share across agents."""
-        from octop_harness.mcp import aload_mcp_tools
-
-        from octop.infra.connectors.mcp_tool_cache import (
-            fingerprint_mcp_spec,
-            wrap_tools_for_shared_use,
-        )
-
-        fp = fingerprint_mcp_spec(spec)
-        cache_key = (user_id, server_name, fp)
-        cached = self._mcp_tool_cache.get(cache_key)
-        if cached is not None:
-            return cached
-
-        async with self._mcp_tool_cache_guard:
-            cached = self._mcp_tool_cache.get(cache_key)
-            if cached is not None:
-                return cached
-            load_lock = self._mcp_tool_cache_locks.get((user_id, server_name))
-            if load_lock is None:
-                load_lock = asyncio.Lock()
-                self._mcp_tool_cache_locks[(user_id, server_name)] = load_lock
-
-        async with load_lock:
-            cached = self._mcp_tool_cache.get(cache_key)
-            if cached is not None:
-                return cached
-            from octop.infra.utils.env_file import (  # noqa: PLC0415
-                env_file_path,
-                load_env_file,
-                overlay_stdio_spec_env,
-            )
-
-            global_env = load_env_file(env_file_path(self._paths.root))
-            load_spec = overlay_stdio_spec_env(spec, global_env)
-            raw = await aload_mcp_tools({server_name: load_spec})
-            from octop.infra.agents.plugins.plugin_tool_names import (  # noqa: PLC0415
-                sanitize_plugin_tool_names,
-            )
-
-            sanitize_plugin_tool_names(raw)
-            server_lock = await self._server_lock(user_id, server_name)
-            wrapped = wrap_tools_for_shared_use(raw, server_lock)
-            self._mcp_tool_cache[cache_key] = wrapped
-            stale = [
-                key
-                for key in self._mcp_tool_cache
-                if key[0] == user_id and key[1] == server_name and key[2] != fp
-            ]
-            for key in stale:
-                del self._mcp_tool_cache[key]
-            logger.info(
-                "mcp tool cache store user=%s server=%s fingerprint=%s tools=%d",
-                user_id,
-                server_name,
-                fp,
-                len(wrapped),
-            )
-            return wrapped
+        return await self._mcp().get_or_load_tools(user_id, server_name, spec)
 
     def merge_turn_mcp_servers(
         self,
@@ -3056,7 +2737,7 @@ class AgentManager:
         agent_owner_id: int | None = None,
     ) -> list[str] | None:
         """Resolve turn MCP servers vs default_open plus optional expert defaults."""
-        return self._connector_svc.merge_turn_mcp_servers(
+        return self._mcp().merge_turn_servers(
             user_id,
             explicit,
             apply_defaults=apply_defaults,
@@ -3071,11 +2752,7 @@ class AgentManager:
         names: list[str],
     ) -> list[str]:
         """Catalog names a non-owner selects for this expert's stored MCP picks."""
-        return self._connector_svc.present_mcp_names_for_viewer(
-            owner_user_id=owner_user_id,
-            viewer_user_id=viewer_user_id,
-            names=names,
-        )
+        return self._mcp().present_names_for_viewer(owner_user_id, viewer_user_id, names)
 
     def align_mcp_names_to_harness(
         self,
@@ -3084,11 +2761,7 @@ class AgentManager:
         names: list[str],
     ) -> list[str]:
         """Viewer catalog names → names registered on the expert owner's harness."""
-        return self._connector_svc.align_mcp_names_to_harness(
-            owner_user_id=owner_user_id,
-            viewer_user_id=viewer_user_id,
-            names=names,
-        )
+        return self._mcp().align_names_to_harness(owner_user_id, viewer_user_id, names)
 
     def mcp_names_for_chips(
         self,
@@ -3098,21 +2771,11 @@ class AgentManager:
         harness_names: list[str],
     ) -> list[str]:
         """History-chip names for the MCP servers actually attached to the turn."""
-        return self._connector_svc.mcp_names_for_chips(
-            owner_user_id=owner_user_id,
-            viewer_user_id=viewer_user_id,
-            requested=requested,
-            harness_names=harness_names,
-        )
+        return self._mcp().names_for_chips(owner_user_id, viewer_user_id, requested, harness_names)
 
     def default_mcp_servers(self, agent_id: str) -> list[str]:
         """Composer MCP servers selected on the expert for new sessions."""
-        from octop.infra.agents.teams import is_team_agent
-
-        row = self._repos.agent_repo.get(agent_id)
-        if row is None or is_team_agent(row):
-            return []
-        return id_list_from_row(row, "mcp_servers")
+        return self._mcp().default_servers(agent_id)
 
     def default_knowledge_base_ids(self, agent_id: str) -> list[str]:
         """Composer knowledge bases selected on the expert for new sessions."""
@@ -3130,238 +2793,9 @@ class AgentManager:
     ) -> list[str]:
         """Ensure requested MCP servers are configured and tools are loaded before chat.
 
-        Custom MCP tools are loaded on demand and shared via a user-level cache.
-        Built-in connectors still use reload_connectors when missing.
-
         Returns server names that still have no loaded tools after reload/retry.
         """
-        if not names:
-            return []
-        from octop.infra.agents.teams import is_team_agent
-
-        if is_team_agent(self.get_row(agent_id)):
-            return []
-        agent = self.get_agent(agent_id)
-        row = self.get_row(agent_id)
-        uid = self._connector_uid_for(row, connector_user_id=connector_user_id) if row else None
-        if uid is None and connector_user_id is not None:
-            uid = connector_user_id
-        owner_raw = getattr(row, "user_id", None) if row is not None else None
-        owner_id = owner_raw if isinstance(owner_raw, int) else None
-        requested = list(names)
-        aliases: dict[str, str] = {}
-        if owner_id is not None and uid is not None and owner_id != uid:
-            aliases = self._connector_svc.shared_custom_harness_aliases(owner_id)
-            names = []
-            for name in requested:
-                mapped = aliases.get(name, name)
-                if mapped not in names:
-                    names.append(mapped)
-
-        custom_configs: dict[str, Any] = {}
-        load_user: dict[str, int] = {}
-        if uid is not None:
-            custom_configs = self._connector_svc.custom_harness_configs(uid)
-            load_user = dict.fromkeys(custom_configs, uid)
-        if aliases and uid is not None and owner_id is not None:
-            # Load the owner's spec when the turn asked for the shared server.
-            # A viewer's own server with the same short name stays theirs unless
-            # the collision-safe name was selected too.
-            viewer_own = set(self._connector_svc.get_custom_servers(uid))
-            owner_backed = {
-                short
-                for long_name, short in aliases.items()
-                if long_name in requested or (short in requested and short not in viewer_own)
-            }
-            if owner_backed:
-                owner_configs = self._connector_svc.custom_harness_configs(owner_id)
-                for name in owner_backed:
-                    spec = owner_configs.get(name)
-                    if isinstance(spec, dict):
-                        custom_configs[name] = spec
-                        load_user[name] = owner_id
-
-        tool_set: frozenset[str] = getattr(agent, "_mcp_tool_name_set", frozenset())
-        attached_raw = getattr(agent, "_mcp_attached_user", None)
-        attached: dict[str, int] = attached_raw if isinstance(attached_raw, dict) else {}
-        missing_tools: list[str] = []
-        for name in names:
-            has_tools = any(tool_name.startswith(f"{name}_") for tool_name in tool_set)
-            expected = load_user.get(name)
-            if has_tools and (expected is None or attached.get(name) == expected):
-                continue
-            missing_tools.append(name)
-        logger.info(
-            "prepare_chat_mcp agent=%s connector_user_id=%s requested=%s tool_count=%d missing=%s",
-            agent_id,
-            connector_user_id,
-            names,
-            len(tool_set),
-            missing_tools,
-        )
-        if not missing_tools:
-            matched = sorted(t for t in tool_set if any(t.startswith(f"{n}_") for n in names))
-            logger.info(
-                "prepare_chat_mcp agent=%s: MCP already ready, matching_tools=%s",
-                agent_id,
-                matched,
-            )
-            return []
-
-        custom_missing = [n for n in missing_tools if n in custom_configs]
-        builtin_missing = [n for n in missing_tools if n not in custom_configs]
-
-        if custom_missing and uid is not None:
-            for name in custom_missing:
-                spec = custom_configs[name]
-                if not isinstance(spec, dict) or not spec.get("transport"):
-                    continue
-                try:
-                    tools = await self._get_or_load_mcp_tools(load_user.get(name, uid), name, spec)
-                except Exception:
-                    logger.exception(
-                        "prepare_chat_mcp agent=%s: failed loading custom MCP %s",
-                        agent_id,
-                        name,
-                    )
-                    continue
-                if tools:
-                    try:
-                        bound_user = load_user.get(name, uid)
-                        _bind_custom_mcp_tools(
-                            agent,
-                            name,
-                            tools,
-                            user_id=bound_user if isinstance(bound_user, int) else None,
-                        )
-                    except Exception:
-                        logger.exception(
-                            "prepare_chat_mcp agent=%s: append_mcp_tools failed for %s",
-                            agent_id,
-                            name,
-                        )
-                        continue
-                agent.config.mcp_server_configs[name] = dict(spec)
-
-        gateway_missing: list[str] = []
-        if builtin_missing and uid is not None:
-            gateway_names = gateway_mcp_server_names(
-                connector_repo=self._repos.connector_repo,
-                user_id=uid,
-            )
-            gateway_missing = [n for n in builtin_missing if n in gateway_names]
-            builtin_missing = [n for n in builtin_missing if n not in gateway_names]
-
-        if gateway_missing and uid is not None:
-            await self._attach_gateway_tools(
-                agent,
-                agent_id=agent_id,
-                user_id=uid,
-                server_names=gateway_missing,
-            )
-
-        if builtin_missing:
-            logger.info(
-                "Reloading agent %s MCP tools (builtin_missing=%s)",
-                agent_id,
-                builtin_missing,
-            )
-            await self.reload_connectors(agent_id, connector_user_id=connector_user_id)
-            agent = self.get_agent(agent_id)
-            tool_set = getattr(agent, "_mcp_tool_name_set", frozenset())
-            still_builtin = [
-                n
-                for n in builtin_missing
-                if n in agent.config.mcp_server_configs
-                and not any(t.startswith(f"{n}_") for t in tool_set)
-            ]
-            still_builtin.extend(
-                n for n in builtin_missing if n not in agent.config.mcp_server_configs
-            )
-            still_builtin = sorted(set(still_builtin))
-            if still_builtin:
-                from octop_harness.mcp import aload_mcp_tools
-
-                from octop.infra.utils.env_file import (
-                    env_file_path,
-                    load_env_file,
-                    overlay_stdio_mcp_configs,
-                )
-
-                subset = {
-                    n: agent.config.mcp_server_configs[n]
-                    for n in still_builtin
-                    if isinstance(agent.config.mcp_server_configs.get(n), dict)
-                    and agent.config.mcp_server_configs[n].get("transport")
-                }
-                if subset:
-                    logger.info(
-                        "prepare_chat_mcp agent=%s: targeted MCP reload for %s",
-                        agent_id,
-                        sorted(subset),
-                    )
-                    global_env = load_env_file(env_file_path(self._paths.root))
-                    extra = await aload_mcp_tools(overlay_stdio_mcp_configs(subset, global_env))
-                    if extra:
-                        from octop.infra.agents.plugins.plugin_tool_names import (  # noqa: PLC0415
-                            sanitize_plugin_tool_names,
-                        )
-
-                        sanitize_plugin_tool_names(extra)
-                        agent.append_mcp_tools(extra)
-
-            # Full reload drops previously appended custom tools — re-inject from cache.
-            if custom_configs and uid is not None:
-                agent = self.get_agent(agent_id)
-                tool_set = getattr(agent, "_mcp_tool_name_set", frozenset())
-                for name in names:
-                    if name not in custom_configs:
-                        continue
-                    if any(t.startswith(f"{name}_") for t in tool_set):
-                        continue
-                    spec = custom_configs[name]
-                    if not isinstance(spec, dict) or not spec.get("transport"):
-                        continue
-                    try:
-                        tools = await self._get_or_load_mcp_tools(
-                            load_user.get(name, uid), name, spec
-                        )
-                    except Exception:
-                        logger.exception(
-                            "prepare_chat_mcp agent=%s: re-inject custom MCP %s failed",
-                            agent_id,
-                            name,
-                        )
-                        continue
-                    if tools:
-                        bound_user = load_user.get(name, uid)
-                        _bind_custom_mcp_tools(
-                            agent,
-                            name,
-                            tools,
-                            user_id=bound_user if isinstance(bound_user, int) else None,
-                        )
-                        agent.config.mcp_server_configs[name] = dict(spec)
-                    tool_set = getattr(agent, "_mcp_tool_name_set", frozenset())
-
-        agent = self.get_agent(agent_id)
-        tool_set = getattr(agent, "_mcp_tool_name_set", frozenset())
-        still_missing = sorted(n for n in names if not any(t.startswith(f"{n}_") for t in tool_set))
-        if still_missing:
-            logger.warning(
-                "prepare_chat_mcp agent=%s: tools still missing for %s",
-                agent_id,
-                still_missing,
-            )
-        if aliases:
-            short_to_long = {short: long for long, short in aliases.items()}
-            still_missing = [
-                short_to_long[name]
-                if name in short_to_long and short_to_long[name] in requested
-                else name
-                for name in still_missing
-            ]
-        return still_missing
+        return await self._mcp().prepare_chat(agent_id, names, connector_user_id=connector_user_id)
 
     async def _attach_gateway_tools(
         self,
@@ -3377,36 +2811,11 @@ class AgentManager:
         pool an in-flight turn still writes to) only to run the very same
         in-process injection at the end of ``_post_start_agent``.
         """
-        repo = self._repos.connector_repo
-        if not repo.connector_feature_allows(user_id):
-            return
-        for inst in repo.list_visible(user_id):
-            if inst.status != "active" or inst.mcp_server_name not in server_names:
-                continue
-            try:
-                await self._connector_svc.ensure_fresh_credentials(inst.instance_id, inst.kind)
-            except Exception:
-                logger.exception(
-                    "prepare_chat_mcp agent=%s: credential refresh failed for %s",
-                    agent_id,
-                    inst.mcp_server_name,
-                )
-        for name in server_names:
-            agent.config.mcp_server_configs.setdefault(name, {})
-        extra = self._agently_write_interrupts(user_id)
-        if extra:
-            current = {**(getattr(agent.config, "interrupt_on", None) or {}), **extra}
-            store = getattr(self, "_hitl_session_store", None)
-            if store is not None:
-                current = apply_session_bypass(current, store) or current
-            agent.config.interrupt_on = current
-        inject_missing_gateway_tools(
+        await self._mcp().attach_gateway_tools(
             agent,
-            svc=self._connector_svc,
-            connector_repo=repo,
-            user_id=user_id,
             agent_id=agent_id,
-            mcp_server_configs=agent.config.mcp_server_configs,
+            user_id=user_id,
+            server_names=server_names,
         )
 
     # ------------------------------------------------------------------
@@ -4801,11 +4210,8 @@ class AgentManager:
         no filesystem read happens per turn.
         """
 
-        snapshot = self._dsh_skill_snapshots.get(agent_id)
-        if snapshot is None:
-            return req
         thread_id = str(req.get("thread_id") or "")
-        text = self._dsh_prompt_sessions.advance(agent_id, thread_id, snapshot)
+        text = self._dsh().advance_prompt(agent_id, thread_id)
         if not text:
             return req
         configurable = dict(req.get("configurable") or {})
@@ -5090,9 +4496,7 @@ class AgentManager:
             QuickChatGuardMiddleware,
         )
 
-        agent_middleware.append(
-            QuickChatGuardMiddleware(thread_repo=self._repos.thread_repo)
-        )
+        agent_middleware.append(QuickChatGuardMiddleware(thread_repo=self._repos.thread_repo))
         if device_tools:
             from octop.infra.agents.middleware.device_link_gate import (  # noqa: PLC0415
                 DeviceLinkToolGateMiddleware,
@@ -5119,9 +4523,7 @@ class AgentManager:
                 adb_interrupt_on,
             )
 
-            agent_middleware.append(
-                HumanInTheLoopMiddleware(interrupt_on=adb_interrupt_on())
-            )
+            agent_middleware.append(HumanInTheLoopMiddleware(interrupt_on=adb_interrupt_on()))
         if dsh_skills_prompts_enabled():
             # Only mounts when the opt-in flag is on, so the flag-off middleware
             # chain is byte-identical to before this integration existed.
@@ -5199,7 +4601,7 @@ class AgentManager:
             )
 
             snapshot = workspace_skill_snapshot(workspace_dir, agent_id=row.agent_id)
-            self._dsh_skill_snapshots[row.agent_id] = snapshot
+            self._dsh().snapshots[row.agent_id] = snapshot
             system_prompt = compose_system_prompt(system_prompt, snapshot)
 
         if compat_enabled() and not team_host and system_prompt:

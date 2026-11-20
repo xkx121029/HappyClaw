@@ -35,9 +35,7 @@ def _base_tool_name(name: str) -> str:
     return (name or "").strip().rsplit("/", 1)[-1]
 
 
-def _target_path(
-    args: Any, workspace_dir: Path, root_dir: Path | None = None
-) -> Path | None:
+def _target_path(args: Any, workspace_dir: Path, root_dir: Path | None = None) -> Path | None:
     if not isinstance(args, dict):
         return None
     raw = args.get("file_path") or args.get("path")

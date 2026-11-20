@@ -1,4 +1,4 @@
-"""S2 switch: off means no import, no discovery, no change to the tool list."""
+﻿"""S2 switch: off means no import, no discovery, no change to the tool list."""
 
 from __future__ import annotations
 
@@ -73,7 +73,7 @@ def test_switch_off_does_not_import_or_change_tools(
 
     names = _tool_names(manager._build_harness_config(_row()))
 
-    assert manager._dsh_tools_status is None
+    assert manager.dsh._tools_status is None
     assert not any(name.startswith("dsh__") for name in names)
     assert not any(
         module.startswith("octop.infra.dsh.tools") for module in sys.modules
@@ -163,7 +163,7 @@ def test_exec_stage_mounts_granted_bundle_without_provider(
     assert status["runtime"] == ["dsh:demo"]
     assert status["mounted"] == ["dsh:demo"]
     assert status["tools"] == ["dsh__demo__startup"]
-    assert manager._dsh_tool_providers == {}
+    assert manager.dsh._tool_providers == {}
 
 
 def test_exec_switch_off_mounts_nothing(
@@ -223,3 +223,4 @@ def test_exec_stage_skips_when_workspace_is_unresolvable(
         SKIP_RUNTIME_NO_WORKSPACE
     ]
     assert status["runtime"] == []
+

@@ -206,7 +206,9 @@ def test_cli_prints_localized_progress_without_booting_another_host(tmp_path, mo
 
 @pytest.mark.parametrize("phase", ["backing_up", "deduplicating", "compacting"])
 def test_memory_dashboard_rejects_busy_before_opening_database(phase, monkeypatch):
-    from octop.api.common import memory_client
+    # Patch the implementation module: ``octop.api.common.memory_client`` is a
+    # re-export shim, so patching it would not reach the running code.
+    from octop.infra.agents.memory import client as memory_client
     from octop.infra.errors import ErrorCode, OctopError
 
     monkeypatch.setattr(memory_client, "require_agent_owner_row", lambda *args, **kwargs: None)

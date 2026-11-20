@@ -232,7 +232,9 @@ class ConversationContextMiddleware(AgentMiddleware[Any, Any]):
                 root = Path(raw_root) if raw_root else self._paths.project_root(project_id)
                 return root, f"project {name}"
             if (getattr(thread, "workspace_kind", "") or "") == SESSION_KIND:
-                return self._paths.session_root(thread_id), "temporary session workspace (no project)"
+                return self._paths.session_root(
+                    thread_id
+                ), "temporary session workspace (no project)"
             raw_dir = str(getattr(thread, "workspace_dir", "") or "").strip()
             if raw_dir:
                 return Path(raw_dir), "thread workspace"
@@ -289,9 +291,7 @@ def _append_block(request: ModelRequest[Any], block: str) -> ModelRequest[Any]:
     return request.override(system_message=SystemMessage(content=content))
 
 
-def _recent_files(
-    root: Path, tz: ZoneInfo, limit: int = _MAX_RECENT_FILES
-) -> list[str]:
+def _recent_files(root: Path, tz: ZoneInfo, limit: int = _MAX_RECENT_FILES) -> list[str]:
     """Recently modified user files, newest first, with relative paths."""
     try:
         if not root.is_dir():

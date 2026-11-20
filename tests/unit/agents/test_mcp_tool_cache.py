@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from langchain_core.tools import BaseTool, StructuredTool
 
+from octop.infra.agents.connectors import ConnectorCoordinator
 from octop.infra.connectors.mcp_tool_cache import (
     fingerprint_mcp_spec,
     wrap_tools_for_shared_use,
@@ -79,9 +80,7 @@ async def test_get_or_load_caches_and_reuses() -> None:
     from octop.infra.agents.manager import AgentManager
 
     mgr = object.__new__(AgentManager)
-    mgr._mcp_tool_cache = {}
-    mgr._mcp_tool_cache_locks = {}
-    mgr._mcp_tool_cache_guard = asyncio.Lock()
+    mgr.connectors = ConnectorCoordinator(mgr)
     mgr._paths = MagicMock(root=MagicMock())
 
     fake = MagicMock()
@@ -108,9 +107,7 @@ async def test_get_or_load_misses_on_fingerprint_change() -> None:
     from octop.infra.agents.manager import AgentManager
 
     mgr = object.__new__(AgentManager)
-    mgr._mcp_tool_cache = {}
-    mgr._mcp_tool_cache_locks = {}
-    mgr._mcp_tool_cache_guard = asyncio.Lock()
+    mgr.connectors = ConnectorCoordinator(mgr)
     mgr._paths = MagicMock(root=MagicMock())
 
     def _tool(name: str) -> MagicMock:
@@ -135,7 +132,7 @@ async def test_get_or_load_misses_on_fingerprint_change() -> None:
     assert aload.await_count == 2
     assert a[0].name == "s_a"
     assert b[0].name == "s_b"
-    assert len(mgr._mcp_tool_cache) == 1
+    assert len(mgr.connectors._tool_cache) == 1
 
 
 @pytest.mark.asyncio
@@ -143,9 +140,7 @@ async def test_prepare_chat_mcp_injects_custom_from_cache() -> None:
     from octop.infra.agents.manager import AgentManager
 
     mgr = object.__new__(AgentManager)
-    mgr._mcp_tool_cache = {}
-    mgr._mcp_tool_cache_locks = {}
-    mgr._mcp_tool_cache_guard = asyncio.Lock()
+    mgr.connectors = ConnectorCoordinator(mgr)
     mgr._paths = MagicMock(root=MagicMock())
 
     tool = MagicMock()

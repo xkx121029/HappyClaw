@@ -1,4 +1,4 @@
-"""S8 boot wiring: zero import when off, safe failures, and status reporting."""
+﻿"""S8 boot wiring: zero import when off, safe failures, and status reporting."""
 
 from __future__ import annotations
 
@@ -54,10 +54,11 @@ def _transport_factory():
 
 def _agent_manager_for(manager: Any) -> AgentManager:
     """Minimal AgentManager carrying only the state the boot hook touches."""
+    from octop.infra.agents.dsh_runtime import attach_dsh_runtime
+
     agent_manager = object.__new__(AgentManager)
     agent_manager._harness_manager = manager
-    agent_manager._dsh_transport_factory = _transport_factory()
-    agent_manager._dsh_llm_install = None
+    attach_dsh_runtime(agent_manager).set_transport_factory(_transport_factory())
     return agent_manager
 
 
@@ -72,7 +73,7 @@ def test_boot_install_is_zero_import_when_switches_are_off(
         agent_manager = object.__new__(AgentManager)
         AgentManager._install_dsh_llm(agent_manager)
 
-        assert getattr(agent_manager, "_dsh_llm_install", None) is None
+        assert getattr(agent_manager.dsh, "_llm_install", None) is None
         for name in ADAPTER_MODULES:
             assert name not in sys.modules, f"boot imported {name} while the stage is off"
     finally:
@@ -93,7 +94,7 @@ def test_boot_structure_mismatch_logs_error_and_keeps_the_factory(
         AgentManager._install_dsh_llm(agent_manager)  # must not raise
 
     assert manager._shared_factory is original
-    result = agent_manager._dsh_llm_install
+    result = agent_manager.dsh._llm_install
     assert result.applied is False
     assert result.outcome == "failed"
     assert "expected ChatModelFactory" in result.reason
@@ -153,4 +154,5 @@ def test_version_warning_reaches_the_startup_log(
 
     messages = [record.message for record in caplog.records]
     assert any("9.9.9" in message and "1.0.9" in message for message in messages)
-    assert agent_manager._dsh_llm_install.version_warning is not None
+    assert agent_manager.dsh._llm_install.version_warning is not None
+

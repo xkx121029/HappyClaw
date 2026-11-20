@@ -875,7 +875,12 @@ class ExpertCatalog:
                 continue
             summaries.append(expert.summary)
         # HappyClaw is the built-in default entry; keep it first in the library.
-        summaries.sort(key=lambda s: (0 if s.id == "happyclaw" else 1 if s.id == "general-assistant" else 2, s.id))
+        summaries.sort(
+            key=lambda s: (
+                0 if s.id == "happyclaw" else 1 if s.id == "general-assistant" else 2,
+                s.id,
+            )
+        )
         return summaries
 
     def get(self, expert_id: str) -> Expert | None:

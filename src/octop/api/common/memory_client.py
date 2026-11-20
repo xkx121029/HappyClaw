@@ -7,6 +7,7 @@ The implementation moved to :mod:`octop.infra.agents.memory.client` so that
 from __future__ import annotations
 
 from octop.infra.agents.memory.client import (
+    _open_memory_for_agent,
     call_memory_rpc,
     invalidate_cached_memory,
     memory_db_path,
@@ -16,6 +17,7 @@ from octop.infra.agents.memory.client import (
 )
 
 __all__ = [
+    "_open_memory_for_agent",
     "call_memory_rpc",
     "invalidate_cached_memory",
     "memory_db_path",
