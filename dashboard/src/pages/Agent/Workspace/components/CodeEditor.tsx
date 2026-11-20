@@ -95,6 +95,8 @@ export default function CodeEditor({
           onMount={handleMount}
           options={{
             minimap: { enabled: false },
+            // Monaco requires a number here (it measures in px internally), so
+            // this mirrors --fn-text-xs instead of referencing the variable.
             fontSize: 13,
             lineNumbers: "on",
             scrollBeyondLastLine: false,

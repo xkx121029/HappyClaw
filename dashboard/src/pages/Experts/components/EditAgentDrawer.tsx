@@ -1035,7 +1035,7 @@ function EditAgentDrawerBody({
                         ) : workspaceFiles.length === 0 ? (
                           <div
                             style={{
-                              fontSize: 13,
+                              fontSize: "var(--fn-text-xs)",
                               color: "var(--fn-text-tertiary)",
                               padding: "8px 0",
                             }}
@@ -1154,7 +1154,7 @@ function EditAgentDrawerBody({
                           {agentSkills.length === 0 ? (
                             <div
                               style={{
-                                fontSize: 13,
+                                fontSize: "var(--fn-text-xs)",
                                 color: "var(--fn-text-tertiary)",
                                 padding: "8px 0",
                               }}
@@ -1287,7 +1287,7 @@ function EditAgentDrawerBody({
                           {agentSubagents.length === 0 ? (
                             <div
                               style={{
-                                fontSize: 13,
+                                fontSize: "var(--fn-text-xs)",
                                 color: "var(--fn-text-tertiary)",
                                 padding: "8px 0",
                               }}

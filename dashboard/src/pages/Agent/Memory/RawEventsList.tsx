@@ -160,7 +160,7 @@ export default function RawEventsList({ agentId }: Props) {
           <div
             style={{
               marginTop: 4,
-              fontSize: 13,
+              fontSize: "var(--fn-text-xs)",
               overflow: "hidden",
               textOverflow: "ellipsis",
               display: "-webkit-box",

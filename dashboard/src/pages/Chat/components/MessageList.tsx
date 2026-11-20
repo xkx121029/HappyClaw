@@ -14,10 +14,12 @@ import { Virtuoso, type Components, type VirtuosoHandle } from "react-virtuoso";
 import { useTranslation } from "react-i18next";
 import cx from "classnames";
 import type { HitlDecisionHandler } from "../../../api/types/hitl";
+import { useNewIds } from "../../../motion";
 import type { ChatMessage } from "../hooks/useChat";
 import type { ComposerTagLookups } from "./UserMessageComposerTags";
 import MessageBubble from "./MessageBubble";
 import AssistantTurnView from "./AssistantTurnView";
+import { PluginSurfaceSlot } from "../../../plugins/surfaces";
 import ScrollToBottomButton from "./ScrollToBottomButton";
 import GeneratingIndicator from "./GeneratingIndicator";
 import TurnTimelineRail from "./TurnTimelineRail";
@@ -135,6 +137,8 @@ interface MessageListProps {
 
 interface GroupRenderContext {
   agentId?: string | null;
+  /** Thread id for ``conversation.view`` plugin surfaces. */
+  threadId?: string | null;
   composerLookups?: ComposerTagLookups;
   isStreaming?: boolean;
   liveSpeakers?: ReadonlyArray<string>;
@@ -157,6 +161,8 @@ interface GroupRenderContext {
   shellCommandDisabledTitle?: string;
   compactProcess?: boolean;
   registerBubbleRef: (messageId: string, el: HTMLDivElement | null) => void;
+  /** 刚出现、需要播放入场动效的消息组（历史与重连不播）。 */
+  freshGroupKeys: ReadonlySet<string>;
 }
 
 function renderMessageGroup(
@@ -169,6 +175,14 @@ function renderMessageGroup(
       ? ctx.onOpenBrowser
       : undefined;
   const afterLatestUser = groupIndex > ctx.lastUserGroupIndex;
+  const groupKey = group.messages[0]?.id ?? `g-${groupIndex}`;
+  const enterProps = ctx.freshGroupKeys.has(groupKey)
+    ? ({
+        className: "octop-enter",
+        "data-motion": "rise",
+        "data-motion-duration": "fast",
+      } as const)
+    : {};
   const isTurnInProgress = isLiveAssistantTurn({
     isStreaming: Boolean(ctx.isStreaming),
     groupIndex,
@@ -183,6 +197,7 @@ function renderMessageGroup(
         <div
           data-message-id={msg.id}
           data-role="assistant"
+          {...enterProps}
           ref={(el) => {
             ctx.registerBubbleRef(msg.id, el);
           }}
@@ -190,6 +205,7 @@ function renderMessageGroup(
           <AssistantTurnView
             messages={[msg]}
             agentId={ctx.agentId}
+            threadId={ctx.threadId}
             isTurnInProgress={isTurnInProgress}
             afterLatestUser={afterLatestUser}
             liveSpeakers={ctx.liveSpeakers}
@@ -215,6 +231,7 @@ function renderMessageGroup(
       <div
         data-message-id={msg.id}
         data-role={msg.role}
+        {...enterProps}
         ref={(el) => {
           ctx.registerBubbleRef(msg.id, el);
         }}
@@ -228,16 +245,30 @@ function renderMessageGroup(
           onEditUserMessage={ctx.onEditUserMessage}
           onWithdrawSteer={ctx.onWithdrawSteer}
         />
+        <PluginSurfaceSlot
+          slot="conversation.view"
+          context={{
+            agentId: ctx.agentId,
+            threadId: ctx.threadId,
+            message: {
+              id: msg.id,
+              role: msg.role,
+              content: msg.content,
+              createdAt: msg.timestamp,
+            },
+          }}
+        />
       </div>
     );
   }
 
-  const groupKey = group.messages[0]?.id ?? "assistant-turn";
+  const groupKeyForRender = group.messages[0]?.id ?? "assistant-turn";
   return (
     <div
-      key={groupKey}
+      key={groupKeyForRender}
       data-message-id={group.messages[0]?.id}
       data-role="assistant"
+      {...enterProps}
       ref={(el) => {
         for (const msg of group.messages) {
           ctx.registerBubbleRef(msg.id, el);
@@ -247,6 +278,7 @@ function renderMessageGroup(
       <AssistantTurnView
         messages={group.messages}
         agentId={ctx.agentId}
+        threadId={ctx.threadId}
         isTurnInProgress={isTurnInProgress}
         afterLatestUser={afterLatestUser}
         liveSpeakers={ctx.liveSpeakers}
@@ -932,9 +964,20 @@ export default function MessageList(props: MessageListProps) {
     scrollToBottom(true, true);
   }, [isStreaming, messages, scrollToBottom]);
 
+  // 只让「刚刚出现」的尾部消息做入场，历史载入 / 重连刷新整体不播。
+  const groupKeys = useMemo(
+    () =>
+      messageGroups.map(
+        (group, index) => group.messages[0]?.id ?? `g-${index}`,
+      ),
+    [messageGroups],
+  );
+  const freshGroupKeys = useNewIds(groupKeys, stableSessionKey, 2);
+
   const groupContext = useMemo<GroupRenderContext>(
     () => ({
       agentId,
+      threadId: sessionKey ?? null,
       composerLookups,
       isStreaming,
       liveSpeakers,
@@ -957,6 +1000,7 @@ export default function MessageList(props: MessageListProps) {
       shellCommandDisabledTitle,
       compactProcess,
       registerBubbleRef,
+      freshGroupKeys,
     }),
     [
       agentId,
@@ -982,6 +1026,8 @@ export default function MessageList(props: MessageListProps) {
       shellCommandDisabledTitle,
       compactProcess,
       registerBubbleRef,
+      freshGroupKeys,
+      sessionKey,
     ],
   );
 
@@ -991,6 +1037,7 @@ export default function MessageList(props: MessageListProps) {
         {showGenerating && (
           <div className={styles.generatingSlot}>
             <GeneratingIndicator
+              phase={isAwaitingAssistantReply ? "thinking" : "working"}
               startedAt={thinkingStartedAt}
               showElapsed={isAwaitingAssistantReply}
               membersOnly={generatingMembersOnly}

@@ -1,4 +1,4 @@
-"""QQ Music Skills gateway — Bearer API Key (qmk-…)."""
+"""Music Skills gateway — Bearer API Key (qmk-…)."""
 
 from __future__ import annotations
 

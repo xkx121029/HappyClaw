@@ -699,10 +699,15 @@ async def _iter_session_jsonl_sources(
     agent_id: str,
     *,
     user: Any,
+    thread_id: str | None = None,
 ) -> list[tuple[str, str]]:
     """Return ``(label, text)`` pairs for session JSONL files (remote backend aware)."""
     registry = server.app_runtime.agent_registry
-    workspace = registry.workspace_for_agent(agent_id)
+    workspace = None
+    if thread_id and hasattr(registry, "workspace_for_thread"):
+        workspace = registry.workspace_for_thread(agent_id, thread_id)
+    if workspace is None:
+        workspace = registry.workspace_for_agent(agent_id)
     if workspace is not None:
         try:
             from_ws = await asyncio.to_thread(_collect_jsonl_from_workspace_backend, workspace)
@@ -716,7 +721,7 @@ async def _iter_session_jsonl_sources(
             )
 
     sources: list[tuple[str, str]] = []
-    local_workspace = resolve_agent_workspace_dir(server, agent_id)
+    local_workspace = resolve_agent_workspace_dir(server, agent_id, thread_id)
     sessions_dir = Path(local_workspace) / "sessions"
     if sessions_dir.is_dir():
         for path in sorted(sessions_dir.glob("*.jsonl"), reverse=True):
@@ -744,7 +749,9 @@ async def _load_thread_messages_from_sessions(
     needed = offset + limit + 1
 
     collected: list[dict[str, Any]] = []
-    for _label, text in await _iter_session_jsonl_sources(server, agent_id, user=user):
+    for _label, text in await _iter_session_jsonl_sources(
+        server, agent_id, user=user, thread_id=thread_id
+    ):
         for line in text.splitlines():
             line = line.strip()
             if not line:

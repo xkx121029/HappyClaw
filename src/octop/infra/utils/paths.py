@@ -88,6 +88,22 @@ class PathLayout:
         """Global agent workspace: ~/.octop/agents/<agent_id>/"""
         return self.agents_dir / agent_id
 
+    @property
+    def projects_dir(self) -> Path:
+        """Project roots created by HappyClaw: ``~/.octop/projects/``."""
+        return self.root / "projects"
+
+    def project_root(self, project_id: str) -> Path:
+        return self.projects_dir / project_id
+
+    @property
+    def sessions_dir(self) -> Path:
+        """Per-conversation roots for threads without a project."""
+        return self.root / "sessions"
+
+    def session_root(self, thread_id: str) -> Path:
+        return self.sessions_dir / thread_id
+
     def ensure_agent_workspace(self, agent_id: str) -> Path:
         """Global agent workspace, mkdir -p."""
         out = self.agent_workspace(agent_id)
@@ -101,6 +117,15 @@ class PathLayout:
     @property
     def plugins_dir(self) -> Path:
         return self.root / "plugins"
+
+    @property
+    def market_dir(self) -> Path:
+        """Unified market install root: ``~/.octop/market/``.
+
+        Octop portal installs keep their flat ``~/.octop/plugins/<id>`` layout;
+        this root only holds catalog installs (``market/dsh/<native>/``).
+        """
+        return self.root / "market"
 
     @property
     def tool_guard_rules_dir(self) -> Path:

@@ -1,10 +1,10 @@
 /**
  * Browser client for Octop's realtime STT WebSocket (`/api/voice/stt-stream`).
  *
- * Tencent refines a sentence (`interim`) before confirming it (`final`), so the
- * client tracks confirmed sentences by id and reports the *cumulative*
- * transcript of the session. The composer can therefore replace only the tail
- * of the input it owns instead of appending duplicates.
+ * The ASR provider refines a sentence (`interim`) before confirming it
+ * (`final`), so the client tracks confirmed sentences by id and reports the
+ * *cumulative* transcript of the session. The composer can therefore replace
+ * only the tail of the input it owns instead of appending duplicates.
  */
 
 export interface RealtimeSttHandlers {

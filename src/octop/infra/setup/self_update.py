@@ -406,6 +406,11 @@ def is_prerelease(value: str) -> bool:
     return match.group("pre_l") is not None or match.group("dev_l") is not None
 
 
+def is_valid_version(value: str) -> bool:
+    """True when *value* is a PEP 440 version accepted by :func:`parse_version`."""
+    return bool(value and value.strip()) and _PEP440_RE.match(value.strip()) is not None
+
+
 def is_newer(remote: str, local: str) -> bool:
     return parse_version(remote) > parse_version(local)
 

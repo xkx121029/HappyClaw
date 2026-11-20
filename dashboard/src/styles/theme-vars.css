@@ -5,64 +5,78 @@
    Mode via html[data-theme="light|dark"]
    =================================================================== */
 
+/* Scale + semantic-color primitives are generated from
+   src/styles/tokens/{scales,colors}.ts by scripts/gen-tokens.mjs.
+   Do not re-declare them here; this file only adds derived aliases,
+   palette accents and component chrome. */
+@import "./tokens.generated.css";
+
+/* ---------- DERIVED / MODE-INDEPENDENT ---------- */
+:root {
+  --fn-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
+    "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --fn-font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  /* Motion */
+  --fn-duration-fast: 120ms;
+  --fn-duration-base: 180ms;
+  --fn-duration-slow: 280ms;
+  --fn-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --fn-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fn-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --fn-transition-fast: var(--fn-duration-fast) var(--fn-ease-standard);
+  --fn-transition: var(--fn-duration-base) var(--fn-ease-standard);
+  --fn-transition-slow: var(--fn-duration-slow) var(--fn-ease-standard);
+  --fn-transition-spring: var(--fn-duration-slow) var(--fn-ease-spring);
+
+  /* Focus: one ring for native controls and custom surfaces. */
+  --fn-focus-ring-width: 2px;
+  --fn-focus-ring-offset: 2px;
+}
+
 /* ---------- LIGHT THEME ---------- */
 :root,
 html[data-theme="light"] {
-  /* ---- Backgrounds ---- */
-  --fn-bg-primary: #ffffff;
-  --fn-bg-secondary: #f7f8fa;
+  /* ---- Backgrounds ----
+     Roles that are generated (bg-layout / bg-container / bg-elevated /
+     bg-secondary / bg-hover / bg-active / bg-selected / fill-hover) are
+     declared in tokens.generated.css; only extra surface aliases live here. */
+  --fn-bg-primary: var(--fn-bg-container);
   --fn-bg-tertiary: #f0f1f3;
-  --fn-bg-elevated: #ffffff;
-  --fn-bg-layout: #f5f6f8;
-  --fn-bg-container: #ffffff;
-  --fn-bg-hover: rgba(232, 93, 117, 0.04);
-  --fn-bg-active: rgba(232, 93, 117, 0.08);
-  --fn-bg-selected: rgba(232, 93, 117, 0.06);
-  --fn-bg-code: #f5f6f8;
+  --fn-bg-code: var(--fn-bg-layout);
   --fn-bg-toolbar: #fafbfc;
   --fn-bg-toolbar-hover: #f0f1f3;
-  --fn-bg-input-label: #f7f8fa;
+  --fn-bg-input-label: var(--fn-bg-secondary);
   --fn-bg-success-light: #ecfdf5;
   --fn-bg-danger-light: #fef2f2;
   --fn-bg-warning-light: #fffbeb;
   --fn-bg-info-light: #eff6ff;
   --fn-bg-glass: rgba(255, 255, 255, 0.8);
-  --fn-bg-sidebar: #ffffff;
-  --fn-bg-base: #ffffff;
-  --fn-bg-page: #f5f6f8;
+  --fn-bg-sidebar: var(--fn-bg-container);
+  --fn-bg-base: var(--fn-bg-container);
+  --fn-bg-page: var(--fn-bg-layout);
   --fn-bg-quaternary: rgba(0, 0, 0, 0.03);
   --fn-bg-subtle: #f3f4f6;
   --fn-bg-secondary-hover: #f0f1f3;
   --fn-bg-secondary-active: #e8eaed;
-  --fn-surface: #ffffff;
-  --fn-surface-sunken: #f7f8fa;
-  --fn-fill-hover: rgba(0, 0, 0, 0.04);
+  --fn-surface: var(--fn-bg-container);
+  --fn-surface-sunken: var(--fn-bg-secondary);
   --fn-fill-tertiary: #f2f3f5;
 
-  /* ---- Text ---- */
-  --fn-text-primary: #111827;
-  --fn-text-secondary: #4b5563;
-  --fn-text-tertiary: #5b6470;
-  --fn-text-quaternary: #6b7280;
-  --fn-text-placeholder: #c0c5ce;
-  --fn-text-disabled: #d1d5db;
+  /* ---- Text (roles are generated) ---- */
   --fn-text-inverse: #ffffff;
   --fn-text-brand: #b93b52;
   --fn-text-danger: #c81e1e;
   --fn-text-link: var(--fn-text-brand);
   --fn-logo-color: #e05040;
   --fn-logo-filter: none;
-  --fn-font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
-  /* ---- Borders ---- */
-  --fn-border-primary: #e5e7eb;
-  --fn-border-secondary: #f3f4f6;
+  /* ---- Borders (primary/secondary/input are generated) ---- */
   --fn-border-tertiary: #f9fafb;
-  --fn-border-input: #d1d5db;
-  --fn-border-input-alt: #e5e7eb;
+  --fn-border-input-alt: var(--fn-border-primary);
   --fn-border-focus: #e85d75;
-  --fn-border: #e5e7eb;
-  --fn-border-color: #e5e7eb;
+  --fn-border: var(--fn-border-primary);
+  --fn-border-color: var(--fn-border-primary);
   --fn-border-strong: #d1d5db;
   --fn-border-subtle: rgba(0, 0, 0, 0.06);
   --fn-border-success: #6ee7b7;
@@ -71,6 +85,8 @@ html[data-theme="light"] {
   --fn-color-brand: #c9435c;
   --fn-color-brand-hover: #b93b52;
   --fn-color-brand-soft: #b93b52;
+  /* Solid brand surface that carries white text (≥4.5:1) in either mode. */
+  --fn-color-brand-strong: var(--fn-color-brand);
   --fn-accent: var(--fn-color-brand);
   --fn-primary: var(--fn-color-brand);
   --fn-primary-bg: color-mix(in srgb, var(--fn-color-brand) 12%, transparent);
@@ -97,24 +113,22 @@ html[data-theme="light"] {
   --fn-assistant-bubble-border: rgba(232, 93, 117, 0.12);
   --fn-assistant-glow-color: 232, 93, 117;
 
-  /* ---- Semantic ---- */
-  --fn-color-success: #10b981;
+  /* ---- Semantic ----
+     success / warning / danger / info are generated; only their tints,
+     borders and legacy aliases live here. */
   --fn-color-success-border: #6ee7b7;
   --fn-color-success-glow: rgba(16, 185, 129, 0.2);
-  --fn-color-danger: #ef4444;
   --fn-color-danger-border: #fca5a5;
-  --fn-color-warning: #f59e0b;
   --fn-color-warning-border: #fcd34d;
   --fn-color-warning-text: #d97706;
-  --fn-color-info: #3b82f6;
   --fn-color-info-border: #93c5fd;
-  --fn-color-error: #ef4444;
+  --fn-color-error: var(--fn-color-danger);
   --fn-color-error-bg: #fef2f2;
   --fn-color-error-border: #fca5a5;
-  --fn-success: #10b981;
+  --fn-success: var(--fn-color-success);
   --fn-success-bg: #ecfdf5;
   --fn-success-border: #6ee7b7;
-  --fn-danger: #ef4444;
+  --fn-danger: var(--fn-color-danger);
   --fn-warning-color: #d97706;
   --fn-color-file-zip: #f59e0b;
   --fn-color-file-word: #3b82f6;
@@ -130,15 +144,17 @@ html[data-theme="light"] {
   --fn-tag-remote-border: #fed7aa;
   --fn-tag-channel-text: #b93b52;
 
-  /* ---- Shadows ---- */
-  --fn-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --fn-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --fn-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06),
-    0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --fn-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07),
-    0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --fn-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.07),
-    0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  /* ---- Shadows: one geometry, cool neutral tint ---- */
+  --fn-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --fn-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06),
+    0 2px 6px -2px rgba(16, 24, 40, 0.08);
+  --fn-shadow-md: 0 4px 10px -2px rgba(16, 24, 40, 0.08),
+    0 2px 4px -2px rgba(16, 24, 40, 0.05);
+  --fn-shadow-lg: 0 12px 24px -8px rgba(16, 24, 40, 0.12),
+    0 4px 8px -4px rgba(16, 24, 40, 0.06);
+  --fn-shadow-xl: 0 24px 48px -12px rgba(16, 24, 40, 0.18);
+  --fn-shadow-popover: 0 8px 24px -6px rgba(16, 24, 40, 0.12),
+    0 2px 8px -2px rgba(16, 24, 40, 0.08);
   --fn-shadow-brand: 0 4px 14px rgba(232, 93, 117, 0.18);
   --fn-shadow-brand-lg: 0 8px 24px rgba(232, 93, 117, 0.24);
 
@@ -151,8 +167,8 @@ html[data-theme="light"] {
 
   /* ---- Cards ---- */
   --fn-card-border-normal: #e5e7eb;
-  --fn-card-shadow-normal: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --fn-card-radius: 12px;
+  --fn-card-shadow-normal: var(--fn-shadow-xs);
+  --fn-card-radius: var(--fn-radius-lg);
 
   /* ---- Sidebar ---- */
   --fn-sidebar-width: 240px;
@@ -176,85 +192,67 @@ html[data-theme="light"] {
   --fn-chat-chrome-divider-inset: 8px;
   --fn-chat-dock-divider-inset-left: 4px;
 
-  /* ---- Transitions ---- */
-  --fn-transition-fast: 0.12s cubic-bezier(0.4, 0, 0.2, 1);
-  --fn-transition: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  --fn-transition-slow: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  --fn-transition-spring: 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* ---- Radius ---- */
-  --fn-radius-sm: 5px;
-  --fn-radius-md: 8px;
-  --fn-radius-lg: 12px;
-  --fn-radius-xl: 18px;
-  --fn-radius-full: 9999px;
+  /* ---- Focus & scrollbar ---- */
+  --fn-focus-ring-color: color-mix(
+    in srgb,
+    var(--fn-color-brand) 55%,
+    transparent
+  );
+  --fn-scrollbar-thumb: rgba(17, 24, 39, 0.16);
+  --fn-scrollbar-thumb-hover: rgba(17, 24, 39, 0.3);
 }
 
 /* ---------- DARK THEME ---------- */
 html[data-theme="dark"] {
-  /* ---- Backgrounds ---- */
-  --fn-bg-primary: #141414;
-  --fn-bg-secondary: #1a1a1a;
-  --fn-bg-tertiary: #222222;
-  --fn-bg-elevated: #1e1e1e;
-  --fn-bg-layout: #0e0e0e;
-  --fn-bg-container: #141414;
-  --fn-bg-hover: rgba(232, 93, 117, 0.08);
-  --fn-bg-active: rgba(232, 93, 117, 0.14);
-  --fn-bg-selected: rgba(232, 93, 117, 0.1);
-  --fn-bg-code: #1e1e1e;
-  --fn-bg-toolbar: #161616;
-  --fn-bg-toolbar-hover: #222222;
-  --fn-bg-input-label: #1a1a1a;
+  /* ---- Backgrounds ----
+     Generated roles live in tokens.generated.css; extra Dark-only aliases and
+     tints stay here. */
+  --fn-bg-primary: var(--fn-bg-container);
+  --fn-bg-tertiary: #1b1e2a;
+  --fn-bg-code: var(--fn-bg-secondary);
+  --fn-bg-toolbar: var(--fn-bg-secondary);
+  --fn-bg-toolbar-hover: #1e2130;
+  --fn-bg-input-label: var(--fn-bg-secondary);
   --fn-bg-success-light: rgba(16, 185, 129, 0.08);
   --fn-bg-danger-light: rgba(239, 68, 68, 0.08);
   --fn-bg-warning-light: rgba(245, 158, 11, 0.08);
   --fn-bg-info-light: rgba(59, 130, 246, 0.08);
-  --fn-bg-glass: rgba(14, 14, 14, 0.8);
-  --fn-bg-sidebar: #141414;
-  --fn-bg-base: #141414;
-  --fn-bg-page: #0e0e0e;
+  --fn-bg-glass: rgba(11, 13, 20, 0.82);
+  --fn-bg-sidebar: var(--fn-bg-container);
+  --fn-bg-base: var(--fn-bg-container);
+  --fn-bg-page: var(--fn-bg-layout);
   --fn-bg-quaternary: rgba(255, 255, 255, 0.04);
-  --fn-bg-subtle: #1e1e1e;
-  --fn-bg-secondary-hover: #222222;
-  --fn-bg-secondary-active: #2a2a2a;
-  --fn-surface: #1e1e1e;
-  --fn-surface-sunken: #1a1a1a;
-  --fn-fill-hover: rgba(255, 255, 255, 0.08);
-  --fn-fill-tertiary: rgba(255, 255, 255, 0.06);
+  --fn-bg-subtle: var(--fn-bg-secondary);
+  --fn-bg-secondary-hover: #1e2130;
+  --fn-bg-secondary-active: #262a3a;
+  --fn-surface: var(--fn-bg-secondary);
+  --fn-surface-sunken: #10121a;
+  --fn-fill-tertiary: rgba(255, 255, 255, 0.05);
 
-  /* ---- Text ---- */
-  --fn-text-primary: rgba(255, 255, 255, 0.9);
-  --fn-text-secondary: rgba(255, 255, 255, 0.72);
-  --fn-text-tertiary: rgba(255, 255, 255, 0.62);
-  --fn-text-quaternary: rgba(255, 255, 255, 0.52);
-  --fn-text-placeholder: rgba(255, 255, 255, 0.16);
-  --fn-text-disabled: rgba(255, 255, 255, 0.16);
-  --fn-text-inverse: #0e0e0e;
+  /* ---- Text (roles are generated) ---- */
+  --fn-text-inverse: #0b0d14;
   --fn-text-brand: #f08b9a;
   --fn-text-danger: #f87171;
   --fn-text-link: var(--fn-text-brand);
   --fn-logo-color: #f08b9a;
   --fn-logo-filter: brightness(1.15) saturate(0.9);
-  --fn-font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
-  /* ---- Borders ---- */
-  --fn-border-primary: rgba(255, 255, 255, 0.08);
-  --fn-border-secondary: rgba(255, 255, 255, 0.05);
-  --fn-border-tertiary: rgba(255, 255, 255, 0.03);
-  --fn-border-input: rgba(255, 255, 255, 0.12);
+  /* ---- Borders (primary/secondary/input are generated) ---- */
+  --fn-border-tertiary: rgba(255, 255, 255, 0.04);
   --fn-border-input-alt: rgba(255, 255, 255, 0.09);
   --fn-border-focus: #f08b9a;
-  --fn-border: rgba(255, 255, 255, 0.08);
-  --fn-border-color: rgba(255, 255, 255, 0.08);
-  --fn-border-strong: rgba(255, 255, 255, 0.16);
-  --fn-border-subtle: rgba(255, 255, 255, 0.05);
+  --fn-border: var(--fn-border-primary);
+  --fn-border-color: var(--fn-border-primary);
+  --fn-border-strong: rgba(255, 255, 255, 0.18);
+  --fn-border-subtle: rgba(255, 255, 255, 0.06);
   --fn-border-success: rgba(52, 211, 153, 0.25);
 
   /* ---- Brand (rose, lightened for dark bg) ---- */
   --fn-color-brand: #f08b9a;
-  --fn-color-brand-hover: #e85d75;
+  --fn-color-brand-hover: #f5a8b4;
   --fn-color-brand-soft: #e85d75;
+  /* Solid brand surface that carries white text (≥4.5:1) in dark mode. */
+  --fn-color-brand-strong: #c9435c;
   --fn-accent: var(--fn-color-brand);
   --fn-primary: var(--fn-color-brand);
   --fn-primary-bg: color-mix(in srgb, var(--fn-color-brand) 16%, transparent);
@@ -264,7 +262,9 @@ html[data-theme="dark"] {
     var(--fn-color-brand) 35%,
     transparent
   );
-  --fn-color-on-brand: #ffffff;
+  /* Dark mode lightens the brand to #f08b9a, so labels on solid brand
+     surfaces switch to ink (8.2:1) instead of white (2.4:1). */
+  --fn-color-on-brand: var(--fn-text-inverse);
   --fn-color-brand-bg: rgba(232, 93, 117, 0.12);
   --fn-color-brand-light: rgba(232, 93, 117, 0.16);
   --fn-color-brand-shadow: rgba(232, 93, 117, 0.25);
@@ -281,24 +281,22 @@ html[data-theme="dark"] {
   --fn-assistant-bubble-border: rgba(240, 139, 154, 0.14);
   --fn-assistant-glow-color: 240, 139, 154;
 
-  /* ---- Semantic ---- */
-  --fn-color-success: #34d399;
+  /* ---- Semantic ----
+     success / warning / danger / info are generated; tints, borders and
+     legacy aliases stay here. */
   --fn-color-success-border: rgba(52, 211, 153, 0.25);
   --fn-color-success-glow: rgba(52, 211, 153, 0.2);
-  --fn-color-danger: #f87171;
   --fn-color-danger-border: rgba(248, 113, 113, 0.25);
-  --fn-color-warning: #fbbf24;
   --fn-color-warning-border: rgba(251, 191, 36, 0.25);
   --fn-color-warning-text: #fbbf24;
-  --fn-color-info: #60a5fa;
   --fn-color-info-border: rgba(96, 165, 250, 0.25);
-  --fn-color-error: #f87171;
+  --fn-color-error: var(--fn-color-danger);
   --fn-color-error-bg: rgba(239, 68, 68, 0.08);
   --fn-color-error-border: rgba(248, 113, 113, 0.25);
-  --fn-success: #34d399;
+  --fn-success: var(--fn-color-success);
   --fn-success-bg: rgba(16, 185, 129, 0.08);
   --fn-success-border: rgba(52, 211, 153, 0.25);
-  --fn-danger: #f87171;
+  --fn-danger: var(--fn-color-danger);
   --fn-warning-color: #fbbf24;
   --fn-color-file-zip: #fbbf24;
   --fn-color-file-word: #60a5fa;
@@ -314,12 +312,16 @@ html[data-theme="dark"] {
   --fn-tag-remote-border: rgba(249, 115, 22, 0.2);
   --fn-tag-channel-text: #f08b9a;
 
-  /* ---- Shadows ---- */
-  --fn-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --fn-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.18);
-  --fn-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.22);
-  --fn-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.35), 0 4px 6px rgba(0, 0, 0, 0.22);
-  --fn-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4), 0 8px 10px rgba(0, 0, 0, 0.25);
+  /* ---- Shadows: same geometry as light, deeper alphas ---- */
+  --fn-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --fn-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+  --fn-shadow-md: 0 4px 10px -2px rgba(0, 0, 0, 0.5),
+    0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --fn-shadow-lg: 0 12px 24px -8px rgba(0, 0, 0, 0.55),
+    0 4px 8px -4px rgba(0, 0, 0, 0.45);
+  --fn-shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+  --fn-shadow-popover: 0 8px 24px -6px rgba(0, 0, 0, 0.55),
+    0 2px 8px -2px rgba(0, 0, 0, 0.45);
   --fn-shadow-brand: 0 4px 14px rgba(232, 93, 117, 0.22);
   --fn-shadow-brand-lg: 0 8px 24px rgba(232, 93, 117, 0.3);
 
@@ -332,40 +334,36 @@ html[data-theme="dark"] {
 
   /* ---- Cards ---- */
   --fn-card-border-normal: rgba(255, 255, 255, 0.07);
-  --fn-card-shadow-normal: 0 1px 3px rgba(0, 0, 0, 0.35);
-  --fn-card-radius: 12px;
+  --fn-card-shadow-normal: var(--fn-shadow-xs);
+  --fn-card-radius: var(--fn-radius-lg);
 
   /* ---- Sidebar ---- */
   --fn-sidebar-width: 240px;
-  --fn-sidebar-bg: #141414;
+  --fn-sidebar-bg: #0f1117;
   --fn-sidebar-border: rgba(255, 255, 255, 0.06);
   --fn-sidebar-item-hover: rgba(255, 255, 255, 0.05);
   --fn-sidebar-item-active-bg: rgba(232, 93, 117, 0.14);
   --fn-sidebar-item-active: rgba(232, 93, 117, 0.14);
   --fn-sidebar-item-active-text: #f08b9a;
-  --fn-sidebar-group-text: rgba(255, 255, 255, 0.52);
+  --fn-sidebar-group-text: rgba(255, 255, 255, 0.48);
 
   /* ---- Header ---- */
   --fn-header-height: 56px;
-  --fn-header-bg: #0e0e0e;
+  --fn-header-bg: #0f1117;
   --fn-header-blur: 0px;
   --fn-chat-chrome-height: 58px;
   --fn-chat-divider: var(--fn-border-primary);
   --fn-chat-chrome-divider-inset: 8px;
   --fn-chat-dock-divider-inset-left: 4px;
 
-  /* ---- Transitions ---- */
-  --fn-transition-fast: 0.12s cubic-bezier(0.4, 0, 0.2, 1);
-  --fn-transition: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  --fn-transition-slow: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  --fn-transition-spring: 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* ---- Radius ---- */
-  --fn-radius-sm: 5px;
-  --fn-radius-md: 8px;
-  --fn-radius-lg: 12px;
-  --fn-radius-xl: 18px;
-  --fn-radius-full: 9999px;
+  /* ---- Focus & scrollbar ---- */
+  --fn-focus-ring-color: color-mix(
+    in srgb,
+    var(--fn-color-brand) 55%,
+    transparent
+  );
+  --fn-scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --fn-scrollbar-thumb-hover: rgba(255, 255, 255, 0.28);
 }
 
 /* ===================================================================
@@ -868,6 +866,41 @@ html[data-palette="slate"][data-theme="dark"] {
   --fn-sidebar-item-active-bg: rgba(148, 163, 184, 0.16);
   --fn-sidebar-item-active: rgba(148, 163, 184, 0.16);
   --fn-sidebar-item-active-text: #94a3b8;
+}
+
+/* ---------- SOLID BRAND SURFACES ----------
+   Dark mode lightens `--fn-color-brand` for legibility on dark surfaces, which
+   drops white label contrast to ~3:1. Solid buttons and badges therefore use
+   the deeper solid tone below; light mode aliases the brand itself.
+   These palettes keep their brand dark in dark mode, so their labels stay
+   white; only the default rose brand (light rose surface) uses ink. */
+html[data-palette="tech"][data-theme="dark"] {
+  --fn-color-brand-strong: #3a5fe0;
+  --fn-color-on-brand: #ffffff;
+}
+html[data-palette="indigo"][data-theme="dark"] {
+  --fn-color-brand-strong: #4f46e5;
+  --fn-color-on-brand: #ffffff;
+}
+html[data-palette="teal"][data-theme="dark"] {
+  --fn-color-brand-strong: #0f766e;
+  --fn-color-on-brand: #ffffff;
+}
+html[data-palette="violet"][data-theme="dark"] {
+  --fn-color-brand-strong: #7c3aed;
+  --fn-color-on-brand: #ffffff;
+}
+html[data-palette="emerald"][data-theme="dark"] {
+  --fn-color-brand-strong: #047857;
+  --fn-color-on-brand: #ffffff;
+}
+html[data-palette="amber"][data-theme="dark"] {
+  --fn-color-brand-strong: #b45309;
+  --fn-color-on-brand: #ffffff;
+}
+html[data-palette="slate"][data-theme="dark"] {
+  --fn-color-brand-strong: #475569;
+  --fn-color-on-brand: #ffffff;
 }
 
 /* ---------- GLOBAL RESET & TRANSITIONS ---------- */

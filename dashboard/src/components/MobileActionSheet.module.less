@@ -1,0 +1,189 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  transition: opacity 160ms var(--fn-ease-out);
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fn-bg-elevated, #fff);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--fn-border-secondary);
+  box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.2);
+  overflow: hidden;
+  animation: sheet-in 220ms var(--fn-ease-out);
+  transition: transform 180ms var(--fn-ease-out);
+}
+
+.panelDragging {
+  transition: none;
+}
+
+/* iOS-style grab handle; the zone is generous so the gesture is forgiving. */
+.grabZone {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.grabber {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--fn-border-strong, rgba(0, 0, 0, 0.18));
+}
+
+.head {
+  flex: none;
+  padding: 2px 20px 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--fn-text-primary);
+}
+
+.subtitle {
+  margin: 3px 0 0;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--fn-text-tertiary);
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 8px 6px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--fn-radius-md);
+  background: transparent;
+  color: var(--fn-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+
+  &:active:not(:disabled) {
+    background: var(--fn-bg-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: -2px;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.45;
+  }
+}
+
+.itemDanger {
+  color: var(--fn-text-danger);
+
+  .itemIcon {
+    color: var(--fn-text-danger);
+  }
+}
+
+.itemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  flex: none;
+  color: var(--fn-text-secondary);
+}
+
+.itemText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.itemLabel {
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 19px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemHint {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fn-text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemMeta {
+  flex: none;
+  font-size: 12px;
+  color: var(--fn-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.safeBottom {
+  flex: none;
+  height: calc(6px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+    transition: none;
+  }
+
+  .backdrop {
+    transition: none;
+  }
+}

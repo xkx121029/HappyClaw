@@ -59,18 +59,14 @@ async def user_summary(
     window: str = "last_30d",
     granularity: str = "by_day",
     agent_id: str | None = None,
-    as_user: int | None = None,
     user: Any = Depends(current_user),
     service: UsageReportService = Depends(get_usage_service),
 ) -> dict[str, Any]:
-    user_id = service.resolve_user_scope(
-        user_id=int(user.id),
-        is_admin=bool(getattr(user, "is_admin", False)),
-        as_user=as_user,
-    )
+    # Single-user mode: the legacy ``as_user`` query param is not accepted;
+    # FastAPI ignores unknown query params, so the scope is always the owner.
     service.assert_agent_exists(agent_id)
     return service.summary(
-        user_id=user_id,
+        user_id=int(user.id),
         agent_id=agent_id,
         window=window,
         granularity=granularity,
@@ -86,19 +82,13 @@ async def user_export(
     request: Request,
     window: str = "last_30d",
     agent_id: str | None = None,
-    as_user: int | None = None,
     user: Any = Depends(current_user),
     service: UsageReportService = Depends(get_usage_service),
 ) -> StreamingResponse:
-    user_id = service.resolve_user_scope(
-        user_id=int(user.id),
-        is_admin=bool(getattr(user, "is_admin", False)),
-        as_user=as_user,
-    )
     service.assert_agent_exists(agent_id)
     locale = resolve_request_locale(request)
     payload, filename = service.export_xlsx(
-        user_id=user_id,
+        user_id=int(user.id),
         agent_id=agent_id,
         window=window,
         locale=locale,

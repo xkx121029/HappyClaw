@@ -147,6 +147,7 @@ export default function ProfileOverview({
             ) : null}
             <Tooltip title={t("common.refresh", "刷新")}>
               <Button
+                    aria-label={t("common.refresh", "刷新")}
                 size="small"
                 icon={
                   refreshing ? <Loader2 size={14} /> : <RefreshCw size={14} />
@@ -532,7 +533,7 @@ function ImportanceStars({ importance, t }: { importance: string; t: TFn }) {
   return (
     <span
       title={`${t("memory.importance.title", "重要程度")}：${label}`}
-      style={{ color: "#faad14", fontSize: 13, letterSpacing: 1 }}
+      style={{ color: "#faad14", fontSize: "var(--fn-text-xs)", letterSpacing: 1 }}
     >
       {"★".repeat(n)}
       <span style={{ color: "#d9d9d9" }}>{"★".repeat(3 - n)}</span>

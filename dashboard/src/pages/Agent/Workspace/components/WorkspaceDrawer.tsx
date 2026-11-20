@@ -225,7 +225,7 @@ function toTreeNodes(infos: FileInfo[], listedPath?: string): TreeDataNode[] {
             <span
               style={{
                 marginLeft: 4,
-                fontSize: 10,
+                fontSize: "var(--fn-text-2xs)",
                 color: "var(--fn-text-tertiary)",
               }}
             >
@@ -242,6 +242,8 @@ function toTreeNodes(infos: FileInfo[], listedPath?: string): TreeDataNode[] {
 
 interface WorkspaceDrawerProps {
   agentId: string;
+  /** Conversation scope: the tree follows this thread's project/session folder. */
+  threadId?: string | null;
   open: boolean;
   onClose: () => void;
   /** Render as a dock/tab body instead of a standalone Ant Design Drawer. */
@@ -250,6 +252,7 @@ interface WorkspaceDrawerProps {
 
 export default function WorkspaceDrawer({
   agentId,
+  threadId = null,
   open,
   onClose,
   embedded = false,
@@ -300,6 +303,9 @@ export default function WorkspaceDrawer({
     });
 
   const rootLabel = t("workspace.root", "工作区");
+  const threadQuery = threadId
+    ? `&thread_id=${encodeURIComponent(threadId)}`
+    : "";
 
   const { size: treeWidth, onResizeStart } = useHorizontalResize({
     min: 180,
@@ -329,7 +335,9 @@ export default function WorkspaceDrawer({
       setTreeLoading(true);
       try {
         const data = await request<FileInfo[]>(
-          withFromWorkspace(`/agents/${agentId}/workspace/tree?path=/`),
+          withFromWorkspace(
+            `/agents/${agentId}/workspace/tree?path=/${threadQuery}`,
+          ),
         );
         setTreeData([
           buildWorkspaceRootNode(toTreeNodes(data, WORKSPACE_ROOT_PATH)),
@@ -353,7 +361,7 @@ export default function WorkspaceDrawer({
         setTreeLoading(false);
       }
     },
-    [agentId, workspaceReady, t, buildWorkspaceRootNode, isMobile],
+    [agentId, threadQuery, workspaceReady, t, buildWorkspaceRootNode, isMobile],
   );
 
   useEffect(() => {
@@ -368,7 +376,7 @@ export default function WorkspaceDrawer({
       void refreshRoot({ activateRoot: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, agentId, workspaceReady]);
+  }, [open, agentId, threadId, workspaceReady]);
 
   const onLoadData = async (node: TreeDataNode): Promise<void> => {
     if (!agentId || !workspaceReady) return;
@@ -377,7 +385,7 @@ export default function WorkspaceDrawer({
     try {
       const data = await request<FileInfo[]>(
         withFromWorkspace(
-          `/agents/${agentId}/workspace/tree?path=${encodeURIComponent(path)}`,
+          `/agents/${agentId}/workspace/tree?path=${encodeURIComponent(path)}${threadQuery}`,
         ),
       );
       const children = toTreeNodes(data, path);
@@ -411,7 +419,7 @@ export default function WorkspaceDrawer({
           withFromWorkspace(
             `/agents/${agentId}/workspace/tree?path=${encodeURIComponent(
               dirPath,
-            )}`,
+            )}${threadQuery}`,
           ),
         );
         const children = toTreeNodes(data, dirPath);
@@ -431,7 +439,7 @@ export default function WorkspaceDrawer({
         );
       }
     },
-    [agentId, workspaceReady, t, refreshRoot],
+    [agentId, threadQuery, workspaceReady, t, refreshRoot],
   );
 
   const loadDirEntries = useCallback(
@@ -443,7 +451,7 @@ export default function WorkspaceDrawer({
           withFromWorkspace(
             `/agents/${agentId}/workspace/tree?path=${encodeURIComponent(
               dirPath,
-            )}`,
+            )}${threadQuery}`,
           ),
         );
         setDirEntries(dedupeFileTreeInfos(data, dirPath));
@@ -457,14 +465,14 @@ export default function WorkspaceDrawer({
         setDirLoading(false);
       }
     },
-    [agentId, workspaceReady, t],
+    [agentId, threadQuery, workspaceReady, t],
   );
 
   const handleDelete = async (target: TreeKey) => {
     if (!agentId || !canDeletePath(target.path)) return;
     setFileActionKey(nodeKey(target));
     try {
-      await workspaceApi.deleteWorkspaceFile(agentId, target.path);
+      await workspaceApi.deleteWorkspaceFile(agentId, target.path, threadId);
       message.success(t("workspace.deleteSuccess"));
       if (selectedKey === nodeKey(target)) {
         setSelectedKey(null);
@@ -516,10 +524,10 @@ export default function WorkspaceDrawer({
     setCreateSaving(true);
     try {
       if (createKind === "folder") {
-        await workspaceApi.mkdirWorkspaceDir(agentId, dest);
+        await workspaceApi.mkdirWorkspaceDir(agentId, dest, threadId);
         message.success(t("workspace.createFolderSuccess"));
       } else {
-        await workspaceApi.createWorkspaceFile(agentId, dest, "");
+        await workspaceApi.createWorkspaceFile(agentId, dest, "", threadId);
         message.success(t("workspace.createFileSuccess"));
       }
       setCreateOpen(false);
@@ -541,7 +549,7 @@ export default function WorkspaceDrawer({
               withFromWorkspace(
                 `/agents/${agentId}/workspace/file?path=${encodeURIComponent(
                   dest,
-                )}`,
+                )}${threadQuery}`,
               ),
             );
             setContent(r.content);
@@ -581,6 +589,7 @@ export default function WorkspaceDrawer({
         agentId,
         renameTarget.path,
         dest,
+        threadId,
       );
       message.success(t("workspace.renameSuccess"));
       setRenameOpen(false);
@@ -624,6 +633,7 @@ export default function WorkspaceDrawer({
         agentId,
         drag.path,
         dest,
+        threadId,
       );
       message.success(t("workspace.moveSuccess"));
       if (selectedKey === nodeKey(drag)) {
@@ -758,7 +768,7 @@ export default function WorkspaceDrawer({
     try {
       const r = await request<{ content: string }>(
         withFromWorkspace(
-          `/agents/${agentId}/workspace/file?path=${encodeURIComponent(path)}`,
+          `/agents/${agentId}/workspace/file?path=${encodeURIComponent(path)}${threadQuery}`,
         ),
       );
       setContent(r.content);
@@ -890,7 +900,7 @@ export default function WorkspaceDrawer({
     try {
       const r = await request<{ content: string }>(
         withFromWorkspace(
-          `/agents/${agentId}/workspace/doc?path=${encodeURIComponent(path)}`,
+          `/agents/${agentId}/workspace/doc?path=${encodeURIComponent(path)}${threadQuery}`,
         ),
       );
       setContent(r.content);
@@ -913,7 +923,7 @@ export default function WorkspaceDrawer({
       if (isEditableDoc(path)) {
         await request(
           withFromWorkspace(
-            `/agents/${agentId}/workspace/doc?path=${encodeURIComponent(path)}`,
+            `/agents/${agentId}/workspace/doc?path=${encodeURIComponent(path)}${threadQuery}`,
           ),
           {
             method: "PUT",
@@ -925,7 +935,7 @@ export default function WorkspaceDrawer({
           withFromWorkspace(
             `/agents/${agentId}/workspace/file?path=${encodeURIComponent(
               path,
-            )}`,
+            )}${threadQuery}`,
           ),
           {
             method: "PUT",
@@ -953,7 +963,7 @@ export default function WorkspaceDrawer({
         withFromWorkspace(
           `/agents/${agentId}/workspace/download?path=${encodeURIComponent(
             path,
-          )}`,
+          )}${threadQuery}`,
         ),
       );
       await saveBlobAsFile(blob, path.split("/").pop() || "download");
@@ -978,7 +988,7 @@ export default function WorkspaceDrawer({
     const url = withFromWorkspace(
       `/agents/${agentId}/workspace/upload?path=${encodeURIComponent(
         uploadPath,
-      )}`,
+      )}${threadQuery}`,
     );
     try {
       await requestUpload(url, fd);

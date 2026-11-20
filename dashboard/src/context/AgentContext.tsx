@@ -495,7 +495,13 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         if (haveStored) {
           persistAndApply(stored);
         } else if (merged.length > 0) {
-          persistAndApply(merged[0].agent_id);
+          // HappyClaw is the built-in default expert: land on it when the user
+          // has not picked an expert in this browser yet.
+          const preferred =
+            merged.find(
+              (a) => a.template_name === "happyclaw" || a.agent_id === "happyclaw",
+            ) ?? merged[0];
+          persistAndApply(preferred.agent_id);
         } else {
           persistAndApply(null);
         }

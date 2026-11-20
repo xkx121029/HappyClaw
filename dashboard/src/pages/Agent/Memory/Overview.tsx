@@ -237,7 +237,7 @@ export default function Overview({
                 <XAxis
                   dataKey="date"
                   tickFormatter={(date: string) => date.slice(5)}
-                  tick={{ fontSize: 11, fill: "var(--fn-text-tertiary)" }}
+                  tick={{ fontSize: "var(--fn-text-2xs)", fill: "var(--fn-text-tertiary)" }}
                   tickLine={false}
                   axisLine={{ stroke: "var(--fn-border-primary, #d9d9d9)" }}
                   height={30}
@@ -246,7 +246,7 @@ export default function Overview({
                 <YAxis
                   allowDecimals={false}
                   width={36}
-                  tick={{ fontSize: 11, fill: "var(--fn-text-tertiary)" }}
+                  tick={{ fontSize: "var(--fn-text-2xs)", fill: "var(--fn-text-tertiary)" }}
                   tickLine={false}
                   axisLine={{ stroke: "var(--fn-border-primary, #d9d9d9)" }}
                 />
@@ -293,7 +293,7 @@ export default function Overview({
                   <XAxis
                     dataKey="date"
                     tickFormatter={(date: string) => date.slice(5)}
-                    tick={{ fontSize: 11, fill: "var(--fn-text-tertiary)" }}
+                    tick={{ fontSize: "var(--fn-text-2xs)", fill: "var(--fn-text-tertiary)" }}
                     tickLine={false}
                     axisLine={{ stroke: "var(--fn-border-primary, #d9d9d9)" }}
                     height={30}
@@ -302,7 +302,7 @@ export default function Overview({
                   <YAxis
                     allowDecimals={false}
                     width={36}
-                    tick={{ fontSize: 11, fill: "var(--fn-text-tertiary)" }}
+                    tick={{ fontSize: "var(--fn-text-2xs)", fill: "var(--fn-text-tertiary)" }}
                     tickLine={false}
                     axisLine={{ stroke: "var(--fn-border-primary, #d9d9d9)" }}
                   />

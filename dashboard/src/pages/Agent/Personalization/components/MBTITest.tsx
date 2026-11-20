@@ -62,7 +62,7 @@ function ResultCard({
       >
         <img
           className={styles.resultAvatar}
-          src={`/assets/mbti/${code}.svg`}
+          src="/assets/avatar-placeholder.svg"
           alt={code}
         />
         <div className={styles.resultCode}>{code}</div>

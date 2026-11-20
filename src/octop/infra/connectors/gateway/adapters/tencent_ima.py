@@ -1,4 +1,4 @@
-"""Tencent IMA notes and knowledge base gateway."""
+"""IMA notes and knowledge base gateway."""
 
 from __future__ import annotations
 

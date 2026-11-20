@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
 // Lazy-loaded pages — Common
+const HomePage = lazy(() => import("../pages/Home"));
 const ExpertsPage = lazy(() => import("../pages/Experts"));
 const CronJobsPage = lazy(() => import("../pages/Control/CronJobs"));
 const ConnectorsPage = lazy(() => import("../pages/Agent/Connectors"));
@@ -17,6 +18,14 @@ const TokenUsagePage = lazy(() => import("../pages/Control/TokenUsage"));
 // Lazy-loaded pages — Control
 const RemoteDesktopPage = lazy(() => import("../pages/Control/RemoteDesktop"));
 const SoloPage = lazy(() => import("../pages/Solo"));
+const BaoPage = lazy(() => import("../components/Bao/BaoPage"));
+
+// Lazy-loaded pages — 手机板块
+const MobileSessionsPage = lazy(
+  () => import("../pages/Mobile/MobileSessions"),
+);
+const MobileControlPage = lazy(() => import("../pages/Mobile/MobileControl"));
+const MobileInfoPage = lazy(() => import("../pages/Mobile/MobileInfo"));
 
 // Lazy-loaded pages — Settings
 const ModelsPage = lazy(() => import("../pages/Settings/Models"));
@@ -32,6 +41,7 @@ const AgentConfigPage = lazy(() => import("../pages/Agent/Config"));
 
 // Misc
 const PwaDebugPage = lazy(() => import("../pages/PwaDebug"));
+const MotionPreviewPage = lazy(() => import("../pages/MotionPreview"));
 const NotFoundPage = lazy(() => import("../components/NotFoundPage"));
 
 function RedirectPreserveSearch({ to }: { to: string }) {
@@ -47,6 +57,7 @@ export interface RouteConfig {
 }
 
 export const pathToKey: Record<string, string> = {
+  "/home": "home",
   "/chat": "chat",
   // Common
   "/experts": "experts",
@@ -77,11 +88,13 @@ export const pathToKey: Record<string, string> = {
   "/remote-browser": "workbench",
   "/remote-desktop": "remote-desktop",
   "/remote-desktop/desktop": "remote-desktop",
-  "/remote-desktop/phone": "remote-desktop",
-  "/remote-desktop/phone/screen": "remote-desktop",
-  "/remote-desktop/phone/shell": "remote-desktop",
+  "/remote-desktop/link": "remote-desktop",
+  // 手机板块
+  "/mobile/sessions": "mobile-sessions",
+  "/mobile/control": "mobile-control",
+  "/mobile/info": "mobile-info",
+  // Legacy aliases (redirected to /remote-desktop/link)
   "/remote-phone": "remote-desktop",
-  "/remote-android": "remote-desktop",
   "/subagents": "personalization",
   "/mbti": "personalization",
   "/memory": "personalization",
@@ -92,6 +105,7 @@ export const pathToKey: Record<string, string> = {
   "/admin/plugins": "admin-plugins",
   "/admin/advanced": "admin-advanced",
   "/admin/security": "admin-security",
+  "/motion-preview": "motion-preview",
 };
 
 /**
@@ -104,18 +118,17 @@ export const FULLSCREEN_PATHS = new Set([
   "/workbench/cloud",
   "/chat",
   "/solo",
+  "/bao",
   "/remote-desktop",
   "/remote-desktop/desktop",
-  "/remote-desktop/phone",
-  "/remote-desktop/phone/screen",
-  "/remote-desktop/phone/shell",
-  "/remote-phone",
+  "/remote-desktop/link",
+  "/remote-desktop/pair",
 ]);
 
 /**
  * Pages that provide their own compact mobile header.
  */
-export const SELF_HEADER_PATHS = new Set<string>([]);
+export const SELF_HEADER_PATHS = new Set<string>(["/bao", "/chat"]);
 
 /** Mobile-only fullscreen pages (custom header + no content padding). */
 export const MOBILE_FULLSCREEN_PATHS = new Set<string>([]);
@@ -146,13 +159,24 @@ export function resolveSelectedKey(pathname: string): string {
 }
 
 export const routeConfigs: RouteConfig[] = [
+  // Home — real-time activity dashboard and default landing page.
+  { path: "/home", element: <HomePage /> },
+
   // Chat (handled via ChatWithKey wrapper in MainLayout)
   { path: "/chat", element: null, useWrapper: true },
   { path: "/chat/:agentId", element: null, useWrapper: true },
   { path: "/chat/:agentId/:threadId", element: null, useWrapper: true },
 
+  // 手机板块（手机会话 / 手机控制 / 手机信息）
+  { path: "/mobile/sessions", element: <MobileSessionsPage /> },
+  { path: "/mobile/control", element: <MobileControlPage /> },
+  { path: "/mobile/info", element: <MobileInfoPage /> },
+
   // SOLO workspace（会话 / 对话 / 编辑器 + 终端 / 文件树）
   { path: "/solo", element: <SoloPage /> },
+
+  // 宝：Router 页面（全局 / 项目作用域通过 ?project= 区分）
+  { path: "/bao", element: <BaoPage /> },
 
   // Common
   { path: "/experts", element: <ExpertsPage /> },
@@ -193,16 +217,27 @@ export const routeConfigs: RouteConfig[] = [
   },
   { path: "/remote-desktop", element: <RemoteDesktopPage /> },
   { path: "/remote-desktop/desktop", element: <RemoteDesktopPage /> },
-  { path: "/remote-desktop/phone", element: <RemoteDesktopPage /> },
-  { path: "/remote-desktop/phone/screen", element: <RemoteDesktopPage /> },
-  { path: "/remote-desktop/phone/shell", element: <RemoteDesktopPage /> },
+  {
+    path: "/remote-desktop/phone",
+    element: <RedirectPreserveSearch to="/remote-desktop/link" />,
+  },
+  { path: "/remote-desktop/link", element: <RemoteDesktopPage /> },
+  { path: "/remote-desktop/pair", element: <RemoteDesktopPage /> },
+  {
+    path: "/remote-desktop/phone/screen",
+    element: <RedirectPreserveSearch to="/remote-desktop/link" />,
+  },
+  {
+    path: "/remote-desktop/phone/shell",
+    element: <RedirectPreserveSearch to="/remote-desktop/link" />,
+  },
   {
     path: "/remote-phone",
-    element: <RedirectPreserveSearch to="/remote-desktop/phone" />,
+    element: <RedirectPreserveSearch to="/remote-desktop/link" />,
   },
   {
     path: "/remote-android",
-    element: <Navigate to="/remote-desktop/phone" replace />,
+    element: <RedirectPreserveSearch to="/remote-desktop/link" />,
   },
   {
     path: "/subagents",
@@ -288,6 +323,8 @@ export const routeConfigs: RouteConfig[] = [
 
   // Misc
   { path: "/pwa-debug", element: <PwaDebugPage /> },
-  { path: "/", element: <Navigate to="/chat" replace /> },
+  // 动效样例：不进入主导航，直接从地址访问，供设计走查使用。
+  { path: "/motion-preview", element: <MotionPreviewPage /> },
+  { path: "/", element: <Navigate to="/home" replace /> },
   { path: "*", element: <NotFoundPage /> },
 ];

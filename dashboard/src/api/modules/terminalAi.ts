@@ -11,7 +11,7 @@ export interface TerminalContext {
   agent_name: string;
 }
 
-/** Bundled terminal expert. Distinct from the Tencent CVM ops expert. */
+/** Bundled terminal expert. Distinct from the cloud ops expert. */
 export const OPS_ENGINEER_EXPERT_ID = "ops-engineer";
 
 export interface CreatedOpsEngineer {
@@ -24,8 +24,12 @@ export interface CreatedOpsEngineer {
 }
 
 export const terminalAiApi = {
-  getContext: (agentId: string) =>
-    request<TerminalContext>(`/agents/${agentId}/terminal/context`),
+  getContext: (agentId: string, threadId?: string | null) =>
+    request<TerminalContext>(
+      `/agents/${agentId}/terminal/context${
+        threadId ? `?thread_id=${encodeURIComponent(threadId)}` : ""
+      }`,
+    ),
 
   createOpsEngineer: () =>
     request<CreatedOpsEngineer>(

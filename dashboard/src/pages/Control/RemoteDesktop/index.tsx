@@ -1,43 +1,68 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Monitor, Smartphone } from "lucide-react";
+import { Monitor, Plug, Smartphone } from "lucide-react";
 import PageShell from "../../../layouts/PageShell";
 import { usePathTabs } from "../../../hooks/usePathTabs";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
-import { useServerCapabilities } from "../../../hooks/useServerCapabilities";
 import { userCan } from "../../../utils/permissions";
+import { connectorPairingApi } from "../../../api/modules/connectorPairing";
 import DesktopPanel from "./DesktopPanel";
-import RemoteAndroidPage from "../RemoteAndroid";
+import DeviceLinkPanel from "../DeviceLink";
+import ConnectorPairingPanel from "./ConnectorPairingPanel";
 import styles from "./index.module.less";
 
-export type RemoteDesktopTab = "desktop" | "phone";
+export type RemoteDesktopTab = "desktop" | "link" | "pair";
 
-const REMOTE_DESKTOP_TABS = [
-  "desktop",
-  "phone",
-] as const satisfies readonly RemoteDesktopTab[];
+const REMOTE_DESKTOP_TABS = ["desktop", "link", "pair"] as const satisfies
+  readonly RemoteDesktopTab[];
 
 const TAB_ICONS = {
   desktop: Monitor,
-  phone: Smartphone,
+  link: Plug,
+  pair: Smartphone,
 } as const;
 
 export default function RemoteDesktopPage() {
   const { t } = useTranslation();
   const user = useCurrentUser();
-  const { mobileEnabled } = useServerCapabilities();
+  const [pendingCount, setPendingCount] = useState(0);
+  const canUsePhone = userCan(user, "mobile");
+
+  // 待批准数量提示：没进入「手机配对」页时也要能看到，所以顶层单独轮询。
+  useEffect(() => {
+    if (!canUsePhone) return;
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await connectorPairingApi.pending();
+        if (alive) setPendingCount(res.requests?.length ?? 0);
+      } catch {
+        /* 服务或权限不可用时保持上一次计数，不打断页面 */
+      }
+    };
+    void load();
+    const timer = window.setInterval(load, 15000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, [canUsePhone]);
 
   const isAllowed = useCallback(
     (tab: RemoteDesktopTab) => {
       if (tab === "desktop") return userCan(user, "desktop");
-      return mobileEnabled && userCan(user, "mobile");
+      // 设备直连走 App 自建 TLS 链路，不依赖旧 ADB 手机能力开关
+      if (tab === "link") return userCan(user, "mobile");
+      // 手机配对（批准手机端连接器）同样只需 mobile 权限
+      if (tab === "pair") return userCan(user, "mobile");
+      return false;
     },
-    [user, mobileEnabled],
+    [user],
   );
 
   const defaultTab: RemoteDesktopTab = userCan(user, "desktop")
     ? "desktop"
-    : "phone";
+    : "link";
 
   const { activeTab, handleTabChange, isMounted } = usePathTabs({
     basePath: "/remote-desktop",
@@ -54,19 +79,25 @@ export default function RemoteDesktopPage() {
       options: REMOTE_DESKTOP_TABS.filter((value) => isAllowed(value)).map(
         (value) => {
           const Icon = TAB_ICONS[value];
+          const label = t(`remoteDesktopHub.tabs.${value}`);
           return {
             value,
-            label: t(`remoteDesktopHub.tabs.${value}`),
+            // 有待批准请求时直接在标签上给出数量，避免用户去找入口
+            label:
+              value === "pair" && pendingCount > 0
+                ? `${label} (${pendingCount})`
+                : label,
             icon: <Icon size={14} strokeWidth={2} />,
           };
         },
       ),
     }),
-    [activeTab, handleTabChange, isAllowed, t],
+    [activeTab, handleTabChange, isAllowed, pendingCount, t],
   );
 
   const desktopVisible = activeTab === "desktop";
-  const phoneVisible = activeTab === "phone";
+  const linkVisible = activeTab === "link";
+  const pairVisible = activeTab === "pair";
   const pageTitle = `${t("remoteDesktopHub.title")} / ${t(
     `remoteDesktopHub.tabs.${activeTab}`,
   )}`;
@@ -88,13 +119,25 @@ export default function RemoteDesktopPage() {
             <DesktopPanel embedded isVisible={desktopVisible} />
           </div>
         )}
-        {isMounted("phone") && (
+        {isMounted("link") && (
           <div
             className={styles.panel}
-            style={{ display: activeTab === "phone" ? "flex" : "none" }}
-            aria-hidden={activeTab !== "phone"}
+            style={{ display: activeTab === "link" ? "flex" : "none" }}
+            aria-hidden={activeTab !== "link"}
           >
-            <RemoteAndroidPage embedded isVisible={phoneVisible} />
+            <DeviceLinkPanel embedded isVisible={linkVisible} />
+          </div>
+        )}
+        {isMounted("pair") && (
+          <div
+            className={styles.panel}
+            style={{ display: activeTab === "pair" ? "flex" : "none" }}
+            aria-hidden={activeTab !== "pair"}
+          >
+            <ConnectorPairingPanel
+              isVisible={pairVisible}
+              onPendingCount={setPendingCount}
+            />
           </div>
         )}
       </div>

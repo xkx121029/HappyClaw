@@ -209,6 +209,18 @@ export default function CandidatesReview({ agentId }: Props) {
                 <div
                   className={styles.candidateMain}
                   onClick={() => setSelected(c)}
+                  role="button"
+                  tabIndex={0}
+                  // The row's visible text includes status tags ("已采纳"), so an
+                  // explicit name keeps it distinguishable from the action
+                  // buttons beside it.
+                  aria-label={c.title || c.assertion}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelected(c);
+                    }
+                  }}
                 >
                   <Space size={4} wrap>
                     <Tag color={kindColor(c.candidate_type)}>
@@ -512,7 +524,7 @@ function ImportanceStars({ importance }: { importance: string }) {
           ? "重要"
           : "一般"
       }`}
-      style={{ color: "#faad14", fontSize: 13, letterSpacing: 1 }}
+      style={{ color: "#faad14", fontSize: "var(--fn-text-xs)", letterSpacing: 1 }}
     >
       {"★".repeat(n)}
       <span style={{ color: "#d9d9d9" }}>{"★".repeat(3 - n)}</span>

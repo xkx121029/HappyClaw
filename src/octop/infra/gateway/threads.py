@@ -18,6 +18,7 @@ class ThreadRegistry:
     CHANNEL_MCP = "mcp"
     CHAT_TYPE_DM = "dm"
     CHAT_TYPE_GROUP = "group"
+    CHAT_TYPE_QUICK = "quick"
 
     @classmethod
     def is_virtual_channel(cls, channel_type: str) -> bool:
@@ -90,6 +91,16 @@ class ThreadRegistry:
             channel_type=ThreadRegistry.CHANNEL_DASHBOARD,
             channel_subject_id=str(user_id),
             channel_chat_type=ThreadRegistry.CHAT_TYPE_DM,
+        )
+
+    @staticmethod
+    def quick_key(*, agent_id: str, user_id: int) -> str:
+        """Isolated session key for quick chats (never the dashboard DM key)."""
+        return ThreadRegistry.make_key(
+            agent_id=agent_id,
+            channel_type=ThreadRegistry.CHANNEL_DASHBOARD,
+            channel_subject_id=str(user_id),
+            channel_chat_type=ThreadRegistry.CHAT_TYPE_QUICK,
         )
 
     @staticmethod
@@ -469,6 +480,7 @@ class ThreadRegistry:
         title: str | None = None,
         last_active: int = 0,
         thread_id: str | None = None,
+        workspace_kind: str | None = None,
     ) -> str:
         """Insert a thread row without rebinding the active session."""
         tid = thread_id or _new_thread_id()
@@ -480,6 +492,7 @@ class ThreadRegistry:
             session_key=session_key,
             title=title,
             last_active=last_active,
+            workspace_kind=workspace_kind,
         )
         return tid
 

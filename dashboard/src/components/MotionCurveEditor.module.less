@@ -1,0 +1,175 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.speedRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.speedLabel {
+  font-size: var(--fn-text-xs);
+  color: var(--fn-text-tertiary);
+}
+
+.custom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--fn-radius-md);
+  background: var(--fn-bg-secondary);
+}
+
+.curveCanvas {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  align-self: center;
+}
+
+.curveFrame {
+  fill: none;
+  stroke: var(--fn-border-secondary);
+  stroke-width: 1;
+}
+
+.curveDiagonal {
+  stroke: var(--fn-border-secondary);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.curvePath {
+  fill: none;
+  stroke: var(--fn-color-brand);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.curveHandleLine {
+  stroke: var(--fn-color-brand);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+
+.curveAnchor {
+  fill: var(--fn-text-quaternary);
+}
+
+.curveHandle {
+  fill: var(--fn-color-brand);
+}
+
+.sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sliderName {
+  width: 20px;
+  font-size: var(--fn-text-2xs);
+  color: var(--fn-text-quaternary);
+  font-variant-numeric: tabular-nums;
+}
+
+.slider {
+  flex: 1;
+  margin: 4px 0;
+}
+
+.sliderValue {
+  width: 40px;
+  text-align: right;
+  font-size: var(--fn-text-2xs);
+  color: var(--fn-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.customHint {
+  margin: 0;
+  font-size: var(--fn-text-2xs);
+  color: var(--fn-text-quaternary);
+  line-height: 1.5;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.previewLabel {
+  font-size: var(--fn-text-xs);
+  color: var(--fn-text-tertiary);
+}
+
+.track {
+  position: relative;
+  height: 22px;
+  border-radius: var(--fn-radius-full);
+  background: var(--fn-bg-secondary);
+  overflow: hidden;
+}
+
+.dot {
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--fn-color-brand);
+  box-shadow: 0 0 10px 2px var(--fn-color-brand-shadow);
+  animation-name: motion-curve-demo;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes motion-curve-demo {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(calc(100% + 60px), 0, 0);
+  }
+}
+
+.reducedNote {
+  margin: 0;
+  font-size: var(--fn-text-2xs);
+  color: var(--fn-text-secondary);
+  line-height: 1.5;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.localHint {
+  font-size: var(--fn-text-2xs);
+  color: var(--fn-text-quaternary);
+  line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+    transform: translate3d(0, 0, 0);
+  }
+}

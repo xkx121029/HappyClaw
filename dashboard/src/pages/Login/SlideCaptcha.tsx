@@ -175,7 +175,7 @@ export default function SlideCaptcha({
           justifyContent: "center",
           paddingLeft: verified ? 8 : THUMB_SIZE,
           paddingRight: verified ? THUMB_SIZE : 8,
-          fontSize: 13,
+          fontSize: "var(--fn-text-xs)",
           color: verified
             ? "var(--fn-success, #16a34a)"
             : "var(--fn-text-tertiary)",

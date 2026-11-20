@@ -312,7 +312,7 @@ function PipelineStoryRow({
             flex: "0 0 10px",
           }}
         />
-        <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
+        <div style={{ flex: 1, minWidth: 0, fontSize: "var(--fn-text-xs)" }}>
           <Space size={6} wrap>
             <span style={{ color: "#262626" }}>📥 {summary.title}</span>
             {summary.tags.map((t, idx) => (
@@ -384,7 +384,7 @@ function SingleEventRow({
           flex: "0 0 10px",
         }}
       />
-      <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
+      <div style={{ flex: 1, minWidth: 0, fontSize: "var(--fn-text-xs)" }}>
         <Space size={6} wrap>
           <span style={{ color: "#262626" }}>{story.icon}</span>
           <Tag
@@ -459,7 +459,7 @@ function DetailLine({
       </span>
       <Tag
         color={ACTION_COLOR[item.action] ?? "default"}
-        style={{ margin: 0, fontSize: 11 }}
+        style={{ margin: 0, fontSize: "var(--fn-text-2xs)" }}
       >
         {actionLabel(item.action)}
       </Tag>

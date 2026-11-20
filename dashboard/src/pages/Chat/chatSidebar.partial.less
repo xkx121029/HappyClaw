@@ -24,18 +24,24 @@
   overflow: hidden;
 
   @media (max-width: 767px) {
+    /* Flush full-height drawer: the list is long, a floating card wastes
+       vertical space and fights the iOS keyboard. */
     position: fixed;
-    top: max(12px, env(safe-area-inset-top, 0px));
-    bottom: max(12px, env(safe-area-inset-bottom, 0px));
-    left: max(16px, env(safe-area-inset-left, 0px));
-    right: max(20px, env(safe-area-inset-right, 0px));
-    width: auto;
-    min-width: unset;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: min(86vw, 340px);
+    min-width: 0;
+    height: 100%;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-radius: 0 18px 18px 0;
     z-index: 200;
-    transform: translateX(calc(-100% - 16px));
+    transform: translateX(-104%);
     opacity: 0;
-    height: auto;
-    box-shadow: var(--fn-shadow-xl);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
   }
 }
 
@@ -282,5 +288,58 @@
 
   &::selection {
     background: color-mix(in srgb, var(--fn-color-brand) 20%, transparent);
+  }
+}
+
+@media (max-width: 767px) {
+  /* Drawer rows are touched, not hovered: comfortable 46px targets and
+     always-visible session actions. */
+  .sessionHeader {
+    gap: 8px;
+    padding: 14px 14px 10px;
+  }
+
+  .sessionItems {
+    padding: 2px 8px 12px;
+  }
+
+  .sessionItem {
+    min-height: 46px;
+    padding: 9px 10px;
+  }
+
+  .sessionName {
+    font-size: 14px;
+    line-height: 19px;
+  }
+
+  .sessionAddBtn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .sessionDeleteBtn,
+  .sessionEditBtn {
+    width: 32px;
+    height: 32px;
+    opacity: 0.7;
+  }
+
+  .sessionActionBtn {
+    min-height: 32px;
+  }
+
+  /* Row icons stay visually small, but the touch target is a full 44px. */
+  .sessionDeleteBtn,
+  .sessionEditBtn,
+  .sessionActionBtn {
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border-radius: var(--fn-radius-sm);
+    }
   }
 }

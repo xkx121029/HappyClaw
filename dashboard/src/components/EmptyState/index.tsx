@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { OctopEmptyMascot } from "./OctopEmptyMascot";
 
 interface EmptyStateProps {
-  /** Icon element. Overrides the default for the current variant. */
+  /** Icon element. Overrides the default variant icon. */
   icon?: ReactNode;
   /** Main title */
   title?: string;
@@ -15,12 +15,23 @@ interface EmptyStateProps {
   /** Optional action button callback */
   onAction?: () => void;
   /**
+   * A secondary escape hatch next to the primary action (e.g. "导入"),
+   * for empties where more than one next step is legitimate.
+   */
+  secondaryAction?: ReactNode;
+  /**
    * Visual variant:
    * - empty: inbox icon
    * - error: alert icon
    * - mascot: shared Octop empty mascot (prefer for list/detail empty shells)
    */
   variant?: "empty" | "error" | "mascot";
+  /**
+   * Set when the empty state is genuinely informational and there is nothing
+   * the user can do (e.g. "no notifications"). Keeps the actionable-empties
+   * rule honest instead of silently omitting the button.
+   */
+  passive?: boolean;
   className?: string;
 }
 
@@ -34,7 +45,9 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
+  secondaryAction,
   variant = "empty",
+  passive = false,
   className,
 }: EmptyStateProps) {
   const defaultIcon =
@@ -62,17 +75,20 @@ export function EmptyState({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "48px 24px",
-        gap: 8,
+        padding: "var(--fn-space-3xl) var(--fn-space-xl)",
+        gap: "var(--fn-space-xs)",
         textAlign: "center",
       }}
     >
-      <div style={{ marginBottom: 8 }}>{icon ?? defaultIcon}</div>
+      <div style={{ marginBottom: "var(--fn-space-xs)" }}>
+        {icon ?? defaultIcon}
+      </div>
       {title && (
         <div
           style={{
-            fontSize: 15,
-            fontWeight: 500,
+            fontSize: "var(--fn-text-md)",
+            fontWeight: "var(--fn-weight-semibold)",
+            lineHeight: "var(--fn-leading-tight)",
             color: "var(--fn-text-primary)",
           }}
         >
@@ -82,23 +98,35 @@ export function EmptyState({
       {description && (
         <div
           style={{
-            fontSize: 13,
+            fontSize: "var(--fn-text-xs)",
             color: "var(--fn-text-tertiary)",
             maxWidth: 320,
-            lineHeight: 1.6,
+            lineHeight: "var(--fn-leading-normal)",
           }}
         >
           {description}
         </div>
       )}
-      {actionLabel && onAction && (
-        <Button type="primary" onClick={onAction} style={{ marginTop: 12 }}>
-          {actionLabel}
-        </Button>
+      {!passive && (actionLabel && onAction) && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--fn-space-xs)",
+            marginTop: "var(--fn-space-sm)",
+          }}
+        >
+          <Button type="primary" onClick={onAction}>
+            {actionLabel}
+          </Button>
+          {secondaryAction}
+        </div>
+      )}
+      {!passive && !actionLabel && secondaryAction && (
+        <div style={{ marginTop: "var(--fn-space-sm)" }}>{secondaryAction}</div>
       )}
     </div>
   );
 }
 
 export { OctopEmptyMascot } from "./OctopEmptyMascot";
-export { OCTOP_EMPTY_MASCOT_SRC } from "../../assets/mascot";

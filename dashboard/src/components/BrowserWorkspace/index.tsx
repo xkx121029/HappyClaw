@@ -315,6 +315,7 @@ const BrowserWorkspace: React.FC<BrowserWorkspaceProps> = ({
             <div className={styles.headerRight}>
               <Tooltip title={t("browserWorkspace.reconnect")}>
                 <Button
+                    aria-label={t("browserWorkspace.reconnect")}
                   type="text"
                   size="small"
                   icon={<RefreshCw size={14} />}

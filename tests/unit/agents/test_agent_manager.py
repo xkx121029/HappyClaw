@@ -883,7 +883,11 @@ def test_format_agent_start_error_unwraps_exception_group() -> None:
 def test_build_harness_config_includes_cronjob_tools_when_cron_manager_set(
     manager: AgentManager,
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # 本机装有 adb 时会额外挂载 adb_* 工具；工具集断言与 adb 无关，显式关掉
+    # 以保证测试在任何机器上结果一致（adb 工具自身行为由 tests/unit/adb 覆盖）。
+    monkeypatch.setattr("octop.infra.control.adb.runner.adb_available", lambda: False)
     from unittest.mock import MagicMock
 
     from octop.infra.cron.manager import CronManager
@@ -916,18 +920,80 @@ def test_build_harness_config_includes_cronjob_tools_when_cron_manager_set(
         "cronjob_delete",
         "cronjob_run_now",
         "search_knowledge",
+        "happysearch_search",
+        "present_file",
     }
 
 
 def test_build_harness_config_includes_search_knowledge_without_cron(
     manager: AgentManager,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr("octop.infra.control.adb.runner.adb_available", lambda: False)
     from octop.infra.knowledge.hint import KnowledgeSearchHintMiddleware
 
     cfg = manager._build_harness_config(_row(agent_id="AGT001"))
     assert cfg.tools is not None
-    assert {t.name for t in cfg.tools} == {"search_knowledge"}
+    assert {t.name for t in cfg.tools} == {
+        "search_knowledge",
+        "happysearch_search",
+        "present_file",
+    }
     assert any(isinstance(item, KnowledgeSearchHintMiddleware) for item in (cfg.middleware or []))
+
+
+def test_build_harness_config_pins_ask_user_pause(manager: AgentManager) -> None:
+    from octop_harness.builtin.tools.ask_user import ASK_USER_TOOL_NAME
+
+    cfg = manager._build_harness_config(_row(agent_id="AGT001"))
+    # The pause must not depend on harness defaults: without this entry the
+    # tool body answers "No interactive user is available" and the question
+    # never surfaces in the conversation.
+    assert cfg.ask_user_enabled is True
+    assert cfg.interrupt_on[ASK_USER_TOOL_NAME]["allowed_decisions"] == ["respond"]
+
+
+def test_build_harness_config_keeps_ask_user_disabled_when_user_removed_it(
+    manager: AgentManager,
+) -> None:
+    from octop_harness.builtin.tools.ask_user import ASK_USER_TOOL_NAME
+
+    cfg = manager._build_harness_config(
+        _row(agent_id="AGT001", config_json=json.dumps({"tools_disabled": [ASK_USER_TOOL_NAME]}))
+    )
+    assert ASK_USER_TOOL_NAME not in (cfg.interrupt_on or {})
+    assert ASK_USER_TOOL_NAME in cfg.tools_disabled
+
+
+def test_build_harness_config_mirrors_ask_pause_onto_device_hitl(
+    manager: AgentManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # 本机装有 adb 时 adb 副作用工具会再挂一个 HITL 实例；本测试只关注设备
+    # HITL 上的 ask 暂停镜像，显式关掉 adb 以保证任何机器上行为一致。
+    monkeypatch.setattr("octop.infra.control.adb.runner.adb_available", lambda: False)
+    from langchain.agents.middleware import HumanInTheLoopMiddleware
+    from langchain_core.tools import StructuredTool
+
+    from octop_harness.builtin.tools.ask_user import ASK_USER_TOOL_NAME
+
+    dummy = StructuredTool.from_function(
+        lambda text: text, name="phone_type_text", description="device action"
+    )
+    monkeypatch.setattr(
+        "octop.infra.control.device_link.manager.get_device_link_manager",
+        lambda: SimpleNamespace(is_paired=lambda: True),
+    )
+    monkeypatch.setattr(
+        "octop.infra.control.device_link.agent_tools.build_device_link_tools",
+        lambda *args, **kwargs: [dummy],
+    )
+    cfg = manager._build_harness_config(_row(agent_id="AGT001"))
+    hitls = [mw for mw in (cfg.middleware or []) if isinstance(mw, HumanInTheLoopMiddleware)]
+    # A paired device mounts its own HITL middleware; deepagents merges caller
+    # middleware by class name, so it replaces the harness one. The ask pause
+    # must live on the surviving instance or the question never pauses.
+    assert len(hitls) == 1
+    assert hitls[0].interrupt_on[ASK_USER_TOOL_NAME]["allowed_decisions"] == ["respond"]
 
 
 def test_build_harness_config_softens_mcp_output_schema_errors(manager: AgentManager) -> None:
@@ -1117,6 +1183,51 @@ def test_build_harness_config_keeps_memory_after_bootstrap(
     )
     cfg = manager._build_harness_config(row)
     assert cfg.memory is None
+
+
+def test_build_harness_config_pooled_keeps_expert_context(
+    manager: AgentManager, tmp_path: Path
+) -> None:
+    from dataclasses import replace
+
+    agent_id = "AGT_POOL"
+    ws = manager._paths.ensure_agent_workspace(agent_id)
+    row = replace(
+        _row(agent_id=agent_id),
+        system_prompt="MBTI persona prompt",
+        config_json=json.dumps({"backend": _fs_backend(ws)}),
+    )
+    project = tmp_path / "project"
+    project.mkdir()
+
+    cfg = manager._build_harness_config(row, workspace_override=project)
+
+    # The expert was onboarded in its private workspace; a project directory
+    # without a marker must not blank the persona or run onboarding again.
+    assert cfg.bootstrap_enabled is False
+    assert cfg.memory is None
+    assert cfg.system_prompt is not None
+    assert cfg.system_prompt.startswith("MBTI persona prompt")
+    # File tools must be rooted at the conversation directory, not the expert home.
+    assert cfg.backend["root_dir"] == str(project.resolve())
+
+
+def test_seed_pooled_workspace_copies_expert_context(
+    manager: AgentManager, tmp_path: Path
+) -> None:
+    agent_id = "AGT_SEED"
+    ws = manager._paths.ensure_agent_workspace(agent_id)
+    (ws / "SOUL.md").write_text("expert soul", encoding="utf-8")
+    (ws / "AGENTS.md").write_text("expert agents", encoding="utf-8")
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "AGENTS.md").write_text("project agents", encoding="utf-8")
+
+    manager._seed_pooled_workspace(agent_id, project)
+
+    assert (project / "SOUL.md").read_text(encoding="utf-8") == "expert soul"
+    # Existing project instructions win over the expert template.
+    assert (project / "AGENTS.md").read_text(encoding="utf-8") == "project agents"
 
 
 def test_build_harness_config_language_follows_owner_locale(manager: AgentManager) -> None:

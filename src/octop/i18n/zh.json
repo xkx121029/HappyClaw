@@ -404,6 +404,7 @@
     "BACKUP_IN_PROGRESS": "已有备份或恢复任务正在进行，请稍后再试。",
     "BACKUP_CLIENT_MISSING": "当前环境找不到 {tool}，无法备份或恢复 PostgreSQL。请在运行 HappyClaw 的环境中安装 PostgreSQL 客户端后再试。",
     "FORBIDDEN": "没有权限。",
+    "PROJECT_DEFAULT_UNDELETABLE": "默认项目不能删除。",
     "UPDATE_TARGET_NOT_NEWER": "目标版本 {target} 必须高于已安装版本 {current}，不支持重装同版本或降级。",
     "NOT_FOUND": "未找到。",
     "USER_DISABLED": "账号已禁用。",
@@ -507,7 +508,11 @@
     "PLUGIN_INVALID_ARCHIVE": "下载内容不是有效的插件 ZIP。请使用直接的 .zip 下载地址（GitHub 请用 raw.githubusercontent.com 或 “Download/raw” 链接，不要用 /blob/ 页面地址）。",
     "PLUGIN_INSTALL_FAILED": "下载或安装插件失败：{reason}",
     "PLUGIN_MARKET_FAILED": "插件市场暂时不可用，请稍后重试。",
+    "PLUGIN_MARKET_SOURCE_INVALID": "DSH 索引地址无效：{url}。请填写 http(s) 地址或存在的绝对文件路径。",
     "PLUGIN_ALREADY_EXISTS": "插件 {id} 已安装。",
+    "DEVICE_LINK_PAIR_FAILED": "配对失败：{reason}。请核对设备地址与手机上显示的配对码后重试。",
+    "DEVICE_LINK_UNREACHABLE": "无法连接设备：{reason}。请确认地址与端口正确，且本机能访问到手机。",
+    "DEVICE_LINK_SCREENSHOT_NOT_FOUND": "截图不存在或已被清理，请重新截取。",
     "KNOWLEDGE_FEATURE_DISABLED": "管理员尚未启用知识库功能。",
     "KNOWLEDGE_PREREQUISITES_RESTART_REQUIRED": "知识库的向量模型或依赖已安装，但当前进程还加载不到，需要重启服务后生效。",
     "KNOWLEDGE_PREREQUISITES_FAILED": "知识库的向量模型或依赖尚未就绪。",
@@ -542,6 +547,7 @@
     "TEAM_MEMBERS_TOO_FEW": "团队至少需要两名成员。",
     "TEAM_MEMBER_INVALID": "所选专家无法加入本机团队。对端专家、其他团队或已删除的专家不能作为成员。",
     "TEAM_MEMBER_BUSY": "该专家有进行中的团队任务，请等结束后再调整成员或删除。",
+    "TEAM_MEMBER_NOT_DIRECT": "这个目标是团队成员，没有独立的运行实例。请改派该项目的会话或主专家。",
     "TEAM_NOT_SHAREABLE": "当前版本不支持分享团队。",
     "LOCAL_DOWNLOAD_UNAVAILABLE": "仅在本机打开 HappyClaw 时才能保存到系统「下载」文件夹。",
     "SKILL_PACKAGE_COPY_DENIED": "该技能包的创建者已禁止复制其中的技能。",
@@ -648,6 +654,7 @@
     "kimi_search": "Kimi 联网搜索",
     "yuanbao_search": "元宝联网搜索",
     "searchfree_search": "AI 联网搜索",
+    "happysearch_search": "多引擎搜索",
     "cronjob_list": "列出定时任务",
     "cronjob_get": "查看定时任务",
     "cronjob_create": "创建定时任务",
@@ -663,19 +670,23 @@
     "browser_use": "使用浏览器",
     "browser_control": "浏览器控制",
     "send_file_to_user": "发送文件",
-    "mobile_screenshot": "手机截图",
-    "mobile_tap": "手机点击",
-    "mobile_swipe": "手机滑动",
-    "mobile_launch_app": "启动手机应用",
-    "mobile_ui_dump": "手机界面结构",
-    "mobile_handoff_to_user": "交给用户操作（手机）",
+    "present_file": "侧栏展示文件",
     "read_env_file": "读取环境变量",
     "write_env_file": "写入环境变量",
     "ask_user_question": "向你提问",
     "generate_image": "生成图片",
     "generate_video": "生成视频",
     "bilibili_search_anime": "搜索番剧",
-    "search_arxiv": "查询 arXiv 论文"
+    "search_arxiv": "查询 arXiv 论文",
+    "adb_devices": "列出 adb 设备",
+    "adb_shell": "adb 执行 shell",
+    "adb_install": "adb 安装应用",
+    "adb_uninstall": "adb 卸载应用",
+    "adb_screenshot": "adb 截屏",
+    "adb_tap": "adb 点击屏幕",
+    "adb_swipe": "adb 滑动屏幕",
+    "adb_input_text": "adb 输入文本",
+    "adb_keyevent": "adb 发送按键"
   },
   "plugins": {
     "arxiv_search": {
@@ -746,7 +757,8 @@
   },
   "cron": {
     "history": {
-      "executed": "任务{cron_id} :{name} 执行."
+      "executed": "任务{cron_id} :{name} 执行.",
+      "skipped_no_model": "提醒已推送，但没有写入会话历史：尚未配置模型。"
     }
   },
   "agents": {
@@ -807,19 +819,11 @@
     "system_prompt": "今天是 {today}。\n\n请根据用户近期的生活事件，用温暖自然的语气写一段关心的话，不超过 150 字。\n注意事件发生的时间，不要把几天前的事说成「今天」。\n不要提及你是 AI，直接表达关心即可。",
     "system_prompt_with_soul": "{soul_md}\n\n---\n\n今天是 {today}。\n\n请根据用户近期的生活事件，用温暖自然的语气写一段关心的话，不超过 150 字。\n注意事件发生的时间，不要把几天前的事说成「今天」。\n不要提及你是 AI，直接表达关心即可。"
   },
+  "accessToken": {
+    "required": "该服务需要访问凭据。",
+    "invalid": "访问凭据不正确。"
+  },
   "mobile": {
-    "unsupported_reason": "此主机不支持远程手机。",
-    "adb_not_found": "未找到 adb。请安装 Android platform-tools 或 Android Studio SDK。",
-    "no_device": "没有已连接的 adb 设备。请启动模拟器或通过 USB 连接手机。",
-    "container_no_adb": "Android 容器已运行，但 adb 尚未发现设备。可稍等开机后点刷新；或在主机执行：adb connect 127.0.0.1:5555",
-    "install_log_start": "正在安装 Android 容器…",
-    "install_log_ready": "Android 环境已就绪。",
-    "error_script_missing": "HappyClaw 包中缺少移动设备安装脚本。",
-    "error_docker_missing": "安装 Android 容器后端需要 Docker。",
-    "error_command_failed": "命令失败（退出码 {exit_code}）。",
-    "docker_missing_auto_install": "未检测到 Docker，正在尝试自动安装（官方 get.docker.com 脚本，按延迟测速选择安装源）…",
-    "docker_auto_install_ok": "Docker 安装成功。",
-    "docker_auto_install_failed": "Docker 自动安装失败。",
     "docker_source_official": "测速完成：官方源 download.docker.com 延迟最低，使用官方安装源。",
     "docker_source_selected": "测速完成：延迟最低的源是 {source}（{delay} 秒），将通过 DOWNLOAD_URL 传给官方安装脚本。",
     "docker_source_fallback": "无法测速各安装源，将直接使用官方安装脚本的默认源。",
@@ -841,9 +845,7 @@
     "docker_mirror_configured": "镜像加速已写入 /etc/docker/daemon.json（原文件已备份为 daemon.json.backup）。",
     "docker_restart_ok": "Docker 守护进程已重启。",
     "docker_restart_ready": "Docker 守护进程已就绪并正常响应。",
-    "docker_restart_failed": "Docker 重启失败（可能无 systemd/service 管理器，或服务未能恢复）。镜像加速配置将在下次 Docker 重启后生效——必要时请手动启动（systemctl restart docker 或 service docker restart）。",
-    "handoff_message": "请在设备上完成此步骤：{reason}",
-    "handoff_default": "需要在设备上手动操作"
+    "docker_restart_failed": "Docker 重启失败（可能无 systemd/service 管理器，或服务未能恢复）。镜像加速配置将在下次 Docker 重启后生效——必要时请手动启动（systemctl restart docker 或 service docker restart）。"
   },
   "usage_export": {
     "sheet_detail": "明细",

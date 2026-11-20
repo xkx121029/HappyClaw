@@ -1146,7 +1146,7 @@ export function ProviderConfigModal({
       </div>
 
       {/* ===== Models section ===== */}
-      <Divider orientation="left" style={{ fontSize: 13 }}>
+      <Divider orientation="left" style={{ fontSize: "var(--fn-text-xs)" }}>
         {t("models.manageModels")}
       </Divider>
 
@@ -1183,7 +1183,7 @@ export function ProviderConfigModal({
           </Button>
         }
       >
-        <div style={{ marginBottom: 8, fontSize: 13 }}>
+        <div style={{ marginBottom: 8, fontSize: "var(--fn-text-xs)" }}>
           {downloadProgressLabel || downloadProgressModel}
         </div>
         <Progress percent={downloadProgress} status="active" />
@@ -1201,12 +1201,12 @@ export function ProviderConfigModal({
       {/* ===== Ollama local models section ===== */}
       {isOllama && (
         <>
-          <Divider orientation="left" style={{ fontSize: 13, marginTop: 24 }}>
+          <Divider orientation="left" style={{ fontSize: "var(--fn-text-xs)", marginTop: 24 }}>
             {t("models.ollamaLocalModels")}
           </Divider>
 
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 13, marginBottom: 6 }}>
+            <div style={{ fontSize: "var(--fn-text-xs)", marginBottom: 6 }}>
               {t("models.ollamaModelsDir")}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -1267,13 +1267,13 @@ export function ProviderConfigModal({
                       }}
                     >
                       <div>
-                        <span style={{ fontSize: 13, fontWeight: 500 }}>
+                        <span style={{ fontSize: "var(--fn-text-xs)", fontWeight: 500 }}>
                           {m.name}
                         </span>
                         {m.size > 0 && (
                           <span
                             style={{
-                              fontSize: 11,
+                              fontSize: "var(--fn-text-2xs)",
                               color: "var(--fn-text-tertiary)",
                               marginLeft: 8,
                             }}
@@ -1286,6 +1286,7 @@ export function ProviderConfigModal({
                         type="text"
                         size="small"
                         danger
+                        aria-label={t("common.delete")}
                         icon={<Trash2 size={14} />}
                         onClick={() => handleOllamaDelete(m)}
                       />
@@ -1308,13 +1309,14 @@ export function ProviderConfigModal({
                   }}
                 >
                   <Loader2 size={12} />
-                  <span style={{ fontSize: 13, flex: 1 }}>
+                  <span style={{ fontSize: "var(--fn-text-xs)", flex: 1 }}>
                     {t("models.localDownloading", { repo: task.name })}
                   </span>
                   <Button
                     type="text"
                     size="small"
                     danger
+                    aria-label={t("common.cancel")}
                     icon={<X size={14} />}
                     onClick={() => handleCancelOllamaDownload(task)}
                   />

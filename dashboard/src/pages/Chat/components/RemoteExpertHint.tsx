@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Tooltip } from "antd";
 import cx from "classnames";
 import { iconForName } from "../../Experts/components/iconForName";
-import styles from "../index.module.less";
+import styles from "./RemoteExpertHint.module.less";
 
 interface RemoteExpertHintProps {
   agent?: {

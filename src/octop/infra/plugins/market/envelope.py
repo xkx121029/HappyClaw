@@ -65,16 +65,26 @@ def _capabilities(
     entry: MarketEntry, manifest: Mapping[str, Any]
 ) -> tuple[CapabilityKind, ...]:
     declared: list[CapabilityKind] = list(entry.capabilities)
+    # The DSH runtime loader reads a top-level ``capabilities`` field, so the
+    # envelope has to record the same thing or capability expansion goes
+    # undetected on upgrade. Older bundles nested it under ``dsh.bundle``.
+    declared.extend(_capability_list(manifest.get("capabilities")))
     bundle = manifest.get("dsh")
     if isinstance(bundle, dict):
         patch = bundle.get("bundle")
         if isinstance(patch, dict):
-            raw = patch.get("capabilities")
-            if isinstance(raw, list):
-                for item in raw:
-                    if isinstance(item, str) and item in _CAPABILITY_VALUES:
-                        declared.append(CapabilityKind(item))
+            declared.extend(_capability_list(patch.get("capabilities")))
     return tuple(dict.fromkeys(declared))
+
+
+def _capability_list(raw: Any) -> list[CapabilityKind]:
+    if isinstance(raw, str):
+        values = [part.strip().lower() for part in raw.split(",")]
+    elif isinstance(raw, (list, tuple)):
+        values = [str(part).strip().lower() for part in raw]
+    else:
+        return []
+    return [CapabilityKind(item) for item in values if item in _CAPABILITY_VALUES]
 
 
 def _metadata(

@@ -12,6 +12,11 @@ import {
   readInflightTail,
 } from "../utils/inflightTranscriptCache";
 
+// 预热 useSessions：refreshHistory/loadHistory 内部动态 import("./useSessions")
+// 会连带拉起 antd（本机 vite-node 转换约 10s）。静态引入让它落在模块加载期，
+// 不占用用例超时。
+import "./useSessions";
+
 const thread = "versioned-history-test";
 
 afterEach(() => {
@@ -174,7 +179,11 @@ describe("history failures", () => {
     });
     resolveHistory({
       thread_id: thread,
-      messages: [{ id: "old", role: "assistant", content: "之前的回复" }],
+      // b5246670（#2920）：无时间戳的服务端行按当前回合尾部处理。给历史行
+      // 标一个更早的时间戳，保持「历史回复在本地新消息之前」的语义。
+      messages: [
+        { id: "old", role: "assistant", content: "之前的回复", timestamp: 1 },
+      ],
       has_more: false,
     });
     await act(async () => {

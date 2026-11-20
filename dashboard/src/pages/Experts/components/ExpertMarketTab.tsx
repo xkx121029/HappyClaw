@@ -312,6 +312,7 @@ export default function ExpertMarketTab({
             />
             <button
               className={styles.toolbarIconBtn}
+              aria-label={t("common.refresh")}
               disabled={refreshing}
               onClick={() => {
                 onPublishedChanged();
@@ -418,6 +419,14 @@ export default function ExpertMarketTab({
                     key={expert.id}
                     className={styles.expertTemplateCard}
                     onClick={() => void openDetail(expert)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        void openDetail(expert);
+                      }
+                    }}
                     style={
                       {
                         "--expert-accent": accent,

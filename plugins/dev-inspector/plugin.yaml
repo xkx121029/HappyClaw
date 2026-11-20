@@ -1,0 +1,8 @@
+id: dev-inspector
+version: 0.1.0
+name: 开发状态速览
+description: 只读查看 git 仓库分支/未提交变更统计，以及本机监听中的 TCP 端口
+icon: "🔍"
+kind: tool
+entry: main.py
+group: ops

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Spin } from "antd";
-import { RefreshCw } from "lucide-react";
+import { Eraser, RefreshCw, SquareTerminal } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
 import TerminalView, {
   type TerminalViewHandle,
@@ -98,47 +98,66 @@ export default function SoloToolTerminal({
 
   const lost = connState === "disconnected" || connState === "error";
 
-  if (!sessionId) {
-    return (
-      <div className={styles.panePlaceholder}>{t("solo.noAgentHint")}</div>
-    );
-  }
-
   return (
-    <div className={styles.terminalWrap}>
-      {sessionExists ? (
-        <TerminalView
-          key={sessionId}
-          terminalRef={termRef}
-          onData={handleData}
-          onResize={handleResize}
-          onReady={handleReady}
-          themeDefinition={themeDefinition}
-        />
+    <>
+      <header className={styles.terminalHeader}>
+        <SquareTerminal size={13} className={styles.headerIcon} />
+        <span className={styles.paneTitle}>{t("solo.terminal")}</span>
+        <span className={styles.terminalHeaderPath}>~</span>
+        <span className={styles.headerSpacer} />
+        <button
+          type="button"
+          className={styles.pact}
+          onClick={() => termRef.current?.reset()}
+        >
+          <Eraser size={12} />
+          {t("solo.clearTerminal")}
+        </button>
+      </header>
+      {!sessionId ? (
+        <div className={styles.panePlaceholder}>{t("solo.noAgentHint")}</div>
       ) : (
-        <div className={styles.panePlaceholder}>
-          <Spin size="small" />
+        <div className={styles.terminalBody}>
+          <div className={styles.terminalWrap}>
+            {sessionExists ? (
+              <TerminalView
+                key={sessionId}
+                terminalRef={termRef}
+                onData={handleData}
+                onResize={handleResize}
+                onReady={handleReady}
+                themeDefinition={themeDefinition}
+                fontFamily="Consolas, monospace"
+                fontSize={13}
+                lineHeight={1.75}
+              />
+            ) : (
+              <div className={styles.panePlaceholder}>
+                <Spin size="small" />
+              </div>
+            )}
+            {lost && sessionExists ? (
+              <div className={styles.terminalOverlay}>
+                <span>
+                  {agentReady
+                    ? t("solo.terminalUnavailable")
+                    : t("solo.terminalNeedsAgent")}
+                </span>
+                <Button
+                  size="small"
+                  icon={<RefreshCw size={13} />}
+                  onClick={() => {
+                    setConnState("connecting");
+                    reconnect(sessionId);
+                  }}
+                >
+                  {t("terminal.reconnect")}
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
-      {lost && sessionExists ? (
-        <div className={styles.terminalOverlay}>
-          <span>
-            {agentReady
-              ? t("solo.terminalUnavailable")
-              : t("solo.terminalNeedsAgent")}
-          </span>
-          <Button
-            size="small"
-            icon={<RefreshCw size={13} />}
-            onClick={() => {
-              setConnState("connecting");
-              reconnect(sessionId);
-            }}
-          >
-            {t("terminal.reconnect")}
-          </Button>
-        </div>
-      ) : null}
-    </div>
+    </>
   );
 }

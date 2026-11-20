@@ -1,9 +1,19 @@
-import { memo, useCallback, useMemo, useState, useRef, useEffect } from "react";
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
+  ChevronRight,
+  FolderPlus,
   GitFork,
   MoreHorizontal,
   Pencil,
@@ -50,16 +60,27 @@ import {
   type SessionSortMode,
 } from "../utils/sessionSortPrefs";
 import {
+  compareSessionsByRecency,
   groupSessionsByRecency,
   type SessionGroupKey,
 } from "../utils/sessionGroups";
 import { useServerTimezone } from "../../../hooks/useServerTimezone";
 import {
+  isDefaultWorkspacePath,
+  normalizeWorkspaceDir,
+  useAgentWorkspaces,
+  workspaceBasename,
+} from "../hooks/useAgentWorkspaces";
+import ProjectBaoRow from "../../../components/Bao/ProjectBaoRow";
+import {
   initialChatNavScope,
   matchesChatNavScope,
   type ChatNavScope,
 } from "../utils/chatNavScope";
-import ChatNavScopeTabs, { ChatNavScopeEmpty } from "./ChatNavScopeTabs";
+import ChatNavScopeTabs, {
+  ChatNavCloudEntry,
+  ChatNavScopeEmpty,
+} from "./ChatNavScopeTabs";
 import AgentUnreadBadge from "./AgentUnreadBadge";
 import ExpertNameLabel from "./ExpertNameLabel";
 import ExpertNavActions, { ExpertPinMark } from "./ExpertNavActions";
@@ -76,6 +97,9 @@ import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 
 /** 侧栏一次最多挂到 DOM 的行数，避免几百条时首屏一次性渲染。 */
 const LIST_PAGE_SIZE = 40;
+
+/** Sessions without a workspace, and default-home experts, share this project. */
+const DEFAULT_PROJECT_KEY = "default";
 
 /** 搜索框自己持有即时输入，父级只接收防抖后的值，输入不被长列表阻塞。 */
 function NavSearchInput({
@@ -168,6 +192,8 @@ function SessionListSkeleton({ rows = 4 }: { rows?: number }) {
 
 interface SessionItemProps {
   session: Session;
+  /** Set in the flat "sessions" list: shows which expert owns this thread. */
+  agent?: OctopAgent;
   isActive: boolean;
   workStatus?: SessionWorkStatus;
   onSelect: (id: string) => void;
@@ -186,6 +212,7 @@ interface SessionItemProps {
 
 const SessionItem = memo(function SessionItem({
   session,
+  agent,
   isActive,
   workStatus = "idle",
   onSelect,
@@ -229,6 +256,9 @@ const SessionItem = memo(function SessionItem({
     ? t("chat.forkNoAssistant")
     : forkDisabledHint;
   const owned = session.owned !== false;
+  const quickCreator = owned
+    ? t("chat.quickChatMe", "我")
+    : session.createdBy || "—";
 
   const menuItems: MenuProps["items"] = owned
     ? [
@@ -306,7 +336,10 @@ const SessionItem = memo(function SessionItem({
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === "Enter" && !isEditing) onSelect(session.id);
+        if ((e.key === "Enter" || e.key === " ") && !isEditing) {
+          e.preventDefault();
+          onSelect(session.id);
+        }
       }}
     >
       <span className={styles.sessionRowLead}>
@@ -345,7 +378,33 @@ const SessionItem = memo(function SessionItem({
               contributed={session.contributed}
               owned={session.owned}
             />
+            {session.quickChat ? (
+              <span
+                className={styles.sessionQuickBadge}
+                title={t("chat.quickChatMeta", {
+                  defaultValue:
+                    "快速对话 · {{creator}} · {{expert}} · 不使用工作区",
+                  creator: quickCreator,
+                  expert: agent?.name || "",
+                })}
+              >
+                {t("chat.quickChat", "快速对话")}
+                <span className={styles.sessionQuickBadgeBy}>
+                  · {quickCreator}
+                </span>
+              </span>
+            ) : null}
           </span>
+          {agent ? (
+            <span className={styles.sessionRowAgent} title={agent.name}>
+              <ExpertIcon
+                iconUrl={agent.icon_url}
+                iconName={agent.icon_name}
+                size={12}
+              />
+              <span className={styles.sessionRowAgentName}>{agent.name}</span>
+            </span>
+          ) : null}
           {session.pinned ? (
             <span
               className={styles.sessionRowPinIndicator}
@@ -386,7 +445,7 @@ interface AgentCardProps {
   onLoadMore: () => void;
   onFetchAllSessions: () => void;
   onSelect: (sessionId: string, agentId: string) => void;
-  onNewChat: (agentId: string) => void;
+  onNewChat: (agentId: string, projectId?: string | null) => void;
   onDelete: (
     id: string,
     compact: boolean,
@@ -457,14 +516,17 @@ function ActiveAgentCard({
   const sessionRows = useMemo<
     Array<{ key: string; groupKey?: SessionGroupKey; session?: Session }>
   >(() => {
-    if (!showGroupHeaders) {
-      return visibleSessions.map((session) => ({ key: session.id, session }));
-    }
     const rows: Array<{
       key: string;
       groupKey?: SessionGroupKey;
       session?: Session;
     }> = [];
+    if (!showGroupHeaders) {
+      for (const session of visibleSessions) {
+        rows.push({ key: session.id, session });
+      }
+      return rows;
+    }
     for (const group of groupSessionsByRecency(
       visibleSessions,
       serverTimezone,
@@ -756,7 +818,9 @@ interface SessionListProps {
   onFetchAllSessions: () => void;
   onSelect: (sessionId: string, agentId: string) => void;
   onAgentSelect: (agentId: string) => void;
-  onNewChat: (agentId: string) => void;
+  onNewChat: (agentId: string, projectId?: string | null) => void;
+  /** Open the folder picker that creates a workspace-backed project. */
+  onNewProject?: () => void;
   onDelete: (
     id: string,
     compact: boolean,
@@ -781,6 +845,7 @@ export default function SessionList({
   onSelect,
   onAgentSelect,
   onNewChat,
+  onNewProject,
   onDelete,
   onRename,
   onPin,
@@ -788,7 +853,7 @@ export default function SessionList({
   activeForkDisabled,
   activeForkDisabledHint,
 }: SessionListProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const liveWorkingIds = useSessionWorkIds();
   const [searchQuery, setSearchQuery] = useState("");
@@ -800,11 +865,7 @@ export default function SessionList({
   }, []);
   const [showingHidden, setShowingHidden] = useState(false);
   const [editAgent, setEditAgent] = useState<OctopAgent | null>(null);
-  const [navScope, setNavScope] = useState<ChatNavScope>(() =>
-    initialChatNavScope(
-      agents.find((agent) => agent.agent_id === activeAgentId),
-    ),
-  );
+  const [navScope, setNavScope] = useState<ChatNavScope>(initialChatNavScope);
   const { filterVisible, pickHidden, hide, unhide, canHide } =
     useHiddenSharedExperts();
   const { pinnedIds, isPinned, togglePin } = usePinnedExperts();
@@ -834,6 +895,11 @@ export default function SessionList({
     return sortedAgents[0]?.agent_id ?? null;
   }, [activeAgentId, sortedAgents]);
   const searching = searchQuery.trim().length > 0;
+  // "projects" groups by the workspace each expert already runs in, so
+  // workspaces are only resolved while that tab is open.
+  const workspaces = useAgentWorkspaces(agents, navScope === "projects");
+  // 时间分组标题按服务端时区切日界；跨专家平铺与专家内列表保持一致。
+  const serverTimezone = useServerTimezone();
   const fetchAllRequestedRef = useRef(false);
   useEffect(() => {
     if (!searching) {
@@ -844,7 +910,12 @@ export default function SessionList({
     fetchAllRequestedRef.current = true;
     onFetchAllSessions();
   }, [onFetchAllSessions, searching]);
-  const catalog = useExpertSessionCatalog(sortedAgents, searching);
+  // The flat "sessions" and "projects" tabs need every expert's threads even
+  // without a query.
+  const catalog = useExpertSessionCatalog(
+    sortedAgents,
+    searching || navScope === "sessions" || navScope === "projects",
+  );
   const sessionsFor = useCallback(
     (agentId: string): Session[] => {
       const catalogList = catalog.byAgent[agentId] ?? [];
@@ -869,6 +940,228 @@ export default function SessionList({
       ),
     );
   }, [searchQuery, searching, sessionsFor, sortedAgents]);
+
+  /**
+   * "sessions" tab: every expert's threads in one recency-ordered list, so a
+   * conversation is reachable without first entering an expert's private view.
+   * Empty threads are kept (they are resumable), but they sort last.
+   */
+  const flatEntries = useMemo(() => {
+    if (navScope !== "sessions") return [];
+    const q = searchQuery.trim().toLowerCase();
+    const rows: Array<{ session: Session; agent: OctopAgent }> = [];
+    for (const agent of listedAgents) {
+      const agentMatches = q.length > 0 && agent.name.toLowerCase().includes(q);
+      for (const session of sessionsFor(agent.agent_id)) {
+        if (q && !agentMatches && !session.name.toLowerCase().includes(q)) {
+          continue;
+        }
+        rows.push({ session, agent });
+      }
+    }
+    rows.sort((a, b) => {
+      if (sortMode === "name") {
+        return a.session.name.localeCompare(b.session.name, i18n.language);
+      }
+      return compareSessionsByRecency(a.session, b.session);
+    });
+    return rows;
+  }, [i18n.language, listedAgents, navScope, searchQuery, sessionsFor, sortMode]);
+
+  /**
+   * "projects" tab: one project per ``workspace_dir``. Experts bound to the same
+   * folder share a project. Experts with no binding — including the auto-created
+   * agent home — all land in the default workspace project, so no conversation
+   * drops out of the list.
+   */
+  const projectGroups = useMemo(() => {
+    if (navScope !== "projects") return [];
+    const q = searchQuery.trim().toLowerCase();
+    const groups = new Map<
+      string,
+      {
+        key: string;
+        title: string;
+        dir: string | null;
+        isDefault: boolean;
+        /** Expert that owns the project folder; used for "new chat" here. */
+        agentId: string;
+        /** ``projects`` table id; null for legacy workspace_dir groups. */
+        projectId: string | null;
+        entries: Array<{ session: Session; agent: OctopAgent }>;
+      }
+    >();
+    for (const agent of listedAgents) {
+      const dir = workspaces.byAgent[agent.agent_id]?.workspaceDir ?? null;
+      const attributed =
+        Boolean(dir) && !isDefaultWorkspacePath(dir, workspaces.agentsRoot);
+      const agentMatches = q.length > 0 && agent.name.toLowerCase().includes(q);
+      let assigned = 0;
+      for (const session of sessionsFor(agent.agent_id)) {
+        if (q && !agentMatches && !session.name.toLowerCase().includes(q)) {
+          continue;
+        }
+        assigned += 1;
+        // Migrated conversations group by the projects table; un-migrated ones
+        // keep the legacy workspace_dir grouping until the upgrade runs.
+        const projectId = session.projectId ?? null;
+        const sessionKey = projectId
+          ? `prj:${projectId}`
+          : attributed && dir
+            ? `ws:${normalizeWorkspaceDir(dir)}`
+            : DEFAULT_PROJECT_KEY;
+        let group = groups.get(sessionKey);
+        if (!group) {
+          group = {
+            key: sessionKey,
+            title: projectId
+              ? session.projectName || t("chat.workspaceDefaultName", "默认工作区")
+              : attributed && dir
+                ? workspaceBasename(dir)
+                : t("chat.workspaceDefaultName", "默认工作区"),
+            dir: projectId
+              ? session.workspaceDir ?? dir
+              : attributed
+                ? dir
+                : null,
+            isDefault: !projectId && !attributed,
+            agentId: agent.agent_id,
+            projectId,
+            entries: [],
+          };
+          groups.set(sessionKey, group);
+        } else if (agent.agent_id === activeAgentId) {
+          group.agentId = agent.agent_id;
+        }
+        group.entries.push({ session, agent });
+      }
+      // Experts without conversations still show their workspace in this tab.
+      if (assigned === 0 && !q) {
+        const key = attributed && dir
+          ? `ws:${normalizeWorkspaceDir(dir)}`
+          : DEFAULT_PROJECT_KEY;
+        if (!groups.has(key)) {
+          groups.set(key, {
+            key,
+            title:
+              attributed && dir
+                ? workspaceBasename(dir)
+                : t("chat.workspaceDefaultName", "默认工作区"),
+            dir: attributed ? dir : null,
+            isDefault: !attributed,
+            agentId: agent.agent_id,
+            projectId: null,
+            entries: [],
+          });
+        }
+      }
+    }
+    const rows = [...groups.values()];
+    for (const group of rows) {
+      group.entries.sort((a, b) =>
+        sortMode === "name"
+          ? a.session.name.localeCompare(b.session.name, i18n.language)
+          : compareSessionsByRecency(a.session, b.session),
+      );
+    }
+    rows.sort((a, b) => {
+      if (a.isDefault !== b.isDefault) return a.isDefault ? 1 : -1;
+      const ta = a.entries[0]?.session.updatedAt;
+      const tb = b.entries[0]?.session.updatedAt;
+      if (ta || tb) {
+        return (tb ? Date.parse(tb) : 0) - (ta ? Date.parse(ta) : 0);
+      }
+      return a.title.localeCompare(b.title, i18n.language);
+    });
+    return rows;
+  }, [
+    activeAgentId,
+    i18n.language,
+    listedAgents,
+    navScope,
+    searchQuery,
+    sessionsFor,
+    sortMode,
+    t,
+    workspaces.agentsRoot,
+    workspaces.byAgent,
+  ]);
+
+  /** Wait for every listed expert's workspace before grouping. */
+  const workspacesReady = useMemo(
+    () =>
+      workspaces.rootReady &&
+      listedAgents.every((agent) => workspaces.byAgent[agent.agent_id]),
+    [listedAgents, workspaces.byAgent, workspaces.rootReady],
+  );
+
+  /** Project holding the open conversation; expanded by default. */
+  const currentProjectKey = useMemo(() => {
+    if (!activeAgentId) return null;
+    const dir = workspaces.byAgent[activeAgentId]?.workspaceDir ?? null;
+    if (!dir || isDefaultWorkspacePath(dir, workspaces.agentsRoot)) {
+      return DEFAULT_PROJECT_KEY;
+    }
+    return `ws:${normalizeWorkspaceDir(dir)}`;
+  }, [activeAgentId, workspaces.agentsRoot, workspaces.byAgent]);
+
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
+    () => new Set(),
+  );
+  useEffect(() => {
+    if (!currentProjectKey) return;
+    setExpandedProjects((prev) =>
+      prev.has(currentProjectKey)
+        ? prev
+        : new Set(prev).add(currentProjectKey),
+    );
+  }, [currentProjectKey]);
+  const toggleProject = useCallback((key: string) => {
+    setExpandedProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  // 每个项目各自挂一页会话，展开更多只影响该项目。
+  const [projectLimits, setProjectLimits] = useState<Record<string, number>>({});
+  const revealMoreProjectSessions = useCallback((key: string) => {
+    setProjectLimits((prev) => ({
+      ...prev,
+      [key]: (prev[key] ?? LIST_PAGE_SIZE) + LIST_PAGE_SIZE,
+    }));
+  }, []);
+
+  const [visibleFlatCount, setVisibleFlatCount] = useState(LIST_PAGE_SIZE);
+  useEffect(() => {
+    setVisibleFlatCount(LIST_PAGE_SIZE);
+  }, [navScope, searchQuery]);
+  const visibleFlat = flatEntries.slice(0, visibleFlatCount);
+
+  // 「最近」排序下，跨专家平铺也要有「置顶/今天/昨天/…」分组标题，
+  // 与专家内列表共用同一套分组规则，避免会话优先侧栏丢掉时间分组。
+  const flatGroups = useMemo(() => {
+    if (navScope !== "sessions" || sortMode !== "recent") return null;
+    const entryBySession = new Map(
+      visibleFlat.map((entry) => [entry.session.id, entry]),
+    );
+    return groupSessionsByRecency(
+      visibleFlat.map((entry) => entry.session),
+      serverTimezone,
+    ).map((group) => ({
+      key: group.key,
+      entries: group.sessions
+        .map((session) => entryBySession.get(session.id))
+        .filter(
+          (
+            entry,
+          ): entry is { session: Session; agent: OctopAgent } =>
+            entry !== undefined,
+        ),
+    }));
+  }, [navScope, serverTimezone, sortMode, visibleFlat]);
 
   // 专家数量多时同样先挂一页，滚动到底再追加。
   const [visibleAgentCount, setVisibleAgentCount] = useState(LIST_PAGE_SIZE);
@@ -953,6 +1246,51 @@ export default function SessionList({
     unreadyExperts > 0
       ? { text: t("chat.noChattableAgentsHint"), action: t("chat.goToExperts") }
       : { text: t("chat.noAgentsHint"), action: t("chat.createExpert") };
+
+  // Cloud collaboration entry badge: how many remote experts / teams exist.
+  const cloudAgentCount = useMemo(
+    () => agents.filter((agent) => matchesChatNavScope(agent, "cloud")).length,
+    [agents],
+  );
+
+  /** Flat rows (sessions / projects) share this wiring. */
+  const renderSessionRow = (session: Session, agent: OctopAgent) => {
+    const isActiveAgent = agent.agent_id === activeAgentId;
+    return (
+      <SessionItem
+        key={`${agent.agent_id}:${session.id}`}
+        session={session}
+        agent={agent}
+        isActive={activeId === session.id}
+        workStatus={resolveSessionWorkStatus(session, liveWorkingIds)}
+        onSelect={(id) => onSelect(id, agent.agent_id)}
+        onDelete={
+          isActiveAgent
+            ? onDelete
+            : (id, compact) => deleteOther(agent.agent_id, id, compact)
+        }
+        onRename={
+          isActiveAgent
+            ? onRename
+            : (id, name) => renameOther(agent.agent_id, id, name)
+        }
+        onPin={
+          isActiveAgent
+            ? onPin
+            : (id, pinned) => pinOther(agent.agent_id, id, pinned)
+        }
+        onContribute={(id, contributed) =>
+          contributeSession(agent.agent_id, id, contributed)
+        }
+        shareable={Boolean(agent.is_shared)}
+        onFork={(id) => onFork(id, agent.agent_id)}
+        forkDisabled={activeId === session.id ? activeForkDisabled : undefined}
+        forkDisabledHint={
+          activeId === session.id ? activeForkDisabledHint : undefined
+        }
+      />
+    );
+  };
 
   const renderAgentRow = (agent: OctopAgent, hiddenRow: boolean) => {
     const isActive = agent.agent_id === activeAgentId;
@@ -1088,7 +1426,15 @@ export default function SessionList({
       ) : null}
 
       {agents.length > 0 ? (
-        <ChatNavScopeTabs value={navScope} onChange={setNavScope} />
+        <>
+          <ChatNavScopeTabs value={navScope} onChange={setNavScope} />
+          <ChatNavCloudEntry
+            active={navScope === "cloud"}
+            count={cloudAgentCount}
+            onOpen={() => setNavScope("cloud")}
+            onClose={() => setNavScope("sessions")}
+          />
+        </>
       ) : null}
 
       {agents.length === 0 ? (
@@ -1103,6 +1449,189 @@ export default function SessionList({
           >
             {emptyAgentsCopy.action}
           </button>
+        </div>
+      ) : navScope === "sessions" ? (
+        <div className={styles.sessionItems}>
+          {catalog.loading && flatEntries.length === 0 ? (
+            <SessionListSkeleton />
+          ) : flatEntries.length === 0 ? (
+            <div className={styles.sessionEmptyAgents}>
+              <p className={styles.sessionEmptyAgentsText}>
+                {searching
+                  ? t("chat.noSearchResults", "没有匹配的会话")
+                  : t("chat.noSessionsYet", "直接发消息即可开始对话")}
+              </p>
+              {searching ? null : (
+                <button
+                  type="button"
+                  className={styles.sessionEmptyAgentsLink}
+                  onClick={() => {
+                    const target = activeAgentId ?? agents[0]?.agent_id;
+                    if (target) onNewChat(target);
+                  }}
+                >
+                  {t("chat.palette.newChat", "新建会话")}
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              {flatGroups
+                ? flatGroups.map((group) => {
+                    const [labelKey, fallback] = GROUP_LABELS[group.key];
+                    return (
+                      <Fragment key={`group-${group.key}`}>
+                        <div
+                          className={styles.sessionGroupLabel}
+                          aria-hidden="true"
+                        >
+                          {t(labelKey, fallback)}
+                        </div>
+                        {group.entries.map(({ session, agent }) =>
+                          renderSessionRow(session, agent),
+                        )}
+                      </Fragment>
+                    );
+                  })
+                : visibleFlat.map(({ session, agent }) =>
+                    renderSessionRow(session, agent),
+                  )}
+              {flatEntries.length > visibleFlat.length ? (
+                <RevealMore
+                  label={t("chat.expandMore", "展开更多")}
+                  onReveal={() =>
+                    setVisibleFlatCount((count) => count + LIST_PAGE_SIZE)
+                  }
+                />
+              ) : null}
+            </>
+          )}
+        </div>
+      ) : navScope === "projects" ? (
+        <div className={styles.sessionItems}>
+          <div className={styles.sessionProjectToolbar}>
+            <span className={styles.sessionProjectToolbarLabel}>
+              {t("chat.navScopeProjects", "项目")}
+            </span>
+            {onNewProject ? (
+              <button
+                type="button"
+                className={styles.sessionProjectCreate}
+                data-testid="chat-project-create"
+                onClick={onNewProject}
+              >
+                <FolderPlus size={12} />
+                {t("chat.projectCreate", "新建项目")}
+              </button>
+            ) : null}
+          </div>
+          {!workspacesReady || catalog.loading ? (
+            <SessionListSkeleton />
+          ) : projectGroups.length === 0 ? (
+            <div className={styles.sessionEmptyAgents}>
+              <p className={styles.sessionEmptyAgentsText}>
+                {t("chat.noSearchResults", "没有匹配的会话")}
+              </p>
+            </div>
+          ) : (
+            projectGroups.map((group) => {
+              const open = expandedProjects.has(group.key);
+              const limit = projectLimits[group.key] ?? LIST_PAGE_SIZE;
+              const shown = group.entries.slice(0, limit);
+              return (
+                <div
+                  key={group.key}
+                  data-testid="chat-project-group"
+                  data-project-key={group.key}
+                  data-project-title={group.title}
+                  data-expanded={open ? "true" : "false"}
+                >
+                  <button
+                    type="button"
+                    className={styles.sessionProjectHeader}
+                    data-testid="chat-project-header"
+                    aria-expanded={open}
+                    onClick={() => {
+                      // 空项目没有可打开的会话：直接在该项目里开一个新会话，
+                      // 下一次发送由 useChatSend 在项目专家下建线程，而不是留在旧会话。
+                      if (
+                        group.entries.length === 0 &&
+                        group.agentId !== activeAgentId
+                      ) {
+                        setExpandedProjects((prev) =>
+                          prev.has(group.key)
+                            ? prev
+                            : new Set(prev).add(group.key),
+                        );
+                        onNewChat(group.agentId, group.projectId);
+                        return;
+                      }
+                      toggleProject(group.key);
+                    }}
+                  >
+                    <ChevronRight
+                      size={12}
+                      className={cx(
+                        styles.sessionProjectChevron,
+                        open && styles.sessionProjectChevronOpen,
+                      )}
+                    />
+                    <span
+                      className={styles.sessionProjectTitle}
+                      title={group.dir ?? undefined}
+                    >
+                      {group.title}
+                    </span>
+                    <span
+                      className={styles.sessionProjectCount}
+                      data-testid="chat-project-count"
+                    >
+                      {group.entries.length}
+                    </span>
+                  </button>
+                  {open ? (
+                    <>
+                      <ProjectBaoRow
+                        projectKey={group.key}
+                        projectName={group.title}
+                      />
+                      {group.entries.length === 0 ? (
+                        <div
+                          className={styles.sessionProjectEmpty}
+                          data-testid="chat-project-empty"
+                        >
+                          <span>
+                            {t("chat.projectEmptyHint", "这个项目下还没有会话")}
+                          </span>
+                          <button
+                            type="button"
+                            className={styles.sessionEmptyAgentsLink}
+                            onClick={() => onNewChat(group.agentId, group.projectId)}
+                          >
+                            {t("chat.palette.newChat", "新建会话")}
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          {shown.map(({ session, agent }) =>
+                            renderSessionRow(session, agent),
+                          )}
+                          {group.entries.length > shown.length ? (
+                            <RevealMore
+                              label={t("chat.expandMore", "展开更多")}
+                              onReveal={() =>
+                                revealMoreProjectSessions(group.key)
+                              }
+                            />
+                          ) : null}
+                        </>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              );
+            })
+          )}
         </div>
       ) : (
         <div className={styles.sessionItems}>

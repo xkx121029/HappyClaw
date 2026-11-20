@@ -62,6 +62,9 @@ export function buildDefaultFormValues(timezone: string) {
     fresh_thread: false,
     session_key: undefined,
     mcp_servers: [],
+    max_retries: 0,
+    retry_backoff_seconds: 60,
+    catch_up_misses: 0,
   };
 }
 

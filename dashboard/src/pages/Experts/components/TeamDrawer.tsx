@@ -618,7 +618,7 @@ export default function TeamDrawer({
       </Form>
 
       <div style={{ marginTop: 8 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>
+        <div style={{ fontSize: "var(--fn-text-xs)", fontWeight: 500, marginBottom: 8 }}>
           {t("experts.mdFilesTitle")}
         </div>
         <p
@@ -652,7 +652,7 @@ export default function TeamDrawer({
                     <span style={{ fontWeight: 500 }}>{meta.label}</span>
                     <span
                       style={{
-                        fontSize: 11,
+                        fontSize: "var(--fn-text-2xs)",
                         color:
                           "var(--fn-text-quaternary, var(--fn-text-tertiary))",
                       }}

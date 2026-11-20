@@ -175,7 +175,14 @@ async def get_tool_settings(
     locale = resolve_request_locale(request)
     agent_cfg = server.app_runtime.agent_registry.get_config(agent_id)
     disabled = set(normalize_tools_disabled(agent_cfg.get("tools_disabled")))
-    mobile_enabled = bool(server.config is not None and server.config.capabilities.mobile.enabled)
+    from octop.infra.control.device_link.manager import get_device_link_manager  # noqa: PLC0415
+    from octop.infra.control.adb.runner import adb_available  # noqa: PLC0415
+    from octop.infra.search.source import load_source  # noqa: PLC0415
+
+    search_source = load_source(server.services.settings_repo).effective
+
+    device_link_enabled = get_device_link_manager().is_paired()
+    adb_enabled = adb_available()
     team_host = is_team_agent(row)
 
     tools: list[ToolSettingsItem] = []
@@ -200,7 +207,9 @@ async def get_tool_settings(
                 and builtin_tool_available(
                     entry.name,
                     agent_cfg=agent_cfg,
-                    mobile_enabled=mobile_enabled,
+                    device_link_enabled=device_link_enabled,
+                    adb_enabled=adb_enabled,
+                    search_source=search_source,
                 ),
                 plugin_id=None,
             )

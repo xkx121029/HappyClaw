@@ -107,6 +107,7 @@ export default class GlobalErrorBoundary extends Component<Props, State> {
           detail={isChunkError ? null : this.state.error?.message}
           detailsLabel={i18n.t("errors.details")}
           actions={actions}
+          mascotState={isChunkError ? "confused" : "scared"}
         />
       );
     }

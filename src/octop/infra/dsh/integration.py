@@ -33,6 +33,7 @@ from octop.infra.dsh.prompts.skills_injection import (
     snapshot_from_summaries,
 )
 from octop.infra.dsh.skills import DshSkillError, DshSkillRoot, discover_skill_root
+from octop.infra.dsh.switches import skills_prompts_enabled
 
 __all__ = [
     "DSH_SKILLS_PROMPTS_ENV",
@@ -57,11 +58,9 @@ WORKSPACE_SKILLS_RANK = 300
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
 
-def dsh_skills_prompts_enabled() -> bool:
-    """Return whether the opt-in DSH prompt integration is on (default: off)."""
-
-    raw = os.environ.get(DSH_SKILLS_PROMPTS_ENV, "")
-    return raw.strip().lower() in _TRUTHY
+# Single source of truth lives in the stdlib-only switch module so hot paths
+# can gate on the flag without importing this (heavier) module.
+dsh_skills_prompts_enabled = skills_prompts_enabled
 
 
 def dsh_skills_strict_enabled() -> bool:

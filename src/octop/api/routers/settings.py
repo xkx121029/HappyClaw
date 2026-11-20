@@ -49,6 +49,24 @@ class HitlSettingsResponse(BaseModel):
     )
 
 
+class SearchSourceView(BaseModel):
+    effective: Literal["happysearch", "searchfree", "both"]
+    stored: str | None = Field(None, description="Persisted value, if any.")
+    env: str | None = Field(None, description="Environment override value, if any.")
+    origin: Literal["env", "settings", "default"]
+    applied: bool = Field(
+        True,
+        description=(
+            "Whether running agents were rebuilt after this change. False means the "
+            "value is stored but takes effect on the next start/reload."
+        ),
+    )
+
+
+class SearchSourcePut(BaseModel):
+    source: Literal["happysearch", "searchfree", "both"]
+
+
 @router.get(
     "/settings/timezone",
     summary="Server default timezone",
@@ -60,6 +78,65 @@ async def get_timezone_settings(
 ) -> TimezoneSettingsResponse:
     """Return the process default timezone used for display and scheduling."""
     return TimezoneSettingsResponse(timezone=server.services.config.default_timezone)
+
+
+@router.get(
+    "/settings/search-source",
+    summary="Effective free search source",
+    response_model=SearchSourceView,
+)
+async def get_search_source_settings(
+    _admin: User = Depends(require_permission("search")),
+    server: Any = Depends(get_server),
+) -> SearchSourceView:
+    """Return the persisted/env-resolved free search source."""
+    from octop.infra.search.source import load_source  # noqa: PLC0415
+
+    state = load_source(server.services.settings_repo)
+    return SearchSourceView(
+        effective=state.effective,
+        stored=state.stored,
+        env=state.env,
+        origin=state.origin,
+    )
+
+
+@router.put(
+    "/settings/search-source",
+    summary="Update free search source",
+    response_model=SearchSourceView,
+)
+async def put_search_source_settings(
+    body: SearchSourcePut,
+    admin: User = Depends(require_permission("search")),
+    server: Any = Depends(get_server),
+) -> SearchSourceView:
+    """Persist the free search source and rebuild running agents immediately."""
+    from octop.infra.search.source import save_source  # noqa: PLC0415
+
+    try:
+        state = save_source(server.services.settings_repo, body.source)
+    except ValueError as exc:
+        raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+
+    applied = False
+    if server.app_runtime is not None:
+        await server.app_runtime.agent_registry.reload_all()
+        applied = True
+
+    server.services.audit_repo.write(
+        actor=admin.username,
+        action="search.source.update",
+        target=str(state.effective),
+        payload=f"origin={state.origin}",
+    )
+    return SearchSourceView(
+        effective=state.effective,
+        stored=state.stored,
+        env=state.env,
+        origin=state.origin,
+        applied=applied,
+    )
 
 
 @router.get(
@@ -152,7 +229,7 @@ async def create_download_link(
 ) -> DownloadLinkResponse:
     """Keep an already-fetched blob behind a credential-free link for a few minutes.
 
-    In-app browsers such as WeChat cannot save ``blob:`` downloads, and the
+    Some in-app browsers cannot save ``blob:`` downloads, and the
     system browser they hand off to has no Octop session.
     """
     data = await read_upload_capped(file, max_bytes=server.services.config.max_upload_bytes)
@@ -185,33 +262,6 @@ async def open_download_link(
             "Content-Disposition": content_disposition(link.filename),
             "Cache-Control": "no-store",
         },
-    )
-
-
-class MobileCapabilitiesResponse(BaseModel):
-    enabled: bool = Field(description="Whether Remote Android is enabled on this host.")
-    backend: str = Field(description="Host backend: physical, redroid, emulator, or none.")
-
-
-class CapabilitiesResponse(BaseModel):
-    mobile: MobileCapabilitiesResponse
-
-
-@router.get(
-    "/settings/capabilities",
-    summary="Host feature capabilities",
-    response_model=CapabilitiesResponse,
-)
-async def get_capabilities(
-    user: Any = Depends(current_user),
-    server: Any = Depends(get_server),
-) -> CapabilitiesResponse:
-    """Return install-time host capabilities (always available when authenticated)."""
-    _ = user
-    cfg: OctopConfig = server.services.config
-    cap = cfg.capabilities.mobile
-    return CapabilitiesResponse(
-        mobile=MobileCapabilitiesResponse(enabled=cap.enabled, backend=cap.backend)
     )
 
 

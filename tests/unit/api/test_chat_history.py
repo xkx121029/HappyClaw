@@ -532,6 +532,64 @@ def _delete_server(hub: WebSocketHub) -> tuple[MagicMock, MagicMock]:
 
 
 @pytest.mark.asyncio
+async def test_create_thread_binds_new_conversation_to_project(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(history_mod, "require_agent_row", lambda *_a, **_k: MagicMock())
+    server = MagicMock()
+    server.services.project_repo.get.return_value = MagicMock(project_id="prj_1", user_id=1)
+    server.app_runtime.gateway.thread_registry.reset = AsyncMock(return_value="thr_new")
+    user = MagicMock(id=1, is_admin=False)
+
+    out = await history_mod.create_thread(
+        "agt_1", project_id="prj_1", user=user, server=server
+    )
+
+    assert out["thread_id"] == "thr_new"
+    server.services.thread_repo.set_workspace.assert_called_once_with(
+        "thr_new",
+        project_id="prj_1",
+        workspace_kind="project",
+        workspace_dir=None,
+    )
+
+
+@pytest.mark.asyncio
+async def test_create_thread_rejects_project_of_another_user(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(history_mod, "require_agent_row", lambda *_a, **_k: MagicMock())
+    server = MagicMock()
+    server.services.project_repo.get.return_value = MagicMock(project_id="prj_1", user_id=2)
+    server.app_runtime.gateway.thread_registry.reset = AsyncMock(return_value="thr_new")
+
+    with pytest.raises(OctopError) as raised:
+        await history_mod.create_thread(
+            "agt_1", project_id="prj_1", user=MagicMock(id=1, is_admin=False), server=server
+        )
+
+    assert raised.value.code is ErrorCode.NOT_FOUND
+    server.app_runtime.gateway.thread_registry.reset.assert_not_awaited()
+    server.services.thread_repo.set_workspace.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_create_thread_without_project_leaves_workspace_unbound(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(history_mod, "require_agent_row", lambda *_a, **_k: MagicMock())
+    server = MagicMock()
+    server.app_runtime.gateway.thread_registry.reset = AsyncMock(return_value="thr_new")
+
+    await history_mod.create_thread(
+        "agt_1", user=MagicMock(id=1, is_admin=False), server=server
+    )
+
+    server.services.project_repo.get.assert_not_called()
+    server.services.thread_repo.set_workspace.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_delete_thread_rejects_active_turn() -> None:
     hub = WebSocketHub()
     hub.mark_turn_active("thr_1")

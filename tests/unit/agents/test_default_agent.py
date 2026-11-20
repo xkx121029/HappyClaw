@@ -39,6 +39,7 @@ def _write_expert(root: Path, expert_id: str) -> None:
 
 @pytest.fixture
 def catalog(tmp_path: Path) -> ExpertCatalog:
+    _write_expert(tmp_path, "happyclaw")
     _write_expert(tmp_path, "general-assistant")
     _write_expert(tmp_path, "ops-engineer")
     cat = ExpertCatalog(tmp_path)

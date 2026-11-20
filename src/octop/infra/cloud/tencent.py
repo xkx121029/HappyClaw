@@ -1,4 +1,4 @@
-"""Tencent Cloud CVM access for the Workbench cloud tab.
+"""Cloud CVM access for the Workbench cloud tab.
 
 Uses the same browser OAuth flow as ``tccli`` (the one the Cluster Doctor
 expert relies on) so operators never paste long-term AK/SK pairs. SQLite
@@ -70,7 +70,7 @@ _CST = timezone(timedelta(hours=8))
 _METRICS = {
     "cpu": "CpuUsage",
     "mem": "MemUsage",
-    # Tencent names the load average "CpuLoadavg" (1 min); "CpuLoad" does not exist.
+    # The API names the load average "CpuLoadavg" (1 min); "CpuLoad" does not exist.
     "load": "CpuLoadavg",
     # Requires the cloud monitor agent; empty series when absent.
     "disk_usage": "CvmDiskUsage",
@@ -80,7 +80,7 @@ _METRICS = {
 
 
 class CloudError(RuntimeError):
-    """Raised when a Tencent Cloud call cannot complete."""
+    """Raised when a cloud API call cannot complete."""
 
 
 def _post_json(path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -292,7 +292,7 @@ def _user_id_from_blob(path: Path) -> int | None:
 
 
 class CloudCredentialStore:
-    """Per-user Tencent Cloud login for the Workbench.
+    """Per-user cloud login for the Workbench.
 
     ``secrets`` is set only for PostgreSQL. The table is then the source of
     truth, shared by every instance. SQLite keeps the encrypted files.

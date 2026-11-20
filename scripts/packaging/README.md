@@ -20,12 +20,15 @@ dist/backend/octop/
 2. 前端构建**失败就中止打包**，不会沿用上一次留在 `src/octop/dashboard` 的旧产物；
 3. 构建成功后在输出目录写 `version.json`（git commit、构建时间、`index.html` 的 sha256），随包进入 `_internal/octop/dashboard/`。
 
+> `git_dirty` 按**全仓**判定（`git_dirty_scope: "repo"`），后端有未提交改动也会标记为脏，不再出现「后端脏但版本戳说干净」。
+
 > **只改前端也必须重打后端**。桌面壳重打安装包前不要复用旧的 `dist/backend/octop`；`verify_backend.py` 会把包内 `index.html` 的哈希与本次前端构建输出对比，不一致直接判失败。
 
 运行时确认包里是哪版前端：`GET /api/health` 的 `build` 字段。
 
 ```json
-{"build": {"git_commit": "abc123…", "git_dirty": false,
+{"build": {"git_commit": "abc123…", "git_dirty": false, "git_dirty_scope": "repo",
+           "git_dirty_count": 0, "git_dirty_paths": [],
            "dashboard_built_at": "2026-11-12T10:20:31+00:00",
            "index_sha256": "9f2c…", "build_seconds": 121.4}}
 ```
@@ -71,13 +74,16 @@ cd E:\HAPPYclaw\Octop
 make package-backend     # 构建 + 自动跑 scripts/packaging/verify_backend.py
 ```
 
-自检覆盖五件事（任一项失败，`make` 以非 0 退出）：
+自检覆盖以下项目（任一项失败，`make` 以非 0 退出）：
 
 0. **agent 栈自检**：跑 `octop.exe selfcheck`，导入 20 个 agent 相关模块（`langchain*` 全家、`langchain_aws.embeddings.bedrock`、`tiktoken*`、`tqdm`、`numpy`、Gmail/Drive loader）并用 `langgraph` 编译+调用一张一次性的图。这一条专门防“包能启动、发第一条消息才炸”的懒加载依赖缺失（numpy 那次就是这么漏的）。
 1. `OCTOP_HOME` 自定义路径生效（DB / 日志 / 数据落在该目录）
 2. dashboard 静态资源可返回（SPA 外壳、`index.html`、`/assets/*`），且包内 `index.html` 的 sha256 与本次前端构建输出一致（防旧界面），`/api/health` 的 `build` 版本戳与之匹配
-3. Playwright 路径可解析（缺失时给中文提示 `hint_zh`，不崩）
-4. 日志写在 home 下，且启动前后 `_internal` 文件数与字节数不变
+3. 版本戳范围必须是全仓（`git_dirty_scope: "repo"`），并把「全仓状态 + 版本戳」两类信息都打印到出包记录里
+4. Playwright 路径可解析（缺失时给中文提示 `hint_zh`，不崩）
+5. 设备直连路由已挂载：`/api/device-link/status` 必须不是 404（401/403 视为已挂载，防“模块能导入但整组没挂”）
+6. 包内存在 happyclaw 默认专家：`_internal/octop/infra/agents/experts/library/happyclaw/manifest.json`
+7. 日志写在 home 下，且启动前后 `_internal` 文件数与字节数不变
 
 单独跑自检（不重新构建）：
 
@@ -101,6 +107,6 @@ dist\backend\octop\octop.exe selfcheck
 | `scripts/packaging/entry_octop.py` | 冻结入口，等价于 console script `octop` |
 | `scripts/packaging/build_dashboard.py` | 打包前强制重建前端，写 `version.json`（commit / 构建时间 / index.html sha256） |
 | `scripts/packaging/octop.spec` | PyInstaller 配置：收集 `octop*` 子模块与数据、排除测试与未用 optional |
-| `scripts/packaging/verify_backend.py` | 产物自检（agent 栈 + 上述四项 + 前端版本一致性） |
+| `scripts/packaging/verify_backend.py` | 产物自检（agent 栈 + 上述各项 + 版本戳范围 + 设备直连/默认专家探测 + 前端版本一致性） |
 | `Makefile` 的 `package-backend` | 先 `package-dashboard` 再构建 + 自检，产物落 `dist/backend/` |
 | `Makefile` 的 `package-dashboard` | 单独重建前端（不打包后端时用） |

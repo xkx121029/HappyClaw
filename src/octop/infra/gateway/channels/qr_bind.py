@@ -1,4 +1,4 @@
-"""WeCom / WeChat QR bind helpers (shared by API and CLI)."""
+"""QR bind helpers (shared by API and CLI)."""
 
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ async def wecom_qr_poll(scode: str) -> dict[str, Any]:
 
 
 async def qq_qr_generate(session_id: str) -> dict[str, str]:
-    """Create a QQ Bot QR task, replacing any pending task for this session."""
+    """Create a bot QR task, replacing any pending task for this session."""
     try:
         from octop_gateway.channels.qq import QQBotQRLogin
     except ImportError as exc:
@@ -74,7 +74,7 @@ async def qq_qr_generate(session_id: str) -> dict[str, str]:
 
 
 async def qq_qr_poll(session_id: str, qrcode_token: str) -> dict[str, Any]:
-    """Poll the active QQ Bot QR task for an Octop API or CLI session."""
+    """Poll the active bot QR task for an Octop API or CLI session."""
     session = _qq_qr_sessions.get(session_id)
     if session is None or session[1] != qrcode_token:
         return {"status": "error", "message": "QQ QR session is missing or expired"}

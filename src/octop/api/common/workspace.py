@@ -41,6 +41,7 @@ async def require_running_workspace(
     as_user: int | None,
     server: Any,
     owner_only: bool = False,
+    thread_id: str | None = None,
 ) -> BackendWorkspace:
     """Auth-checked :class:`BackendWorkspace` for a running agent.
 
@@ -50,22 +51,35 @@ async def require_running_workspace(
     window we fall back to :meth:`AgentManager.workspace_for_agent`.
     Stopped / failed agents still raise — the fallback is only for the
     rebuild gap, not a way to edit a stopped workspace through this helper.
+
+    ``thread_id`` addresses the conversation's own directory (project or
+    session workspace) instead of the expert's base workspace.
     """
     checker = require_agent_owner_row if owner_only else require_agent_row
     row = checker(agent_id, user=user, as_user=as_user, server=server)
+    agent = None
     try:
-        return require_running_agent(server, agent_id).workspace
+        agent = require_running_agent(server, agent_id)
     except OctopError as exc:
         if exc.code is not ErrorCode.AGENT_NOT_RUNNING:
             raise
         state = str(getattr(row, "last_state", "") or "").strip().lower()
         if state != "running":
             raise
-        assert server.app_runtime is not None
-        fallback = server.app_runtime.agent_registry.workspace_for_agent(agent_id)
-        if fallback is None:
-            raise
-        return cast("BackendWorkspace", fallback)
+    assert server.app_runtime is not None
+    if thread_id:
+        workspace = server.app_runtime.agent_registry.workspace_for_thread(
+            agent_id, thread_id
+        )
+        if workspace is None:
+            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        return cast("BackendWorkspace", workspace)
+    if agent is not None:
+        return agent.workspace
+    fallback = server.app_runtime.agent_registry.workspace_for_agent(agent_id)
+    if fallback is None:
+        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+    return cast("BackendWorkspace", fallback)
 
 
 async def require_agent_workspace(
@@ -75,6 +89,7 @@ async def require_agent_workspace(
     server: Any,
     as_user: int | None = None,
     owner_only: bool = False,
+    thread_id: str | None = None,
 ) -> BackendWorkspace:
     """Auth-checked workspace even when the agent is stopped.
 
@@ -85,6 +100,12 @@ async def require_agent_workspace(
     checker = require_agent_owner_row if owner_only else require_agent_row
     checker(agent_id, user=user, as_user=as_user, server=server)
     assert server.app_runtime is not None
+    if thread_id:
+        scoped = server.app_runtime.agent_registry.workspace_for_thread(
+            agent_id, thread_id
+        )
+        if scoped is not None:
+            return cast("BackendWorkspace", scoped)
     workspace = server.app_runtime.agent_registry.workspace_for_agent(agent_id)
     if workspace is None:
         raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")

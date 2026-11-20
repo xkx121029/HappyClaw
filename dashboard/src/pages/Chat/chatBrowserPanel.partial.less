@@ -46,7 +46,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: var(--fn-space-sm);
   /* Extra padding is the approach zone: fade in before the pointer hits icons. */
   padding: 40px 14px 40px 40px;
   box-sizing: border-box;
@@ -90,10 +90,10 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  border-radius: 999px;
+  border-radius: var(--fn-radius-full);
   background: var(--fn-color-brand);
   color: #fff;
-  font-size: 11px;
+  font-size: var(--fn-text-2xs);
   font-weight: 700;
   line-height: 18px;
   text-align: center;
@@ -122,7 +122,7 @@
 .dockTitleWithIcon {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -137,7 +137,7 @@
 .dockTabBar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   min-width: 0;
   max-width: 100%;
 }
@@ -145,7 +145,7 @@
 .dockTabs {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   min-width: 0;
   flex: 1;
   overflow-x: auto;
@@ -159,8 +159,8 @@
   gap: 2px;
   max-width: 180px;
   height: 30px;
-  padding: 0 4px 0 8px;
-  border-radius: 6px;
+  padding: 0 var(--fn-space-2xs) 0 var(--fn-space-xs);
+  border-radius: var(--fn-radius-sm);
   color: var(--fn-text-secondary);
   flex-shrink: 0;
 
@@ -180,16 +180,16 @@
 .dockTabLabel {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--fn-space-dense);
   min-width: 0;
   max-width: 160px;
   height: 100%;
   border: none;
   background: transparent;
   color: inherit;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.3;
+  font-size: var(--fn-text-sm);
+  font-weight: var(--fn-weight-regular);
+  line-height: var(--fn-leading-tight);
   cursor: pointer;
   padding: 0;
   overflow: hidden;
@@ -209,7 +209,7 @@
   width: 18px;
   height: 18px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--fn-radius-xs);
   background: transparent;
   color: var(--fn-text-tertiary);
   cursor: pointer;
@@ -231,7 +231,7 @@
   margin-left: 2px;
   padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--fn-radius-sm);
   background: transparent;
   color: var(--fn-text-secondary);
   cursor: pointer;
@@ -273,7 +273,7 @@
   min-height: 0;
   width: 100%;
   overflow: auto;
-  padding: 12px;
+  padding: var(--fn-space-sm);
   box-sizing: border-box;
 
   /* Stretch plugin cards that use chat-column maxWidth (often inline). */
@@ -294,9 +294,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--fn-space-xl);
   color: var(--fn-text-tertiary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   text-align: center;
 }
 
@@ -307,7 +307,7 @@
   flex-direction: column;
   overflow: hidden;
   background: var(--fn-bg-primary);
-  padding: 12px 20px 12px;
+  padding: var(--fn-space-sm) var(--fn-space-lg) var(--fn-space-sm);
   box-sizing: border-box;
   gap: 10px;
 }
@@ -317,17 +317,17 @@
   flex-shrink: 0;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
+  gap: var(--fn-space-xs);
+  padding: var(--fn-space-xs) var(--fn-space-sm);
+  border-radius: var(--fn-radius-md);
   border: 1px solid var(--fn-border-secondary, rgba(0, 0, 0, 0.08));
   background: color-mix(
     in srgb,
     var(--fn-bg-secondary, #f5f5f7) 88%,
     transparent
   );
-  font-size: 12px;
-  line-height: 1.55;
+  font-size: var(--fn-text-2xs);
+  line-height: var(--fn-leading-normal);
   color: var(--fn-text-tertiary, var(--fn-text-secondary));
 
   p {
@@ -349,7 +349,7 @@
   align-items: center;
   justify-content: center;
   min-height: 0;
-  padding: 24px;
+  padding: var(--fn-space-xl);
 }
 
 .dockFileTreeWrap {
@@ -357,7 +357,7 @@
   min-height: 0;
   overflow: auto;
   border: 1px solid var(--fn-border-secondary, rgba(0, 0, 0, 0.08));
-  border-radius: 8px;
+  border-radius: var(--fn-radius-md);
   background: var(--fn-bg-elevated, var(--fn-bg-primary));
 }
 
@@ -365,9 +365,9 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 8px 12px;
-  font-size: 13px;
-  font-weight: 600;
+  padding: var(--fn-space-xs) var(--fn-space-sm);
+  font-size: var(--fn-text-xs);
+  font-weight: var(--fn-weight-semibold);
   color: var(--fn-text-secondary);
   background: color-mix(
     in srgb,
@@ -378,16 +378,16 @@
 }
 
 .dockFileTree {
-  padding: 4px 0 8px;
+  padding: var(--fn-space-2xs) 0 var(--fn-space-xs);
 }
 
 .dockFileTreeFolder {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--fn-space-dense);
   width: 100%;
   min-height: 34px;
-  padding: 2px 12px 2px 10px;
+  padding: 2px var(--fn-space-sm) 2px 10px;
   border: none;
   background: transparent;
   color: var(--fn-text-secondary);
@@ -401,8 +401,8 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--fn-color-brand);
-    outline-offset: -2px;
+    outline: var(--fn-focus-ring-width) solid var(--fn-focus-ring-color);
+    outline-offset: calc(-1 * var(--fn-focus-ring-width));
   }
 
   svg {
@@ -412,8 +412,8 @@
 }
 
 .dockFileTreeFolderName {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fn-text-xs);
+  font-weight: var(--fn-weight-semibold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -422,9 +422,9 @@
 .dockFileTreeFile {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   min-height: 36px;
-  padding: 2px 8px 2px 10px;
+  padding: 2px var(--fn-space-xs) 2px 10px;
   box-sizing: border-box;
 
   &:hover,
@@ -436,7 +436,7 @@
 .dockFileTreeFileMain {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   flex: 1;
   min-width: 0;
   padding: 0;
@@ -448,7 +448,7 @@
   text-align: left;
 
   &:focus-visible {
-    outline: 2px solid var(--fn-color-brand);
+    outline: var(--fn-focus-ring-width) solid var(--fn-focus-ring-color);
     outline-offset: 1px;
   }
 }
@@ -464,8 +464,8 @@
 }
 
 .dockFileTreeFileName {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--fn-text-sm);
+  font-weight: var(--fn-weight-medium);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -481,8 +481,8 @@
 }
 
 .dockFileTreeFileAgent {
-  font-size: 11px;
-  font-weight: 400;
+  font-size: var(--fn-text-2xs);
+  font-weight: var(--fn-weight-regular);
   color: var(--fn-text-tertiary, #8b8b8f);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -499,15 +499,15 @@
   height: 28px;
   padding: 0;
   border: 1px solid var(--fn-border-secondary, rgba(0, 0, 0, 0.1));
-  border-radius: 6px;
+  border-radius: var(--fn-radius-sm);
   background: var(--fn-bg-primary);
   color: var(--fn-text-secondary);
   cursor: pointer;
   opacity: 1;
   transition:
-    opacity 0.12s ease,
-    background 0.12s ease,
-    color 0.12s ease;
+    opacity var(--fn-transition-fast),
+    background var(--fn-transition-fast),
+    color var(--fn-transition-fast);
 
   &:hover:not(:disabled) {
     color: var(--fn-color-brand);
@@ -525,7 +525,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--fn-color-brand);
+    outline: var(--fn-focus-ring-width) solid var(--fn-focus-ring-color);
     outline-offset: 1px;
     opacity: 1;
   }
@@ -550,8 +550,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 16px;
-  font-weight: 400;
+  font-size: var(--fn-text-lg);
+  font-weight: var(--fn-weight-regular);
   color: var(--chat-title-color, var(--fn-text-primary));
 }
 
@@ -594,7 +594,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--fn-radius-sm);
   background: transparent;
   color: var(--fn-text-secondary);
   cursor: pointer;
@@ -608,7 +608,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--fn-color-brand);
+    outline: var(--fn-focus-ring-width) solid var(--fn-focus-ring-color);
     outline-offset: 2px;
   }
 
@@ -636,7 +636,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 12px 16px;
+  padding: var(--fn-space-sm) var(--fn-space-md);
   background: var(--fn-bg-primary);
   color: var(--fn-text-primary);
 }
@@ -655,22 +655,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 32px 16px;
+  gap: var(--fn-space-xs);
+  padding: var(--fn-space-2xl) var(--fn-space-md);
   text-align: center;
 }
 
 .fileMissingIcon {
   color: var(--fn-text-tertiary);
-  margin-bottom: 4px;
+  margin-bottom: var(--fn-space-2xs);
 }
 
 .fileMissingTitle {
   margin: 0;
   max-width: 360px;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.55;
+  font-size: var(--fn-text-sm);
+  font-weight: var(--fn-weight-medium);
+  line-height: var(--fn-leading-normal);
   color: var(--fn-text-secondary);
 }
 
@@ -719,7 +719,7 @@
 .editArea {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   /* User bubbles shrink-to-fit; force a comfortable editor width. */
   width: min(560px, 70vw);
   min-width: min(320px, 100%);
@@ -731,14 +731,14 @@
   width: 100%;
   min-height: 120px;
   max-height: 360px;
-  padding: 12px 14px;
+  padding: var(--fn-space-sm) 14px;
   border: 1px solid var(--fn-color-brand);
-  border-radius: 14px;
+  border-radius: var(--fn-radius-lg);
   background: var(--fn-bg-primary);
   color: var(--fn-text-primary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-family: inherit;
-  line-height: 1.6;
+  line-height: var(--fn-leading-relaxed);
   resize: vertical;
   outline: none;
   box-sizing: border-box;
@@ -750,22 +750,22 @@
 .editActions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 .editSaveBtn {
   padding: 5px 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--fn-radius-md);
   background: linear-gradient(
     135deg,
     var(--fn-color-brand),
     var(--fn-color-brand-soft)
   );
   color: #fff;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity var(--fn-transition);
 
   &:hover {
     opacity: 0.9;
@@ -775,10 +775,10 @@
 .editCancelBtn {
   padding: 5px 14px;
   border: 1px solid var(--fn-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--fn-radius-md);
   background: transparent;
   color: var(--fn-text-secondary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   cursor: pointer;
   transition: background var(--fn-transition-fast);
 
@@ -789,8 +789,8 @@
 
 /* ---------- Error message box ---------- */
 .errorMessageBox {
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: var(--fn-space-sm) 14px;
+  border-radius: var(--fn-radius-lg);
   border: 1px solid
     color-mix(in srgb, var(--fn-color-brand) 32%, var(--fn-border-primary));
   background: color-mix(
@@ -800,30 +800,30 @@
   );
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 .errorMessageHeader {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--fn-space-dense);
 }
 
 .errorMessageIcon {
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   color: var(--fn-color-brand);
 }
 
 .errorMessageTitle {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fn-text-xs);
+  font-weight: var(--fn-weight-semibold);
   color: var(--fn-color-brand);
 }
 
 .errorMessageBody {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-primary);
-  line-height: 1.6;
+  line-height: var(--fn-leading-relaxed);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -831,20 +831,20 @@
 .errorActionRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   align-self: flex-start;
 }
 
 .errorConfigBtn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
+  gap: var(--fn-space-dense);
+  padding: 5px var(--fn-space-sm);
   border: 1px solid color-mix(in srgb, var(--fn-color-brand) 35%, transparent);
-  border-radius: 8px;
+  border-radius: var(--fn-radius-md);
   background: color-mix(in srgb, var(--fn-color-brand) 8%, transparent);
   color: var(--fn-color-brand);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   cursor: pointer;
   transition:
     background var(--fn-transition-fast),
@@ -859,14 +859,14 @@
 .errorRetryBtn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--fn-space-dense);
   align-self: flex-start;
-  padding: 5px 12px;
+  padding: 5px var(--fn-space-sm);
   border: 1px solid color-mix(in srgb, var(--fn-color-brand) 35%, transparent);
-  border-radius: 8px;
+  border-radius: var(--fn-radius-md);
   background: transparent;
   color: var(--fn-color-brand);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   cursor: pointer;
   transition:
     background var(--fn-transition-fast),
@@ -884,33 +884,35 @@
   background: color-mix(in srgb, var(--fn-color-brand) 6%, transparent);
 }
 
+/* Auth / takeover are warning states: amber stays semantic, all tints and
+   glows are derived from the shared warning token so they follow the theme. */
 .browserStatusAuth {
   animation: browserAuthPulse 2s ease-in-out infinite;
-  border-color: #faad14;
-  color: #faad14;
+  border-color: var(--fn-color-warning);
+  color: var(--fn-color-warning-text);
 }
 
 .browserStatusTakeover {
   animation: browserTakeoverPulse 1.2s ease-in-out infinite;
-  border-color: #fa8c16;
-  color: #fa8c16;
-  background: rgba(250, 140, 22, 0.1);
-  box-shadow: 0 0 12px rgba(250, 140, 22, 0.4);
+  border-color: var(--fn-color-warning);
+  color: var(--fn-color-warning-text);
+  background: color-mix(in srgb, var(--fn-color-warning) 10%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--fn-color-warning) 40%, transparent);
 
   &:hover {
-    background: rgba(250, 140, 22, 0.15);
-    box-shadow: 0 0 20px rgba(250, 140, 22, 0.5);
+    background: color-mix(in srgb, var(--fn-color-warning) 15%, transparent);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--fn-color-warning) 50%, transparent);
   }
 }
 
 @keyframes browserTakeoverPulse {
   0%,
   100% {
-    box-shadow: 0 0 8px rgba(250, 140, 22, 0.3);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--fn-color-warning) 30%, transparent);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 20px rgba(250, 140, 22, 0.6);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--fn-color-warning) 60%, transparent);
     transform: scale(1.08);
   }
 }
@@ -918,10 +920,10 @@
 @keyframes browserAuthPulse {
   0%,
   100% {
-    box-shadow: 0 2px 8px rgba(250, 173, 20, 0.2);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--fn-color-warning) 20%, transparent);
   }
   50% {
-    box-shadow: 0 2px 16px rgba(250, 173, 20, 0.5);
+    box-shadow: 0 2px 16px color-mix(in srgb, var(--fn-color-warning) 50%, transparent);
   }
 }
 
@@ -931,26 +933,26 @@
   right: 8px;
   width: 9px;
   height: 9px;
-  border-radius: 50%;
+  border-radius: var(--fn-radius-full);
   border: 1.5px solid var(--fn-bg-primary, #fff);
 }
 
 .browserStatus_agent {
-  background: #52c41a;
+  background: var(--fn-color-success);
 }
 
 .browserStatus_user {
-  background: #faad14;
+  background: var(--fn-color-warning);
   animation: browserUserDotPulse 1.2s ease-in-out infinite;
 }
 
 @keyframes browserUserDotPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(250, 173, 20, 0.6);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--fn-color-warning) 60%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(250, 173, 20, 0);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--fn-color-warning) 0%, transparent);
   }
 }
 
@@ -963,7 +965,7 @@
   align-items: center;
   justify-content: center;
   touch-action: none;
-  transition: background 0.15s;
+  transition: background var(--fn-transition-fast);
 }
 
 .panelResizer.horizontal {
@@ -978,16 +980,16 @@
     background: var(--fn-chat-divider, var(--fn-border-primary));
     opacity: 0;
     transition:
-      opacity 0.15s,
-      background 0.15s,
-      width 0.15s;
+      opacity var(--fn-transition-fast),
+      background var(--fn-transition-fast),
+      width var(--fn-transition-fast);
   }
 
   &:hover .resizerHandle,
   &.resizerActive .resizerHandle {
     width: 2px;
     opacity: 1;
-    background: #1890ff;
+    background: var(--fn-color-brand);
   }
 }
 
@@ -1003,21 +1005,21 @@
     background: var(--fn-chat-divider, var(--fn-border-primary));
     opacity: 0;
     transition:
-      opacity 0.15s,
-      background 0.15s,
-      height 0.15s;
+      opacity var(--fn-transition-fast),
+      background var(--fn-transition-fast),
+      height var(--fn-transition-fast);
   }
 
   &:hover .resizerHandle,
   &.resizerActive .resizerHandle {
     height: 2px;
     opacity: 1;
-    background: #1890ff;
+    background: var(--fn-color-brand);
   }
 }
 
 .resizerActive {
-  background: rgba(24, 144, 255, 0.06);
+  background: color-mix(in srgb, var(--fn-color-brand) 6%, transparent);
 }
 
 .panelResizeActive {

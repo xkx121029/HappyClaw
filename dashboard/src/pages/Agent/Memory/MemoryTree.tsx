@@ -231,7 +231,7 @@ export default function MemoryTree({ agentId, initialExpandEntityId }: Props) {
         }}
       >
         <Space size={8}>
-          <span style={{ fontSize: 14, fontWeight: 600 }}>
+          <span style={{ fontSize: "var(--fn-text-sm)", fontWeight: 600 }}>
             {t("memory.tree.title", "按主题浏览")}
           </span>
           <Tag>
@@ -255,15 +255,29 @@ export default function MemoryTree({ agentId, initialExpandEntityId }: Props) {
             {t("memory.create.title", "新建记忆")}
           </Button>
           <a
+            role="button"
+            tabIndex={0}
             onClick={handleRefresh}
-            style={{ fontSize: 12, cursor: "pointer" }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleRefresh();
+              }
+            }}
+            style={{ fontSize: "var(--fn-text-2xs)", cursor: "pointer" }}
           >
             <RefreshCw size={14} /> {t("common.refresh", "刷新")}
           </a>
         </Space>
       </div>
 
-      <div style={{ fontSize: 12, color: "#8c8c8c", marginBottom: 8 }}>
+      <div
+        style={{
+          fontSize: "var(--fn-text-2xs)",
+          color: "var(--fn-text-tertiary)",
+          marginBottom: 8,
+        }}
+      >
         {t(
           "memory.tree.hint",
           "点击主题展开它下面的记忆；再点击具体记忆查看详情。",
@@ -275,7 +289,7 @@ export default function MemoryTree({ agentId, initialExpandEntityId }: Props) {
       ) : entities.length === 0 ? (
         <MemoryPipelineEmpty agentId={agentId} />
       ) : (
-        <div className="memory-tree" style={{ fontSize: 13 }}>
+        <div className="memory-tree" style={{ fontSize: "var(--fn-text-xs)" }}>
           {/* Root row */}
           <RootRow agentId={agentId} entityCount={entities.length} />
 
@@ -381,6 +395,7 @@ function RootRow({
   agentId: string;
   entityCount: number;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       style={{
@@ -388,13 +403,20 @@ function RootRow({
         alignItems: "center",
         padding: "6px 4px",
         fontWeight: 600,
-        color: "#262626",
+        color: "var(--fn-text-primary)",
       }}
     >
-      <ChevronDown size={10} style={{ marginRight: 6, color: "#8c8c8c" }} />
-      <span style={{ marginRight: 6 }}>🧠</span>
+      <ChevronDown
+        size={10}
+        style={{ marginRight: 6, color: "var(--fn-text-tertiary)" }}
+      />
+      <span style={{ marginRight: 6 }} aria-hidden>
+        🧠
+      </span>
       <span>{agentId}</span>
-      <Tag style={{ marginLeft: 8 }}>{entityCount} 个主题</Tag>
+      <Tag style={{ marginLeft: 8 }}>
+        {t("memory.tree.entityCount", "{{n}} 个主题", { n: entityCount })}
+      </Tag>
     </div>
   );
 }
@@ -417,6 +439,15 @@ function EntityRow({
   return (
     <div
       onClick={onToggle}
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onToggle();
+        }
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -442,38 +473,51 @@ function EntityRow({
       {/* L-elbow guide */}
       <Guide />
       {expanded ? (
-        <ChevronDown size={10} style={{ marginRight: 6, color: "#8c8c8c" }} />
+        <ChevronDown
+          size={10}
+          style={{ marginRight: 6, color: "var(--fn-text-tertiary)" }}
+        />
       ) : (
-        <ChevronRight size={10} style={{ marginRight: 6, color: "#8c8c8c" }} />
+        <ChevronRight
+          size={10}
+          style={{ marginRight: 6, color: "var(--fn-text-tertiary)" }}
+        />
       )}
-      <span style={{ marginRight: 6 }}>🏷️</span>
+      <span style={{ marginRight: 6 }} aria-hidden>
+        🏷️
+      </span>
       <span style={{ fontWeight: 500 }}>{entity.canonical_name}</span>
-      <Tag style={{ marginLeft: 8, fontSize: 11 }}>
+      <Tag style={{ marginLeft: 8, fontSize: "var(--fn-text-2xs)" }}>
         {entityTypeLabel(entity.entity_type)}
       </Tag>
-      <Tag color="blue" style={{ fontSize: 11 }}>
-        {entity.atom_count} 条记忆
+      <Tag color="blue" style={{ fontSize: "var(--fn-text-2xs)" }}>
+        {t("memory.tree.atomCount", "{{n}} 条记忆", { n: entity.atom_count })}
       </Tag>
       {entity.aliases.length > 0 ? (
         <span
           style={{
             marginLeft: 6,
-            fontSize: 11,
-            color: "#bfbfbf",
+            fontSize: "var(--fn-text-2xs)",
+            color: "var(--fn-text-tertiary)",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
             maxWidth: 220,
           }}
         >
-          (也叫 {entity.aliases.join(", ")})
+          {t("memory.tree.aka", "(也叫 {{names}})", {
+            names: entity.aliases.join(", "),
+          })}
         </span>
       ) : null}
       {/* Push the summary affordance to the right edge. */}
       <span style={{ marginLeft: "auto" }} />
       {entity.page_dirty ? (
-        <Tag color="orange" style={{ fontSize: 11, margin: 0 }}>
-          待刷新
+        <Tag
+          color="orange"
+          style={{ fontSize: "var(--fn-text-2xs)", margin: 0 }}
+        >
+          {t("memory.tree.stale", "待刷新")}
         </Tag>
       ) : null}
       <Tooltip title={t("memory.create.addToTopicTip", "在此主题下添加记忆")}>
@@ -481,13 +525,14 @@ function EntityRow({
           size="small"
           type="text"
           icon={<Plus size={13} />}
+          aria-label={t("memory.create.addToTopicTip", "在此主题下添加记忆")}
           onClick={(e) => {
             e.stopPropagation();
             onAdd();
           }}
           style={{
             flexShrink: 0,
-            color: hovered ? "#1677ff" : "#8c8c8c",
+            color: hovered ? "var(--fn-color-brand)" : "var(--fn-text-tertiary)",
           }}
         />
       </Tooltip>
@@ -495,6 +540,7 @@ function EntityRow({
         <Button
           size="small"
           icon={<BookOpen size={13} />}
+          aria-label={t("memory.tree.viewSummaryTip")}
           onClick={(e) => {
             e.stopPropagation();
             onViewSummary();
@@ -503,8 +549,8 @@ function EntityRow({
             flexShrink: 0,
             fontSize: 12,
             // Lift the button on row hover so it reads as the primary action.
-            borderColor: hovered ? "#1677ff" : undefined,
-            color: hovered ? "#1677ff" : undefined,
+            borderColor: hovered ? "var(--fn-color-brand)" : undefined,
+            color: hovered ? "var(--fn-color-brand)" : undefined,
           }}
         >
           {t("memory.tree.viewSummary")}
@@ -525,17 +571,19 @@ function AtomChildren({
   onEdit?: (atom: AtomItem) => void;
   onDeprecate?: (atom: AtomItem) => void;
 }) {
+  const { t } = useTranslation();
   if (!cache || cache.loading) {
     return (
       <div
         style={{
           marginLeft: ROW_INDENT_PX * 2,
           padding: "6px 4px",
-          color: "#8c8c8c",
-          fontSize: 12,
+          color: "var(--fn-text-tertiary)",
+          fontSize: "var(--fn-text-2xs)",
         }}
       >
-        <Spin size="small" /> <span style={{ marginLeft: 6 }}>加载中...</span>
+        <Spin size="small" />{" "}
+        <span style={{ marginLeft: 6 }}>{t("common.loading")}</span>
       </div>
     );
   }
@@ -546,12 +594,12 @@ function AtomChildren({
         style={{
           marginLeft: ROW_INDENT_PX * 2,
           padding: "4px 4px 8px",
-          color: "#bfbfbf",
-          fontSize: 12,
+          color: "var(--fn-text-tertiary)",
+          fontSize: "var(--fn-text-2xs)",
           fontStyle: "italic",
         }}
       >
-        （该主题下暂无记忆）
+        {t("memory.tree.emptyTopic", "该主题下暂无记忆")}
       </div>
     );
   }
@@ -584,11 +632,30 @@ function AtomRow({
 }) {
   const [hovered, setHovered] = useState(false);
   const { t } = useTranslation();
-  const showActions = hovered && !isAtomDeprecated(atom);
+  // Actions also surface on keyboard focus; hover alone would hide edit and
+  // forget behind a pointer.
+  const [focused, setFocused] = useState(false);
+  const showActions = (hovered || focused) && !isAtomDeprecated(atom);
 
   return (
     <div
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      onFocus={() => setFocused(true)}
+      onBlur={(event) => {
+        // Moving focus to a child (the edit/forget buttons) must not unmount
+        // them mid-click, so only clear when focus leaves the row entirely.
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setFocused(false);
+        }
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -611,7 +678,9 @@ function AtomRow({
     >
       <Guide />
       <ConfidenceDot value={atom.confidence} />
-      <span style={{ marginRight: 4, fontSize: 12 }}>📌</span>
+      <span style={{ marginRight: 4 }} aria-hidden>
+        📌
+      </span>
       <span
         style={{
           flex: 1,
@@ -619,26 +688,50 @@ function AtomRow({
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
-          color: isAtomDeprecated(atom) ? "#bfbfbf" : "#262626",
+          color: isAtomDeprecated(atom)
+            ? "var(--fn-text-disabled)"
+            : "var(--fn-text-primary)",
           textDecoration: isAtomDeprecated(atom) ? "line-through" : "none",
         }}
       >
         {atom.assertion}
       </span>
       {atom.kind ? (
-        <Tag style={{ fontSize: 10, lineHeight: "16px", margin: 0 }}>
+        <Tag
+          style={{
+            fontSize: "var(--fn-text-2xs)",
+            lineHeight: "16px",
+            margin: 0,
+          }}
+        >
           {kindLabel(atom.kind)}
         </Tag>
       ) : null}
-      <span style={{ fontSize: 11, color: "#8c8c8c", whiteSpace: "nowrap" }}>
+      <span
+        style={{
+          fontSize: "var(--fn-text-2xs)",
+          color: "var(--fn-text-tertiary)",
+          whiteSpace: "nowrap",
+        }}
+      >
         {formatRelativeTime(atom.created_at)}
       </span>
       {showActions && onEdit ? (
         <Tooltip title={t("memory.edit.tooltip", "编辑这条记忆")}>
           <span
+            role="button"
+            tabIndex={0}
+            aria-label={t("memory.edit.tooltip", "编辑这条记忆")}
             onClick={(e) => {
               e.stopPropagation();
               onEdit(atom);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit(atom);
+              }
             }}
             style={{
               display: "inline-flex",
@@ -647,7 +740,7 @@ function AtomRow({
               width: 22,
               height: 22,
               borderRadius: 4,
-              color: "#1677ff",
+              color: "var(--fn-color-brand)",
               cursor: "pointer",
               flexShrink: 0,
             }}
@@ -661,9 +754,19 @@ function AtomRow({
       {showActions && onDeprecate ? (
         <Tooltip title={t("memory.tree.deprecateTooltip")}>
           <span
+            role="button"
+            tabIndex={0}
+            aria-label={t("memory.tree.deprecateTooltip")}
             onClick={(e) => {
               e.stopPropagation();
               onDeprecate(atom);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                onDeprecate(atom);
+              }
             }}
             style={{
               display: "inline-flex",
@@ -672,13 +775,13 @@ function AtomRow({
               width: 22,
               height: 22,
               borderRadius: 4,
-              color: "#ff4d4f",
+              color: "var(--fn-color-danger)",
               cursor: "pointer",
               flexShrink: 0,
             }}
             onMouseEnter={(e) =>
               ((e.currentTarget as HTMLSpanElement).style.background =
-                "#fff1f0")
+                "var(--fn-bg-danger-light)")
             }
             onMouseLeave={(e) =>
               ((e.currentTarget as HTMLSpanElement).style.background =
@@ -696,14 +799,15 @@ function AtomRow({
 }
 
 function ConfidenceDot({ value }: { value: Confidence }) {
+  const { t } = useTranslation();
   const color =
     value === "high" ? "#52c41a" : value === "medium" ? "#faad14" : "#f5222d";
   const tip =
     value === "high"
-      ? "很有把握"
+      ? t("memory.tree.confidenceHigh", "很有把握")
       : value === "medium"
-      ? "一般把握"
-      : "不太确定";
+        ? t("memory.tree.confidenceMedium", "一般把握")
+        : t("memory.tree.confidenceLow", "不太确定");
   return (
     <span
       title={tip}
@@ -768,18 +872,32 @@ function AtomDetailDrawer({
         <div>
           <Space size={4} wrap style={{ marginBottom: 12 }}>
             {atom.kind ? <Tag>{kindLabel(atom.kind)}</Tag> : null}
-            <Tag>重要程度：{importanceLabel(atom.importance)}</Tag>
-            <Tag>可信度：{confidenceLabel(atom.confidence)}</Tag>
+            <Tag>
+              {t("memory.tree.importance", "重要程度：{{level}}", {
+                level: importanceLabel(atom.importance),
+              })}
+            </Tag>
+            <Tag>
+              {t("memory.tree.confidence", "可信度：{{level}}", {
+                level: confidenceLabel(atom.confidence),
+              })}
+            </Tag>
             <Tag color={isAtomDeprecated(atom) ? "red" : "green"}>
-              {isAtomDeprecated(atom) ? "已忘记" : "在用"}
+              {isAtomDeprecated(atom)
+                ? t("memory.tree.forgotten", "已忘记")
+                : t("memory.tree.active", "在用")}
             </Tag>
           </Space>
           <LineageStrip agentId={agentId} atom={atom} />
-          <Typography.Title level={5}>记忆内容</Typography.Title>
+          <Typography.Title level={5}>
+            {t("memory.tree.atomContent", "记忆内容")}
+          </Typography.Title>
           <Typography.Paragraph>{atom.assertion}</Typography.Paragraph>
           {(atom.search_terms ?? []).length > 0 ? (
             <>
-              <Typography.Title level={5}>关联关键词</Typography.Title>
+              <Typography.Title level={5}>
+                {t("memory.tree.keywords", "关联关键词")}
+              </Typography.Title>
               <Space size={4} wrap>
                 {(atom.search_terms ?? []).map((s) => (
                   <Tag key={s}>{s}</Tag>
@@ -789,11 +907,15 @@ function AtomDetailDrawer({
           ) : null}
           <Typography.Paragraph
             type="secondary"
-            style={{ fontSize: 12, marginTop: 16 }}
+            style={{ fontSize: "var(--fn-text-2xs)", marginTop: 16 }}
           >
-            首次记录于 {formatRelativeTime(atom.created_at)}
+            {t("memory.tree.firstRecorded", "首次记录于 {{time}}", {
+              time: formatRelativeTime(atom.created_at),
+            })}
             {atom.occurred_at
-              ? ` · 发生于 ${formatRelativeTime(atom.occurred_at)}`
+              ? t("memory.tree.occurredAt", " · 发生于 {{time}}", {
+                  time: formatRelativeTime(atom.occurred_at),
+                })
               : ""}
           </Typography.Paragraph>
 
@@ -888,17 +1010,30 @@ function EntitySummaryDrawer({
       {entity ? (
         <div>
           <Space size={4} wrap style={{ marginBottom: 4 }}>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>🏷️</span>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>
+            <span style={{ fontSize: "var(--fn-text-lg)", fontWeight: 600 }} aria-hidden>
+              🏷️
+            </span>
+            <span style={{ fontSize: "var(--fn-text-lg)", fontWeight: 600 }}>
               {entity.canonical_name}
             </span>
             <Tag>{entityTypeLabel(entity.entity_type)}</Tag>
-            <Tag color="blue">{entity.atom_count} 条记忆</Tag>
-            {page?.dirty ? <Tag color="orange">待刷新</Tag> : null}
+            <Tag color="blue">
+              {t("memory.tree.atomCount", "{{n}} 条记忆", {
+                n: entity.atom_count,
+              })}
+            </Tag>
+            {page?.dirty ? (
+              <Tag color="orange">{t("memory.tree.stale", "待刷新")}</Tag>
+            ) : null}
           </Space>
           {entity.aliases.length > 0 ? (
-            <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-              也叫 {entity.aliases.join("、")}
+            <Typography.Paragraph
+              type="secondary"
+              style={{ fontSize: "var(--fn-text-2xs)" }}
+            >
+              {t("memory.tree.aka", "(也叫 {{names}})", {
+                names: entity.aliases.join("、"),
+              })}
             </Typography.Paragraph>
           ) : null}
 
@@ -918,11 +1053,15 @@ function EntitySummaryBody({
   failed: boolean;
   page: EntityPage | null;
 }) {
+  const { t } = useTranslation();
   if (loading) return <Skeleton active paragraph={{ rows: 6 }} />;
   if (failed) {
     return (
       <Typography.Paragraph type="danger">
-        摘要加载失败，请稍后重试。
+        {t(
+          "memory.tree.summaryFailed",
+          "摘要加载失败，请稍后重试。",
+        )}
       </Typography.Paragraph>
     );
   }
@@ -930,10 +1069,16 @@ function EntitySummaryBody({
     return (
       <div style={{ marginTop: 12 }}>
         <Typography.Paragraph type="secondary">
-          这个主题的摘要还没有生成。
+          {t("memory.tree.summaryEmpty", "这个主题的摘要还没有生成。")}
         </Typography.Paragraph>
-        <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-          新建主题或有新记忆改动后，系统会在后台自动整理出一份长文摘要，稍后回来即可查看。
+        <Typography.Paragraph
+          type="secondary"
+          style={{ fontSize: "var(--fn-text-2xs)" }}
+        >
+          {t(
+            "memory.tree.summaryEmptyHint",
+            "新建主题或有新记忆改动后，系统会在后台自动整理出一份长文摘要，稍后回来即可查看。",
+          )}
         </Typography.Paragraph>
       </div>
     );
@@ -943,10 +1088,10 @@ function EntitySummaryBody({
       {page.headline ? (
         <Typography.Paragraph
           style={{
-            fontSize: 13,
-            color: "#595959",
+            fontSize: "var(--fn-text-xs)",
+            color: "var(--fn-text-secondary)",
             background: "var(--fn-bg-hover, #fafafa)",
-            borderRadius: 6,
+            borderRadius: "var(--fn-radius-sm)",
             padding: "8px 12px",
           }}
         >
@@ -958,11 +1103,18 @@ function EntitySummaryBody({
       </div>
       <Typography.Paragraph
         type="secondary"
-        style={{ fontSize: 12, marginTop: 16 }}
+        style={{ fontSize: "var(--fn-text-2xs)", marginTop: 16 }}
       >
-        版本 v{page.summary_version} · 更新于{" "}
-        {formatRelativeTime(page.updated_at)}
-        {page.dirty ? " · 有新记忆改动，后台稍后会自动刷新这份摘要" : ""}
+        {t("memory.tree.summaryMeta", "版本 v{{version}} · 更新于 {{time}}", {
+          version: page.summary_version,
+          time: formatRelativeTime(page.updated_at),
+        })}
+        {page.dirty
+          ? t(
+              "memory.tree.summaryStale",
+              " · 有新记忆改动，后台稍后会自动刷新这份摘要",
+            )
+          : ""}
       </Typography.Paragraph>
     </>
   );

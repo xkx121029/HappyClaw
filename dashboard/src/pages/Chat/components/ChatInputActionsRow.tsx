@@ -23,6 +23,7 @@ import {
   Bot,
   Plus,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Route,
@@ -148,6 +149,11 @@ interface ChatInputActionsRowProps {
   selectedModel?: string | null;
   defaultModel?: string | null;
   onModelChange?: (model: string | null) => void;
+  /**
+   * Main chat composer: show the active model as its own button so switching is
+   * one click and the model in use is visible. SOLO keeps its own rail select.
+   */
+  showModelChip?: boolean;
   reasoningMode?: "auto" | "enabled" | "disabled";
   reasoningEffort?: string | null;
   onReasoningChange?: (
@@ -215,6 +221,7 @@ export default function ChatInputActionsRow({
   availableModels,
   selectedModel,
   onModelChange,
+  showModelChip = false,
   reasoningMode = "auto",
   reasoningEffort = null,
   onReasoningChange,
@@ -292,6 +299,8 @@ export default function ChatInputActionsRow({
   const [compactPicker, setCompactPicker] = useState<CompactPickerKey | null>(
     null,
   );
+  /** Desktop model chip popover. */
+  const [modelChipOpen, setModelChipOpen] = useState(false);
 
   const useCompactControls = isMobile || isCompact;
 
@@ -411,6 +420,12 @@ export default function ChatInputActionsRow({
     closeCompactPicker();
   };
 
+  /** The model menu is reachable from the plus menu and from the model chip. */
+  const closeModelMenu = () => {
+    setModelChipOpen(false);
+    closePlusMenu();
+  };
+
   const openCompactPicker = (key: CompactPickerKey) => {
     setReasoningModelRef(null);
     if (key !== "model") setModelQuery("");
@@ -449,6 +464,7 @@ export default function ChatInputActionsRow({
       ? t("chat.reasoningEnabled", "开启")
       : t("chat.reasoningDisabled", "关闭");
 
+  const modelsCount = availableModels?.length ?? 0;
   const selectedModelTriggerLabel = selectedModel
     ? modelOptionLabel(
         availableModels?.find((m) => modelOptionValue(m) === selectedModel) ?? {
@@ -601,7 +617,7 @@ export default function ChatInputActionsRow({
                 )}
                 onClick={() => {
                   modelChange?.(null);
-                  closePlusMenu();
+                  closeModelMenu();
                 }}
               >
                 <span className={styles.modelMenuTitle}>
@@ -629,7 +645,7 @@ export default function ChatInputActionsRow({
                     className={styles.modelMenuSelect}
                     onClick={() => {
                       modelChange?.(active ? null : value);
-                      closePlusMenu();
+                      closeModelMenu();
                     }}
                   >
                     <img
@@ -685,7 +701,7 @@ export default function ChatInputActionsRow({
                 message.info(t("chat.remoteExpert.manageToast"));
                 return;
               }
-              closePlusMenu();
+              closeModelMenu();
               navigate("/admin/models");
             }}
           >
@@ -1051,6 +1067,48 @@ export default function ChatInputActionsRow({
             </Tooltip>
           </Popover>
         )}
+        {showModelChip && !useCompactControls && modelChange ? (
+          <Popover
+            trigger="click"
+            placement="topLeft"
+            arrow={false}
+            open={modelChipOpen}
+            onOpenChange={setModelChipOpen}
+            overlayClassName={styles.plusMenuPopover}
+            content={
+              <div className={styles.plusFlyout}>
+                <div className={styles.plusFlyoutPanel}>
+                  <div className={styles.plusFlyoutPanelBody}>{modelMenu}</div>
+                </div>
+              </div>
+            }
+          >
+            <Tooltip
+              title={
+                modelsCount === 0
+                  ? t("chat.modelChipEmptyHint", "还没有可用模型，点这里去配置")
+                  : t("chat.modelChipHint", "切换模型，下一轮生效")
+              }
+              mouseEnterDelay={0.4}
+            >
+              <button
+                type="button"
+                className={cx(styles.secondaryBtn, styles.modelChipBtn)}
+                aria-label={t("chat.selectModel", "Model")}
+                data-testid="composer-model-chip"
+                disabled={lockThreadSettings}
+              >
+                <Cpu size={14} />
+                <span className={styles.modelChipLabel}>
+                  {modelsCount === 0
+                    ? t("modelConfig.configureButton", "配置模型")
+                    : selectedModelTriggerLabel}
+                </span>
+                <ChevronDown size={12} />
+              </button>
+            </Tooltip>
+          </Popover>
+        ) : null}
         {onHitlPolicyChange && (
           <HitlPolicyPicker
             policy={hitlPolicy ?? { mode: "ask" }}
@@ -1163,6 +1221,7 @@ export default function ChatInputActionsRow({
           <Tooltip title={t("chatWelcome.newChat")} mouseEnterDelay={0.4}>
             <button
               className={styles.newChatBtn}
+              aria-label={t("chatWelcome.newChat")}
               onClick={onNewChat}
               type="button"
             >
@@ -1174,6 +1233,7 @@ export default function ChatInputActionsRow({
             <Tooltip title={t("chatWelcome.newChat")} mouseEnterDelay={0.4}>
               <button
                 className={styles.newChatBtn}
+                aria-label={t("chatWelcome.newChat")}
                 onClick={onNewChat}
                 type="button"
               >
@@ -1183,6 +1243,7 @@ export default function ChatInputActionsRow({
             <Tooltip title={t("chat.polish.tooltip")} mouseEnterDelay={0.4}>
               <button
                 className={styles.secondaryBtn}
+                aria-label={t("chat.polish.tooltip")}
                 onClick={onPolish}
                 type="button"
                 disabled={
@@ -1223,6 +1284,13 @@ export default function ChatInputActionsRow({
               (recording || transcribing) && styles.secondaryBtnActive,
             )}
             type="button"
+            aria-label={
+              recording
+                ? t("voice.stopRecording", "停止录音")
+                : transcribing
+                  ? t("voice.transcribing", "识别中…")
+                  : t("voice.startRecording", "语音输入")
+            }
             // Dictation only fills the composer, so it stays available while a
             // reply is still streaming.
             disabled={disabled || transcribing || !_sttAvailable}

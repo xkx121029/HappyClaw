@@ -6,11 +6,13 @@ import {
   Brain,
   Notebook,
   Puzzle,
+  Smile,
   Sparkles,
   Waypoints,
   Wrench,
 } from "lucide-react";
 import PageShell, { pageShellStyles } from "../../../layouts/PageShell";
+import { PluginSurfaceSlot } from "../../../plugins/surfaces";
 import { useAgent } from "../../../context/AgentContext";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { usePathTabs } from "../../../hooks/usePathTabs";
@@ -25,6 +27,7 @@ import ToolsTabs from "../Tools/ToolsTabs";
 import SubagentManager from "../../Experts/components/SubagentManager";
 import MBTISelector from "./components/MBTISelector";
 import AgentPluginsPanel from "./components/AgentPluginsPanel";
+import BaoPanel from "./components/BaoPanel";
 import MemoryPanel from "../Memory/MemoryPanel";
 import ChannelsPanel from "../Channels/ChannelsPanel";
 import styles from "./index.module.less";
@@ -35,6 +38,7 @@ export type PersonalizationTab =
   | "tools"
   | "plugins"
   | "mbti"
+  | "bao"
   | "memory"
   | "channels";
 
@@ -44,6 +48,7 @@ const PERSONALIZATION_TABS = [
   "tools",
   "plugins",
   "mbti",
+  "bao",
   "memory",
   "channels",
 ] as const satisfies readonly PersonalizationTab[];
@@ -54,6 +59,7 @@ const TAB_ICONS = {
   tools: Wrench,
   plugins: Puzzle,
   mbti: Brain,
+  bao: Smile,
   memory: Notebook,
   channels: Waypoints,
 } as const;
@@ -142,6 +148,11 @@ export default function PersonalizationPage() {
           style={{ marginBottom: 12 }}
         />
       ) : null}
+      {/* Plugin settings cards live on every settings tab, above the panels. */}
+      <PluginSurfaceSlot
+        slot="settings.section"
+        context={{ agentId: activeAgentId }}
+      />
       <div className={styles.panels}>
         {isMounted("skills") && (
           <div
@@ -231,6 +242,18 @@ export default function PersonalizationPage() {
                 />
               </div>
             )}
+          </div>
+        )}
+
+        {isMounted("bao") && (
+          <div
+            className={styles.panel}
+            style={{ display: activeTab === "bao" ? "flex" : "none" }}
+            aria-hidden={activeTab !== "bao"}
+          >
+            <div className={pageShellStyles.fillChild}>
+              <BaoPanel />
+            </div>
           </div>
         )}
 

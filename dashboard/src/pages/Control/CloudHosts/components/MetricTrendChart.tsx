@@ -371,7 +371,7 @@ export default function MetricTrendChart({
                   value: `${group.threshold}%`,
                   position: "insideTopRight",
                   fill: "var(--sc-danger)",
-                  fontSize: 10,
+                  fontSize: "var(--fn-text-2xs)",
                   opacity: 0.8,
                 }}
               />

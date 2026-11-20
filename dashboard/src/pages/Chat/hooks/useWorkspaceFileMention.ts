@@ -23,6 +23,7 @@ export function useWorkspaceFileMention(
   agentId: string | null | undefined,
   mentionMenuOpen: boolean,
   mentionQuery: string,
+  threadId?: string | null,
 ): {
   files: WorkspaceMentionFile[];
   loading: boolean;
@@ -38,6 +39,9 @@ export function useWorkspaceFileMention(
   const [error, setError] = useState<"need_agent" | "failed" | null>(null);
   const [globEntries, setGlobEntries] = useState<WorkspaceMentionEntry[]>([]);
   const [globLoading, setGlobLoading] = useState(false);
+  // A conversation may live in its own project/session directory, so the index
+  // cache is scoped by thread as well as agent.
+  const scope = agentId ? (threadId ? `${agentId}:${threadId}` : agentId) : null;
 
   useEffect(() => {
     if (!mentionMenuOpen) {
@@ -45,14 +49,14 @@ export function useWorkspaceFileMention(
       setError(null);
       return;
     }
-    if (!agentId) {
+    if (!agentId || !scope) {
       setLoading(false);
       return;
     }
 
-    const cached = cachedWorkspaceMentionIndex(agentId);
+    const cached = cachedWorkspaceMentionIndex(agentId, threadId);
     if (cached) {
-      setIndex({ agentId, paths: cached.paths, truncated: cached.truncated });
+      setIndex({ agentId: scope, paths: cached.paths, truncated: cached.truncated });
       setLoading(false);
       setError(null);
       return;
@@ -61,18 +65,18 @@ export function useWorkspaceFileMention(
     const controller = new AbortController();
     setLoading(true);
     setError(null);
-    void loadWorkspaceMentionIndex(agentId, controller.signal)
+    void loadWorkspaceMentionIndex(agentId, controller.signal, threadId)
       .then((loaded) => {
         if (controller.signal.aborted) return;
         setIndex({
-          agentId,
+          agentId: scope,
           paths: loaded.paths,
           truncated: loaded.truncated,
         });
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted || isAbortError(err)) return;
-        setIndex({ agentId, paths: [], truncated: false });
+        setIndex({ agentId: scope, paths: [], truncated: false });
         setError("failed");
       })
       .finally(() => {
@@ -82,9 +86,9 @@ export function useWorkspaceFileMention(
     return () => {
       controller.abort();
     };
-  }, [mentionMenuOpen, agentId]);
+  }, [mentionMenuOpen, agentId, scope, threadId]);
 
-  const ready = index && agentId && index.agentId === agentId ? index : null;
+  const ready = index && scope && index.agentId === scope ? index : null;
   const truncated = Boolean(ready?.truncated);
   const supplement =
     mentionMenuOpen &&
@@ -103,7 +107,12 @@ export function useWorkspaceFileMention(
     const controller = new AbortController();
     setGlobLoading(true);
     const timer = window.setTimeout(() => {
-      void searchWorkspaceMentionFiles(agentId, mentionQuery, controller.signal)
+      void searchWorkspaceMentionFiles(
+        agentId,
+        mentionQuery,
+        controller.signal,
+        threadId,
+      )
         .then((entries) => {
           if (controller.signal.aborted) return;
           setGlobEntries(entries);
@@ -122,7 +131,7 @@ export function useWorkspaceFileMention(
       window.clearTimeout(timer);
       setGlobLoading(false);
     };
-  }, [supplement, agentId, mentionQuery]);
+  }, [supplement, agentId, mentionQuery, threadId]);
 
   useEffect(() => {
     if (!mentionMenuOpen || agentId) return;

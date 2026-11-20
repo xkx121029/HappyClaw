@@ -109,14 +109,17 @@ export default function MetricHeatmap({
   return (
     <div className={styles.wrap}>
       <div className={styles.strip} ref={stripRef}>
-        {cells.map((cell) => (
+        {cells.map((cell, index) => (
           <Tooltip
             key={cell.t}
             title={`${cell.label} · ${cell.v.toFixed(1)}${unit}`}
           >
             <span
               role="button"
-              tabIndex={-1}
+              // Roving tabindex: hundreds of cells would otherwise flood the
+              // Tab order. The selected cell (or the first one) is reachable,
+              // and arrows move the selection.
+              tabIndex={cell.t === selectedT || (selectedT == null && index === 0) ? 0 : -1}
               aria-label={`${cell.label} ${cell.v.toFixed(1)}${unit}`}
               className={
                 cell.t === selectedT
@@ -128,6 +131,29 @@ export default function MetricHeatmap({
                 background: LEVEL_COLORS[cell.level],
               }}
               onClick={() => onSelect?.(cell.t)}
+              onKeyDown={(event) => {
+                if (!onSelect) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelect(cell.t);
+                  return;
+                }
+                if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+                  return;
+                }
+                event.preventDefault();
+                const delta = event.key === "ArrowRight" ? 1 : -1;
+                const next = cells[index + delta];
+                if (!next) return;
+                onSelect(next.t);
+                const strip = event.currentTarget.parentElement;
+                requestAnimationFrame(() => {
+                  const nodes = strip?.querySelectorAll<HTMLElement>(
+                    '[role="button"]',
+                  );
+                  nodes?.[index + delta]?.focus();
+                });
+              }}
             />
           </Tooltip>
         ))}

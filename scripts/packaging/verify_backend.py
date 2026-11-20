@@ -112,6 +112,26 @@ def wait_route(
     return None
 
 
+def probe_route_mounted(
+    op: urllib.request.OpenerDirector, base: str, path: str, proc, timeout: float
+) -> tuple[float | None, int | None]:
+    """Probe a deferred route that may be auth-protected: 404/405 means not mounted."""
+    started = time.perf_counter()
+    while time.perf_counter() - started < timeout:
+        if proc.poll() is not None:
+            return None, None
+        try:
+            status, _, _ = get(op, f"{base}{path}", timeout=2.0)
+            return round(time.perf_counter() - started, 2), status
+        except urllib.error.HTTPError as exc:
+            if exc.code not in (404, 405):
+                return round(time.perf_counter() - started, 2), exc.code
+        except (urllib.error.URLError, OSError):
+            pass
+        time.sleep(0.5)
+    return None, None
+
+
 def run_selfcheck(exe: Path, env: dict[str, str], timeout: float) -> tuple[bool, str]:
     """Run ``exe selfcheck``: imports the agent stack + compiles a graph.
 
@@ -296,6 +316,31 @@ def main() -> int:
         else:
             fail("health 版本戳", f"/api/health 未返回匹配的 build 信息：{health_build}")
 
+        # Packaging record: keep both the whole-repo state and the version stamp
+        # so a reviewer never has to trust a single boolean.
+        dirty_paths = [str(p) for p in (build_stamp.get("git_dirty_paths") or [])]
+        print(
+            "  [记录] 版本戳："
+            f"commit {(build_stamp.get('git_commit') or 'unknown')[:12]}，"
+            f"构建于 {build_stamp.get('dashboard_built_at') or 'unknown'}，"
+            f"index_sha256 {(build_stamp.get('index_sha256') or '')[:12]}…"
+        )
+        print(
+            "  [记录] 全仓状态："
+            f"git_dirty={build_stamp.get('git_dirty')}，"
+            f"范围 {build_stamp.get('git_dirty_scope') or '未知'}，"
+            f"未提交 {build_stamp.get('git_dirty_count', '未知')} 项"
+            + (f"（如 {'、'.join(dirty_paths[:5])}）" if dirty_paths else "")
+        )
+        if build_stamp.get("git_dirty_scope") != "repo":
+            fail(
+                "版本戳范围",
+                "version.json 的 git_dirty 未覆盖全仓"
+                f"（git_dirty_scope={build_stamp.get('git_dirty_scope')!r}），重新打包后再交付",
+            )
+        else:
+            ok("版本戳范围", "git_dirty 覆盖全仓，后端未提交改动不会被漏报")
+
         # 3. Playwright (deferred router — mounted only after the socket is up)
         mounted = wait_route(op, base, "/api/browser/env-status", proc, args.timeout)
         if mounted is None:
@@ -323,6 +368,33 @@ def main() -> int:
                     ok("Chromium 缺失时降级", f"返回中文提示：{hint}")
                 else:
                     fail("Chromium 缺失时降级", "未找到浏览器且没有中文提示字段 hint_zh")
+
+        # 3b. Deferred feature routers must be really mounted, not just importable.
+        # device-link/status may be auth-protected, so any non-404 answer counts.
+        link_elapsed, link_status = probe_route_mounted(
+            op, base, "/api/device-link/status", proc, args.timeout
+        )
+        if link_elapsed is None:
+            fail("设备直连路由", "/api/device-link/status 在超时内仍是 404（整组未挂载）")
+        else:
+            ok("设备直连路由", f"/api/device-link/status 已挂载（HTTP {link_status}，{link_elapsed}s）")
+
+        # The bundled default expert ships as package data; a missing directory
+        # silently degrades the first-run experience.
+        expert_manifest = (
+            internal
+            / "octop"
+            / "infra"
+            / "agents"
+            / "experts"
+            / "library"
+            / "happyclaw"
+            / "manifest.json"
+        )
+        if expert_manifest.is_file():
+            ok("默认专家在包内", str(expert_manifest.relative_to(internal)))
+        else:
+            fail("默认专家在包内", f"包内缺少 {expert_manifest.relative_to(internal)}")
 
         # 4. logs + read-only _internal
         log = home / "logs" / "octop.log"

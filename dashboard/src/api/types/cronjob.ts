@@ -80,6 +80,29 @@ export interface OctopCronRow {
   last_run_at: number | null;
   last_status: string | null;
   last_error: string | null;
+  /** IANA zone the trigger is interpreted in; empty means the server default. */
+  timezone?: string;
+  /** Planned next fire time (unix seconds); null for mail/one-shot-done. */
+  next_run_at?: number | null;
+  max_retries?: number;
+  retry_backoff_seconds?: number;
+  catch_up_misses?: number;
+  consecutive_failures?: number;
+}
+
+/** One row from GET /api/agents/:id/cron/:cron_id/runs */
+export interface OctopCronRun {
+  run_id: string;
+  cron_id: string;
+  trigger_kind: "schedule" | "manual" | "mail" | "catchup";
+  scheduled_for: number | null;
+  status: "running" | "ok" | "error" | "missed" | "skipped";
+  attempt: number;
+  started_at: number;
+  finished_at: number | null;
+  duration_ms: number | null;
+  error: string | null;
+  note: string | null;
 }
 
 /** Body sent to POST /api/agents/:id/cron */
@@ -93,6 +116,10 @@ export interface OctopCronCreateBody {
   model?: string | null;
   task_type?: "text" | "agent";
   mcp_servers?: string[];
+  timezone?: string | null;
+  max_retries?: number;
+  retry_backoff_seconds?: number;
+  catch_up_misses?: number;
 }
 
 /** Body sent to PATCH /api/agents/:id/cron/:cron_id */
@@ -106,4 +133,8 @@ export interface OctopCronPatchBody {
   model?: string | null;
   task_type?: "text" | "agent";
   mcp_servers?: string[];
+  timezone?: string | null;
+  max_retries?: number;
+  retry_backoff_seconds?: number;
+  catch_up_misses?: number;
 }

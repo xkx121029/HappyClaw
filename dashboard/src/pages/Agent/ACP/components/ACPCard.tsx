@@ -95,6 +95,18 @@ export function ACPCard({
       onClick={interactionDisabled ? undefined : onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      role={interactionDisabled ? undefined : "button"}
+      tabIndex={interactionDisabled ? undefined : 0}
+      onKeyDown={
+        interactionDisabled
+          ? undefined
+          : (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onClick?.();
+              }
+            }
+      }
     >
       <div className={styles.cardTop}>
         <img

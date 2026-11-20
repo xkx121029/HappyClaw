@@ -1,0 +1,2 @@
+# Generated from src/styles/tokens/*.ts by scripts/gen-tokens.mjs
+src/styles/tokens.generated.css

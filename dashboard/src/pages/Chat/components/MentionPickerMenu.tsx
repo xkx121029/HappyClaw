@@ -116,6 +116,8 @@ interface MentionPickerMenuProps {
   activeIndex: number;
   onSelect: (pick: MentionPick) => void;
   onHover: (index: number) => void;
+  /** Name of the expert that actually executes the current conversation. */
+  currentAgentName?: string | null;
 }
 
 export default function MentionPickerMenu({
@@ -129,6 +131,7 @@ export default function MentionPickerMenu({
   activeIndex,
   onSelect,
   onHover,
+  currentAgentName = null,
 }: MentionPickerMenuProps) {
   const { t } = useTranslation();
 
@@ -154,6 +157,7 @@ export default function MentionPickerMenu({
   });
   const fileHint = hint ? t(HINT_KEYS[hint], HINT_FALLBACK[hint]) : "";
   const hasFilePick = fileCount > 0;
+  const hasAgentPick = items.some((item) => item.kind === "agent");
 
   if (items.length === 0 && !fileHint) {
     return (
@@ -238,6 +242,20 @@ export default function MentionPickerMenu({
             <div className={styles.mentionCategory}>{fileSection}</div>
           )}
           <div className={styles.mentionHint}>{fileHint}</div>
+        </div>
+      ) : null}
+      {hasAgentPick ? (
+        <div className={styles.mentionHint}>
+          {currentAgentName
+            ? t("mention.contextOnly", {
+                name: currentAgentName,
+                defaultValue:
+                  "已提及的专家会作为上下文；当前会话仍由 {{name}} 执行。",
+              })
+            : t(
+                "mention.contextOnlyNoAgent",
+                "已提及的专家会作为上下文，不会切换执行者。",
+              )}
         </div>
       ) : null}
     </div>

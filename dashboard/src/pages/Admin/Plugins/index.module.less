@@ -429,6 +429,80 @@
   justify-content: flex-end;
 }
 
+// DSH market installs live in the market root, not the host plugin dir. They
+// get their own read-only block so the installed tab never looks empty after
+// a successful market install.
+.dshInstalled {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--fn-border-secondary, var(--fn-card-border-normal));
+  border-radius: var(--fn-radius-md, 8px);
+  background: var(--fn-bg-layout, var(--fn-bg-secondary));
+}
+
+.dshInstalledHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dshInstalledHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dshInstalledHint {
+  font-size: 12px;
+  color: var(--fn-text-tertiary);
+  word-break: break-all;
+}
+
+.dshInstalledList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dshInstalledRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 10px;
+  border-radius: var(--fn-radius-md, 8px);
+  background: var(--fn-bg-primary);
+}
+
+.dshInstalledMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  flex: 1;
+}
+
+.dshInstalledName {
+  font-weight: 500;
+  color: var(--fn-text-primary);
+}
+
+.dshInstalledMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dshInstalledSource {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--fn-text-tertiary);
+  word-break: break-all;
+}
+
 .drawerTitleBar {
   display: flex;
   align-items: center;
@@ -745,4 +819,212 @@
   color: var(--fn-text-tertiary);
   max-width: 360px;
   line-height: 1.6;
+}
+
+.dshSection {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed var(--fn-card-border-normal);
+}
+
+.dshHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dshTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dshSubtitle {
+  margin: 2px 0 0;
+  color: var(--fn-text-tertiary);
+  font-size: 12px;
+}
+
+.dshHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dshSourceCount {
+  color: var(--fn-text-tertiary);
+  font-size: 12px;
+}
+
+.dshAddRow {
+  display: flex;
+  gap: 8px;
+}
+
+.dshStatusBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border: 1px solid var(--fn-card-border-normal);
+  border-radius: 8px;
+}
+
+.dshStatusReason {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fn-text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dshStatusMeta {
+  color: var(--fn-text-tertiary);
+  font-size: 12px;
+}
+
+.dshStatusSpacer {
+  flex: 1;
+}
+
+.dshToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dshSearch {
+  max-width: 320px;
+}
+
+.dshPager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.dshSourceInput {
+  max-width: 560px;
+}
+
+.dshSourceList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dshSourceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--fn-card-border-normal);
+  border-radius: 8px;
+}
+
+.dshSourceMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dshSourceUrl {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--fn-font-mono, monospace);
+  font-size: 12px;
+}
+
+.dshFetchedAt {
+  color: var(--fn-text-tertiary);
+  font-size: 11px;
+}
+
+.dshError {
+  margin: 4px 0;
+}
+
+.dshProgress {
+  margin: 6px 0 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--fn-bg-tertiary);
+}
+
+.dshProgressMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--fn-text-secondary);
+}
+
+.dshProgressDetail {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fn-text-tertiary);
+  font-family: var(--fn-font-mono, monospace);
+  font-size: 11px;
+}
+
+.dshEmpty {
+  max-width: 560px;
+  text-align: left;
+  line-height: 1.6;
+}
+
+.dshFormatHint {
+  display: block;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--fn-bg-tertiary);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.dshTagRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dshCardAlert {
+  margin: 8px 0 4px;
+}
+
+.dshCardSource {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--fn-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dshVersionSelect {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.dshInstalledLine {
+  margin-top: 6px;
+  color: var(--fn-text-tertiary);
+  font-size: 12px;
 }

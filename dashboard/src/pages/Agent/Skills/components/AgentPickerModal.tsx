@@ -52,7 +52,7 @@ export default function AgentPickerModal({
                   <Avatar
                     style={{
                       background: "var(--fn-color-brand, #6366f1)",
-                      fontSize: 14,
+                      fontSize: "var(--fn-text-sm)",
                     }}
                   >
                     {(agent.name || "?").charAt(0).toUpperCase()}

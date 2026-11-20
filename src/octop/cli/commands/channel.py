@@ -206,7 +206,7 @@ def test(agent_id: str | None, channel_id: str, as_user: str | None) -> None:
 
 @channel.group("bind")
 def bind_group() -> None:
-    """QR-based channel binding (QQ / WeCom / WeChat)."""
+    """QR-based channel binding for supported channels."""
 
 
 @bind_group.command("qq")
@@ -214,7 +214,7 @@ def bind_group() -> None:
 @click.option("--channel-id", default=None, help="Existing channel to update (optional).")
 @click.option("--user", "as_user", default=None)
 def bind_qq(agent_id: str | None, channel_id: str | None, as_user: str | None) -> None:
-    """Scan with mobile QQ and save QQ Bot application credentials."""
+    """Scan with a mobile app and save bot application credentials."""
     import asyncio
 
     from octop.cli.support.offline_ops import (
@@ -346,7 +346,7 @@ def bind_wecom(agent_id: str | None, channel_id: str | None, as_user: str | None
 @click.option("--channel-id", default=None)
 @click.option("--user", "as_user", default=None)
 def bind_weixin(agent_id: str | None, channel_id: str | None, as_user: str | None) -> None:
-    """Scan WeChat QR code and save account credentials."""
+    """Scan a QR code and save account credentials."""
     import asyncio
 
     from octop.cli.support.offline_ops import create_channel_offline, patch_channel_offline

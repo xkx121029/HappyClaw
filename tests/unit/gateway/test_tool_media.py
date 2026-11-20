@@ -490,7 +490,7 @@ def test_is_media_push_tool_allowlist() -> None:
 
     assert is_media_push_tool("send_file_to_user")
     assert is_media_push_tool("namespace/desktop_screenshot")
-    assert is_media_push_tool("mobile_screenshot")
+    assert not is_media_push_tool("mobile_screenshot")
     assert is_media_push_tool("generate_image")
     assert not is_media_push_tool("write_file")
     assert not is_media_push_tool("read_file")

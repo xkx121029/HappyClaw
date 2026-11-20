@@ -1,6 +1,8 @@
 /** Map sidebar paths to their lazy route chunks for hover prefetch. */
 const ROUTE_PREFETCHERS: Record<string, () => Promise<unknown>> = {
+  "/home": () => import("../pages/Home"),
   "/chat": () => import("../pages/Chat"),
+  "/chat?quick=1": () => import("../pages/Chat"),
   "/experts": () => import("../pages/Experts"),
   "/tasks": () => import("../pages/Control/CronJobs"),
   "/connectors": () => import("../pages/Agent/Connectors"),
@@ -16,8 +18,13 @@ const ROUTE_PREFETCHERS: Record<string, () => Promise<unknown>> = {
   "/remote-desktop": () => import("../pages/Control/RemoteDesktop"),
   "/remote-desktop/desktop": () => import("../pages/Control/RemoteDesktop"),
   "/remote-desktop/phone": () => import("../pages/Control/RemoteDesktop"),
+  "/remote-desktop/link": () => import("../pages/Control/RemoteDesktop"),
+  "/remote-desktop/pair": () => import("../pages/Control/RemoteDesktop"),
   "/remote-phone": () => import("../pages/Control/RemoteDesktop"),
   "/remote-android": () => import("../pages/Control/RemoteDesktop"),
+  "/mobile/sessions": () => import("../pages/Mobile/MobileSessions"),
+  "/mobile/control": () => import("../pages/Mobile/MobileControl"),
+  "/mobile/info": () => import("../pages/Mobile/MobileInfo"),
   "/acp": () => import("../pages/Agent/ACP"),
   "/personalization": () => import("../pages/Agent/Personalization"),
   "/personalization/skills": () => import("../pages/Agent/Personalization"),

@@ -83,6 +83,14 @@ class CronJobRow:
     last_error: str | None
     created_at: int
     updated_at: int
+    # Scheduling semantics persisted with the job so a restart can explain the
+    # next fire time and decide whether downtime left work behind.
+    timezone: str = ""
+    next_run_at: int | None = None
+    max_retries: int = 0
+    retry_backoff_seconds: int = 60
+    catch_up_misses: int = 0
+    consecutive_failures: int = 0
     run_lease_owner: str | None = None
     run_lease_token: str | None = None
     run_lease_until: int | None = None
@@ -108,6 +116,12 @@ class CronJobRow:
             last_error=r["last_error"],
             created_at=r["created_at"],
             updated_at=r["updated_at"],
+            timezone=str(cell(r, "timezone") or ""),
+            next_run_at=opt_int(cell(r, "next_run_at")),
+            max_retries=opt_int(cell(r, "max_retries")) or 0,
+            retry_backoff_seconds=opt_int(cell(r, "retry_backoff_seconds")) or 60,
+            catch_up_misses=opt_int(cell(r, "catch_up_misses")) or 0,
+            consecutive_failures=opt_int(cell(r, "consecutive_failures")) or 0,
             run_lease_owner=cell(r, "run_lease_owner") or None,
             run_lease_token=cell(r, "run_lease_token") or None,
             run_lease_until=opt_int(cell(r, "run_lease_until")),
@@ -127,6 +141,12 @@ class CronJobRow:
             "mcp_servers": list(self.mcp_servers),
             "last_run_at": self.last_run_at,
             "last_status": self.last_status,
+            "timezone": self.timezone,
+            "next_run_at": self.next_run_at,
+            "max_retries": self.max_retries,
+            "retry_backoff_seconds": self.retry_backoff_seconds,
+            "catch_up_misses": self.catch_up_misses,
+            "consecutive_failures": self.consecutive_failures,
         }
         if include_agent:
             out["agent_id"] = self.agent_id
@@ -153,14 +173,19 @@ class CronJobRepo:
         mcp_servers: list[str] | None = None,
         enabled: bool = True,
         name: str | None = None,
+        timezone: str = "",
+        max_retries: int = 0,
+        retry_backoff_seconds: int = 60,
+        catch_up_misses: int = 0,
     ) -> str:
         ts = now_ts()
         with self._db.transaction() as conn:
             conn.execute(
                 "INSERT INTO cron_jobs(cron_id, name, agent_id, user_id, schedule_spec, prompt, "
                 "session_key, model, fresh_thread, task_type, mcp_servers, enabled, "
+                "timezone, max_retries, retry_backoff_seconds, catch_up_misses, "
                 "created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     cron_id,
                     (name or "").strip() or default_cron_name(prompt, cron_id),
@@ -174,6 +199,10 @@ class CronJobRepo:
                     task_type,
                     _encode_mcp_servers(mcp_servers),
                     bool_int(enabled),
+                    timezone,
+                    max(0, int(max_retries)),
+                    max(1, int(retry_backoff_seconds)),
+                    max(0, int(catch_up_misses)),
                     ts,
                     ts,
                 ),
@@ -268,9 +297,11 @@ class CronJobRepo:
             cur = conn.execute(
                 "UPDATE cron_jobs SET last_run_at = ?, last_status = ?, last_error = ?, "
                 "enabled = CASE WHEN ? = 1 THEN 0 ELSE enabled END, "
+                "consecutive_failures = CASE WHEN ? = 'ok' THEN 0 "
+                "ELSE consecutive_failures + 1 END, "
                 "run_lease_owner = NULL, run_lease_token = NULL, run_lease_until = NULL, "
                 "updated_at = ? WHERE cron_id = ? AND run_lease_token = ?",
-                (ts, status, error, bool_int(disable), now_ts(), cron_id, token),
+                (ts, status, error, bool_int(disable), status, now_ts(), cron_id, token),
             )
             return int(cur.rowcount or 0) > 0
 
@@ -294,9 +325,32 @@ class CronJobRepo:
         with self._db.transaction() as conn:
             conn.execute(
                 "UPDATE cron_jobs SET last_run_at = ?, last_status = ?, last_error = ?, "
+                "consecutive_failures = CASE WHEN ? = 'ok' THEN 0 "
+                "ELSE consecutive_failures + 1 END, "
                 "updated_at = ? WHERE cron_id = ?",
-                (ts, status, error, now_ts(), cron_id),
+                (ts, status, error, status, now_ts(), cron_id),
             )
+
+    def update_schedule_state(
+        self,
+        cron_id: str,
+        *,
+        next_run_at: int | None,
+        timezone: str | None = None,
+    ) -> None:
+        """Persist the next planned fire time so a restart can reason about it."""
+        with self._db.transaction() as conn:
+            if timezone is None:
+                conn.execute(
+                    "UPDATE cron_jobs SET next_run_at = ?, updated_at = ? WHERE cron_id = ?",
+                    (next_run_at, now_ts(), cron_id),
+                )
+            else:
+                conn.execute(
+                    "UPDATE cron_jobs SET next_run_at = ?, timezone = ?, updated_at = ? "
+                    "WHERE cron_id = ?",
+                    (next_run_at, timezone, now_ts(), cron_id),
+                )
 
     def mark_missed(self, cron_id: str) -> bool:
         """Disable a one-shot that never ran and record ``last_status='missed'``.
@@ -328,6 +382,10 @@ class CronJobRepo:
         task_type: CronTaskType | None = None,
         model: str | None | object = UNSET,
         mcp_servers: list[str] | None | object = UNSET,
+        timezone: str | None = None,
+        max_retries: int | None = None,
+        retry_backoff_seconds: int | None = None,
+        catch_up_misses: int | None = None,
     ) -> None:
         fields, params = partial_updates(
             [
@@ -352,6 +410,18 @@ class CronJobRepo:
         if enabled is not None:
             fields.append("enabled = ?")
             params.append(bool_int(enabled))
+        if timezone is not None:
+            fields.append("timezone = ?")
+            params.append(timezone)
+        if max_retries is not None:
+            fields.append("max_retries = ?")
+            params.append(max(0, int(max_retries)))
+        if retry_backoff_seconds is not None:
+            fields.append("retry_backoff_seconds = ?")
+            params.append(max(1, int(retry_backoff_seconds)))
+        if catch_up_misses is not None:
+            fields.append("catch_up_misses = ?")
+            params.append(max(0, int(catch_up_misses)))
         if not fields:
             return
         fields.append("updated_at = ?")

@@ -1,7 +1,11 @@
-import { ShieldAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import cx from "classnames";
 import type { HitlActionRequest } from "../../../api/types/hitl";
+import {
+  Mascot,
+  mascotStatusInk,
+  useMascotAppearance,
+} from "../../../components/Mascot";
 import { useToolDisplayNames } from "../hooks/toolDisplayNames";
 import type { HitlRequestResolution } from "../hooks/sseHelpers";
 import type { HitlDecisionHandler } from "../utils/hitlSessionPolicy";
@@ -40,6 +44,7 @@ export default function HitlApprovalCard({
   speakerName,
 }: HitlApprovalCardProps) {
   const { t } = useTranslation();
+  const baoLook = useMascotAppearance();
   const toolLabelOf = useToolDisplayNames();
   const interactive = status === "pending" && Boolean(onDecision);
   const emit = (
@@ -71,7 +76,21 @@ export default function HitlApprovalCard({
     <div className={styles.card} role="status">
       <div className={styles.titleRow}>
         <span className={styles.iconWrap} aria-hidden="true">
-          <ShieldAlert size={18} strokeWidth={2} />
+          <Mascot
+            size={18}
+            color={mascotStatusInk(
+              baoLook,
+              status === "pending" ? "working" : null,
+            )}
+            state={
+              status === "pending"
+                ? "listening"
+                : status === "approved"
+                  ? "happy"
+                  : "sad"
+            }
+            surface="var(--fn-bg-base)"
+          />
         </span>
         <div className={styles.title}>
           {t("chat.hitl.title", "Confirm this action")}

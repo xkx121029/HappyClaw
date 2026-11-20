@@ -9,5 +9,8 @@ def test_mobile_keys_parity() -> None:
     en_keys = {k for k in all_keys_for_locale("en") if k.startswith("mobile.")}
     zh_keys = {k for k in all_keys_for_locale("zh") if k.startswith("mobile.")}
     assert en_keys == zh_keys
-    assert "mobile.no_device" in en_keys
-    assert "mobile.handoff_message" in en_keys
+    # Only the standalone Docker installer strings remain after the ADB-based
+    # Remote Phone chain was removed.
+    assert "mobile.docker_install_log_start" in en_keys
+    assert "mobile.no_device" not in en_keys
+    assert "mobile.handoff_message" not in en_keys

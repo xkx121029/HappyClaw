@@ -15,7 +15,14 @@ from pydantic import BaseModel, Field
 from octop.api.common.agent import assert_agent_owner as _assert_agent_owner
 from octop.api.common.upload_limit import read_upload_capped
 from octop.api.deps import current_user, get_server, require_permission
-from octop.infra.agents.plugins.manager import PluginManager
+from octop.infra.agents.plugins.manager import (
+    PLUGIN_UI_API_VERSION,
+    PLUGIN_UI_DATA_DOMAINS,
+    PLUGIN_UI_EVENTS,
+    PLUGIN_UI_HOST_SERVICES,
+    PLUGIN_UI_SLOTS,
+    PluginManager,
+)
 from octop.infra.agents.plugins.plugin_tool_defaults import (
     agent_plugin_enabled,
     merge_plugins_enabled_settings,
@@ -44,6 +51,10 @@ _UI_CONTENT_TYPES = {
 
 class PluginInstallBody(BaseModel):
     url: str = Field(..., description="HTTP(S) URL to a plugin ZIP archive")
+
+
+class DshSourceBody(BaseModel):
+    url: str = Field(..., description="HTTP(S) URL or absolute path to a DSH format-1 index")
 
 
 class AgentPluginToolBody(BaseModel):
@@ -105,6 +116,91 @@ async def list_plugins(
     return [
         _with_plugin_visibility(server, item) for item in _plugin_manager(server).list_installed()
     ]
+
+
+_PLUGIN_UI_SLOT_TITLES = {
+    "home.sidebar": "首页右侧栏",
+    "chat.messages.top": "聊天页消息列表上方",
+    "conversation.view": "逐条消息下方",
+    "conversation.input.left": "输入框左侧",
+    "conversation.input.overlay": "输入区浮层",
+    "settings.section": "设置页区块",
+}
+
+
+@router.get(
+    "/ui/capabilities",
+    summary="Describe the plugin UI surface contract",
+)
+async def plugin_ui_capabilities(
+    _user: Any = Depends(current_user),
+) -> dict[str, Any]:
+    """Advertise exactly what v1 can mount and read.
+
+    Plugins and the compatibility layer consume this instead of guessing.
+    ``trust.sandboxed`` is always false in v1: the UI entry runs as same-origin
+    trusted ESM, not in an iframe.
+    """
+    return {
+        "api_version": PLUGIN_UI_API_VERSION,
+        "trust": {
+            "model": "same-origin-esm",
+            "sandboxed": False,
+            "warning": "插件界面与 Dashboard 同源执行，拥有页面权限，不是沙箱；只安装可信来源。",
+        },
+        "slots": [
+            {"id": slot, "title": _PLUGIN_UI_SLOT_TITLES.get(slot, slot)}
+            for slot in PLUGIN_UI_SLOTS
+        ],
+        "data": [
+            {
+                "domain": "runtime.activity",
+                "description": "运行中的 Agent/工具计数",
+                "refresh_seconds": 3,
+            },
+            {
+                "domain": "sessions.running",
+                "description": "运行中或等待用户的会话列表",
+                "refresh_seconds": 3,
+            },
+            {
+                "domain": "plugins.installed",
+                "description": "已安装插件摘要",
+                "refresh_seconds": 10,
+            },
+            {
+                "domain": "host.context",
+                "description": "语言、主题与当前时间",
+                "refresh_seconds": None,
+            },
+        ],
+        "events": [
+            {"name": "session.started", "description": "会话进入运行集合"},
+            {"name": "session.updated", "description": "运行中会话字段变化"},
+            {"name": "session.ended", "description": "会话离开运行集合"},
+        ],
+        "data_domains": list(PLUGIN_UI_DATA_DOMAINS),
+        "event_names": list(PLUGIN_UI_EVENTS),
+        "host_services": [dict(row) for row in PLUGIN_UI_HOST_SERVICES],
+    }
+
+
+@router.get(
+    "/dsh-installed",
+    summary="List DSH bundles installed from the DSH plugin market",
+)
+async def list_dsh_installed(
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugins")),
+) -> dict[str, Any]:
+    """Show market-installed DSH bundles on the installed tab.
+
+    These live under the DSH market root rather than ``~/.octop/plugins``, so
+    the installed list cannot see them through :meth:`list_installed`. Reading
+    the ledger locally keeps the tab honest even when the catalog is offline.
+    """
+
+    return await asyncio.to_thread(_plugin_manager(server).list_dsh_installed)
 
 
 @router.post("/reload", summary="Reload plugins from disk (admin)")
@@ -225,6 +321,224 @@ async def list_market_plugins(
     """Return the portal marketplace catalog in the caller's language."""
     language = accept_language or "zh"
     return await asyncio.to_thread(_plugin_manager(server).list_market, language)
+
+
+# -- DSH catalog ---------------------------------------------------------
+#
+# These routes are registered before ``/market/{plugin_id}/install`` so the
+# literal ``dsh`` segment is never captured as an octop plugin id.
+
+
+async def _reload_agents_for_dsh(server: OctopServer) -> None:
+    if server.app_runtime is not None:
+        await server.app_runtime.agent_registry.reload_all()
+
+
+@router.get("/market/dsh", summary="List one page of the DSH catalog")
+async def list_dsh_market_plugins(
+    accept_language: str | None = Header(default=None),
+    q: str = Query("", description="Case-insensitive name/description/id search"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    language = accept_language or "zh"
+    return await asyncio.to_thread(
+        _plugin_manager(server).list_dsh_market,
+        language,
+        query=q,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.post("/market/dsh/refresh", summary="Re-fetch every DSH index")
+async def refresh_dsh_market(
+    accept_language: str | None = Header(default=None),
+    q: str = Query("", description="Case-insensitive name/description/id search"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    language = accept_language or "zh"
+    return await asyncio.to_thread(
+        _plugin_manager(server).list_dsh_market,
+        language,
+        query=q,
+        page=page,
+        page_size=page_size,
+        refresh=True,
+    )
+
+
+@router.get(
+    "/dsh/status",
+    summary="DSH runtime status: readiness, switches, sources, last failure",
+)
+async def dsh_status(
+    accept_language: str | None = Header(default=None),
+    probe: bool = Query(False, description="Re-fetch every DSH index before reporting"),
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    """Dedicated DSH state endpoint; the UI does not have to reconstruct it.
+
+    ``probe=false`` reads the last known source health (unknown before the
+    first fetch), so a status poll stays local. Only a probe touches network.
+    """
+
+    language = accept_language or "zh"
+    runtime = getattr(server, "app_runtime", None)
+    agent_manager = getattr(runtime, "agent_registry", None)
+    return await asyncio.to_thread(
+        _plugin_manager(server).dsh_status,
+        language=language,
+        probe=probe,
+        agent_manager=agent_manager,
+    )
+
+
+@router.get(
+    "/dsh/progress",
+    summary="DSH load progress: phase, dependency install output, probe stage",
+)
+async def dsh_install_progress(
+    plugin_id: str = Query(..., description="Canonical id, e.g. dsh:demo-plugin"),
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    """Poll one plugin's install progress while the install request runs.
+
+    ``progress`` is null until a load starts; the record keeps the last outcome
+    for the process lifetime so the page can render it after the response too.
+    """
+
+    return await asyncio.to_thread(
+        _plugin_manager(server).dsh_install_progress, plugin_id
+    )
+
+
+@router.post("/market/dsh/sources", summary="Add a DSH index source")
+async def add_dsh_source(
+    body: DshSourceBody,
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    urls = await asyncio.to_thread(_plugin_manager(server).add_dsh_source, body.url)
+    return {"sources": urls}
+
+
+@router.delete("/market/dsh/sources", summary="Remove a DSH index source")
+async def remove_dsh_source(
+    url: str = Query(..., description="Exact stored address to remove"),
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    urls = await asyncio.to_thread(_plugin_manager(server).remove_dsh_source, url)
+    return {"sources": urls}
+
+
+@router.post("/market/dsh/install", summary="Install a DSH catalog release")
+async def install_dsh_market_plugin(
+    plugin_id: str = Query(..., description="Canonical id, e.g. dsh:demo-plugin"),
+    version: str | None = Query(default=None, description="Exact release version"),
+    force: bool = Query(default=False, description="Replace the same release"),
+    accept_language: str | None = Header(default=None),
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    mgr = _plugin_manager(server)
+    language = accept_language or "zh"
+    result = await asyncio.to_thread(
+        lambda: mgr.install_dsh_market(
+            plugin_id,
+            version=version,
+            force=force,
+            language=language,
+        )
+    )
+    await _reload_agents_for_dsh(server)
+    return result
+
+
+@router.post("/market/dsh/upgrade", summary="Upgrade or switch a DSH release")
+async def upgrade_dsh_market_plugin(
+    plugin_id: str = Query(..., description="Canonical id, e.g. dsh:demo-plugin"),
+    version: str | None = Query(default=None, description="Target version"),
+    allow_capability_expansion: bool = Query(default=False),
+    accept_language: str | None = Header(default=None),
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    mgr = _plugin_manager(server)
+    language = accept_language or "zh"
+    result = await asyncio.to_thread(
+        lambda: mgr.upgrade_dsh_market(
+            plugin_id,
+            version=version,
+            allow_capability_expansion=allow_capability_expansion,
+            language=language,
+        )
+    )
+    await _reload_agents_for_dsh(server)
+    return result
+
+
+@router.delete("/market/dsh/plugin", summary="Uninstall a DSH catalog release")
+async def uninstall_dsh_market_plugin(
+    plugin_id: str = Query(..., description="Canonical id, e.g. dsh:demo-plugin"),
+    version: str | None = Query(default=None, description="Exact slot; default current"),
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    mgr = _plugin_manager(server)
+    result = await asyncio.to_thread(
+        lambda: mgr.uninstall_dsh_market(plugin_id, version=version)
+    )
+    await _reload_agents_for_dsh(server)
+    return result
+
+
+@router.post(
+    "/market/bundled/{plugin_id}/install",
+    summary="Install a bundled catalog plugin (admin)",
+)
+async def install_bundled_plugin(
+    plugin_id: str,
+    force: bool = Query(default=False, description="Replace an existing install"),
+    server: OctopServer = Depends(get_server),
+    _user: Any = Depends(require_permission("plugin_market")),
+) -> dict[str, Any]:
+    """Copy one in-package catalog plugin into ``~/.octop/plugins``.
+
+    No network access and no dependency installation: bundled plugins ship with
+    the product. The Dashboard calls this for ``source == "bundled"`` rows.
+    """
+    mgr = _plugin_manager(server)
+    try:
+        loaded = await asyncio.to_thread(
+            lambda: mgr.install_bundled(plugin_id, force=force)
+        )
+    except OctopError:
+        raise
+    except Exception as exc:
+        raise OctopError(
+            ErrorCode.PLUGIN_INSTALL_FAILED,
+            f"plugin install failed: {exc}",
+            details={"reason": str(exc)},
+        ) from exc
+    if server.app_runtime is not None:
+        await server.refresh_plugin_channels()
+        await server.app_runtime.agent_registry.reload_all()
+    return {
+        "id": loaded.manifest.id,
+        "version": loaded.manifest.version,
+        "name": loaded.manifest.name,
+        "kind": loaded.manifest.kind,
+        "source": "bundled",
+    }
 
 
 @router.post(

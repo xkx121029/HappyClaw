@@ -418,7 +418,7 @@ export function CustomProviderModal({
         {kind === "openai" && !embeddingLane ? <TestStreamHint /> : null}
       </div>
 
-      <Divider orientation="left" style={{ fontSize: 13 }}>
+      <Divider orientation="left" style={{ fontSize: "var(--fn-text-xs)" }}>
         {t("models.manageModels")}
       </Divider>
       <ModelListEditor

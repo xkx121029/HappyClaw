@@ -1,6 +1,7 @@
 import { request } from "../request";
 import type {
   OctopCronRow,
+  OctopCronRun,
   OctopCronCreateBody,
   OctopCronPatchBody,
 } from "../types";
@@ -37,8 +38,13 @@ export const octopCronApi = {
   delete: (agentId: string, cronId: string) =>
     request<void>(`/agents/${agentId}/cron/${cronId}`, { method: "DELETE" }),
 
+  runs: (agentId: string, cronId: string, limit = 20) =>
+    request<OctopCronRun[]>(
+      `/agents/${agentId}/cron/${cronId}/runs?limit=${limit}`,
+    ),
+
   runNow: (agentId: string, cronId: string) =>
-    request<void>(`/agents/${agentId}/cron/${cronId}/run-now`, {
+    request<{ run_id: string }>(`/agents/${agentId}/cron/${cronId}/run-now`, {
       method: "POST",
     }),
 };

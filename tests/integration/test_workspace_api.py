@@ -97,6 +97,84 @@ async def test_tree_for_unknown_agent_404(env: Any) -> None:
     assert r.status_code == 404
 
 
+# --- conversation-scoped workspaces -----------------------------------------
+
+
+async def test_tree_and_file_follow_project_thread(env: Any, tmp_octop_home: Any) -> None:
+    """A thread in a project sees that project's folder, not the expert home."""
+    c, srv, auth, aid = env
+    project_root = tmp_octop_home / "external-project"
+    project_root.mkdir(parents=True)
+    (project_root / "project-note.md").write_text("from project", encoding="utf-8")
+
+    users = (await c.get("/api/users", headers=auth)).json()
+    uid = users[0]["id"]
+    srv.services.project_repo.create(
+        project_id="prj_ws_test",
+        user_id=uid,
+        name="WS test",
+        root_dir=str(project_root),
+    )
+    created = await c.post(
+        f"/api/agents/{aid}/threads",
+        params={"project_id": "prj_ws_test"},
+        headers=auth,
+    )
+    assert created.status_code == 201, created.text
+    tid = created.json()["thread_id"]
+
+    tree = await c.get(
+        f"/api/agents/{aid}/workspace/tree",
+        params={**FROM_WORKSPACE, "path": "/", "thread_id": tid},
+        headers=auth,
+    )
+    assert tree.status_code == 200, tree.text
+    assert any("project-note.md" in row["path"] for row in tree.json())
+
+    file = await c.get(
+        f"/api/agents/{aid}/workspace/file",
+        params={**FROM_WORKSPACE, "path": "/project-note.md", "thread_id": tid},
+        headers=auth,
+    )
+    assert file.status_code == 200, file.text
+    assert file.json()["content"] == "from project"
+
+
+async def test_tree_follows_session_workspace(env: Any, tmp_octop_home: Any) -> None:
+    """Files bound to ``sessions/<thread_id>`` show up in that thread's tree."""
+    c, srv, auth, aid = env
+    created = await c.post(f"/api/agents/{aid}/threads", headers=auth)
+    assert created.status_code == 201, created.text
+    tid = created.json()["thread_id"]
+
+    session_dir = tmp_octop_home / "sessions" / tid
+    session_dir.mkdir(parents=True)
+    (session_dir / "draft.md").write_text("session file", encoding="utf-8")
+    srv.services.thread_repo.set_workspace(
+        tid,
+        project_id=None,
+        workspace_kind="session",
+        workspace_dir=str(session_dir),
+    )
+
+    tree = await c.get(
+        f"/api/agents/{aid}/workspace/tree",
+        params={**FROM_WORKSPACE, "path": "/", "thread_id": tid},
+        headers=auth,
+    )
+    assert tree.status_code == 200, tree.text
+    assert any("draft.md" in row["path"] for row in tree.json())
+
+    # The expert's own workspace stays untouched.
+    expert_tree = await c.get(
+        f"/api/agents/{aid}/workspace/tree",
+        params={**FROM_WORKSPACE, "path": "/"},
+        headers=auth,
+    )
+    assert expert_tree.status_code == 200, expert_tree.text
+    assert not any("draft.md" in row["path"] for row in expert_tree.json())
+
+
 # --- write + read round-trip ------------------------------------------------
 
 

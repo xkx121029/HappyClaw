@@ -172,6 +172,58 @@ jwt/cryptography 栈」与「tokens 签名/解码往返 + 篡改拒绝仍正常�
 `tests/unit/api/test_jwt_tokens.py` 10 passed。既有 gateway 重符号解析守卫在
 本轮负载下超时（与本次改动无交集，昨轮通过），待负载恢复复跑。
 
+## 3f. 第六轮：DSH 默认关闭时的技能/提示词树惰性化（2026-11-19 凌晨）
+
+对 `_prepare_runtime` 逐模块计时（单进程顺序 import）得到聊天天花板分布：
+`octop.infra.agents.manager` **12.41s**、`cron.manager` 1.91s，其余均 <0.5s。
+用 `-X importtime` 拆 manager 后，本仓库自有代码里最大的一块是
+`octop.infra.dsh.integration`（300ms）及其拉起的 `dsh.skills.*`（约 270ms）——
+而 DSH 技能/提示词默认关闭，启动时根本用不到。
+
+改动：
+
+- `dsh/switches.py` 新增 `skills_prompts_enabled()`（纯 stdlib 环境变量读取）；
+  `dsh/integration.py` 改为从该模块再导出 `dsh_skills_prompts_enabled`，
+  单一事实来源，语义不变（仍然独立于 `OCTOP_DSH_RUNTIME` 主开关）。
+- `agents/manager.py` 移除顶层 `dsh.integration` / `dsh.prompts.skills_injection`
+  导入；`DshPromptSessionStore` 改为首次使用时的 `_dsh_prompt_store()` 懒建；
+  删除/停机/会话结束的游标清理都先判空，不再为了清理而触发导入。
+  `workspace_skill_snapshot` / `compose_system_prompt` 仅在开关打开的分支内局部导入。
+- 守卫：`tests/unit/test_import_lightweight.py` 新增
+  「manager 导入不拉 dsh.integration/skills/prompts」与「开关函数为同一对象」。
+
+**收益**（`-X importtime` 结构对照）：
+
+| 指标 | 改动前 | 改动后 | 收益 |
+| --- | ---: | ---: | ---: |
+| `import octop.infra.agents.manager` 累计 | 10.41s | **9.69s** | **-720ms（-7%）** |
+| 导入模块数 | 1977 | **1942** | -35 |
+
+验证：`tests/unit/test_import_lightweight.py` 8 passed；
+`tests/unit/infra/dsh` 135 passed。Wall-clock 绝对值本轮仍受前端 vitest/tsc
+并发影响（12.4s vs 12.5s，噪声大于收益），故以结构与 `sys.modules` 不变式为准，
+待机器空闲后复测。
+
+## 3g. 空闲机复测（2026-11-20 凌晨）
+
+第六轮遗留的「待机器空闲后复测绝对值」已在新进程、无并发测试负载下完成。
+
+| 场景 | 冷态首跑 | 热态（第 2/3 跑） | 热态均值 |
+| --- | ---: | ---: | ---: |
+| `import octop` | 1.00s | 0.22s / 0.19s | **0.21s** |
+| `import octop.api.app` | 10.42s | 1.72s / 1.66s | **1.69s** |
+| `import octop.infra.cron.manager` | — | 2.17s / 2.22s / 2.27s | **2.22s** |
+
+同机 `-X importtime` 重测 `import octop.api.app`：self 总时长 1.72s，其中本仓库自有代码
+self 仅 **107.5ms（6%）**；大头是 fastapi 466.2ms、pydantic 162.7ms、anyio 98.7ms、
+stdlib asyncio 79.5ms。即 import 路径上已无可观的本地优化目标。
+
+守卫与健康度复核（同一时间窗口）：`test_import_lightweight` + `test_httpx_lazy_patch` +
+`i18n/test_domains_lazy` 共 15 passed；`import octop.api.app` 的守卫不变式仍成立。
+
+**结论**：Python 导入树这条线到此为止，继续裁剪属于运行库侧议题；下一步只剩 launcher
+感知优化（见 §5）与产品侧 chat-ready 判定调整。
+
 ## 4. 局限与未做项
 
 诚实说明，避免高估：
@@ -179,6 +231,10 @@ jwt/cryptography 栈」与「tokens 签名/解码往返 + 篡改拒绝仍正常�
 - 这些是**子模块级**改造，不是全进程热启动从 19.8s 降到个位数秒——那需要动 `infra/server.py` / `api/app.py`（当前有在途改动，本轮刻意不碰）。
 - `apscheduler`（1.19s self）这条线未动：其顶层导入点 `infra/cron/manager.py` 有在途改动，避免制造冲突。
 - 惰性化的收益在「首次真正用到该符号」时会以导入延迟的形式回来，但那时已在服务运行中、对 splash 无感。
+- 第六轮后 `agents.manager` 剩余 9.69s 里约 8.4s 来自第三方/运行库
+  （langsmith、mcp、langchain_core、octop_harness、deepagents），本仓库自有代码
+  已降到亚秒级；继续在 Python 导入树上做裁剪的边际收益很低，后续若要再降，
+  应视为「运行库侧」议题或重新评估 chat-ready 的判定时机（需产品决策）。
 
 ## 5. 下一步（方案 2）
 

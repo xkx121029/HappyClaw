@@ -36,7 +36,7 @@ export function desktopWsBase(): string | null {
 }
 
 /**
- * Full WebSocket URL for an ``/api/…`` path (e.g. ``/api/mobile-stream/ws``).
+ * Full WebSocket URL for an ``/api/…`` path (e.g. ``/api/desktop/ws``).
  * Callers append their own query string afterwards, exactly as they did with the
  * page-origin form, so no query escaping is duplicated here.
  */

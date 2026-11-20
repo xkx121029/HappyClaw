@@ -2076,7 +2076,7 @@ function ConnectorConfigDrawer({
                 !(entry.kind === "qcc" && preview?.api_key_configured) && (
                   <div
                     style={{
-                      fontSize: 13,
+                      fontSize: "var(--fn-text-xs)",
                       color: "var(--fn-text-tertiary)",
                       marginBottom: 8,
                     }}
@@ -2116,6 +2116,13 @@ function ConnectorConfigDrawer({
                     onClick={() => setShowManual((v) => !v)}
                     role="button"
                     tabIndex={0}
+                    aria-expanded={showManual}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setShowManual((v) => !v);
+                      }
+                    }}
                   >
                     {showManual
                       ? t("connectors.hideManual", "收起手动输入")

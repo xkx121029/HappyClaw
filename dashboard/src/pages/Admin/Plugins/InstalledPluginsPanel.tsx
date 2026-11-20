@@ -36,7 +36,12 @@ import {
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import cx from "classnames";
-import { pluginsApi, type InstalledPlugin } from "../../../api/modules/plugins";
+import {
+  pluginsApi,
+  type DshInstalledPlugin,
+  type DshInstalledView,
+  type InstalledPlugin,
+} from "../../../api/modules/plugins";
 import type { ResourceVisibilityMode } from "../../../api/modules/userGroups";
 import { ResourceVisibilityCollapse } from "../../../components/ResourceVisibilityFields";
 import { ResizableTable } from "../../../components/ResizableTable";
@@ -82,11 +87,88 @@ function statusTag(row: InstalledPlugin, t: (key: string) => string) {
   );
 }
 
+/** Explicitly label DSH as having no UI surface: expected, not broken. */
+function dshSurfaceTag(
+  row: DshInstalledPlugin,
+  t: (key: string) => string,
+) {
+  const supported = row.runtime.surface_supported;
+  if (supported === true) return null;
+  const reason =
+    row.runtime.surface_reason ||
+    t("plugins.uiNoSurfaceHint");
+  return (
+    <Tag bordered={false} title={reason}>
+      {t("plugins.uiNoSurface")}
+    </Tag>
+  );
+}
+
+function octopSurfacesNotice(
+  row: InstalledPlugin,
+  t: (key: string, options?: Record<string, unknown>) => string,
+) {
+  const surfaces = row.ui?.surfaces ?? [];
+  if (surfaces.length === 0) return null;
+  const supported = surfaces
+    .filter((surface) => surface.supported)
+    .map((surface) => surface.title || surface.id);
+  const unsupported = surfaces.filter((surface) => !surface.supported);
+  return (
+    <div style={{ marginTop: 6, fontSize: "var(--fn-text-2xs)", opacity: 0.7, lineHeight: 1.5 }}>
+      {supported.length > 0 ? (
+        <div>{t("plugins.uiSurfaceAt", { slots: supported.join("、") })}</div>
+      ) : null}
+      {unsupported.map((surface) => (
+        <div key={surface.id}>
+          {t("plugins.uiSurfaceUnsupported", {
+            slot: surface.slot,
+            code: surface.reason_code || "SURFACE_SLOT_UNKNOWN",
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Runtime readiness for a DSH bundle, reusing the market panel's wording. */
+function dshRuntimeTag(
+  row: DshInstalledPlugin,
+  t: (key: string) => string,
+) {
+  if (row.error)
+    return (
+      <Tag color="error" bordered={false}>
+        {t("plugins.statusError")}
+      </Tag>
+    );
+  if (row.runtime.status === "visible")
+    return (
+      <Tag color="success" bordered={false}>
+        {t("plugins.dsh.runtimeVisible")}
+      </Tag>
+    );
+  if (row.runtime.status === "broken")
+    return (
+      <Tag color="error" bordered={false}>
+        {t("plugins.dsh.runtimeBroken")}
+      </Tag>
+    );
+  return (
+    <Tag color="warning" bordered={false}>
+      {t("plugins.dsh.runtimeNotVisible")}
+    </Tag>
+  );
+}
+
 /** Server-wide plugin install, reload, enable, detail, and uninstall surface. */
 export function InstalledPluginsPanel() {
   const { t } = useTranslation();
   const [, setSearchParams] = useSearchParams();
   const [plugins, setPlugins] = useState<InstalledPlugin[]>([]);
+  const [dshInstalled, setDshInstalled] = useState<DshInstalledView | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [installOpen, setInstallOpen] = useState(false);
   const [installUrl, setInstallUrl] = useState("");
@@ -101,6 +183,15 @@ export function InstalledPluginsPanel() {
 
   const fetchPlugins = useCallback(async () => {
     setLoading(true);
+    // DSH bundles are tracked by the market ledger, not ``/plugins``; fetch
+    // them separately so one failing source never blanks the host list.
+    void pluginsApi
+      .listDshInstalled()
+      .then(setDshInstalled)
+      .catch((err) => {
+        console.warn("[plugins] dsh installed list failed:", err);
+        setDshInstalled(null);
+      });
     try {
       const rows = await pluginsApi.list();
       setPlugins(rows);
@@ -354,6 +445,14 @@ export function InstalledPluginsPanel() {
         ]}
       />
 
+      <Alert
+        type="info"
+        showIcon
+        style={{ marginBottom: 12 }}
+        message={t("plugins.uiTrustTitle")}
+        description={t("plugins.uiTrustNotice")}
+      />
+
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
           <span className={styles.toolbarCount}>
@@ -412,6 +511,56 @@ export function InstalledPluginsPanel() {
         </div>
       </div>
 
+      {dshInstalled && dshInstalled.plugins.length > 0 ? (
+        <section className={styles.dshInstalled}>
+          <div className={styles.dshInstalledHead}>
+            <div className={styles.dshInstalledHeading}>
+              <Text strong>
+                {t("plugins.dshInstalledTitle", {
+                  count: dshInstalled.plugins.length,
+                })}
+              </Text>
+              <span className={styles.dshInstalledHint}>
+                {t("plugins.dshInstalledHint", {
+                  path: dshInstalled.market_root,
+                })}
+              </span>
+            </div>
+            <Button
+              size="small"
+              icon={<Store size={14} />}
+              onClick={() =>
+                setSearchParams({ tab: "market" }, { replace: true })
+              }
+            >
+              {t("plugins.dshInstalledManage")}
+            </Button>
+          </div>
+          <div className={styles.dshInstalledList}>
+            {dshInstalled.plugins.map((row) => (
+              <div key={row.plugin_id} className={styles.dshInstalledRow}>
+                <div className={styles.dshInstalledMain}>
+                  <span className={styles.dshInstalledName}>
+                    {row.name || row.plugin_id}
+                  </span>
+                  <span className={styles.tableMono}>{row.plugin_id}</span>
+                </div>
+                <div className={styles.dshInstalledMeta}>
+                  <Tag bordered={false}>{row.version || "—"}</Tag>
+                  {dshRuntimeTag(row, t)}
+                  {dshSurfaceTag(row, t)}
+                </div>
+                <div className={styles.dshInstalledSource}>
+                  {t("plugins.dshInstalledSource", {
+                    source: row.source_url || t("plugins.dshInstalledLocalSource"),
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {showCardView ? (
         loading ? (
           <div className={styles.loadingSkeleton}>
@@ -469,6 +618,7 @@ export function InstalledPluginsPanel() {
                         row.description ||
                         t("plugins.noDescription")}
                     </p>
+                    {octopSurfacesNotice(row, t)}
                   </div>
                   <div className={styles.cardFooter}>
                     <button

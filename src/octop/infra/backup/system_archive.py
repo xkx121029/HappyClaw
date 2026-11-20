@@ -26,7 +26,12 @@ from octop.infra.backup.chats import (
     restore_preserved_chats,
     strip_chat_tables_from_sqlite_file,
 )
-from octop.infra.backup.manifest import MANIFEST_VERSION, AgentBackupEntry, BackupManifest
+from octop.infra.backup.manifest import (
+    MANIFEST_VERSION,
+    AgentBackupEntry,
+    BackupManifest,
+    ExternalProjectEntry,
+)
 from octop.infra.backup.pg_dump import dump_postgres, restore_postgres
 from octop.infra.backup.snapshot import (
     capture_jwt_secret_from_pool,
@@ -55,6 +60,9 @@ _WORKSPACES_DIR = "workspaces"
 _SKILL_PACKAGES_DIR = "skill-packages"
 _PLUGINS_DIR = "plugins"
 _KNOWLEDGE_DIR = "knowledge"
+_PROJECTS_DIR = "projects"
+_PROJECTS_EXTERNAL_DIR = "projects-external"
+_SESSIONS_DIR = "sessions"
 _MANIFEST_NAME = "manifest.json"
 _SQLITE_DB_ARC = f"{_DB_DIR}/octop.db"
 _PG_DUMP_ARC = f"{_DB_DIR}/octop.dump"
@@ -137,6 +145,46 @@ def _system_files_path_from_row(row: Any) -> str:
     return system_files_path_from_config(parsed if isinstance(parsed, dict) else None)
 
 
+def _is_within(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
+def _list_external_project_entries(
+    pool: DatabasePool,
+    home_root: Path,
+) -> list[ExternalProjectEntry]:
+    """Project rows whose ``root_dir`` lives outside *home_root*.
+
+    Roots inside ``{OCTOP_HOME}`` are covered by the default ``projects/``
+    packing; missing directories are skipped with a warning.
+    """
+    with pool.connect() as conn:
+        rows = conn.execute("SELECT project_id, root_dir FROM projects").fetchall()
+    home = home_root.resolve()
+    entries: list[ExternalProjectEntry] = []
+    for row in rows:
+        project_id = str(row[0])
+        raw = row[1]
+        if not isinstance(raw, str) or not raw.strip():
+            continue
+        root_dir = Path(raw).expanduser()
+        if _is_within(root_dir.resolve(), home):
+            continue
+        if not root_dir.is_dir():
+            logger.warning(
+                "external project %s root_dir %s does not exist; skipping",
+                project_id,
+                root_dir,
+            )
+            continue
+        entries.append(ExternalProjectEntry(project_id=project_id, root_dir=str(root_dir)))
+    return entries
+
+
 def _build_manifest(
     *,
     paths: PathLayout,
@@ -152,6 +200,7 @@ def _build_manifest(
     include_plugins: bool,
     include_knowledge: bool,
     include_chats: bool,
+    external_projects: list[ExternalProjectEntry],
 ) -> BackupManifest:
     try:
         schema_version = _current_version(pool)
@@ -180,6 +229,10 @@ def _build_manifest(
         includes_skill_packages=include_skill_packages,
         includes_plugins=include_plugins,
         includes_knowledge=include_knowledge,
+        includes_projects=include_workspaces and paths.projects_dir.is_dir(),
+        includes_sessions=include_workspaces and paths.sessions_dir.is_dir(),
+        includes_projects_external=bool(external_projects),
+        external_projects=external_projects,
         includes_chats=include_chats,
     )
 
@@ -222,6 +275,11 @@ def create_system_backup(
             raise OctopError(ErrorCode.NOT_FOUND, f"database not found: {pool.path}")
 
     env_path = env_file_path(paths.root)
+    # Project roots outside {OCTOP_HOME} need their own archive section; the
+    # default projects/ packing only covers paths.projects_dir.
+    external_projects = (
+        _list_external_project_entries(pool, paths.root) if include_workspaces else []
+    )
     manifest = _build_manifest(
         paths=paths,
         agent_rows=agent_rows,
@@ -236,6 +294,7 @@ def create_system_backup(
         include_plugins=include_plugins,
         include_knowledge=include_knowledge,
         include_chats=include_chats,
+        external_projects=external_projects,
     )
     filename = suggested_backup_filename()
     dest = Path(dest)
@@ -305,6 +364,27 @@ def create_system_backup(
                                 agent_id,
                                 exc_info=True,
                             )
+                    # Project roots and per-conversation roots live outside the
+                    # agent directories; without them a restore loses user files.
+                    _add_dir(
+                        tf,
+                        paths.projects_dir,
+                        _PROJECTS_DIR,
+                        skip_chats=not include_chats,
+                    )
+                    _add_dir(
+                        tf,
+                        paths.sessions_dir,
+                        _SESSIONS_DIR,
+                        skip_chats=not include_chats,
+                    )
+                    for entry in external_projects:
+                        _add_dir(
+                            tf,
+                            Path(entry.root_dir),
+                            f"{_PROJECTS_EXTERNAL_DIR}/{entry.project_id}",
+                            skip_chats=not include_chats,
+                        )
                 if include_skill_packages and paths.skill_packages_dir.is_dir():
                     _add_dir(
                         tf,
@@ -400,6 +480,99 @@ def _replace_tree_from_archive(extracted: Path, dest: Path, arc_name: str) -> in
         shutil.copy2(src_file, out)
         count += 1
     return count
+
+
+def _copy_tree_from_archive(
+    extracted: Path,
+    dest: Path,
+    arc_name: str,
+    *,
+    skip_chats: bool,
+) -> int:
+    """Merge files packed under *arc_name* back into *dest* without deleting."""
+    prefix = f"{arc_name}/"
+    count = 0
+    for rel, src_file in _iter_extracted_files(extracted, arc_name):
+        rest = rel[len(prefix) :]
+        if not rest:
+            continue
+        if skip_chats and is_chat_workspace_rel(Path(rest)):
+            continue
+        out = dest / rest
+        out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src_file, out)
+        count += 1
+    return count
+
+
+def _restore_external_projects(
+    extracted: Path,
+    manifest: BackupManifest,
+    *,
+    paths: PathLayout,
+    pool: DatabasePool,
+) -> int:
+    """Copy files packed under ``projects-external/`` back into their project roots.
+
+    Target root prefers the restored database's ``root_dir`` for the project
+    (rows can survive pruning that the manifest does not know about); the
+    manifest's recorded root is the fallback. Roots that resolve inside
+    ``{OCTOP_HOME}`` are skipped — the default ``projects/`` restore already
+    covers them.
+
+    Path safety: members were extracted through ``tarfile.data_filter`` and are
+    read back from disk under the fixed ``projects-external/{project_id}/``
+    prefix, so a rel path can neither escape that prefix nor contain ``..``;
+    the destination is limited to the DB/manifest recorded ``root_dir``, and
+    manifest-supplied project ids are checked to be single path segments.
+    """
+    with pool.connect() as conn:
+        rows = conn.execute("SELECT project_id, root_dir FROM projects").fetchall()
+    db_roots = {str(row[0]): str(row[1]) for row in rows if row[1]}
+    home = paths.root.resolve()
+    total = 0
+    for entry in manifest.external_projects:
+        if not entry.project_id or Path(entry.project_id).name != entry.project_id:
+            logger.warning("skipping unsafe external project id %r", entry.project_id)
+            continue
+        db_root = db_roots.get(entry.project_id)
+        if db_root:
+            target = Path(db_root).expanduser()
+            origin = "database"
+        else:
+            target = Path(entry.root_dir).expanduser()
+            origin = "manifest"
+        if not target.is_absolute():
+            logger.warning(
+                "external project %s has non-absolute root_dir %r; skipping",
+                entry.project_id,
+                target,
+            )
+            continue
+        if _is_within(target.resolve(), home):
+            logger.info(
+                "project %s root_dir %s is inside OCTOP_HOME; skipping external copy "
+                "(default projects restore covers it)",
+                entry.project_id,
+                target,
+            )
+            continue
+        count = _copy_tree_from_archive(
+            extracted,
+            target,
+            f"{_PROJECTS_EXTERNAL_DIR}/{entry.project_id}",
+            skip_chats=not manifest.includes_chats,
+        )
+        if count:
+            logger.info(
+                "restored %d external project files for %s into %s (root_dir from %s)",
+                count,
+                entry.project_id,
+                target,
+                origin,
+            )
+        total += count
+    return total
 
 
 def restore_system_backup(
@@ -604,6 +777,33 @@ def restore_system_backup(
             shutil.copy2(src_file, dest)
             restored_workspaces += 1
 
+        restored_project_files = 0
+        if manifest.includes_projects:
+            restored_project_files = _copy_tree_from_archive(
+                extracted,
+                paths.projects_dir,
+                _PROJECTS_DIR,
+                skip_chats=not manifest.includes_chats,
+            )
+
+        restored_session_files = 0
+        if manifest.includes_sessions:
+            restored_session_files = _copy_tree_from_archive(
+                extracted,
+                paths.sessions_dir,
+                _SESSIONS_DIR,
+                skip_chats=not manifest.includes_chats,
+            )
+
+        restored_project_external_files = 0
+        if manifest.includes_projects_external and manifest.external_projects:
+            restored_project_external_files = _restore_external_projects(
+                extracted,
+                manifest,
+                paths=paths,
+                pool=pool,
+            )
+
         restored_skill_package_files = 0
         if manifest.includes_skill_packages:
             restored_skill_package_files = _replace_tree_from_archive(
@@ -642,6 +842,9 @@ def restore_system_backup(
         "octop_version": manifest.octop_version,
         "agents": len(manifest.agents),
         "workspace_files": restored_workspaces,
+        "project_files": restored_project_files,
+        "project_external_files": restored_project_external_files,
+        "session_files": restored_session_files,
         "skill_package_files": restored_skill_package_files,
         "plugin_files": restored_plugin_files,
         "knowledge_files": restored_knowledge_files,

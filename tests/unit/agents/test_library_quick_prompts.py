@@ -45,7 +45,7 @@ def test_bundled_experts_use_market_scenes() -> None:
         data = json.loads(path.read_text(encoding="utf-8"))
         expert_id = path.parent.name
         scene = str(data.get("scene") or "").strip()
-        if expert_id in {"default", "general-assistant"}:
+        if expert_id in {"default", "general-assistant", "happyclaw"}:
             assert scene == "", expert_id
             continue
         assert scene in allowed, expert_id

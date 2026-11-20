@@ -910,9 +910,18 @@ export default function ModelStep({ onBack, onSkip, onContinue }: Props) {
                   <div
                     key={p.id}
                     className={modelStyles.variantItem}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       applyPreset(p as ProviderPreset);
                       setVariantGroup(null);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        applyPreset(p as ProviderPreset);
+                        setVariantGroup(null);
+                      }
                     }}
                   >
                     <span className={modelStyles.variantItemName}>
@@ -983,7 +992,7 @@ export default function ModelStep({ onBack, onSkip, onContinue }: Props) {
               marginBottom: 8,
             }}
           >
-            <Text strong style={{ fontSize: 13 }}>
+            <Text strong style={{ fontSize: "var(--fn-text-xs)" }}>
               {t("models.initialModelsLabel")}
             </Text>
             <Space size={4}>
@@ -1030,6 +1039,7 @@ export default function ModelStep({ onBack, onSkip, onContinue }: Props) {
                     type="text"
                     size="small"
                     danger
+                    aria-label={t("common.delete")}
                     className={setupStyles.wizardModelDeleteFab}
                     icon={<Trash2 size={14} />}
                     onClick={(e) => {
@@ -1164,6 +1174,7 @@ export default function ModelStep({ onBack, onSkip, onContinue }: Props) {
                   type="text"
                   size="small"
                   danger
+                  aria-label={t("common.delete")}
                   className={setupStyles.wizardModelDeleteFab}
                   icon={<Trash2 size={14} />}
                   onClick={() => {
@@ -1216,7 +1227,7 @@ export default function ModelStep({ onBack, onSkip, onContinue }: Props) {
         <div className={setupStyles.modelStepHeader}>
           <div
             style={{
-              fontSize: 16,
+              fontSize: "var(--fn-text-lg)",
               fontWeight: 600,
               color: "var(--fn-text-primary)",
               marginBottom: 4,
@@ -1224,7 +1235,7 @@ export default function ModelStep({ onBack, onSkip, onContinue }: Props) {
           >
             {t("wizard.stepModel")}
           </div>
-          <Text type="secondary" style={{ fontSize: 13 }}>
+          <Text type="secondary" style={{ fontSize: "var(--fn-text-xs)" }}>
             {t("models.noProvidersHint")}
           </Text>
         </div>
@@ -1254,7 +1265,7 @@ export default function ModelStep({ onBack, onSkip, onContinue }: Props) {
       <div className={setupStyles.modelStepHeader}>
         <div
           style={{
-            fontSize: 16,
+            fontSize: "var(--fn-text-lg)",
             fontWeight: 600,
             color: "var(--fn-text-primary)",
             marginBottom: 4,
@@ -1262,7 +1273,7 @@ export default function ModelStep({ onBack, onSkip, onContinue }: Props) {
         >
           {t("wizard.stepModel")}
         </div>
-        <Text type="secondary" style={{ fontSize: 13 }}>
+        <Text type="secondary" style={{ fontSize: "var(--fn-text-xs)" }}>
           {t("wizard.model.intro")}
         </Text>
       </div>

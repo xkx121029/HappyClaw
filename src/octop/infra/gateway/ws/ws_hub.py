@@ -116,6 +116,11 @@ class WebSocketHub:
         """Number of dashboard-driven turns currently streaming."""
         return len(self._active_turns)
 
+    @property
+    def active_thread_ids(self) -> frozenset[str]:
+        """Snapshot used to distinguish live turns from abandoned ones."""
+        return frozenset(self._active_turns)
+
     def has_subscribers(self, thread_id: str) -> bool:
         """True when at least one Dashboard socket is bound to *thread_id*."""
         tid = thread_id.strip()
@@ -154,6 +159,14 @@ class WebSocketHub:
             await self.push(targets[0], frame)
             return
         await asyncio.gather(*(self.push(conn_id, frame) for conn_id in targets))
+
+    async def broadcast(self, frame: dict[str, Any]) -> int:
+        """Send *frame* to every user-bound dashboard socket (single owner setup)."""
+        targets = [cid for cid in self._connections if cid in self._conn_user]
+        if not targets:
+            return 0
+        await asyncio.gather(*(self.push(conn_id, frame) for conn_id in targets))
+        return len(targets)
 
     async def push_json(self, connection_id: str, payload: str) -> None:
         try:

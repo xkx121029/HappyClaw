@@ -31,6 +31,7 @@ from octop.infra.plugins.bridge.approval import CapabilityProbe
 from octop.infra.plugins.bridge.errors import DshToolErrorCode
 from octop.infra.plugins.runtime.contract import PermissionKind
 from octop.infra.plugins.sandbox import (
+    CommandExecutor,
     PluginSandbox,
     SandboxAbsenceGate,
     SandboxAbsenceMode,
@@ -68,10 +69,16 @@ class DshSandboxState:
 
 @dataclass(frozen=True, slots=True)
 class SandboxProbe:
-    """A callable probe plus the posture it was built with."""
+    """A callable probe plus the posture it was built with.
+
+    ``sandbox`` is the assembled :class:`PluginSandbox` when one exists. The
+    exec stage needs it to run a command *through* the same sandbox that vetted
+    the call, instead of a second instance that could drift from the probe.
+    """
 
     state: DshSandboxState
     probe: CapabilityProbe
+    sandbox: PluginSandbox | None = None
 
     def __call__(
         self, tool_name: str, arguments: Mapping[str, Any] | None = None
@@ -109,6 +116,7 @@ def build_capability_probe(
     workspace_root: str | Path | None = None,
     inspections: Mapping[str, ToolInspection] | None = None,
     absence_mode: object | None = None,
+    executor: CommandExecutor | None = None,
 ) -> SandboxProbe:
     """Build the probe for one plugin's mounted tools.
 
@@ -137,6 +145,7 @@ def build_capability_probe(
                 declarations=declared,
                 permissions=granted,
                 inspections=dict(inspections or {}),
+                executor=executor,
             )
         except Exception as exc:
             # A configured sandbox that cannot be built is a missing sandbox,
@@ -152,6 +161,7 @@ def build_capability_probe(
         return SandboxProbe(
             state=DshSandboxState(plugin_id, True, mode.value),
             probe=_with_bridge_code(sandbox.probe),
+            sandbox=sandbox,
         )
 
     return _absence_probe(

@@ -281,6 +281,7 @@ def test_parse_plugin_ui_meta_and_list(tmp_path: Path) -> None:
     assert parse_plugin_ui_meta(plugin_dir) == {
         "entry": "ui/dist/index.js",
         "manifest": "ui/dist/manifest.json",
+        "surfaces": [],
     }
 
     config_path = tmp_path / "config.json"
@@ -292,6 +293,7 @@ def test_parse_plugin_ui_meta_and_list(tmp_path: Path) -> None:
     assert row.get("ui") == {
         "entry": "ui/dist/index.js",
         "manifest": "ui/dist/manifest.json",
+        "surfaces": [],
     }
     resolved = mgr.resolve_ui_file("with-ui", "dist/index.js")
     assert resolved.name == "index.js"

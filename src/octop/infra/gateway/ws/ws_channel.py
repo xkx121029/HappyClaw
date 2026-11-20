@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import base64
 import logging
-from typing import Any
+from typing import Any, Callable
 
 from octop_gateway.channel import BaseChannel, MessageProcessor
 from octop_gateway.constraints import ChannelConstraints
@@ -51,10 +51,12 @@ class WebSocketChannel(BaseChannel):
         hub: WebSocketHub,
         steer: SteerCoordinator | None = None,
         channel_id: str = WS_CHANNEL_ID,
+        on_turn_finished: Callable[..., None] | None = None,
     ) -> None:
         super().__init__(processor, channel_id=channel_id, debounce_seconds=0.0)
         self._hub = hub
         self._steer = steer or SteerCoordinator()
+        self._on_turn_finished = on_turn_finished
 
     def _default_constraints(self) -> ChannelConstraints:
         return ChannelConstraints(
@@ -172,6 +174,8 @@ class WebSocketChannel(BaseChannel):
         self._hub.mark_turn_active(thread_id)
         failed = False
         stream = None
+        turn_text_parts: list[str] = []
+        turn_error: str | None = None
         try:
             await self._hub.push_to_thread(
                 thread_id,
@@ -234,11 +238,46 @@ class WebSocketChannel(BaseChannel):
                         )
                     if chunk_type == "error":
                         failed = True
+                        if isinstance(chunk, dict):
+                            raw_error = chunk.get("message")
+                            if isinstance(raw_error, str) and raw_error.strip():
+                                turn_error = raw_error.strip()
                         break
+                    if chunk_type == "token" and isinstance(chunk, dict):
+                        token = chunk.get("content")
+                        if isinstance(token, str) and token:
+                            turn_text_parts.append(token)
+                        continue
                     if chunk_type == "hitl_required":
                         # Graph is interrupted; the WS turn ends but resume flows
                         # through the HITL SSE route — never continue into it.
                         self._steer.set_phase(thread_id, "hitl_paused")
+                        # Fan out to the owner's dashboard-notification sockets so
+                        # the Home inbox can show the pause without polling.
+                        try:
+                            uid = resolve_user_id_for_message(
+                                current, agent_owner_id=None
+                            )
+                            if uid > 0:
+                                await self._hub.push_to_user(
+                                    uid,
+                                    {
+                                        "type": "hitl_pending",
+                                        "agentId": str(message.tenant_id or ""),
+                                        "threadId": thread_id,
+                                        "pendingId": (
+                                            chunk.get("pending_id")
+                                            if isinstance(chunk, dict)
+                                            else None
+                                        ),
+                                    },
+                                )
+                        except Exception:
+                            logger.debug(
+                                "hitl inbox notify failed thread=%s",
+                                thread_id,
+                                exc_info=True,
+                            )
                         continue
                     if chunk_type == "tool_result":
                         saw_tool_result = True
@@ -363,6 +402,23 @@ class WebSocketChannel(BaseChannel):
                 )
             except Exception:
                 logger.exception("websocket failed to deliver turn.ended thread=%s", thread_id)
+            if self._on_turn_finished is not None:
+                status = "awaiting" if self._steer.is_hitl_paused(thread_id) else (
+                    "failed" if failed else "done"
+                )
+                try:
+                    self._on_turn_finished(
+                        thread_id=thread_id,
+                        agent_id=str(message.tenant_id or ""),
+                        status=status,
+                        result_text="".join(turn_text_parts),
+                        error_text=turn_error,
+                    )
+                except Exception:
+                    logger.exception(
+                        "turn-finished callback failed thread=%s (turn already closed)",
+                        thread_id,
+                    )
 
     async def _send_text(self, subject: ChannelSubject, text: str) -> None:
         if not text:

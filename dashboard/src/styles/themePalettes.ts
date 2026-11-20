@@ -392,6 +392,17 @@ export function brandTokensFor(
   return ANTD_BRAND_TOKENS[palette][isDark ? "dark" : "light"];
 }
 
+/** Focus-ring color for antd controls, derived from the active brand tone. */
+export function brandFocusRing(
+  palette: ThemePalette,
+  isDark: boolean,
+  customColor?: string | null,
+  alpha = 0.22,
+): string {
+  const [r, g, b] = hexToRgb(brandTokensFor(palette, isDark, customColor).colorPrimary);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 /**
  * CSS custom-property overrides for `html[data-palette="custom"]`.
  * Mirrors the curated palette blocks in theme-vars.css but derived at runtime.
@@ -411,6 +422,8 @@ export function customPaletteCssVars(hex: string, isDark: boolean): string {
 --fn-color-brand: ${solid};
 --fn-color-brand-hover: ${mixHex(solid, "#000000", 0.1)};
 --fn-color-brand-soft: ${mixHex(solid, "#000000", 0.1)};
+--fn-color-brand-strong: ${solid};
+--fn-color-on-brand: #ffffff;
 --fn-color-brand-bg: rgba(${rgb}, 0.14);
 --fn-color-brand-light: rgba(${rgb}, 0.18);
 --fn-color-brand-shadow: rgba(${rgb}, 0.28);
@@ -441,6 +454,7 @@ export function customPaletteCssVars(hex: string, isDark: boolean): string {
 --fn-color-brand: ${solid};
 --fn-color-brand-hover: ${mixHex(solid, "#000000", 0.1)};
 --fn-color-brand-soft: ${mixHex(solid, "#000000", 0.1)};
+--fn-color-brand-strong: ${solid};
 --fn-color-brand-bg: rgba(${rgb}, 0.06);
 --fn-color-brand-light: ${mixHex(solid, "#FFFFFF", 0.88)};
 --fn-color-brand-shadow: rgba(${rgb}, 0.15);

@@ -13,7 +13,6 @@ Sub-packages (see ``AGENTS.md`` §5 for ownership boundaries):
     gateway     — IM / dashboard ingress, threads, slash, media, HITL
     history     — versioned messages, trajectory, turn projection
     knowledge   — knowledge bases
-    mobile      — Android remote
     proactive   — proactive care scheduler
     setup       — first-run wizard, OS service, TLS, self-update
     skills      — skill packages + SkillHub HTTP client

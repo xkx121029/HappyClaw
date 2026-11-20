@@ -727,6 +727,7 @@ export default function BrowserAiPanel({
                 <button
                   type="button"
                   className={cx(styles.actionBtn, styles.actionBtnDanger)}
+                  aria-label={t("browser.recordReplay.stop", "停止浏览器录制")}
                   onClick={handleEndRecording}
                 >
                   <Square size={14} />
@@ -745,6 +746,10 @@ export default function BrowserAiPanel({
                   <button
                     type="button"
                     className={styles.actionBtn}
+                    aria-label={t(
+                      "browser.recordReplay.replay",
+                      "回放最近一次浏览器录制",
+                    )}
                     disabled={isStreaming}
                     onClick={handleReplay}
                   >

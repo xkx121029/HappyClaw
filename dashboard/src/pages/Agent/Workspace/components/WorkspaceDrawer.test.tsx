@@ -40,12 +40,14 @@ vi.mock("./FileViewer", () => ({
 }));
 
 import WorkspaceDrawer from "./WorkspaceDrawer";
+import { request } from "../../../../api/request";
 
-function renderEmbedded() {
+function renderEmbedded(threadId?: string) {
   return render(
     <App>
       <WorkspaceDrawer
         agentId="agent-1"
+        threadId={threadId}
         open
         onClose={() => undefined}
         embedded
@@ -80,5 +82,18 @@ describe("WorkspaceDrawer embedded tree", () => {
     expect(
       screen.getByRole("button", { name: "收起目录树" }),
     ).toBeInTheDocument();
+  });
+
+  it("scopes the file tree to the conversation when threadId is set", async () => {
+    localStorage.setItem(TREE_COLLAPSED_KEY, "0");
+    vi.mocked(request).mockClear();
+
+    renderEmbedded("thr-1");
+
+    await waitFor(() => {
+      expect(request).toHaveBeenCalled();
+    });
+    const urls = vi.mocked(request).mock.calls.map((call) => String(call[0]));
+    expect(urls.some((url) => url.includes("thread_id=thr-1"))).toBe(true);
   });
 });

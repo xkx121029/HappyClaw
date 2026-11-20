@@ -19,9 +19,6 @@ vi.mock("../components/CurrentVersionBadge", () => ({
 vi.mock("../hooks/useUpdateStatus", () => ({
   useUpdateStatus: () => ({ hasUpdate: false }),
 }));
-vi.mock("../hooks/useServerCapabilities", () => ({
-  useServerCapabilities: () => ({ mobileEnabled: false, loading: false }),
-}));
 
 function renderSidebar(opts: {
   collapsed: boolean;

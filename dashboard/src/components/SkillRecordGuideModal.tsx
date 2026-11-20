@@ -104,7 +104,7 @@ export default function SkillRecordGuideModal({
       <div style={{ padding: "8px 0" }}>
         <Typography.Paragraph
           style={{
-            fontSize: 14,
+            fontSize: "var(--fn-text-sm)",
             color: "var(--fn-text-secondary)",
             marginBottom: 16,
           }}

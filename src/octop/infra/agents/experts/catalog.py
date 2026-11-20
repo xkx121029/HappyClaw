@@ -49,6 +49,7 @@ _FALLBACK_BUNDLED_AVATAR_IDS = frozenset(
         "cvm-cluster-doctor",
         "default",
         "general-assistant",
+        "happyclaw",
         "karpathy-knowledge-base",
         "meituan-living-assistant",
         "multi-agent-orchestrator",
@@ -309,10 +310,12 @@ def welcome_payload_has_content(payload: dict[str, Any]) -> bool:
 
 
 def default_welcome_payload(catalog: ExpertCatalog | None = None) -> dict[str, Any]:
-    """Last-resort welcome: prefer bundled ``general-assistant``, else a small built-in set."""
+    """Last-resort welcome: prefer ``happyclaw``, then ``general-assistant``."""
     if catalog is not None:
-        expert = catalog.get("general-assistant")
-        if expert is not None:
+        for template_id in ("happyclaw", "general-assistant"):
+            expert = catalog.get(template_id)
+            if expert is None:
+                continue
             payload = welcome_payload_from_expert(expert)
             if welcome_payload_has_content(payload):
                 return payload
@@ -871,7 +874,8 @@ class ExpertCatalog:
             if not include_market_cache and ex_id not in self._bundled_ids:
                 continue
             summaries.append(expert.summary)
-        summaries.sort(key=lambda s: (0 if s.id == "general-assistant" else 1, s.id))
+        # HappyClaw is the built-in default entry; keep it first in the library.
+        summaries.sort(key=lambda s: (0 if s.id == "happyclaw" else 1 if s.id == "general-assistant" else 2, s.id))
         return summaries
 
     def get(self, expert_id: str) -> Expert | None:

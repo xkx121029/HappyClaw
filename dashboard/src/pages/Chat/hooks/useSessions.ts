@@ -34,6 +34,15 @@ export interface Session {
   contributed?: boolean;
   /** False when another user contributed this conversation. */
   owned?: boolean;
+  /** Project the conversation belongs to (null on un-migrated installs). */
+  projectId?: string | null;
+  projectName?: string | null;
+  workspaceKind?: string | null;
+  workspaceDir?: string | null;
+  /** Lightweight chat without a workspace; file tools are hidden server-side. */
+  quickChat?: boolean;
+  /** Display name of the quick-chat initiator (``null`` = self / unknown). */
+  createdBy?: string | null;
 }
 
 /** Result of probing whether a thread exists for the current agent. */
@@ -62,6 +71,12 @@ export function toSession(row: {
   unread_count?: number;
   contributed?: boolean;
   owned?: boolean;
+  project_id?: string | null;
+  project_name?: string | null;
+  workspace_kind?: string | null;
+  workspace_dir?: string | null;
+  quick_chat?: boolean;
+  created_by_name?: string | null;
 }): Session {
   const hasActivity =
     Boolean(row.has_messages) || Boolean(row.title) || row.last_active > 0;
@@ -99,6 +114,12 @@ export function toSession(row: {
     unreadCount: row.unread_count ?? 0,
     contributed: Boolean(row.contributed),
     owned: row.owned !== false,
+    projectId: row.project_id ?? null,
+    projectName: row.project_name ?? null,
+    workspaceKind: row.workspace_kind ?? null,
+    workspaceDir: row.workspace_dir ?? null,
+    quickChat: Boolean(row.quick_chat) || row.workspace_kind === "quick",
+    createdBy: row.created_by_name ?? null,
   };
 }
 
@@ -125,12 +146,16 @@ export function sortSessions(sessions: Session[]): Session[] {
 /** Pick the thread bound to the dashboard session_key, else best history candidate. */
 export function pickPreferredSession(sessions: Session[]): Session | null {
   if (sessions.length === 0) return null;
+  // Quick chats are a side entrance; a bare /chat must not land there while a
+  // normal conversation exists for this expert.
+  const normal = sessions.filter((s) => !s.quickChat);
+  const pool = normal.length > 0 ? normal : sessions;
   return (
-    sessions.find((s) => s.isActive) ??
-    sessions.find((s) => s.hasActivity && s.name !== "New Chat") ??
-    sessions.find((s) => s.hasActivity) ??
-    sessions.find((s) => s.name !== "New Chat") ??
-    sessions[0]
+    pool.find((s) => s.isActive) ??
+    pool.find((s) => s.hasActivity && s.name !== "New Chat") ??
+    pool.find((s) => s.hasActivity) ??
+    pool.find((s) => s.name !== "New Chat") ??
+    pool[0]
   );
 }
 

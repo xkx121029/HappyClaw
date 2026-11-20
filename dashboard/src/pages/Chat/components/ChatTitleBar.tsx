@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Dropdown, Switch } from "antd";
 import type { MenuProps } from "antd";
 import { useTranslation } from "react-i18next";
@@ -21,6 +22,7 @@ import RemoteExpertHint from "./RemoteExpertHint";
 import styles from "../index.module.less";
 import { isImeComposing } from "../../../utils/ime";
 import { useCollapseThinking } from "../hooks/useCollapseThinking";
+import { rememberSharedRect, SharedElement } from "../../../motion";
 
 interface ChatTitleBarProps {
   session: Session;
@@ -44,6 +46,8 @@ interface ChatTitleBarProps {
     bridge_connection_name?: string | null;
     bridge_connection_icon?: string | null;
   } | null;
+  /** 当前对话的工作区入口（chip + 菜单由父组件构建）；未传则不渲染。 */
+  workspaceChip?: ReactNode;
 }
 
 export default function ChatTitleBar({
@@ -59,12 +63,32 @@ export default function ChatTitleBar({
   onOpenSolo,
   isTeam = false,
   agent = null,
+  workspaceChip = null,
 }: ChatTitleBarProps) {
   const { t } = useTranslation();
   const [collapseThinking, setCollapseThinking] = useCollapseThinking(isTeam);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 离开会话前记住标题位置：按下指针（即将点击侧栏/返回）时记录一次，
+  // 回到列表页由同名标题的共享元素接着落回原处。
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleValueRef = useRef(title);
+  titleValueRef.current = title;
+  useEffect(() => {
+    const record = () => {
+      const el = titleRef.current;
+      const value = titleValueRef.current;
+      if (!el || !value) return;
+      rememberSharedRect(
+        `thread-title:${value}`,
+        el.getBoundingClientRect(),
+      );
+    };
+    document.addEventListener("pointerdown", record, true);
+    return () => document.removeEventListener("pointerdown", record, true);
+  }, []);
 
   useEffect(() => {
     if (!isEditing) setEditValue(title);
@@ -187,8 +211,18 @@ export default function ChatTitleBar({
           />
         ) : (
           <div className={styles.chatTitleHeading}>
-            <h1 className={styles.chatTitleText} title={title}>
-              {title}
+            <h1 ref={titleRef} className={styles.chatTitleText} title={title}>
+              {title ? (
+                <SharedElement
+                  as="span"
+                  id={`thread-title:${title}`}
+                  activeKey={title}
+                >
+                  {title}
+                </SharedElement>
+              ) : (
+                title
+              )}
             </h1>
             <SessionShareMark
               contributed={session.contributed}
@@ -208,6 +242,7 @@ export default function ChatTitleBar({
         )}
       </div>
       <div className={styles.chatTitleActions}>
+        {workspaceChip}
         {onOpenSolo ? (
           <button
             type="button"

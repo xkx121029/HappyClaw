@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from octop.i18n import tr
 from octop.infra.cron.task_type import CronTaskType, normalize_cron_task_type
+from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.gateway.threads import ThreadRegistry
 from octop.infra.utils.llm_text import strip_thinking
 from octop.infra.utils.locale import resolve_user_locale
@@ -58,10 +59,14 @@ class CronDeliveryService:
         """Retarget projection and locale lookups after a control-plane swap."""
         self._repos = repos
 
-    async def deliver(self, command: CronDeliveryCommand) -> None:
-        """Run one delivery under the target channel session lock."""
+    async def deliver(self, command: CronDeliveryCommand) -> str | None:
+        """Run one delivery under the target channel session lock.
 
-        async def _locked() -> None:
+        Returns a note when the message was delivered in a degraded way (for
+        example history was skipped because no model is configured).
+        """
+
+        async def _locked() -> str | None:
             if command.fresh_thread:
                 await self._gateway.thread_registry.reset_by_session_key(command.session_key)
             session = self._gateway.require_session(command.agent_id, command.session_key)
@@ -70,11 +75,11 @@ class CronDeliveryService:
                     f"session {command.session_key!r} does not belong to user {command.user_id!r}"
                 )
             if command.task_type == "text":
-                await self._deliver_text(command, session)
-            else:
-                await self._deliver_agent(command, session)
+                return await self._deliver_text(command, session)
+            await self._deliver_agent(command, session)
+            return None
 
-        await self._gateway.run_in_session(
+        return await self._gateway.run_in_session(
             command.agent_id,
             command.session_key,
             _locked,
@@ -84,9 +89,10 @@ class CronDeliveryService:
         self,
         command: CronDeliveryCommand,
         session: SessionRow,
-    ) -> None:
+    ) -> str | None:
         projected: list[ThreadMessageInput] = []
         title_source = command.prompt
+        note: str | None = None
         if session.channel_type == ThreadRegistry.CHANNEL_DASHBOARD:
             # Imported here: langchain_core.messages and history.projection pull the
             # whole agent stack, which must not load just to import CronManager.
@@ -117,9 +123,21 @@ class CronDeliveryService:
                     id=f"cron:{delivery_id}:assistant",
                 ),
             ]
-            harness = self._agent_manager.get_agent(command.agent_id)
-            appended = await harness.aappend_messages(session.thread_id, canonical)
-            projected = message_inputs(appended, dedupe_missing_ids=True)
+            try:
+                harness = self._agent_manager.get_agent(command.agent_id)
+            except OctopError as exc:
+                # A fixed-text reminder does not need a model to reach the user.
+                # Checkpoint writes do, so degrade to push-only and say why.
+                if exc.code != ErrorCode.AGENT_NO_MODEL:
+                    raise
+                note = tr("cron.history.skipped_no_model", locale)
+                logger.info(
+                    "cron text task %s pushed without session history: no model configured",
+                    command.cron_id,
+                )
+            else:
+                appended = await harness.aappend_messages(session.thread_id, canonical)
+                projected = message_inputs(appended, dedupe_missing_ids=True)
 
         self._project_best_effort(session.thread_id, projected)
         self._remember_thread_title(session, command)
@@ -129,6 +147,7 @@ class CronDeliveryService:
             title_source=title_source,
         )
         await self._notify_best_effort(session, command.agent_id, command.prompt)
+        return note
 
     async def _deliver_agent(
         self,

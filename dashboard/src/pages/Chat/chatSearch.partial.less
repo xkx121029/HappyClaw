@@ -91,7 +91,7 @@ html[data-theme="dark"] ::highlight(octop-chat-search-active) {
   }
 
   &:focus-visible {
-    outline: 2px solid var(--fn-brand);
+    outline: 2px solid var(--fn-color-brand);
     outline-offset: 1px;
   }
 
@@ -99,62 +99,4 @@ html[data-theme="dark"] ::highlight(octop-chat-search-active) {
     opacity: 0.4;
     cursor: default;
   }
-}
-
-/* ---------- 快捷键帮助 ---------- */
-
-.shortcutModal {
-  :global(.ant-modal-content) {
-    border-radius: 16px;
-    border: 1px solid var(--fn-border-secondary);
-    background: var(--fn-bg-elevated);
-  }
-
-  :global(.ant-modal-title) {
-    font-size: 15px;
-  }
-}
-
-.shortcutList {
-  margin: 4px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.shortcutRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--fn-border-secondary);
-
-  &:last-child {
-    border-bottom: 0;
-  }
-}
-
-.shortcutLabel {
-  color: var(--fn-text-primary);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.shortcutKeys {
-  flex: none;
-  padding: 2px 7px;
-  border-radius: 6px;
-  border: 1px solid var(--fn-border-secondary);
-  color: var(--fn-text-secondary);
-  font-family: inherit;
-  font-size: 12px;
-  line-height: 1.5;
-  white-space: nowrap;
-}
-
-.shortcutNote {
-  margin: 12px 0 0;
-  color: var(--fn-text-tertiary);
-  font-size: 12px;
-  line-height: 1.6;
 }

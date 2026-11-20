@@ -15,6 +15,9 @@ from octop.infra.crypto.sealed_repos import (
 from octop.infra.db.pool import DatabasePool
 from octop.infra.db.repos.agents import AgentRepo
 from octop.infra.db.repos.audit import AuditRepo
+from octop.infra.db.repos.bao_messages import BaoMessageRepo
+from octop.infra.db.repos.bao_proactive import BaoProactiveRepo
+from octop.infra.db.repos.bao_tasks import BaoTaskRepo
 from octop.infra.db.repos.auth_challenges import AuthChallengeRepo
 from octop.infra.db.repos.backends import BackendRepo
 from octop.infra.db.repos.bridge_connections import BridgeConnectionRepo
@@ -23,10 +26,12 @@ from octop.infra.db.repos.channels import ChannelRepo
 from octop.infra.db.repos.connectors import ConnectorRepo
 from octop.infra.db.repos.control_files import ControlFileRepo
 from octop.infra.db.repos.cron import CronJobRepo
+from octop.infra.db.repos.cron_runs import CronRunRepo
 from octop.infra.db.repos.invites import InviteRepo
 from octop.infra.db.repos.knowledge import KnowledgeRepo
 from octop.infra.db.repos.proactive_care_config import ProactiveCareConfigRepo
 from octop.infra.db.repos.profile_avatars import ProfileAvatarRepo
+from octop.infra.db.repos.projects import ProjectRepo
 from octop.infra.db.repos.providers import ProviderRepo
 from octop.infra.db.repos.published_experts import PublishedExpertRepo
 from octop.infra.db.repos.resource_group_grants import ResourceGroupGrantRepo
@@ -61,9 +66,14 @@ class RepoBundle:
     provider_repo: SealedProviderRepo
     channel_repo: ChannelRepo
     cron_repo: CronJobRepo
+    cron_run_repo: CronRunRepo
     session_repo: SessionRepo
     thread_repo: ThreadRepo
     thread_message_repo: ThreadMessageRepo
+    project_repo: ProjectRepo
+    bao_task_repo: BaoTaskRepo
+    bao_message_repo: BaoMessageRepo
+    bao_proactive_repo: BaoProactiveRepo
     trajectory_event_repo: TrajectoryEventRepo
     secret_repo: SecretRepo
     audit_repo: AuditRepo
@@ -101,9 +111,14 @@ class RepoBundle:
             provider_repo=SealedProviderRepo(ProviderRepo(db), secret_repo),
             channel_repo=ChannelRepo(db),
             cron_repo=CronJobRepo(db),
+            cron_run_repo=CronRunRepo(db),
             session_repo=SessionRepo(db),
             thread_repo=ThreadRepo(db),
             thread_message_repo=ThreadMessageRepo(db),
+            project_repo=ProjectRepo(db),
+            bao_task_repo=BaoTaskRepo(db),
+            bao_message_repo=BaoMessageRepo(db),
+            bao_proactive_repo=BaoProactiveRepo(db),
             trajectory_event_repo=TrajectoryEventRepo(db),
             secret_repo=secret_repo,
             audit_repo=AuditRepo(db),
@@ -180,6 +195,22 @@ class SharedServices:
     @property
     def thread_message_repo(self) -> ThreadMessageRepo:
         return self.repos.thread_message_repo
+
+    @property
+    def project_repo(self) -> ProjectRepo:
+        return self.repos.project_repo
+
+    @property
+    def bao_task_repo(self) -> BaoTaskRepo:
+        return self.repos.bao_task_repo
+
+    @property
+    def bao_message_repo(self) -> BaoMessageRepo:
+        return self.repos.bao_message_repo
+
+    @property
+    def bao_proactive_repo(self) -> BaoProactiveRepo:
+        return self.repos.bao_proactive_repo
 
     @property
     def trajectory_event_repo(self) -> TrajectoryEventRepo:

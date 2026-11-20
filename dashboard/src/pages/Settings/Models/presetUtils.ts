@@ -6,7 +6,7 @@ export interface PresetGroup {
   presets: ProviderPreset[];
 }
 
-/** Preset brand card order (swap Tencent Cloud / Aliyun vs pure alphabetical). */
+/** Preset brand card order (swap cloud vendors vs pure alphabetical). */
 const PRESET_GROUP_ORDER = [
   "tencent",
   "kimi",

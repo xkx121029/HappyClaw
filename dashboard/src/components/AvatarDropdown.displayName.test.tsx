@@ -31,9 +31,10 @@ vi.mock("../utils/locale", () => ({
 vi.mock("./ThemeSwitcher", () => ({ default: () => null }));
 vi.mock("./PaletteSwitcher", () => ({ default: () => null }));
 
-vi.mock("../pages/Admin/Users/ProfileAvatar", () => ({
-  ProfileAvatar: () => <span data-testid="profile-avatar" />,
-  ProfileAvatarPicker: () => <div data-testid="avatar-picker" />,
+vi.mock("./AvatarPicker", () => ({
+  ResourceAvatar: () => <span data-testid="profile-avatar" />,
+  ResourceAvatarPicker: () => <div data-testid="avatar-picker" />,
+  USER_AVATAR_PRESETS: [],
 }));
 
 import AvatarDropdown from "./AvatarDropdown";

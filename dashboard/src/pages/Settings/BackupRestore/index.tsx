@@ -34,6 +34,7 @@ import {
   backupApi,
   type AutoBackupSettings,
   type BackupFileItem,
+  type BackupVerifyResponse,
 } from "../../../api/modules/backup";
 import { useBackupOperation } from "../../../context/BackupOperationContext";
 import { useServiceRestartContext } from "../../../context/ServiceRestartContext";
@@ -197,6 +198,10 @@ export default function BackupRestorePanel() {
   const [pendingRestore, setPendingRestore] = useState<BackupFileItem | null>(
     null,
   );
+  const [verifyResult, setVerifyResult] = useState<BackupVerifyResponse | null>(
+    null,
+  );
+  const [verifying, setVerifying] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
 
   const [autoEnabled, setAutoEnabled] = useState(false);
@@ -347,6 +352,19 @@ export default function BackupRestorePanel() {
     }
   };
 
+  const openRestore = useCallback((row: BackupFileItem) => {
+    setPendingRestore(row);
+    setRestoreConfig(row.includes_config !== false);
+    setRestoreOpen(true);
+    setVerifyResult(null);
+    setVerifying(true);
+    backupApi
+      .verifyBackup(row.name)
+      .then(setVerifyResult)
+      .catch(() => setVerifyResult(null))
+      .finally(() => setVerifying(false));
+  }, []);
+
   const confirmRestore = async () => {
     if (!pendingRestore) return;
     const name = pendingRestore.name;
@@ -431,11 +449,7 @@ export default function BackupRestorePanel() {
             icon={<RotateCcw size={14} />}
             loading={restoringThisName === row.name}
             disabled={busy}
-            onClick={() => {
-              setPendingRestore(row);
-              setRestoreConfig(row.includes_config !== false);
-              setRestoreOpen(true);
-            }}
+            onClick={() => openRestore(row)}
           >
             {restoringThisName === row.name
               ? t("backup.restoring")
@@ -553,11 +567,7 @@ export default function BackupRestorePanel() {
                     busy={busy}
                     timeZone={serverTimezone}
                     onDownload={onDownload}
-                    onRestore={(item) => {
-                      setPendingRestore(item);
-                      setRestoreConfig(item.includes_config !== false);
-                      setRestoreOpen(true);
-                    }}
+                    onRestore={openRestore}
                     onDelete={onDelete}
                   />
                 ))}
@@ -830,7 +840,11 @@ export default function BackupRestorePanel() {
         okText={restoring ? t("backup.restoring") : t("backup.importConfirmOk")}
         cancelText={t("common.cancel")}
         confirmLoading={restoring}
-        okButtonProps={{ danger: true, disabled: busy && !restoring }}
+        okButtonProps={{
+          danger: true,
+          disabled:
+            (busy && !restoring) || verifying || verifyResult?.ok === false,
+        }}
         cancelButtonProps={{ disabled: restoring }}
       >
         <p>
@@ -838,6 +852,33 @@ export default function BackupRestorePanel() {
             name: pendingRestore?.name ?? restoreTarget ?? "",
           })}
         </p>
+        {verifying ? (
+          <p className={styles.restoreNote}>{t("backup.verifyChecking")}</p>
+        ) : verifyResult && verifyResult.ok ? (
+          <p className={styles.restoreNote}>
+            {t("backup.verifyPassed", {
+              files: verifyResult.files,
+              schema: verifyResult.schema_version ?? "-",
+              created: verifyResult.created_at
+                ? formatServerIsoDateTime(
+                    verifyResult.created_at,
+                    serverTimezone,
+                  )
+                : "-",
+            })}
+          </p>
+        ) : verifyResult && !verifyResult.ok ? (
+          <div className={styles.verifyFail}>
+            <p className={styles.verifyFailTitle}>{t("backup.verifyFailed")}</p>
+            {verifyResult.errors.map((line) => (
+              <p key={line} className={styles.verifyFailLine}>
+                {line}
+              </p>
+            ))}
+          </div>
+        ) : restoring ? null : (
+          <p className={styles.restoreNote}>{t("backup.verifyUnavailable")}</p>
+        )}
         {pendingRestore?.includes_chats === false ? (
           <p className={styles.restoreNote}>{t("backup.restoreKeepChats")}</p>
         ) : null}

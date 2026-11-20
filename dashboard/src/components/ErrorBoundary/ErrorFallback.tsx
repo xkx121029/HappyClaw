@@ -1,4 +1,5 @@
-import { OctopEmptyMascot } from "../EmptyState/OctopEmptyMascot";
+import { Mascot } from "../Mascot";
+import type { MascotState } from "../Mascot";
 import styles from "./ErrorFallback.module.less";
 
 export interface ErrorFallbackAction {
@@ -18,6 +19,8 @@ interface ErrorFallbackProps {
   detailsLabel: string;
   /** Buttons, in reading order. */
   actions: ErrorFallbackAction[];
+  /** Mascot expression matching how bad the failure is. */
+  mascotState?: MascotState;
 }
 
 /**
@@ -42,11 +45,17 @@ export default function ErrorFallback({
   detail,
   detailsLabel,
   actions,
+  mascotState = "scared",
 }: ErrorFallbackProps) {
   return (
     <div className={styles.wrap} role="alert">
       <div className={styles.inner}>
-        <OctopEmptyMascot size={132} className={styles.mascot} />
+        <Mascot
+          size={132}
+          state={mascotState}
+          surface="var(--fn-bg-layout, var(--fn-bg-base))"
+          className={styles.mascot}
+        />
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.subtitle}>{subtitle}</p>
         <div className={styles.actions}>

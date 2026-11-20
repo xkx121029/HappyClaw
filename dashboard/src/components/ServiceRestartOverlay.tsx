@@ -5,6 +5,7 @@ import { CheckCircle, AlertTriangle, Power } from "lucide-react";
 import { Button, Spin } from "antd";
 import { useTranslation } from "react-i18next";
 import type { RestartPhase } from "../hooks/useServiceRestart";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import styles from "./ServiceRestartOverlay.module.less";
 
 const OVERLAY_Z_INDEX = 2_147_483_000;
@@ -42,14 +43,14 @@ const PANEL_STYLE: CSSProperties = {
 
 const TITLE_STYLE: CSSProperties = {
   margin: 0,
-  fontSize: 16,
+  fontSize: "var(--fn-text-lg)",
   fontWeight: 600,
   color: "var(--fn-text-primary, #111)",
 };
 
 const SUBTITLE_STYLE: CSSProperties = {
   margin: 0,
-  fontSize: 13,
+  fontSize: "var(--fn-text-xs)",
   color: "var(--fn-text-secondary, #666)",
   lineHeight: 1.5,
 };
@@ -70,6 +71,8 @@ export default function ServiceRestartOverlay({
   onRetry,
 }: ServiceRestartOverlayProps) {
   const { t } = useTranslation();
+  // Blocking overlay: keep focus inside and restore it when it closes.
+  const trapRef = useFocusTrap<HTMLDivElement>(phase !== "idle", onCancel);
 
   useEffect(() => {
     if (phase === "idle") return;
@@ -84,6 +87,8 @@ export default function ServiceRestartOverlay({
 
   return createPortal(
     <div
+      ref={trapRef}
+      tabIndex={-1}
       style={OVERLAY_BLOCK_STYLE}
       role="alertdialog"
       aria-modal="true"

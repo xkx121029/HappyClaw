@@ -77,8 +77,13 @@ export function ConnectorInstanceCard({
       style={{ "--connector-accent": accent } as React.CSSProperties}
       onClick={() => editable && onEdit(instance)}
       role={editable ? "button" : undefined}
-      tabIndex={editable ? 0 : -1}
-      onKeyDown={(e) => e.key === "Enter" && editable && onEdit(instance)}
+      tabIndex={editable ? 0 : undefined}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && editable) {
+          e.preventDefault();
+          onEdit(instance);
+        }
+      }}
     >
       <div className={styles.typeCardBody}>
         <div className={styles.typeCardHeader}>
@@ -110,6 +115,7 @@ export function ConnectorInstanceCard({
           </div>
           <div
             className={styles.instanceCardHeaderActions}
+            role="presentation"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
@@ -142,6 +148,7 @@ export function ConnectorInstanceCard({
         {instance.can_manage ? (
           <div
             className={styles.instanceCardActions}
+            role="presentation"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >

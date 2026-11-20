@@ -16,8 +16,8 @@ export function TableSkeleton({ rows = 5, columns = 4 }: TableSkeletonProps) {
       <div
         style={{
           display: "flex",
-          gap: 16,
-          padding: "12px 16px",
+          gap: "var(--fn-space-md)",
+          padding: "var(--fn-space-sm) var(--fn-space-md)",
           borderBottom: "1px solid var(--fn-border-color, #f0f0f0)",
           background: "var(--fn-bg-secondary, #fafafa)",
         }}
@@ -40,8 +40,8 @@ export function TableSkeleton({ rows = 5, columns = 4 }: TableSkeletonProps) {
           key={rowIdx}
           style={{
             display: "flex",
-            gap: 16,
-            padding: "14px 16px",
+            gap: "var(--fn-space-md)",
+            padding: "14px var(--fn-space-md)",
             borderBottom: "1px solid var(--fn-border-color, #f0f0f0)",
             alignItems: "center",
           }}

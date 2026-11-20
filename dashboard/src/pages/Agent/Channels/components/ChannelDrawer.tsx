@@ -539,7 +539,7 @@ export function ChannelDrawer({
   const [autoSaveFailed, setAutoSaveFailed] = useState(false);
 
   const supportsQuickConfig = QUICK_CONFIG_CHANNELS.includes(selectedKind);
-  // weixin has no manual form — always quick-only
+  // quick-only channels have no manual form
   const isQuickOnly = selectedKind === "weixin";
   const draftScope = editing
     ? `channel:${editing.id}`
@@ -611,7 +611,7 @@ export function ChannelDrawer({
     restoringDraftRef.current = false;
   }, [open, loadingConfig, draftScope, form, selectedKind]);
 
-  // ── QQ Bot Flow ────────────────────────────────────────────────────────
+  // ── Bot Flow ───────────────────────────────────────────────────────────
   const startQqQr = async () => {
     stopPolling();
     const session = qrSessionRef.current;
@@ -701,7 +701,7 @@ export function ChannelDrawer({
     }
   };
 
-  // ── WeChat Flow ─────────────────────────────────────────────────────────
+  // ── QR Flow ────────────────────────────────────────────────────────────
   const startWeixinQr = async () => {
     stopPolling();
     const session = qrSessionRef.current;
@@ -1155,7 +1155,7 @@ export function ChannelDrawer({
           }}
         >
           <Spin size="small" />
-          <span style={{ color: "var(--fn-text-secondary)", fontSize: 13 }}>
+          <span style={{ color: "var(--fn-text-secondary)", fontSize: "var(--fn-text-xs)" }}>
             {t("channels.qrAutoSaving")}
           </span>
         </div>
@@ -1643,7 +1643,7 @@ export function ChannelDrawer({
               href={s.manageUrl}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ fontSize: 13, marginBottom: 12, display: "block" }}
+              style={{ fontSize: "var(--fn-text-xs)", marginBottom: 12, display: "block" }}
             >
               {t("channels.feishuManageBot")}
             </a>

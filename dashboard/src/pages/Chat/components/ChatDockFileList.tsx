@@ -21,6 +21,8 @@ import styles from "../index.module.less";
 
 interface ChatDockFileListProps {
   agentId: string;
+  /** Conversation scope for downloads of this agent's own files. */
+  threadId?: string | null;
   filePaths: Array<string | DockFileRef>;
   onOpenFile: (path: string, agentId?: string | null) => void;
   /** Map producer agent_id → display name (team file dock). */
@@ -199,6 +201,7 @@ function TreeNodes({
  */
 export default function ChatDockFileList({
   agentId,
+  threadId = null,
   filePaths,
   onOpenFile,
   agentNameById,
@@ -249,6 +252,10 @@ export default function ChatDockFileList({
       const owner = (fileAgentId || agentId || "").trim();
       if (!owner || !path) return;
       const downloadKey = `${owner}\0${path}`;
+      const scope =
+        threadId && owner === agentId
+          ? `&thread_id=${encodeURIComponent(threadId)}`
+          : "";
       setDownloading(downloadKey);
       try {
         const blob = await requestBlob(
@@ -256,7 +263,7 @@ export default function ChatDockFileList({
             owner,
           )}/workspace/download?path=${encodeURIComponent(
             toDockWorkspaceApiPath(path, owner),
-          )}`,
+          )}${scope}`,
         );
         await saveBlobAsFile(blob, dockFileBasename(path) || "download");
       } catch (err: unknown) {
@@ -277,7 +284,7 @@ export default function ChatDockFileList({
         setDownloading(null);
       }
     },
-    [agentId, t],
+    [agentId, threadId, t],
   );
 
   const listHint = (

@@ -174,7 +174,7 @@ export function SkillHubDetailDrawer({
           )}
           <span
             style={{
-              fontSize: 16,
+              fontSize: "var(--fn-text-lg)",
               fontWeight: 600,
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -271,7 +271,7 @@ export function SkillHubDetailDrawer({
           {desc ? (
             <div
               style={{
-                fontSize: 14,
+                fontSize: "var(--fn-text-sm)",
                 lineHeight: 1.7,
                 color: "var(--fn-text-primary)",
               }}
@@ -291,7 +291,7 @@ export function SkillHubDetailDrawer({
           <FieldLabel>ID / Slug</FieldLabel>
           <div
             style={{
-              fontSize: 13,
+              fontSize: "var(--fn-text-xs)",
               fontFamily: "var(--fn-font-mono, monospace)",
               padding: "10px 14px",
               background: "var(--fn-bg-tertiary)",

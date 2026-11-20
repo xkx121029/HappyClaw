@@ -1,4 +1,4 @@
-"""Tencent Cloud realtime speech recognition (ASR V2) WebSocket URL signing.
+"""Realtime speech recognition (ASR V2) WebSocket URL signing.
 
 This is a *different* scheme from :mod:`octop.infra.utils.tencent_sign`, which
 implements TC3-HMAC-SHA256 for the JSON APIs (``SentenceRecognition`` /
@@ -25,7 +25,7 @@ from uuid import uuid4
 ASR_V2_HOST = "asr.cloud.tencent.com"
 #: Large-model engine; supports Mandarin + English + Cantonese and 30 dialects.
 DEFAULT_ENGINE = "16k_zh_en_2.0"
-#: Tencent's ``voice_format`` token for raw 16-bit mono PCM.
+#: The ``voice_format`` token for raw 16-bit mono PCM.
 PCM_VOICE_FORMAT = 1
 DEFAULT_EXPIRED_SECONDS = 3600
 

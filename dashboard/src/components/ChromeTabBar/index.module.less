@@ -1,6 +1,7 @@
-/* Shared tokens for chrome-style session tabs (browser + terminal). */
+/* Shared metrics for chrome-style session tabs (browser + terminal).
+   纯度量，不含颜色；强调色直接读全局令牌，避免第二条色板。 */
 :global(:root) {
-  --browser-chrome-tab-font-size: 12px;
+  --browser-chrome-tab-font-size: var(--fn-text-2xs, 12px);
   --browser-chrome-tab-line-height: 16px;
   --browser-chrome-tab-pad: 4px 10px;
   --browser-chrome-tab-radius: 4px 4px 0 0;

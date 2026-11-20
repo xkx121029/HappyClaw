@@ -1,11 +1,20 @@
 import { request } from "../../api/request";
-import * as chatStore from "../../pages/Chat/hooks/chatStore";
 import i18n from "../../i18n";
 import {
   mergePatchedToolOutput,
   parseOctopToolOutput,
 } from "./parseToolOutput";
 import { registerToolRenderer } from "./registry";
+import { PLUGIN_UI_API_VERSION, isSurfaceSlot } from "../surfaces/types";
+import {
+  listPluginSurfaceInfo,
+  registerPluginSurface,
+} from "../surfaces/registry";
+import {
+  readPluginData,
+  subscribePluginData,
+  subscribePluginEvent,
+} from "../surfaces/data";
 import type {
   OctopPluginUIHost,
   ToolRenderContext,
@@ -43,7 +52,8 @@ function readTheme(): "light" | "dark" {
 }
 
 function createHost(defaultPluginId: string): OctopPluginUIHost {
-  return {
+  const host: OctopPluginUIHost = {
+    apiVersion: PLUGIN_UI_API_VERSION,
     registerRenderer(reg) {
       const pluginId = reg.pluginId ?? defaultPluginId;
       const full: ToolRendererRegistration = {
@@ -64,7 +74,11 @@ function createHost(defaultPluginId: string): OctopPluginUIHost {
     },
     patchResult(callId: string, nextData: unknown) {
       if (!callId) return;
-      chatStore.patchToolResultData(callId, nextData);
+      // Dynamic: the chat store is only reachable once a tool UI exists, and
+      // the app shell imports this host for every page.
+      void import("../../pages/Chat/hooks/chatStore").then((mod) => {
+        mod.patchToolResultData(callId, nextData);
+      });
     },
     request<T = unknown>(path: string, init?: RequestInit) {
       return request<T>(path, init);
@@ -75,7 +89,36 @@ function createHost(defaultPluginId: string): OctopPluginUIHost {
     closeSidePanel(callId) {
       dockHandlers.closeSidePanel?.(callId);
     },
+    surfaces: {
+      supports: isSurfaceSlot,
+      list(slot) {
+        return listPluginSurfaceInfo(slot);
+      },
+      register(reg) {
+        return registerPluginSurface(defaultPluginId, reg, host);
+      },
+    },
+    data: {
+      read<T = unknown>(domain: string) {
+        return readPluginData<T>(domain);
+      },
+      subscribe<T = unknown>(domain: string, cb: (value: T) => void) {
+        return subscribePluginData<T>(domain, cb);
+      },
+    },
+    events: {
+      on<T = unknown>(event: string, cb: (payload: T) => void) {
+        return subscribePluginEvent<T>(event, cb);
+      },
+    },
+    get context() {
+      return {
+        locale: contextOverride.locale ?? i18n.language ?? "en",
+        theme: contextOverride.theme ?? readTheme(),
+      };
+    },
   };
+  return host;
 }
 
 /** Host bound to ``builtin`` for first-party renderers. */

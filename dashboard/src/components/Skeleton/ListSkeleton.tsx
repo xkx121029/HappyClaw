@@ -10,15 +10,21 @@ interface ListSkeletonProps {
  */
 export function ListSkeleton({ rows = 4 }: ListSkeletonProps) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--fn-space-sm)",
+      }}
+    >
       {Array.from({ length: rows }, (_, i) => (
         <div
           key={i}
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 12,
-            padding: "8px 0",
+            gap: "var(--fn-space-sm)",
+            padding: "var(--fn-space-xs) 0",
             borderBottom: "1px solid var(--fn-border-color, #f0f0f0)",
           }}
         >

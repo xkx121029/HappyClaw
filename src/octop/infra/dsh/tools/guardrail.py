@@ -46,6 +46,7 @@ def build_read_only_guardrail(
     hitl: bool,
     approval: ApprovalChannel | None = None,
     risky_tools: Mapping[str, tuple[str, ...]] | None = None,
+    exec_tools: Mapping[str, str] | None = None,
     known_tools: Iterable[str] | None = None,
     plugin_id: str = "",
     ledger: ApprovalLedger | None = None,
@@ -65,12 +66,21 @@ def build_read_only_guardrail(
     existing ``hitl_required`` frame before it runs. With the switch off nothing
     is escalated, and a call that somehow still needs approval is denied because
     no channel is attached.
+
+    ``exec_tools`` maps exposed tool names to the reason they need real process
+    execution (S10). Such a tool is always HIGH, never MEDIUM: it is escalated
+    even when HITL is off, where the missing approval channel turns it into an
+    explicit ``TOOL_APPROVAL_UNAVAILABLE`` denial instead of a silent run.
     """
 
     risky = {name: tuple(values) for name, values in (risky_tools or {}).items()}
+    exec_reasons = {name: reason for name, reason in (exec_tools or {}).items()}
     known = None if known_tools is None else frozenset(known_tools)
 
     def assess(tool_name: str, arguments: Mapping[str, object]) -> RiskAssessment:
+        exec_reason = exec_reasons.get(tool_name)
+        if exec_reason:
+            return RiskAssessment(RiskLevel.HIGH, exec_reason)
         declared = risky.get(tool_name)
         if declared:
             return RiskAssessment(

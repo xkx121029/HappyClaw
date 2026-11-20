@@ -1,0 +1,401 @@
+/* ------------------------------------------------------------------
+   Phone chat surface (≤767px). Desktop rules stay untouched.
+   ------------------------------------------------------------------ */
+
+/* App-style session header: one bar, safe-area aware, 40px targets. */
+.mobileChatBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  box-sizing: border-box;
+  min-height: calc(58px + env(safe-area-inset-top, 0px));
+  padding: calc(7px + env(safe-area-inset-top, 0px)) 6px 7px;
+  background: var(--fn-bg-elevated, #fff);
+  border-bottom: 1px solid var(--fn-border-secondary);
+  z-index: 30;
+}
+
+.mobileBarBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 0;
+  border-radius: var(--fn-radius-md);
+  background: transparent;
+  color: var(--fn-text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+
+  &:active {
+    background: var(--fn-bg-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: 1px;
+  }
+}
+
+/* Round identity button: visually distinct from the flat icon buttons. */
+.mobileAvatarBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  margin-right: 2px;
+  border: 1px solid color-mix(in srgb, var(--fn-color-brand) 18%, transparent);
+  border-radius: 50%;
+  background: var(--fn-color-brand-bg);
+  color: var(--fn-text-brand);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+
+  &:active {
+    transform: scale(0.94);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: 2px;
+  }
+
+  /* Keep the disc visually 36px but make the target a full 44px. */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+  }
+}
+
+/* Primary "new conversation" action — visually distinct from the flat bar
+   buttons so it reads as the header's main affordance. */
+.mobileNewBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  background: var(--fn-color-brand);
+  color: var(--fn-color-on-brand);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+
+  &:active {
+    transform: scale(0.94);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: 2px;
+  }
+
+  /* 36px disc, 44px touch target. */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+  }
+}
+
+.mobileChatHeading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 0 2px 0 4px;
+}
+
+.mobileChatEyebrow {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--fn-text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Quick-chat sessions: the mobile header states the no-workspace mode. */
+.mobileQuickScope {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--fn-color-brand);
+
+  svg {
+    flex: none;
+  }
+}
+
+.mobileQuickScopeText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobileChatTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mobileChatTitle {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 21px;
+  color: var(--fn-text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobileChatMarks {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobileBarActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+/* ---- Message hierarchy: process = inset card, answer = plain reading ---- */
+@media (max-width: 767px) {
+  /* Workspace notice: text gets its own row, actions wrap underneath.
+     Side-by-side squeezes the hint into a 1-character column at 390px. */
+  .chatWorkspaceNotice {
+    position: relative;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 12px 8px;
+    padding: 10px 12px;
+  }
+
+  .chatWorkspaceNoticeBody {
+    flex: 1 1 100%;
+    padding-right: 26px;
+    padding-left: 22px;
+  }
+
+  /* Keep the icon on the title line instead of giving it its own row. */
+  .chatWorkspaceNoticeIcon {
+    position: absolute;
+    top: 13px;
+    left: 12px;
+  }
+
+  .chatWorkspaceNoticeActions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .chatWorkspaceNoticeActions :global(.octop-btn),
+  .chatWorkspaceNoticeActions :global(.ant-btn) {
+    flex: 1 1 auto;
+    min-height: 34px;
+  }
+
+  /* Pin the dismiss control so it never steals a whole action row. */
+  .chatWorkspaceNoticeClose {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+  }
+
+  /* Inline message actions are touched, not hovered: 34px squares. */
+  .msgMetaRow .msgCopyBtn,
+  .msgMetaRow .msgActionBtn {
+    width: 34px;
+    height: 34px;
+  }
+
+  /* Tool-process summary is a full-width row; give it a comfortable height. */
+  .inlineToolSummary {
+    min-height: 36px;
+  }
+
+  /* Session drawer: sort toggle and scope tabs need real touch height. */
+  .sessionSortOption {
+    height: 44px;
+    padding: 0 10px;
+    line-height: 44px;
+  }
+
+  .sessionScopeTab {
+    height: 44px;
+    line-height: 44px;
+  }
+
+  .processSummary {
+    padding: 10px 12px;
+    border: 1px solid var(--fn-border-secondary);
+    border-left: 2px solid
+      color-mix(in srgb, var(--fn-color-brand) 42%, transparent);
+    border-radius: 12px;
+    background: var(--fn-bg-secondary);
+  }
+
+  /* The answer is the thing people read: no competing card behind it. */
+  .assistantText,
+  .assistantText.groupFirst,
+  .assistantText.groupMiddle,
+  .assistantText.groupLast {
+    padding: 0;
+    background: transparent;
+    line-height: 1.78;
+  }
+
+  .processSummaryToggle {
+    min-height: 32px;
+  }
+
+  .userBubble .bubbleContent,
+  .userText {
+    border-radius: 16px;
+  }
+
+  /* Long code / tables must scroll inside their own box, never the page. */
+  .assistantText :global(pre),
+  .assistantText :global(table) {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* ---- Attachments: one horizontal filmstrip, thumb-sized removals ---- */
+  .imagePreviewBar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .imagePreviewItem {
+    flex: none;
+  }
+
+  .imagePreviewThumb {
+    border-radius: 12px;
+  }
+
+  .imagePreviewRemove {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+
+    /* Keep the visual dot small but the touch target ≥44px. */
+    &::after {
+      content: "";
+      position: absolute;
+      inset: -10px;
+      border-radius: 50%;
+    }
+  }
+
+  .attachmentPreviewCard {
+    max-width: 78vw;
+    flex: none;
+  }
+
+  .attachmentPreviewName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Messages scroll under the header: fade the top edge instead of
+     showing a clipped sliver of a half-scrolled action row. */
+  .messageListWrapper::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(
+      to bottom,
+      var(--fn-bg-elevated, #fff),
+      transparent
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Composer controls: thumb-sized, 44px like every other phone target. */
+  .secondaryBtn,
+  .sendBtn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .sendBtn {
+    border-radius: 14px;
+  }
+
+  /* The model chip keeps its label; only its height grows to match. */
+  .modelChipBtn {
+    width: auto;
+    max-width: 46vw;
+    height: 44px;
+    padding: 0 12px;
+  }
+
+  /* The chat page hides the tab bar, so the composer owns its safe area
+     (already set in chatInputCore) — nothing else to reserve here. */
+}
+
+/* 360px-class phones: keep the composer toolbar on a single row. The visual
+   circle shrinks to 40px, the hit area stays 44px via ::after. */
+@media (max-width: 374px) {
+  .actionsRow {
+    flex-wrap: nowrap;
+  }
+
+  .secondaryActions,
+  .inputActions {
+    gap: 2px;
+  }
+
+  .secondaryBtn,
+  .sendBtn {
+    position: relative;
+    width: 40px;
+    height: 40px;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+    }
+  }
+}

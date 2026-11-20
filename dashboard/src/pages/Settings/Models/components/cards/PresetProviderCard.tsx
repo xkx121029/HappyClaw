@@ -129,7 +129,7 @@ export function PresetProviderCard({
 
         <div className={styles.cardActions}>
           <div className={styles.cardActionsLeft}>
-            <Tag color="default" style={{ fontSize: 11 }}>
+            <Tag color="default" style={{ fontSize: "var(--fn-text-2xs)" }}>
               {preset.protocol}
             </Tag>
           </div>

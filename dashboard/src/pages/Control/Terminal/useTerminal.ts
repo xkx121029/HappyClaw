@@ -31,6 +31,8 @@ export interface TerminalSession {
   id: string;
   /** Agent this shell is rooted at. Captured at connect time, reused on reconnect. */
   agentId: string;
+  /** Conversation whose project/session directory roots this shell, if any. */
+  threadId: string;
   ws: WebSocket | null;
   connState: TerminalConnState;
   /** True once the shell exited — suppresses auto-reconnect. */
@@ -62,6 +64,7 @@ const SCROLLBACK_MAX_CHARS = 200_000;
 interface StoredTab {
   id: string;
   agentId: string;
+  threadId?: string;
 }
 
 interface StoredState {
@@ -102,7 +105,11 @@ function generateId(): string {
   return `t-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function buildWsUrl(agentId: string, sessionId: string): string {
+function buildWsUrl(
+  agentId: string,
+  sessionId: string,
+  threadId?: string,
+): string {
   const token = getAuthToken();
   const base = resolveWsUrl(
     `/api/agents/${encodeURIComponent(agentId)}/terminal/ws`,
@@ -111,6 +118,7 @@ function buildWsUrl(agentId: string, sessionId: string): string {
   if (token) params.set("token", token);
   // Same id re-attaches to the backend shell.
   params.set("session_id", sessionId);
+  if (threadId) params.set("thread_id", threadId);
   return `${base}?${params.toString()}`;
 }
 
@@ -130,10 +138,15 @@ function pickAgentId(
   return resolve(session.agentId) || resolve(currentAgentId);
 }
 
-function emptySession(id: string, agentId = ""): TerminalSession {
+function emptySession(
+  id: string,
+  agentId = "",
+  threadId = "",
+): TerminalSession {
   return {
     id,
     agentId,
+    threadId,
     ws: null,
     connState: "connecting",
     exited: false,
@@ -178,7 +191,7 @@ function getStoreSnapshot(): Snapshot {
 function persistNow() {
   const tabs = [...sessions.values()]
     .filter((s) => s.agentId)
-    .map((s) => ({ id: s.id, agentId: s.agentId }));
+    .map((s) => ({ id: s.id, agentId: s.agentId, threadId: s.threadId }));
   writePersist(tabs, activeId);
 }
 
@@ -252,7 +265,9 @@ function openWs(session: TerminalSession) {
   }
   let ws: WebSocket;
   try {
-    ws = new WebSocket(buildWsUrl(session.agentId, session.id));
+    ws = new WebSocket(
+      buildWsUrl(session.agentId, session.id, session.threadId),
+    );
   } catch (err) {
     console.error("[Terminal] Failed to create WebSocket:", err);
     setConnState(session, "error");
@@ -351,7 +366,7 @@ function ensureHydrated() {
   if (stored?.tabs.length) {
     sessionIds = stored.tabs.map((t) => t.id);
     for (const tab of stored.tabs) {
-      sessions.set(tab.id, emptySession(tab.id, tab.agentId));
+      sessions.set(tab.id, emptySession(tab.id, tab.agentId, tab.threadId));
     }
     const valid =
       stored.activeId && sessionIds.includes(stored.activeId)
@@ -433,12 +448,18 @@ function reconcileAgentIds(
   }
 }
 
-function connect(id: string, agentId: string, cbs: TerminalCallbacks) {
+function connect(
+  id: string,
+  agentId: string,
+  cbs: TerminalCallbacks,
+  threadId?: string,
+) {
   ensureHydrated();
   const session = sessions.get(id);
   if (!session) return;
 
   session.listeners.add(cbs);
+  if (threadId) session.threadId = threadId;
 
   if (validAgentIds.size > 0) {
     session.agentId = pickAgentId(session, agentId, validAgentIds);
@@ -645,8 +666,8 @@ export function useTerminal() {
       [],
     ),
     connect: useCallback(
-      (id: string, agentId: string, cbs: TerminalCallbacks) =>
-        connect(id, agentId, cbs),
+      (id: string, agentId: string, cbs: TerminalCallbacks, threadId?: string) =>
+        connect(id, agentId, cbs, threadId),
       [],
     ),
     unbind: useCallback(

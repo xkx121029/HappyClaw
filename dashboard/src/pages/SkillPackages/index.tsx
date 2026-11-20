@@ -1012,6 +1012,7 @@ export default function SkillPackagesPage() {
                         <button
                           type="button"
                           className={skillStyles.toolbarIconBtn}
+                          aria-label={t("common.refresh")}
                           onClick={() => void handleRefresh()}
                           disabled={refreshing || detailLoading}
                         >

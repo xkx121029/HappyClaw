@@ -1,0 +1,177 @@
+/* ================================================================
+   Command palette (Ctrl/Cmd + K) — shared by the page-level palette
+   and the shell-level navigation palette.
+   ================================================================ */
+
+.commandPaletteModal {
+  :global(.ant-modal-content) {
+    padding: 0;
+    overflow: hidden;
+    border-radius: var(--fn-radius-xl);
+    border: 1px solid var(--fn-border-secondary);
+    background: var(--fn-bg-elevated);
+    box-shadow: var(--fn-shadow-xl);
+  }
+}
+
+.commandPalette {
+  display: flex;
+  flex-direction: column;
+  max-height: min(68vh, 600px);
+  color: var(--fn-text-primary);
+}
+
+.cpSearch {
+  display: flex;
+  align-items: center;
+  gap: var(--fn-space-xs);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--fn-border-secondary);
+  color: var(--fn-text-secondary);
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--fn-text-primary);
+    font-size: var(--fn-text-sm);
+    line-height: 1.4;
+
+    &::placeholder {
+      color: var(--fn-text-placeholder);
+    }
+  }
+}
+
+.cpKbd {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--fn-border-secondary);
+  color: var(--fn-text-secondary);
+  font-size: var(--fn-text-2xs);
+  line-height: 1.4;
+}
+
+.cpList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.cpGroup {
+  padding: 10px 10px 6px;
+  font-size: var(--fn-text-2xs);
+  line-height: 1.4;
+  color: var(--fn-text-secondary);
+}
+
+.cpItem {
+  display: flex;
+  align-items: center;
+  gap: var(--fn-space-xs);
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--fn-radius-sm);
+  background: transparent;
+  color: var(--fn-text-primary);
+  font-size: var(--fn-text-xs);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: -1px;
+  }
+}
+
+.cpItemActive {
+  background: color-mix(in srgb, var(--fn-color-brand) 8%, transparent);
+}
+
+.cpLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cpMeta {
+  flex: none;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fn-text-secondary);
+  font-size: var(--fn-text-2xs);
+}
+
+.cpEmpty {
+  padding: 26px 12px;
+  text-align: center;
+  color: var(--fn-text-secondary);
+  font-size: var(--fn-text-xs);
+  line-height: 1.5;
+}
+
+.cpEmptyText {
+  margin: 0;
+}
+
+.cpEmptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--fn-space-xs);
+  margin-top: 12px;
+}
+
+.cpEmptyAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--fn-border-secondary);
+  border-radius: var(--fn-radius-sm);
+  background: transparent;
+  color: var(--fn-text-primary);
+  font-size: var(--fn-text-2xs);
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--fn-color-brand);
+    color: var(--fn-color-brand);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: 1px;
+  }
+}
+
+/* 空结果时上下键选中的动作，和列表行的选中态保持一致。 */
+.cpEmptyActionActive {
+  border-color: var(--fn-color-brand);
+  background: color-mix(in srgb, var(--fn-color-brand) 8%, transparent);
+  color: var(--fn-color-brand);
+}
+
+.cpFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fn-space-sm);
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--fn-border-secondary);
+  color: var(--fn-text-secondary);
+  font-size: var(--fn-text-2xs);
+  line-height: 1.4;
+}

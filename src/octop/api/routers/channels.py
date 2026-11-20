@@ -671,7 +671,7 @@ async def wecom_qrcode_poll(
         raise HTTPException(status_code=502, detail=f"Failed to poll QR result: {exc}") from exc
 
 
-# ─── QQ Bot QR code ─────────────────────────────────────────────────────────
+# ─── Bot QR code ────────────────────────────────────────────────────────────
 
 
 @router.post(
@@ -684,7 +684,7 @@ async def qq_qrcode_generate(
     user: Any = Depends(require_permission("channels")),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
-    """Create an in-memory QQ Bot binding session and return its QR target URL."""
+    """Create an in-memory bot binding session and return its QR target URL."""
     _require_agent_access(agent_id, user=user, as_user=as_user, server=server)
     try:
         return await qr_bind.qq_qr_generate(f"api:{agent_id}")
@@ -706,7 +706,7 @@ async def qq_qrcode_poll(
     user: Any = Depends(require_permission("channels")),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
-    """Poll the active QQ Bot binding task and return credentials after confirmation."""
+    """Poll the active bot binding task and return credentials after confirmation."""
     _require_agent_access(agent_id, user=user, as_user=as_user, server=server)
     qrcode_token = _sanitize_token(qrcode_token, "qrcode_token")
     try:
@@ -718,11 +718,11 @@ async def qq_qrcode_poll(
         ) from exc
 
 
-# ─── WeChat (Weixin) QR code ─────────────────────────────────────────────────
+# ─── Personal channel QR code ───────────────────────────────────────────────
 
 
 def _get_weixin_qr_login() -> Any:
-    """Import WeixinQRLogin lazily from octop-gateway weixin channel."""
+    """Import the QR login helper lazily from the gateway channel."""
     try:
         from octop_gateway.channels.weixin.login_qr import WeixinQRLogin
 
@@ -741,7 +741,7 @@ async def weixin_qrcode_generate(
     user: Any = Depends(require_permission("channels")),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
-    """Generate WeChat iLink Bot QR code."""
+    """Generate the iLink Bot QR code."""
     _require_agent_access(agent_id, user=user, as_user=as_user, server=server)
     cls = _get_weixin_qr_login()
     try:
@@ -768,7 +768,7 @@ async def weixin_qrcode_poll(
     user: Any = Depends(require_permission("channels")),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
-    """Poll WeChat QR scan result (single long-poll, ~40s)."""
+    """Poll the QR scan result (single long-poll, ~40s)."""
     _require_agent_access(agent_id, user=user, as_user=as_user, server=server)
     qrcode_token = _sanitize_token(qrcode_token, "qrcode_token")
     cls = _get_weixin_qr_login()

@@ -14,7 +14,7 @@ from octop.infra.db.migrate import run_migrations
 from octop.infra.db.pool import SqlitePool
 from octop.infra.db.repos.agents import AgentRow
 from octop.infra.db.services import build_shared_services
-from octop.infra.dsh.tools.gate import SKIP_NO_PROVIDER
+from octop.infra.dsh.tools.gate import SKIP_NO_PROVIDER, SKIP_RUNTIME_NO_WORKSPACE
 from octop.infra.utils.paths import PathLayout
 
 from tests.dsh_integration.fixtures.tools import fixture_tool
@@ -92,7 +92,11 @@ def test_switch_on_without_provider_adds_nothing_but_reports_reason(
     monkeypatch.setenv("OCTOP_DSH_RUNTIME", "1")
     monkeypatch.setenv("OCTOP_DSH_TOOLS", "1")
     monkeypatch.setenv("OCTOP_DSH_TOOL_ROOTS", str(root))
-    monkeypatch.delenv("OCTOP_DSH_MARKET_ROOT", raising=False)
+    # An existing (empty) market root keeps discovery from adding a
+    # ``market_root_missing`` skip; this case is about the missing provider.
+    market = tmp_path / "market"
+    market.mkdir()
+    monkeypatch.setenv("OCTOP_DSH_MARKET_ROOT", str(market))
 
     names = _tool_names(manager._build_harness_config(_row()))
 
@@ -129,3 +133,93 @@ def test_switch_on_with_provider_mounts_prefixed_tool(
     status = manager.dsh_tools_status()
     assert status["mounted"] == ["dsh:demo"]
     assert status["tools"] == ["dsh__demo__echo"]
+
+
+def _enable_exec(monkeypatch: pytest.MonkeyPatch, root: Path, granted: str) -> None:
+    monkeypatch.setenv("OCTOP_DSH_RUNTIME", "1")
+    monkeypatch.setenv("OCTOP_DSH_TOOLS", "1")
+    monkeypatch.setenv("OCTOP_DSH_EXEC", "1")
+    monkeypatch.setenv("OCTOP_DSH_EXEC_PLUGINS", granted)
+    monkeypatch.setenv("OCTOP_DSH_TOOL_ROOTS", str(root))
+    monkeypatch.delenv("OCTOP_DSH_MARKET_ROOT", raising=False)
+
+
+def test_exec_stage_mounts_granted_bundle_without_provider(
+    manager: AgentManager,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The app's own config builder is the entry point, and it needs no provider."""
+
+    root = tmp_path / "local"
+    write_package(root / "demo", "demo")
+    _enable_exec(monkeypatch, root, "dsh:demo")
+
+    config = manager._build_harness_config(_row())
+    names = _tool_names(config)
+
+    assert "dsh__demo__startup" in names
+    status = manager.dsh_tools_status()
+    assert status["runtime"] == ["dsh:demo"]
+    assert status["mounted"] == ["dsh:demo"]
+    assert status["tools"] == ["dsh__demo__startup"]
+    assert manager._dsh_tool_providers == {}
+
+
+def test_exec_switch_off_mounts_nothing(
+    manager: AgentManager,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "local"
+    write_package(root / "demo", "demo")
+    _enable_exec(monkeypatch, root, "dsh:demo")
+    monkeypatch.delenv("OCTOP_DSH_EXEC")
+    _forget_tools_modules(monkeypatch)
+
+    names = _tool_names(manager._build_harness_config(_row()))
+
+    assert not any(name.startswith("dsh__") for name in names)
+    assert manager.dsh_tools_status()["runtime"] == []
+
+
+def test_exec_stage_ignores_plugin_outside_grant_list(
+    manager: AgentManager,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "local"
+    write_package(root / "demo", "demo")
+    _enable_exec(monkeypatch, root, "dsh:something-else")
+
+    names = _tool_names(manager._build_harness_config(_row()))
+
+    assert not any(name.startswith("dsh__demo__") for name in names)
+    status = manager.dsh_tools_status()
+    assert status["runtime"] == []
+    assert status["mounted"] == []
+
+
+def test_exec_stage_skips_when_workspace_is_unresolvable(
+    manager: AgentManager,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "local"
+    write_package(root / "demo", "demo")
+    _enable_exec(monkeypatch, root, "dsh:demo")
+    # Same as above: point the market root at an existing empty directory so
+    # only the workspace skip is left in the list.
+    market = tmp_path / "market"
+    market.mkdir()
+    monkeypatch.setenv("OCTOP_DSH_MARKET_ROOT", str(market))
+    monkeypatch.setattr(manager, "_dsh_sandbox_root", lambda row: None)
+
+    names = _tool_names(manager._build_harness_config(_row()))
+
+    assert not any(name.startswith("dsh__demo__") for name in names)
+    status = manager.dsh_tools_status()
+    assert [skip["reason"] for skip in status["skipped"]] == [
+        SKIP_RUNTIME_NO_WORKSPACE
+    ]
+    assert status["runtime"] == []

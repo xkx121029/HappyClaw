@@ -22,6 +22,14 @@ export const PublishedExpertCard = memo(function PublishedExpertCard({
     <div
       className={styles.expertTemplateCard}
       onClick={() => onInstall(expert)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onInstall(expert);
+        }
+      }}
       style={{ "--expert-accent": accent } as React.CSSProperties}
     >
       <div className={styles.marketCardHeader}>

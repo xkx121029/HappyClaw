@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "title": { "en": "Bad row fixture" },
+  "plugins": [
+    {
+      "name": "dsh-plugin-demo",
+      "title": { "en": "Demo DSH plugin" },
+      "versions": [
+        {
+          "version": "1.0",
+          "publishTimestamp": 1788000000,
+          "source": { "type": "npm" }
+        }
+      ]
+    }
+  ]
+}

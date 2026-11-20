@@ -50,8 +50,32 @@ export function ChromeTabBar({
             <div
               role="tab"
               aria-selected={selected}
+              // Roving tabindex: only the active tab is in the page Tab order,
+              // arrows move between tabs (see onKeyDown below).
+              tabIndex={selected ? 0 : -1}
               className={cx(styles.tab, selected && styles.tabActive)}
               onClick={() => onChange(tab.key)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onChange(tab.key);
+                  return;
+                }
+                if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+                e.preventDefault();
+                const index = tabs.findIndex((item) => item.key === tab.key);
+                const delta = e.key === "ArrowRight" ? 1 : -1;
+                const next = tabs[(index + delta + tabs.length) % tabs.length];
+                onChange(next.key);
+                // Move focus with the selection so the roving tabindex and the
+                // visual focus ring stay on the same tab.
+                const list = e.currentTarget.parentElement;
+                requestAnimationFrame(() => {
+                  list
+                    ?.querySelector<HTMLElement>(`[role="tab"][aria-selected="true"]`)
+                    ?.focus();
+                });
+              }}
             >
               {tab.leading}
               <span className={styles.tabLabel}>{tab.label}</span>

@@ -16,9 +16,36 @@ from octop.infra.setup.password_file import read_password
 from octop.infra.users.password import _COMMON_PASSWORDS, validate_password_policy
 
 posix_only = pytest.mark.skipif(os.name != "posix", reason="bash entrypoint helpers")
-# Same tests, but runnable anywhere a bash is on PATH (e.g. Git Bash on Windows).
-bash_exe = shutil.which("bash")
-bash_only = pytest.mark.skipif(bash_exe is None, reason="requires a bash shell")
+# Same tests, but runnable anywhere a *working* bash is on PATH (e.g. Git Bash on Windows).
+
+
+def _bash_works(path: str) -> bool:
+    # System32\bash.exe is the WSL launcher: it sits on PATH even when WSL has
+    # no usable distro (missing VHDX, no install), so probe before trusting it.
+    try:
+        return subprocess.run([path, "-c", "true"], capture_output=True, timeout=15).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def _find_working_bash() -> str | None:
+    candidates = [shutil.which("bash")]
+    if os.name == "nt":
+        try:
+            listed = subprocess.run(
+                ["where", "bash"], capture_output=True, text=True, timeout=15
+            ).stdout.split()
+            candidates.extend(listed)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    for exe in candidates:
+        if exe and _bash_works(exe):
+            return exe
+    return None
+
+
+bash_exe = _find_working_bash()
+bash_only = pytest.mark.skipif(bash_exe is None, reason="requires a working bash shell")
 
 REPO = Path(__file__).resolve().parents[2]
 ENTRYPOINT = REPO / "docker" / "docker-entrypoint.sh"
@@ -299,7 +326,11 @@ octop_validate_password "$pw"
 # after a successful ``octop init``.
 # ---------------------------------------------------------------------------
 
-_STUB_OCTOP = r"""#!/usr/bin/env bash
+_STUB_OCTOP = r"""#!/bin/sh
+# POSIX sh, not `#!/usr/bin/env bash`: on Windows the latter resolves `bash`
+# through PATH and can pick System32\bash.exe (the WSL launcher) before a
+# msys/Git Bash, which fails with a WSL MountDisk error. The stub body is
+# POSIX-sh compatible on Linux CI, Git Bash, and msys64 alike.
 printf '%s\n' "$*" >> "$OCTOP_STUB_LOG"
 if [ "$1" = "init" ]; then
     if [ "${OCTOP_STUB_INIT_FAIL:-0}" = "1" ]; then

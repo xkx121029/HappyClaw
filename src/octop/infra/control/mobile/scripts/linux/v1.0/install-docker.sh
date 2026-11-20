@@ -711,7 +711,7 @@ do_install() {
 								;;
 						esac
 						$sh_c "sed -i 's|\$releasever|$el_releasever|g' /etc/yum.repos.d/docker-ce.repo"
-						# 部分镜像站（如腾讯）提供的 repo 文件内部仍写死官方域名，
+						# 部分镜像站提供的 repo 文件内部仍写死官方域名，
 						# 当下载源非官方时，同步替换 repo 内的域名，否则 makecache 仍会去访问官方源
 						if [ "$DOWNLOAD_URL" != "$DEFAULT_DOWNLOAD_URL" ]; then
 							$sh_c "sed -i 's|https://download.docker.com|$DOWNLOAD_URL|g' /etc/yum.repos.d/docker-ce.repo"
@@ -741,7 +741,7 @@ do_install() {
 								;;
 						esac
 						$sh_c "sed -i 's|\$releasever|$el_releasever|g' /etc/yum.repos.d/docker-ce.repo"
-						# 部分镜像站（如腾讯）提供的 repo 文件内部仍写死官方域名，
+						# 部分镜像站提供的 repo 文件内部仍写死官方域名，
 						# 当下载源非官方时，同步替换 repo 内的域名，否则 makecache 仍会去访问官方源
 						if [ "$DOWNLOAD_URL" != "$DEFAULT_DOWNLOAD_URL" ]; then
 							$sh_c "sed -i 's|https://download.docker.com|$DOWNLOAD_URL|g' /etc/yum.repos.d/docker-ce.repo"

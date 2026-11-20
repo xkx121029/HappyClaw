@@ -2281,6 +2281,7 @@ export default function KnowledgeBasesPage() {
                 </Button>
                 <Tooltip title={t("common.refresh")}>
                   <Button
+                    aria-label={t("common.refresh")}
                     icon={<RefreshCw size={15} />}
                     loading={refreshing}
                     onClick={() => void refresh()}
@@ -2876,6 +2877,7 @@ export default function KnowledgeBasesPage() {
                                 key={document.id}
                                 className={styles.docCard}
                                 role={document.is_dir ? "button" : undefined}
+                                tabIndex={document.is_dir ? 0 : undefined}
                                 onClick={(event) => {
                                   if (
                                     !shouldOpenKnowledgeFolder(
@@ -2889,6 +2891,21 @@ export default function KnowledgeBasesPage() {
                                     document.path || document.filename,
                                   );
                                 }}
+                                onKeyDown={
+                                  document.is_dir
+                                    ? (event) => {
+                                        if (
+                                          event.key === "Enter" ||
+                                          event.key === " "
+                                        ) {
+                                          event.preventDefault();
+                                          setCurrentFolder(
+                                            document.path || document.filename,
+                                          );
+                                        }
+                                      }
+                                    : undefined
+                                }
                               >
                                 <div className={styles.docCardHeader}>
                                   <DocumentFormatIcon

@@ -38,7 +38,7 @@ def _config_flag(value: Any, *, default: bool) -> bool:
 
 
 def qq_channel_response_mode(config: dict[str, Any]) -> ChannelResponseMode:
-    """QQ C2C stream is on by default. Explicit ``c2c_streaming: false`` opts out."""
+    """C2C stream is on by default. Explicit ``c2c_streaming: false`` opts out."""
     if _config_flag(config.get("c2c_streaming"), default=True):
         return "stream"
     return "invoke"
@@ -168,7 +168,7 @@ async def withhold_weixin_stream_preamble(
 
 
 def wrap_weixin_stream_processor(processor: MessageProcessor) -> MessageProcessor:
-    """Hide tool lead-in text before a WeChat stream processor emits it."""
+    """Hide tool lead-in text before a stream processor emits it."""
 
     def _wrapped(message: InboundMessage) -> AsyncIterator[MessageEvent]:
         return withhold_weixin_stream_preamble(processor(message))

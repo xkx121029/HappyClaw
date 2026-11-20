@@ -2,7 +2,7 @@
 
 Why this exists
 ---------------
-The Workbench keeps a per-user Tencent Cloud login (local files on SQLite,
+The Workbench keeps a per-user cloud login (local files on SQLite,
 the shared ``secrets`` table on PostgreSQL) while the ops expert's skill
 drives ``tccli``
 off ``~/.tccli/<profile>.credential``. Authorizing in one place used to leave
@@ -25,7 +25,7 @@ from octop.infra.errors import OctopError
 
 @click.group()
 def cloud() -> None:
-    """Tencent Cloud credential helpers."""
+    """Cloud credential helpers."""
 
 
 def _first_admin_id() -> int | None:

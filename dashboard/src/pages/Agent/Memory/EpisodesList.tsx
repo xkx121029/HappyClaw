@@ -117,11 +117,19 @@ export default function EpisodesList({ agentId }: Props) {
                   <li
                     key={ep.id}
                     onClick={() => setSelected(ep)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelected(ep);
+                      }
+                    }}
                     style={{
                       display: "flex",
                       gap: 12,
                       padding: "10px 0",
-                      borderBottom: "1px dashed #f5f5f5",
+                      borderBottom: `1px dashed var(--fn-border-secondary)`,
                       cursor: "pointer",
                       alignItems: "flex-start",
                     }}
@@ -137,7 +145,7 @@ export default function EpisodesList({ agentId }: Props) {
                     >
                       <div
                         style={{
-                          fontSize: 11,
+                          fontSize: "var(--fn-text-2xs)",
                           color: "#8c8c8c",
                           marginBottom: 4,
                         }}
@@ -159,7 +167,7 @@ export default function EpisodesList({ agentId }: Props) {
                           <Tag key={topic}>{topic}</Tag>
                         ))}
                       </Space>
-                      <div style={{ marginTop: 4, fontSize: 13 }}>
+                      <div style={{ marginTop: 4, fontSize: "var(--fn-text-xs)" }}>
                         {ep.summary}
                       </div>
                     </div>

@@ -19,7 +19,7 @@ neither hide other plugins nor block startup.
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -70,28 +70,40 @@ class DshToolSkip:
 
 @dataclass(frozen=True, slots=True)
 class DiscoveredPlugin:
-    """A plugin that passed the read-only gate and may mount tools."""
+    """A plugin that passed the gate and may mount tools.
+
+    ``grant`` is non-empty for S10 runtime plugins: the host granted execution
+    to a bundle whose manifest declares no tools. It is recorded so the status
+    report can show *why* a non-tool plugin was admitted.
+    """
 
     plugin_id: str
     origin: str
     location: str
     envelope: PluginEnvelope
+    grant: str = ""
 
 
 def discover_dsh_plugins(
     *,
     market_root: str | Path | None = None,
     local_roots: Sequence[str | Path] = (),
+    granted: Mapping[str, str] | None = None,
 ) -> tuple[list[DiscoveredPlugin], list[DshToolSkip]]:
-    """Return (mountable plugins, skip records); never raises."""
+    """Return (mountable plugins, skip records); never raises.
+
+    ``granted`` maps plugin ids to the reason the host grants them execution
+    even though their manifest declares no ``tool`` capability. It never
+    bypasses the blocking-permission check.
+    """
 
     candidates: dict[str, DiscoveredPlugin] = {}
     skipped: list[DshToolSkip] = []
     if market_root is not None:
-        _discover_market(Path(market_root), candidates, skipped)
+        _discover_market(Path(market_root), candidates, skipped, granted or {})
     roots = [Path(root).expanduser() for root in local_roots if str(root).strip()]
     if roots:
-        _discover_local(roots, candidates, skipped)
+        _discover_local(roots, candidates, skipped, granted or {})
     ordered = sorted(candidates.values(), key=lambda item: item.plugin_id)
     return ordered, skipped
 
@@ -100,6 +112,7 @@ def _discover_market(
     root: Path,
     candidates: dict[str, DiscoveredPlugin],
     skipped: list[DshToolSkip],
+    granted: Mapping[str, str],
 ) -> None:
     if not root.is_dir():
         skipped.append(
@@ -122,7 +135,7 @@ def _discover_market(
         if slot.kind is not PluginKind.DSH:
             continue
         touched.add(_native_of(slot.plugin_id))
-        _admit(slot.envelope, ORIGIN_MARKET, str(slot.slot), candidates, skipped)
+        _admit(slot.envelope, ORIGIN_MARKET, str(slot.slot), candidates, skipped, granted)
     for plugin_id, reason in sorted(broken.items()):
         touched.add(_native_of(plugin_id))
         skipped.append(
@@ -150,6 +163,7 @@ def _discover_local(
     roots: Sequence[Path],
     candidates: dict[str, DiscoveredPlugin],
     skipped: list[DshToolSkip],
+    granted: Mapping[str, str],
 ) -> None:
     try:
         envelopes = DshPluginLoader().discover(roots=list(roots), strict=False)
@@ -179,6 +193,7 @@ def _discover_local(
             str(envelope.source.reference),
             candidates,
             skipped,
+            granted,
         )
 
 
@@ -188,8 +203,10 @@ def _admit(
     location: str,
     candidates: dict[str, DiscoveredPlugin],
     skipped: list[DshToolSkip],
+    granted: Mapping[str, str],
 ) -> None:
-    if not is_tool_plugin(envelope):
+    grant = str(granted.get(envelope.id) or "").strip()
+    if not is_tool_plugin(envelope) and not grant:
         skipped.append(
             DshToolSkip(
                 envelope.id,
@@ -215,6 +232,7 @@ def _admit(
         origin=origin,
         location=location,
         envelope=envelope,
+        grant=grant,
     )
 
 

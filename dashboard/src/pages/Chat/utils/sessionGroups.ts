@@ -21,6 +21,20 @@ export interface SessionGroup {
 
 const DAY_MS = 86_400_000;
 
+/**
+ * 置顶优先，其次按更新时间倒序。跨专家平铺与按项目分组共用同一比较，
+ * 避免两处排序规则漂移。
+ */
+export function compareSessionsByRecency(
+  a: { pinned?: boolean; updatedAt?: string | null },
+  b: { pinned?: boolean; updatedAt?: string | null },
+): number {
+  if (Boolean(a.pinned) !== Boolean(b.pinned)) return a.pinned ? -1 : 1;
+  const ta = a.updatedAt ? Date.parse(a.updatedAt) : 0;
+  const tb = b.updatedAt ? Date.parse(b.updatedAt) : 0;
+  return tb - ta;
+}
+
 const GROUP_ORDER: SessionGroupKey[] = [
   "pinned",
   "today",

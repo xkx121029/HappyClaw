@@ -143,7 +143,7 @@ export function useBrowserSessionState(
     const wsPath = bridgeId
       ? `/bridge/connections/${encodeURIComponent(bridgeId)}/browser-stream/ws`
       : "/browser-stream/ws";
-    const wsUrl = `${getWsUrl(wsPath)}?${params.toString()}`;
+    const wsUrl = getWsUrl(wsPath, params);
 
     let ws: WebSocket;
     try {

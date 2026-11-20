@@ -1,4 +1,4 @@
-"""Direct HTTP client for Tencent SkillHub marketplace operations."""
+"""Direct HTTP client for skill marketplace operations."""
 
 from __future__ import annotations
 

@@ -148,6 +148,21 @@ async def get_backup_status(
     return BackupService.status()
 
 
+@router.get("/backup/verify", summary="Verify a stored backup archive (read-only)")
+async def verify_backup_file(
+    filename: str = Query(min_length=1),
+    _: Any = Depends(require_permission("backup")),
+    service: BackupService = Depends(get_backup_service),
+) -> dict[str, Any]:
+    """Report archive integrity and manifest facts without restoring.
+
+    ``ok=false`` lists concrete problems (missing manifest, unsupported
+    version, missing database member) so the dashboard can block a restore
+    before it starts.
+    """
+    return await service.averify_backup(filename)
+
+
 @router.get("/backup/auto", summary="Get automatic backup settings")
 async def get_auto_backup_settings(
     _: Any = Depends(require_permission("backup")),

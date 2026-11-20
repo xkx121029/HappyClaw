@@ -8,8 +8,10 @@ body {
   overflow: hidden;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
-    "Noto Sans SC", sans-serif;
+  font-family: var(--fn-font-sans);
+  font-size: var(--fn-text-sm);
+  line-height: var(--fn-leading-normal);
+  color: var(--fn-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
@@ -17,6 +19,20 @@ body {
   /* Override the boot ground (#f5f6f8) so iOS PWA letterboxing
      below 100dvh follows the theme instead of staying that gray. */
   background: var(--fn-bg-layout, #f5f6f8);
+}
+
+/* Native controls (scrollbars, date pickers, autofill) follow the theme. */
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--fn-color-brand) 22%, transparent);
+  color: var(--fn-text-primary);
 }
 
 html {
@@ -74,7 +90,7 @@ html[data-octop-desktop-chrome="windows"] .octop-win-menu {
   height: var(--octop-caption-row, 32px);
   padding-left: 4px;
   padding-right: var(--window-controls-inset-end, 138px);
-  background: var(--fn-bg-layout, #0e0e0e);
+  background: var(--fn-bg-layout, #0b0d14);
 }
 
 /* Linux caption buttons. Electron's overlay paints Adwaita circles; these
@@ -393,213 +409,104 @@ a,
   padding: 0;
 }
 
-/* ---- Dark mode: force antd component backgrounds ---- */
-/* Cards */
+/* ---- Dark mode: a handful of surfaces antd's darkAlgorithm cannot know ----
+   Everything else is themed through `antdThemeConfig` in
+   `src/styles/tokens/antd.ts`, which maps our semantic tokens onto antd's
+   token names. Each rule below is here because it expresses something that
+   config cannot: a *different* surface than the component default, or a
+   contrast fix for a specific composite. Do not add background/colour
+   patches that merely restate the tokens — fix `antd.ts` instead. */
+
+/* Cards sit on the layout ground, one step darker than a raised container. */
 html[data-theme="dark"] .ant-card,
 html[data-theme="dark"] .octop-ant-card,
 html[data-theme="dark"] [class$="-card"]:not([class*="-card-"]) {
-  background-color: var(--fn-bg-secondary) !important;
-  border-color: var(--fn-border-primary) !important;
+  background-color: var(--fn-bg-secondary);
+  border-color: var(--fn-border-primary);
 }
 
-/* Tables */
-html[data-theme="dark"] .ant-table-wrapper,
-html[data-theme="dark"] .octop-ant-table-wrapper {
-  background-color: transparent !important;
-}
-
-html[data-theme="dark"] .ant-table,
-html[data-theme="dark"] .octop-ant-table {
-  background-color: var(--fn-bg-primary) !important;
-}
-
-html[data-theme="dark"] .ant-table-container,
-html[data-theme="dark"] .octop-ant-table-container {
-  border-color: var(--fn-border-primary) !important;
-}
-
+/* Table headers use the sunken tone so the sticky band separates from rows. */
 html[data-theme="dark"] .ant-table-thead > tr > th,
 html[data-theme="dark"] .octop-ant-table-thead > tr > th,
 html[data-theme="dark"] .ant-table-thead > tr > td,
 html[data-theme="dark"] .octop-ant-table-thead > tr > td {
-  background-color: var(--fn-bg-tertiary) !important;
-  border-color: var(--fn-border-primary) !important;
-  color: var(--fn-text-secondary) !important;
+  background-color: var(--fn-bg-tertiary);
+  border-color: var(--fn-border-primary);
+  color: var(--fn-text-secondary);
 }
 
+html[data-theme="dark"] .ant-table-wrapper,
+html[data-theme="dark"] .octop-ant-table-wrapper {
+  background-color: transparent;
+}
+
+html[data-theme="dark"] .ant-table-container,
+html[data-theme="dark"] .octop-ant-table-container,
 html[data-theme="dark"] .ant-table-tbody > tr > td,
 html[data-theme="dark"] .octop-ant-table-tbody > tr > td {
-  border-color: var(--fn-border-primary) !important;
-  color: var(--fn-text-primary) !important;
-}
-
-html[data-theme="dark"] .ant-table-tbody > tr.ant-table-row:hover > td,
-html[data-theme="dark"] .octop-ant-table-tbody > tr:hover > td {
-  background-color: var(--fn-bg-hover) !important;
-}
-
-html[data-theme="dark"] .ant-table-cell-row-hover,
-html[data-theme="dark"] .octop-ant-table-cell-row-hover {
-  background-color: var(--fn-bg-hover) !important;
+  border-color: var(--fn-border-primary);
 }
 
 html[data-theme="dark"] .ant-table-placeholder td,
 html[data-theme="dark"] .octop-ant-table-placeholder td {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
-html[data-theme="dark"] .ant-empty-description,
-html[data-theme="dark"] .octop-ant-empty-description {
-  color: var(--fn-text-tertiary) !important;
-}
-
-/* Inputs */
+/* Inputs read as the page ground, not as a raised panel. */
 html[data-theme="dark"] .ant-input,
 html[data-theme="dark"] .octop-ant-input,
 html[data-theme="dark"] .ant-input-affix-wrapper,
-html[data-theme="dark"] .octop-ant-input-affix-wrapper {
-  background-color: var(--fn-bg-primary) !important;
-  border-color: var(--fn-border-input) !important;
-  color: var(--fn-text-primary) !important;
+html[data-theme="dark"] .octop-ant-input-affix-wrapper,
+html[data-theme="dark"] .ant-select-selector,
+html[data-theme="dark"] .octop-ant-select-selector,
+html[data-theme="dark"] .ant-input-number,
+html[data-theme="dark"] .octop-ant-input-number {
+  background-color: var(--fn-bg-primary);
+  border-color: var(--fn-border-input);
+  color: var(--fn-text-primary);
 }
 
 html[data-theme="dark"] .ant-input::placeholder,
 html[data-theme="dark"] .octop-ant-input::placeholder {
-  color: var(--fn-text-placeholder) !important;
+  color: var(--fn-text-placeholder);
 }
 
-/* Select */
-html[data-theme="dark"] .ant-select-selector,
-html[data-theme="dark"] .octop-ant-select-selector {
-  background-color: var(--fn-bg-primary) !important;
-  border-color: var(--fn-border-input) !important;
-  color: var(--fn-text-primary) !important;
-}
-
-html[data-theme="dark"] .ant-select-dropdown,
-html[data-theme="dark"] .octop-ant-select-dropdown {
-  background-color: var(--fn-bg-elevated) !important;
-}
-
-html[data-theme="dark"] .ant-select-item-option-active,
-html[data-theme="dark"] .octop-ant-select-item-option-active {
-  background-color: var(--fn-bg-hover) !important;
-}
-
-html[data-theme="dark"] .ant-select-item-option-selected,
-html[data-theme="dark"] .octop-ant-select-item-option-selected {
-  background-color: var(--fn-bg-active) !important;
-}
-
-/* InputNumber */
-html[data-theme="dark"] .ant-input-number,
-html[data-theme="dark"] .octop-ant-input-number {
-  background-color: var(--fn-bg-primary) !important;
-  border-color: var(--fn-border-input) !important;
-  color: var(--fn-text-primary) !important;
-}
-
-/* Modal */
-html[data-theme="dark"] .ant-modal-content,
-html[data-theme="dark"] .octop-ant-modal-content {
-  background-color: var(--fn-bg-elevated) !important;
-}
-
-html[data-theme="dark"] .ant-modal-header,
-html[data-theme="dark"] .octop-ant-modal-header {
-  background-color: var(--fn-bg-elevated) !important;
-}
-
-/* Form */
-html[data-theme="dark"] .ant-form-item-label > label,
-html[data-theme="dark"] .octop-ant-form-item-label > label {
-  color: var(--fn-text-secondary) !important;
-}
-
-/* Drawer */
-html[data-theme="dark"] .ant-drawer-content,
-html[data-theme="dark"] .octop-ant-drawer-content {
-  background-color: var(--fn-bg-elevated) !important;
-}
-
-/* Pagination */
-html[data-theme="dark"] .ant-pagination-item,
-html[data-theme="dark"] .octop-ant-pagination-item {
-  background-color: transparent !important;
-  border-color: var(--fn-border-input) !important;
-}
-
-html[data-theme="dark"] .ant-pagination-item a,
-html[data-theme="dark"] .octop-ant-pagination-item a {
-  color: var(--fn-text-primary) !important;
-}
-
-/* Checkbox */
-html[data-theme="dark"] .ant-checkbox-inner,
-html[data-theme="dark"] .octop-ant-checkbox-inner {
-  background-color: transparent !important;
-  border-color: var(--fn-border-input) !important;
-}
-
-/* Tabs */
-html[data-theme="dark"] .ant-tabs-tab,
-html[data-theme="dark"] .octop-ant-tabs-tab {
-  color: var(--fn-text-secondary) !important;
-}
-
-/* Tooltip */
-html[data-theme="dark"] .ant-tooltip-inner,
-html[data-theme="dark"] .octop-ant-tooltip-inner {
-  background-color: var(--fn-bg-elevated) !important;
-}
-
-/* Popover */
-html[data-theme="dark"] .ant-popover-inner,
-html[data-theme="dark"] .octop-ant-popover-inner {
-  background-color: var(--fn-bg-elevated) !important;
-}
-
-/* Tag */
-html[data-theme="dark"] .ant-tag,
-html[data-theme="dark"] .octop-ant-tag {
-  border-color: var(--fn-border-primary) !important;
+/* Off switches need a visible track on near-black surfaces. */
+html[data-theme="dark"] .ant-switch,
+html[data-theme="dark"] .octop-ant-switch {
+  background: var(--fn-text-quaternary);
 }
 
 /* Green status tags: preset antd green fails AA at 12px, deepen the text. */
 .octop-tag-green {
-  color: #237804 !important;
-  background: #f6ffed !important;
-  border-color: #b7eb8f !important;
+  color: #237804;
+  background: #f6ffed;
+  border-color: #b7eb8f;
 }
 
 html[data-theme="dark"] .octop-tag-green {
-  color: #95de64 !important;
-  background: rgba(35, 120, 4, 0.18) !important;
-  border-color: rgba(149, 222, 100, 0.35) !important;
+  color: #95de64;
+  background: rgba(35, 120, 4, 0.18);
+  border-color: rgba(149, 222, 100, 0.35);
 }
 
 /* Primary buttons keep white labels; the dark palette's light brand tone
-   would drop them to 3.1:1, so use the deeper brand surface in dark. */
+   would drop them to 3.1:1, so use the per-palette solid brand surface. */
 html[data-theme="dark"] .octop-btn-primary:not(:disabled) {
-  background: #b93b52;
-  border-color: #b93b52;
+  background: var(--fn-color-brand-strong);
+  border-color: var(--fn-color-brand-strong);
   color: #ffffff;
 }
 
 html[data-theme="dark"] .octop-btn-primary:not(:disabled):hover {
-  background: #c9435c;
-  border-color: #c9435c;
+  background: color-mix(in srgb, var(--fn-color-brand-strong) 88%, #ffffff);
+  border-color: color-mix(in srgb, var(--fn-color-brand-strong) 88%, #ffffff);
 }
 
 /* Switch */
-html[data-theme="dark"] .ant-switch,
-html[data-theme="dark"] .octop-ant-switch {
-  background: var(--fn-text-quaternary) !important;
-}
-
 html[data-theme="dark"] .ant-switch-checked,
 html[data-theme="dark"] .octop-ant-switch-checked {
-  background: var(--fn-color-brand) !important;
+  background: var(--fn-color-brand);
 }
 
 /* ---- Mobile responsive ---- */
@@ -759,25 +666,58 @@ html[data-theme="dark"] .octop-ant-switch-checked {
   box-shadow: 0 0 0 1.5px var(--fn-sidebar-bg);
 }
 
-/* ---- Scrollbar ---- */
+/* ---- Scrollbar: one 8px rail in both modes, thumb from tokens ---- */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fn-scrollbar-thumb) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--fn-text-quaternary);
+  background: var(--fn-scrollbar-thumb);
+  border: 2px solid transparent;
   border-radius: var(--fn-radius-full);
+  background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--fn-text-tertiary);
+  background: var(--fn-scrollbar-thumb-hover);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
-html[data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+/* ---- Focus: one visible ring for non-antd interactive elements ---- */
+:where(a, summary, [role="button"], [tabindex]:not([tabindex="-1"])):where(
+    :not(.octop-btn, .octop-input, .octop-select, .octop-checkbox, .octop-radio)
+  ):focus-visible {
+  outline: var(--fn-focus-ring-width) solid var(--fn-focus-ring-color);
+  outline-offset: var(--fn-focus-ring-offset);
+  border-radius: var(--fn-radius-xs);
 }
-html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.18);
+
+/* Many modules set `outline: none` to suppress the mouse-click ring on custom
+   controls. That also suppressed it for keyboard users, so keyboard focus had
+   no visible indicator at all. This rule wins on specificity (0,2,0 vs 0,1,0)
+   and restores the ring for keyboard navigation only. */
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: var(--fn-focus-ring-width) solid var(--fn-focus-ring-color);
+  outline-offset: var(--fn-focus-ring-offset);
+}
+
+/* Honour reduced-motion by collapsing the shared motion tokens. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fn-duration-fast: 1ms;
+    --fn-duration-base: 1ms;
+    --fn-duration-slow: 1ms;
+    --fn-transition-spring: 1ms linear;
+  }
 }

@@ -202,17 +202,21 @@ describe("TrajectoryInspector", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Preview" }));
 
-    await waitFor(() => {
-      expect(eventMock).toHaveBeenCalledWith("A1", "T1", "ctx-1");
-      const preview = screen.getByTestId("trajectory-preview");
-      expect(preview).toHaveTextContent("Prefer BackendWorkspace paths");
-      // Rendered markdown — not the raw ## / ** markers.
-      expect(preview.querySelector("h2")).toHaveTextContent("Rules");
-      expect(preview.querySelector("strong")).toHaveTextContent(
-        "BackendWorkspace",
-      );
-      expect(preview).not.toHaveTextContent("summary: meta");
-    });
+    // markdown 渲染器是 lazy chunk，本机 vite-node 转换可达 15s+。
+    await waitFor(
+      () => {
+        expect(eventMock).toHaveBeenCalledWith("A1", "T1", "ctx-1");
+        const preview = screen.getByTestId("trajectory-preview");
+        expect(preview).toHaveTextContent("Prefer BackendWorkspace paths");
+        // Rendered markdown — not the raw ## / ** markers.
+        expect(preview.querySelector("h2")).toHaveTextContent("Rules");
+        expect(preview.querySelector("strong")).toHaveTextContent(
+          "BackendWorkspace",
+        );
+        expect(preview).not.toHaveTextContent("summary: meta");
+      },
+      { timeout: 30000 },
+    );
   });
 
   it("labels the middle tab Result for tool events", () => {

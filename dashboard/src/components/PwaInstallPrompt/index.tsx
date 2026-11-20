@@ -11,6 +11,7 @@ import {
   waitForInstallPrompt,
 } from "../../pwa-prompt";
 import { isDesktopShell } from "../../utils/desktopBridge";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 import styles from "./index.module.less";
 
 const DISMISSED_KEY = "pwa:install-dismissed";
@@ -36,12 +37,16 @@ function isStandalone(): boolean {
 
 export function IosGuide({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  // Both PWA guides are custom overlays, so antd's focus trap does not apply.
+  const ref = useFocusTrap<HTMLDivElement>(true, onClose);
   return createPortal(
     <div
+      ref={ref}
       className={styles.iosOverlay}
       role="dialog"
       aria-modal="true"
       aria-label={t("pwa.addToHomeScreen", "添加到主屏幕")}
+      tabIndex={-1}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -90,12 +95,15 @@ export function IosGuide({ onClose }: { onClose: () => void }) {
 export function DesktopInstallGuide({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const isEdge = /edg/i.test(navigator.userAgent);
+  const ref = useFocusTrap<HTMLDivElement>(true, onClose);
   return createPortal(
     <div
+      ref={ref}
       className={styles.desktopOverlay}
       role="dialog"
       aria-modal="true"
       aria-label={t("pwa.installDesktopApp", "安装为桌面应用")}
+      tabIndex={-1}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

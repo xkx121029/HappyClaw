@@ -972,7 +972,7 @@ export default function CreateFromExpertDrawer({
                       {configFiles.length === 0 ? (
                         <div
                           style={{
-                            fontSize: 13,
+                            fontSize: "var(--fn-text-xs)",
                             color: "var(--fn-text-tertiary)",
                             padding: "4px 0",
                           }}
@@ -999,7 +999,7 @@ export default function CreateFromExpertDrawer({
                                   </span>
                                   <span
                                     style={{
-                                      fontSize: 11,
+                                      fontSize: "var(--fn-text-2xs)",
                                       color:
                                         "var(--fn-text-quaternary, var(--fn-text-tertiary))",
                                     }}
@@ -1089,7 +1089,7 @@ export default function CreateFromExpertDrawer({
                       pendingHubSkills.length === 0 ? (
                         <div
                           style={{
-                            fontSize: 13,
+                            fontSize: "var(--fn-text-xs)",
                             color: "var(--fn-text-tertiary)",
                             padding: "4px 0",
                           }}
@@ -1114,7 +1114,7 @@ export default function CreateFromExpertDrawer({
                                 </span>
                                 <span
                                   style={{
-                                    fontSize: 11,
+                                    fontSize: "var(--fn-text-2xs)",
                                     color:
                                       "var(--fn-text-quaternary, var(--fn-text-tertiary))",
                                   }}
@@ -1182,7 +1182,7 @@ export default function CreateFromExpertDrawer({
                                           </span>
                                           <span
                                             style={{
-                                              fontSize: 11,
+                                              fontSize: "var(--fn-text-2xs)",
                                               color:
                                                 "var(--fn-text-quaternary, var(--fn-text-tertiary))",
                                             }}
@@ -1314,7 +1314,7 @@ export default function CreateFromExpertDrawer({
                       {subagentFiles.length === 0 ? (
                         <div
                           style={{
-                            fontSize: 13,
+                            fontSize: "var(--fn-text-xs)",
                             color: "var(--fn-text-tertiary)",
                             padding: "4px 0",
                           }}
@@ -1339,7 +1339,7 @@ export default function CreateFromExpertDrawer({
                                 </span>
                                 <span
                                   style={{
-                                    fontSize: 11,
+                                    fontSize: "var(--fn-text-2xs)",
                                     color:
                                       "var(--fn-text-quaternary, var(--fn-text-tertiary))",
                                   }}

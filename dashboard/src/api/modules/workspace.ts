@@ -12,6 +12,10 @@ import type {
   SyncFromOpenClawResponse,
 } from "../types";
 
+function threadQuery(threadId?: string | null): string {
+  return threadId ? `&thread_id=${encodeURIComponent(threadId)}` : "";
+}
+
 export const workspaceApi = {
   getWorkspaceTree: () => request<FileTreeNode[]>("/workspace/tree"),
 
@@ -88,10 +92,14 @@ export const workspaceApi = {
     );
   },
 
-  deleteWorkspaceFile: (agentId: string, path: string): Promise<void> =>
+  deleteWorkspaceFile: (
+    agentId: string,
+    path: string,
+    threadId?: string | null,
+  ): Promise<void> =>
     request<void>(
       withFromWorkspace(
-        `/agents/${agentId}/workspace/file?path=${encodeURIComponent(path)}`,
+        `/agents/${agentId}/workspace/file?path=${encodeURIComponent(path)}${threadQuery(threadId)}`,
       ),
       { method: "DELETE" },
     ),
@@ -100,10 +108,11 @@ export const workspaceApi = {
     agentId: string,
     path: string,
     destination: string,
+    threadId?: string | null,
   ): Promise<{ path: string }> =>
     request<{ path: string }>(
       withFromWorkspace(
-        `/agents/${agentId}/workspace/move?path=${encodeURIComponent(path)}`,
+        `/agents/${agentId}/workspace/move?path=${encodeURIComponent(path)}${threadQuery(threadId)}`,
       ),
       {
         method: "POST",
@@ -114,10 +123,11 @@ export const workspaceApi = {
   mkdirWorkspaceDir: (
     agentId: string,
     path: string,
+    threadId?: string | null,
   ): Promise<{ path: string; is_dir: boolean }> =>
     request<{ path: string; is_dir: boolean }>(
       withFromWorkspace(
-        `/agents/${agentId}/workspace/mkdir?path=${encodeURIComponent(path)}`,
+        `/agents/${agentId}/workspace/mkdir?path=${encodeURIComponent(path)}${threadQuery(threadId)}`,
       ),
       { method: "POST" },
     ),
@@ -126,20 +136,22 @@ export const workspaceApi = {
   getAgentTree: (
     agentId: string,
     path = "/",
+    threadId?: string | null,
   ): Promise<WorkspaceEntry[]> =>
     request<WorkspaceEntry[]>(
       withFromWorkspace(
-        `/agents/${agentId}/workspace/tree?path=${encodeURIComponent(path)}`,
+        `/agents/${agentId}/workspace/tree?path=${encodeURIComponent(path)}${threadQuery(threadId)}`,
       ),
     ),
 
   readWorkspaceFile: (
     agentId: string,
     path: string,
+    threadId?: string | null,
   ): Promise<{ path: string; content: string }> =>
     request<{ path: string; content: string }>(
       withFromWorkspace(
-        `/agents/${agentId}/workspace/file?path=${encodeURIComponent(path)}`,
+        `/agents/${agentId}/workspace/file?path=${encodeURIComponent(path)}${threadQuery(threadId)}`,
       ),
     ),
 
@@ -147,10 +159,11 @@ export const workspaceApi = {
     agentId: string,
     path: string,
     content = "",
+    threadId?: string | null,
   ): Promise<{ path: string; size: number }> =>
     request<{ path: string; size: number }>(
       withFromWorkspace(
-        `/agents/${agentId}/workspace/file?path=${encodeURIComponent(path)}`,
+        `/agents/${agentId}/workspace/file?path=${encodeURIComponent(path)}${threadQuery(threadId)}`,
       ),
       {
         method: "PUT",

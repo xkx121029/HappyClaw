@@ -1,4 +1,4 @@
-"""WeChat Reading (WeRead) bookshelf gateway."""
+"""WeRead bookshelf gateway."""
 
 from __future__ import annotations
 

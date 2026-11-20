@@ -122,7 +122,7 @@ const CHART_TOOLTIP_STYLE = {
 };
 
 /** Shared axis / legend styling so ticks + legend never collide or clip. */
-const AXIS_TICK = { fontSize: 11, fill: "var(--fn-text-tertiary)" } as const;
+const AXIS_TICK = { fontSize: "var(--fn-text-2xs)", fill: "var(--fn-text-tertiary)" } as const;
 const AXIS_LINE = { stroke: "var(--fn-border-primary)" } as const;
 /** Plot insets: leave room for X ticks (bottom) and optional top legend. */
 const BAR_MARGIN = { top: 12, right: 16, bottom: 8, left: 4 } as const;

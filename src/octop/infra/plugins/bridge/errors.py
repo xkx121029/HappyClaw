@@ -39,6 +39,15 @@ class DshToolErrorCode(StrEnum):
     TOOL_OUTPUT_INVALID = "TOOL_OUTPUT_INVALID"
     TOOL_RENDER_FAILED = "TOOL_RENDER_FAILED"
     TOOL_RESULT_TOO_LARGE = "TOOL_RESULT_TOO_LARGE"
+    # S10 runtime invocation: the bundle entry is executed in a Node child
+    # process. Each failure mode gets its own code so the UI never has to guess
+    # whether the plugin is missing, its entry is gone, or the host runtime is
+    # too old.
+    TOOL_RUNTIME_PLUGIN_NOT_LOADED = "TOOL_RUNTIME_PLUGIN_NOT_LOADED"
+    TOOL_RUNTIME_ENTRY_MISSING = "TOOL_RUNTIME_ENTRY_MISSING"
+    TOOL_RUNTIME_ENGINE_UNSATISFIED = "TOOL_RUNTIME_ENGINE_UNSATISFIED"
+    TOOL_RUNTIME_SERVICE_MISSING = "TOOL_RUNTIME_SERVICE_MISSING"
+    TOOL_RUNTIME_FAILED = "TOOL_RUNTIME_FAILED"
 
 
 _MAX_MESSAGE_CHARS = 1000

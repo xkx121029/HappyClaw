@@ -17,7 +17,7 @@ export function PageHeader({ className }: PageHeaderProps) {
         description={
           <>
             {t("environments.description")}
-            <p style={{ marginTop: 8, marginBottom: 0, fontSize: 13 }}>
+            <p style={{ marginTop: 8, marginBottom: 0, fontSize: "var(--fn-text-xs)" }}>
               {t("environments.secretGuide")}{" "}
               <a
                 href="https://console.cloud.tencent.com/cam/capi"

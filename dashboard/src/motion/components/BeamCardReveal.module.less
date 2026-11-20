@@ -1,0 +1,75 @@
+/* 光束 → 光斑 → 卡片的出场层。只承担视觉，不接收指针事件。 */
+
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  pointer-events: none;
+  display: none;
+  contain: strict;
+}
+
+.ray {
+  position: fixed;
+  height: 2px;
+  border-radius: 999px;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--fn-color-brand) 38%,
+    #ffffff 88%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px 2px
+      color-mix(in srgb, var(--fn-color-brand) 55%, transparent),
+    0 0 24px 6px color-mix(in srgb, var(--fn-color-brand) 22%, transparent);
+  opacity: 0;
+}
+
+.head {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #ffffff 0%,
+    var(--fn-color-brand) 45%,
+    transparent 72%
+  );
+  box-shadow: 0 0 18px 6px
+    color-mix(in srgb, var(--fn-color-brand) 45%, transparent);
+  opacity: 0;
+}
+
+.bloom {
+  position: fixed;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--fn-color-brand) 38%, transparent) 0%,
+    color-mix(in srgb, var(--fn-color-brand) 16%, transparent) 42%,
+    transparent 68%
+  );
+  opacity: 0;
+  filter: blur(1px);
+}
+
+.card {
+  position: relative;
+  opacity: 0;
+  transform-origin: center center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ray,
+  .head,
+  .bloom {
+    display: none;
+  }
+
+  .card {
+    opacity: 1;
+  }
+}

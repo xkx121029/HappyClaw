@@ -1,5 +1,8 @@
 """Unified plugin market: octop + DSH catalogs, one install pipeline."""
 
+import os
+from pathlib import Path
+
 from octop.infra.plugins.market.envelope import ENVELOPE_FILENAME
 from octop.infra.plugins.market.errors import (
     CapabilityExpansionError,
@@ -44,6 +47,22 @@ from octop.infra.plugins.runtime.contract import (
     PluginRequirement,
 )
 
+def default_market_root() -> Path:
+    """Catalog install root shared by the API and the DSH tool discovery.
+
+    ``OCTOP_DSH_MARKET_ROOT`` overrides it; otherwise ``~/.octop/market``
+    (``$OCTOP_HOME/market``) is used. Never created here — a missing root is a
+    readable skip, not an error.
+    """
+
+    raw = os.environ.get("OCTOP_DSH_MARKET_ROOT", "").strip()
+    if raw:
+        return Path(raw).expanduser()
+    from octop.infra.utils.paths import PathLayout
+
+    return PathLayout.from_env().market_dir
+
+
 __all__ = [
     "Artifact",
     "CapabilityExpansionError",
@@ -78,6 +97,7 @@ __all__ = [
     "UninstallResult",
     "UnsupportedSourceError",
     "UpgradeResult",
+    "default_market_root",
     "install_entry",
     "plugin_dir_name",
     "uninstall",

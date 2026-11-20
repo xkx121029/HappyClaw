@@ -5,7 +5,10 @@ vi.mock("./config", () => ({
 }));
 
 vi.mock("../i18n", () => ({
-  default: { language: "zh" },
+  default: {
+    language: "zh",
+    t: (_key: string, fallback?: string) => fallback ?? _key,
+  },
 }));
 
 /**
@@ -103,10 +106,16 @@ describe("desktop device session", () => {
     const session = installBridge(tokenFor("local"));
     mod.setAuthToken(tokenFor("admin"));
     fetchMock.mockResolvedValue(tokenExpiredResponse());
+    const unauthorized = vi.fn();
+    window.addEventListener(mod.UNAUTHORIZED_EVENT, unauthorized);
 
-    await expect(mod.request("/agents")).rejects.toThrow();
+    await expect(mod.request("/agents")).rejects.toThrow("本机连接已失效");
     expect(session.renew).not.toHaveBeenCalled();
-    expect(replace).toHaveBeenCalledWith("/login");
+    // 单人模式没有登录页：只广播失效事件，不整页跳转。
+    expect(replace).not.toHaveBeenCalled();
+    expect(mod.getAuthToken()).toBe("");
+    expect(unauthorized).toHaveBeenCalledTimes(1);
+    window.removeEventListener(mod.UNAUTHORIZED_EVENT, unauthorized);
   });
 
   it("registers the device credential for the local account only", async () => {
@@ -130,14 +139,18 @@ describe("desktop device session", () => {
     expect(session.register).not.toHaveBeenCalled();
   });
 
-  it("falls through to the login path when there is no bridge", async () => {
+  it("falls back to the unauthorized event when there is no bridge", async () => {
+    const unauthorized = vi.fn();
+    window.addEventListener(mod.UNAUTHORIZED_EVENT, unauthorized);
     mod.setAuthToken("stale-token");
     fetchMock.mockResolvedValue(tokenExpiredResponse());
 
-    await expect(mod.request("/agents")).rejects.toThrow();
+    await expect(mod.request("/agents")).rejects.toThrow("本机连接已失效");
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(mod.getAuthToken()).toBe("");
-    expect(replace).toHaveBeenCalledWith("/login");
+    expect(unauthorized).toHaveBeenCalledTimes(1);
+    expect(replace).not.toHaveBeenCalled();
+    window.removeEventListener(mod.UNAUTHORIZED_EVENT, unauthorized);
   });
 
   it("does not retry a rejected login", async () => {

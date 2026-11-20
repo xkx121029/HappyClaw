@@ -4,6 +4,11 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import cx from "classnames";
 import Markdown from "../../../components/Markdown/LazyMarkdown";
+import {
+  Mascot,
+  mascotStatusInk,
+  useMascotAppearance,
+} from "../../../components/Mascot";
 import type { DecisionNotice } from "../hooks/useChat";
 import type { AssistantTurnSplit } from "../utils/messageContent";
 import { countProcessStats } from "../utils/messageContent";
@@ -223,6 +228,7 @@ function AssistantProcessSummary({
   agentId = null,
 }: AssistantProcessSummaryProps) {
   const { t } = useTranslation();
+  const baoLook = useMascotAppearance();
   const [collapseThinking] = useCollapseThinking(isTeam);
   const [expanded, setExpanded] = useState(isStreaming && !collapseThinking);
   const prevStreaming = useRef(isStreaming);
@@ -301,6 +307,13 @@ function AssistantProcessSummary({
         aria-expanded={expanded}
         aria-busy={liveHint ? true : undefined}
       >
+        <Mascot
+          size={16}
+          color={mascotStatusInk(baoLook, liveHint ? "working" : null)}
+          state={liveHint ? "working" : "happy"}
+          className={styles.processMascot}
+          surface="var(--fn-bg-base)"
+        />
         <span className={styles.processSummaryText}>
           {liveHint ? (
             <span className={styles.processLiveHint} aria-live="polite">

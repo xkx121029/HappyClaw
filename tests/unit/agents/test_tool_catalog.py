@@ -79,8 +79,8 @@ def test_plugin_tools_ignored_when_plugin_globally_disabled() -> None:
 
 def test_builtin_tool_available_gates() -> None:
     assert builtin_tool_available("web_fetch", agent_cfg={}) is True
-    assert builtin_tool_available("mobile_tap", agent_cfg={}, mobile_enabled=False) is False
-    assert builtin_tool_available("mobile_tap", agent_cfg={}, mobile_enabled=True) is True
+    assert builtin_tool_available("phone_tap", agent_cfg={}, device_link_enabled=False) is False
+    assert builtin_tool_available("phone_tap", agent_cfg={}, device_link_enabled=True) is True
     assert (
         builtin_tool_available(
             "acp_runner",

@@ -251,12 +251,11 @@ class _GeetestV4Provider:
 
 @dataclass(frozen=True)
 class _TencentProvider:
-    """Tencent Cloud Captcha ticket check (DescribeCaptchaResult, API 3.0).
+    """Captcha ticket check (DescribeCaptchaResult, API 3.0).
 
     The login token carries the frontend callback pair as ``ticket:randstr``;
     ``site_key`` is the CaptchaAppId and ``secret`` is the AppSecretKey.
-    Ticket verification is signed with CAM API keys (``cam_id``/``cam_key``),
-    see https://cloud.tencent.com/document/product/1110/36926.
+    Ticket verification is signed with CAM API keys (``cam_id``/``cam_key``).
     """
 
     slug: str = "tencent"

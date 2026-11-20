@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { ChevronRight, FilePen, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import cx from "classnames";
@@ -6,36 +6,40 @@ import type { HitlDecisionHandler } from "../../../api/types/hitl";
 import type { ChatMessage } from "../hooks/useChat";
 import {
   splitAssistantTurn,
-  toAnswerOnlyMessage,
   turnUsedBrowserTool,
   turnUsedFileTool,
 } from "../utils/messageContent";
 import { isWriteToolName } from "../constants";
 import { collectChatFilePaths } from "../hooks/useChatFileDetection";
-import { layoutAssistantTurnHitl } from "../utils/layoutAssistantTurnHitl";
 import { useAgent } from "../../../context/AgentContext";
 import { TodoProgressPanel } from "../../../components/TodoProgressPanel";
 import {
   collectWriteTodosFromMessages,
   isWriteTodosToolName,
 } from "../../../utils/parseWriteTodos";
-import MessageBubble from "./MessageBubble";
+import MessageBubble, { ToolDetailsInline } from "./MessageBubble";
+import { PluginSurfaceSlot } from "../../../plugins/surfaces";
 import { ToolMediaStrip } from "./ToolMediaStrip";
-import {
-  TurnProcessBlocks,
-  turnHasProcessSummary,
-  turnHasVisibleProcess,
-} from "./TurnProcessBlocks";
 import { collectTurnToolMedia } from "../../../utils/collectTurnToolMedia";
 import { collectTurnKnowledgeCitations } from "../../../utils/collectTurnKnowledgeCitations";
 import { KnowledgeCitationsStrip } from "./KnowledgeCitationsStrip";
 import { messageSpeakerId } from "../utils/messageGrouping";
 import { isAssistantProcessLive } from "./liveAssistantTurn";
+import {
+  buildTurnBlocks,
+  planTurnBlocks,
+  type PlannedTurnBlock,
+} from "../utils/turnBlocks";
+import { ProcessStepGroup } from "./TurnProcessSteps";
+import { isPinnedToolUiMessage } from "../../../plugins/toolRenderers/isPinnedToolUi";
+import { useToolRendererVersion } from "../../../plugins/toolRenderers";
 import styles from "../index.module.less";
 
 interface AssistantTurnViewProps {
   messages: ChatMessage[];
   agentId?: string | null;
+  /** Passed to ``conversation.view`` plugin surfaces. */
+  threadId?: string | null;
   isStreaming?: boolean;
   /** True while this assistant turn is still being generated (incl. between tool calls). */
   isTurnInProgress?: boolean;
@@ -59,67 +63,13 @@ interface AssistantTurnViewProps {
   onRunShellCommand?: (code: string) => void;
   shellCommandDisabled?: boolean;
   shellCommandDisabledTitle?: string;
+  /**
+   * Surfaces that already render their own action timeline (Solo's activity
+   * feed) set this to hide the chat-side thinking/tool steps and avoid showing
+   * the same actions twice. Text, approval cards and rich tool UIs stay.
+   * Defaults to false: full interleaved steps.
+   */
   compactProcess?: boolean;
-}
-
-function hasProcessContent(
-  split: ReturnType<typeof splitAssistantTurn>,
-  deferLoneDecision = false,
-): boolean {
-  return turnHasVisibleProcess(split, { deferLoneDecision });
-}
-
-function TurnErrorBubbles({
-  messages,
-  agentId,
-  showAvatar,
-  onRegenerate,
-  onDisableStreamUsage,
-  onEditUserMessage,
-  onForkAssistantMessage,
-  forkDisabled,
-  forkDisabledHint,
-  onRunShellCommand,
-  shellCommandDisabled,
-  shellCommandDisabledTitle,
-}: {
-  messages: ChatMessage[] | undefined;
-  agentId?: string | null;
-  showAvatar: boolean;
-  onRegenerate?: (messageId: string) => void;
-  onDisableStreamUsage?: () => Promise<boolean>;
-  onEditUserMessage?: (messageId: string, newText: string) => void;
-  onForkAssistantMessage?: (messageId: string) => void;
-  forkDisabled?: boolean;
-  forkDisabledHint?: string;
-  onRunShellCommand?: (code: string) => void;
-  shellCommandDisabled?: boolean;
-  shellCommandDisabledTitle?: string;
-}) {
-  if (!messages?.length) return null;
-  return (
-    <>
-      {messages.map((message, index) => (
-        <div key={message.id} className={styles.assistantTurnAnswer}>
-          <MessageBubble
-            message={message}
-            agentId={agentId}
-            showAvatar={showAvatar && index === 0}
-            groupPosition="only"
-            onRegenerate={onRegenerate}
-            onDisableStreamUsage={onDisableStreamUsage}
-            onEditUserMessage={onEditUserMessage}
-            onForkAssistantMessage={onForkAssistantMessage}
-            forkDisabled={forkDisabled}
-            forkDisabledHint={forkDisabledHint}
-            onRunShellCommand={onRunShellCommand}
-            shellCommandDisabled={shellCommandDisabled}
-            shellCommandDisabledTitle={shellCommandDisabledTitle}
-          />
-        </div>
-      ))}
-    </>
-  );
 }
 
 /** True when any message in this turn belongs to a still-live speaker. */
@@ -135,9 +85,19 @@ function turnHasLiveSpeaker(
   return false;
 }
 
+/** A lone decision stamp would paint one row, then jump into the steps. */
+function isLoneDecision(block: PlannedTurnBlock): boolean {
+  return (
+    block.kind === "process" &&
+    block.steps.length > 0 &&
+    block.steps.every((step) => step.kind === "decision")
+  );
+}
+
 export default function AssistantTurnView({
   messages,
   agentId: agentIdProp,
+  threadId = null,
   isTurnInProgress = false,
   afterLatestUser = false,
   liveSpeakers = [],
@@ -170,29 +130,11 @@ export default function AssistantTurnView({
     hasStreamingMessage: hasStreamingMsg,
     speakerLive,
   });
-
-  const hitlLayout = useMemo(
-    () => layoutAssistantTurnHitl(messages),
-    [messages],
-  );
   const hasPendingHitl = messages.some((m) => m.hitlData?.status === "pending");
 
   const splitOpts = useMemo(
     () => ({ joinAnswerFragments: turnStreaming }),
     [turnStreaming],
-  );
-
-  const segmentProcess = useMemo(
-    () =>
-      hitlLayout.segments.map((seg) => ({
-        split: splitAssistantTurn(seg.processMessages, splitOpts),
-        hitl: seg.hitlMessage,
-      })),
-    [hitlLayout, splitOpts],
-  );
-  const trailingSplit = useMemo(
-    () => splitAssistantTurn(hitlLayout.trailingMessages, splitOpts),
-    [hitlLayout, splitOpts],
   );
 
   const fullSplit = useMemo(
@@ -235,48 +177,60 @@ export default function AssistantTurnView({
       (m) => m.status === "streaming" && isWriteTodosToolName(m.toolData?.name),
     );
 
-  // A decision stamp often lands before the first tool. Showing it on its
-  // own, then folding it in, flashes a one-line row. Hold that row until the
-  // reply has tools or the turn settles.
+  // Rich plugin UIs load async after mount — bump forces a rebuild.
+  const rendererVersion = useToolRendererVersion();
+  const blocks = useMemo(
+    () =>
+      planTurnBlocks(
+        buildTurnBlocks(messages, { isPinnedTool: isPinnedToolUiMessage }),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rendererVersion invalidates pinned-tool lookups
+    [messages, rendererVersion],
+  );
+
   const deferLoneDecision = turnStreaming && !hasPendingHitl;
-  const firstProcessSegmentIdx = compactProcess
-    ? -1
-    : segmentProcess.findIndex(({ split }) =>
-        hasProcessContent(split, deferLoneDecision),
-      );
-  const firstSummaryIdx = compactProcess
-    ? -1
-    : segmentProcess.findIndex(({ split }) =>
-        turnHasProcessSummary(split, { deferLoneDecision }),
-      );
-  const showTrailingProcess =
-    !compactProcess && hasProcessContent(trailingSplit, deferLoneDecision);
-  const trailingHasSummary =
-    !compactProcess &&
-    turnHasProcessSummary(trailingSplit, { deferLoneDecision });
-  const anyProcessShown = firstProcessSegmentIdx >= 0 || showTrailingProcess;
+  const visibleBlocks = useMemo(() => {
+    let next = compactProcess
+      ? blocks.filter((block) => block.kind !== "process")
+      : blocks;
+    if (deferLoneDecision)
+      next = next.filter((block) => !isLoneDecision(block));
+    return next;
+  }, [blocks, compactProcess, deferLoneDecision]);
+
+  const avatarBlockId = useMemo(() => {
+    const first = visibleBlocks.find(
+      (block) =>
+        block.kind === "text" ||
+        block.kind === "process" ||
+        block.kind === "error",
+    );
+    return first?.id ?? null;
+  }, [visibleBlocks]);
+  const lastTextBlockId = useMemo(() => {
+    for (let i = visibleBlocks.length - 1; i >= 0; i -= 1) {
+      if (visibleBlocks[i].kind === "text") return visibleBlocks[i].id;
+    }
+    return null;
+  }, [visibleBlocks]);
+  const firstProcessId = useMemo(() => {
+    const first = visibleBlocks.find((block) => block.kind === "process");
+    return first?.id ?? null;
+  }, [visibleBlocks]);
 
   const todoPanel =
     todoItems.length > 0 ? (
       <TodoProgressPanel
         items={todoItems}
         isStreaming={todoStreaming}
-        followingProcessSummary={anyProcessShown}
+        followingProcessSummary={Boolean(firstProcessId)}
       />
     ) : null;
-  const todoAtTop = todoPanel && !anyProcessShown ? todoPanel : null;
+  const todoAtTop = todoPanel && !firstProcessId ? todoPanel : null;
 
   const isWrapupTurn = messages.some((item) => item.teamWrapup);
   const hasVisibleTurn =
-    Boolean(todoAtTop) ||
-    anyProcessShown ||
-    segmentProcess.some(
-      ({ split }) =>
-        split.answerMessage || (split.errorMessages?.length ?? 0) > 0,
-    ) ||
-    hitlLayout.segments.length > 0 ||
-    Boolean(trailingSplit.answerMessage) ||
-    (trailingSplit.errorMessages?.length ?? 0) > 0 ||
+    visibleBlocks.length > 0 ||
     hasToolMedia ||
     knowledgeCitations.length > 0 ||
     showOpenBrowser ||
@@ -285,23 +239,141 @@ export default function AssistantTurnView({
   // would shift the layout before the avatar and the first status settle.
   if (!hasVisibleTurn) return null;
 
-  const trailingBody = (
-    <>
-      {showTrailingProcess ? (
-        <>
-          <TurnProcessBlocks
-            split={trailingSplit}
-            isStreaming={turnStreaming && !hasPendingHitl}
-            onAcpPermissionSelect={onAcpPermissionSelect}
-            hideToolMedia={hasToolMedia}
-            agentId={speakerAgentId}
-            showAvatar={firstSummaryIdx < 0 && trailingHasSummary}
+  const renderBlock = (block: PlannedTurnBlock, index: number) => {
+    if (block.kind === "text") {
+      const isFirst = index === 0;
+      const isMetaOwner = block.id === lastTextBlockId;
+      const groupPosition =
+        isFirst && isMetaOwner
+          ? "only"
+          : isFirst
+          ? "first"
+          : isMetaOwner
+          ? "last"
+          : "middle";
+      return (
+        <div key={block.id} className={styles.assistantTurnAnswer}>
+          <MessageBubble
+            message={block.message}
+            agentId={agentId}
+            showAvatar={isFirst && block.id === avatarBlockId}
+            groupPosition={groupPosition}
+            onRegenerate={onRegenerate}
+            onDisableStreamUsage={onDisableStreamUsage}
+            onEditUserMessage={onEditUserMessage}
+            onForkAssistantMessage={onForkAssistantMessage}
+            forkDisabled={forkDisabled}
+            forkDisabledHint={forkDisabledHint}
+            onRunShellCommand={onRunShellCommand}
+            shellCommandDisabled={shellCommandDisabled}
+            shellCommandDisabledTitle={shellCommandDisabledTitle}
           />
-          {todoPanel && firstProcessSegmentIdx < 0 ? (
-            <div className={styles.turnInset}>{todoPanel}</div>
-          ) : null}
-        </>
-      ) : null}
+          <PluginSurfaceSlot
+            slot="conversation.view"
+            context={{
+              agentId,
+              threadId,
+              message: {
+                id: block.message.id,
+                role: block.message.role,
+                content: block.message.content,
+                createdAt: block.message.timestamp,
+              },
+            }}
+          />
+        </div>
+      );
+    }
+    if (block.kind === "error") {
+      return (
+        <div key={block.id} className={styles.assistantTurnAnswer}>
+          <MessageBubble
+            message={block.message}
+            agentId={agentId}
+            showAvatar={block.id === avatarBlockId}
+            groupPosition="only"
+            onRegenerate={onRegenerate}
+            onDisableStreamUsage={onDisableStreamUsage}
+            onEditUserMessage={onEditUserMessage}
+            onForkAssistantMessage={onForkAssistantMessage}
+            forkDisabled={forkDisabled}
+            forkDisabledHint={forkDisabledHint}
+            onRunShellCommand={onRunShellCommand}
+            shellCommandDisabled={shellCommandDisabled}
+            shellCommandDisabledTitle={shellCommandDisabledTitle}
+          />
+          <PluginSurfaceSlot
+            slot="conversation.view"
+            context={{
+              agentId,
+              threadId,
+              message: {
+                id: block.message.id,
+                role: block.message.role,
+                content: block.message.content,
+                createdAt: block.message.timestamp,
+              },
+            }}
+          />
+        </div>
+      );
+    }
+    if (block.kind === "hitl") {
+      return (
+        <MessageBubble
+          key={block.id}
+          message={block.message}
+          agentId={agentId}
+          onHitlDecision={onHitlDecision}
+          groupPosition="only"
+        />
+      );
+    }
+    if (block.kind === "toolCard") {
+      if (!block.message.toolData) return null;
+      return (
+        <div key={block.id} className={styles.turnInset}>
+          <div className={styles.pinnedToolResults} data-octop-pinned-tools="">
+            <div className={styles.pinnedToolResultItem}>
+              <ToolDetailsInline
+                toolData={block.message.toolData}
+                isStreaming={
+                  block.message.status === "streaming" && turnStreaming
+                }
+                onAcpPermissionSelect={onAcpPermissionSelect}
+                hideMediaPreview={hasToolMedia}
+                agentId={speakerAgentId}
+                forceError={block.message.status === "error"}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <Fragment key={block.id}>
+        <ProcessStepGroup
+          steps={block.steps}
+          merged={block.merged}
+          durationMs={block.durationMs}
+          failedCount={block.failedCount}
+          isStreaming={turnStreaming && !hasPendingHitl}
+          onAcpPermissionSelect={onAcpPermissionSelect}
+          hideToolMedia={hasToolMedia}
+          agentId={speakerAgentId}
+          showAvatar={block.id === avatarBlockId}
+        />
+        {todoPanel && block.id === firstProcessId ? (
+          <div className={styles.turnInset}>{todoPanel}</div>
+        ) : null}
+      </Fragment>
+    );
+  };
+
+  const body = (
+    <>
+      {todoAtTop ? <div className={styles.turnInset}>{todoAtTop}</div> : null}
+      {visibleBlocks.map(renderBlock)}
       {hasToolMedia && (
         <div className={styles.turnInset}>
           <ToolMediaStrip
@@ -312,43 +384,6 @@ export default function AssistantTurnView({
           />
         </div>
       )}
-      {trailingSplit.answerMessage ? (
-        <div className={styles.assistantTurnAnswer}>
-          <MessageBubble
-            message={toAnswerOnlyMessage(trailingSplit.answerMessage)}
-            agentId={agentId}
-            showAvatar={firstSummaryIdx < 0 && !trailingHasSummary}
-            onRegenerate={onRegenerate}
-            onDisableStreamUsage={onDisableStreamUsage}
-            onEditUserMessage={onEditUserMessage}
-            onForkAssistantMessage={onForkAssistantMessage}
-            forkDisabled={forkDisabled}
-            forkDisabledHint={forkDisabledHint}
-            groupPosition="only"
-            onRunShellCommand={onRunShellCommand}
-            shellCommandDisabled={shellCommandDisabled}
-            shellCommandDisabledTitle={shellCommandDisabledTitle}
-          />
-        </div>
-      ) : null}
-      <TurnErrorBubbles
-        messages={trailingSplit.errorMessages}
-        agentId={agentId}
-        showAvatar={
-          firstSummaryIdx < 0 &&
-          !trailingHasSummary &&
-          !trailingSplit.answerMessage
-        }
-        onRegenerate={onRegenerate}
-        onDisableStreamUsage={onDisableStreamUsage}
-        onEditUserMessage={onEditUserMessage}
-        onForkAssistantMessage={onForkAssistantMessage}
-        forkDisabled={forkDisabled}
-        forkDisabledHint={forkDisabledHint}
-        onRunShellCommand={onRunShellCommand}
-        shellCommandDisabled={shellCommandDisabled}
-        shellCommandDisabledTitle={shellCommandDisabledTitle}
-      />
       {knowledgeCitations.length > 0 ? (
         <div className={styles.turnInset}>
           <KnowledgeCitationsStrip citations={knowledgeCitations} />
@@ -418,85 +453,21 @@ export default function AssistantTurnView({
   );
 
   return (
-    <div className={styles.assistantTurn}>
-      {todoAtTop ? <div className={styles.turnInset}>{todoAtTop}</div> : null}
-      {segmentProcess.map(({ split, hitl }, idx) => {
-        const showProcess =
-          !compactProcess && hasProcessContent(split, deferLoneDecision);
-        // Freeze process spinner while a pending approval card is open.
-        const processStreaming =
-          turnStreaming &&
-          !hasPendingHitl &&
-          idx === segmentProcess.length - 1 &&
-          hitlLayout.trailingMessages.length === 0;
-        return (
-          <div key={hitl.id} className={styles.hitlSegment}>
-            {showProcess ? (
-              <>
-                <TurnProcessBlocks
-                  split={split}
-                  isStreaming={processStreaming}
-                  onAcpPermissionSelect={onAcpPermissionSelect}
-                  hideToolMedia={hasToolMedia}
-                  agentId={speakerAgentId}
-                  showAvatar={idx === firstSummaryIdx}
-                />
-                {todoPanel && idx === firstProcessSegmentIdx ? (
-                  <div className={styles.turnInset}>{todoPanel}</div>
-                ) : null}
-              </>
-            ) : null}
-            {split.answerMessage ? (
-              <div className={styles.assistantTurnAnswer}>
-                <MessageBubble
-                  message={toAnswerOnlyMessage(split.answerMessage)}
-                  agentId={agentId}
-                  showAvatar={!showProcess}
-                  groupPosition="only"
-                  onRegenerate={onRegenerate}
-                  onDisableStreamUsage={onDisableStreamUsage}
-                  onEditUserMessage={onEditUserMessage}
-                  onForkAssistantMessage={onForkAssistantMessage}
-                  forkDisabled={forkDisabled}
-                  forkDisabledHint={forkDisabledHint}
-                  onRunShellCommand={onRunShellCommand}
-                  shellCommandDisabled={shellCommandDisabled}
-                  shellCommandDisabledTitle={shellCommandDisabledTitle}
-                />
-              </div>
-            ) : null}
-            <TurnErrorBubbles
-              messages={split.errorMessages}
-              agentId={agentId}
-              showAvatar={!showProcess && !split.answerMessage}
-              onRegenerate={onRegenerate}
-              onDisableStreamUsage={onDisableStreamUsage}
-              onEditUserMessage={onEditUserMessage}
-              onForkAssistantMessage={onForkAssistantMessage}
-              forkDisabled={forkDisabled}
-              forkDisabledHint={forkDisabledHint}
-              onRunShellCommand={onRunShellCommand}
-              shellCommandDisabled={shellCommandDisabled}
-              shellCommandDisabledTitle={shellCommandDisabledTitle}
-            />
-            <MessageBubble
-              message={hitl}
-              agentId={agentId}
-              onHitlDecision={onHitlDecision}
-              groupPosition="only"
-            />
-          </div>
-        );
-      })}
+    <div
+      className={cx(
+        styles.assistantTurn,
+        compactProcess && styles.assistantTurnCompact,
+      )}
+    >
       {isWrapupTurn ? (
         <div className={styles.teamWrapupTurn}>
           <span className={styles.teamWrapupBadge}>
             {t("chat.teamWrapupBadge", { defaultValue: "主持人总结" })}
           </span>
-          {trailingBody}
+          {body}
         </div>
       ) : (
-        trailingBody
+        body
       )}
     </div>
   );

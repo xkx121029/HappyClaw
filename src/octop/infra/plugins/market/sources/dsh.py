@@ -18,7 +18,9 @@ plugin-market.zh.md`` and the index-format Agent Note):
   integer ``publishTimestamp`` in ``[0, 10^11)``.
 * ``source`` is ``{"type": "npm", "registry"?}`` or ``{"type": "git", "url",
   "commit", "path"?}``; other types reject the index.
-* ``engines.dsh`` is a non-blank string.
+* ``engines`` and ``engines.dsh`` are optional; absent means "runs on any DSH
+  version", exactly as ``@deepseek-ai/dsh-plugin-market-index`` defines it.
+  A present ``dsh`` range must be plain SemVer (no ``workspace:`` range).
 
 Assumptions (also recorded in ``marketplace.md``):
 
@@ -37,7 +39,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from typing import Any, Mapping
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 from octop.infra.plugins.market.download import (
     Transport,
@@ -46,6 +48,7 @@ from octop.infra.plugins.market.download import (
 )
 from octop.infra.plugins.market.errors import (
     IndexFormatError,
+    MarketError,
     PayloadError,
     SourceUnreachableError,
 )
@@ -201,7 +204,7 @@ def _normalize_index(
                 capabilities=(),
                 releases=tuple(releases),
                 homepage=_optional_url(raw.get("homepage"), f"{path}.homepage"),
-                icon=_icon(raw.get("icon"), f"{path}.icon"),
+                icon=_icon(raw.get("icon"), f"{path}.icon", index_label),
                 tags=tags,
                 extra={
                     "index_url": index_label,
@@ -238,13 +241,26 @@ def _releases(raw: Any, path: str, package_name: str, npm_registry: str) -> list
                 path=f"{item_path}.publishTimestamp",
             )
         engines = item.get("engines")
+        if engines is None:
+            engines = {}
         if not isinstance(engines, dict):
             raise IndexFormatError("engines must be an object", path=f"{item_path}.engines")
         dsh_range = engines.get("dsh")
-        if not isinstance(dsh_range, str) or not dsh_range.strip():
-            raise IndexFormatError("engines.dsh must be a non-blank string", path=f"{item_path}.engines.dsh")
-        if _SEMVER_RANGE_CHARS_RE.fullmatch(dsh_range.strip()) is None:
-            raise IndexFormatError("engines.dsh is not a semver range", path=f"{item_path}.engines.dsh")
+        if dsh_range is not None:
+            if not isinstance(dsh_range, str) or not dsh_range.strip():
+                raise IndexFormatError(
+                    "engines.dsh must be a non-blank string", path=f"{item_path}.engines.dsh"
+                )
+            dsh_range = dsh_range.strip()
+            if dsh_range.startswith("workspace:"):
+                raise IndexFormatError(
+                    "engines.dsh must not be a workspace: range",
+                    path=f"{item_path}.engines.dsh",
+                )
+            if _SEMVER_RANGE_CHARS_RE.fullmatch(dsh_range) is None:
+                raise IndexFormatError(
+                    "engines.dsh is not a semver range", path=f"{item_path}.engines.dsh"
+                )
         artifact, extra = _artifact(
             item.get("source"),
             package_name,
@@ -252,12 +268,16 @@ def _releases(raw: Any, path: str, package_name: str, npm_registry: str) -> list
             f"{item_path}.source",
             npm_registry,
         )
+        # An absent range is a fact about the release, not a missing field: the
+        # DSH format defines it as "any DSH version", so it is recorded as such
+        # instead of being invented or dropped.
+        extra["dsh_engine"] = dsh_range
         releases.append(
             PluginRelease(
                 version=version,
                 artifact=artifact,
                 published_at=timestamp,
-                requires={"dsh": dsh_range.strip()},
+                requires={"dsh": dsh_range} if dsh_range else {},
                 extra=extra,
             )
         )
@@ -389,15 +409,28 @@ def _optional_url(value: Any, path: str) -> str | None:
     return value.strip()
 
 
-def _icon(value: Any, path: str) -> str | None:
+def _icon(value: Any, path: str, index_label: str) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str) or not value.strip():
         return None
-    if value.startswith("data:"):
-        return value
-    require_http_url(value, path=path)
-    return value.strip()
+    text = value.strip()
+    if text.startswith("data:"):
+        return text
+    index = urlparse(index_label)
+    try:
+        if index.scheme in {"http", "https"} and index.netloc:
+            # The DSH format resolves relative icon references against the index
+            # URL; an absolute reference is kept as written.
+            resolved = urljoin(index_label, text)
+            require_http_url(resolved, path=path)
+            return resolved
+        # An offline index file has no origin to resolve against, so a relative
+        # reference is unusable rather than guessable.
+        require_http_url(text, path=path)
+    except MarketError as exc:
+        raise IndexFormatError(str(exc), path=path) from exc
+    return text
 
 
 def _string_list(value: Any) -> list[str]:

@@ -1,4 +1,4 @@
-"""Tencent Cloud CVM inventory, monitoring and lifecycle for the Workbench."""
+"""Cloud CVM inventory, monitoring and lifecycle for the Workbench."""
 
 from __future__ import annotations
 

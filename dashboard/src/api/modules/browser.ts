@@ -172,7 +172,7 @@ export const browserApi = {
     if (token) {
       params.set("token", token);
     }
-    const wsUrl = `${getWsUrl("/browser-stream/ws")}?${params.toString()}`;
+    const wsUrl = getWsUrl("/browser-stream/ws", params);
     return new WebSocket(wsUrl);
   },
 

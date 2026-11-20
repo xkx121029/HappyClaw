@@ -517,12 +517,8 @@ class OctopServer:
         # build() so Google Drive/Gmail tools fall back to the network.
         install_google_discovery_fallback()
         with _timing.segment("config"):
-            from octop.infra.control.mobile.config_probe import (  # noqa: PLC0415
-                ensure_mobile_capabilities_probed,
-            )
-
             with _timing.segment("config.load"):
-                config = ensure_mobile_capabilities_probed(self.paths.config)
+                config = load_config(self.paths.config)
             self.config = config
 
         import time  # noqa: PLC0415
@@ -838,6 +834,12 @@ class OctopServer:
         with _timing.segment("services.gateway_boot"):
             await gateway.boot(serve_background=self._serve_background)
 
+        from octop.infra.bao.followup import BaoFollowupService  # noqa: PLC0415
+
+        # Attached after boot so the turn-completion hook can nudge a stalled
+        # task forward or notify the user without a separate polling loop.
+        gateway.set_bao_followup(BaoFollowupService(server=self, gateway=gateway))
+
         from octop import __version__  # noqa: PLC0415
 
         started_at = self._started_at
@@ -898,6 +900,35 @@ class OctopServer:
             default_timezone=config.default_timezone,
         )
         registry.set_proactive_scheduler(proactive_scheduler)
+
+        # 手机侧信息整合（Today）：周期采集 + 事件触发，离线时静默跳过。
+        try:
+            from octop.infra.control.device_link.manager import (  # noqa: PLC0415
+                get_device_link_manager,
+            )
+            from octop.infra.control.device_link.today import (  # noqa: PLC0415
+                TodayCollector,
+                set_today_collector,
+            )
+
+            device_link_manager = get_device_link_manager()
+            today_collector = TodayCollector(
+                manager=device_link_manager,
+                server=self,
+                gateway=gateway,
+                cron_manager=cron_mgr,
+                agent_repo=self.services.repos.agent_repo,
+                session_repo=self.services.repos.session_repo,
+                thread_repo=self.services.repos.thread_repo,
+                timezone=config.default_timezone,
+                config_path=self.paths.root / "device-link" / "today-config.json",
+            )
+            await today_collector.start()
+            set_today_collector(today_collector)
+            self._today_collector = today_collector
+        except Exception:  # noqa: BLE001
+            logger.warning("today collector unavailable", exc_info=True)
+            self._today_collector = None
 
         with _timing.segment("services.agents"):
             # Wiring only: agent graph compilation is deferred to
@@ -1115,6 +1146,10 @@ class OctopServer:
             from octop.infra.connectors.gateway import agently_auth
 
             await agently_auth.close()
+            collector = getattr(self, "_today_collector", None)
+            if collector is not None:
+                await collector.stop()
+                self._today_collector = None
             if self.app_runtime is not None:
                 rt = self.app_runtime
                 await rt.proactive_scheduler.shutdown()

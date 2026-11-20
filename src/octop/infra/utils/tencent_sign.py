@@ -1,4 +1,4 @@
-"""Tencent Cloud TC3-HMAC-SHA256 request signing."""
+"""TC3-HMAC-SHA256 request signing."""
 
 from __future__ import annotations
 

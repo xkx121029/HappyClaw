@@ -521,7 +521,7 @@ export default function PwaDebugPage() {
       <p
         style={{
           margin: "0 0 20px",
-          fontSize: 13,
+          fontSize: "var(--fn-text-xs)",
           color: "var(--fn-text-tertiary)",
         }}
       >
@@ -555,7 +555,7 @@ export default function PwaDebugPage() {
             <div style={{ minWidth: 0 }}>
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--fn-text-xs)",
                   fontWeight: 600,
                   color: "var(--fn-text-primary)",
                   marginBottom: 2,
@@ -592,7 +592,7 @@ export default function PwaDebugPage() {
             border: "none",
             background: forceInstalling ? "#94a3b8" : "var(--fn-color-brand)",
             color: "#fff",
-            fontSize: 13,
+            fontSize: "var(--fn-text-xs)",
             fontWeight: 600,
             cursor: forceInstalling ? "not-allowed" : "pointer",
           }}
@@ -607,7 +607,7 @@ export default function PwaDebugPage() {
             border: "1px solid var(--fn-border-primary)",
             background: "var(--fn-bg-tertiary)",
             color: "var(--fn-text-primary)",
-            fontSize: 13,
+            fontSize: "var(--fn-text-xs)",
             cursor: "pointer",
           }}
         >
@@ -621,7 +621,7 @@ export default function PwaDebugPage() {
             border: "1px solid #f59e0b",
             background: "transparent",
             color: "#f59e0b",
-            fontSize: 13,
+            fontSize: "var(--fn-text-xs)",
             cursor: "pointer",
           }}
         >
@@ -635,7 +635,7 @@ export default function PwaDebugPage() {
             border: "1px solid var(--fn-border-primary)",
             background: "var(--fn-bg-tertiary)",
             color: "var(--fn-text-primary)",
-            fontSize: 13,
+            fontSize: "var(--fn-text-xs)",
             cursor: "pointer",
           }}
         >
@@ -649,7 +649,7 @@ export default function PwaDebugPage() {
             border: "1px solid #ef4444",
             background: "transparent",
             color: "#ef4444",
-            fontSize: 13,
+            fontSize: "var(--fn-text-xs)",
             cursor: "pointer",
           }}
         >
@@ -665,7 +665,7 @@ export default function PwaDebugPage() {
               border: "1px solid var(--fn-color-brand)",
               background: "transparent",
               color: "var(--fn-color-brand)",
-              fontSize: 13,
+              fontSize: "var(--fn-text-xs)",
               fontWeight: 600,
               cursor: "pointer",
             }}

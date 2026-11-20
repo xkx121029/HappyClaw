@@ -215,7 +215,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-/** Normalize saved config and old JSON form drafts into the typed QQ policy. */
+/** Normalize saved config and old JSON form drafts into the typed channel policy. */
 export function normalizeQqGroupContextConfig(
   value: unknown,
 ): QqGroupContextConfig {
@@ -430,7 +430,7 @@ export const DEFAULT_CHANNEL_DISPLAY_CONFIG = {
   show_tool_hints: false,
 } as const;
 
-/** Persist QQ C2C stream on, and drop QQ-only leftovers. Other channels unchanged. */
+/** Persist channel C2C stream on, and drop channel-only leftovers. Other channels unchanged. */
 export function applyQqChannelSaveConfig(
   config: Record<string, unknown>,
   kind: string,

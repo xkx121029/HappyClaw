@@ -1,7 +1,7 @@
-"""Tencent Cloud realtime speech recognition (ASR V2) upstream session.
+"""Realtime speech recognition (ASR V2) upstream session.
 
 One :class:`TencentRealtimeSession` owns a single connection to
-``wss://asr.cloud.tencent.com/asr/v2/<appid>``.  It is deliberately transport
+``wss://<asr-host>/asr/v2/<appid>``.  It is deliberately transport
 agnostic: it pushes raw PCM frames upstream and yields the parsed JSON events
 back, leaving the browser-facing WebSocket, localisation and error mapping to
 the HTTP layer.
@@ -136,7 +136,7 @@ class TencentRealtimeSession:
                 # websockets >= 14 defaults to proxy=True, which silently routes
                 # through HTTPS_PROXY / ALL_PROXY when the deployment sets one.
                 proxy=None,
-                # Tencent does not answer WebSocket pings; keepalive would abort.
+                # The upstream does not answer WebSocket pings; keepalive would abort.
                 ping_interval=None,
                 open_timeout=HANDSHAKE_TIMEOUT_SECONDS,
                 close_timeout=CLOSE_TIMEOUT_SECONDS,
@@ -173,7 +173,7 @@ class TencentRealtimeSession:
         await self._ws.send(pcm)
 
     async def finish(self) -> None:
-        """Tell Tencent the audio stream ended so it can flush ``final``."""
+        """Tell the upstream the audio stream ended so it can flush ``final``."""
         if self._ws is None:
             return
         await self._ws.send(json.dumps({"type": "end"}))

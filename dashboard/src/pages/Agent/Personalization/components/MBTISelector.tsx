@@ -506,6 +506,13 @@ export default function MBTISelector({
                     onClick={() => handleCardClick(type)}
                     role="button"
                     tabIndex={0}
+                    aria-pressed={isSelected || isCurrent}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleCardClick(type);
+                      }
+                    }}
                   >
                     <div
                       className={styles.typeCardAccent}
@@ -520,7 +527,7 @@ export default function MBTISelector({
                       <div className={styles.typeCardHeader}>
                         <img
                           className={styles.typeAvatar}
-                          src={`/assets/mbti/${code}.svg`}
+                          src="/assets/avatar-placeholder.svg"
                           alt={code}
                           style={{ background: `${type.color}14` }}
                         />
@@ -597,7 +604,7 @@ export default function MBTISelector({
               <div className={styles.modalHeaderInner}>
                 <img
                   className={styles.modalAvatar}
-                  src={`/assets/mbti/${selectedType.code}.svg`}
+                  src="/assets/avatar-placeholder.svg"
                   alt={selectedType.code}
                 />
                 <div>

@@ -27,7 +27,6 @@ ARTIFACT_TOOL_BASES = frozenset(
         "send_file",
         "send_file_to_user",
         "desktop_screenshot",
-        "mobile_screenshot",
     }
 )
 

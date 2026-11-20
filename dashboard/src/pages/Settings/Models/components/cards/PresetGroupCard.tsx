@@ -67,11 +67,27 @@ function VariantPickerDrawer({
                 styles.variantItem,
                 configured && styles.variantItemDisabled,
               )}
+              // Already-configured variants do nothing on click, so they stay
+              // out of the tab order and out of the a11y tree as buttons.
+              role={configured ? undefined : "button"}
+              tabIndex={configured ? undefined : 0}
+              aria-disabled={configured ? true : undefined}
               onClick={() => {
                 if (configured) return;
                 onClose();
                 onSelect(preset);
               }}
+              onKeyDown={
+                configured
+                  ? undefined
+                  : (event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onClose();
+                        onSelect(preset);
+                      }
+                    }
+              }
             >
               <span className={styles.variantItemName}>
                 {presetVariantLabel(preset)}
@@ -153,7 +169,7 @@ export function PresetGroupCard({
             />
           )}
           <span className={styles.presetGroupTitle}>{group.groupName}</span>
-          <Tag color="default" style={{ fontSize: 11, marginLeft: "auto" }}>
+          <Tag color="default" style={{ fontSize: "var(--fn-text-2xs)", marginLeft: "auto" }}>
             {configuredEntries.length}/{group.presets.length}
           </Tag>
         </div>
@@ -248,7 +264,7 @@ export function PresetGroupCard({
 
         <div className={styles.cardActions}>
           <div className={styles.cardActionsLeft}>
-            <Tag color="default" style={{ fontSize: 11 }}>
+            <Tag color="default" style={{ fontSize: "var(--fn-text-2xs)" }}>
               {group.presets[0]?.protocol}
             </Tag>
           </div>

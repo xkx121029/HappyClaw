@@ -166,13 +166,19 @@ export function clearWorkspaceMentionIndexCache(): void {
   mentionIndexCache.clear();
 }
 
+function mentionScopeKey(agentId: string, threadId?: string | null): string {
+  return threadId ? `${agentId}:${threadId}` : agentId;
+}
+
 export function cachedWorkspaceMentionIndex(
   agentId: string,
+  threadId?: string | null,
 ): WorkspaceMentionIndex | null {
-  const hit = mentionIndexCache.get(agentId);
+  const scope = mentionScopeKey(agentId, threadId);
+  const hit = mentionIndexCache.get(scope);
   if (!hit) return null;
   if (Date.now() - hit.at >= MENTION_INDEX_TTL_MS) {
-    mentionIndexCache.delete(agentId);
+    mentionIndexCache.delete(scope);
     return null;
   }
   return { paths: hit.paths, truncated: hit.truncated };
@@ -182,11 +188,13 @@ export function cachedWorkspaceMentionIndex(
 export async function loadWorkspaceMentionIndex(
   agentId: string,
   signal?: AbortSignal,
+  threadId?: string | null,
 ): Promise<WorkspaceMentionIndex> {
-  const cached = cachedWorkspaceMentionIndex(agentId);
+  const cached = cachedWorkspaceMentionIndex(agentId, threadId);
   if (cached) return cached;
+  const scope = threadId ? `&thread_id=${encodeURIComponent(threadId)}` : "";
   const body = await request<{ paths?: string[]; truncated?: boolean }>(
-    `/agents/${encodeURIComponent(agentId)}/workspace/mention-index`,
+    `/agents/${encodeURIComponent(agentId)}/workspace/mention-index?${scope}`,
     signal ? { signal } : {},
   );
   const index: WorkspaceMentionIndex = {
@@ -195,7 +203,10 @@ export async function loadWorkspaceMentionIndex(
       .filter((entry) => entry.path),
     truncated: Boolean(body?.truncated),
   };
-  mentionIndexCache.set(agentId, { ...index, at: Date.now() });
+  mentionIndexCache.set(mentionScopeKey(agentId, threadId), {
+    ...index,
+    at: Date.now(),
+  });
   return index;
 }
 
@@ -204,16 +215,18 @@ export async function searchWorkspaceMentionFiles(
   agentId: string,
   query: string,
   signal?: AbortSignal,
+  threadId?: string | null,
 ): Promise<WorkspaceMentionEntry[]> {
   if (!shouldSearchWorkspaceMentions(query) || !isPathLikeMentionQuery(query)) {
     return [];
   }
   const pattern = workspaceGlobPattern(query);
+  const scope = threadId ? `&thread_id=${encodeURIComponent(threadId)}` : "";
   const entries = await request<WorkspaceMentionEntry[]>(
     withFromWorkspace(
       `/agents/${encodeURIComponent(
         agentId,
-      )}/workspace/glob?pattern=${encodeURIComponent(pattern)}&path=/`,
+      )}/workspace/glob?pattern=${encodeURIComponent(pattern)}&path=/${scope}`,
     ),
     signal ? { signal } : {},
   );

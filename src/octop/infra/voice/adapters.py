@@ -52,7 +52,7 @@ def parse_tencent_credentials(row: VoiceProviderRow) -> tuple[str, str]:
 
 
 def _voice_format(mime: str) -> str:
-    """Map an upload MIME type onto a Tencent ASR ``VoiceFormat`` token."""
+    """Map an upload MIME type onto an ASR ``VoiceFormat`` token."""
     lowered = mime.lower()
     if "mp3" in lowered or "mpeg" in lowered:
         return "mp3"

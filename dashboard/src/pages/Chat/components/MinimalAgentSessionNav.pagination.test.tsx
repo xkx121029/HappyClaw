@@ -18,6 +18,13 @@ import { emitSessionEvent } from "../hooks/chatStore";
 import type { Session } from "../hooks/useSessions";
 import MinimalAgentSessionNav from "./MinimalAgentSessionNav";
 
+// 编辑抽屉的 antd Drawer 在 jsdom 里会挂住（open=false 也触发测量循环），
+// 与本文件的分页行为无关；其余 SessionList 测试同样把它 mock 掉。
+vi.mock("./ChatEditExpertDrawer", () => ({
+  default: () => null,
+  canEditExpertFromChat: () => false,
+}));
+
 function agent(
   partial: Pick<OctopAgent, "id" | "agent_id" | "name">,
 ): OctopAgent {
@@ -91,6 +98,9 @@ function renderNav(
       />
     </MemoryRouter>,
   );
+  // 侧栏默认落在「会话」的跨专家平铺列表；本文件断言的是专家内分页，
+  // 所以先切到「专家」tab，其余断言保持原样。
+  fireEvent.click(screen.getByRole("tab", { name: "专家" }));
   return { ...view, onSelect };
 }
 

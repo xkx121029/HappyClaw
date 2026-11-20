@@ -57,6 +57,7 @@
 }
 
 .chatInput {
+  position: relative;
   flex-shrink: 0;
   padding: 16px var(--chat-column-pad-x, 32px) 20px;
   background: var(--fn-bg-elevated, #fff);
@@ -128,11 +129,11 @@
   cursor: pointer;
 
   &:hover {
-    color: var(--fn-brand);
+    color: var(--fn-color-brand);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--fn-brand);
+    outline: 2px solid var(--fn-color-brand);
     outline-offset: 2px;
   }
 }
@@ -171,6 +172,19 @@
   display: flex;
   align-items: flex-end;
   gap: 8px;
+}
+
+/* Plugin overlay layer over the composer: the layer itself never eats clicks;
+   the plugin content it hosts turns pointer events back on inline. */
+.inputOverlay {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  pointer-events: none;
+  z-index: 4;
 }
 
 .actionsRow {
@@ -332,6 +346,26 @@
     outline: 2px solid var(--fn-color-brand);
     outline-offset: 2px;
   }
+}
+
+/* Visible model switch in the desktop composer: label shows the model in use. */
+.modelChipBtn {
+  width: auto;
+  max-width: 220px;
+  height: 32px;
+  gap: 6px;
+  padding: 0 10px;
+  border-radius: var(--fn-radius-full);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.modelChipLabel {
+  min-width: 0;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Active state for toggle buttons (connectors, etc.) */
@@ -992,7 +1026,9 @@
   }
 
   .secondaryActions {
-    flex: 1 1 auto;
+    /* Do not eat the whole row: the send cluster must stay beside it. */
+    flex: 0 1 auto;
+    min-width: 0;
     padding-right: 0;
     overflow-x: auto;
     scrollbar-width: none;

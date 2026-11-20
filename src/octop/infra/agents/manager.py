@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -17,6 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 from octop_harness import HarnessAgent, HarnessAgentConfig, HarnessAgentManager
+from octop_harness.builtin.tools.ask_user import ASK_USER_TOOL_NAME
 from octop_harness.registry import AgentEntry
 from octop_harness.security.models import SecurityPolicy
 
@@ -76,13 +78,10 @@ from octop.infra.connectors.builder import (
 )
 from octop.infra.connectors.service import ConnectorService
 from octop.infra.db.repos.audit import ACTOR_SYSTEM
-from octop.infra.dsh.integration import (
-    DshPromptSessionStore,
-    compose_system_prompt,
-    dsh_skills_prompts_enabled,
-    workspace_skill_snapshot,
+from octop.infra.dsh.compat.switch import compat_enabled
+from octop.infra.dsh.switches import (
+    skills_prompts_enabled as dsh_skills_prompts_enabled,
 )
-from octop.infra.dsh.prompts.skills_injection import SkillPromptSnapshot
 from octop.infra.dsh.switches import stage_enabled as dsh_stage_enabled
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.skills.presentation import apply_skill_presentation, localize_skill_summary
@@ -154,6 +153,52 @@ _AGENT_BOOT_START_TIMEOUT = 60.0
 _MEMORY_NS_PREFIX = "agent_"
 
 _AGENT_STATES_NEEDING_MODEL_RELOAD = frozenset({"failed", "created"})
+
+# Pooled project runtimes are released after this much inactivity.
+_POOL_IDLE_TTL_S = 30 * 60.0
+
+# Expert context files the harness memory middleware reads from the active
+# workspace. Pooled runtimes work in a project/session directory, so those
+# files must be copied there or the model loses the expert's persona.
+_POOLED_CONTEXT_FILES = (
+    "AGENTS.md",
+    "SOUL.md",
+    "IDENTITY.md",
+    "MEMORY.md",
+    "USER.md",
+    "PROACTIVE.md",
+)
+
+_LOCAL_BACKEND_KINDS = frozenset({"local_shell", "filesystem"})
+
+
+def _scope_local_backend_to_workspace(spec: Any, workspace_dir: Path) -> Any:
+    """Point local backend roots at the conversation workspace.
+
+    Pooled runtimes are built from the expert's persisted backend, whose
+    ``root_dir`` is the expert home. Project/session directories live outside
+    that root, so every file tool call is rejected as "outside root directory".
+    Remote backends are left untouched: their paths are container-relative.
+    """
+    if not isinstance(spec, dict):
+        return spec
+    scoped = str(workspace_dir.resolve())
+    kind = spec.get("type")
+    if kind in _LOCAL_BACKEND_KINDS:
+        return {**spec, "root_dir": scoped}
+    default = spec.get("default")
+    if kind == "composite" and isinstance(default, dict):
+        if default.get("type") in _LOCAL_BACKEND_KINDS:
+            return {**spec, "default": {**default, "root_dir": scoped}}
+    return spec
+
+
+def _norm_path(path: Path | str) -> str:
+    return os.path.normcase(os.path.abspath(str(path)))
+
+
+def _same_path(left: Path | str, right: Path | str) -> bool:
+    return _norm_path(left) == _norm_path(right)
 
 _HARNESS_AGENT_CONFIG_FIELDS = frozenset(item.name for item in fields(HarnessAgentConfig))
 
@@ -510,6 +555,28 @@ def _bind_custom_mcp_tools(
 # ---------------------------------------------------------------------------
 
 
+def _search_tools(settings_repo: Any, agent_cfg: dict[str, Any]) -> list[Any]:
+    """按持久化搜索来源挂载**恰好一个**免费搜索工具。
+
+    ``happysearch`` -> ``happysearch_search``；``searchfree`` ->
+    ``searchfree_search``；``both`` -> 一个内部融合两路的
+    ``happysearch_search``。绝不同时挂载两个免费工具。
+    """
+    from octop.infra.search.source import load_source  # noqa: PLC0415
+
+    if agent_cfg.get("web_search_tools") is False:
+        return []
+    state = load_source(settings_repo)
+    if state.effective == "searchfree":
+        from octop.infra.search.native_tool import searchfree_search  # noqa: PLC0415
+
+        return [searchfree_search]
+    from octop.infra.search.happy_tool import build_happysearch_tool  # noqa: PLC0415
+
+    mode = "both" if state.effective == "both" else "happysearch"
+    return [build_happysearch_tool(mode=mode)]
+
+
 class AgentManager:
     """Process-wide singleton: owns harness HarnessAgentManager + all HarnessAgent instances.
 
@@ -562,6 +629,14 @@ class AgentManager:
             workspace_for=self.workspace_for_agent,
         )
         self._harness_manager: HarnessAgentManager | None = None
+        # Pooled harness instances: one per (expert, project directory). The
+        # base agent_id keeps the legacy/single-workspace instance.
+        self._workspace_pool: dict[str, dict[str, str]] = {}
+        self._pool_workspaces: dict[str, str] = {}
+        self._pool_last_used: dict[str, float] = {}
+        # Base-agent middleware that notices the first user file a conversation
+        # creates while it still has no workspace (spec §3.2).
+        self._session_workspace_mw: dict[str, Any] = {}
         self.memory_slim = MemorySlimCoordinator(self)
         self._lock = asyncio.Lock()
         # Serialize start/reload per agent so parallel provider reloads cannot
@@ -574,8 +649,10 @@ class AgentManager:
         self._thread_execution_locks: dict[tuple[str, str], asyncio.Lock] = {}
         # Opt-in DSH skill/prompt state. Session cursors live on this instance
         # (never in module globals) and are keyed by (agent_id, thread_id).
-        self._dsh_prompt_sessions = DshPromptSessionStore()
-        self._dsh_skill_snapshots: dict[str, SkillPromptSnapshot] = {}
+        # Built on first use so the default-off path never imports the DSH
+        # skill/integration tree during startup warm-up.
+        self._dsh_prompt_sessions: Any | None = None
+        self._dsh_skill_snapshots: dict[str, Any] = {}
         # S8 model adapter: transport factory injected before boot(), plus the
         # last install result for the read-only status query. Both stay None
         # when the stage is off, which costs no DSH LLM import.
@@ -744,6 +821,19 @@ class AgentManager:
         if restore_agents:
             await self.restore_agents()
 
+    def _dsh_prompt_store(self) -> Any:
+        """Return the DSH session-cursor store, importing it on first use.
+
+        The store is only touched when ``OCTOP_DSH_SKILLS_PROMPTS`` is on, so
+        the default-off path never loads :mod:`octop.infra.dsh.integration`
+        (and the skill discovery tree behind it) during startup.
+        """
+        if self._dsh_prompt_sessions is None:
+            from octop.infra.dsh.integration import DshPromptSessionStore  # noqa: PLC0415
+
+            self._dsh_prompt_sessions = DshPromptSessionStore()
+        return self._dsh_prompt_sessions
+
     def _install_dsh_llm(self) -> None:
         """Wire the S8 model adapter into the harness factory when enabled.
 
@@ -812,6 +902,7 @@ class AgentManager:
                 "mounted": [],
                 "tools": [],
                 "skipped": [],
+                "runtime": [],
                 "sandbox": {"mode": mode, "assembled": False, "plugins": []},
             }
         return {"enabled": True, **self._dsh_tools_status.report()}
@@ -834,9 +925,43 @@ class AgentManager:
             logger.warning("DSH sandbox workspace unavailable: %s", exc)
             return None
 
+    def _dsh_runtime_tools(self, sandbox_root: Any) -> dict[str, Any]:
+        """S10 exec grants for this agent; empty unless the stage is on.
+
+        Two independent opt-ins are required: ``OCTOP_DSH_EXEC`` (stage) and a
+        plugin id listed in ``OCTOP_DSH_EXEC_PLUGINS`` (grant). The DSH runtime
+        module is imported only after both checks pass.
+
+        A missing workspace root does *not* drop the grant here: it is carried
+        as ``workspace_root=None`` so the mount step can skip with
+        ``runtime_requires_workspace`` instead of the misleading
+        ``no_tool_provider`` reason.
+        """
+        if not dsh_stage_enabled("exec"):
+            return {}
+        from octop.infra.dsh.tools.runtime import (  # noqa: PLC0415
+            ENV_NODE,
+            ExecGrant,
+            RuntimeTools,
+            resolve_exec_plugins,
+        )
+
+        node = os.environ.get(ENV_NODE) or ""
+        return {
+            plugin_id: RuntimeTools(
+                grant=ExecGrant(
+                    plugin_id=plugin_id,
+                    workspace_root=sandbox_root,
+                    node_executable=node,
+                )
+            )
+            for plugin_id in sorted(resolve_exec_plugins())
+        }
+
     def _dsh_plugin_tools(self, row: Any, *, reserved: Sequence[Any]) -> list[Any]:
         """Assemble read-only DSH tools for one agent (called only when enabled)."""
         from octop.infra.dsh.tools import build_dsh_plugin_tools  # noqa: PLC0415
+        from octop.infra.plugins.market import default_market_root  # noqa: PLC0415
 
         hitl = dsh_stage_enabled("hitl")
         approval = None
@@ -848,9 +973,11 @@ class AgentManager:
             )
 
             approval = HitlApprovalChannel()
+        sandbox_root = self._dsh_sandbox_root(row)
+        runtime = self._dsh_runtime_tools(sandbox_root)
         build = build_dsh_plugin_tools(
             scope=str(row.agent_id),
-            market_root=os.environ.get("OCTOP_DSH_MARKET_ROOT") or None,
+            market_root=os.environ.get("OCTOP_DSH_MARKET_ROOT") or default_market_root(),
             local_roots=_dsh_local_roots(),
             providers=self._dsh_tool_providers,
             hitl=hitl,
@@ -859,17 +986,28 @@ class AgentManager:
             # S4: the sandbox confines calls to this agent's workspace. If the
             # path cannot be resolved the probe falls back to the absence gate,
             # whose mode (allow / strict) is visible through dsh_tools_status().
-            sandbox_root=self._dsh_sandbox_root(row),
+            sandbox_root=sandbox_root,
             sandbox_absence=os.environ.get("OCTOP_DSH_SANDBOX_ABSENCE") or None,
+            runtime=runtime,
         )
         self._dsh_tools_status = build
-        for skip in build.skipped:
-            logger.info(
-                "DSH tool skipped: %s (%s) %s",
-                skip.plugin_id,
-                skip.reason,
-                skip.detail,
-            )
+        if build.skipped:
+            from octop.infra.dsh.diagnostics import record_failure  # noqa: PLC0415
+
+            for skip in build.skipped:
+                logger.info(
+                    "DSH tool skipped: %s (%s) %s",
+                    skip.plugin_id,
+                    skip.reason,
+                    skip.detail,
+                )
+                record_failure(
+                    kind="load",
+                    plugin_id=skip.plugin_id,
+                    code=skip.reason,
+                    reason=skip.detail or skip.reason,
+                    detail=skip.tool,
+                )
         return list(build.tools)
 
     async def restore_agents(self) -> None:
@@ -1407,11 +1545,13 @@ class AgentManager:
                 except Exception:
                     logger.exception("failed to drop deleted expert %s from team rosters", agent_id)
             await asyncio.to_thread(self._quiesce_octop_memory, agent_id)
+            await self._release_pool_for_agent(agent_id)
             await self._harness_manager.aremove_agent(agent_id)  # type: ignore[union-attr]
         self._bootstrap_known.pop(agent_id, None)
         self._plugin_tool_labels.pop(agent_id, None)
         # Agent deleted: drop every DSH session cursor and its snapshot.
-        self._dsh_prompt_sessions.discard_agent(agent_id)
+        if self._dsh_prompt_sessions is not None:
+            self._dsh_prompt_sessions.discard_agent(agent_id)
         self._dsh_skill_snapshots.pop(agent_id, None)
         cfg = agent_config_from_row(row)
         await asyncio.to_thread(
@@ -1487,10 +1627,12 @@ class AgentManager:
                 raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
             async with self._lifecycle_lock_for(agent_id):
                 await asyncio.to_thread(self._quiesce_octop_memory, agent_id)
+                await self._release_pool_for_agent(agent_id)
                 await self._harness_manager.aremove_agent(agent_id)  # type: ignore[union-attr]
                 self._bootstrap_known.pop(agent_id, None)
                 # Agent stopped: drop every DSH session cursor and its snapshot.
-                self._dsh_prompt_sessions.discard_agent(agent_id)
+                if self._dsh_prompt_sessions is not None:
+                    self._dsh_prompt_sessions.discard_agent(agent_id)
                 self._dsh_skill_snapshots.pop(agent_id, None)
                 self._repos.agent_repo.set_state(agent_id, "stopped", error=None)
 
@@ -1555,6 +1697,7 @@ class AgentManager:
                     raise ValueError(tr("memory_storage.restore_changed", locale))
                 cfg, metadata, tags, user_display = self._agent_runtime_bundle(row)
                 removed = True
+                await self._release_pool_for_agent(agent_id)
                 await self._harness_manager.aremove_agent(agent_id)
                 if runtime.memory is not None or (
                     key is not None and shared_memory_store().peek(key) is not None
@@ -1634,6 +1777,23 @@ class AgentManager:
             except KeyError:
                 pass
         return self._backend_workspace_for_row(row)
+
+    def workspace_for_thread(self, agent_id: str, thread_id: str) -> Any | None:
+        """Backend workspace for a conversation, falling back to the expert's."""
+        path = self.thread_workspace_path(agent_id, thread_id)
+        if path is None:
+            return self.workspace_for_agent(agent_id)
+        if self._harness_manager is not None:
+            pooled = self._workspace_pool.get(agent_id, {}).get(_norm_path(path))
+            if pooled:
+                try:
+                    return self._harness_manager.get_agent(pooled).agent.workspace
+                except KeyError:
+                    pass
+        row = self.get_row(agent_id)
+        if row is None:
+            return None
+        return self._backend_workspace_for_row(row, workspace_dir=path)
 
     async def save_manual_memory_document(self, agent_id: str, filename: str, content: str) -> None:
         """Serialize owner edits with document review and lifecycle changes."""
@@ -1928,7 +2088,8 @@ class AgentManager:
         uses that so the request itself does not vacuum.
         """
         # Session ended: drop its DSH skill cursor explicitly (never GC-driven).
-        self._dsh_prompt_sessions.discard(agent_id, thread_id)
+        if self._dsh_prompt_sessions is not None:
+            self._dsh_prompt_sessions.discard(agent_id, thread_id)
         row = self.get_row(agent_id)
         harness = None
         try:
@@ -2231,6 +2392,221 @@ class AgentManager:
         finally:
             self._end_invocation(agent_id)
 
+    # ------------------------------------------------------------------
+    # Project workspaces — pooled instances per (agent, directory)
+    # ------------------------------------------------------------------
+
+    def thread_workspace_path(self, agent_id: str, thread_id: str) -> Path | None:
+        """Directory a conversation works in, or None when it has none yet.
+
+        Returns None when the resolved path equals the expert's own workspace or
+        the directory is not materialized (creating dirs is a P2 concern).
+        """
+        if not thread_id:
+            return None
+        try:
+            thread = self._repos.thread_repo.get(thread_id)
+        except Exception:  # pragma: no cover - defensive for old schemas
+            return None
+        if thread is None or thread.agent_id != agent_id:
+            return None
+        from octop.infra.projects.workspace import resolve_thread_workspace  # noqa: PLC0415
+
+        resolved = resolve_thread_workspace(
+            thread=thread, project_repo=self._repos.project_repo, paths=self._paths
+        )
+        if resolved.path is None or not resolved.path.is_dir():
+            return None
+        base = self.resolve_workspace_dir(agent_id)
+        if _same_path(resolved.path, base):
+            return None
+        return resolved.path
+
+    def pooled_agent_id(self, agent_id: str, workspace: Path) -> str:
+        digest = hashlib.sha1(str(workspace).encode("utf-8")).hexdigest()[:10]  # noqa: S324
+        return f"{agent_id}~{digest}"
+
+    async def _dispatch_agent_id(self, agent_id: str, thread_id: str) -> str:
+        """Registry id to run this turn under: base agent or a pooled instance."""
+        if self._harness_manager is None:
+            return agent_id
+        workspace = self.thread_workspace_path(agent_id, thread_id)
+        if workspace is None:
+            return agent_id
+        key = _norm_path(workspace)
+        pooled = self._workspace_pool.get(agent_id, {}).get(key)
+        if pooled and self._octop_harness_or_none(pooled) is not None:
+            self._pool_last_used[pooled] = time.monotonic()
+            return pooled
+        return await self._ensure_pooled_instance(agent_id, workspace)
+
+    def _seed_pooled_workspace(self, agent_id: str, workspace: Path) -> None:
+        """Copy expert context files into a fresh conversation directory.
+
+        Memory middleware resolves ``AGENTS.md`` / ``SOUL.md`` / ``USER.md`` /
+        ``MEMORY.md`` inside the *active* workspace. A new project or session
+        directory has only the built-in templates, so without this copy the
+        expert's persona never reaches the model. Existing conversation files
+        win: a project may legitimately ship its own ``AGENTS.md``.
+        """
+        base = self.resolve_workspace_dir(agent_id)
+        if _same_path(base, workspace) or not base.is_dir():
+            return
+        for name in _POOLED_CONTEXT_FILES:
+            source = base / name
+            target = workspace / name
+            if not source.is_file() or target.exists():
+                continue
+            with suppress(OSError):
+                shutil.copy2(source, target)
+
+    async def _ensure_pooled_instance(self, agent_id: str, workspace: Path) -> str:
+        assert self._harness_manager is not None
+        key = _norm_path(workspace)
+        pooled = self.pooled_agent_id(agent_id, workspace)
+        async with self._lifecycle_lock_for(agent_id):
+            existing = self._octop_harness_or_none(pooled)
+            if existing is not None:
+                self._workspace_pool.setdefault(agent_id, {})[key] = pooled
+                self._pool_workspaces[pooled] = str(workspace)
+                self._pool_last_used[pooled] = time.monotonic()
+                return pooled
+            await self._acquire_pool_slot(agent_id)
+            row = self.get_row(agent_id)
+            if row is None:
+                return agent_id
+            self._seed_pooled_workspace(agent_id, workspace)
+            cfg = self._build_harness_config(row, workspace_override=workspace)
+            entry = await self._harness_manager.acreate_agent(
+                cfg,
+                agent_id=pooled,
+                metadata={"parent_agent_id": agent_id, "workspace": str(workspace)},
+                tags=["pooled"],
+                init_workspace=True,
+            )
+            await self._wire_pooled_agent(row, entry.agent, cfg)
+            self._workspace_pool.setdefault(agent_id, {})[key] = pooled
+            self._pool_workspaces[pooled] = str(workspace)
+            self._pool_last_used[pooled] = time.monotonic()
+            logger.info(
+                "Agent %s: pooled runtime for workspace %s (%s)",
+                agent_id,
+                workspace,
+                pooled,
+            )
+            return pooled
+
+    async def _wire_pooled_agent(self, row: AgentRow, agent: HarnessAgent, cfg: Any) -> None:
+        """Per-instance wiring that must not touch the base agent's callbacks."""
+        uid = self._connector_uid_for(row)
+        if uid is not None:
+            inject_missing_gateway_tools(
+                agent,
+                svc=self._connector_svc,
+                connector_repo=self._repos.connector_repo,
+                user_id=uid,
+                agent_id=row.agent_id,
+                mcp_server_configs=cfg.mcp_server_configs,
+            )
+        _sanitize_bound_mcp_tools(agent)
+        ws = agent.workspace
+        with suppress(Exception):
+            from octop.infra.agents.builtin_skills import (  # noqa: PLC0415
+                sync_octop_builtin_skills,
+            )
+
+            await sync_octop_builtin_skills(ws)
+        if self._plugin_manager is not None:
+            with suppress(Exception):
+                await asyncio.to_thread(
+                    self._plugin_manager.sync_skills_to_workspace,
+                    ws,
+                    agent_plugins=self.get_config(row.agent_id).get("plugins"),
+                )
+
+    async def _release_pool_for_agent(self, agent_id: str) -> None:
+        """Drop every pooled runtime of an expert (delete / full stop)."""
+        pooled_ids = list(self._workspace_pool.pop(agent_id, {}).values())
+        for pooled in pooled_ids:
+            self._pool_last_used.pop(pooled, None)
+            self._pool_workspaces.pop(pooled, None)
+            if self._harness_manager is not None:
+                with suppress(Exception):
+                    await self._harness_manager.aremove_agent(pooled)
+            logger.info("Released pooled runtime %s for agent %s", pooled, agent_id)
+
+    async def _acquire_pool_slot(self, agent_id: str) -> None:
+        """Wait for runtime capacity; raise AGENT_BUSY after the queue timeout."""
+        limit_total = max(1, int(getattr(self._config, "project_runtime_max_instances", 6)))
+        limit_agent = max(1, int(getattr(self._config, "project_runtime_per_agent", 2)))
+        timeout = float(getattr(self._config, "project_runtime_queue_timeout_s", 120.0))
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        while True:
+            await self._release_idle_pool()
+            total = len(self._pool_last_used)
+            per_agent = len(self._workspace_pool.get(agent_id, {}))
+            if total < limit_total and per_agent < limit_agent:
+                return
+            if loop.time() >= deadline:
+                logger.warning(
+                    "Project runtime capacity reached: %d/%d total, %d/%d for %s",
+                    total,
+                    limit_total,
+                    per_agent,
+                    limit_agent,
+                    agent_id,
+                )
+                raise OctopError.localized(ErrorCode.AGENT_BUSY)
+            await asyncio.sleep(0.5)
+
+    async def _finalize_session_workspace(self, agent_id: str, thread_id: str) -> None:
+        """Bind ``sessions/<thread_id>`` after its first user file was written."""
+        middleware = self._session_workspace_mw.get(agent_id)
+        if middleware is None or not thread_id:
+            return
+        written = middleware.take(thread_id)
+        if not written:
+            return
+        from octop.infra.projects.session import bind_session_workspace  # noqa: PLC0415
+
+        try:
+            await asyncio.to_thread(
+                bind_session_workspace,
+                thread_repo=self._repos.thread_repo,
+                paths=self._paths,
+                thread_id=thread_id,
+                workspace_dir=self.resolve_workspace_dir(agent_id),
+                written=written,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to enable session workspace for %s", thread_id, exc_info=True
+            )
+
+    async def _release_idle_pool(self) -> None:
+        """Drop pooled instances idle longer than the TTL (~30 min)."""
+        if self._harness_manager is None:
+            return
+        now = time.monotonic()
+        expired = [
+            pooled
+            for pooled, used in self._pool_last_used.items()
+            if now - used > _POOL_IDLE_TTL_S
+        ]
+        for pooled in expired:
+            parent = self._pool_workspaces.pop(pooled, None)
+            self._pool_last_used.pop(pooled, None)
+            for key, value in list(self._workspace_pool.items()):
+                for workspace_key, candidate in list(value.items()):
+                    if candidate == pooled:
+                        del value[workspace_key]
+                if not value:
+                    self._workspace_pool.pop(key, None)
+            with suppress(Exception):
+                await self._harness_manager.aremove_agent(pooled)
+            logger.info("Released idle pooled runtime %s (%s)", pooled, parent)
+
     async def stream(self, agent_id: str, request: dict[str, Any]) -> AsyncIterator[Any]:
         """Stream harness chunks (Langfuse tracing handled inside octop-harness)."""
         if self._harness_manager is None:
@@ -2238,35 +2614,47 @@ class AgentManager:
         self._require_live_agent(agent_id)
 
         thread_id = str(request.get("thread_id") or "")
+        dispatch_id = await self._dispatch_agent_id(agent_id, thread_id)
         async with (
             self._thread_execution_lock(agent_id, thread_id),
             self._track_invocation(agent_id),
         ):
-            self._apply_pending_bootstrap_graph_refresh(agent_id)
+            self._apply_pending_bootstrap_graph_refresh(dispatch_id)
             req = self._prepare_stream_request(agent_id, request)
             with (
                 hitl_thread_scope(thread_id_from_request(req)),
                 turn_model_scope(self._stream_model_label(agent_id, req, thread_id)),
             ):
-                async for chunk in self._harness_manager.stream(agent_id, cast(Any, req)):
-                    yield chunk
-            self._apply_pending_bootstrap_graph_refresh(agent_id)
+                try:
+                    async for chunk in self._harness_manager.stream(
+                        dispatch_id, cast(Any, req)
+                    ):
+                        yield chunk
+                finally:
+                    await self._finalize_session_workspace(agent_id, thread_id)
+            self._apply_pending_bootstrap_graph_refresh(dispatch_id)
 
     async def call(self, agent_id: str, request: dict[str, Any]) -> dict[str, Any]:
         """Non-streaming harness invocation (one-shot agent call)."""
         if self._harness_manager is None:
             raise self._unavailable_error(agent_id)
         self._require_live_agent(agent_id)
+        dispatch_id = await self._dispatch_agent_id(
+            agent_id, str(request.get("thread_id") or "")
+        )
         async with self._track_invocation(agent_id):
-            self._apply_pending_bootstrap_graph_refresh(agent_id)
+            self._apply_pending_bootstrap_graph_refresh(dispatch_id)
             req = self._prepare_stream_request(agent_id, request)
             thread_id = str(req.get("thread_id") or thread_id_from_request(req) or "")
             with (
                 hitl_thread_scope(thread_id_from_request(req)),
                 turn_model_scope(self._stream_model_label(agent_id, req, thread_id)),
             ):
-                result = await self._harness_manager.call(agent_id, cast(Any, req))
-            self._apply_pending_bootstrap_graph_refresh(agent_id)
+                try:
+                    result = await self._harness_manager.call(dispatch_id, cast(Any, req))
+                finally:
+                    await self._finalize_session_workspace(agent_id, thread_id)
+            self._apply_pending_bootstrap_graph_refresh(dispatch_id)
         if not isinstance(result, dict):
             return {"result": result}
         return result
@@ -2281,25 +2669,35 @@ class AgentManager:
         if self._harness_manager is None:
             raise self._unavailable_error(agent_id)
         self._require_live_agent(agent_id)
+        dispatch_id = await self._dispatch_agent_id(agent_id, thread_id)
         async with (
             self._thread_execution_lock(agent_id, thread_id),
             self._track_invocation(agent_id),
         ):
-            self._apply_pending_bootstrap_graph_refresh(agent_id)
+            self._apply_pending_bootstrap_graph_refresh(dispatch_id)
             with (
                 hitl_thread_scope(thread_id),
                 turn_model_scope(self._stream_model_label(agent_id, {}, thread_id)),
             ):
-                async for chunk in self._harness_manager.resume_hitl(
-                    agent_id, thread_id, decisions
-                ):
-                    yield chunk
-            self._apply_pending_bootstrap_graph_refresh(agent_id)
+                try:
+                    async for chunk in self._harness_manager.resume_hitl(
+                        dispatch_id, thread_id, decisions
+                    ):
+                        yield chunk
+                finally:
+                    await self._finalize_session_workspace(agent_id, thread_id)
+            self._apply_pending_bootstrap_graph_refresh(dispatch_id)
 
     def cancel_stream(self, agent_id: str, thread_id: str) -> None:
         """Signal octop-harness to stop the active stream for *(agent_id, thread_id)*."""
         if self._harness_manager is not None:
-            self._harness_manager.cancel(agent_id, thread_id)
+            dispatch_id = agent_id
+            workspace = self.thread_workspace_path(agent_id, thread_id)
+            if workspace is not None:
+                dispatch_id = self._workspace_pool.get(agent_id, {}).get(
+                    _norm_path(workspace), agent_id
+                )
+            self._harness_manager.cancel(dispatch_id, thread_id)
 
     def get_thread_model(self, agent_id: str, thread_id: str) -> str | None:
         if self._harness_manager is None:
@@ -4212,6 +4610,7 @@ class AgentManager:
             row = self._repos.agent_repo.get(agent_id)
             if not row or not row.enabled or row.last_state == "stopped":
                 await asyncio.to_thread(self._quiesce_octop_memory, agent_id)
+                await self._release_pool_for_agent(agent_id)
                 await self._harness_manager.aremove_agent(agent_id)
                 return
             if self._harness_manager.shared_factory is None:
@@ -4434,8 +4833,15 @@ class AgentManager:
                 return str(row.default_model).strip()
         return ""
 
-    def _build_harness_config(self, row: AgentRow) -> HarnessAgentConfig:
-        """Convert an AgentRow into a HarnessAgentConfig."""
+    def _build_harness_config(
+        self, row: AgentRow, *, workspace_override: Path | None = None
+    ) -> HarnessAgentConfig:
+        """Convert an AgentRow into a HarnessAgentConfig.
+
+        ``workspace_override`` builds a pooled instance for a project directory
+        owned by this expert; expert-level state (memory) stays in the private
+        ``agents/<id>`` directory.
+        """
         from octop_harness.middleware.bootstrap import bootstrap_marker_exists  # noqa: PLC0415
 
         from octop.infra.agents.workspace.dir import (  # noqa: PLC0415
@@ -4447,7 +4853,13 @@ class AgentManager:
         cfg = self._agent_config_dict(row)
         raw = cfg.get("workspace_dir")
         stored = self._repos.agent_repo.get(row.agent_id) is not None
-        if isinstance(raw, str) and raw.strip() and stored:
+        if workspace_override is not None:
+            workspace_dir = workspace_override
+            harness_workspace = workspace_override
+            cfg = dict(cfg)
+            cfg["workspace_dir"] = str(workspace_override)
+            workspace_dir.mkdir(parents=True, exist_ok=True)
+        elif isinstance(raw, str) and raw.strip() and stored:
             # Host mkdir may remap an unwritable leftover (e.g. /root/.octop/…)
             # and persist the new path; re-read so harness gets that string.
             workspace_dir = self.resolve_workspace_dir(row.agent_id)
@@ -4474,6 +4886,13 @@ class AgentManager:
                 cfg = persisted
 
         backend = self._backend_spec_for_row(row, cfg=cfg, workspace_dir=workspace_dir)
+        if workspace_override is not None:
+            backend = _scope_local_backend_to_workspace(backend, workspace_override)
+            # The workspace facade must resolve virtual absolute paths against
+            # the same root as the harness backend, or ``/report.html`` would
+            # still land in the expert home instead of the conversation.
+            cfg = dict(cfg)
+            cfg["backend"] = backend
         ws = self._backend_workspace_for_row(
             row,
             cfg=cfg,
@@ -4500,24 +4919,41 @@ class AgentManager:
         if not team_host:
             knowledge_tools = build_knowledge_tools(KnowledgeToolServices(self))
 
-        mobile_tools: list[Any] = []
-        if not team_host and self._config.capabilities.mobile.enabled:
-            from octop.infra.control.mobile.tools import build_mobile_tools  # noqa: PLC0415
+        # 设备链路（HappyClaw ↔ 手机 App）：仅已配对时挂载；离线时由
+        # DeviceLinkToolGateMiddleware 把工具从模型可见列表中剔除。
+        device_tools: list[Any] = []
+        if not team_host:
+            try:
+                from octop.infra.control.device_link.agent_tools import (  # noqa: PLC0415
+                    build_device_link_tools,
+                )
+                from octop.infra.control.device_link.manager import (  # noqa: PLC0415
+                    get_device_link_manager,
+                )
 
-            def _mobile_workspace_for(agent_id: str) -> Any:
-                # Prefer the running agent's workspace — authoritative for
-                # docker / ephemeral remote sandboxes; ws is the start-time
-                # fallback for the agent being configured here.
-                if self._harness_manager is not None:
-                    with suppress(Exception):
-                        return self._harness_manager.get_agent(agent_id).agent.workspace
-                return ws if agent_id == row.agent_id else None
+                if get_device_link_manager().is_paired():
+                    device_tools = build_device_link_tools(
+                        self._config,
+                        user_repo=self._repos.user_repo,
+                        cron_manager=self._cron_manager,
+                    )
+            except Exception:  # noqa: BLE001
+                logger.warning("device link agent tools unavailable", exc_info=True)
+                device_tools = []
 
-            mobile_tools = build_mobile_tools(
-                self._config,
-                user_repo=self._repos.user_repo,
-                workspace_for=_mobile_workspace_for,
-            )
+        # 本机 adb 通道：与设备直连并列，直接调用主机 adb 操作模拟器/USB 调试手机。
+        # 主机没有 adb 时不挂载，避免给模型一堆必然失败的工具。
+        adb_tools: list[Any] = []
+        if not team_host:
+            try:
+                from octop.infra.control.adb.runner import adb_available  # noqa: PLC0415
+                from octop.infra.control.adb.tools import build_adb_tools  # noqa: PLC0415
+
+                if adb_available():
+                    adb_tools = build_adb_tools(user_repo=self._repos.user_repo)
+            except Exception:  # noqa: BLE001
+                logger.warning("adb agent tools unavailable", exc_info=True)
+                adb_tools = []
 
         from octop_harness.plugins import PluginRegistry, build_plugin_tools  # noqa: PLC0415
 
@@ -4563,7 +4999,7 @@ class AgentManager:
             plugin_tools,
             reserved={
                 str(getattr(t, "name", ""))
-                for t in [*(cron_tools or []), *knowledge_tools, *mobile_tools]
+                for t in [*(cron_tools or []), *knowledge_tools, *device_tools, *adb_tools]
             },
         )
         self._plugin_tool_labels[row.agent_id] = {
@@ -4580,6 +5016,9 @@ class AgentManager:
 
         from octop.infra.agents.middleware.binary_read_guard import BinaryReadGuardMiddleware
         from octop.infra.agents.middleware.browser_profile import BrowserProfileMiddleware
+        from octop.infra.agents.middleware.conversation_context import (
+            ConversationContextMiddleware,
+        )
         from octop.infra.agents.middleware.mcp_output_schema import (
             McpOutputSchemaMiddleware,
             harness_handles_mcp_tool_errors,
@@ -4608,6 +5047,16 @@ class AgentManager:
             ),
             ReasoningRequestMiddleware(),
             KnowledgeSearchHintMiddleware(),
+            ConversationContextMiddleware(
+                thread_repo=self._repos.thread_repo,
+                project_repo=self._repos.project_repo,
+                paths=self._paths,
+                agent_id=row.agent_id,
+                agent_name=row.name,
+                workspace_dir=workspace_dir,
+                default_timezone=self._config.default_timezone,
+                cron_manager=self._cron_manager,
+            ),
             BrowserProfileMiddleware(),
             BinaryReadGuardMiddleware(),
             *(() if harness_handles_mcp_tool_errors() else (McpOutputSchemaMiddleware(),)),
@@ -4619,6 +5068,60 @@ class AgentManager:
             ),
             OctopUiOffloadMiddleware(),
         ]
+        if workspace_override is None:
+            # Only the base agent serves conversations that have no workspace
+            # yet; pooled instances already run inside a resolved directory.
+            from octop.infra.agents.middleware.session_workspace import (  # noqa: PLC0415
+                SessionWorkspaceMiddleware,
+            )
+
+            session_mw = SessionWorkspaceMiddleware(
+                thread_repo=self._repos.thread_repo,
+                workspace_dir=workspace_dir,
+                root_dir=Path(str(backend.get("root_dir")))
+                if isinstance(backend, dict) and backend.get("root_dir")
+                else None,
+            )
+            self._session_workspace_mw[row.agent_id] = session_mw
+            agent_middleware.append(session_mw)
+        # Quick chats have no workspace: hide file/shell tools on every runtime
+        # (base and pooled), and refuse them again at tool-call time.
+        from octop.infra.agents.middleware.quick_chat_guard import (  # noqa: PLC0415
+            QuickChatGuardMiddleware,
+        )
+
+        agent_middleware.append(
+            QuickChatGuardMiddleware(thread_repo=self._repos.thread_repo)
+        )
+        if device_tools:
+            from octop.infra.agents.middleware.device_link_gate import (  # noqa: PLC0415
+                DeviceLinkToolGateMiddleware,
+            )
+
+            agent_middleware.append(DeviceLinkToolGateMiddleware())
+            # 设备副作用动作的审批必须独立于全局 HITL 开关与 onboarding 状态：
+            # 自己挂一个 HumanInTheLoopMiddleware，避免 cfg.interrupt_on 在
+            # 未 bootstrap / hitl 关闭时被 harness 静默丢弃。
+            from langchain.agents.middleware import HumanInTheLoopMiddleware  # noqa: PLC0415
+
+            from octop.infra.control.device_link.agent_tools import (  # noqa: PLC0415
+                device_link_interrupt_on,
+            )
+
+            agent_middleware.append(
+                HumanInTheLoopMiddleware(interrupt_on=device_link_interrupt_on())
+            )
+        if adb_tools:
+            # adb 的副作用动作同样逐次审批；只读（列设备/截屏）不打断。
+            from langchain.agents.middleware import HumanInTheLoopMiddleware  # noqa: PLC0415
+
+            from octop.infra.control.adb.tools import (  # noqa: PLC0415
+                adb_interrupt_on,
+            )
+
+            agent_middleware.append(
+                HumanInTheLoopMiddleware(interrupt_on=adb_interrupt_on())
+            )
         if dsh_skills_prompts_enabled():
             # Only mounts when the opt-in flag is on, so the flag-off middleware
             # chain is byte-identical to before this integration existed.
@@ -4632,12 +5135,26 @@ class AgentManager:
         if cron_tools:
             merged_tools.extend(cron_tools)
         merged_tools.extend(knowledge_tools)
-        merged_tools.extend(mobile_tools)
+        if not team_host:
+            from octop.infra.agents.workspace.present_file import (  # noqa: PLC0415
+                build_present_file_tool,
+            )
+
+            merged_tools.append(build_present_file_tool(ws))
+        merged_tools.extend(device_tools)
+        merged_tools.extend(adb_tools)
         merged_tools.extend(plugin_tools)
+        merged_tools.extend(_search_tools(self._repos.settings_repo, cfg))
         # dsh:stage-tools — the only S2 insertion point. When the switch is off
         # this block neither imports the tools package nor touches the list.
         if dsh_stage_enabled("tools"):
             merged_tools.extend(self._dsh_plugin_tools(row, reserved=merged_tools))
+        # dsh:compat-tools — independent of the DSH tool stage. Only active when
+        # OCTOP_DSH_COMPAT is on; a bundle that failed to mount contributes nothing.
+        if compat_enabled():
+            from octop.infra.dsh.compat.tools import compat_structured_tools  # noqa: PLC0415
+
+            merged_tools.extend(compat_structured_tools(reserved=merged_tools))
         # agent_list / ask_agent: PeerAgentMiddleware (team_enabled=True), not config.tools.
 
         acp_section = cfg.get("acp")
@@ -4658,16 +5175,42 @@ class AgentManager:
 
         system_prompt = row.system_prompt
         memory: tuple[str, ...] | None = None
-        if not team_host and not bootstrap_marker_exists(ws):
+        if workspace_override is not None:
+            # Pooled runtimes (project / session conversations) act for an
+            # expert already onboarded in its private workspace. The bootstrap
+            # marker lives there, not in the conversation directory, so checking
+            # the override path would blank the persona prompt and memory files
+            # and turn the turn into a bare model request. Never run onboarding
+            # inside a project or session directory either.
+            bootstrap_enabled = False
+        elif not team_host and not bootstrap_marker_exists(ws):
             system_prompt = None
             memory = ()
+            bootstrap_enabled = True
+        else:
+            bootstrap_enabled = not team_host
 
         if dsh_skills_prompts_enabled() and not team_host and system_prompt:
             # Opt-in: fold the deterministic DSH skills section into the graph
             # prompt. Flag off keeps the exact previous string and reads nothing.
+            from octop.infra.dsh.integration import (  # noqa: PLC0415
+                compose_system_prompt,
+                workspace_skill_snapshot,
+            )
+
             snapshot = workspace_skill_snapshot(workspace_dir, agent_id=row.agent_id)
             self._dsh_skill_snapshots[row.agent_id] = snapshot
             system_prompt = compose_system_prompt(system_prompt, snapshot)
+
+        if compat_enabled() and not team_host and system_prompt:
+            # DSH bundles that publish memory/system-prompt context (for example
+            # auto-memory) fold their rendered sections in here. Failures are
+            # swallowed inside the bridge; they never reach the chat path.
+            from octop.infra.dsh.compat.prompt import compat_prompt_block  # noqa: PLC0415
+
+            compat_block = compat_prompt_block()
+            if compat_block:
+                system_prompt = f"{system_prompt}\n\n{compat_block}"
 
         mcp_server_configs: dict[str, Any] = {}
         if not team_host:
@@ -4757,6 +5300,15 @@ class AgentManager:
         harness_fields: dict[str, Any] = {}
         if "decision" in _HARNESS_AGENT_CONFIG_FIELDS:
             harness_fields["decision"] = self._decision.harness_config()
+        if "web_search_tools" in _HARNESS_AGENT_CONFIG_FIELDS:
+            # 始终显式传值，避免 harness 默认 "auto" 无条件带上 searchfree。
+            # 这里只放已配置的商业 provider；免费来源由 Octop 自己挂载。
+            from octop.infra.search.source import harness_policy, load_source  # noqa: PLC0415
+
+            harness_fields["web_search_tools"] = harness_policy(
+                load_source(self._repos.settings_repo),
+                agent_cfg=cfg,
+            )
 
         harness_cfg = HarnessAgentConfig(
             name=_memory_namespace(row.agent_id),
@@ -4783,7 +5335,7 @@ class AgentManager:
             mcp_server_configs=mcp_server_configs,
             tools=merged_tools or None,
             middleware=agent_middleware or None,
-            bootstrap_enabled=not team_host,
+            bootstrap_enabled=bootstrap_enabled,
             acp_runners=acp_config.runners,
             acp_delegate_enabled=bool(acp_raw.get("tool_enabled", False)),
             skills_disabled=frozenset(skills_disabled_set(cfg) | plugin_skills_disabled),
@@ -4792,7 +5344,15 @@ class AgentManager:
             media_generation=self._media_generation.harness_config(),
             **harness_fields,
             **_memory_extract_settings(cfg, is_ref_usable=self._providers.is_model_ref_usable),
-            **_resolve_memory_backend_kwargs(cfg, workspace_dir=workspace_dir, config=self._config),
+            **_resolve_memory_backend_kwargs(
+                cfg,
+                workspace_dir=(
+                    self._paths.agent_workspace(row.agent_id)
+                    if workspace_override is not None
+                    else workspace_dir
+                ),
+                config=self._config,
+            ),
         )
         if "tools_disabled" in _HARNESS_AGENT_CONFIG_FIELDS:
             from octop.infra.agents.settings.tool_catalog import effective_tools_disabled
@@ -4814,6 +5374,41 @@ class AgentManager:
         interrupt_on = apply_session_bypass(applied.interrupt_on, self._hitl_session_store)
         if interrupt_on is not applied.interrupt_on:
             applied = replace(applied, interrupt_on=interrupt_on)
+        # ``ask_user_question`` is a collaboration pause, not an approval gate:
+        # the harness only interrupts while its own default flag happens to stay
+        # on, and a turn that misses it runs the tool body and answers the model
+        # with "No interactive user is available" (the question never reaches
+        # the conversation). Pin the pause per turn so a project/session runtime
+        # can never degrade that way. A user who removed the tool from the
+        # agent's tool list keeps it off; nothing is re-enabled behind their back.
+        ask_disabled = ASK_USER_TOOL_NAME in getattr(applied, "tools_disabled", frozenset())
+        ask_rule = {
+            "allowed_decisions": ["respond"],
+            "description": "The agent is asking you to decide.",
+        }
+        if not ask_disabled and "ask_user_enabled" in _HARNESS_AGENT_CONFIG_FIELDS:
+            applied = replace(applied, ask_user_enabled=True)
+        if not ask_disabled and "interrupt_on" in _HARNESS_AGENT_CONFIG_FIELDS:
+            applied = replace(
+                applied,
+                interrupt_on={**(applied.interrupt_on or {}), ASK_USER_TOOL_NAME: dict(ask_rule)},
+            )
+        if not ask_disabled and applied.middleware:
+            # Device actions carry their own ``HumanInTheLoopMiddleware`` (it must
+            # survive ``hitl.enabled=False`` and the onboarding window). deepagents
+            # merges caller middleware by ``.name``, and that class name is shared
+            # with the harness instance — ours therefore *replaces* it, silently
+            # dropping the pause pinned above, and the tool body runs instead
+            # (the "No interactive user is available" reply). Mirror the rule onto
+            # the instance that actually reaches the graph.
+            from langchain.agents.middleware import HumanInTheLoopMiddleware  # noqa: PLC0415
+
+            for middleware in applied.middleware:
+                if not isinstance(middleware, HumanInTheLoopMiddleware):
+                    continue
+                current = dict(middleware.interrupt_on or {})
+                if ASK_USER_TOOL_NAME not in current:
+                    middleware.interrupt_on = {**current, ASK_USER_TOOL_NAME: dict(ask_rule)}
         if applied.model_retry_enabled:
             factory = (
                 self._harness_manager.shared_factory if self._harness_manager is not None else None

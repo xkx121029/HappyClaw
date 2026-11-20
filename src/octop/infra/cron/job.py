@@ -50,6 +50,8 @@ class CronJob:
         self._delivery_service = delivery_service
         self._cron_repo = cron_repo
         self._audit_repo = audit_repo
+        # Set by run(): a degraded-delivery note (for example history skipped).
+        self.last_note: str | None = None
 
     @classmethod
     def from_row(
@@ -83,14 +85,19 @@ class CronJob:
         lease_token: str | None = None,
         disable_after: bool = False,
     ) -> bool:
-        """Run the delivery. Return False when ``lease_token`` was lost before recording."""
+        """Run the delivery.
+
+        Returns True only when the run completed and its result was recorded.
+        A false value lets the caller retry or mark the run failed; an error is
+        never reported as success.
+        """
         from octop.infra.metrics import METRICS  # noqa: PLC0415
 
         METRICS.inc("cron_runs_total")
         ts = int(time.time())
 
         try:
-            await self._delivery_service.deliver(
+            self.last_note = await self._delivery_service.deliver(
                 CronDeliveryCommand(
                     cron_id=self._cron_id,
                     cron_name=self._name,
@@ -126,7 +133,7 @@ class CronJob:
             )
             if raise_on_error:
                 raise
-            return True
+            return False
         recorded_ok = self._record(
             ts,
             "ok",

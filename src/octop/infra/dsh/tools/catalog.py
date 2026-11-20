@@ -2,8 +2,13 @@
 
 Inputs are already-admitted plugins (see :mod:`.discovery`) plus a mapping from
 plugin id to a tool **provider**. The provider is the only way a tool body can
-enter S2: DSH bundles ship JavaScript, and this stage never executes it, so no
-declarative on-disk tool format is invented here.
+enter this stage, and the default providers never execute plugin JavaScript.
+
+The one exception is explicit and opt-in: ``runtime`` (S10) maps a host-granted
+plugin id to a :class:`~.runtime.RuntimeTools` invoker. Those tools still go
+through the same pipeline; what changes is that their body runs the bundle's
+built entry in a Node child process via ``PluginSandbox.run_command``, and the
+guardrail rates them HIGH so approval is mandatory.
 
 Every mounted tool is bound to one ``ToolPipeline`` built by its plugin's
 ``DshToolRegistry``. Parameter validation, the guardrail (capability, approval,
@@ -31,8 +36,15 @@ from octop.infra.plugins.bridge.errors import DshToolError
 from octop.infra.plugins.bridge.registry import DshToolRegistry
 from octop.infra.plugins.runtime.contract import PluginEnvelope
 from octop.infra.plugins.sandbox import ToolInspection
+from octop.infra.plugins.sandbox.command import SubprocessExecutor
 
-from .discovery import ORIGIN_MARKET, DiscoveredPlugin, DshToolSkip, discover_dsh_plugins
+from .discovery import (
+    ORIGIN_LOCAL,
+    ORIGIN_MARKET,
+    DiscoveredPlugin,
+    DshToolSkip,
+    discover_dsh_plugins,
+)
 from .gate import (
     BLOCKING_PERMISSIONS,
     SKIP_DEFINITION_INVALID,
@@ -40,9 +52,17 @@ from .gate import (
     SKIP_NAME_CONFLICT,
     SKIP_NO_PROVIDER,
     SKIP_PROVIDER_FAILED,
+    SKIP_RUNTIME_GRANT_NOT_FOUND,
+    SKIP_RUNTIME_NO_WORKSPACE,
     permission_name,
 )
 from .guardrail import build_read_only_guardrail
+from .runtime import (
+    RuntimeTools,
+    exec_declarations,
+    exec_permissions,
+    exec_reason,
+)
 from .sandbox import DshSandboxState, build_capability_probe, resolve_absence_mode_strict
 
 logger = logging.getLogger(__name__)
@@ -59,12 +79,14 @@ class DshToolBuild:
     skipped: list[DshToolSkip] = field(default_factory=list)
     sandboxes: list[DshSandboxState] = field(default_factory=list)
     sandbox_mode: str = ""
+    runtime: list[str] = field(default_factory=list)
 
     def report(self) -> dict[str, Any]:
         return {
             "mounted": list(self.mounted),
             "tools": [str(getattr(tool, "name", "")) for tool in self.tools],
             "skipped": [skip.to_dict() for skip in self.skipped],
+            "runtime": list(self.runtime),
             "sandbox": {
                 "mode": self.sandbox_mode,
                 "assembled": bool(self.sandboxes)
@@ -88,8 +110,15 @@ def build_dsh_plugin_tools(
     capability_declarations: Mapping[str, Mapping[str, Sequence[str]]] | None = None,
     inspections: Mapping[str, Mapping[str, ToolInspection]] | None = None,
     sandbox_absence: str | None = None,
+    runtime: Mapping[str, RuntimeTools] | None = None,
 ) -> DshToolBuild:
     """Return the read-only tool list for ``scope``; never raises.
+
+    ``runtime`` is the S10 exec stage: a map of plugin id to the host-granted
+    invoker. Listing a plugin here is itself the capability and ``exec`` grant,
+    so a bundle whose manifest declares no tools can still be mounted — but only
+    those exact ids, only when the caller turned the stage on, and every call
+    still goes through the sandbox, approval and output-cap layers.
 
     ``sandbox_root`` is the workspace the sandbox confines calls to. Without it
     the absence gate is used, which warns once and records ``unavailable``
@@ -116,6 +145,7 @@ def build_dsh_plugin_tools(
             capability_declarations=capability_declarations,
             inspections=inspections,
             sandbox_absence=sandbox_absence,
+            runtime=runtime,
         )
     except Exception as exc:  # pragma: no cover - last-resort isolation
         logger.warning("DSH tool assembly failed: %s", exc, exc_info=True)
@@ -145,10 +175,13 @@ def _build(
     capability_declarations: Mapping[str, Mapping[str, Sequence[str]]] | None,
     inspections: Mapping[str, Mapping[str, ToolInspection]] | None,
     sandbox_absence: str | None,
+    runtime: Mapping[str, RuntimeTools] | None,
 ) -> DshToolBuild:
+    grants = {plugin_id: "host exec grant" for plugin_id in (runtime or {})}
     candidates, skipped = discover_dsh_plugins(
         market_root=market_root,
         local_roots=local_roots,
+        granted=grants,
     )
     mode = resolve_absence_mode_strict(sandbox_absence)
     build = DshToolBuild(skipped=list(skipped), sandbox_mode=mode.value)
@@ -167,6 +200,19 @@ def _build(
             declarations=(capability_declarations or {}).get(candidate.plugin_id, {}),
             inspections=(inspections or {}).get(candidate.plugin_id, {}),
             absence_mode=mode,
+            runtime=(runtime or {}).get(candidate.plugin_id),
+        )
+    # An explicitly granted id that never showed up must be reported, not
+    # dropped: a typo in the grant list would otherwise look like success.
+    reported = {skip.plugin_id for skip in build.skipped} | set(build.mounted)
+    for plugin_id in sorted(set(runtime or {}) - reported):
+        build.skipped.append(
+            DshToolSkip(
+                plugin_id,
+                ORIGIN_LOCAL,
+                SKIP_RUNTIME_GRANT_NOT_FOUND,
+                "the exec grant names this plugin id but discovery found no such bundle",
+            )
         )
     return build
 
@@ -185,10 +231,11 @@ def _mount_plugin(
     declarations: Mapping[str, Sequence[str]],
     inspections: Mapping[str, ToolInspection],
     absence_mode: object | None,
+    runtime: RuntimeTools | None = None,
 ) -> None:
     envelope = candidate.envelope
     provider = providers.get(candidate.plugin_id)
-    if provider is None:
+    if provider is None and runtime is None:
         build.skipped.append(
             DshToolSkip(
                 candidate.plugin_id,
@@ -198,8 +245,22 @@ def _mount_plugin(
             )
         )
         return
+    if runtime is not None and sandbox_root is None:
+        build.skipped.append(
+            DshToolSkip(
+                candidate.plugin_id,
+                candidate.origin,
+                SKIP_RUNTIME_NO_WORKSPACE,
+                "exec stage needs a workspace root: the sandbox cannot confine a command without one",
+            )
+        )
+        return
     try:
-        definitions = list(provider(envelope))
+        definitions = (
+            runtime.definitions(envelope)
+            if runtime is not None
+            else list(provider(envelope))  # type: ignore[misc]
+        )
     except Exception as exc:
         build.skipped.append(
             DshToolSkip(
@@ -267,10 +328,10 @@ def _mount_plugin(
             return
 
     exposed_names = [registry.exposed_name(definition.name) for definition in accepted]
+    is_runtime = runtime is not None
+    permissions = exec_permissions(envelope) if is_runtime else envelope.permissions
     declared = tuple(
-        permission_name(kind)
-        for kind in envelope.permissions
-        if kind in BLOCKING_PERMISSIONS
+        permission_name(kind) for kind in permissions if kind in BLOCKING_PERMISSIONS
     )
 
     # Host-facing maps are keyed by native tool name; the sandbox sees the
@@ -278,10 +339,18 @@ def _mount_plugin(
     by_exposed = {
         registry.exposed_name(definition.name): definition.name for definition in accepted
     }
-    tool_defaults: dict[str, Sequence[str]] = {}
-    for exposed, native in by_exposed.items():
-        if native in declarations:
-            tool_defaults[exposed] = declarations[native]
+    if is_runtime:
+        # A granted bundle's tools declare exactly ``exec``; the host grant is
+        # the only source of that permission, and it is never widened by the
+        # manifest or by ``capability_declarations``.
+        tool_defaults: dict[str, Sequence[str]] = dict(
+            exec_declarations(envelope, exposed_names)
+        )
+    else:
+        tool_defaults = {}
+        for exposed, native in by_exposed.items():
+            if native in declarations:
+                tool_defaults[exposed] = declarations[native]
     plans = {
         exposed: inspections[native]
         for exposed, native in by_exposed.items()
@@ -298,19 +367,32 @@ def _mount_plugin(
     probe = build_capability_probe(
         plugin_id=candidate.plugin_id,
         tool_names=exposed_names,
-        permissions=envelope.permissions,
+        permissions=permissions,
         declarations=tool_defaults,
         workspace_root=sandbox_root,
         inspections=plans,
         absence_mode=absence_mode,
+        executor=SubprocessExecutor() if is_runtime else None,
     )
     build.sandboxes.append(probe.state)
+
+    if is_runtime:
+        runtime.bind(
+            {definition.name: registry.exposed_name(definition.name) for definition in accepted},
+            probe.sandbox,
+        )
+        build.runtime.append(candidate.plugin_id)
 
     guardrail = build_read_only_guardrail(
         capability=probe,
         hitl=hitl,
         approval=approval,
-        risky_tools={name: declared for name in exposed_names} if declared else {},
+        risky_tools={} if is_runtime else ({name: declared for name in exposed_names} if declared else {}),
+        exec_tools=(
+            {name: exec_reason(candidate.plugin_id) for name in exposed_names}
+            if is_runtime
+            else None
+        ),
         known_tools=exposed_names,
         plugin_id=candidate.plugin_id,
         ledger=ledger,

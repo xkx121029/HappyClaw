@@ -263,6 +263,32 @@ class HitlPendingStore:
         rows.sort(key=lambda r: r.created_at, reverse=True)
         return rows
 
+    def list_pending_for_agent(
+        self,
+        *,
+        agent_id: str,
+        user_id: int,
+    ) -> list[HitlPendingRecord]:
+        """Pending pauses this user may answer for *agent_id*.
+
+        Team member pauses are stored on the room thread but resumed through
+        the member agent, so both ``agent_id`` and ``resume_agent_id`` match.
+        """
+        self._gc()
+        now = time.time()
+        rows: list[HitlPendingRecord] = []
+        for record in self._records.values():
+            if record.status != "pending" or record.user_id != user_id:
+                continue
+            if record.agent_id != agent_id and record.resume_agent_id != agent_id:
+                continue
+            if now - record.created_at > self.ttl_seconds:
+                record.status = "expired"
+                continue
+            rows.append(record)
+        rows.sort(key=lambda record: record.created_at, reverse=True)
+        return rows
+
     def pending_thread_ids(
         self,
         *,

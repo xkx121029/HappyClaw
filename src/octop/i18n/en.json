@@ -404,6 +404,7 @@
     "BACKUP_IN_PROGRESS": "A backup or restore is already in progress. Try again shortly.",
     "BACKUP_CLIENT_MISSING": "PostgreSQL backup needs {tool}, which is not installed. Install the PostgreSQL client tools where HappyClaw runs, then try again.",
     "FORBIDDEN": "Permission denied.",
+    "PROJECT_DEFAULT_UNDELETABLE": "The default project cannot be deleted.",
     "UPDATE_TARGET_NOT_NEWER": "Target version {target} must be newer than installed version {current}. Reinstalling or downgrading is not supported.",
     "NOT_FOUND": "Not found.",
     "USER_DISABLED": "This account has been disabled.",
@@ -507,7 +508,11 @@
     "PLUGIN_INVALID_ARCHIVE": "The download is not a valid plugin ZIP. Use a direct .zip download URL (on GitHub use raw.githubusercontent.com or the “Download” / “raw” link, not the /blob/ page).",
     "PLUGIN_INSTALL_FAILED": "Failed to download or install the plugin: {reason}",
     "PLUGIN_MARKET_FAILED": "Plugin market is temporarily unavailable. Please try again later.",
+    "PLUGIN_MARKET_SOURCE_INVALID": "Invalid DSH index address: {url}. Use an http(s) URL or an existing absolute file path.",
     "PLUGIN_ALREADY_EXISTS": "Plugin {id} is already installed.",
+    "DEVICE_LINK_PAIR_FAILED": "Pairing failed: {reason}. Check the device address and the pairing code shown on the phone, then try again.",
+    "DEVICE_LINK_UNREACHABLE": "Cannot reach the device: {reason}. Confirm the host and port are correct and the phone can be reached from this machine.",
+    "DEVICE_LINK_SCREENSHOT_NOT_FOUND": "Screenshot not found. It may have been cleaned up; capture a new one.",
     "KNOWLEDGE_FEATURE_DISABLED": "Knowledge bases are disabled by the administrator.",
     "KNOWLEDGE_PREREQUISITES_RESTART_REQUIRED": "The knowledge-base embedding components were installed but cannot be loaded by this process yet. Restart the server for them to take effect.",
     "KNOWLEDGE_PREREQUISITES_FAILED": "Knowledge-base embedding prerequisites are not ready.",
@@ -542,6 +547,7 @@
     "TEAM_MEMBERS_TOO_FEW": "A team needs at least two members.",
     "TEAM_MEMBER_INVALID": "Those experts cannot join a team on this instance. Peer experts, other teams, and deleted experts are not allowed.",
     "TEAM_MEMBER_BUSY": "This expert has an in-flight team job. Wait until it finishes.",
+    "TEAM_MEMBER_NOT_DIRECT": "This target is a team member and has no runtime of its own. Dispatch to that project's conversation or its main expert instead.",
     "TEAM_NOT_SHAREABLE": "Teams cannot be shared in this version.",
     "LOCAL_DOWNLOAD_UNAVAILABLE": "Saving to the host Downloads folder is only available when HappyClaw is opened on this computer.",
     "SKILL_PACKAGE_COPY_DENIED": "The creator of this skill package has disabled copying its skills.",
@@ -648,6 +654,7 @@
     "kimi_search": "Kimi web search",
     "yuanbao_search": "Yuanbao web search",
     "searchfree_search": "AI web search",
+    "happysearch_search": "Multi-engine search",
     "cronjob_list": "List cron jobs",
     "cronjob_get": "Get cron job",
     "cronjob_create": "Create cron job",
@@ -663,19 +670,23 @@
     "browser_use": "Use browser",
     "browser_control": "Browser control",
     "send_file_to_user": "Send file",
-    "mobile_screenshot": "Mobile screenshot",
-    "mobile_tap": "Mobile tap",
-    "mobile_swipe": "Mobile swipe",
-    "mobile_launch_app": "Launch mobile app",
-    "mobile_ui_dump": "Mobile UI dump",
-    "mobile_handoff_to_user": "Hand off to user (mobile)",
+    "present_file": "Show in side panel",
     "read_env_file": "Read env file",
     "write_env_file": "Write env file",
     "ask_user_question": "Ask the user",
     "generate_image": "Generate image",
     "generate_video": "Generate video",
     "bilibili_search_anime": "Search Bilibili anime",
-    "search_arxiv": "Search arXiv papers"
+    "search_arxiv": "Search arXiv papers",
+    "adb_devices": "List adb devices",
+    "adb_shell": "Run adb shell",
+    "adb_install": "Install APK via adb",
+    "adb_uninstall": "Uninstall app via adb",
+    "adb_screenshot": "Take adb screenshot",
+    "adb_tap": "Tap via adb",
+    "adb_swipe": "Swipe via adb",
+    "adb_input_text": "Type text via adb",
+    "adb_keyevent": "Send keyevent via adb"
   },
   "plugins": {
     "arxiv_search": {
@@ -746,7 +757,8 @@
   },
   "cron": {
     "history": {
-      "executed": "Task {cron_id}: {name} executed."
+      "executed": "Task {cron_id}: {name} executed.",
+      "skipped_no_model": "Reminder delivered, but no session history was written: no model is configured."
     }
   },
   "agents": {
@@ -807,19 +819,11 @@
     "system_prompt": "Today is {today}.\n\nBased on the user's recent life events, write a warm and natural caring message in no more than 150 words.\nPay attention to when events occurred — do not describe something from a few days ago as happening \"today\".\nDo not mention that you are an AI; express care directly.",
     "system_prompt_with_soul": "{soul_md}\n\n---\n\nToday is {today}.\n\nBased on the user's recent life events, write a warm and natural caring message in no more than 150 words.\nPay attention to when events occurred — do not describe something from a few days ago as happening \"today\".\nDo not mention that you are an AI; express care directly."
   },
+  "accessToken": {
+    "required": "This server requires an access credential.",
+    "invalid": "The access credential is incorrect."
+  },
   "mobile": {
-    "unsupported_reason": "Remote Phone is not supported on this host.",
-    "adb_not_found": "adb was not found. Install Android platform-tools or Android Studio SDK.",
-    "no_device": "No adb device connected. Start an emulator or connect a phone via USB.",
-    "container_no_adb": "Android container is running but adb cannot see a device yet. Wait for boot, then refresh; or run: adb connect 127.0.0.1:5555",
-    "install_log_start": "Starting Android container install…",
-    "install_log_ready": "Android environment is ready.",
-    "error_script_missing": "Mobile install script is missing from the HappyClaw package.",
-    "error_docker_missing": "Docker is required to install the Android container backend.",
-    "error_command_failed": "Command failed (exit {exit_code}).",
-    "docker_missing_auto_install": "Docker is not installed. Trying to install it automatically (official get.docker.com script, source picked by latency race)…",
-    "docker_auto_install_ok": "Docker installed successfully.",
-    "docker_auto_install_failed": "Automatic Docker install failed.",
     "docker_source_official": "Latency race: official download.docker.com is the fastest; using the official install source.",
     "docker_source_selected": "Latency race: fastest source is {source} ({delay}s); it will be passed to the official install script via DOWNLOAD_URL.",
     "docker_source_fallback": "Could not measure source latency; running the official install script with its default source.",
@@ -841,9 +845,7 @@
     "docker_mirror_configured": "Registry mirror written to /etc/docker/daemon.json (previous file backed up as daemon.json.backup).",
     "docker_restart_ok": "Docker daemon restarted.",
     "docker_restart_ready": "Docker daemon is up and responding.",
-    "docker_restart_failed": "Failed to restart Docker (no systemd/service manager, or the service did not come back). The mirror config takes effect after the next Docker restart — start it manually if needed (systemctl restart docker or service docker restart).",
-    "handoff_message": "Please complete this step on the device: {reason}",
-    "handoff_default": "manual action required on the device"
+    "docker_restart_failed": "Failed to restart Docker (no systemd/service manager, or the service did not come back). The mirror config takes effect after the next Docker restart — start it manually if needed (systemctl restart docker or service docker restart)."
   },
   "usage_export": {
     "sheet_detail": "Detail",

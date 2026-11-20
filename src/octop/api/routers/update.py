@@ -7,9 +7,10 @@ import logging
 import os
 import sys
 import time
+from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 
 from octop.api.deps import current_user, get_server, require_permission
@@ -24,6 +25,7 @@ from octop.api.routers.update_store import (
 from octop.infra.desktop import desktop_shell_enabled
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.server import OctopServer
+from octop.infra.setup.release_manifest import CHANNELS, ManifestError, load_manifest
 from octop.infra.setup.self_update import (
     UpgradeResult,
     fetch_pypi_info,
@@ -32,7 +34,9 @@ from octop.infra.setup.self_update import (
     green_packages_dir,
     is_newer,
     is_prerelease,
+    is_valid_version,
     parse_changelog_for_version,
+    parse_version,
     run_upgrade,
     validate_upgrade_target,
 )
@@ -65,6 +69,37 @@ class UpgradeBody(BaseModel):
         description="Pin a newer release. Same/older versions are rejected before installation. "
         "Defaults to the channel latest (stable when stable_only).",
     )
+
+
+class ReleaseArtifactModel(BaseModel):
+    platform: str
+    arch: str
+    kind: str | None = None
+    filename: str
+    url: str
+    sha256: str
+    size_bytes: int
+
+
+class ReleaseCheckResponse(BaseModel):
+    ok: bool
+    configured: bool
+    current_version: str
+    channel: str
+    latest_version: str | None = None
+    has_update: bool = False
+    supported: bool = True
+    minimum_supported_version: str | None = None
+    release_notes: str | None = None
+    published_at: str | None = None
+    product: str | None = None
+    artifacts: list[ReleaseArtifactModel] = Field(default_factory=list)
+    source: str | None = None
+    cached: bool = False
+    stale: bool = False
+    checked_at: str
+    error_code: str | None = None
+    error: str | None = None
 
 
 def _read_stable_only(server: Any | None) -> bool:
@@ -234,6 +269,120 @@ async def check_for_updates(
         description=pypi_info.description,
         stable_only=stable_only,
         include_prerelease=True,
+    )
+
+
+@router.get(
+    "/check",
+    response_model=ReleaseCheckResponse,
+    summary="Check the published release manifest",
+)
+async def check_release_manifest(
+    response: Response,
+    channel: str = Query("stable", description="Release channel: stable or beta"),
+    current_version: str | None = Query(
+        None,
+        description="Version to compare against; defaults to the running build.",
+    ),
+    _: Any = Depends(current_user),
+) -> ReleaseCheckResponse:
+    """Read-only release check backed by the published manifest.
+
+    The endpoint never downloads or installs anything. When the manifest source
+    is unset or unreachable it still returns HTTP 200 with an ``error_code`` so
+    the dashboard can explain the failure instead of showing a bare 500.
+    """
+    response.headers["Cache-Control"] = "private, max-age=60"
+
+    normalized_channel = channel.strip().lower()
+    if normalized_channel not in CHANNELS:
+        raise HTTPException(status_code=400, detail="channel must be stable or beta")
+
+    current = (current_version or "").strip() or get_local_version()
+    if not is_valid_version(current):
+        raise HTTPException(
+            status_code=400, detail="current_version must be a PEP 440 version"
+        )
+
+    checked_at = datetime.now(timezone.utc).isoformat()
+
+    def _failure(*, code: str, message: str, configured: bool) -> ReleaseCheckResponse:
+        return ReleaseCheckResponse(
+            ok=False,
+            configured=configured,
+            current_version=current,
+            channel=normalized_channel,
+            checked_at=checked_at,
+            error_code=code,
+            error=message,
+        )
+
+    try:
+        snapshot = await asyncio.to_thread(load_manifest)
+    except ManifestError as exc:
+        return _failure(
+            code=exc.code,
+            message=exc.message,
+            configured=exc.code != "manifest_not_configured",
+        )
+
+    manifest = snapshot.manifest
+    if manifest is None:
+        return _failure(
+            code=snapshot.error_code or "manifest_unreachable",
+            message=snapshot.error or "manifest is unavailable",
+            configured=True,
+        )
+
+    if normalized_channel == "stable" and manifest.channel != "stable":
+        return ReleaseCheckResponse(
+            ok=False,
+            configured=True,
+            current_version=current,
+            channel=normalized_channel,
+            has_update=False,
+            source=snapshot.source,
+            cached=snapshot.cached,
+            stale=snapshot.stale,
+            checked_at=checked_at,
+            error_code="no_release_for_channel",
+            error=f"the published manifest is on the {manifest.channel} channel",
+        )
+
+    supported = True
+    if manifest.minimum_supported_version:
+        supported = not is_newer(manifest.minimum_supported_version, current)
+
+    return ReleaseCheckResponse(
+        ok=True,
+        configured=True,
+        current_version=current,
+        channel=normalized_channel,
+        latest_version=manifest.version,
+        has_update=is_newer(manifest.version, current),
+        supported=supported,
+        minimum_supported_version=manifest.minimum_supported_version,
+        release_notes=manifest.notes,
+        published_at=manifest.published_at,
+        product=manifest.product,
+        artifacts=[
+            ReleaseArtifactModel(
+                platform=artifact.platform,
+                arch=artifact.arch,
+                kind=artifact.kind,
+                filename=artifact.filename,
+                url=artifact.url,
+                sha256=artifact.sha256,
+                size_bytes=artifact.size_bytes,
+            )
+            for artifact in manifest.artifacts
+        ],
+        source=snapshot.source,
+        cached=snapshot.cached,
+        stale=snapshot.stale,
+        checked_at=checked_at,
+        error_code=snapshot.error_code,
+        error=snapshot.error,
     )
 
 

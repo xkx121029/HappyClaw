@@ -12,7 +12,7 @@ import {
 
 function catalog() {
   // 单人模式：本机拥有完整导航目录，不再按角色裁剪。
-  return buildNavSections({ mobileEnabled: true });
+  return buildNavSections();
 }
 
 describe("sidebarNavLayout", () => {
@@ -20,17 +20,16 @@ describe("sidebarNavLayout", () => {
     const sections = catalog();
     expect(sectionsFromLayout(sections, null)).toBe(sections);
     const editor = editorFromCatalog(sections, null);
+    // Two-level nav: daily destinations are ungrouped, everything configurable
+    // sits in the single 设置 group.
     expect(editor.ungrouped).toEqual([
+      "home",
       "chat",
+      "quick-chat",
       "experts",
       "tasks",
-      "token-usage",
     ]);
-    expect(editor.groups.map((group) => group.id)).toEqual([
-      "settings",
-      "control",
-      "admin",
-    ]);
+    expect(editor.groups.map((group) => group.id)).toEqual(["settings"]);
     expect(editor.hidden).toEqual([]);
   });
 
@@ -39,27 +38,27 @@ describe("sidebarNavLayout", () => {
     const applied = sectionsFromLayout(sections, {
       groups: [
         { id: "settings", name: "配置" },
-        { id: "control" },
+        { id: "c_controlgrp", name: "控制" },
         { id: "c_emptygrp1", name: "空组" },
       ],
       items: [
         { key: "chat" },
         { key: "personalization", group: "settings" },
         { key: "token-usage", hidden: true },
-        { key: "workbench", group: "control" },
+        { key: "workbench", group: "c_controlgrp" },
       ],
     });
     expect(applied.map((section) => section.id ?? "front")).toEqual([
       "front",
       "settings",
-      "control",
+      "c_controlgrp",
     ]);
     expect(applied[0]?.items.map((item) => item.key)).toEqual(["chat"]);
     expect(applied[1]?.title).toBe("配置");
     expect(applied[1]?.items.map((item) => item.key)).toEqual([
       "personalization",
     ]);
-    expect(applied[2]?.groupKey).toBe("nav.control");
+    expect(applied[2]?.groupKey).toBeUndefined();
   });
 
   it("sends keys missing from a saved layout to hidden", () => {
@@ -83,7 +82,7 @@ describe("sidebarNavLayout", () => {
   it("moves a deleted group's items to the front of the ungrouped list", () => {
     const editor = editorFromCatalog(catalog(), null);
     const next = deleteGroup(editor, "settings");
-    expect(next.groups.map((group) => group.id)).toEqual(["control", "admin"]);
+    expect(next.groups.map((group) => group.id)).toEqual([]);
     expect(next.ungrouped.slice(0, 2)).toEqual(["personalization", "channels"]);
     expect(next.ungrouped).toContain("chat");
   });
@@ -91,7 +90,7 @@ describe("sidebarNavLayout", () => {
   it("places an item before another and can hide it", () => {
     const editor = editorFromCatalog(catalog(), null);
     const moved = placeItem(editor, "tasks", { kind: "ungrouped" }, "chat");
-    expect(moved.ungrouped.slice(0, 2)).toEqual(["tasks", "chat"]);
+    expect(moved.ungrouped.slice(0, 3)).toEqual(["home", "tasks", "chat"]);
     const hidden = placeItem(moved, "tasks", { kind: "hidden" }, null);
     expect(hidden.ungrouped).not.toContain("tasks");
     expect(hidden.hidden).toContain("tasks");
@@ -106,12 +105,11 @@ describe("sidebarNavLayout", () => {
     const editor = editorFromCatalog(sections, {
       groups: [
         { id: "settings" },
-        { id: "admin" },
         { id: "c_aabbccdd", name: "常用" },
       ],
       items: [
         { key: "chat" },
-        { key: "admin-users", group: "admin" },
+        { key: "admin-users", group: "settings" },
         { key: "channels", group: "settings" },
         { key: "personalization", group: "settings" },
       ],
@@ -127,7 +125,7 @@ describe("sidebarNavLayout", () => {
     expect(shown).toContain("personalization");
     expect(
       visibleEditorGroups(editor, sections).map((group) => group.id),
-    ).toEqual(["settings", "admin", "c_aabbccdd"]);
+    ).toEqual(["settings", "c_aabbccdd"]);
   });
 
   it("keeps a new empty group only in the editor", () => {

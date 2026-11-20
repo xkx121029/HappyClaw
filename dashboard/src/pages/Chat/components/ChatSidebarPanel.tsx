@@ -1,4 +1,4 @@
-import { useCallback, type RefObject } from "react";
+import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import cx from "classnames";
 import SessionList from "./SessionList";
@@ -33,7 +33,9 @@ interface ChatSidebarPanelProps {
   onSelectSession: (sessionId: string, agentId: string) => void;
   onAgentSelect: (agentId: string) => void;
   /** Start a fresh chat from an expert row (classic + minimal). */
-  onNewChatWithAgent: (agentId: string) => void;
+  onNewChatWithAgent: (agentId: string, projectId?: string | null) => void;
+  /** Open the folder picker that creates a workspace-backed project. */
+  onNewProject?: () => void;
   onDeleteSession: (
     id: string,
     compact: boolean,
@@ -72,6 +74,7 @@ export default function ChatSidebarPanel({
   onSelectSession,
   onAgentSelect,
   onNewChatWithAgent,
+  onNewProject,
   onDeleteSession,
   onRenameSession,
   onPinSession,
@@ -84,6 +87,83 @@ export default function ChatSidebarPanel({
   navEmbedded = false,
 }: ChatSidebarPanelProps) {
   const { t } = useTranslation();
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+
+  // Native-feeling drawer dismissal: swipe the panel left.
+  const handleDrawerTouchStart = (event: React.TouchEvent) => {
+    if (!isMobile) return;
+    const touch = event.touches[0];
+    swipeStart.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleDrawerTouchEnd = (event: React.TouchEvent) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!isMobile || !start) return;
+    const touch = event.changedTouches[0];
+    if (
+      touch.clientX - start.x < -56 &&
+      Math.abs(touch.clientY - start.y) < 64
+    ) {
+      onSidebarOpenChange(false);
+    }
+  };
+
+  // A full-screen drawer must never be the first thing a phone shows. The open
+  // preference is shared with the desktop rail, so a phone inheriting "open"
+  // would land on the drawer instead of the conversation.
+  const closedOnMobileRef = useRef(false);
+  useEffect(() => {
+    if (!isMobile || navEmbedded || closedOnMobileRef.current) return;
+    closedOnMobileRef.current = true;
+    if (sidebarOpen) onSidebarOpenChange(false);
+  }, [isMobile, navEmbedded, onSidebarOpenChange, sidebarOpen]);
+
+  // Native drawer opening: a right swipe from the left edge. The panel itself
+  // handles swipe-left to dismiss; MainLayout excludes /chat from its own
+  // drawer gesture, so the two never fight over the same edge.
+  useEffect(() => {
+    if (!isMobile || sidebarOpen || navEmbedded) return;
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    const onStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      if (touch.clientX > 24) return;
+      tracking = true;
+      startX = touch.clientX;
+      startY = touch.clientY;
+    };
+    const onMove = (event: TouchEvent) => {
+      if (!tracking) return;
+      const touch = event.touches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      // Vertical scrolling wins the gesture as soon as it is clearly vertical.
+      if (Math.abs(dy) > 40 && Math.abs(dy) >= Math.abs(dx)) {
+        tracking = false;
+        return;
+      }
+      if (dx > 56 && Math.abs(dy) < 40) {
+        tracking = false;
+        onSidebarOpenChange(true);
+      }
+    };
+    const onEnd = () => {
+      tracking = false;
+    };
+
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, [isMobile, navEmbedded, onSidebarOpenChange, sidebarOpen]);
 
   const handleRailToggle = useCallback(() => {
     if (sidebarOpen) {
@@ -113,12 +193,14 @@ export default function ChatSidebarPanel({
       onSelect={onSelectSession}
       onAgentSelect={onAgentSelect}
       onNewChat={onNewChatWithAgent}
+      onNewProject={onNewProject}
       onDeleteActive={onDeleteSession}
       onRenameActive={onRenameSession}
       onPinActive={onPinSession}
       onFork={onForkSession}
       activeForkDisabled={forkDisabled}
       activeForkDisabledHint={forkDisabledHint}
+      unreadyExperts={unreadyExperts}
     />
   ) : (
     <SessionList
@@ -134,6 +216,7 @@ export default function ChatSidebarPanel({
       onSelect={onSelectSession}
       onAgentSelect={onAgentSelect}
       onNewChat={onNewChatWithAgent}
+      onNewProject={onNewProject}
       onDelete={onDeleteSession}
       onRename={onRenameSession}
       onPin={onPinSession}
@@ -162,6 +245,7 @@ export default function ChatSidebarPanel({
       {isMobile && sidebarOpen && (
         <div
           className={styles.overlay}
+          role="presentation"
           onClick={() => onSidebarOpenChange(false)}
         />
       )}
@@ -178,6 +262,8 @@ export default function ChatSidebarPanel({
             ? { width: sidebarWidth, minWidth: sidebarWidth }
             : undefined
         }
+        onTouchStart={handleDrawerTouchStart}
+        onTouchEnd={handleDrawerTouchEnd}
       >
         {sessionList}
       </div>

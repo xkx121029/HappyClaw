@@ -4,6 +4,7 @@ import {
   Archive,
   Lock,
   RefreshCw,
+  Smartphone,
   Variable,
   Activity,
 } from "lucide-react";
@@ -11,6 +12,7 @@ import EnvironmentsPage from "../Environments";
 import { ObservabilitySettingsPanel } from "../Observability";
 import BackupRestorePanel from "../BackupRestore";
 import { HttpsSettingsPanel } from "../HttpsSettings";
+import { PhoneAccessPanel } from "../PhoneAccess";
 import UpdateConfig from "./UpdateConfig";
 import PageShell from "../../../layouts/PageShell";
 import TabBar, { type TabBarItem } from "../../../components/TabLabel/TabBar";
@@ -24,6 +26,7 @@ type TabKey =
   | "observability"
   | "backup"
   | "https"
+  | "phone"
   | "updates";
 
 const TABS: TabBarItem<TabKey>[] = [
@@ -31,6 +34,7 @@ const TABS: TabBarItem<TabKey>[] = [
   { key: "observability", labelKey: "nav.observability", icon: Activity },
   { key: "backup", labelKey: "nav.backupRestore", icon: Archive },
   { key: "https", labelKey: "nav.https", icon: Lock },
+  { key: "phone", labelKey: "nav.phoneAccess", icon: Smartphone },
   { key: "updates", labelKey: "nav.checkUpdates", icon: RefreshCw },
 ];
 
@@ -39,6 +43,7 @@ function parseTab(raw: string | null): TabKey {
     raw === "observability" ||
     raw === "backup" ||
     raw === "https" ||
+    raw === "phone" ||
     raw === "updates"
   ) {
     return raw;
@@ -77,6 +82,8 @@ export default function AdvancedSettingsPage() {
         return <BackupRestorePanel />;
       case "https":
         return <HttpsSettingsPanel />;
+      case "phone":
+        return <PhoneAccessPanel />;
       case "updates":
         return <UpdateConfig />;
     }

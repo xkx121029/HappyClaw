@@ -9,7 +9,12 @@ from langchain_core.tools import StructuredTool
 from langgraph.config import get_config
 from pydantic import Field
 
+from octop.infra.agents.session_scope import (
+    SessionScopeError,
+    current_session_scope,
+)
 from octop.infra.knowledge.retrieve import DEFAULT_RETRIEVAL_K, retrieve_context
+from octop.infra.utils.browser_media import parse_octop_user_id
 
 SEARCH_KNOWLEDGE_TOOL = "search_knowledge"
 
@@ -53,12 +58,21 @@ def format_search_knowledge_description(
     return f"{_SEARCH_DESC_BASE}\nAttached this turn:\n{listed}"
 
 
-def _tool_ctx() -> tuple[int, bool, list[str], str]:
+def _tool_ctx(services: Any) -> tuple[int, bool, list[str], str]:
     cfg = get_config().get("configurable") or {}
-    user_raw = cfg.get("user")
-    if user_raw is None:
-        raise ValueError("missing configurable.user")
-    user_id = int(user_raw)
+    user_id = parse_octop_user_id(cfg.get("user"))
+    if user_id is None:
+        # The turn is the source of truth: read the owner from the expert that
+        # started this conversation instead of failing on a missing user field.
+        scope = current_session_scope(tool=SEARCH_KNOWLEDGE_TOOL)
+        row = services._manager._repos.agent_repo.get(scope.agent_id)
+        if row is None or row.user_id is None:
+            raise SessionScopeError(
+                f"{SEARCH_KNOWLEDGE_TOOL} is scoped to the current conversation, but "
+                f"expert {scope.agent_id!r} no longer exists, so there is no owner "
+                "whose knowledge bases could be searched."
+            )
+        user_id = int(row.user_id)
     is_admin = bool(cfg.get("user_is_admin"))
     raw_ids = cfg.get("knowledge_base_ids")
     ids: list[str] = []
@@ -119,7 +133,7 @@ def build_knowledge_tools(services: Any) -> list[StructuredTool]:
         ] = DEFAULT_RETRIEVAL_K,
     ) -> str:
         try:
-            user_id, is_admin, kb_ids, locale = _tool_ctx()
+            user_id, is_admin, kb_ids, locale = _tool_ctx(services)
             if not kb_ids:
                 return "No knowledge bases selected for this turn."
             context = await retrieve_context(

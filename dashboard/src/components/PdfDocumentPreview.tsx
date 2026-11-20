@@ -38,6 +38,7 @@ import cx from "classnames";
 import { useIsMobile } from "../hooks/useIsMobile";
 import styles from "./PdfDocumentPreview.module.less";
 import DocumentPreviewLoading from "./DocumentPreviewLoading";
+import { PdfLoadingBar } from "./PdfViewerSkeleton";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -157,32 +158,6 @@ function isEditableTarget(target: EventTarget | null): boolean {
 const supportsIntersectionObserver =
   typeof IntersectionObserver !== "undefined";
 
-/** Thin top progress bar: real percent while downloading, sliding
- *  (indeterminate) while pdf.js parses. */
-function PdfLoadingBar({ percent }: { percent?: number | null }) {
-  const clamped =
-    percent != null && Number.isFinite(percent)
-      ? Math.max(2, Math.min(100, Math.round(percent)))
-      : null;
-  return (
-    <div className={styles.pdfLoadingBar} aria-hidden>
-      <div
-        className={
-          clamped != null
-            ? styles.pdfLoadingBarFill
-            : styles.pdfLoadingBarIndeterminate
-        }
-        style={clamped != null ? { width: clamped + "%" } : undefined}
-      />
-    </div>
-  );
-}
-
-/** Clean paper placeholder (no fake text lines) shared by skeletons. */
-function SkelPage() {
-  return <div className={styles.skelPage} aria-hidden />;
-}
-
 /** In-slot page placeholder for unmounted pages and Page loading. */
 function PdfPageSkeletonBlock() {
   return <div className={styles.pdfPageSkeleton} aria-hidden />;
@@ -210,21 +185,6 @@ function samePageSet(a: ReadonlySet<number>, b: ReadonlySet<number>): boolean {
     if (!b.has(pageNo)) return false;
   }
   return true;
-}
-
-/** Full viewer skeleton + real download percent, shown while the blob loads. */
-export function PdfViewerSkeleton({ percent }: { percent?: number | null }) {
-  return (
-    <div className={styles.pdfPreview} aria-busy="true">
-      <div className={styles.pdfToolbar}>
-        <PdfLoadingBar percent={percent} />
-      </div>
-      <div className={styles.pdfScroll}>
-        <SkelPage />
-        <SkelPage />
-      </div>
-    </div>
-  );
 }
 
 export default function PdfDocumentPreview({

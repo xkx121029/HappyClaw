@@ -1,12 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Select, Tooltip } from "antd";
-import {
-  ChevronLeft,
-  ChevronRight,
-  MessageSquarePlus,
-  MessagesSquare,
-} from "lucide-react";
+import { ChevronDown, FileText, Plus, Search } from "lucide-react";
 import cx from "classnames";
 import type { OctopAgent } from "../../../context/AgentContext";
 import { useServerTimezone } from "../../../hooks/useServerTimezone";
@@ -15,181 +9,206 @@ import {
   formatServerHourMinute,
   formatServerYmd,
 } from "../../../utils/formatMessageTime";
+import SoloMenu from "./SoloMenu";
 import styles from "../solo.module.less";
 
 interface SoloConversationRailProps {
   agents: OctopAgent[];
-  activeAgentId: string | null;
+  agentId: string | null;
+  agentReady: boolean;
   onSelectAgent: (agentId: string) => void;
   sessions: Session[];
   sessionsLoading: boolean;
   activeThreadId: string | null;
   onSelectThread: (threadId: string) => void;
   onNewChat: () => void;
-  collapsed: boolean;
-  /** 容器过窄时禁止展开，按钮给出明确提示而不是静默失效。 */
-  toggleDisabled?: boolean;
-  onToggleCollapsed: () => void;
+  onOpenFiles: () => void;
+  streaming: boolean;
 }
 
-function agentInitial(name: string): string {
-  return (name || "?").trim().slice(0, 1).toUpperCase();
-}
-
-/** 会话时间一律按服务端时区展示，避免浏览器时区与服务端会话顺序不一致。 */
 function formatSessionTime(updatedAt: string | null, timeZone: string): string {
   if (!updatedAt) return "";
   const date = new Date(updatedAt);
   if (Number.isNaN(date.getTime())) return "";
-  const sameDay =
-    formatServerYmd(date, timeZone) === formatServerYmd(new Date(), timeZone);
-  return sameDay
-    ? formatServerHourMinute(date, timeZone)
-    : formatServerYmd(date, timeZone).slice(5).replace("-", "/");
+  return `${formatServerYmd(date, timeZone).slice(5)} ${formatServerHourMinute(
+    date,
+    timeZone,
+  )}`;
 }
 
+/**
+ * 对话面板（对应参照稿左栏）：状态点 + 专家入口 + 新任务/打开文件 + 会话列表。
+ * 选中状态只属于 SOLO，不读写主模式的 activeAgent。
+ */
 export default function SoloConversationRail({
   agents,
-  activeAgentId,
+  agentId,
+  agentReady,
   onSelectAgent,
   sessions,
   sessionsLoading,
   activeThreadId,
   onSelectThread,
   onNewChat,
-  collapsed,
-  toggleDisabled = false,
-  onToggleCollapsed,
+  onOpenFiles,
+  streaming,
 }: SoloConversationRailProps) {
   const { t } = useTranslation();
   const timeZone = useServerTimezone();
-  const activeAgent = agents.find((agent) => agent.agent_id === activeAgentId);
+  const [agentMenuOpen, setAgentMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const agentOptions = useMemo(
-    () =>
-      agents
-        .map((agent) => ({
-          value: agent.agent_id,
-          label:
-            agent.state === "running"
-              ? agent.name
-              : `${agent.name}${t("solo.agentNotRunning")}`,
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label)),
-    [agents, t],
+  const currentAgent = useMemo(
+    () => agents.find((agent) => agent.agent_id === agentId) ?? null,
+    [agents, agentId],
   );
 
-  if (collapsed) {
-    return (
-      <aside className={cx(styles.rail, styles.railCollapsed)}>
-        <Tooltip
-          title={
-            toggleDisabled ? t("solo.railTooNarrow") : t("solo.expandRail")
-          }
-          placement="right"
-        >
-          <button
-            type="button"
-            className={styles.railIconButton}
-            onClick={onToggleCollapsed}
-            disabled={toggleDisabled}
-            aria-label={t("solo.expandRail")}
-          >
-            <ChevronRight size={16} />
-          </button>
-        </Tooltip>
-        <Tooltip title={t("solo.newChat")} placement="right">
-          <button
-            type="button"
-            className={styles.railIconButton}
-            onClick={onNewChat}
-            aria-label={t("solo.newChat")}
-          >
-            <MessageSquarePlus size={16} />
-          </button>
-        </Tooltip>
-        <Tooltip
-          title={activeAgent?.name ?? t("solo.noAgent")}
-          placement="right"
-        >
-          <span className={styles.railAgentAvatar}>
-            {activeAgent ? agentInitial(activeAgent.name) : "?"}
-          </span>
-        </Tooltip>
-        <Tooltip title={t("solo.sessions")} placement="right">
-          <span className={styles.railCollapsedMark}>
-            <MessagesSquare size={14} />
-            <span>{sessions.length}</span>
-          </span>
-        </Tooltip>
-      </aside>
+  const agentItems = useMemo(
+    () =>
+      [...agents]
+        .sort((a, b) => {
+          const readyDiff =
+            Number(b.state === "running") - Number(a.state === "running");
+          return readyDiff !== 0 ? readyDiff : a.name.localeCompare(b.name);
+        })
+        .map((agent) => ({
+          key: agent.agent_id,
+          label: agent.name,
+          active: agent.agent_id === agentId,
+        })),
+    [agents, agentId],
+  );
+
+  const visibleSessions = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return sessions;
+    return sessions.filter((session) =>
+      session.name.toLowerCase().includes(keyword),
     );
-  }
+  }, [sessions, search]);
+
+  const searchLabel = t("solo.searchSessions", {
+    defaultValue: t("solo.sessions"),
+  });
 
   return (
-    <aside className={styles.rail}>
-      <div className={styles.railHead}>
-        <div className={styles.railTitleRow}>
-          <span className={styles.railTitle}>{t("solo.conversations")}</span>
-          <Tooltip title={t("solo.collapseRail")}>
-            <button
-              type="button"
-              className={styles.railIconButton}
-              onClick={onToggleCollapsed}
-              disabled={toggleDisabled}
-              aria-label={t("solo.collapseRail")}
-            >
-              <ChevronLeft size={16} />
-            </button>
-          </Tooltip>
-        </div>
-        <Select
-          size="small"
-          className={styles.railAgentSelect}
-          value={activeAgentId ?? undefined}
-          placeholder={t("solo.noAgent")}
-          options={agentOptions}
-          onChange={onSelectAgent}
-          popupMatchSelectWidth={false}
-          showSearch
-          optionFilterProp="label"
-          notFoundContent={t("solo.noAgent")}
+    <div className={styles.sidePanel}>
+      <div className={styles.sideHead}>
+        <span
+          className={cx(
+            styles.sideStatus,
+            streaming && styles.sideStatusBusy,
+            !agentReady && styles.sideStatusOff,
+          )}
+          aria-hidden
         />
+        <div
+          className={styles.menuAnchor}
+          style={{ flex: 1, minWidth: 0 }}
+        >
+          <button
+            type="button"
+            className={styles.sideAgentButton}
+            aria-haspopup="menu"
+            aria-expanded={agentMenuOpen}
+            onClick={() => setAgentMenuOpen((open) => !open)}
+          >
+            <span className={styles.projectSelectName}>
+              {currentAgent?.name ?? t("solo.noAgent")}
+            </span>
+            <ChevronDown size={10} />
+          </button>
+          {agentMenuOpen ? (
+            <SoloMenu
+              items={agentItems}
+              onSelect={(key) => {
+                setAgentMenuOpen(false);
+                onSelectAgent(key);
+              }}
+              onClose={() => setAgentMenuOpen(false)}
+              ariaLabel={t("solo.expert")}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className={styles.sideMeta}>
+        {agentReady ? t("solo.ready") : t("solo.agentStoppedShort")} ·{" "}
+        {sessions.length} {t("solo.sessions")}
+      </div>
+
+      <button type="button" className={styles.newTask} onClick={onNewChat}>
+        <Plus size={14} />
+        <span>{t("solo.newTask", { defaultValue: t("solo.newChat") })}</span>
+        <span className={styles.newTaskKey}>Ctrl+Alt+N</span>
+      </button>
+
+      <button type="button" className={styles.sideItem} onClick={onOpenFiles}>
+        <FileText size={14} />
+        <span>{t("solo.openFiles", { defaultValue: t("solo.files") })}</span>
+      </button>
+
+      <div className={styles.sideSectionHead}>
+        <span>{t("solo.sessions")}</span>
+        <span className={styles.sideCount}>{sessions.length}</span>
+        <span className={styles.sideSpacer} />
         <button
           type="button"
-          className={styles.railNewChat}
-          onClick={onNewChat}
+          className={styles.sideIconButton}
+          aria-label={searchLabel}
+          aria-pressed={searchOpen}
+          onClick={() => setSearchOpen((open) => !open)}
         >
-          <MessageSquarePlus size={14} />
-          <span>{t("solo.newChat")}</span>
+          <Search size={13} />
         </button>
       </div>
 
-      <div className={styles.railList}>
+      {searchOpen ? (
+        <div className={styles.sideSearchRow}>
+          <input
+            type="text"
+            className={styles.sideSearchInput}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={searchLabel}
+            aria-label={searchLabel}
+          />
+        </div>
+      ) : null}
+
+      <div className={styles.sessionList}>
         {sessionsLoading && sessions.length === 0 ? (
-          <div className={styles.railEmpty}>{t("solo.sessionsLoading")}</div>
-        ) : sessions.length === 0 ? (
-          <div className={styles.railEmpty}>{t("solo.sessionsEmpty")}</div>
+          <div className={styles.sideEmpty}>{t("solo.sessionsLoading")}</div>
+        ) : visibleSessions.length === 0 ? (
+          <div className={styles.sideEmpty}>{t("solo.sessionsEmpty")}</div>
         ) : (
-          sessions.map((session) => (
-            <button
-              type="button"
-              key={session.id}
-              className={cx(
-                styles.railSession,
-                session.id === activeThreadId && styles.railSessionActive,
-              )}
-              onClick={() => onSelectThread(session.id)}
-              title={session.name}
-            >
-              <span className={styles.railSessionName}>{session.name}</span>
-              <span className={styles.railSessionTime}>
-                {formatSessionTime(session.updatedAt, timeZone)}
-              </span>
-            </button>
-          ))
+          visibleSessions.map((session) => {
+            const active = session.id === activeThreadId;
+            return (
+              <button
+                type="button"
+                key={session.id}
+                className={cx(
+                  styles.sessionItem,
+                  active && styles.sessionItemActive,
+                )}
+                aria-current={active ? "true" : undefined}
+                onClick={() => onSelectThread(session.id)}
+                title={session.name}
+              >
+                <div className={styles.sessionName}>
+                  <span className={styles.sessionDot} aria-hidden />
+                  {session.name}
+                </div>
+                <div className={styles.sessionTime}>
+                  {formatSessionTime(session.updatedAt, timeZone)}
+                </div>
+              </button>
+            );
+          })
         )}
       </div>
-    </aside>
+    </div>
   );
 }

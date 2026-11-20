@@ -177,6 +177,7 @@ export const AdminAgentCard = memo(function AdminAgentCard({
               <Tooltip title={t("adminAgents.action.start")}>
                 <button
                   type="button"
+                  aria-label={t("adminAgents.action.start")}
                   className={cx(
                     styles.cardActionBtn,
                     styles.cardActionBtnStart,
@@ -192,6 +193,7 @@ export const AdminAgentCard = memo(function AdminAgentCard({
               <Tooltip title={t("adminAgents.action.stop")}>
                 <button
                   type="button"
+                  aria-label={t("adminAgents.action.stop")}
                   className={cx(styles.cardActionBtn, styles.cardActionBtnStop)}
                   disabled={loading}
                   onClick={() => void onAct("stop")}
@@ -203,6 +205,7 @@ export const AdminAgentCard = memo(function AdminAgentCard({
             <Tooltip title={t("adminAgents.action.reload")}>
               <button
                 type="button"
+                aria-label={t("adminAgents.action.reload")}
                 className={cx(styles.cardActionBtn, styles.cardActionBtnReload)}
                 disabled={loading}
                 onClick={() => void onAct("reload")}
@@ -224,6 +227,7 @@ export const AdminAgentCard = memo(function AdminAgentCard({
             <Tooltip title={t("common.delete")}>
               <button
                 type="button"
+                aria-label={t("common.delete")}
                 className={cx(styles.cardActionBtn, styles.cardActionBtnDanger)}
                 disabled={loading}
               >

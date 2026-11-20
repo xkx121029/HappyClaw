@@ -176,7 +176,7 @@ function MarkdownImage({
   if (!imgSrc) {
     // Render a subtle placeholder instead of a broken image icon
     return (
-      <span style={{ color: "var(--fn-text-tertiary, #999)", fontSize: 13 }}>
+      <span style={{ color: "var(--fn-text-tertiary, #999)", fontSize: "var(--fn-text-xs)" }}>
         [{alt || "image"}]
       </span>
     );

@@ -1,6 +1,6 @@
-import { useEffect } from "react";
 import { X } from "lucide-react";
 
+import { useFocusTrap } from "../../../../hooks/useFocusTrap";
 import { ALERT_MIN, WARN_MIN, levelTone } from "../theme";
 import styles from "./NodeDetailDrawer.module.less";
 
@@ -64,14 +64,8 @@ export default function NodeDetailDrawer({
   onClose: () => void;
   onOpenFull?: () => void;
 }) {
-  useEffect(() => {
-    if (!node) return undefined;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [node, onClose]);
+  // Esc, focus containment and focus restore for this hand-rolled drawer.
+  const trapRef = useFocusTrap<HTMLElement>(Boolean(node), onClose);
 
   if (!node) return null;
 
@@ -90,10 +84,12 @@ export default function NodeDetailDrawer({
   return (
     <div className={styles.backdrop} role="presentation" onClick={onClose}>
       <section
+        ref={trapRef}
         className={styles.drawer}
         role="dialog"
         aria-modal="true"
         aria-label={`${node.name} 节点详情`}
+        tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
         <div className={styles.titlebar}>

@@ -25,6 +25,7 @@ import {
 } from "../../../utils/updateStatusCache";
 import { TabPanelHeader } from "./TabPanelHeader";
 import DesktopUpdatePanel from "./DesktopUpdatePanel";
+import ReleaseFeedPanel from "./ReleaseFeedPanel";
 import { isDesktopShell } from "../../../utils/desktopBridge";
 import styles from "./UpdateConfig.module.less";
 
@@ -153,7 +154,16 @@ function UpgradeGuide() {
 export default function UpdateConfig() {
   // The desktop shell owns detection/download/install; show the shell panel and
   // never mount the Python self-update flow.
-  if (isDesktopShell()) return <DesktopUpdatePanel />;
+  if (isDesktopShell()) {
+    return (
+      <>
+        <DesktopUpdatePanel />
+        <div className={styles.feedPanel}>
+          <ReleaseFeedPanel />
+        </div>
+      </>
+    );
+  }
   return <ServerUpdateConfig />;
 }
 
@@ -400,6 +410,15 @@ function ServerUpdateConfig() {
                 )}
               </div>
             </div>
+            {/* Desktop is same-origin: this is the address a phone would enter. */}
+            <div className={styles.versionCard}>
+              <span className={styles.versionLabel}>
+                {t("advancedSettings.update.serverAddress")}
+              </span>
+              <span className={styles.versionValue}>
+                {window.location.origin}
+              </span>
+            </div>
           </div>
 
           {status?.latest_is_prerelease && status.latest_version && (
@@ -596,6 +615,10 @@ function ServerUpdateConfig() {
         </section>
 
         <UpgradeGuide />
+      </div>
+
+      <div className={styles.feedPanel}>
+        <ReleaseFeedPanel currentVersion={status?.current_version} />
       </div>
     </div>
   );

@@ -133,6 +133,43 @@ def test_api_app_import_is_jwt_free() -> None:
     assert heavy == [], f"octop.api.app pulled jwt stack at import: {heavy}"
 
 
+def test_agent_manager_import_skips_dsh_skill_tree() -> None:
+    """Default-off DSH must not load its skill/prompt tree during warm-up.
+
+    ``_prepare_runtime`` imports ``octop.infra.agents.manager`` before the first
+    chat turn; with ``OCTOP_DSH_SKILLS_PROMPTS`` off the session store and skill
+    discovery are created lazily, so none of that tree may be imported here.
+    """
+    code = """
+import sys
+import octop.infra.agents.manager
+prefixes = (
+    "octop.infra.dsh.integration",
+    "octop.infra.dsh.skills",
+    "octop.infra.dsh.prompts",
+)
+loaded = [m for m in sys.modules if m.startswith(prefixes)]
+assert loaded == [], loaded
+from octop.infra.dsh.switches import skills_prompts_enabled
+assert skills_prompts_enabled() is False
+from octop.infra.dsh.integration import dsh_skills_prompts_enabled
+assert dsh_skills_prompts_enabled is skills_prompts_enabled
+print("OK")
+"""
+    env = _environ_with_src()
+    env.pop("OCTOP_DSH_SKILLS_PROMPTS", None)
+    proc = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=str(_project_root()),
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=True,
+        env=env,
+    )
+    assert "OK" in proc.stdout, proc.stderr
+
+
 def test_auth_tokens_lazy_jwt_still_roundtrips() -> None:
     """Deferral must not break sign/decode; ``jwt`` loads on first use."""
     code = """

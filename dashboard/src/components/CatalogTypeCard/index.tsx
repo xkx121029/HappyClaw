@@ -37,7 +37,13 @@ export const CatalogTypeCard = memo(function CatalogTypeCard({
       onClick={() => !disabled && onClick()}
       role="button"
       tabIndex={disabled ? -1 : 0}
-      onKeyDown={(e) => e.key === "Enter" && !disabled && onClick()}
+      onKeyDown={(e) => {
+        // Space as well as Enter: this is a button in everything but tag name.
+        if ((e.key === "Enter" || e.key === " ") && !disabled) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       {configuredBadge}
 

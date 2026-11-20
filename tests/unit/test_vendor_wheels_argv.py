@@ -22,7 +22,32 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "desktop" / "portable" / "vendor-wheels.sh"
-BASH = shutil.which("bash")
+def _bash_works(path: str) -> bool:
+    # System32\bash.exe is the WSL launcher: it sits on PATH even when WSL has
+    # no usable distro (missing VHDX, no install), so probe before trusting it.
+    try:
+        return subprocess.run([path, "-c", "true"], capture_output=True, timeout=15).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def _find_working_bash() -> str | None:
+    candidates = [shutil.which("bash")]
+    if os.name == "nt":
+        try:
+            listed = subprocess.run(
+                ["where", "bash"], capture_output=True, text=True, timeout=15
+            ).stdout.split()
+            candidates.extend(listed)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    for exe in candidates:
+        if exe and _bash_works(exe):
+            return exe
+    return None
+
+
+BASH = _find_working_bash()
 
 # ``extra`` is empty for these; override platforms add ``--overrides``.
 NO_OVERRIDE_PLATS = ["linux-amd64", "windows-amd64"]

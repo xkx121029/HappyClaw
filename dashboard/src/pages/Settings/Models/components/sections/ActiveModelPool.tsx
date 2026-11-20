@@ -336,6 +336,9 @@ export function ActiveModelPool({
                       }
                     >
                       <Button
+                    aria-label={isPreferred
+                          ? t("models.clearPreferred")
+                          : t("models.setAsPreferred")}
                         type="text"
                         size="small"
                         loading={isLoading}
@@ -383,6 +386,7 @@ export function ActiveModelPool({
                         ) : (
                           <Tooltip title={t("models.testConnection")}>
                             <Button
+                    aria-label={t("models.testConnection")}
                               type="text"
                               size="small"
                               icon={<Zap size={14} />}

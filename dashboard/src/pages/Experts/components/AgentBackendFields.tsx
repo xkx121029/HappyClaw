@@ -326,7 +326,7 @@ export default function AgentBackendFields({
           </Form.Item>
 
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+            <div style={{ fontSize: "var(--fn-text-xs)", fontWeight: 500, marginBottom: 4 }}>
               {t("experts.backendPathMappings")}
             </div>
             <p
@@ -372,6 +372,7 @@ export default function AgentBackendFields({
                 <button
                   type="button"
                   disabled={disabled}
+                  aria-label={t("common.delete")}
                   onClick={() => onRemovePathMapping(i)}
                   style={{
                     background: "none",

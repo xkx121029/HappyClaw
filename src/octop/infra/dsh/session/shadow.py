@@ -156,6 +156,24 @@ def write_shadow_turn(thread_id: str, inputs: Sequence[ThreadMessageInput]) -> N
             thread_id,
             exc_info=True,
         )
+        return
+    # Tell compat bundles the turn landed (auto-memory consolidates on this).
+    # Runs on a daemon thread: a slow plugin must not delay the turn.
+    try:
+        from octop.infra.dsh.compat.registry import get_registry  # noqa: PLC0415
+        from octop.infra.dsh.compat.switch import compat_enabled  # noqa: PLC0415
+
+        if compat_enabled():
+            import threading  # noqa: PLC0415
+
+            threading.Thread(
+                target=get_registry().emit,
+                args=("turn.done", {"threadId": thread_id, "messages": len(inputs)}),
+                daemon=True,
+                name="dsh-compat-turn",
+            ).start()
+    except Exception:  # pragma: no cover - event bridge is advisory
+        logger.debug("DSH compat turn event skipped", exc_info=True)
 
 
 def parse_message(

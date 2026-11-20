@@ -43,6 +43,8 @@ import styles from "../index.module.less";
 
 interface FilePanelContentProps {
   agentId: string;
+  /** Conversation whose project/session directory holds this file. */
+  threadId?: string | null;
   /** Single workspace file path for this tab. */
   filePath: string;
   /** Lift toolbar actions into the shared dock shell (active tab only). */
@@ -55,10 +57,12 @@ interface FilePanelContentProps {
  */
 export default function FilePanelContent({
   agentId,
+  threadId,
   filePath,
   onActionsChange,
 }: FilePanelContentProps) {
   const { t } = useTranslation();
+  const threadQuery = threadId ? `&thread_id=${encodeURIComponent(threadId)}` : "";
   const resolvedPath = normalizeDockFilePath(filePath);
   const [content, setContent] = useState<string>("");
   const [editMode, setEditMode] = useState(false);
@@ -120,7 +124,7 @@ export default function FilePanelContent({
       request<{ content: string }>(
         `/agents/${agentId}/workspace/file?path=${encodeURIComponent(
           apiFilePath,
-        )}`,
+        )}${threadQuery}`,
       )
         .then((r) => {
           if (!cancelled) {
@@ -135,7 +139,7 @@ export default function FilePanelContent({
       probeAuthResource(
         `/agents/${agentId}/workspace/download?path=${encodeURIComponent(
           apiFilePath,
-        )}`,
+        )}${threadQuery}`,
       )
         .then(() => finishOk())
         .catch(finishError);
@@ -149,6 +153,7 @@ export default function FilePanelContent({
     resolvedPath,
     apiFilePath,
     agentId,
+    threadQuery,
     isText,
     mediaKind,
     docKind,
@@ -167,7 +172,7 @@ export default function FilePanelContent({
       await request(
         `/agents/${agentId}/workspace/file?path=${encodeURIComponent(
           apiFilePath,
-        )}`,
+        )}${threadQuery}`,
         { method: "PUT", body: JSON.stringify({ content }) },
       );
       message.success(t("workspace.saved", "已保存"));
@@ -180,7 +185,7 @@ export default function FilePanelContent({
     } finally {
       setSaving(false);
     }
-  }, [agentId, apiFilePath, content, resolvedPath, t]);
+  }, [agentId, apiFilePath, content, resolvedPath, threadQuery, t]);
 
   const download = useCallback(async () => {
     if (!resolvedPath) return;
@@ -188,7 +193,7 @@ export default function FilePanelContent({
       const blob = await requestBlob(
         `/agents/${agentId}/workspace/download?path=${encodeURIComponent(
           apiFilePath,
-        )}`,
+        )}${threadQuery}`,
       );
       await saveBlobAsFile(blob, dockFileBasename(resolvedPath) || "download");
     } catch (err: unknown) {
@@ -207,7 +212,7 @@ export default function FilePanelContent({
           t("workspace.downloadFailed", "下载失败"),
       );
     }
-  }, [agentId, apiFilePath, resolvedPath, t]);
+  }, [agentId, apiFilePath, resolvedPath, threadQuery, t]);
 
   const bodyFill =
     !fileMissing &&
@@ -361,6 +366,7 @@ export default function FilePanelContent({
           viewerPath && (
             <FileViewer
               agentId={agentId}
+              threadId={threadId}
               path={viewerPath}
               fromWorkspace={false}
               editMode={editMode}

@@ -11,7 +11,7 @@ export default function NotFoundPage() {
   return (
     <div className={styles.wrap}>
       <div className={styles.inner}>
-        <OctopEmptyMascot size={140} className={styles.mascot} />
+        <OctopEmptyMascot size={140} className={styles.mascot} state="confused" />
         <h1 className={styles.title}>{t("common.notFound")}</h1>
         <p className={styles.hint}>{t("common.notFoundHint")}</p>
         <Button type="primary" onClick={() => navigate("/chat")}>

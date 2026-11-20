@@ -207,7 +207,10 @@
   height: 30px;
   border-radius: 50%;
   flex: none;
-  background: var(--fn-skeleton-fill, color-mix(in srgb, var(--fn-text-primary) 8%, transparent));
+  background: var(
+    --fn-skeleton-fill,
+    color-mix(in srgb, var(--fn-text-primary) 8%, transparent)
+  );
   animation: skeletonPulse 1.5s ease-in-out infinite;
 }
 
@@ -222,14 +225,20 @@
 .messageSkeletonBubble {
   height: 34px;
   border-radius: 12px;
-  background: var(--fn-skeleton-fill, color-mix(in srgb, var(--fn-text-primary) 8%, transparent));
+  background: var(
+    --fn-skeleton-fill,
+    color-mix(in srgb, var(--fn-text-primary) 8%, transparent)
+  );
   animation: skeletonPulse 1.5s ease-in-out infinite;
 }
 
 .messageSkeletonLine {
   height: 10px;
   border-radius: 6px;
-  background: var(--fn-skeleton-fill, color-mix(in srgb, var(--fn-text-primary) 8%, transparent));
+  background: var(
+    --fn-skeleton-fill,
+    color-mix(in srgb, var(--fn-text-primary) 8%, transparent)
+  );
   animation: skeletonPulse 1.5s ease-in-out infinite;
 }
 
@@ -296,12 +305,17 @@
 .assistantTurn {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 16px;
 
   .messageBubble {
     margin-bottom: 0;
   }
+}
+
+/* Compact (Solo) density — same blocks, tighter rhythm. */
+.assistantTurnCompact {
+  gap: 10px;
 }
 
 .turnInset {
@@ -509,13 +523,18 @@
   color: var(--fn-text-primary);
   padding: 10px 14px;
   border-radius: 16px 16px 6px 16px;
-  font-size: var(--octop-message-font-size, 14px);
+  /* Plugin (DSH) font variables win when a plugin sets them; otherwise the
+     host's own reading preferences apply. */
+  font-size: var(--dsh-font-size-text, var(--octop-message-font-size, 14px));
+  font-family: var(--dsh-font-family-text, inherit);
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
 
   @media (max-width: 767px) {
-    font-size: calc(var(--octop-message-font-size, 14px) + 1px);
+    font-size: calc(
+      var(--dsh-font-size-text, var(--octop-message-font-size, 14px)) + 1px
+    );
   }
 }
 
@@ -533,7 +552,8 @@
   padding: 10px 14px;
   border-radius: 14px;
   border: none;
-  font-size: var(--octop-reading-font-size, 15px);
+  font-size: var(--dsh-font-size-text, var(--octop-reading-font-size, 15px));
+  font-family: var(--dsh-font-family-text, inherit);
   line-height: 1.7;
   color: var(--fn-text-primary);
   word-break: break-word;
@@ -542,7 +562,9 @@
   overflow: visible;
 
   @media (max-width: 767px) {
-    font-size: calc(var(--octop-reading-font-size, 15px) + 1px);
+    font-size: calc(
+      var(--dsh-font-size-text, var(--octop-reading-font-size, 15px)) + 1px
+    );
   }
 
   // Markdown reset
@@ -557,9 +579,26 @@
       margin: 10px 0;
       border-radius: var(--fn-radius-md);
       overflow-x: auto;
+      font-size: var(--dsh-font-size-code, inherit);
+      font-family: var(
+        --dsh-font-family-code,
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Consolas,
+        monospace
+      );
     }
     code {
-      font-size: 13.5px;
+      font-size: var(--dsh-font-size-code, 13.5px);
+      font-family: var(
+        --dsh-font-family-code,
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Consolas,
+        monospace
+      );
     }
     ul,
     ol {
@@ -736,6 +775,15 @@
   margin-left: 4px;
 }
 
+.generatingMascot {
+  margin-right: 2px;
+}
+
+.processMascot {
+  margin-right: 6px;
+  flex: none;
+}
+
 /* ---------- Tool-only message row (no bubble wrapper) ---------- */
 .toolOnlyRow {
   padding: 2px 0;
@@ -785,6 +833,25 @@
 
   .inlineToolStatus {
     color: var(--fn-color-brand);
+  }
+}
+
+/* A failed tool must stay visible even while collapsed. */
+.inlineToolSummaryFailed {
+  border-color: color-mix(
+    in srgb,
+    var(--fn-color-danger, #e5484d) 35%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--fn-color-danger, #e5484d) 5%,
+    var(--fn-bg-secondary, #f8fafc)
+  );
+
+  .inlineToolIcon,
+  .inlineToolStatus {
+    color: var(--fn-color-danger, #e5484d);
   }
 }
 
@@ -856,6 +923,37 @@
   border-radius: 8px;
   background: var(--fn-bg-secondary, rgba(0, 0, 0, 0.02));
   border: 1px solid var(--fn-border-secondary, rgba(0, 0, 0, 0.06));
+}
+
+.inlineToolDetailsBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Expanded args/results can be arbitrarily long. Cap the body so one command
+   cannot eat the viewport; "Show all" opts out of the cap. */
+.inlineToolDetailsClamped {
+  max-height: 360px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.inlineToolExpandAll {
+  align-self: flex-start;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--fn-text-secondary);
+  font-size: 11px;
+  line-height: 1.6;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--fn-text-primary);
+    text-decoration: underline;
+  }
 }
 
 .inlineToolMediaPreview {
@@ -969,6 +1067,7 @@
    past that avatar. Placed after `.chatMsgColumns()` so these overrides win. */
 @media (max-width: 767px) {
   .processSummaryRow,
+  .turnProcessRow,
   .turnInset,
   .assistantBubble {
     grid-template-columns: var(--chat-msg-avatar-slot, 44px) minmax(0, 1fr);
@@ -984,6 +1083,10 @@
       width: 100%;
       min-width: 0;
     }
+  }
+
+  .turnProcessBody {
+    grid-column: 2;
   }
 
   .turnInset > * {
@@ -1461,6 +1564,90 @@
   word-break: break-word;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+/* ---------- Interleaved turn blocks ----------
+   Each narration / tool run is its own block so two sentences from the same
+   reply never read as one glued paragraph. Steps stay one line until clicked. */
+.turnProcessRow {
+  .chatMsgColumns();
+  align-items: start;
+  max-width: 100%;
+  min-width: 0;
+
+  .avatarCol {
+    grid-column: 1;
+    justify-self: center;
+    align-items: center;
+    margin-top: calc((28px - 36px) / 2);
+
+    .msgSender,
+    .msgSenderBtn {
+      padding-top: 0;
+    }
+  }
+}
+
+.turnProcessBody {
+  grid-column: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.turnStepList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.turnStepRow {
+  min-width: 0;
+  max-width: 100%;
+
+  /* The step box already carries its own rhythm. */
+  .inlineToolBlock {
+    margin-top: 0;
+  }
+}
+
+.turnStepRowFailed {
+  padding-left: 8px;
+  border-left: 2px solid var(--fn-color-danger, #e5484d);
+}
+
+.turnThinkingBody {
+  margin-top: 6px;
+  color: var(--fn-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.turnFailedDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--fn-color-danger, #e5484d);
+  vertical-align: middle;
+}
+
+.turnFailedChip {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--fn-color-danger, #e5484d) 12%,
+    transparent
+  );
+  color: var(--fn-color-danger, #e5484d);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .processToolItem {

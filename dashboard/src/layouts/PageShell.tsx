@@ -31,6 +31,12 @@ interface PageShellProps {
   /** Right-aligned action buttons shown alongside the title. */
   actions?: React.ReactNode;
   /**
+   * The single thing this page exists to do. Rendered at `primary` weight in
+   * the title row so no page has to invent its own emphasis; pages that only
+   * read data can omit it.
+   */
+  primaryAction?: React.ReactNode;
+  /**
    * Path tabs shared by Workbench / Personalization:
    * desktop → title-row actions; mobile → full-width bar above content.
    */
@@ -76,14 +82,14 @@ function PathTabsSegmented({
 /**
  * Universal page wrapper for every non-fullscreen, non-Chat page.
  *
- * Visual contract (master spec §5 / sub-project ② spec §6.2):
- *  - Title row: 20px / 600 weight, fixed (does not scroll with content)
- *  - Subtitle: 13px / secondary colour, 4px below title
+ * Visual contract (all values come from the design tokens so they cannot drift
+ * from antd's own scale):
+ *  - Title row: `--fn-text-xl` / semibold, fixed (does not scroll)
+ *  - Subtitle: `--fn-text-xs` / secondary colour, `--fn-space-2xs` below title
  *  - Optional agent bar (`agentScoped`): below title, outside content card
- *  - Gap between title row and content: 24px (12px + agent bar when scoped)
- *  - Content: colorBgContainer background, 24px padding, 8px radius
+ *  - Content: bg-container, `--fn-space-xl` padding, `--fn-radius-md`
  *  - Only the content area scrolls internally
- *  - `actions` slot: right-aligned in the title row
+ *  - `primaryAction`: the page's one main action, right-aligned before `actions`
  *  - `pathTabs`: desktop in title row; mobile full-width bar in content
  *
  * Tabbed helpers: `PageShell.FillTabs` (Ant Tabs) and `PageShell.Tabbed`
@@ -93,6 +99,7 @@ function PageShell({
   title,
   subtitle,
   actions,
+  primaryAction,
   pathTabs,
   agentScoped,
   showTeams,
@@ -118,63 +125,44 @@ function PageShell({
     ? `calc(${outerPad}px + ${safeBottom})`
     : `${outerPad}px`;
 
-  const titleActions =
-    !isMobile && pathTabs ? (
-      <>
+  const titleActions = (
+    <>
+      {!isMobile && pathTabs && (
         <PathTabsSegmented pathTabs={pathTabs} isMobile={false} />
-        {actions}
-      </>
-    ) : (
-      actions
-    );
+      )}
+      {primaryAction}
+      {actions}
+    </>
+  );
 
   return (
     <div
+      className={styles.shell}
       style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
         padding: `${outerPadTop}px ${outerPad}px ${outerPadBottom}`,
-        boxSizing: "border-box",
-        overflow: "hidden",
       }}
     >
       {/* Title row — fixed, never scrolls */}
       <div
+        className={styles.titleRow}
         style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 12,
-          flexShrink: 0,
-          marginBottom: agentScoped ? 12 : 24,
+          marginBottom: agentScoped
+            ? "var(--fn-space-sm)"
+            : "var(--fn-space-xl)",
           paddingRight: titleRowEndPadding(outerPad),
         }}
       >
-        <div>
-          <Title
-            level={4}
-            style={{
-              margin: 0,
-              lineHeight: "28px",
-              fontSize: 20,
-              fontWeight: 600,
-            }}
-          >
+        <div className={styles.titleBlock}>
+          <Title level={4} className={styles.title}>
             {title}
           </Title>
           {subtitle && (
-            <Text
-              type="secondary"
-              style={{ fontSize: 13, marginTop: 4, display: "block" }}
-            >
+            <Text type="secondary" className={styles.subtitle}>
               {subtitle}
             </Text>
           )}
         </div>
-        {titleActions && (
-          <div style={{ flexShrink: 0, paddingTop: 2 }}>{titleActions}</div>
-        )}
+        {titleActions && <div className={styles.titleActions}>{titleActions}</div>}
       </div>
 
       {agentScoped && (
@@ -191,7 +179,7 @@ function PageShell({
         style={{
           flex: 1,
           background: "var(--fn-bg-container, var(--fn-bg-elevated))",
-          borderRadius: 8,
+          borderRadius: "var(--fn-radius-md)",
           padding: contentPad,
           paddingBottom: pinBody
             ? contentPad

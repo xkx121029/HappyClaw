@@ -156,7 +156,7 @@ export function ProviderCard({
   })();
 
   // Try lookup by name, lowercase name, then fall back to custom logo.
-  // Provider names like "DeepSeek" → "deepseek", "Tencent Cloud Coding Plan" → try both.
+  // Provider names like "DeepSeek" → "deepseek", "Cloud Coding Plan" → try both.
   const nameSlug = provider.name.toLowerCase().replace(/\s+/g, "-");
   const logo =
     getProviderLogo(provider.name) ??
@@ -356,6 +356,7 @@ export function ProviderCard({
             {hasApiKey && !isOnnx && (
               <Tooltip title={t("models.test")}>
                 <Button
+                    aria-label={t("models.test")}
                   type="text"
                   size="small"
                   loading={testing}
@@ -367,6 +368,7 @@ export function ProviderCard({
             )}
             <Tooltip title={t("models.settings")}>
               <Button
+                    aria-label={t("models.settings")}
                 type="text"
                 size="small"
                 onClick={(e) => {
@@ -380,6 +382,7 @@ export function ProviderCard({
             {isLocalRuntime ? null : (
               <Tooltip title={t("common.delete")}>
                 <Button
+                    aria-label={t("common.delete")}
                   type="text"
                   size="small"
                   danger

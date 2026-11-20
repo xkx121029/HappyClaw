@@ -3,10 +3,21 @@ import { useElapsedSince } from "../../../hooks/useElapsedSeconds";
 import { useAgent } from "../../../context/AgentContext";
 import { isTeamAgent, isTeamHostSpeaker } from "../../../utils/teamAgent";
 import { rewritePeerSpeakerId } from "../../../utils/remoteExpert";
+import {
+  Mascot,
+  mascotStatusInk,
+  useMascotAppearance,
+} from "../../../components/Mascot";
+import type { MascotState } from "../../../components/Mascot";
 import { ExpertMessageAvatar } from "./MessageSender";
 import styles from "../index.module.less";
 
 interface GeneratingIndicatorProps {
+  /**
+   * Real stage of the turn: before the first token we are ``thinking``; once
+   * content or tool calls stream in we are ``working``.
+   */
+  phase?: "thinking" | "working";
   /** When set, appends elapsed seconds (useful while waiting for the first token). */
   startedAt?: number | null;
   showElapsed?: boolean;
@@ -21,6 +32,16 @@ interface GeneratingIndicatorProps {
   showAvatar?: boolean;
   agentId?: string | null;
 }
+
+/**
+ * The engine's own ``thinking`` morph collapses the body into three dots, so
+ * the wait-for-first-token phase borrows ``curious`` (body + eyes stay on
+ * screen) instead. ``working`` already keeps the body and is used as-is.
+ */
+const PHASE_MASCOT: Record<"thinking" | "working", MascotState> = {
+  thinking: "curious",
+  working: "working",
+};
 
 /**
  * Bottom-left live status for the turn. Stop/cancel stays on the composer —
@@ -66,6 +87,7 @@ function GeneratingAvatar({ agentId }: { agentId?: string | null }) {
 }
 
 export default function GeneratingIndicator({
+  phase = "thinking",
   startedAt = null,
   showElapsed = false,
   membersOnly = false,
@@ -74,6 +96,7 @@ export default function GeneratingIndicator({
   agentId = null,
 }: GeneratingIndicatorProps) {
   const { t } = useTranslation();
+  const baoLook = useMascotAppearance();
   const elapsedAnchor =
     startedAt != null && startedAt > 0 ? startedAt : Date.now();
   const elapsed = useElapsedSince(elapsedAnchor);
@@ -117,6 +140,13 @@ export default function GeneratingIndicator({
           role="status"
           aria-live="polite"
         >
+          <Mascot
+            size={18}
+            color={mascotStatusInk(baoLook, phase === "working" ? "working" : null)}
+            state={PHASE_MASCOT[phase]}
+            className={styles.generatingMascot}
+            surface="var(--fn-bg-layout, var(--fn-bg-base))"
+          />
           <span className={styles.thinkingDot} />
           <span className={styles.thinkingDot} />
           <span className={styles.thinkingDot} />

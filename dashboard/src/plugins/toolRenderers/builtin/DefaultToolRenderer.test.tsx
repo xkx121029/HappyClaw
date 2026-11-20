@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import styles from "../../../pages/Chat/index.module.less";
 import { builtinPluginHost } from "../host";
@@ -68,6 +68,73 @@ describe("DefaultToolRenderer streaming chrome", () => {
     );
 
     expect(screen.getByText("按需调用")).toBeInTheDocument();
+  });
+
+  it("caps overflowing details and only offers show-all when clipped", () => {
+    const scrollHeight = vi
+      .spyOn(HTMLElement.prototype, "scrollHeight", "get")
+      .mockReturnValue(900);
+    const clientHeight = vi
+      .spyOn(HTMLElement.prototype, "clientHeight", "get")
+      .mockReturnValue(360);
+    try {
+      render(
+        <DefaultToolRenderer
+          {...base}
+          status="done"
+          isStreaming={false}
+          args={{ command: "pytest -q" }}
+          output={"x".repeat(5000)}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /读取文件/ }));
+      const showAll = screen.getByRole("button", { name: "Show all" });
+      expect(showAll).toHaveAttribute("aria-expanded", "false");
+      const body = showAll.previousElementSibling as HTMLElement;
+      expect(body).toHaveClass(styles.inlineToolDetailsClamped);
+      expect(body).toHaveAttribute("data-tool-details-overflow", "true");
+
+      fireEvent.click(showAll);
+      const showLess = screen.getByRole("button", { name: "Show less" });
+      expect(showLess).toHaveAttribute("aria-expanded", "true");
+      expect(
+        (showLess.previousElementSibling as HTMLElement).className,
+      ).not.toContain(styles.inlineToolDetailsClamped);
+
+      // Collapsing resets the preference so the next open is capped again.
+      fireEvent.click(screen.getByRole("button", { name: /读取文件/ }));
+      expect(
+        screen.queryByRole("button", { name: "Show less" }),
+      ).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: /读取文件/ }));
+      expect(
+        screen.getByRole("button", { name: "Show all" }),
+      ).toBeInTheDocument();
+    } finally {
+      scrollHeight.mockRestore();
+      clientHeight.mockRestore();
+    }
+  });
+
+  it("does not offer show-all when the details fit", () => {
+    render(
+      <DefaultToolRenderer
+        {...base}
+        status="done"
+        isStreaming={false}
+        args={{ command: "pwd" }}
+        output="ok"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /读取文件/ }));
+    expect(
+      screen.queryByRole("button", { name: "Show all" }),
+    ).not.toBeInTheDocument();
+    const body = (screen.getByText("Result").parentElement as HTMLElement)
+      .parentElement as HTMLElement;
+    expect(body).toHaveClass(styles.inlineToolDetailsClamped);
   });
 
   it("keeps a completed status without the breathing dots", () => {

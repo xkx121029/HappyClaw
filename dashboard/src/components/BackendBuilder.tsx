@@ -315,7 +315,7 @@ export default function BackendBuilder({
               background: "var(--fn-bg-secondary)",
             }}
           >
-            <Text strong style={{ fontSize: 13 }}>
+            <Text strong style={{ fontSize: "var(--fn-text-xs)" }}>
               Default backend
             </Text>
             <Text
@@ -354,6 +354,7 @@ export default function BackendBuilder({
                   type="text"
                   danger
                   icon={<Trash2 size={12} />}
+                  aria-label={`Remove route ${idx + 1}`}
                   onClick={() =>
                     setRouteList((rs) => rs.filter((_, i) => i !== idx))
                   }
@@ -418,7 +419,7 @@ export default function BackendBuilder({
             background: "var(--fn-bg-tertiary)",
             padding: 8,
             borderRadius: 6,
-            fontSize: 11,
+            fontSize: "var(--fn-text-2xs)",
             margin: 0,
             maxHeight: 180,
             overflow: "auto",

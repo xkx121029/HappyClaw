@@ -680,6 +680,7 @@ export function MediaGenerationSettingsPanel() {
                   <div className={styles.cardFooterActions}>
                     <Tooltip title={t("mediaGeneration.testCredentials")}>
                       <Button
+                    aria-label={t("mediaGeneration.testCredentials")}
                         type="text"
                         size="small"
                         className={styles.iconButton}
@@ -694,6 +695,7 @@ export function MediaGenerationSettingsPanel() {
                     </Tooltip>
                     <Tooltip title={t("mediaGeneration.editProvider")}>
                       <Button
+                    aria-label={t("mediaGeneration.editProvider")}
                         type="text"
                         size="small"
                         className={styles.iconButton}
@@ -706,6 +708,7 @@ export function MediaGenerationSettingsPanel() {
                     </Tooltip>
                     <Tooltip title={t("common.delete")}>
                       <Button
+                    aria-label={t("common.delete")}
                         danger
                         type="text"
                         size="small"

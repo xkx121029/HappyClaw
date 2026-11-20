@@ -36,12 +36,14 @@ describe("theme palettes", () => {
     ]);
   });
 
-  it("keeps the historic Elegant Rose default brand tokens", () => {
-    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimary).toBe("#E85D75");
-    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimaryHover).toBe("#D14A62");
-    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimaryActive).toBe("#B83A50");
+  // G09 设计令牌：rose.light 主色深化到 WCAG AA（≥4.5:1 on white）。
+  it("keeps the rose default brand tokens readable on white", () => {
+    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimary).toBe("#C9435C");
+    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimaryHover).toBe("#B93B52");
+    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimaryActive).toBe("#A63348");
     expect(ANTD_BRAND_TOKENS.rose.dark.colorPrimary).toBe("#F08B9A");
     expect(ANTD_BRAND_TOKENS.rose.dark.colorLink).toBe("#F08B9A");
+    expect(contrastRatio(ANTD_BRAND_TOKENS.rose.light.colorPrimary, "#FFFFFF")).toBeGreaterThanOrEqual(4.5);
   });
 
   it.each(VALID_PALETTES.filter((palette) => palette !== "rose"))(

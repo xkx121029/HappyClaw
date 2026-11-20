@@ -50,23 +50,6 @@ class UsageReportService:
 
     # -- scope ------------------------------------------------------------
 
-    def resolve_user_scope(
-        self,
-        *,
-        user_id: int,
-        is_admin: bool,
-        as_user: int | None,
-    ) -> int:
-        """An admin may query another user's bucket; everyone else is pinned."""
-        if as_user is None or as_user == user_id:
-            return user_id
-        if not is_admin:
-            raise OctopError(ErrorCode.FORBIDDEN, "as_user requires admin")
-        target = self._user_manager.get_by_id(as_user)
-        if target is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
-        return int(target.id)
-
     def assert_agent_exists(self, agent_id: str | None) -> None:
         if agent_id is None:
             return

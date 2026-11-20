@@ -3,10 +3,12 @@ import { getAuthToken } from "../../api/request";
 import type { InstalledPlugin } from "../../api/modules/plugins";
 import { createPluginUiHost } from "./host";
 import { unregisterPluginRenderers } from "./registry";
+import { unregisterPluginSurfaces } from "../surfaces/registry";
 import type { PluginUiModule } from "./types";
 
 const loadedPlugins = new Set<string>();
 const blobUrls: string[] = [];
+const cleanups = new Map<string, Array<() => void>>();
 
 async function fetchAuthedText(path: string): Promise<string> {
   const url = getApiUrl(path);
@@ -44,8 +46,12 @@ async function importPluginEsm(
 function runSetup(mod: PluginUiModule, pluginId: string): void {
   const host = createPluginUiHost(pluginId);
   const setup = mod.setup ?? mod.default?.setup;
-  if (typeof setup === "function") {
-    setup(host);
+  if (typeof setup !== "function") return;
+  const cleanup = setup(host);
+  if (typeof cleanup === "function") {
+    const existing = cleanups.get(pluginId) ?? [];
+    existing.push(cleanup);
+    cleanups.set(pluginId, existing);
   }
 }
 
@@ -62,6 +68,8 @@ export async function loadInstalledPluginUis(
       runSetup(mod, plugin.id);
       loadedPlugins.add(plugin.id);
     } catch (err) {
+      // A setup that throws halfway may have registered a surface already.
+      unregisterPluginSurfaces(plugin.id);
       console.warn(`[plugin-ui] failed to load ${plugin.id}:`, err);
     }
   }
@@ -80,9 +88,20 @@ export async function reloadPluginToolUis(
 
 /** Drop cached load state (e.g. after uninstall); blob URLs are revoked. */
 export function resetPluginUiLoader(): void {
+  for (const [id, fns] of cleanups) {
+    for (const fn of fns) {
+      try {
+        fn();
+      } catch (err) {
+        console.warn(`[plugin-ui] cleanup failed for ${id}:`, err);
+      }
+    }
+  }
   for (const id of loadedPlugins) {
     unregisterPluginRenderers(id);
+    unregisterPluginSurfaces(id);
   }
+  cleanups.clear();
   loadedPlugins.clear();
   while (blobUrls.length) {
     const url = blobUrls.pop();

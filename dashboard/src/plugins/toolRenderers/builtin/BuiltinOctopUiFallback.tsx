@@ -60,7 +60,7 @@ export function BuiltinOctopUiFallback({
       }}
       aria-busy={running || undefined}
     >
-      <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 15 }}>
+      <div style={{ fontWeight: 600, marginBottom: 4, fontSize: "var(--fn-text-md)" }}>
         {title}
       </div>
       <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
@@ -76,11 +76,11 @@ export function BuiltinOctopUiFallback({
         </div>
       ) : null}
       {showReturnedText ? (
-        <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>
+        <div style={{ fontSize: "var(--fn-text-xs)", whiteSpace: "pre-wrap" }}>
           {textFallback}
         </div>
       ) : entries.length > 0 ? (
-        <dl style={{ margin: 0, fontSize: 13 }}>
+        <dl style={{ margin: 0, fontSize: "var(--fn-text-xs)" }}>
           {entries.map(([k, v]) => (
             <div key={k} style={{ marginBottom: 4 }}>
               <dt style={{ display: "inline", opacity: 0.65 }}>{k}: </dt>
@@ -93,7 +93,7 @@ export function BuiltinOctopUiFallback({
           ))}
         </dl>
       ) : textFallback ? (
-        <div style={{ fontSize: 13 }}>{textFallback}</div>
+        <div style={{ fontSize: "var(--fn-text-xs)" }}>{textFallback}</div>
       ) : output ? (
         <pre
           style={{

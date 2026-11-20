@@ -18,6 +18,11 @@ import {
   GraduationCap,
   Shield,
   PanelsTopLeft,
+  Home,
+  Zap,
+  MessagesSquare,
+  Smartphone,
+  Info,
 } from "lucide-react";
 
 export const EXPANDED_WIDTH = 220;
@@ -64,6 +69,9 @@ export const SIDEBAR_NAV_KEYS = [
   "experts",
   "tasks",
   "token-usage",
+  "mobile-sessions",
+  "mobile-control",
+  "mobile-info",
   "personalization",
   "channels",
   "connectors",
@@ -80,12 +88,18 @@ export const SIDEBAR_NAV_KEYS = [
   "admin-advanced",
 ] as const;
 
-export const BUILTIN_NAV_GROUP_IDS = ["settings", "control", "admin"] as const;
+export const BUILTIN_NAV_GROUP_IDS = [
+  "mobile",
+  "settings",
+  "control",
+  "admin",
+] as const;
 
 const BUILTIN_NAV_GROUP_LABEL_KEYS: Record<
   (typeof BUILTIN_NAV_GROUP_IDS)[number],
   string
 > = {
+  mobile: "nav.mobileSection",
   settings: "nav.settings",
   control: "nav.control",
   admin: "nav.admin",
@@ -112,11 +126,14 @@ export function navSectionLabel(
 }
 
 /**
- * Catalog of nav item keys that live under settings / control / admin groups.
+ * Catalog of nav item keys that live under the settings group.
  * Permission-independent — used for pane/route helpers; visibility still
  * comes from {@link buildNavSections}.
  */
 export const SIDEBAR_GROUPED_NAV_KEYS = [
+  "mobile-sessions",
+  "mobile-control",
+  "mobile-info",
   "personalization",
   "channels",
   "connectors",
@@ -126,6 +143,7 @@ export const SIDEBAR_GROUPED_NAV_KEYS = [
   "workbench",
   "remote-desktop",
   "acp",
+  "token-usage",
   "models",
   "admin-storage",
   "admin-plugins",
@@ -140,15 +158,41 @@ export function isGroupedNavKey(key: string): boolean {
   return GROUPED_NAV_KEY_SET.has(key);
 }
 
-export function buildNavSections(_opts?: {
-  mobileEnabled?: boolean;
-}): NavSection[] {
+/**
+ * Two levels, not five groups.
+ *
+ * The sidebar used to expose 23 destinations across five groups, so half of the
+ * first level was configuration and administration — for a single-owner
+ * workspace that buries the four daily destinations (home / chat / experts /
+ * tasks). Everything configurable now lives under one collapsible 设置 group;
+ * the routes are unchanged, so bookmarks and deep links still work.
+ */
+export function buildNavSections(): NavSection[] {
   const topItems: NavItem[] = [
+    {
+      // Pinned above the customizable catalog: Home is the landing page and is
+      // intentionally excluded from the nav customizer (see Sidebar.tsx).
+      key: "home",
+      path: "/home",
+      icon: <Home size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.home",
+    },
     {
       key: "chat",
       path: "/chat",
       icon: <MessageSquareText size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.chat",
+    },
+    {
+      // First-level destination next to 对话: a reusable, workspace-free
+      // conversation with the default expert. ``?quick=1`` is consumed by the
+      // chat page, and the selected state comes from the open thread being a
+      // quick one (see quickChatState.ts). Pinned like Home: the nav customizer
+      // never owns it, and a saved layout cannot hide it.
+      key: "quick-chat",
+      path: "/chat?quick=1",
+      icon: <Zap size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.quickChat",
     },
     {
       key: "experts",
@@ -161,12 +205,6 @@ export function buildNavSections(_opts?: {
       path: "/tasks",
       icon: <Timer size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.tasks",
-    },
-    {
-      key: "token-usage",
-      path: "/token-usage",
-      icon: <Activity size={iconSize} strokeWidth={iconStroke} />,
-      labelKey: "nav.tokenUsage",
     },
   ];
   const sections: NavSection[] = [{ items: topItems }];
@@ -208,41 +246,49 @@ export function buildNavSections(_opts?: {
       icon: <Cloudy size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.bridge",
     },
-  ];
-  sections.push({
-    id: "settings",
-    groupKey: "nav.settings",
-    items: settingsItems,
-  });
-
-  const controlItems: NavItem[] = [
     {
       key: "workbench",
       path: "/workbench",
       icon: <PanelsTopLeft size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.workbench",
     },
-  ];
-  // 本机远控：桌面端与手机端共用一个入口。
-  controlItems.push({
-    key: "remote-desktop",
-    path: "/remote-desktop",
-    icon: <Monitor size={iconSize} strokeWidth={iconStroke} />,
-    labelKey: "nav.remoteDesktop",
-  });
-  controlItems.push({
-    key: "acp",
-    path: "/acp",
-    icon: <Share2 size={iconSize} strokeWidth={iconStroke} />,
-    labelKey: "nav.acp",
-  });
-  sections.push({
-    id: "control",
-    groupKey: "nav.control",
-    items: controlItems,
-  });
-
-  const adminItems: NavItem[] = [
+    {
+      // 本机远控：桌面端与手机端共用一个入口。
+      key: "remote-desktop",
+      path: "/remote-desktop",
+      icon: <Monitor size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.remoteDesktop",
+    },
+    {
+      key: "acp",
+      path: "/acp",
+      icon: <Share2 size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.acp",
+    },
+    {
+      key: "token-usage",
+      path: "/token-usage",
+      icon: <Activity size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.tokenUsage",
+    },
+    {
+      key: "mobile-sessions",
+      path: "/mobile/sessions",
+      icon: <MessagesSquare size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.mobileSessions",
+    },
+    {
+      key: "mobile-control",
+      path: "/mobile/control",
+      icon: <Smartphone size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.mobileControl",
+    },
+    {
+      key: "mobile-info",
+      path: "/mobile/info",
+      icon: <Info size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.mobileInfo",
+    },
     {
       key: "models",
       path: "/admin/models",
@@ -274,6 +320,10 @@ export function buildNavSections(_opts?: {
       labelKey: "nav.adminAdvanced",
     },
   ];
-  sections.push({ id: "admin", groupKey: "nav.admin", items: adminItems });
+  sections.push({
+    id: "settings",
+    groupKey: "nav.settings",
+    items: settingsItems,
+  });
   return sections;
 }

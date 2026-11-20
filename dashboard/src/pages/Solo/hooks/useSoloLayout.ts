@@ -1,47 +1,67 @@
 import { useCallback, useEffect, useState, type RefObject } from "react";
 
 /**
- * SOLO 页面分栏布局。
+ * SOLO 页面三栏布局（会话列表 / 对话 / 编辑器 + 右侧文件树）。
  *
- * 宽度只存"用户想要的尺寸"，实际渲染时按容器宽度收敛（``fitWidths``），
- * 因此窄屏不会把某一栏挤到不可操作，也不会改写用户在大屏下调好的偏好。
+ * 宽度只存"用户想要的尺寸"，渲染时按容器宽度收敛（``fitWidths``），
+ * 因此窄屏不会把编辑器挤到不可用，也不会改写用户在大屏下调好的偏好。
+ * 度量对齐参照稿 ``solo-ide_(4).html``：分栏条视觉 5px、两侧 -2px，布局占位 1px。
  */
 
 export interface SoloLayout {
-  /** 会话选择器展开宽度。 */
-  rail: number;
-  /** agent 对话区宽度。 */
-  chat: number;
-  /** 文件树宽度。 */
+  /** 左侧会话列表栏，参照稿 215。 */
+  side: number;
+  /** 对话栏，参照稿 660。 */
+  agent: number;
+  /** 右侧文件树，参照稿 230。 */
   tree: number;
+  /** AI 动作时间线占中间列高度的比例（0-1）。 */
+  timeline: number;
   /** 终端占编辑器列高度的比例（0-1）。 */
   terminal: number;
 }
 
-const STORAGE_KEY = "octop-solo-layout-v1";
+const STORAGE_KEY = "octop-solo-layout-v3";
 
-export const RAIL_COLLAPSED_WIDTH = 48;
-export const RAIL_MIN_WIDTH = 168;
-export const RAIL_MAX_WIDTH = 300;
-export const CHAT_MIN_WIDTH = 280;
+export const SIDE_MIN_WIDTH = 150;
+export const SIDE_MAX_WIDTH = 420;
+export const AGENT_MIN_WIDTH = 400;
+export const AGENT_MAX_WIDTH = 1000;
 /** 极端窄屏下的最后底线，低于此值对话区不可用。 */
-const CHAT_ABSOLUTE_MIN = 220;
-export const CHAT_MAX_WIDTH = 640;
+export const AGENT_ABSOLUTE_MIN = 340;
 export const TREE_MIN_WIDTH = 160;
-export const TREE_MAX_WIDTH = 420;
-export const SPLITTER_WIDTH = 6;
-export const EDITOR_MIN_WIDTH = 280;
+export const TREE_MAX_WIDTH = 520;
+export const EDITOR_MIN_WIDTH = 320;
+
+/** 分栏条视觉宽度（参照稿 .rz / .treesplit）。 */
+export const SPLITTER_WIDTH = 5;
+/** 分栏条两侧负外边距（参照稿 margin: 0 -2px）。 */
+export const SPLITTER_INSET = 2;
+/** 分栏条在布局中实际占位：5 - 2*2 = 1。 */
+export const SPLITTER_GAP = SPLITTER_WIDTH - SPLITTER_INSET * 2;
+
 export const TERMINAL_MIN_RATIO = 0.16;
 export const TERMINAL_MAX_RATIO = 0.7;
+export const TIMELINE_MIN_RATIO = 0.18;
+export const TIMELINE_MAX_RATIO = 0.6;
 
-/** 低于该宽度时选择器自动收成图标栏。 */
-export const RAIL_AUTO_COLLAPSE_WIDTH = 1120;
+/**
+ * 低于该宽度时文件树让位，改用浮层打开。
+ * 取值正好是「三栏最小宽 + 编辑器最小 + 三条分栏条占位」。
+ */
+export const TREE_AUTO_COLLAPSE_WIDTH =
+  SIDE_MIN_WIDTH +
+  AGENT_MIN_WIDTH +
+  TREE_MIN_WIDTH +
+  EDITOR_MIN_WIDTH +
+  SPLITTER_GAP * 3;
 
-const DEFAULTS: SoloLayout = {
-  rail: 208,
-  chat: 360,
-  tree: 220,
-  terminal: 0.32,
+export const DEFAULT_LAYOUT: SoloLayout = {
+  side: 215,
+  agent: 660,
+  tree: 230,
+  timeline: 0.34,
+  terminal: 0.28,
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -56,65 +76,71 @@ function positive(value: unknown, fallback: number): number {
 function loadLayout(): SoloLayout {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULTS;
+    if (!raw) return DEFAULT_LAYOUT;
     const parsed = JSON.parse(raw) as Partial<SoloLayout>;
     return {
-      rail: clamp(
-        positive(parsed.rail, DEFAULTS.rail),
-        RAIL_MIN_WIDTH,
-        RAIL_MAX_WIDTH,
+      side: clamp(
+        positive(parsed.side, DEFAULT_LAYOUT.side),
+        SIDE_MIN_WIDTH,
+        SIDE_MAX_WIDTH,
       ),
-      chat: clamp(
-        positive(parsed.chat, DEFAULTS.chat),
-        CHAT_MIN_WIDTH,
-        CHAT_MAX_WIDTH,
+      agent: clamp(
+        positive(parsed.agent, DEFAULT_LAYOUT.agent),
+        AGENT_MIN_WIDTH,
+        AGENT_MAX_WIDTH,
       ),
       tree: clamp(
-        positive(parsed.tree, DEFAULTS.tree),
+        positive(parsed.tree, DEFAULT_LAYOUT.tree),
         TREE_MIN_WIDTH,
         TREE_MAX_WIDTH,
       ),
+      timeline: clamp(
+        positive(parsed.timeline, DEFAULT_LAYOUT.timeline),
+        TIMELINE_MIN_RATIO,
+        TIMELINE_MAX_RATIO,
+      ),
       terminal: clamp(
-        positive(parsed.terminal, DEFAULTS.terminal),
+        positive(parsed.terminal, DEFAULT_LAYOUT.terminal),
         TERMINAL_MIN_RATIO,
         TERMINAL_MAX_RATIO,
       ),
     };
   } catch {
-    return DEFAULTS;
+    return DEFAULT_LAYOUT;
   }
 }
 
 export interface FittedWidths {
-  rail: number;
-  chat: number;
+  side: number;
+  agent: number;
   tree: number;
   /** 容器太窄时文件树让位，由调用方决定以浮层方式打开。 */
   treeFitted: boolean;
 }
 
 /**
- * 把偏好宽度压进容器：先压对话区、再压文件树、最后压选择器，
- * 始终保证编辑器至少 ``EDITOR_MIN_WIDTH``。
+ * 把偏好宽度压进容器，始终保证编辑器至少 ``EDITOR_MIN_WIDTH``：
+ * 依次扣减 agent → tree → side；仍不够时文件树让位并重算；最后把 agent 压到底线。
  */
 export function fitWidths(
   available: number,
-  rail: number,
-  chat: number,
+  side: number,
+  agent: number,
   tree: number,
 ): FittedWidths {
-  let nextRail = rail;
-  let nextChat = chat;
-  let nextTree = tree;
+  let nextSide = side;
+  let nextAgent = agent;
+  let nextTree = available < TREE_AUTO_COLLAPSE_WIDTH ? 0 : tree;
 
-  const panes = () => nextRail + nextChat + nextTree;
   const budget = () =>
-    available - SPLITTER_WIDTH * 2 - EDITOR_MIN_WIDTH - (nextTree > 0 ? SPLITTER_WIDTH : 0);
+    available -
+    EDITOR_MIN_WIDTH -
+    SPLITTER_GAP * (nextTree > 0 ? 3 : 2);
 
-  let overflow = panes() - budget();
+  let overflow = nextSide + nextAgent + nextTree - budget();
   if (overflow > 0) {
-    const take = Math.min(overflow, Math.max(0, nextChat - CHAT_MIN_WIDTH));
-    nextChat -= take;
+    const take = Math.min(overflow, Math.max(0, nextAgent - AGENT_MIN_WIDTH));
+    nextAgent -= take;
     overflow -= take;
   }
   if (overflow > 0) {
@@ -122,30 +148,26 @@ export function fitWidths(
     nextTree -= take;
     overflow -= take;
   }
-  if (overflow > 0 && nextTree >= TREE_MIN_WIDTH) {
+  if (overflow > 0) {
+    const take = Math.min(overflow, Math.max(0, nextSide - SIDE_MIN_WIDTH));
+    nextSide -= take;
+    overflow -= take;
+  }
+  if (overflow > 0 && nextTree > 0) {
     nextTree = 0;
-    overflow = panes() - (available - SPLITTER_WIDTH * 2 - EDITOR_MIN_WIDTH);
+    overflow = nextSide + nextAgent - budget();
   }
   if (overflow > 0) {
     const take = Math.min(
       overflow,
-      Math.max(0, nextRail - RAIL_COLLAPSED_WIDTH),
+      Math.max(0, nextAgent - AGENT_ABSOLUTE_MIN),
     );
-    nextRail -= take;
-    overflow -= take;
+    nextAgent -= take;
   }
-  if (overflow > 0) {
-    // 极端窄屏（<700）时连图标栏 + 对话最小宽都放不下，最后才允许对话区
-    // 压到 220，保证编辑器始终可用。
-    const take = Math.min(overflow, Math.max(0, nextChat - CHAT_ABSOLUTE_MIN));
-    nextChat -= take;
-  }
-  if (available < 720) {
-    nextRail = RAIL_COLLAPSED_WIDTH;
-  }
+
   return {
-    rail: Math.round(nextRail),
-    chat: Math.round(nextChat),
+    side: Math.round(nextSide),
+    agent: Math.round(nextAgent),
     tree: Math.round(nextTree),
     treeFitted: nextTree > 0,
   };
@@ -181,7 +203,7 @@ export function useSoloLayout() {
   }, [layout]);
 
   const setPaneWidth = useCallback(
-    (key: "rail" | "chat" | "tree", width: number) => {
+    (key: "side" | "agent" | "tree", width: number) => {
       setLayout((prev) => ({ ...prev, [key]: Math.round(width) }));
     },
     [],
@@ -194,5 +216,12 @@ export function useSoloLayout() {
     }));
   }, []);
 
-  return { layout, setPaneWidth, setTerminalRatio };
+  const setTimelineRatio = useCallback((ratio: number) => {
+    setLayout((prev) => ({
+      ...prev,
+      timeline: clamp(ratio, TIMELINE_MIN_RATIO, TIMELINE_MAX_RATIO),
+    }));
+  }, []);
+
+  return { layout, setPaneWidth, setTerminalRatio, setTimelineRatio };
 }

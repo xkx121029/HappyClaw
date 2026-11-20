@@ -25,6 +25,8 @@ import {
 } from "./components";
 import type { CronJobFormValues } from "./useCronJobs";
 import { useCardTableView } from "../../../hooks/useCardTableView";
+import { AnimatePresence, motion } from "motion/react";
+import { useMotionTokens } from "../../../motion";
 import { showConfirmModal } from "../../../utils/confirmModal";
 import { OctopEmptyMascot } from "../../../components/EmptyState";
 import { ResizableTable } from "../../../components/ResizableTable";
@@ -91,6 +93,7 @@ function CronJobsEmptyState({
 
 function CronJobsPage() {
   const { t } = useTranslation();
+  const motionTokens = useMotionTokens();
   const { isMobile, viewMode, setViewMode, showCardView } =
     useCardTableView("table");
   const navigate = useNavigate();
@@ -323,6 +326,7 @@ function CronJobsPage() {
             />
             <Tooltip title={t("common.refresh")}>
               <Button
+                    aria-label={t("common.refresh")}
                 icon={<RefreshCw size={15} />}
                 loading={refreshing || listRefreshing || listStale}
                 onClick={() => void handleRefresh()}
@@ -356,17 +360,38 @@ function CronJobsPage() {
           ) : null}
           {showCardView ? (
             <div className={styles.cardGrid}>
-              {jobs.map((job) => (
-                <CronJobCard
-                  key={job.id}
-                  job={job}
-                  timeZone={cronTimezone}
-                  onToggleEnabled={handleToggleEnabled}
-                  onExecuteNow={handleExecuteNow}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              ))}
+              <AnimatePresence initial={false}>
+                {jobs.map((job) => (
+                  <motion.div
+                    key={job.id}
+                    layout="position"
+                    className={styles.cardCell}
+                    initial={{ opacity: 0, y: motionTokens.shift.md }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{
+                      opacity: 0,
+                      scale: motionTokens.scale.card,
+                      transition: {
+                        duration: motionTokens.duration.fast / 1000,
+                        ease: motionTokens.exitBezier,
+                      },
+                    }}
+                    transition={{
+                      duration: motionTokens.duration.base / 1000,
+                      ease: motionTokens.enterBezier,
+                    }}
+                  >
+                    <CronJobCard
+                      job={job}
+                      timeZone={cronTimezone}
+                      onToggleEnabled={handleToggleEnabled}
+                      onExecuteNow={handleExecuteNow}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           ) : (
             <ResizableTable

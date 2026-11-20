@@ -210,6 +210,7 @@ const WelcomeConfig = forwardRef<WelcomeConfigRef, WelcomeConfigProps>(
                       <Button
                         type="text"
                         danger
+                        aria-label={t("common.delete")}
                         icon={<DeleteOutlined />}
                         disabled={disabled}
                         onClick={() => removeQuickPrompt(index)}

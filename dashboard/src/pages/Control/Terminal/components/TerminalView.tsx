@@ -27,7 +27,18 @@ interface TerminalViewProps {
   themeDefinition: TerminalThemeDefinition;
   /** Called once xterm is fully initialised and the write handle is ready */
   onReady?: () => void;
+  /** Optional xterm font family override */
+  fontFamily?: string;
+  /** Optional xterm font size override */
+  fontSize?: number;
+  /** Optional xterm line height override */
+  lineHeight?: number;
 }
+
+const DEFAULT_FONT_FAMILY =
+  '"JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", "Courier New", monospace';
+const DEFAULT_FONT_SIZE = 14;
+const DEFAULT_LINE_HEIGHT = 1.4;
 
 export default function TerminalView({
   onData,
@@ -35,6 +46,9 @@ export default function TerminalView({
   terminalRef,
   themeDefinition,
   onReady,
+  fontFamily,
+  fontSize,
+  lineHeight,
 }: TerminalViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
@@ -88,10 +102,9 @@ export default function TerminalView({
     if (!containerRef.current) return;
 
     const term = new Terminal({
-      fontFamily:
-        '"JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", "Courier New", monospace',
-      fontSize: 14,
-      lineHeight: 1.4,
+      fontFamily: fontFamily ?? DEFAULT_FONT_FAMILY,
+      fontSize: fontSize ?? DEFAULT_FONT_SIZE,
+      lineHeight: lineHeight ?? DEFAULT_LINE_HEIGHT,
       cursorBlink: true,
       cursorStyle: "block",
       allowTransparency: false,
@@ -188,6 +201,27 @@ export default function TerminalView({
     if (!term) return;
     term.options.theme = themeDefinition.theme;
   }, [themeDefinition]);
+
+  // Hot-swap the optional font overrides without recreating the terminal
+  useEffect(() => {
+    const term = xtermRef.current;
+    if (!term) return;
+    if (
+      fontFamily === undefined &&
+      fontSize === undefined &&
+      lineHeight === undefined
+    ) {
+      return;
+    }
+    if (fontFamily !== undefined) term.options.fontFamily = fontFamily;
+    if (fontSize !== undefined) term.options.fontSize = fontSize;
+    if (lineHeight !== undefined) term.options.lineHeight = lineHeight;
+    try {
+      fitAddonRef.current?.fit();
+    } catch {
+      // Ignore fit errors while the container is hidden
+    }
+  }, [fontFamily, fontSize, lineHeight]);
 
   return (
     <div

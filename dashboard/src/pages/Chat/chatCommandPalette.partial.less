@@ -86,13 +86,13 @@
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid var(--fn-brand);
+    outline: 2px solid var(--fn-color-brand);
     outline-offset: -1px;
   }
 }
 
 .cpItemActive {
-  background: color-mix(in srgb, var(--fn-brand) 8%, transparent);
+  background: color-mix(in srgb, var(--fn-color-brand) 8%, transparent);
 }
 
 .cpLabel {
@@ -148,21 +148,21 @@
   cursor: pointer;
 
   &:hover {
-    border-color: var(--fn-brand);
-    color: var(--fn-brand);
+    border-color: var(--fn-color-brand);
+    color: var(--fn-color-brand);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--fn-brand);
+    outline: 2px solid var(--fn-color-brand);
     outline-offset: 1px;
   }
 }
 
 /* 空结果时上下键选中的动作，和列表行的选中态保持一致。 */
 .cpEmptyActionActive {
-  border-color: var(--fn-brand);
-  background: color-mix(in srgb, var(--fn-brand) 8%, transparent);
-  color: var(--fn-brand);
+  border-color: var(--fn-color-brand);
+  background: color-mix(in srgb, var(--fn-color-brand) 8%, transparent);
+  color: var(--fn-color-brand);
 }
 
 .cpFooter {

@@ -17,6 +17,8 @@
 
 /* ---------- Page shell ---------- */
 .chatPage {
+  /* 布局度量（列宽 / 头像槽 / 间距）——不是颜色令牌，仅供聊天区内部共享；
+     SOLO 页面会把这些值压成 0 以复用同一套 MessageList。 */
   /* Shared column metrics: title bar + composer alignment. */
   --chat-column-max: 960px;
   --chat-column-pad-x: 32px;
@@ -141,9 +143,10 @@
 .chatTitleBarEmpty {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   flex: 0 0 var(--fn-chat-chrome-height, 58px);
   --chat-title-pad-x: var(--chat-column-pad-x);
-  padding-inline-start: var(--chat-title-pad-x);
+  padding-inline: var(--chat-title-pad-x);
   box-sizing: border-box;
 }
 
@@ -234,6 +237,86 @@
     outline: 2px solid var(--fn-color-brand);
     outline-offset: 2px;
   }
+}
+
+.chatTitleWorkspaceBtn {
+  flex-shrink: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 180px;
+  height: 24px;
+  margin: 0 4px 0 0;
+  padding: 0 8px;
+  border: 1px solid var(--fn-border-secondary);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fn-text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color var(--fn-transition-fast, 0.15s ease),
+    background var(--fn-transition-fast, 0.15s ease),
+    border-color var(--fn-transition-fast, 0.15s ease);
+
+  &:hover {
+    color: var(--fn-text-primary);
+    background: var(--fn-bg-secondary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: 2px;
+  }
+}
+
+.chatTitleWorkspaceLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Quick chats: informative, non-interactive workspace scope chip. */
+.chatTitleQuickScope {
+  flex-shrink: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 220px;
+  height: 24px;
+  margin: 0 4px 0 0;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--fn-color-brand) 36%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--fn-color-brand) 10%, transparent);
+  color: var(--fn-color-brand);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.chatWorkspaceOption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 280px;
+  padding: 2px 0;
+}
+
+.chatWorkspaceOptionName {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chatWorkspaceOptionPath {
+  overflow: hidden;
+  color: var(--fn-text-tertiary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chatTitleInput {
@@ -433,3 +516,83 @@
   line-height: 1.6;
   color: var(--fn-text-secondary);
 }
+
+/* Conversation workspace notice: "no workspace yet" and "separate workspace on". */
+.chatWorkspaceNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 var(--chat-column-pad-x) 10px;
+  padding: 9px 10px 9px 12px;
+  border: 1px solid var(--fn-border-secondary);
+  border-radius: 10px;
+  background: var(--fn-bg-secondary, rgba(0, 0, 0, 0.03));
+}
+
+.chatWorkspaceNoticeIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  color: var(--fn-text-secondary);
+}
+
+.chatWorkspaceNoticeBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chatWorkspaceNoticeTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fn-text-primary);
+}
+
+.chatWorkspaceNoticePath {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--fn-text-secondary);
+  font-family: var(--fn-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+
+.chatWorkspaceNoticeHint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fn-text-secondary);
+}
+
+.chatWorkspaceNoticeActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.chatWorkspaceNoticeClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fn-text-secondary);
+  cursor: pointer;
+}
+
+.chatWorkspaceNoticeClose:hover {
+  background: var(--fn-border-secondary);
+  color: var(--fn-text-primary);
+}
+
+/* Phone overrides are imported last so they win over desktop rules above. */
+@import "./mobileChat.partial.less";

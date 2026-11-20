@@ -4,8 +4,8 @@ Usage::
 
     python -m octop.infra.dsh.session.verify \\
         --thread-id thr_xxx \\
-        --db E:\\HAPPYclaw\\octop-qa-home\\octop.db \\
-        --shadow-dir E:\\HAPPYclaw\\2026-11-12\\dsh-integration\\shadow-data
+        --db <home>\\octop.db \\
+        --shadow-dir <shadow-data-dir>
 
 The command projects the shadow log with :func:`project`, reads the same
 thread from ``thread_messages`` through a read-only SQLite URI, and aligns the

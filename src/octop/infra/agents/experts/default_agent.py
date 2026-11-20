@@ -25,7 +25,7 @@ from octop.infra.utils.locale import normalize_locale
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EXPERT_ID = "general-assistant"
+DEFAULT_EXPERT_ID = "happyclaw"
 SETUP_DEFAULT_AGENT_ID = "main"
 
 

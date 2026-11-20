@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
 import { pluginsApi } from "../../api/modules/plugins";
-import {
-  ensureBuiltinToolRenderers,
-  loadInstalledPluginUis,
-  setPluginUiToolContext,
-} from "../toolRenderers";
-import { updateToolPluginIndex } from "../toolRenderers/toolPluginIndex";
+// Import the concrete modules, not the barrel: the barrel re-exports this hook,
+// and a cycle between them makes Rollup split them into different chunks.
+import { ensureBuiltinToolRenderers } from "./ensureBuiltins";
+import { loadInstalledPluginUis } from "./loader";
+import { setPluginUiToolContext } from "./host";
+import { updateToolPluginIndex } from "./toolPluginIndex";
 
 /**
  * Load builtin + installed plugin UI modules once per app session, and keep

@@ -1,5 +1,6 @@
 import { getApiUrl } from "../config";
 import { getAuthToken, request, requestBlob } from "../request";
+import { mobileCredentialToken } from "../../utils/mobileEndpoint";
 
 export type TrajectoryKind =
   | "user"
@@ -103,6 +104,10 @@ export const trajectoryApi = {
     if (afterSeq != null) search.set("after_seq", String(afterSeq));
     const token = getAuthToken();
     if (token) search.set("access_token", token);
+    // EventSource cannot set headers; a connected phone passes its credential
+    // in the query string instead.
+    const credential = mobileCredentialToken();
+    if (credential) search.set("octop_token", credential);
     const qs = search.toString();
     return getApiUrl(
       `${trajectoryBase(agentId, threadId)}/stream${qs ? `?${qs}` : ""}`,

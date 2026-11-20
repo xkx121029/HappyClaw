@@ -143,6 +143,10 @@
   .sessionScopeTabs {
     margin: 0 4px 8px;
   }
+
+  .sessionCloudEntry {
+    margin: 0 4px 8px;
+  }
 }
 
 .minimalAgentSection {
@@ -437,7 +441,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--fn-brand);
+    outline: 2px solid var(--fn-color-brand);
     outline-offset: 1px;
   }
 }
@@ -454,6 +458,134 @@
   font-size: 12px;
   line-height: 16px;
   user-select: none;
+}
+
+/* 快速对话会话标记：与普通会话明确区分，并带出发起人。 */
+.sessionQuickBadge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border: 1px solid color-mix(in srgb, var(--fn-color-brand) 40%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fn-color-brand) 10%, transparent);
+  color: var(--fn-color-brand);
+  font-size: 10px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.sessionQuickBadgeBy {
+  max-width: 72px;
+  overflow: hidden;
+  font-weight: 400;
+  opacity: 0.82;
+  text-overflow: ellipsis;
+}
+
+/* Projects: first-level headers with a second-level session list. */
+.sessionProjectToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 8px 6px;
+  flex-shrink: 0;
+}
+
+.sessionProjectToolbarLabel {
+  color: var(--fn-text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  user-select: none;
+}
+
+.sessionProjectCreate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fn-text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fn-sidebar-item-hover);
+    color: var(--fn-text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: 1px;
+  }
+}
+
+.sessionProjectHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fn-text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fn-sidebar-item-hover);
+    color: var(--fn-text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: -2px;
+  }
+}
+
+.sessionProjectChevron {
+  flex-shrink: 0;
+  color: var(--fn-text-quaternary);
+  transition: transform var(--fn-transition-fast);
+}
+
+.sessionProjectChevronOpen {
+  transform: rotate(90deg);
+}
+
+.sessionProjectTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--fn-text-secondary);
+}
+
+.sessionProjectCount {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--fn-text-quaternary);
+  font-size: 11px;
+}
+
+.sessionProjectEmpty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 10px 26px;
+  color: var(--fn-text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
 }
 
 .sessionScopeTabs {
@@ -497,6 +629,45 @@
   color: var(--fn-text-primary);
   font-weight: 600;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+/* Cloud collaboration is a capability entry below the tabs, not a tab. */
+.sessionCloudEntry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin: 0 12px 8px 0;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fn-text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fn-sidebar-item-hover);
+    color: var(--fn-text-secondary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fn-color-brand);
+    outline-offset: 1px;
+  }
+}
+
+.sessionCloudEntryActive {
+  background: var(--fn-bg-secondary, rgba(0, 0, 0, 0.04));
+  color: var(--fn-text-secondary);
+}
+
+.sessionCloudEntryCount {
+  margin-left: auto;
+  color: var(--fn-text-quaternary);
+  font-size: 11px;
 }
 
 .sessionSearchIcon {

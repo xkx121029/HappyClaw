@@ -70,6 +70,8 @@ export const createColumns = (
         return (
           <Tooltip title={id}>
             <div
+              role="button"
+              tabIndex={0}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -80,6 +82,12 @@ export const createColumns = (
                 paddingLeft: 8,
               }}
               onClick={() => handlers.onDetail(record)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handlers.onDetail(record);
+                }
+              }}
             >
               <Tooltip title={label}>
                 {icon ? (
@@ -106,7 +114,7 @@ export const createColumns = (
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
                   color: "var(--fn-text-secondary)",
-                  fontSize: 13,
+                  fontSize: "var(--fn-text-xs)",
                   fontFamily: "monospace",
                 }}
               >
@@ -208,7 +216,7 @@ export const createColumns = (
       render: (_: unknown, record: CronJob) => {
         const taskType = record.task_type === "text" ? "text" : "agent";
         return (
-          <Tag style={{ fontSize: 11, whiteSpace: "nowrap" }}>
+          <Tag style={{ fontSize: "var(--fn-text-2xs)", whiteSpace: "nowrap" }}>
             {taskType === "text"
               ? handlers.t("cronJobs.form.taskTypeText")
               : handlers.t("cronJobs.form.taskTypeAgent")}
@@ -253,6 +261,45 @@ export const createColumns = (
       },
     },
     {
+      title: handlers.t("cronJobs.col.nextRunAt"),
+      key: "next_run_at",
+      width: 180,
+      render: (_: unknown, record: CronJob) => {
+        const meta = (record.meta as Record<string, unknown> | undefined) ?? {};
+        const ts = meta.octop_next_run_at;
+        const failures = meta.octop_consecutive_failures;
+        const failing =
+          typeof failures === "number" && failures > 0 ? failures : 0;
+        return (
+          <span
+            style={{
+              fontSize: 12,
+              color: "var(--fn-text-secondary)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            {formatCronTimestamp(
+              typeof ts === "number" ? ts : null,
+              handlers.timeZone,
+            )}
+            {failing > 0 && (
+              <Tooltip
+                title={handlers.t("cronJobs.consecutiveFailures", {
+                  count: failing,
+                })}
+              >
+                <Tag color="warning" style={{ fontSize: "var(--fn-text-2xs)", margin: 0 }}>
+                  ×{failing}
+                </Tag>
+              </Tooltip>
+            )}
+          </span>
+        );
+      },
+    },
+    {
       title: handlers.t("cronJobs.col.lastStatus"),
       key: "last_status",
       width: 100,
@@ -268,7 +315,7 @@ export const createColumns = (
         }
         const known = lastRunStatusTag(status);
         const tag = (
-          <Tag color={known?.color ?? "default"} style={{ fontSize: 11 }}>
+          <Tag color={known?.color ?? "default"} style={{ fontSize: "var(--fn-text-2xs)" }}>
             {known ? handlers.t(known.labelKey) : status}
           </Tag>
         );
@@ -286,7 +333,7 @@ export const createColumns = (
         const meta = (record.meta as Record<string, unknown> | undefined) ?? {};
         const fresh = Boolean(meta.octop_fresh_thread);
         return (
-          <Tag style={{ fontSize: 11 }}>
+          <Tag style={{ fontSize: "var(--fn-text-2xs)" }}>
             {fresh
               ? handlers.t("cronJobs.col.freshThreadOn")
               : handlers.t("cronJobs.col.freshThreadOff")}
@@ -339,6 +386,7 @@ export const createColumns = (
               <Button
                 type="text"
                 size="small"
+                aria-label={handlers.t("common.more", "更多")}
                 icon={<MoreHorizontal size={14} />}
               />
             </Dropdown>

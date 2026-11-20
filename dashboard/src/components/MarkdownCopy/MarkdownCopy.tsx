@@ -145,6 +145,7 @@ export function MarkdownCopy({
             </div>
             <Button
               icon={<Copy size={16} />}
+              aria-label={t("common.copy", "复制")}
               {...defaultCopyButtonProps}
               onClick={copyToClipboard}
               loading={isCopying}

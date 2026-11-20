@@ -428,6 +428,14 @@ export default function SkillHubTab({
               key={skill.slug}
               className={styles.hubCard}
               onClick={() => handleCardClick(skill)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleCardClick(skill);
+                }
+              }}
             >
               <div className={styles.hubCardHeader}>
                 {skill.iconUrl ? (
@@ -452,7 +460,7 @@ export default function SkillHubTab({
                   <Tag
                     color="orange"
                     style={{
-                      fontSize: 11,
+                      fontSize: "var(--fn-text-2xs)",
                       lineHeight: "18px",
                       padding: "0 6px",
                       margin: 0,

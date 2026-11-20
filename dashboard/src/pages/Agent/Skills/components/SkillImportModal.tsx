@@ -267,10 +267,19 @@ export function SkillImportModal({
               isDragging && styles.zipDragDropActive,
               zipFile && styles.zipDragDropHasFile,
             )}
+            role="button"
+            tabIndex={busy ? -1 : 0}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => !busy && fileInputRef.current?.click()}
+            onKeyDown={(event) => {
+              if (busy) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
           >
             <div className={styles.zipDragDropIcon}>
               <svg viewBox="0 0 24 24" width="48" height="48" fill="none">

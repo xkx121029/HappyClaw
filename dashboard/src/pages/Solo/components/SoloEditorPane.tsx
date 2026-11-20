@@ -1,7 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Spin, Tooltip } from "antd";
-import { FileCode2, PanelRight, RotateCw, Save, X } from "lucide-react";
+import {
+  FileCode2,
+  Globe,
+  Loader2,
+  PanelRight,
+  RefreshCw,
+  Save,
+  X,
+} from "lucide-react";
 import cx from "classnames";
 import { workspaceApi } from "../../../api/modules/workspace";
 import { apiErrorMessage } from "../../../utils/apiError";
@@ -9,11 +24,15 @@ import { message } from "@/utils/antdMessage";
 import CodeEditor from "../../Agent/Workspace/components/CodeEditor";
 import Splitter from "./Splitter";
 import SoloToolTerminal from "./SoloTerminal";
+import SoloBrowserPane from "./SoloBrowserPane";
 import styles from "../solo.module.less";
 
 interface SoloEditorPaneProps {
   agentId: string | null;
   agentReady: boolean;
+  /** 浏览器预览要按会话找 agent 打开的页面。 */
+  threadId: string | null;
+  bridgeConnectionId?: string | null;
   filePath: string | null;
   onCloseFile: () => void;
   terminalRatio: number;
@@ -21,23 +40,33 @@ interface SoloEditorPaneProps {
   /** 文件树被容器压掉时，用这个入口以浮层打开。 */
   treeFitted: boolean;
   onToggleTree: () => void;
+  /** 当前页签视图由外层控制。 */
+  view: "editor" | "browser";
+  onViewChange: (view: "editor" | "browser") => void;
 }
 
 function fileName(path: string): string {
   return path.replace(/\/+$/, "").split("/").pop() || path;
 }
 
+/** 中间栏：编辑器（顶部文件页签）+ 终端，两个区域之间可拖拽调高。 */
 export default function SoloEditorPane({
   agentId,
   agentReady,
+  threadId,
+  bridgeConnectionId,
   filePath,
   onCloseFile,
   terminalRatio,
   onTerminalRatioChange,
   treeFitted,
   onToggleTree,
+  view,
+  onViewChange,
 }: SoloEditorPaneProps) {
   const { t } = useTranslation();
+  // 打开过浏览器页签后保持挂载，切回文件时不重复建立浏览器流。
+  const [browserOpened, setBrowserOpened] = useState(false);
   const [content, setContent] = useState("");
   const [original, setOriginal] = useState("");
   const [loading, setLoading] = useState(false);
@@ -80,6 +109,16 @@ export default function SoloEditorPane({
     };
   }, [agentId, filePath, reloadKey, t]);
 
+  // 从文件树里点开文件时回到编辑器，避免停在浏览器页签看不到内容。
+  useEffect(() => {
+    if (filePath) onViewChange("editor");
+  }, [filePath, onViewChange]);
+
+  // 外部（顶栏/命令面板）切到浏览器时也要挂载预览。
+  useEffect(() => {
+    if (view === "browser") setBrowserOpened(true);
+  }, [view]);
+
   const save = useCallback(async () => {
     if (!agentId || !filePath || saving) return;
     if (content === original) return;
@@ -118,6 +157,23 @@ export default function SoloEditorPane({
     [onTerminalRatioChange, terminalRatio],
   );
 
+  const breadcrumb = useMemo(() => {
+    if (!filePath) return null;
+    const parts = filePath.split("/").filter(Boolean);
+    return (
+      <div className={styles.fileBreadcrumb}>
+        <span className={styles.crumbs}>
+          {parts.map((part, index) => (
+            <Fragment key={`${index}-${part}`}>
+              {index > 0 ? <span>/</span> : null}
+              {index === parts.length - 1 ? <b>{part}</b> : <span>{part}</span>}
+            </Fragment>
+          ))}
+        </span>
+      </div>
+    );
+  }, [filePath]);
+
   const editorBody = useMemo(() => {
     if (!agentId) {
       return (
@@ -154,63 +210,135 @@ export default function SoloEditorPane({
         </div>
       );
     }
-    return (
-      <CodeEditor path={filePath} value={content} onChange={setContent} />
-    );
+    return <CodeEditor path={filePath} value={content} onChange={setContent} />;
   }, [agentId, agentReady, content, error, filePath, loading, t]);
 
   return (
     <section className={styles.editorColumn} ref={columnRef}>
       <div className={styles.editorPane}>
-        <header className={styles.paneHeader}>
-          <FileCode2 size={14} className={styles.headerIcon} />
-          <span className={styles.paneTitle}>
-            {filePath ? fileName(filePath) : t("solo.editor")}
-          </span>
+        <div className={styles.editorTabs}>
           {filePath ? (
-            <span className={styles.panePath} title={filePath}>
-              {filePath}
-            </span>
-          ) : null}
-          {dirty ? <span className={styles.dirtyDot} title={t("solo.unsaved")} /> : null}
+            <div
+              className={cx(
+                styles.editorTab,
+                view === "editor" && styles.editorTabActive,
+              )}
+              title={filePath}
+              role="tab"
+              aria-selected={view === "editor"}
+              tabIndex={0}
+              onClick={() => onViewChange("editor")}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onViewChange("editor");
+                }
+              }}
+            >
+              <FileCode2 size={13} className={styles.editorTabIcon} />
+              <span className={styles.editorTabName}>
+                {fileName(filePath)}
+              </span>
+              {dirty ? (
+                <span className={styles.dirtyDot} title={t("solo.unsaved")} />
+              ) : null}
+              <button
+                type="button"
+                className={styles.editorTabClose}
+                onClick={onCloseFile}
+                aria-label={t("solo.closeFile")}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ) : (
+            <div
+              className={cx(styles.editorTab, styles.editorTabPlaceholder)}
+              title={t("solo.noOpenFile")}
+            >
+              <FileCode2 size={13} className={styles.editorTabIcon} />
+              <span className={styles.editorTabName}>
+                {t("solo.noOpenFile")}
+              </span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            className={cx(
+              styles.editorTab,
+              view === "browser" && styles.editorTabActive,
+            )}
+            onClick={() => {
+              setBrowserOpened(true);
+              onViewChange("browser");
+            }}
+            title={t("solo.browserTab")}
+          >
+            <Globe size={13} className={styles.editorTabIcon} />
+            <span className={styles.editorTabName}>{t("solo.browserTab")}</span>
+          </button>
+
           <span className={styles.headerSpacer} />
-          {filePath ? (
+
+          {view === "editor" && filePath ? (
             <>
               <Tooltip title={t("solo.save")}>
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<Save size={14} />}
-                  loading={saving}
-                  disabled={!dirty || !agentReady}
+                <button
+                  type="button"
+                  className={styles.toolIconButton}
                   onClick={() => void save()}
+                  disabled={!dirty || !agentReady || saving}
                   aria-label={t("solo.save")}
-                />
+                >
+                  {saving ? (
+                    <Loader2 size={14} className={styles.spin} />
+                  ) : (
+                    <Save size={14} />
+                  )}
+                </button>
               </Tooltip>
-              <Tooltip title={t("solo.closeFile")}>
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<X size={14} />}
-                  onClick={onCloseFile}
-                  aria-label={t("solo.closeFile")}
-                />
+              <Tooltip title={t("solo.reloadFile")}>
+                <button
+                  type="button"
+                  className={styles.toolIconButton}
+                  onClick={() => setReloadKey((key) => key + 1)}
+                  aria-label={t("solo.reloadFile")}
+                >
+                  <RefreshCw size={14} />
+                </button>
               </Tooltip>
             </>
           ) : null}
           {!treeFitted ? (
             <Tooltip title={t("solo.toggleFiles")}>
-              <Button
-                type="text"
-                size="small"
-                icon={<PanelRight size={14} />}
+              <button
+                type="button"
+                className={styles.toolIconButton}
                 onClick={onToggleTree}
                 aria-label={t("solo.toggleFiles")}
-              />
+              >
+                <PanelRight size={14} />
+              </button>
             </Tooltip>
           ) : null}
-        </header>
-        <div className={styles.editorBody}>{editorBody}</div>
+        </div>
+        {breadcrumb}
+        <div className={styles.editorBody}>
+          {browserOpened ? (
+            <div
+              className={styles.browserPane}
+              style={{ display: view === "browser" ? "flex" : "none" }}
+            >
+              <SoloBrowserPane
+                threadId={threadId}
+                agentReady={agentReady}
+                bridgeConnectionId={bridgeConnectionId}
+              />
+            </div>
+          ) : null}
+          {view === "editor" ? editorBody : null}
+        </div>
       </div>
 
       <Splitter
@@ -220,16 +348,10 @@ export default function SoloEditorPane({
       />
 
       <div
-        className={cx(styles.terminalPane)}
+        className={styles.terminalPane}
         style={{ height: `${Math.round(terminalRatio * 1000) / 10}%` }}
       >
-        <header className={styles.paneHeader}>
-          <RotateCw size={13} className={styles.headerIcon} />
-          <span className={styles.paneTitle}>{t("solo.terminal")}</span>
-        </header>
-        <div className={styles.terminalBody}>
-          <SoloToolTerminal agentId={agentId} agentReady={agentReady} />
-        </div>
+        <SoloToolTerminal agentId={agentId} agentReady={agentReady} />
       </div>
     </section>
   );

@@ -8,6 +8,9 @@ interface SplitterProps {
   /** 每次指针移动的增量（像素，向右/向下为正）。 */
   onDelta: (delta: number) => void;
   label: string;
+  /** 双击复位到默认宽度；不传时不响应双击。 */
+  onReset?: () => void;
+  testId?: string;
 }
 
 const KEYBOARD_STEP = 16;
@@ -16,6 +19,8 @@ export default function Splitter({
   orientation,
   onDelta,
   label,
+  onReset,
+  testId,
 }: SplitterProps) {
   const [dragging, setDragging] = useState(false);
   const lastPos = useRef(0);
@@ -46,6 +51,8 @@ export default function Splitter({
 
   const stopDragging = useCallback(() => setDragging(false), []);
 
+  const handleDoubleClick = useCallback(() => onReset?.(), [onReset]);
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
       const dec = orientation === "vertical" ? "ArrowLeft" : "ArrowUp";
@@ -67,6 +74,7 @@ export default function Splitter({
       tabIndex={0}
       aria-label={label}
       aria-orientation={orientation}
+      data-testid={testId}
       className={cx(
         styles.splitter,
         orientation === "vertical" ? styles.splitterV : styles.splitterH,
@@ -76,6 +84,7 @@ export default function Splitter({
       onPointerMove={handlePointerMove}
       onPointerUp={stopDragging}
       onPointerCancel={stopDragging}
+      onDoubleClick={handleDoubleClick}
       onKeyDown={handleKeyDown}
     >
       <span className={styles.splitterGrip} />

@@ -1,19 +1,27 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import AvatarDropdown from "../components/AvatarDropdown";
+import { useBao } from "../components/Bao/BaoContext";
 import AppVersionBadge from "../components/AppVersionBadge";
+import { Mascot, mascotStatusInk } from "../components/Mascot";
 import CurrentVersionBadge from "../components/CurrentVersionBadge";
-import { ArrowLeftRight, ChevronDown, X } from "lucide-react";
+import {
+  ArrowLeftRight,
+  ChevronDown,
+  Search,
+  SquareTerminal,
+  X,
+} from "lucide-react";
 import cx from "classnames";
 import { useTheme } from "../context/ThemeContext";
 import { useLayoutMode } from "../context/LayoutModeContext";
 import { useDesktopChromeStyle } from "../hooks/useDesktopChrome";
 import { useUpdateStatus } from "../hooks/useUpdateStatus";
 import { prefetchRoute } from "../routes/prefetch";
-import { useServerCapabilities } from "../hooks/useServerCapabilities";
 import { EXPAND_CHAT_RAIL_EVENT } from "../pages/Chat/chatRailEvents";
+import { SHELL_PALETTE_EVENT } from "../components/CommandPalette/paletteEvents";
 import {
   CHAT_HISTORY_RAIL_ID,
   OPEN_NAV_RECORDS_EVENT,
@@ -41,6 +49,11 @@ import {
 } from "./sidebarNav";
 import { sectionsFromLayout, type SidebarNavLayout } from "./sidebarNavLayout";
 import SidebarNavCustomizer from "./SidebarNavCustomizer";
+import {
+  chatThreadIdFromPath,
+  isQuickChatSearch,
+  useQuickChatActive,
+} from "../pages/Chat/quickChatState";
 import styles from "./Sidebar.module.less";
 import { typeSize } from "../utils/mobileTypeScale";
 
@@ -409,28 +422,73 @@ export default function Sidebar({
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const drawerSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const { name: baoName, tasks: baoTasks, appearance: baoLook } = useBao();
   const { isDark } = useTheme();
   const { hasUpdate } = useUpdateStatus();
-  const { mobileEnabled } = useServerCapabilities();
   const { layoutMode, minimalPane, setMinimalPane } = useLayoutMode();
   const isMinimal = layoutMode === "minimal";
   const onChatPath = isChatPath(location.pathname);
   const [chatSidebarOpen, setChatSidebarOpen] = useChatSidebarOpen();
   const showChatRailToggle = !isMinimal;
   const chatRailOpen = showChatRailToggle && onChatPath && chatSidebarOpen;
-  const catalog = useMemo(
-    () => buildNavSections({ mobileEnabled }),
-    [mobileEnabled],
-  );
+  const catalog = useMemo(() => buildNavSections(), []);
   const [savedLayout, setSavedLayout] = useState<SidebarNavLayout | null>(null);
   const [customizerOpen, setCustomizerOpen] = useState(false);
-  const navSections = useMemo(
-    () => sectionsFromLayout(catalog, savedLayout),
-    [catalog, savedLayout],
+  // Home and 快速对话 are pinned first-level entries: they are not part of the
+  // customizable catalog, so a saved layout can never hide them and the
+  // backend key list stays untouched.
+  const customizerCatalog = useMemo(
+    () =>
+      catalog
+        .map((section) => ({
+          ...section,
+          items: section.items.filter(
+            (item) => item.key !== "home" && item.key !== "quick-chat",
+          ),
+        }))
+        .filter((section) => section.items.length > 0),
+    [catalog],
   );
+  const navSections = useMemo(() => {
+    const pinnedKeys = ["home", "quick-chat"];
+    const allItems = catalog.flatMap((section) => section.items);
+    const pinned = pinnedKeys
+      .map((key) => allItems.find((item) => item.key === key))
+      .filter((item): item is NavItem => Boolean(item));
+    if (pinned.length === 0) return sectionsFromLayout(catalog, savedLayout);
+    const sections = sectionsFromLayout(catalog, savedLayout)
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => !pinnedKeys.includes(item.key)),
+      }))
+      .filter((section) => section.items.length > 0);
+    const first = sections[0];
+    if (first && !first.groupKey && !first.title) {
+      const items = [...first.items];
+      const home = pinned.find((item) => item.key === "home");
+      const quick = pinned.find((item) => item.key === "quick-chat");
+      if (quick) {
+        const chatIndex = items.findIndex((item) => item.key === "chat");
+        items.splice(chatIndex >= 0 ? chatIndex + 1 : 0, 0, quick);
+      }
+      if (home) items.unshift(home);
+      return [{ ...first, items }, ...sections.slice(1)];
+    }
+    return [{ items: pinned }, ...sections];
+  }, [catalog, savedLayout]);
+  const quickThreadActive = useQuickChatActive(
+    chatThreadIdFromPath(location.pathname),
+  );
+  // Quick chats live on the chat route; move the highlight to its own nav item.
+  // ``?quick=1`` marks them in the URL, so the highlight is right immediately
+  // and after a reload, before session metadata finishes loading.
+  const quickChatActive =
+    isQuickChatSearch(location.search) || quickThreadActive;
+  const navSelectedKey = quickChatActive ? "quick-chat" : selectedKey;
   const { toggleGroup, isGroupCollapsed } = useNavGroupCollapse(
     navSections,
-    selectedKey,
+    navSelectedKey,
   );
 
   useEffect(() => {
@@ -485,7 +543,13 @@ export default function Sidebar({
     // When navigating to /chat, preserve the current chatId in the URL so the
     // Chat component is not remounted (key stays the same) and the user stays
     // on their most recent conversation instead of seeing a blank welcome screen.
-    if (path === "/chat" && window.location.pathname.startsWith("/chat/")) {
+    // A quick chat is the exception: 快速对话 is a peer nav item, so 对话 must
+    // leave quick mode instead of re-opening the same thread.
+    if (
+      path === "/chat" &&
+      window.location.pathname.startsWith("/chat/") &&
+      !quickChatActive
+    ) {
       if (isMobile) onToggle();
       return;
     }
@@ -518,6 +582,77 @@ export default function Sidebar({
     </>
   );
 
+  const soloActive = location.pathname === "/solo";
+
+  const openSolo = () => {
+    navigate("/solo");
+    if (isMobile) onToggle();
+  };
+
+  // Quick chat is a first-level nav destination (see sidebarNav): the chat
+  // page consumes ``?quick=1`` and opens the no-workspace conversation.
+
+  const soloEntry = (
+    <button
+      type="button"
+      className={cx(
+        styles.soloEntry,
+        isRailCollapsed && styles.soloEntryCollapsed,
+        soloActive && styles.soloEntryActive,
+      )}
+      onClick={openSolo}
+      aria-label={t("solo.openSolo")}
+      aria-current={soloActive ? "page" : undefined}
+      title={t("solo.openSolo")}
+    >
+      <SquareTerminal size={16} strokeWidth={1.8} />
+      {!isRailCollapsed ? (
+        <span className={styles.soloEntryLabel}>{t("solo.openSolo")}</span>
+      ) : null}
+    </button>
+  );
+
+  const baoRunning = baoTasks.filter(
+    (task) => task.status === "running" || task.status === "awaiting",
+  ).length;
+
+  const openGlobalBao = () => {
+    navigate("/bao");
+    if (isMobile) onToggle();
+  };
+
+  // Global Bao is a first-class sidebar entry: always visible, keyboard
+  // focusable, and it navigates to the cross-project page.
+  const baoEntry = (
+    <button
+      type="button"
+      className={cx(styles.soloEntry, isRailCollapsed && styles.soloEntryCollapsed)}
+      onClick={openGlobalBao}
+      aria-label={t("bao.entry.open")}
+      aria-keyshortcuts="Alt+B"
+      title={`${t("bao.entry.open")} (Alt+B)`}
+    >
+      <Mascot
+        size={18}
+        {...baoLook}
+        color={mascotStatusInk(baoLook, baoRunning > 0 ? "working" : null)}
+        state={baoRunning > 0 ? "working" : "idle"}
+        className={styles.baoGlyph}
+        surface="var(--fn-sidebar-bg)"
+      />
+      {!isRailCollapsed ? (
+        <span className={styles.soloEntryLabel}>
+          {t("bao.entry.labelNamed", { name: baoName })}
+        </span>
+      ) : null}
+      {baoRunning > 0 ? (
+        <span className={styles.baoBadge} aria-label={t("bao.entry.running", { count: baoRunning })}>
+          {baoRunning}
+        </span>
+      ) : null}
+    </button>
+  );
+
   const userFooter = (
     <div
       className={styles.sidebarUser}
@@ -544,7 +679,7 @@ export default function Sidebar({
   const customizer = (
     <SidebarNavCustomizer
       open={customizerOpen}
-      catalog={catalog}
+      catalog={customizerCatalog}
       layout={savedLayout}
       onClose={() => setCustomizerOpen(false)}
       onSaved={setSavedLayout}
@@ -592,7 +727,7 @@ export default function Sidebar({
         }
         return section.items;
       })}
-      selectedKey={selectedKey}
+      selectedKey={navSelectedKey}
       onNavigate={handleNavigate}
       hasUpdate={hasUpdate}
       t={t}
@@ -600,7 +735,7 @@ export default function Sidebar({
   ) : (
     <NavList
       sections={navSections}
-      selectedKey={selectedKey}
+      selectedKey={navSelectedKey}
       onNavigate={handleNavigate}
       onToggleChatRail={handleToggleChatRail}
       showChatRailToggle={showChatRailToggle}
@@ -617,7 +752,7 @@ export default function Sidebar({
         <div style={{ flexShrink: 0 }}>
           <SidebarCollapsedIconNav
             items={primaryItems}
-            selectedKey={selectedKey}
+            selectedKey={navSelectedKey}
             onNavigate={handleNavigate}
             hasUpdate={hasUpdate}
             t={t}
@@ -626,7 +761,7 @@ export default function Sidebar({
           {minimalPane === "settings" ? (
             <SidebarCollapsedIconNav
               items={groupedItems}
-              selectedKey={selectedKey}
+              selectedKey={navSelectedKey}
               onNavigate={handleNavigate}
               hasUpdate={hasUpdate}
               t={t}
@@ -638,7 +773,7 @@ export default function Sidebar({
           <div className={styles.minimalPrimaryBlock}>
             <NavList
               sections={navSections}
-              selectedKey={selectedKey}
+              selectedKey={navSelectedKey}
               onNavigate={handleNavigate}
               isMobile={isMobile}
               isGroupCollapsed={isGroupCollapsed}
@@ -653,7 +788,7 @@ export default function Sidebar({
           >
             <NavList
               sections={navSections}
-              selectedKey={selectedKey}
+              selectedKey={navSelectedKey}
               onNavigate={handleNavigate}
               isMobile={isMobile}
               isGroupCollapsed={isGroupCollapsed}
@@ -692,8 +827,8 @@ export default function Sidebar({
           top: 0,
           bottom: 0,
           left: 0,
-          height: "auto",
-          width: EXPANDED_WIDTH,
+          height: "100%",
+          width: "min(86vw, 320px)",
           boxSizing: "border-box",
           paddingLeft: "env(safe-area-inset-left, 0px)",
           background: "var(--fn-sidebar-bg)",
@@ -703,7 +838,27 @@ export default function Sidebar({
           flexDirection: "column",
           transform: collapsed ? "translateX(-100%)" : "translateX(0)",
           transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-          boxShadow: collapsed ? "none" : "4px 0 20px rgba(0,0,0,0.10)",
+          boxShadow: collapsed ? "none" : "4px 0 24px rgba(0, 0, 0, 0.14)",
+        }}
+        onTouchStart={(event) => {
+          if (collapsed) return;
+          const touch = event.touches[0];
+          drawerSwipeStart.current = {
+            x: touch.clientX,
+            y: touch.clientY,
+          };
+        }}
+        onTouchEnd={(event) => {
+          const start = drawerSwipeStart.current;
+          drawerSwipeStart.current = null;
+          if (!start || collapsed) return;
+          const touch = event.changedTouches[0];
+          if (
+            touch.clientX - start.x < -56 &&
+            Math.abs(touch.clientY - start.y) < 64
+          ) {
+            onToggle();
+          }
         }}
       >
         <div
@@ -738,8 +893,8 @@ export default function Sidebar({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 32,
-              height: 32,
+              width: 40,
+              height: 40,
               border: "none",
               borderRadius: "var(--fn-radius-md)",
               background: "transparent",
@@ -751,6 +906,9 @@ export default function Sidebar({
             <X size={16} strokeWidth={1.8} />
           </button>
         </div>
+
+        {baoEntry}
+        {soloEntry}
 
         <div
           style={{
@@ -822,6 +980,33 @@ export default function Sidebar({
         >
           {brandInner}
         </div>
+        {/* Discoverability for ⌘K: without a visible affordance the palette is
+            only known to people who already knew the shortcut. */}
+        <div style={{ padding: isRailCollapsed ? "0 8px 8px" : "0 10px 8px" }}>
+          <button
+            type="button"
+            className={styles.paletteEntry}
+            onClick={() =>
+              window.dispatchEvent(new Event(SHELL_PALETTE_EVENT))
+            }
+            aria-label={t("palette.open", "搜索页面与操作")}
+            title={t("palette.open", "搜索页面与操作")}
+          >
+            <Search size={14} strokeWidth={1.9} aria-hidden />
+            {!isRailCollapsed ? (
+              <>
+                <span className={styles.paletteEntryLabel}>
+                  {t("palette.open", "搜索页面与操作")}
+                </span>
+                <kbd className={styles.paletteEntryKbd}>
+                  {isMacPlatform() ? "⌘K" : "Ctrl K"}
+                </kbd>
+              </>
+            ) : null}
+          </button>
+        </div>
+        {baoEntry}
+        {soloEntry}
         <div
           className={isRailCollapsed ? styles.navScrollCollapsed : undefined}
           style={{

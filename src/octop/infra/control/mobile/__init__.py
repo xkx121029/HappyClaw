@@ -1,1 +1,1 @@
-"""Remote Android infrastructure (probe, adb, setup)."""
+"""Docker installation helpers (Android Remote Phone chain removed)."""

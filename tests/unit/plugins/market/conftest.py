@@ -86,7 +86,9 @@ def dsh_package(
             key: {"type": type_name} for key, type_name in config_schema.items()
         }
     if capabilities:
-        package["dsh"]["bundle"]["capabilities"] = list(capabilities)
+        # Top-level field: this is what DshPluginLoader reads when deciding
+        # whether a bundle may mount tools.
+        package["capabilities"] = list(capabilities)
     return json.dumps(package)
 
 

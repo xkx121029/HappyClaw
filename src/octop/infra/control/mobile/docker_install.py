@@ -8,7 +8,7 @@ Design notes:
   scripts/linux/v1.0/install-docker.sh) so hosts the online script does not
   support (TencentOS / OpenCloudOS releasever mapping, offline curl failures,
   etc.) still install, and we never pipe the network straight into ``sh``.
-- Registry-mirror config probes Tencent Cloud's mirror reachability (again no
+- Registry-mirror config probes the configured mirror's reachability (again no
   geo check) and runs only right after a fresh install, so a daemon that may
   already be running user containers is never restarted.
 """
@@ -190,7 +190,7 @@ async def docker_daemon_ready(timeout: float = _DAEMON_READY_TIMEOUT) -> bool:
 
 
 async def _probe_tencent_mirror() -> bool:
-    """Plain TCP reachability check for the Tencent Cloud registry mirror."""
+    """Plain TCP reachability check for the configured registry mirror."""
     try:
         _, writer = await asyncio.wait_for(
             asyncio.open_connection(_TENCENT_MIRROR_HOST, 443), timeout=_PROBE_TIMEOUT

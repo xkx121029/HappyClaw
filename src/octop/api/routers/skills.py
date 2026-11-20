@@ -126,8 +126,8 @@ def _summary_dict(
             # ``slug`` is the directory name — the stable identifier used for all
             # by-name operations (detail / enable / disable / delete / install
             # check). ``name`` is the frontmatter display name, which may differ
-            # from the slug (e.g. dir "tencent-meeting-skill" with frontmatter
-            # name "tencent-meeting-mcp"); using ``name`` as the id 404s.
+            # from the slug (e.g. a directory whose frontmatter display name
+            # differs from its folder name); using ``name`` as the id 404s.
             "slug": name,
             "name": str(meta.get("name") or name),
             "description": str(meta.get("description") or ""),
@@ -1133,7 +1133,7 @@ async def hub_rankings(
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
-    """Fetch Tencent SkillHub rankings directly over HTTP.
+    """Fetch skill marketplace rankings directly over HTTP.
 
     Returns the same payload shape previously produced by
     ``skillhub skill rankings`` (typically ``section``, ``skills``, ``total``).

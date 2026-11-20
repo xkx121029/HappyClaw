@@ -13,11 +13,15 @@ import {
   FULLSCREEN_PATHS,
   MOBILE_FULLSCREEN_PATHS,
   SELF_HEADER_PATHS,
+  isRemoteDesktopPath,
   isWorkbenchPath,
 } from "../../routes";
 import { CHAT_HISTORY_RAIL_ID, isChatPath } from "../chatHistoryRail";
+import { PageStage } from "../../page-transitions";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { useKeyboardOffset } from "../../hooks/useKeyboardOffset";
+import { useMobileKeyboardOpen } from "../../hooks/useMobileKeyboardOpen";
+import MobileTabBar from "../MobileTabBar";
 import { useChatSidebarOpen } from "../../pages/Chat/hooks/useChatSidebarState";
 import { EXPAND_CHAT_RAIL_EVENT } from "../../pages/Chat/chatRailEvents";
 import RailEdgeControl from "../../components/RailEdgeControl";
@@ -32,6 +36,13 @@ import { useLayoutMode } from "../../context/LayoutModeContext";
 import { useDashboardPushToast } from "../../hooks/useDashboardPushToast";
 import { useRailShortcuts } from "../../hooks/useRailShortcuts";
 import { DESKTOP_CHROME_HEIGHT } from "../../utils/desktopChrome";
+import { BaoProvider } from "../../components/Bao/BaoContext";
+import { usePluginToolUis } from "../../plugins/toolRenderers";
+import ShellCommandPalette, {
+  useShellPaletteShortcut,
+} from "../../components/CommandPalette/ShellCommandPalette";
+import { SHELL_PALETTE_EVENT } from "../../components/CommandPalette/paletteEvents";
+import ShortcutSheet from "../ShortcutSheet";
 
 const Chat = lazy(() => import("../../pages/Chat"));
 const WorkbenchPage = lazy(() => import("../../pages/Control/Workbench"));
@@ -68,6 +79,9 @@ export default function MainLayout() {
   const isMobile = useIsMobile();
   const { layoutMode } = useLayoutMode();
   useDashboardPushToast();
+  // Plugin UI surfaces (e.g. the Home sidebar task-progress card) must load on
+  // every authenticated page, not only after visiting Chat.
+  usePluginToolUis({ agentId: null, threadId: null });
   useKeyboardOffset();
   const isMinimalLayout = layoutMode === "minimal";
   const isFullscreen =
@@ -159,6 +173,43 @@ export default function MainLayout() {
     onToggleHistory: handleHistoryRailToggle,
   });
 
+  // Global command palette + shortcut cheatsheet. React runs effects bottom-up,
+  // so the chat page registers its richer ⌘K palette first and calls
+  // preventDefault; this handler then sees the event as handled and yields.
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutSheetOpen, setShortcutSheetOpen] = useState(false);
+  useShellPaletteShortcut(true, () => setPaletteOpen(true));
+
+  // The sidebar's ⌘K affordance dispatches this instead of receiving a prop.
+  useEffect(() => {
+    const open = () => setPaletteOpen(true);
+    window.addEventListener(SHELL_PALETTE_EVENT, open);
+    return () => window.removeEventListener(SHELL_PALETTE_EVENT, open);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      // `?` is a printable character: never hijack it inside a text field.
+      if (
+        target &&
+        (target.isContentEditable ||
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT")
+      ) {
+        return;
+      }
+      if (event.key !== "?") return;
+      event.preventDefault();
+      setShortcutSheetOpen((open) => !open);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   const navEdgeLabel = t(
     collapsed ? "layout.expandNav" : "layout.collapseNav",
     collapsed ? "展开导航栏" : "收起导航栏",
@@ -238,6 +289,66 @@ export default function MainLayout() {
   );
 
   const isChatRoute = isChatPath(currentPath);
+  // SOLO is a standalone full-screen workspace: no main sidebar, no shell nav.
+  const isSoloRoute = currentPath === "/solo";
+  // Workbench / Remote Desktop paint their own full-bleed surfaces.
+  const isImmersiveRoute =
+    isSoloRoute ||
+    isWorkbenchPath(currentPath) ||
+    isRemoteDesktopPath(currentPath);
+  const softKeyboardOpen = useMobileKeyboardOpen(isMobile);
+  /* Chat owns the full screen: a tab bar under the composer would compete
+     with the input and the home indicator, so it steps aside there too. */
+  const showMobileTabBar =
+    isMobile && !isImmersiveRoute && !isChatRoute && !softKeyboardOpen;
+
+  /**
+   * Left-edge swipe opens the app drawer, mirroring native apps. Chat owns its
+   * own session drawer, so it is excluded here.
+   */
+  useEffect(() => {
+    if (!isMobile || isSoloRoute || isChatPath(currentPath) || !collapsed) {
+      return;
+    }
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    const onStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      if (touch.clientX > 24) return;
+      tracking = true;
+      startX = touch.clientX;
+      startY = touch.clientY;
+    };
+    const onMove = (event: TouchEvent) => {
+      if (!tracking) return;
+      const touch = event.touches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      if (Math.abs(dy) > 40 && Math.abs(dy) >= Math.abs(dx)) {
+        tracking = false;
+        return;
+      }
+      if (dx > 56 && Math.abs(dy) < 40) {
+        tracking = false;
+        persistNavCollapsed(false);
+      }
+    };
+    const onEnd = () => {
+      tracking = false;
+    };
+
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, [collapsed, currentPath, isMobile, isSoloRoute, persistNavCollapsed]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("octop-chat-open", isChatRoute);
@@ -249,201 +360,217 @@ export default function MainLayout() {
   return (
     <ServiceRestartProvider>
       <BackupOperationProvider>
-        {/* Shell column: the window's title band floats over the workbench row,
+        <BaoProvider>
+          {/* Shell column: the window's title band floats over the workbench row,
             so every column paints its own surface to the top edge. */}
-        <div
-          className="octop-window-shell"
-          style={
-            {
-              height: "100%",
-              boxSizing: "border-box",
-              /* iOS PWA landscape sides. Top is owned by Header (#664/#746),
-                 bottom is handled per-surface. */
-              paddingLeft: "env(safe-area-inset-left, 0px)",
-              paddingRight: "env(safe-area-inset-right, 0px)",
-              display: "flex",
-              flexDirection: "column",
-              background: isChatRoute
-                ? "var(--fn-bg-elevated, #fff)"
-                : "var(--fn-bg-primary)",
-              transition: "background var(--fn-transition)",
-              overflow: "hidden",
-              position: "relative",
-              /* The title row's height, for columns that paint their own
-                 surface behind it (see the band below). */
-              "--octop-shell-top-band": `${shellTopBand}px`,
-            } as React.CSSProperties
-          }
-        >
-          {/* macOS only: one drag strip beside the traffic lights. Windows drags
-              from the caption menu row, not from the page. */}
-          {shellTopBand > 0 && <DesktopWindowDragBand position="absolute" />}
-
           <div
-            style={{
-              flex: 1,
-              minHeight: 0,
-              display: "flex",
-              flexDirection: "row",
-              overflow: "hidden",
-            }}
-          >
-            {/* Mobile overlay backdrop */}
-            {isMobile && !collapsed && (
-              <div
-                onClick={toggleCollapsed}
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  background: "rgba(0, 0, 0, 0.40)",
-                  zIndex: 99,
-                }}
-              />
-            )}
-
-            <div
-              style={{
-                position: "relative",
-                flexShrink: 0,
-                alignSelf: "stretch",
+            className={`octop-window-shell${
+              showMobileTabBar ? " has-mobile-tabbar" : ""
+            }`}
+            style={
+              {
+                height: "100%",
+                boxSizing: "border-box",
+                /* iOS PWA landscape sides. Top is owned by Header (#664/#746),
+                 bottom is handled per-surface. */
+                paddingLeft: "env(safe-area-inset-left, 0px)",
+                paddingRight: "env(safe-area-inset-right, 0px)",
                 display: "flex",
-                minHeight: 0,
-              }}
-            >
-              <Sidebar
-                selectedKey={selectedKey}
-                collapsed={collapsed}
-                onToggle={toggleCollapsed}
-                isMobile={isMobile}
-              />
-              {!isMobile && (
-                <RailEdgeControl
-                  expanded={!collapsed}
-                  onToggle={handleNavRailToggle}
-                  side="end"
-                  placement="center"
-                  label={navEdgeLabel}
-                  hint={navEdgeHint}
-                  shortcut={railShortcutAria("toggle-nav")}
-                />
-              )}
-            </div>
+                flexDirection: "column",
+                background: isChatRoute
+                  ? "var(--fn-bg-elevated, #fff)"
+                  : "var(--fn-bg-primary)",
+                transition: "background var(--fn-transition)",
+                overflow: "hidden",
+                position: "relative",
+                /* The title row's height, for columns that paint their own
+                 surface behind it (see the band below). */
+                "--octop-shell-top-band": `${shellTopBand}px`,
+              } as React.CSSProperties
+            }
+          >
+            {/* macOS only: one drag strip beside the traffic lights. Windows drags
+              from the caption menu row, not from the page. */}
+            {shellTopBand > 0 && <DesktopWindowDragBand position="absolute" />}
 
-            {isChatRoute && !isMinimalLayout && (
-              <div
-                id={CHAT_HISTORY_RAIL_ID}
-                style={{
-                  flexShrink: 0,
-                  display: "flex",
-                  alignSelf: "stretch",
-                  minHeight: 0,
-                  height: "100%",
-                  position: "relative",
-                }}
-              />
-            )}
-
-            {/* Right column: mobile header (if any) + page content */}
             <div
               style={{
                 flex: 1,
-                minWidth: 0,
                 minHeight: 0,
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: "row",
                 overflow: "hidden",
               }}
             >
-              {isMobile &&
-                !(
-                  SELF_HEADER_PATHS.has(currentPath) ||
-                  [...SELF_HEADER_PATHS].some((p) =>
-                    currentPath.startsWith(p + "/"),
-                  )
-                ) && (
-                  <Header
+              {/* Mobile overlay backdrop */}
+              {isMobile && !collapsed && !isSoloRoute && (
+                <div
+                  onClick={toggleCollapsed}
+                  role="presentation"
+                  style={{
+                    position: "fixed",
+                    inset: 0,
+                    background: "rgba(0, 0, 0, 0.40)",
+                    zIndex: 99,
+                  }}
+                />
+              )}
+
+              {!isSoloRoute && (
+                <div
+                  style={{
+                    position: "relative",
+                    flexShrink: 0,
+                    alignSelf: "stretch",
+                    display: "flex",
+                    minHeight: 0,
+                  }}
+                >
+                  <Sidebar
                     selectedKey={selectedKey}
                     collapsed={collapsed}
                     onToggle={toggleCollapsed}
                     isMobile={isMobile}
                   />
-                )}
+                  {!isMobile && (
+                    <RailEdgeControl
+                      expanded={!collapsed}
+                      onToggle={handleNavRailToggle}
+                      side="end"
+                      placement="center"
+                      label={navEdgeLabel}
+                      hint={navEdgeHint}
+                      shortcut={railShortcutAria("toggle-nav")}
+                    />
+                  )}
+                </div>
+              )}
 
-              <Layout
+              {isChatRoute && !isMinimalLayout && (
+                <div
+                  id={CHAT_HISTORY_RAIL_ID}
+                  style={{
+                    flexShrink: 0,
+                    display: "flex",
+                    alignSelf: "stretch",
+                    minHeight: 0,
+                    height: "100%",
+                    position: "relative",
+                  }}
+                />
+              )}
+
+              {/* Right column: mobile header (if any) + page content */}
+              <div
                 style={{
-                  background: "transparent",
                   flex: 1,
+                  minWidth: 0,
+                  minHeight: 0,
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
-                  minWidth: 0,
-                  minHeight: 0,
                 }}
               >
-                <Content
-                  className="page-container"
+                {isMobile &&
+                  !isSoloRoute &&
+                  !(
+                    SELF_HEADER_PATHS.has(currentPath) ||
+                    [...SELF_HEADER_PATHS].some((p) =>
+                      currentPath.startsWith(p + "/"),
+                    )
+                  ) && (
+                    <Header
+                      selectedKey={selectedKey}
+                      collapsed={collapsed}
+                      onToggle={toggleCollapsed}
+                      isMobile={isMobile}
+                    />
+                  )}
+
+                <Layout
                   style={{
-                    background: isChatRoute
-                      ? "var(--fn-bg-elevated, #fff)"
-                      : "var(--fn-bg-layout)",
-                    transition: "background var(--fn-transition)",
+                    background: "transparent",
                     flex: 1,
-                    overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",
+                    overflow: "hidden",
+                    minWidth: 0,
                     minHeight: 0,
                   }}
                 >
-                  <PwaAutoPrompt />
-
-                  {workbenchMounted && (
-                    <div
-                      style={{
-                        flex: 1,
-                        minHeight: 0,
-                        overflow: "hidden",
-                        display: onWorkbench ? "flex" : "none",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <Suspense fallback={<PageLoading />}>
-                        <WorkbenchPage isVisible={onWorkbench} />
-                      </Suspense>
-                    </div>
-                  )}
-
-                  {/* Keep Routes mounted when visiting Workbench so leaving/re-entering
-                  does not remount every lazy page (lag + lost UI state). */}
-                  <div
+                  <Content
+                    className="page-container"
                     style={{
+                      background: isChatRoute
+                        ? "var(--fn-bg-elevated, #fff)"
+                        : "var(--fn-bg-layout)",
+                      transition: "background var(--fn-transition)",
                       flex: 1,
-                      minHeight: 0,
                       overflow: "hidden",
-                      display: onWorkbench ? "none" : "flex",
+                      display: "flex",
                       flexDirection: "column",
+                      minHeight: 0,
                     }}
                   >
-                    {isFullscreen ? (
+                    <PwaAutoPrompt />
+
+                    {workbenchMounted && (
                       <div
                         style={{
                           flex: 1,
                           minHeight: 0,
                           overflow: "hidden",
-                          display: "flex",
+                          display: onWorkbench ? "flex" : "none",
                           flexDirection: "column",
                         }}
                       >
-                        {routes}
+                        <Suspense fallback={<PageLoading />}>
+                          <WorkbenchPage isVisible={onWorkbench} />
+                        </Suspense>
                       </div>
-                    ) : (
-                      <div className="page-content">{routes}</div>
                     )}
-                  </div>
-                </Content>
-              </Layout>
+
+                    {/* Keep Routes mounted when visiting Workbench so leaving/re-entering
+                  does not remount every lazy page (lag + lost UI state). */}
+                    <div
+                      style={{
+                        flex: 1,
+                        minHeight: 0,
+                        overflow: "hidden",
+                        display: onWorkbench ? "none" : "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      {isFullscreen ? (
+                        <PageStage>{routes}</PageStage>
+                      ) : (
+                        <PageStage className="page-content">{routes}</PageStage>
+                      )}
+                    </div>
+                  </Content>
+                </Layout>
+              </div>
             </div>
+
+            {showMobileTabBar && <MobileTabBar />}
+
+            {/* Shell-level ⌘K palette and the `?` cheatsheet live above every
+                route so they work on pages that never mount the chat shell. */}
+            <ShellCommandPalette
+              open={paletteOpen}
+              onClose={() => setPaletteOpen(false)}
+              onOpenShortcuts={() => {
+                setPaletteOpen(false);
+                setShortcutSheetOpen(true);
+              }}
+            />
+            <ShortcutSheet
+              open={shortcutSheetOpen}
+              onClose={() => setShortcutSheetOpen(false)}
+              includeComposer={isChatRoute}
+            />
           </div>
-        </div>
+        </BaoProvider>
       </BackupOperationProvider>
     </ServiceRestartProvider>
   );

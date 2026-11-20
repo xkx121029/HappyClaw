@@ -99,6 +99,7 @@ on each start. Schema (`OctopConfig` in `octop/config.py`):
   "port": 8088,
   "log_level": "info",
   "cors_origins": [],
+  "access_token": null,
   "default_timezone": "Asia/Shanghai",
   "enable_dashboard": true,
   "enable_api_docs": false,
@@ -144,6 +145,17 @@ Notes:
 - `access_token_ttl_seconds`, `login_max_attempts`, `login_lockout_seconds`,
   and `require_setup_password` are legacy keys: they are still parsed so old
   `config.json` files load, but they have no effect in single-user mode.
+- `access_token` gates every `/api` route (except `/api/health`, `/api/docs`,
+  and `/api/openapi.json`) with a shared secret, so a phone on the LAN can use
+  the dashboard as a client. Clients send it as `X-Octop-Token: <token>`,
+  `Authorization: Bearer <token>`, or `?octop_token=<token>` (WebSocket and
+  EventSource cannot set headers). Settings → Advanced → Phone access writes
+  `bind_host` and `access_token` for you and shows the LAN URL to type on the
+  phone. **Both values are read only when the service starts** — changing them
+  cannot apply live, so restart (`octop restart`, or the in-app "Restart now")
+  after toggling. Turning phone access off restores `127.0.0.1` at the next
+  start. `OCTOP_BIND_HOST` / `OCTOP_ACCESS_TOKEN`, when set, take precedence
+  over the file and make the panel read-only.
 - `max_upload_mb` is the process-wide ceiling for dashboard chat
   attachments, IM inbound files, and knowledge-base documents (default
   100). Existing `config.json` files that omit the key pick up the
@@ -171,7 +183,8 @@ Each variable, when set, takes precedence over the matching key in
 | `OCTOP_LOG_MAX_BYTES` | int | `104857600` (100 MiB) | Roll the active log when it exceeds this size (in addition to daily rotation) |
 | `OCTOP_LOG_COMPRESS` | bool | `true` | logrotate-style `compress` + `delaycompress`: gzip prior rotated plains on the next cycle (`octop.YYYY-MM-DD.log.gz`); the newest rotated file stays uncompressed until then |
 | `OCTOP_DEFAULT_TIMEZONE` | IANA tz | `Asia/Shanghai` | Default timezone for display, scheduling, and harness (`cron_timezone` / `OCTOP_CRON_TIMEZONE` still accepted) |
-| `OCTOP_CORS_ORIGINS` | comma-sep list | empty | Permitted CORS origins for the dashboard / external callers |
+| `OCTOP_CORS_ORIGINS` | comma-sep list | empty | Permitted CORS origins for the dashboard / external callers (`*` allows any origin) |
+| `OCTOP_ACCESS_TOKEN` | string | empty | Shared secret required by `/api` (phone / cross-origin clients); overrides `config.json` |
 | `OCTOP_ENABLE_DASHBOARD` | bool | `true` | Serve the built React SPA at `/` |
 | `OCTOP_ENABLE_API_DOCS` | bool | `false` | Expose Scalar API docs at `/api/docs` |
 | `OCTOP_MAX_UPLOAD_MB` | int | `100` | Max upload size in MiB for chat attachments, IM inbound, and knowledge documents (1–1024) |

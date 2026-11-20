@@ -124,7 +124,7 @@ type MetricsPayload = {
   cached?: boolean;
 };
 
-// period 单位秒；腾讯云单次最多返回 1440 个点，长周期自动降采样
+// period 单位秒；单次最多返回 1440 个点，长周期自动降采样
 const METRIC_RANGES = {
   "1h": { minutes: 60, period: 60, gran: "cloud.gran1m" },
   "24h": { minutes: 1440, period: 300, gran: "cloud.gran5m" },
@@ -867,7 +867,7 @@ export default function CloudHostsPage({
     [filteredInstances, clusterMetrics],
   );
 
-  // 授权后自动就绪「腾讯云运维专家」，无需用户去专家市场手动添加
+  // 授权后自动就绪「云运维专家」，无需用户去专家市场手动添加
   const {
     agentId: opsAgentId,
     ensuring: opsEnsuring,
@@ -1258,6 +1258,7 @@ export default function CloudHostsPage({
                                     <Button
                                       size="small"
                                       type="text"
+                                      aria-label={t("cloud.confirmStart")}
                                       icon={<PlayCircle size={15} />}
                                       disabled={row.state === "RUNNING"}
                                     />
@@ -1273,6 +1274,7 @@ export default function CloudHostsPage({
                                       size="small"
                                       type="text"
                                       danger
+                                      aria-label={t("cloud.confirmStop")}
                                       icon={<PauseCircle size={15} />}
                                       disabled={row.state === "STOPPED"}
                                     />
@@ -1286,6 +1288,7 @@ export default function CloudHostsPage({
                                     <Button
                                       size="small"
                                       type="text"
+                                      aria-label={t("cloud.confirmReboot")}
                                       icon={<RotateCcw size={15} />}
                                     />
                                   </Popconfirm>

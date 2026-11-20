@@ -164,6 +164,12 @@ export function CustomMcpServerCard({
           <Button
             type="text"
             size="small"
+            aria-label={
+              card.collapsed
+                ? t("common.expand", "展开")
+                : t("common.collapse", "收起")
+            }
+            aria-expanded={!card.collapsed}
             icon={
               card.collapsed ? (
                 <ChevronDown size={16} />
@@ -177,6 +183,7 @@ export function CustomMcpServerCard({
             type="text"
             size="small"
             danger
+            aria-label={t("common.delete")}
             icon={<Trash2 size={16} />}
             onClick={handleRemove}
           />

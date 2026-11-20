@@ -609,7 +609,7 @@ export default function LoginPage() {
             <p
               style={{
                 margin: 0,
-                fontSize: 13,
+                fontSize: "var(--fn-text-xs)",
                 color: "var(--fn-text-tertiary)",
                 textAlign: "center",
               }}
@@ -620,7 +620,7 @@ export default function LoginPage() {
           <p
             style={{
               margin: 0,
-              fontSize: 13,
+              fontSize: "var(--fn-text-xs)",
               lineHeight: 1.5,
               color: "var(--fn-text-tertiary)",
               textAlign: "center",
@@ -824,7 +824,7 @@ export default function LoginPage() {
             onChange={(e) => setRemember(e.target.checked)}
             style={{
               margin: 0,
-              fontSize: 13,
+              fontSize: "var(--fn-text-xs)",
               color: "var(--fn-text-tertiary)",
             }}
           >
@@ -840,7 +840,7 @@ export default function LoginPage() {
               border: "none",
               background: "none",
               cursor: "pointer",
-              fontSize: 13,
+              fontSize: "var(--fn-text-xs)",
               lineHeight: 1.5,
               color: "var(--fn-text-tertiary)",
               flexShrink: 0,
@@ -918,7 +918,7 @@ export default function LoginPage() {
               alignItems: "center",
               gap: 12,
               color: "var(--fn-text-tertiary)",
-              fontSize: 13,
+              fontSize: "var(--fn-text-xs)",
             }}
           >
             <span

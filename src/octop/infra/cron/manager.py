@@ -6,10 +6,11 @@ import asyncio
 import datetime as dt
 import logging
 import random
+import time
 import uuid
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Awaitable
 from zoneinfo import ZoneInfo
 
 from apscheduler.events import EVENT_JOB_MISSED, JobEvent
@@ -31,6 +32,13 @@ from octop.infra.cron.trigger import (
 )
 from octop.infra.db.lease import LEASE_SECONDS, RECONCILE_SECONDS, RENEW_SECONDS
 from octop.infra.db.repos.audit import ACTOR_SYSTEM
+from octop.infra.db.repos.cron_runs import (
+    RUN_STATUS_ERROR,
+    RUN_STATUS_SKIPPED,
+    TRIGGER_KIND_CATCHUP,
+    TRIGGER_KIND_MANUAL,
+    TRIGGER_KIND_SCHEDULE,
+)
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.gateway.threads import ThreadRegistry
 from octop.infra.utils.locale import resolve_user_locale
@@ -63,6 +71,10 @@ class CronCreateSpec:
     task_type: str = "agent"
     mcp_servers: list[str] = field(default_factory=list)
     enabled: bool = True
+    timezone: str | None = None
+    max_retries: int = 0
+    retry_backoff_seconds: int = 60
+    catch_up_misses: int = 0
     meta: dict[str, Any] = field(default_factory=dict)
     username: str | None = None
 
@@ -93,6 +105,11 @@ class CronManager:
         self._scheduled_spec: dict[str, str] = {}
         self._reconcile_task: asyncio.Task[None] | None = None
         self._serve_background = True
+        # Planned fire time per job id, captured when APScheduler advances it.
+        self._slots: dict[str, int] = {}
+        # Detached run tasks. Holding a reference keeps the event loop from
+        # garbage-collecting a fire-and-forget run mid-flight.
+        self._inflight: set[asyncio.Task[Any]] = set()
 
     def replace_repos(self, repos: RepoBundle) -> None:
         """Point cron persistence at a rebound control-plane pool."""
@@ -105,7 +122,19 @@ class CronManager:
         if not serve_background:
             logger.info("CronManager booted without background schedules")
             return
+        # Capture the persisted next fire time before reconcile overwrites it;
+        # it is the only reliable marker of where the previous process stopped.
+        previous = {
+            row.cron_id: row.next_run_at
+            for row in self._repos.cron_repo.list_all(include_disabled=False)
+        }
+        # A run owned by a process that died can never finish; surface it instead
+        # of leaving a permanent `running` row in the history.
+        closed = self._repos.cron_run_repo.close_stale_running(older_than_seconds=LEASE_SECONDS)
+        if closed:
+            logger.warning("closed %d interrupted cron run(s)", closed)
         await self.reconcile_user_jobs()
+        await self._recover_downtime(previous)
         self._reconcile_task = asyncio.create_task(self._reconcile_loop(), name="cron-reconcile")
         logger.info("CronManager booted; instance %s", self._instance_id)
 
@@ -129,6 +158,10 @@ class CronManager:
             task.cancel()
             with suppress(asyncio.CancelledError):
                 await task
+        for run in list(self._inflight):
+            run.cancel()
+        if self._inflight:
+            await asyncio.gather(*self._inflight, return_exceptions=True)
         await self._mail_watch.close()
         if self._scheduler.running:
             self._scheduler.shutdown(wait=False)
@@ -151,9 +184,10 @@ class CronManager:
                 if cron_id not in wanted and cron_id not in self._system_job_ids:
                     await self._unschedule(cron_id)
             for row in rows:
-                if self._scheduled_spec.get(
-                    row.cron_id
-                ) == row.trigger and self._schedule_is_attached(row):
+                if (
+                    self._scheduled_spec.get(row.cron_id) == self._spec_key(row)
+                    and self._schedule_is_attached(row)
+                ):
                     continue
                 await self._unschedule(row.cron_id)
                 self._schedule(row)
@@ -171,6 +205,14 @@ class CronManager:
     def _scheduler_jobs(self) -> list[Any]:
         raw = self._scheduler.get_jobs()
         return raw if isinstance(raw, list) else []
+
+    def _next_run_ts(self, cron_id: str) -> int | None:
+        job = self._scheduler.get_job(cron_id)
+        fire = getattr(job, "next_run_time", None)
+        try:
+            return int(fire.timestamp()) if fire is not None else None
+        except (AttributeError, TypeError, ValueError):
+            return None
 
     async def create(self, spec: CronCreateSpec | None = None, **kwargs: Any) -> CronJobRow:
         if spec is None:
@@ -199,6 +241,10 @@ class CronManager:
                 task_type=normalize_cron_task_type(spec.task_type),
                 mcp_servers=list(spec.mcp_servers or []),
                 enabled=spec.enabled,
+                timezone=spec.timezone or "",
+                max_retries=spec.max_retries,
+                retry_backoff_seconds=spec.retry_backoff_seconds,
+                catch_up_misses=spec.catch_up_misses,
             )
             row = self._repos.cron_repo.get(spec.cron_id)
             assert row is not None
@@ -234,6 +280,12 @@ class CronManager:
     def list_all(self, *, include_disabled: bool = True) -> list[CronJobRow]:
         return self._repos.cron_repo.list_all(include_disabled=include_disabled)
 
+    def list_runs(self, cron_id: str, *, limit: int = 20) -> list[dict[str, Any]]:
+        return [
+            run.to_public_dict()
+            for run in self._repos.cron_run_repo.list_for_job(cron_id, limit=limit)
+        ]
+
     async def update(
         self,
         cron_id: str,
@@ -247,6 +299,10 @@ class CronManager:
         task_type: str | None = None,
         model: str | None | object = UNSET,
         mcp_servers: list[str] | None | object = UNSET,
+        timezone: str | None = None,
+        max_retries: int | None = None,
+        retry_backoff_seconds: int | None = None,
+        catch_up_misses: int | None = None,
     ) -> CronJobRow:
         enabled_bool: bool | None = bool(enabled) if enabled is not None else None
         async with self._lock:
@@ -254,6 +310,7 @@ class CronManager:
             if existing is None:
                 raise OctopError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
             trigger_changed = trigger is not None and trigger != existing.trigger
+            timezone_changed = timezone is not None and timezone != existing.timezone
             enabled_changed = enabled_bool is not None and enabled_bool != bool(existing.enabled)
             # Validate a new trigger, or a mailbox, before persisting. Echoing the
             # current trigger on a rename must not re-check authorization.
@@ -279,6 +336,14 @@ class CronManager:
                 repo_kwargs["mcp_servers"] = (
                     list(mcp_servers) if isinstance(mcp_servers, list) else []
                 )
+            if timezone is not None:
+                repo_kwargs["timezone"] = timezone
+            if max_retries is not None:
+                repo_kwargs["max_retries"] = max_retries
+            if retry_backoff_seconds is not None:
+                repo_kwargs["retry_backoff_seconds"] = retry_backoff_seconds
+            if catch_up_misses is not None:
+                repo_kwargs["catch_up_misses"] = catch_up_misses
             self._repos.cron_repo.update(cron_id, **repo_kwargs)
             row = self._repos.cron_repo.get(cron_id)
             if row is None:
@@ -286,7 +351,7 @@ class CronManager:
             if self._schedule_needs_rebuild(
                 existing,
                 row,
-                trigger_changed=trigger_changed,
+                trigger_changed=trigger_changed or timezone_changed,
                 enabled_changed=enabled_changed,
             ):
                 await self._unschedule(cron_id)
@@ -330,47 +395,163 @@ class CronManager:
             self._repos.audit_repo.write(actor=ACTOR_SYSTEM, action="cron.delete", target=cron_id)
             logger.info("CronJob %s deleted", cron_id)
 
-    async def run_now(self, cron_id: str, *, wait: bool = False) -> None:
-        """Trigger a run; embedded callers wait for bookkeeping and receive failures."""
+    async def run_now(self, cron_id: str, *, wait: bool = False) -> str:
+        """Trigger a manual run and return its run id.
+
+        ``wait`` keeps the CLI contract: the caller awaits the bookkeeping and
+        sees failures. The HTTP path returns the run id immediately so the
+        dashboard can follow the same record the worker writes.
+        """
         row = self._repos.cron_repo.get(cron_id)
         if row is None:
             raise OctopError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
         logger.info("CronJob %s triggered manually", cron_id)
+        run = self._repos.cron_run_repo.start(
+            cron_id,
+            trigger_kind=TRIGGER_KIND_MANUAL,
+            scheduled_for=None,
+        )
+        assert run is not None
         if wait:
-            await self._run_user_job(cron_id, raise_on_error=True, force=True)
-        else:
-            asyncio.ensure_future(self._run_user_job(cron_id, force=True))
+            return await self._execute_run(cron_id, run.run_id, raise_on_error=True, force=True)
+        self._spawn(self._execute_run(cron_id, run.run_id, raise_on_error=False, force=True))
+        return run.run_id
 
-    async def _run_user_job(
+    def _spawn(self, coro: Awaitable[Any]) -> asyncio.Task[Any]:
+        """Detach a run from the scheduler callback that triggered it."""
+        task = asyncio.ensure_future(coro)
+        self._inflight.add(task)
+
+        def _finished(done: asyncio.Task[Any]) -> None:
+            self._inflight.discard(done)
+            if done.cancelled():
+                return
+            exc = done.exception()
+            if exc is not None:
+                logger.error("cron run task failed", exc_info=exc)
+
+        task.add_done_callback(_finished)
+        return task
+
+    async def _on_schedule(self, cron_id: str) -> None:
+        """Scheduler callback: record the slot, then hand execution to a task.
+
+        Nothing here awaits the agent turn, so a slow run can never delay the
+        next tick of any other job.
+        """
+        scheduled_for = self._slots.get(cron_id) or int(time.time())
+        next_ts = self._next_run_ts(cron_id)
+        if next_ts is not None:
+            self._slots[cron_id] = next_ts
+        with suppress(Exception):
+            self._repos.cron_repo.update_schedule_state(cron_id, next_run_at=next_ts)
+        run = self._repos.cron_run_repo.start(
+            cron_id,
+            trigger_kind=TRIGGER_KIND_SCHEDULE,
+            scheduled_for=scheduled_for,
+        )
+        if run is None:
+            logger.info("CronJob %s slot %s already recorded; skipping", cron_id, scheduled_for)
+            return
+        self._spawn(self._execute_run(cron_id, run.run_id, raise_on_error=False, force=False))
+
+    async def _execute_run(
         self,
         cron_id: str,
+        run_id: str,
         *,
-        raise_on_error: bool = False,
-        force: bool = False,
-    ) -> None:
-        claimed = self._repos.cron_repo.claim_run(
-            cron_id,
-            owner=self._instance_id,
-            lease_seconds=LEASE_SECONDS,
-            force=force,
-        )
-        if claimed is None:
-            if raise_on_error and self._repos.cron_repo.get(cron_id) is not None:
-                raise OctopError(
-                    ErrorCode.CRON_ALREADY_RUNNING,
-                    f"cron job {cron_id!r} is already running",
-                )
-            logger.info("CronJob %s skipped; another instance holds the run lease", cron_id)
-            return
+        raise_on_error: bool,
+        force: bool,
+    ) -> str:
+        """Execute one run record, retrying per the job's persisted policy."""
+        row = self._repos.cron_repo.get(cron_id)
+        max_attempts = max(0, row.max_retries) + 1 if row is not None else 1
+        backoff = max(1, row.retry_backoff_seconds) if row is not None else 60
+        token: str | None = None
         try:
-            await self._execute_claimed(claimed, raise_on_error=raise_on_error)
+            for attempt in range(1, max_attempts + 1):
+                claimed = self._repos.cron_repo.claim_run(
+                    cron_id,
+                    owner=self._instance_id,
+                    lease_seconds=LEASE_SECONDS,
+                    force=force,
+                )
+                if claimed is None:
+                    if attempt == 1:
+                        self._repos.cron_run_repo.finish(
+                            run_id,
+                            status=RUN_STATUS_SKIPPED,
+                            error="another run was already in progress",
+                        )
+                        if raise_on_error:
+                            raise OctopError(
+                                ErrorCode.CRON_ALREADY_RUNNING,
+                                f"cron job {cron_id!r} is already running",
+                            )
+                        logger.info("CronJob %s skipped; run lease held elsewhere", cron_id)
+                        return run_id
+                    self._repos.cron_run_repo.finish(
+                        run_id,
+                        status=RUN_STATUS_ERROR,
+                        error="run lease was unavailable before the retry",
+                    )
+                    return run_id
+                token = str(claimed.run_lease_token or "")
+                ok, note = await self._execute_claimed(
+                    claimed, raise_on_error=raise_on_error, run_id=run_id
+                )
+                if not ok and token:
+                    # CronJob.run() releases the lease when it records a result;
+                    # release again so a retry is never blocked by a stale lease.
+                    self._repos.cron_repo.release_run_lease(cron_id, token=token)
+                token = None
+                if ok:
+                    self._repos.cron_run_repo.finish(run_id, status="ok", note=note)
+                    return run_id
+                latest = self._repos.cron_repo.get(cron_id)
+                error = (latest.last_error if latest is not None else None) or "run failed"
+                if attempt >= max_attempts:
+                    self._repos.cron_run_repo.finish(run_id, status=RUN_STATUS_ERROR, error=error)
+                    return run_id
+                logger.warning(
+                    "CronJob %s attempt %d/%d failed; retrying in %ds",
+                    cron_id,
+                    attempt,
+                    max_attempts,
+                    backoff * attempt,
+                )
+                self._repos.cron_run_repo.mark_attempt(
+                    run_id, attempt=attempt + 1, error=error
+                )
+                await asyncio.sleep(backoff * attempt)
+            return run_id
+        except asyncio.CancelledError:
+            self._repos.cron_run_repo.finish(
+                run_id,
+                status=RUN_STATUS_ERROR,
+                error="run cancelled: the server is shutting down",
+            )
+            if token:
+                self._repos.cron_repo.release_run_lease(cron_id, token=token)
+            raise
+        except BaseException as exc:
+            self._repos.cron_run_repo.finish(run_id, status=RUN_STATUS_ERROR, error=str(exc))
+            raise
         finally:
             await self._finish_one_shot(cron_id)
+            with suppress(Exception):
+                self._repos.cron_run_repo.prune(cron_id)
 
-    async def _execute_claimed(self, row: Any, *, raise_on_error: bool) -> None:
+    async def _execute_claimed(
+        self,
+        row: Any,
+        *,
+        raise_on_error: bool,
+        run_id: str,
+    ) -> tuple[bool, str | None]:
         token = str(row.run_lease_token or "")
         if not token:
-            return
+            return False, None
         stop = asyncio.Event()
 
         async def _renew() -> None:
@@ -389,11 +570,11 @@ class CronManager:
                     return
 
         renew_task = asyncio.create_task(_renew())
+        job = self._make_job(row)
         run_task = asyncio.create_task(
-            self._make_job(row).run(
+            job.run(
                 raise_on_error=raise_on_error,
                 lease_token=token,
-                disable_after=str(row.trigger).startswith("date:"),
             )
         )
         try:
@@ -406,14 +587,19 @@ class CronManager:
                 with suppress(asyncio.CancelledError):
                     await run_task
                 logger.warning("CronJob %s lost its run lease", row.cron_id)
+                self._repos.cron_run_repo.finish(
+                    run_id,
+                    status=RUN_STATUS_ERROR,
+                    error="run lease was lost while executing",
+                )
                 if raise_on_error:
                     raise OctopError(
                         ErrorCode.CRON_ALREADY_RUNNING,
                         f"cron job {row.cron_id!r} lost its run lease",
                     )
-                return
+                return False, None
             stop.set()
-            await run_task
+            return bool(await run_task), job.last_note
         finally:
             # The run lives on its own task so the lease can be renewed beside it.
             # Cancelling the caller (CLI ``run-now --wait``) must cancel that run
@@ -459,14 +645,29 @@ class CronManager:
             if row.enabled:
                 self._repos.cron_repo.update(job_id, enabled=False)
             return
+        slot = self._slots.pop(job_id, None)
+        if slot is not None:
+            self._repos.cron_run_repo.record_missed_slot(
+                job_id,
+                scheduled_for=slot,
+                reason="missed the one-shot window while the server was unavailable",
+            )
         if self._repos.cron_repo.mark_missed(job_id):
             logger.info("CronJob %s missed its one-shot window; disabling", job_id)
+
+    def _job_timezone(self, row: Any) -> str:
+        return (getattr(row, "timezone", "") or "").strip() or self._timezone
+
+    def _spec_key(self, row: Any) -> str:
+        """What a schedule depends on: the expression *and* its timezone."""
+        return f"{self._job_timezone(row)}\x00{row.trigger}"
 
     def _schedule(self, row: Any) -> None:
         if not row.enabled:
             return
+        tz_name = self._job_timezone(row)
         try:
-            trigger = build_trigger(row.trigger, timezone=self._timezone)
+            trigger = build_trigger(row.trigger, timezone=tz_name)
             source = self._mail_source(row.trigger, row.user_id)
         except OctopError:
             logger.warning(
@@ -484,12 +685,15 @@ class CronManager:
                 await self._run_mail_event(row.cron_id, message_id)
 
             self._mail_watch.subscribe(source.instance_id, row.cron_id, creds, on_mail)
-            self._scheduled_spec[row.cron_id] = row.trigger
+            self._scheduled_spec[row.cron_id] = self._spec_key(row)
+            self._repos.cron_repo.update_schedule_state(
+                row.cron_id, next_run_at=None, timezone=row.timezone or tz_name
+            )
             return
         grace = RECURRING_MISFIRE_GRACE_SECONDS
         if isinstance(trigger, DateTrigger):
             run_at = trigger.run_date
-            tzinfo = run_at.tzinfo or ZoneInfo(self._timezone)
+            tzinfo = run_at.tzinfo or ZoneInfo(tz_name)
             if run_at.tzinfo is None:
                 run_at = run_at.replace(tzinfo=tzinfo)
             action = one_shot_disposition(
@@ -498,28 +702,115 @@ class CronManager:
                 last_run_at=row.last_run_at,
             )
             if action == "miss":
+                self._repos.cron_run_repo.record_missed_slot(
+                    row.cron_id,
+                    scheduled_for=int(run_at.timestamp()),
+                    reason="one-shot time passed while the server was unavailable",
+                )
                 if self._repos.cron_repo.mark_missed(row.cron_id):
                     logger.info("CronJob %s missed its one-shot time; disabling", row.cron_id)
+                self._repos.cron_repo.update_schedule_state(row.cron_id, next_run_at=None)
                 return
             if action == "close":
                 self._repos.cron_repo.update(row.cron_id, enabled=False)
+                self._repos.cron_repo.update_schedule_state(row.cron_id, next_run_at=None)
                 logger.info("CronJob %s one-shot already ran; disabling", row.cron_id)
                 return
             grace = ONE_SHOT_MISFIRE_GRACE_SECONDS
         if self._scheduler.get_job(row.cron_id):
             self._scheduler.remove_job(row.cron_id)
         self._scheduler.add_job(
-            self._run_user_job,
+            self._on_schedule,
             trigger=trigger,
             args=[row.cron_id],
             id=row.cron_id,
             replace_existing=True,
             misfire_grace_time=grace,
+            coalesce=True,
+            max_instances=1,
         )
-        self._scheduled_spec[row.cron_id] = row.trigger
+        scheduled = self._scheduler.get_job(row.cron_id)
+        next_fire = getattr(scheduled, "next_run_time", None)
+        next_ts: int | None
+        try:
+            next_ts = int(next_fire.timestamp()) if next_fire is not None else None
+        except (AttributeError, TypeError, ValueError):
+            next_ts = None
+        if next_ts is not None:
+            self._slots[row.cron_id] = next_ts
+        self._repos.cron_repo.update_schedule_state(
+            row.cron_id, next_run_at=next_ts, timezone=row.timezone or tz_name
+        )
+        self._scheduled_spec[row.cron_id] = self._spec_key(row)
+
+    def _missed_slots(self, row: Any, *, reference: int, now: dt.datetime) -> list[int]:
+        """Fire times the job should have hit between ``reference`` and *now*."""
+        tz = ZoneInfo(self._job_timezone(row))
+        try:
+            trigger = build_trigger(row.trigger, timezone=tz.key)
+        except OctopError:
+            return []
+        if isinstance(trigger, (AgentlyMailTrigger, DateTrigger)):
+            return []
+        slots: list[int] = []
+        cursor = dt.datetime.fromtimestamp(reference - 1, tz)
+        for _ in range(500):
+            fire = trigger.get_next_fire_time(cursor, cursor)
+            if fire is None or fire > now:
+                break
+            slots.append(int(fire.timestamp()))
+            cursor = fire
+        return slots
+
+    async def _recover_downtime(self, previous: dict[str, int | None]) -> None:
+        """Turn the gap since the last persisted fire time into explicit records.
+
+        Recurring jobs never replay silently: with ``catch_up_misses`` the last
+        N slots run on boot, otherwise every missed slot is recorded as
+        ``missed`` so the dashboard can explain the gap.
+        """
+        if not previous:
+            return
+        now = dt.datetime.now(dt.timezone.utc)
+        for row in self._repos.cron_repo.list_all(include_disabled=False):
+            reference = previous.get(row.cron_id) or row.last_run_at
+            if reference is None:
+                continue
+            slots = self._missed_slots(row, reference=reference, now=now)
+            if not slots:
+                continue
+            budget = max(0, row.catch_up_misses)
+            replay = slots[-budget:] if budget else []
+            for slot in slots[: len(slots) - len(replay)][:50]:
+                self._repos.cron_run_repo.record_missed_slot(
+                    row.cron_id,
+                    scheduled_for=slot,
+                    reason="scheduled time passed while the server was offline",
+                )
+            if replay:
+                logger.info("CronJob %s catching up %d missed slot(s)", row.cron_id, len(replay))
+                self._spawn(self._run_catch_up(row.cron_id, replay))
+
+    async def _run_catch_up(self, cron_id: str, slots: list[int]) -> None:
+        for slot in slots:
+            run = self._repos.cron_run_repo.start(
+                cron_id,
+                trigger_kind=TRIGGER_KIND_CATCHUP,
+                scheduled_for=slot,
+            )
+            if run is None:
+                continue
+            try:
+                await self._execute_run(cron_id, run.run_id, raise_on_error=False, force=False)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.exception("cron catch-up failed for %s at %s", cron_id, slot)
+            await asyncio.sleep(0)
 
     async def _unschedule(self, cron_id: str) -> None:
         self._scheduled_spec.pop(cron_id, None)
+        self._slots.pop(cron_id, None)
         await self._mail_watch.unsubscribe(cron_id)
         if self._scheduler.get_job(cron_id):
             self._scheduler.remove_job(cron_id)
@@ -583,12 +874,30 @@ class CronManager:
         if claimed is None:
             logger.info("CronJob %s mail event skipped; run lease held elsewhere", cron_id)
             return
+        run = self._repos.cron_run_repo.start(
+            cron_id,
+            trigger_kind="mail",
+            scheduled_for=None,
+        )
+        if run is None:
+            return
         event_row = replace(
             claimed,
             prompt=prompt,
             mcp_servers=list(dict.fromkeys([source.mcp_server_name, *claimed.mcp_servers])),
         )
-        await self._execute_claimed(event_row, raise_on_error=False)
+        try:
+            ok, _note = await self._execute_claimed(
+                event_row, raise_on_error=False, run_id=run.run_id
+            )
+            self._repos.cron_run_repo.finish(
+                run.run_id,
+                status="ok" if ok else RUN_STATUS_ERROR,
+                error=None if ok else "mail event delivery failed",
+            )
+        finally:
+            with suppress(Exception):
+                self._repos.cron_run_repo.prune(cron_id)
 
     async def reload_mail_watches(self) -> None:
         """Rebuild every mailbox watch after a full cron reload."""

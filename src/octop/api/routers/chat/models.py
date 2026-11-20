@@ -205,6 +205,19 @@ class RenameThreadBody(BaseModel):
     hitl_policy: HitlSessionPolicyBody | None = None
 
 
+class ThreadProjectBody(BaseModel):
+    """Turn a conversation into the first thread of a project."""
+
+    root_dir: str | None = Field(
+        default=None,
+        description=(
+            "Folder that becomes the project root. Omit to keep the conversation's "
+            "current directory (or create a project directory when it has none)."
+        ),
+    )
+    name: str | None = Field(default=None, description="Project name; defaults to the folder name.")
+
+
 class HitlResumeBody(BaseModel):
     thread_id: str = Field(..., description="Conversation thread awaiting approval.")
     decisions: list[dict[str, Any]] = Field(

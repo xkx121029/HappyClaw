@@ -38,7 +38,7 @@ export default function LanguagePage() {
       </h2>
       <p
         style={{
-          fontSize: 14,
+          fontSize: "var(--fn-text-sm)",
           color: "var(--fn-text-tertiary)",
           marginBottom: 24,
         }}

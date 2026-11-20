@@ -30,7 +30,11 @@ from octop.infra.gateway.hitl.coordinator import (
     HitlStreamContext,
     decision_rejection_reason,
 )
-from octop.infra.gateway.hitl.format import normalize_hitl_request
+from octop.infra.gateway.hitl.format import (
+    extract_questions,
+    is_ask_action_requests,
+    normalize_hitl_request,
+)
 from octop.infra.gateway.hitl.store import HitlPendingRecord
 from octop.infra.text_assist import require_host_models, run_text_assist
 from octop.infra.utils.locale import resolve_request_locale
@@ -145,6 +149,9 @@ async def iter_dashboard_hitl_resume_sse(
     )
     disconnected = False
     followup_pause = False
+    resume_text_parts: list[str] = []
+    resume_error: str | None = None
+    bao_task_repo = getattr(getattr(server, "services", None), "bao_task_repo", None)
     # Clear the in-memory pause before the (possibly long) resume stream so
     # history reload cannot reinject the same card while the turn continues.
     if pending is not None:
@@ -169,6 +176,16 @@ async def iter_dashboard_hitl_resume_sse(
                     record = hitl_coordinator.register_from_request(request_payload, ctx=hitl_ctx)
                     request_payload["pending_id"] = record.pending_id
                     chunk["request"] = request_payload
+            if isinstance(chunk, dict):
+                chunk_type = chunk.get("type")
+                if chunk_type == "token":
+                    token = chunk.get("content")
+                    if isinstance(token, str) and token:
+                        resume_text_parts.append(token)
+                elif chunk_type == "error":
+                    raw_error = chunk.get("message")
+                    if isinstance(raw_error, str) and raw_error.strip():
+                        resume_error = raw_error.strip()
             if not disconnected:
                 yield format_sse("chunk", chunk)
         # A new approval card is still pending. Draining now would start a
@@ -176,9 +193,22 @@ async def iter_dashboard_hitl_resume_sse(
         # without another pause. A plain ``done`` would also make the
         # dashboard flush locally queued messages and reload history.
         if followup_pause:
+            if bao_task_repo is not None:
+                bao_task_repo.complete_running(
+                    thread_id=thread_id,
+                    agent_id=agent_id,
+                    status="awaiting",
+                )
             if not disconnected:
                 yield format_sse("chunk", {"type": "done", "hitl_paused": True})
             return
+        if bao_task_repo is not None:
+            bao_task_repo.complete_running(
+                thread_id=thread_id,
+                agent_id=agent_id,
+                status="done",
+                result_text="".join(resume_text_parts),
+            )
         if not disconnected:
             yield format_sse("chunk", {"type": "done"})
         # Steers parked across the HITL pause drain at this
@@ -202,6 +232,13 @@ async def iter_dashboard_hitl_resume_sse(
         # leave the record looking like a successful approve/reject.
         if pending is not None:
             hitl_coordinator.store.mark_resolved(pending.pending_id, "expired")
+        if bao_task_repo is not None:
+            bao_task_repo.complete_running(
+                thread_id=thread_id,
+                agent_id=agent_id,
+                status="failed",
+                error_text=resume_error or str(exc),
+            )
         yield format_sse(
             "chunk",
             {"type": "error", "message": format_stream_error(exc, locale)},
@@ -222,6 +259,58 @@ def _dashboard_hitl_stream_context(
     if row is not None:
         return row.session_key, row.channel_type or "dashboard"
     return f"{agent_id}:dashboard:{user_id}:dm", "dashboard"
+
+
+@router.get(
+    "/agents/{agent_id}/chat/hitl/pending",
+    summary="List pending HITL pauses",
+)
+async def list_pending_hitl(
+    agent_id: str,
+    user: Any = Depends(current_user),
+    server: Any = Depends(get_server),
+) -> dict[str, Any]:
+    """Pending questions/approvals the Home inbox can render.
+
+    Read-only projection of the same ``HitlPendingStore`` the chat page uses;
+    answering still goes through ``/chat/hitl/resume`` so there is no second
+    source of truth.
+    """
+    assert_agent_access(server, agent_id, user)
+    assert server.app_runtime is not None  # noqa: S101
+    gateway = server.app_runtime.gateway
+    records = gateway.processor.hitl_coordinator.store.list_pending_for_agent(
+        agent_id=agent_id,
+        user_id=user.id,
+    )
+    items: list[dict[str, Any]] = []
+    for record in records:
+        # Team member pauses live on the room thread but resume through the
+        # member agent/thread stored separately.
+        owner_agent = record.resume_agent_id or record.agent_id
+        owner_thread = record.resume_thread_id or record.thread_id
+        row = gateway.thread_registry.get_thread(owner_thread)
+        title = getattr(row, "title", None) if row is not None else None
+        is_ask = is_ask_action_requests(record.action_requests)
+        items.append(
+            {
+                "pendingId": record.pending_id,
+                "agentId": owner_agent,
+                "threadId": owner_thread,
+                "sessionTitle": str(title) if title else None,
+                "createdAtMs": int(record.created_at * 1000),
+                "kind": "question" if is_ask else "approval",
+                "questions": extract_questions(record.action_requests) if is_ask else [],
+                "actionRequests": [
+                    {
+                        "name": str(action.get("name") or "tool"),
+                        "description": action.get("description"),
+                    }
+                    for action in record.action_requests
+                ],
+            }
+        )
+    return {"ok": True, "items": items}
 
 
 @router.post("/agents/{agent_id}/chat/hitl/resume", summary="Resume HITL approval (SSE)")
@@ -272,6 +361,22 @@ async def resume_hitl(
 
     if body.hitl_policy is not None and thread_row.user_id == user.id:
         hitl_coordinator.session_policies.set(body.thread_id, body.hitl_policy.model_dump())
+
+    # The Home inbox reflects the same pause outside the chat page; tell it the
+    # card was answered elsewhere so both surfaces converge without polling.
+    if pending is not None:
+        try:
+            await server.app_runtime.gateway.ws_hub.push_to_user(
+                user.id,
+                {
+                    "type": "hitl_resolved",
+                    "agentId": agent_id,
+                    "threadId": body.thread_id,
+                    "pendingId": pending.pending_id,
+                },
+            )
+        except Exception:  # noqa: BLE001 - a notify failure must not block resume
+            logger.warning("hitl resolved notify failed thread=%s", body.thread_id)
 
     async def gen() -> AsyncIterator[str]:
         async for frame in iter_dashboard_hitl_resume_sse(

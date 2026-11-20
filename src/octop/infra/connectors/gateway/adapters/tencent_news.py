@@ -1,4 +1,4 @@
-"""Tencent News search gateway — official OpenAPI with API Key."""
+"""News search gateway — official OpenAPI with API Key."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 OPENAPI_SEARCH_URL = "https://openapi.inews.qq.com/api/v1/agent/search"
-# Match tencent-news-cli ≥1.0.14 (Caller-Skill + Skill-Request-Id are required by some keys).
+# Match the official CLI ≥1.0.14 (Caller-Skill + Skill-Request-Id are required by some keys).
 _CALLER_SKILL = "octop_tencent-news_0.1"
 
 TOOLS: list[dict[str, Any]] = [
@@ -64,11 +64,11 @@ def search_news(creds: dict[str, Any], args: dict[str, Any]) -> str:
         "Content-Type": "application/json",
         "Accept": "application/json",
         "User-Agent": "octop-connector/0.1",
-        # Required by openapi.inews.qq.com for newer API-key cohorts (error 4010).
+        # Required by the upstream API for newer API-key cohorts (error 4010).
         "Skill-Request-Id": request_id,
         "Caller-Skill": _CALLER_SKILL,
     }
-    # Official tencent-news-cli body shape (not a flat query string).
+    # Official CLI body shape (not a flat query string).
     body = {
         "page": 1,
         "page_size": limit,

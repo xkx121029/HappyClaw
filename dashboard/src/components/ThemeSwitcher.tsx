@@ -45,6 +45,8 @@ export default function ThemeSwitcher({ compact }: ThemeSwitcherProps) {
           <Tooltip key={key} title={labelMap[key]} mouseEnterDelay={0.4}>
             <button
               onClick={() => setPreference(key)}
+              aria-label={labelMap[key]}
+              aria-pressed={active}
               style={{
                 display: "flex",
                 alignItems: "center",

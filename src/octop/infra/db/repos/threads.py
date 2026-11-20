@@ -48,6 +48,9 @@ class ThreadRow:
     pending_plan_path: str | None = None
     hitl_policy: str | None = None
     contributed: bool = False
+    project_id: str | None = None
+    workspace_kind: str | None = None
+    workspace_dir: str | None = None
 
     @classmethod
     def from_row(cls, r: DbRow) -> ThreadRow:
@@ -71,6 +74,18 @@ class ThreadRow:
             contributed = bool(r["contributed"])
         except (KeyError, IndexError):
             contributed = False
+        try:
+            project_id = r["project_id"]
+        except (KeyError, IndexError):
+            project_id = None
+        try:
+            workspace_kind = r["workspace_kind"]
+        except (KeyError, IndexError):
+            workspace_kind = None
+        try:
+            workspace_dir = r["workspace_dir"]
+        except (KeyError, IndexError):
+            workspace_dir = None
         return cls(
             id=r["id"],
             thread_id=r["thread_id"],
@@ -90,6 +105,9 @@ class ThreadRow:
             pending_plan_path=str(pending_plan_path) if pending_plan_path else None,
             hitl_policy=str(hitl_policy) if hitl_policy else None,
             contributed=contributed,
+            project_id=str(project_id) if project_id else None,
+            workspace_kind=str(workspace_kind) if workspace_kind else None,
+            workspace_dir=str(workspace_dir) if workspace_dir else None,
         )
 
 
@@ -167,13 +185,17 @@ class ThreadRepo:
         session_key: str,
         title: str | None = None,
         last_active: int | None = None,
+        project_id: str | None = None,
+        workspace_kind: str | None = None,
+        workspace_dir: str | None = None,
     ) -> None:
         ts = now_ts()
         with self._db.transaction() as conn:
             conn.execute(
                 "INSERT INTO threads(thread_id, agent_id, user_id, channel_type, "
-                "session_key, title, last_active, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "session_key, title, last_active, created_at, project_id, "
+                "workspace_kind, workspace_dir) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     thread_id,
                     agent_id,
@@ -183,6 +205,9 @@ class ThreadRepo:
                     clip_thread_title(title) if title else None,
                     ts if last_active is None else last_active,
                     ts,
+                    project_id,
+                    workspace_kind,
+                    workspace_dir,
                 ),
             )
             conn.execute(
@@ -288,6 +313,52 @@ class ThreadRepo:
             ).fetchall()
         return map_rows(rows, ThreadRow)
 
+    def list_all(self) -> list[ThreadRow]:
+        """Every thread, used by the one-shot upgrade scan."""
+        with self._db.connect() as conn:
+            rows = conn.execute("SELECT * FROM threads ORDER BY id").fetchall()
+        return map_rows(rows, ThreadRow)
+
+    def list_by_project(self, *, project_id: str, limit: int = 200) -> list[ThreadRow]:
+        with self._db.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM threads WHERE project_id = ? "
+                "ORDER BY pinned DESC, "
+                "CASE WHEN last_active > 0 THEN last_active ELSE created_at END DESC, "
+                "thread_id DESC LIMIT ?",
+                (project_id, limit),
+            ).fetchall()
+        return map_rows(rows, ThreadRow)
+
+    def set_workspace(
+        self,
+        thread_id: str,
+        *,
+        project_id: str | None,
+        workspace_kind: str | None,
+        workspace_dir: str | None,
+    ) -> None:
+        """Bind a thread to a project or a per-conversation directory."""
+        with self._db.transaction() as conn:
+            conn.execute(
+                "UPDATE threads SET project_id = ?, workspace_kind = ?, workspace_dir = ? "
+                "WHERE thread_id = ?",
+                (project_id, workspace_kind, workspace_dir, thread_id),
+            )
+
+    def unbind_project(self, project_id: str) -> int:
+        """Detach every thread bound to *project_id* (project deleted).
+
+        Only ``project_id`` is cleared: the workspace snapshot stays, so each
+        conversation keeps resolving to its own directory afterwards.
+        """
+        with self._db.transaction() as conn:
+            cursor = conn.execute(
+                "UPDATE threads SET project_id = NULL WHERE project_id = ?",
+                (project_id,),
+            )
+        return int(getattr(cursor, "rowcount", 0) or 0)
+
     def set_title_if_null(self, thread_id: str, title: str) -> None:
         with self._db.transaction() as conn:
             conn.execute(
@@ -380,6 +451,17 @@ class ThreadRepo:
                 "UPDATE threads SET artifacts = ? WHERE thread_id = ?",
                 (
                     json.dumps(serialize_thread_artifacts(merged), ensure_ascii=False),
+                    thread_id,
+                ),
+            )
+
+    def set_artifacts(self, thread_id: str, artifacts: Sequence[ThreadArtifact]) -> None:
+        """Replace the artifact list (used when a workspace move rewrites paths)."""
+        with self._db.transaction() as conn:
+            conn.execute(
+                "UPDATE threads SET artifacts = ? WHERE thread_id = ?",
+                (
+                    json.dumps(serialize_thread_artifacts(list(artifacts)), ensure_ascii=False),
                     thread_id,
                 ),
             )

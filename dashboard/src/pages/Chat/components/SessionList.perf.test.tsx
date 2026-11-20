@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { OctopAgent } from "../../../context/AgentContext";
@@ -75,10 +76,14 @@ describe("SessionList render baseline", () => {
     vi.spyOn(octopThreadsApi, "list").mockResolvedValue([]);
   });
 
-  it("renders 300 experts", () => {
+  it("renders 300 experts", async () => {
     const agents = makeAgents(300);
+    const user = userEvent.setup();
     const started = performance.now();
     renderList(agents, []);
+    // 侧栏默认落在「会话」的跨专家平铺列表，专家目录在「专家」tab。
+    // 基线要覆盖专家列表的挂载，所以切到该 tab 后再断言。
+    await user.click(screen.getByRole("tab", { name: "专家" }));
     const elapsed = performance.now() - started;
 
     // eslint-disable-next-line no-console

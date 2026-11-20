@@ -8,14 +8,14 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 6px;
-  font-size: 10px;
+  font-size: var(--fn-text-2xs);
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--fn-text-inverse);
   background: var(--fn-color-brand);
-  border-radius: 999px;
+  border-radius: var(--fn-radius-full);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -25,18 +25,21 @@
 .cardGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  row-gap: 16px;
-  column-gap: 12px;
-  padding: 20px 0 40px;
+  row-gap: var(--fn-space-md);
+  column-gap: var(--fn-space-sm);
+  padding: var(--fn-space-lg) 0 40px;
 
   > div {
+    /* Let the track shrink instead of being pushed open by long nowrap
+       strings (e.g. a backend error message) inside a card. */
+    min-width: 0;
     content-visibility: auto;
     contain-intrinsic-size: auto 280px;
   }
 
   @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--fn-space-sm);
   }
 }
 
@@ -49,12 +52,12 @@
   border-radius: 8px;
   background: transparent;
   color: var(--fn-text-secondary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   cursor: pointer;
 
   &:hover {
-    border-color: var(--fn-brand);
-    color: var(--fn-brand);
+    border-color: var(--fn-color-brand);
+    color: var(--fn-color-brand);
   }
 }
 
@@ -67,7 +70,7 @@
   overflow: hidden;
   min-width: 320px;
   min-height: 196px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--fn-shadow-sm);
   transition:
     box-shadow 0.2s,
     transform 0.2s;
@@ -77,7 +80,7 @@
   }
 
   &:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--fn-shadow-md);
     transform: translateY(-1px);
   }
 }
@@ -90,14 +93,14 @@
 .agentCard2Header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px 10px;
+  gap: var(--fn-space-sm);
+  padding: 14px var(--fn-space-md) 10px;
 }
 
 .agentCard2Icon {
   width: 42px;
   height: 42px;
-  border-radius: 10px;
+  border-radius: var(--fn-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -108,7 +111,7 @@
 .avatarPicker {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--fn-space-sm);
 }
 
 .avatarPickerPreviewBtn {
@@ -117,27 +120,27 @@
   background: transparent;
   cursor: pointer;
   line-height: 0;
-  border-radius: 50%;
+  border-radius: var(--fn-radius-full);
   flex-shrink: 0;
 }
 
 .avatarPickerPreviewBody {
   display: flex;
   justify-content: center;
-  padding: 12px 0 8px;
+  padding: var(--fn-space-sm) 0 var(--fn-space-xs);
 }
 
 .avatarPickerActions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   min-width: 0;
 }
 
 .avatarPickerHint {
   width: 100%;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   line-height: 1.4;
 }
@@ -148,7 +151,7 @@
 }
 
 .agentCard2Name {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   color: var(--fn-text-primary);
   white-space: nowrap;
@@ -161,7 +164,7 @@
 .agentCard2NameRow {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   min-width: 0;
 }
 
@@ -188,15 +191,15 @@
 .agentCardIdRow {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   min-width: 0;
-  margin-top: 4px;
+  margin-top: var(--fn-space-2xs);
 }
 
 .agentCardId {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   min-height: 24px;
   padding: 2px 0;
   border: none;
@@ -220,14 +223,14 @@
 
 .agentCardIdLabel {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .agentCardIdValue {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: nowrap;
   overflow: hidden;
@@ -256,13 +259,16 @@
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: var(--fn-radius-sm);
   flex-shrink: 0;
   line-height: 0;
   background: var(--fn-bg-tertiary);
   color: var(--fn-text-tertiary);
 }
 
+/* Backend-category colours are a data legend, not decoration: shell / fs /
+   db / storage / sandbox / composite must stay visually distinct, so these
+   keep their literal hues and have explicit dark-mode variants below. */
 .backendFlag_shell {
   color: #3d5a80;
   background: rgba(61, 90, 128, 0.12);
@@ -328,10 +334,10 @@
 .agentCard2State {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 12px;
+  gap: var(--fn-space-2xs);
+  padding: 2px var(--fn-space-xs);
+  border-radius: var(--fn-radius-full);
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   line-height: 1.6;
 }
@@ -339,7 +345,7 @@
 .stateDot2 {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--fn-radius-full);
   display: inline-block;
   flex-shrink: 0;
 }
@@ -351,15 +357,15 @@
 .agentCard2HeaderActions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   flex-shrink: 0;
 }
 
 .agentCard2Desc {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   line-height: 1.55;
-  margin: 0 16px 2px;
+  margin: 0 var(--fn-space-md) 2px;
   min-height: 2.4em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -371,7 +377,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px 14px;
+  padding: 10px var(--fn-space-md) 14px;
   margin-top: auto;
 }
 
@@ -379,7 +385,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 5px 8px;
+  padding: 5px var(--fn-space-xs);
   border-radius: var(--fn-radius-sm);
   border: 1px solid var(--fn-border-primary);
   background: transparent;
@@ -401,7 +407,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 5px 8px;
+  padding: 5px var(--fn-space-xs);
   border-radius: var(--fn-radius-sm);
   border: 1px solid var(--fn-border-primary);
   background: transparent;
@@ -413,9 +419,9 @@
     background 0.15s;
 
   &:hover {
-    color: #ff4d4f;
-    border-color: #ff4d4f;
-    background: #fff1f0;
+    color: var(--fn-color-danger);
+    border-color: var(--fn-color-danger);
+    background: var(--fn-bg-danger-light);
   }
 }
 
@@ -424,8 +430,8 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 5px 12px;
-  font-size: 12px;
+  padding: 5px var(--fn-space-sm);
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   border-radius: var(--fn-radius-sm);
   border: 1px solid;
@@ -448,20 +454,20 @@
   min-height: 0;
 
   .agentCard2Header {
-    padding: 20px 16px 12px;
+    padding: var(--fn-space-lg) var(--fn-space-md) var(--fn-space-sm);
     align-items: center;
   }
 
   .agentCard2Footer {
-    margin-top: 4px;
-    padding-top: 8px;
+    margin-top: var(--fn-space-2xs);
+    padding-top: var(--fn-space-xs);
   }
 }
 
 .teamCardIcon {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--fn-radius-full);
   color: var(--fn-color-brand);
   background: var(--fn-color-brand-light, #f5f5f5);
   line-height: 0;
@@ -490,8 +496,8 @@
   flex-shrink: 0;
   padding: 0 6px;
   height: 16px;
-  border-radius: 4px;
-  font-size: 10px;
+  border-radius: var(--fn-radius-xs);
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -503,7 +509,7 @@
 .teamCardStateDot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--fn-radius-full);
   display: inline-block;
   flex-shrink: 0;
 }
@@ -514,10 +520,10 @@
 }
 
 .teamCardDesc {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   line-height: 1.5;
-  margin: 0 16px 8px;
+  margin: 0 var(--fn-space-md) var(--fn-space-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -528,31 +534,31 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  margin: 0 16px;
+  margin: 0 var(--fn-space-md);
 }
 
 .teamCardRosterLabel {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
 .teamMemberAvatar {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: var(--fn-radius-full);
   border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  font-size: 10px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .teamMemberMore {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   flex-shrink: 0;
 }
@@ -560,25 +566,25 @@
 .memberPicker {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 .memberPickerMeta {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
 .memberPickerEmpty {
-  padding: 20px 8px;
+  padding: var(--fn-space-lg) var(--fn-space-xs);
   text-align: center;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
 .memberPickerGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   max-height: 360px;
   overflow-y: auto;
   padding: 2px;
@@ -595,7 +601,7 @@
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--fn-border-primary);
-  border-radius: 10px;
+  border-radius: var(--fn-radius-md);
   background: var(--fn-bg-primary);
   cursor: pointer;
   text-align: left;
@@ -639,7 +645,7 @@
   right: 8px;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: var(--fn-radius-full);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -650,7 +656,7 @@
 .memberPickIcon {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--fn-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -661,11 +667,11 @@
 .memberPickBody {
   min-width: 0;
   flex: 1;
-  padding-right: 16px;
+  padding-right: var(--fn-space-md);
 }
 
 .memberPickName {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
   line-height: 1.3;
@@ -675,8 +681,8 @@
 }
 
 .memberPickDesc {
-  margin-top: 4px;
-  font-size: 12px;
+  margin-top: var(--fn-space-2xs);
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   line-height: 1.45;
   display: -webkit-box;
@@ -691,11 +697,11 @@
   background: var(--fn-bg-primary);
   border: 1px solid var(--fn-card-border-normal);
   border-radius: var(--fn-radius-lg);
-  padding: 16px;
+  padding: var(--fn-space-md);
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--fn-shadow-xs);
   transition:
     box-shadow 0.2s,
     transform 0.2s;
@@ -733,7 +739,7 @@
 .agentCardPortrait {
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: var(--fn-radius-lg);
   background: transparent;
   box-shadow: inset 0 0 0 1px
     color-mix(in srgb, var(--fn-border, #e2e8f0) 80%, transparent);
@@ -745,7 +751,7 @@
 }
 
 .agentCardName {
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   color: var(--fn-text-primary);
   white-space: nowrap;
@@ -757,10 +763,10 @@
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  margin-top: 4px;
+  margin-top: var(--fn-space-2xs);
   padding: 0 6px;
-  border-radius: 999px;
-  font-size: 12px;
+  border-radius: var(--fn-radius-full);
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   line-height: 18px;
   color: var(--expert-accent, var(--fn-color-brand));
@@ -784,7 +790,7 @@
 .stateDot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--fn-radius-full);
   display: inline-block;
   flex-shrink: 0;
 }
@@ -804,12 +810,12 @@
 }
 
 .stateLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
 }
 
 .agentCardDesc {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   line-height: 1.5;
   min-height: 2.4em;
@@ -823,7 +829,7 @@
 }
 
 .agentCardErrorWrap {
-  margin: 4px 16px 8px;
+  margin: var(--fn-space-2xs) var(--fn-space-md) var(--fn-space-xs);
   min-width: 0;
 }
 
@@ -832,12 +838,12 @@
   align-items: flex-start;
   gap: 6px;
   min-width: 0;
-  font-size: 12px;
-  color: #ff4d4f;
-  background: #fff1f0;
-  border: 1px solid #ffa39e;
+  font-size: var(--fn-text-2xs);
+  color: var(--fn-color-danger);
+  background: var(--fn-bg-danger-light);
+  border: 1px solid var(--fn-color-error-border);
   border-radius: var(--fn-radius-sm);
-  padding: 6px 8px;
+  padding: 6px var(--fn-space-xs);
   cursor: help;
 }
 
@@ -863,7 +869,7 @@
   border: none;
   background: none;
   color: var(--fn-color-brand, #1677ff);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -877,7 +883,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   min-width: 0;
 }
 
@@ -895,11 +901,11 @@
 .tableErrorText {
   display: flex;
   align-items: flex-start;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   min-width: 0;
-  font-size: 11px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.4;
-  color: #ff4d4f;
+  color: var(--fn-color-danger);
   cursor: help;
 
   svg {
@@ -921,7 +927,7 @@
   border: none;
   background: none;
   color: var(--fn-color-brand, #1677ff);
-  font-size: 11px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -942,9 +948,9 @@
 .cardBtn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   border-radius: var(--fn-radius-sm);
   border: 1px solid var(--fn-border-primary);
   background: transparent;
@@ -968,22 +974,22 @@
 .cardBtnStart {
   flex: 1;
   justify-content: center;
-  color: #1677ff;
-  border-color: #1677ff;
+  color: var(--fn-color-info);
+  border-color: var(--fn-color-info);
 
   &:hover:not(:disabled) {
-    background: #e6f4ff;
+    background: var(--fn-bg-info-light);
   }
 }
 
 .cardBtnStop {
   flex: 1;
   justify-content: center;
-  color: #ff6b35;
-  border-color: #ff6b35;
+  color: var(--fn-color-warning);
+  border-color: var(--fn-color-warning);
 
   &:hover:not(:disabled) {
-    background: #fff2ec;
+    background: var(--fn-bg-warning-light);
   }
 }
 
@@ -993,13 +999,13 @@
 }
 
 .cardBtnDanger {
-  color: #ff4d4f;
+  color: var(--fn-color-danger);
   border-color: var(--fn-border-primary);
 
   &:hover:not(:disabled) {
-    color: #ff4d4f;
-    border-color: #ff4d4f;
-    background: #fff1f0;
+    color: var(--fn-color-danger);
+    border-color: var(--fn-color-danger);
+    background: var(--fn-bg-danger-light);
   }
 }
 
@@ -1015,7 +1021,7 @@
   background: var(--fn-bg-primary);
   border: 2px solid var(--fn-card-border-normal);
   border-radius: var(--fn-radius-lg);
-  padding: 20px;
+  padding: var(--fn-space-lg);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1055,23 +1061,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   margin-top: auto;
 }
 
 .expertInstalledLabel {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   flex-shrink: 0;
   margin-left: auto;
-  font-size: 11px;
-  color: #52c41a;
+  font-size: var(--fn-text-2xs);
+  color: var(--fn-color-success);
   font-weight: 500;
 }
 
 .expertCardHint {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-quaternary);
   min-width: 0;
   transition: color 0.2s;
@@ -1112,6 +1118,8 @@
     background-image: linear-gradient(
       90deg,
       var(--fn-bg-tertiary) 25%,
+      /* White is the shimmer highlight, not a surface colour — mixing toward
+         the page colour would erase the sweep in dark mode. */
       color-mix(in srgb, var(--fn-bg-tertiary) 78%, #fff) 37%,
       var(--fn-bg-tertiary) 63%
     ) !important;
@@ -1127,7 +1135,7 @@
 .marketSourceTabs {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: var(--fn-space-lg);
   flex-shrink: 0;
   min-width: 0;
 }
@@ -1135,11 +1143,11 @@
 .marketSourceTab {
   appearance: none;
   margin: 0;
-  padding: 4px 0;
+  padding: var(--fn-space-2xs) 0;
   border: 0;
   background: none;
   color: var(--fn-text-tertiary);
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 500;
   line-height: 22px;
   cursor: pointer;
@@ -1162,25 +1170,25 @@
 .marketBlock {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
 
   .cardGrid {
-    padding-top: 12px;
+    padding-top: var(--fn-space-sm);
     padding-bottom: 0;
   }
 }
 
 .marketBlockTitle {
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   line-height: 22px;
   color: var(--fn-text-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .marketBlockHint {
-  margin: 0 0 8px;
-  font-size: 12px;
+  margin: 0 0 var(--fn-space-xs);
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   color: var(--fn-text-tertiary);
 }
@@ -1214,7 +1222,7 @@
 .marketCardTitleRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   min-width: 0;
 
   .agentCardName {
@@ -1268,7 +1276,7 @@
 .marketCardFooterStart {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   min-width: 0;
   flex-wrap: wrap;
 
@@ -1282,7 +1290,7 @@
   align-items: center;
   gap: 5px;
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   white-space: nowrap;
 }
@@ -1297,21 +1305,21 @@
 .marketTagRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 .marketDrawerDesc {
   margin: 0;
   color: var(--fn-text-secondary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   line-height: 1.7;
   word-break: break-word;
 }
 
 .marketSectionTitle {
-  margin-bottom: 8px;
+  margin-bottom: var(--fn-space-xs);
   color: var(--fn-text-tertiary);
-  font-size: 11px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1320,20 +1328,20 @@
 .marketSkillList {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 .marketQuickPromptList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 .marketQuickPromptCard {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 10px var(--fn-space-sm);
   border-radius: var(--fn-radius-md);
   min-width: 0;
   background: var(--fn-bg-secondary);
@@ -1348,6 +1356,8 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
+  /* The chip gets a pastel inline background, so the glyph is deliberately
+     dark ink in both themes instead of following --fn-text-*. */
   color: rgba(15, 23, 42, 0.62);
 }
 
@@ -1357,7 +1367,7 @@
 }
 
 .marketQuickPromptTitle {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
   line-height: 1.4;
@@ -1368,7 +1378,7 @@
 
 .marketQuickPromptDesc {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   line-height: 1.45;
   word-break: break-word;
@@ -1382,15 +1392,15 @@
 .marketTaskExampleList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 .marketTaskExampleItem {
-  padding: 10px 12px;
+  padding: 10px var(--fn-space-sm);
   border-radius: var(--fn-radius-md);
   background: var(--fn-bg-secondary);
   border: 1px solid var(--fn-border-secondary, var(--fn-border-primary));
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   line-height: 1.45;
   color: var(--fn-text-secondary);
   text-align: left;
@@ -1408,16 +1418,16 @@
 }
 
 .marketWorkflowMeta {
-  padding: 12px 14px;
+  padding: var(--fn-space-sm) 14px;
   border-radius: var(--fn-radius-md);
   background: var(--fn-bg-secondary);
   border: 1px solid var(--fn-border-secondary);
 }
 
 .marketWorkflowMetaTitle {
-  margin-bottom: 8px;
+  margin-bottom: var(--fn-space-xs);
   color: var(--fn-text-tertiary);
-  font-size: 11px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   letter-spacing: 0.04em;
 }
@@ -1429,14 +1439,14 @@
 .marketWorkflowChildrenLabel {
   margin-bottom: 6px;
   color: var(--fn-text-tertiary);
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
 }
 
 .marketWorkflowPreview {
   min-height: 120px;
   max-height: 360px;
   overflow: auto;
-  padding: 14px 16px;
+  padding: 14px var(--fn-space-md);
   color: var(--fn-text-primary);
   background: var(--fn-bg-secondary);
   border: 1px solid var(--fn-border-secondary);
@@ -1445,12 +1455,12 @@
 
 .marketWorkflowEmpty {
   color: var(--fn-text-tertiary);
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.6;
 }
 
 .marketWorkflowMarkdown {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.7;
   color: var(--fn-text-primary);
   word-break: break-word;
@@ -1466,16 +1476,16 @@
   }
 
   :global(h1) {
-    font-size: 16px;
+    font-size: var(--fn-text-lg);
   }
 
   :global(h2) {
-    font-size: 14px;
+    font-size: var(--fn-text-sm);
   }
 
   :global(h3),
   :global(h4) {
-    font-size: 13px;
+    font-size: var(--fn-text-xs);
   }
 
   :global(h1:first-child),
@@ -1512,13 +1522,13 @@
 
   :global(code) {
     padding: 0.1em 0.35em;
-    border-radius: 4px;
+    border-radius: var(--fn-radius-xs);
     background: color-mix(in srgb, var(--fn-text-primary) 8%, transparent);
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
   }
 
   :global(hr) {
-    margin: 12px 0;
+    margin: var(--fn-space-sm) 0;
     border: none;
     border-top: 1px solid var(--fn-border-secondary);
   }
@@ -1537,15 +1547,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0 0;
-  gap: 12px;
+  padding: var(--fn-space-2xs) 0 0;
+  gap: var(--fn-space-sm);
   flex-wrap: wrap;
 }
 
 .gridToolbarLeft {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--fn-space-sm);
   flex-wrap: wrap;
   min-width: 0;
 }
@@ -1569,20 +1579,20 @@
 }
 
 .searchEmpty {
-  padding: 28px 12px 12px;
+  padding: 28px var(--fn-space-sm) var(--fn-space-sm);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
 }
 
 .viewModeLabel {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
 }
 
 .gridCount {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -1591,7 +1601,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   border: 1px solid var(--fn-color-brand);
   background: transparent;
@@ -1652,20 +1662,20 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 60px 20px;
+  padding: 60px var(--fn-space-lg);
   color: var(--fn-text-tertiary);
   text-align: center;
 }
 
 .emptyTitle {
-  font-size: 15px;
+  font-size: var(--fn-text-md);
   font-weight: 600;
   color: var(--fn-text-secondary);
-  margin: 4px 0 0;
+  margin: var(--fn-space-2xs) 0 0;
 }
 
 .emptyHint {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
   max-width: 320px;
   line-height: 1.6;
@@ -1693,11 +1703,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: var(--fn-space-xs);
 }
 
 .marketLoadResult {
-  padding: 16px;
+  padding: var(--fn-space-md);
 
   :global(.ant-result-icon) {
     display: flex;
@@ -1706,7 +1716,7 @@
   }
 
   :global(.ant-result-title) {
-    font-size: 16px;
+    font-size: var(--fn-text-lg);
     line-height: 1.4;
   }
 
@@ -1720,15 +1730,15 @@
 /* ── Drawer shared styles ──────────────────────────────────────── */
 
 .textAssistField {
-  margin-bottom: 4px !important;
+  margin-bottom: var(--fn-space-2xs) !important;
 }
 
 .drawerSection {
-  margin-bottom: 24px;
+  margin-bottom: var(--fn-space-xl);
 }
 
 .drawerSectionTitle {
-  font-size: 11px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -1739,7 +1749,7 @@
 .editExpertTitle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   min-width: 0;
 }
 
@@ -1777,8 +1787,8 @@
 }
 
 .drawerCancelBtn {
-  padding: 7px 16px;
-  font-size: 14px;
+  padding: 7px var(--fn-space-md);
+  font-size: var(--fn-text-sm);
   border: 1px solid var(--fn-border-primary);
   background: transparent;
   color: var(--fn-text-secondary);
@@ -1791,8 +1801,8 @@
 }
 
 .drawerSaveBtn {
-  padding: 7px 20px;
-  font-size: 14px;
+  padding: 7px var(--fn-space-lg);
+  font-size: var(--fn-text-sm);
   font-weight: 500;
   border: none;
   background: var(--fn-color-brand);
@@ -1815,7 +1825,7 @@
 .fileList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 .fileItem {
@@ -1841,10 +1851,10 @@
 .fileItemMain {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--fn-space-sm);
   flex: 1;
   min-width: 0;
-  padding: 10px 12px;
+  padding: 10px var(--fn-space-sm);
   border: none;
   background: transparent;
   cursor: pointer;
@@ -1872,7 +1882,7 @@
 .catalogDrawer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--fn-space-sm);
   min-height: 200px;
   min-width: 0;
 
@@ -1885,7 +1895,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 12px;
+  padding: var(--fn-space-sm);
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -1929,9 +1939,9 @@
 .catalogToolbar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--fn-space-sm);
   flex-wrap: wrap;
-  margin-bottom: 4px;
+  margin-bottom: var(--fn-space-2xs);
 }
 
 .toolbarBtnPrimary {
@@ -1939,7 +1949,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 500;
   border: 1px solid var(--fn-color-brand);
   background: var(--fn-color-brand);
@@ -1963,22 +1973,22 @@
   min-width: 0;
 
   :global(.ant-tabs-nav) {
-    margin-bottom: 4px;
+    margin-bottom: var(--fn-space-2xs);
   }
 }
 
 .catalogLoading {
   display: flex;
   justify-content: center;
-  padding: 48px 0;
+  padding: var(--fn-space-3xl) 0;
 }
 
 .catalogGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  row-gap: 16px;
-  column-gap: 12px;
-  padding-top: 4px;
+  row-gap: var(--fn-space-md);
+  column-gap: var(--fn-space-sm);
+  padding-top: var(--fn-space-2xs);
   width: 100%;
   min-width: 0;
 
@@ -1995,7 +2005,7 @@
   gap: 10px;
   width: 100%;
   box-sizing: border-box;
-  padding: 16px;
+  padding: var(--fn-space-md);
   min-height: 148px;
   min-width: 0;
   max-width: 100%;
@@ -2021,8 +2031,8 @@
 
   @media (max-width: 767px) {
     min-height: 0;
-    padding: 12px;
-    gap: 8px;
+    padding: var(--fn-space-sm);
+    gap: var(--fn-space-xs);
 
     &:hover {
       transform: none;
@@ -2049,7 +2059,7 @@
 .catalogCardIcon {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--fn-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2060,7 +2070,7 @@
 .catalogCardTitle {
   flex: 1;
   min-width: 0;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   color: var(--fn-text-primary);
   overflow: hidden;
@@ -2069,8 +2079,8 @@
 }
 
 .catalogCardInstalled {
-  color: #22c55e;
-  font-size: 16px;
+  color: var(--fn-color-success);
+  font-size: var(--fn-text-lg);
   flex-shrink: 0;
 }
 
@@ -2086,7 +2096,7 @@
 .catalogCardDesc {
   flex: 1;
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.55;
   color: var(--fn-text-secondary);
   display: -webkit-box;
@@ -2098,7 +2108,7 @@
   @media (max-width: 767px) {
     flex: 0 0 auto;
     -webkit-line-clamp: 2;
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
     line-height: 1.5;
   }
 }
@@ -2107,20 +2117,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   margin-top: auto;
   min-width: 0;
 
   @media (max-width: 767px) {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: var(--fn-space-xs);
   }
 }
 
 .catalogCardSlug {
   flex: 1;
-  font-size: 11px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-quaternary);
   font-family: var(--fn-font-mono, ui-monospace, monospace);
   overflow: hidden;
@@ -2143,7 +2153,7 @@
   @media (max-width: 767px) {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: var(--fn-space-xs);
     width: 100%;
   }
 }
@@ -2152,10 +2162,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   height: 24px;
   padding: 0 10px;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   line-height: 1;
   color: var(--fn-text-secondary);
@@ -2188,7 +2198,7 @@
     width: 100%;
     min-width: 0;
     height: 32px;
-    padding: 0 8px;
+    padding: 0 var(--fn-space-xs);
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -2219,9 +2229,9 @@
   color: var(--fn-text-tertiary);
 
   &:hover {
-    color: #ff4d4f;
-    border-color: rgba(255, 77, 79, 0.35);
-    background: rgba(255, 77, 79, 0.06);
+    color: var(--fn-color-danger);
+    border-color: color-mix(in srgb, var(--fn-color-danger) 35%, transparent);
+    background: var(--fn-bg-danger-light);
   }
 }
 
@@ -2235,7 +2245,7 @@
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   line-height: 1.6;
   color: var(--fn-text-primary);
   font-family: inherit;
@@ -2250,7 +2260,7 @@
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
   line-height: 1;
 }
 
@@ -2270,19 +2280,19 @@
 }
 
 .fileLabel {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
 
 .filePath {
-  font-size: 11px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-quaternary);
   font-family: "SF Mono", Menlo, Consolas, monospace;
 }
 
 .fileHint {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-color-brand);
   white-space: nowrap;
   flex-shrink: 0;
@@ -2297,7 +2307,7 @@
   }
 
   .fileHint {
-    font-size: 12px;
+    font-size: var(--fn-text-2xs);
     max-width: 3.5em;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2320,7 +2330,7 @@
     box-shadow: 0 0 0 3px var(--fn-color-brand);
   }
   100% {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--fn-shadow-xs);
   }
 }
 
@@ -2329,7 +2339,7 @@
 }
 
 .expertsTable {
-  margin: 12px 0 0;
+  margin: var(--fn-space-sm) 0 0;
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -2344,7 +2354,7 @@
   // remain clickable (fixes #460: pagination hidden behind scrollbar).
   :global(.octop-table-pagination),
   :global(.ant-table-pagination) {
-    margin: 12px 0 0 !important;
+    margin: var(--fn-space-sm) 0 0 !important;
     position: relative;
     z-index: 1;
   }
@@ -2353,7 +2363,7 @@
 .tableNameCell {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   min-width: 0;
 }
 
@@ -2377,7 +2387,7 @@
 .tableAgentIdBtn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   max-width: 100%;
   padding: 0;
   border: none;
@@ -2396,7 +2406,7 @@
 }
 
 .tableAgentIdValue {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2422,7 +2432,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 6px;
+  padding: var(--fn-space-2xs) 6px;
   border-radius: var(--fn-radius-sm);
   border: 1px solid var(--fn-border-primary);
   background: transparent;
@@ -2448,8 +2458,8 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 4px 8px;
-  font-size: 12px;
+  padding: var(--fn-space-2xs) var(--fn-space-xs);
+  font-size: var(--fn-text-2xs);
   border-radius: var(--fn-radius-sm);
   border: 1px solid var(--fn-border-primary);
   background: transparent;
@@ -2465,26 +2475,26 @@
 .welcomeConfig {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 4px 0;
+  gap: var(--fn-space-md);
+  padding: var(--fn-space-2xs) 0;
 }
 
 .welcomeConfigHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--fn-space-sm);
 }
 
 .welcomeConfigHeader h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
   font-weight: 600;
   color: var(--fn-text-primary);
 }
 
 .welcomeConfigLoading {
-  padding: 24px;
+  padding: var(--fn-space-xl);
   text-align: center;
   color: var(--fn-text-tertiary);
 }
@@ -2492,12 +2502,12 @@
 .welcomeConfigSection {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--fn-space-sm);
 }
 
 .welcomeConfigSection h4 {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-secondary);
 }
@@ -2505,7 +2515,7 @@
 .welcomeMessageFields {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--fn-space-sm);
 }
 
 .welcomeMessageField {
@@ -2515,7 +2525,7 @@
 }
 
 .welcomeMessageField label {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   color: var(--fn-text-tertiary);
 }
@@ -2524,19 +2534,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--fn-space-sm);
 }
 
 .quickPromptsList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--fn-space-sm);
 }
 
 .quickPromptsEmpty {
-  padding: 16px;
+  padding: var(--fn-space-md);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   color: var(--fn-text-tertiary);
   border: 1px dashed var(--fn-border-secondary);
   border-radius: var(--fn-radius-md);
@@ -2545,7 +2555,7 @@
 .quickPromptItem {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--fn-space-sm);
   padding: 14px;
   background: var(--fn-bg-secondary);
   border: 1px solid var(--fn-card-border-normal);
@@ -2556,11 +2566,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 .quickPromptIndex {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   color: var(--fn-text-tertiary);
 }
@@ -2568,12 +2578,12 @@
 .quickPromptFields {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--fn-space-sm);
 }
 
 .quickPromptRow {
   display: flex;
-  gap: 12px;
+  gap: var(--fn-space-sm);
   flex-wrap: wrap;
 }
 
@@ -2594,7 +2604,7 @@
 }
 
 .quickPromptField label {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   font-weight: 500;
   color: var(--fn-text-tertiary);
 }
@@ -2608,7 +2618,7 @@
 .colorOption {
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: var(--fn-radius-sm);
   border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.15s;
@@ -2626,12 +2636,13 @@
 
 .colorOptionActive {
   border-color: var(--fn-color-brand);
-  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--fn-color-brand) 20%, transparent);
 }
 
 .iconPicker {
   display: flex;
-  gap: 4px;
+  gap: var(--fn-space-2xs);
   flex-wrap: wrap;
   align-items: center;
 }
@@ -2639,7 +2650,7 @@
 .iconOption {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--fn-radius-sm);
   border: 1px solid var(--fn-border-primary);
   background: var(--fn-bg-primary);
   display: flex;
@@ -2648,7 +2659,7 @@
   cursor: pointer;
   transition: all 0.15s;
   color: var(--fn-text-secondary);
-  font-size: 14px;
+  font-size: var(--fn-text-sm);
 }
 
 .iconOption:hover {
@@ -2664,7 +2675,7 @@
 /* "无图标" 按钮：文字宽度自适应，避免溢出固定 28px 的图标框 */
 .iconOptionNoIcon {
   width: auto;
-  padding: 0 8px;
+  padding: 0 var(--fn-space-xs);
   white-space: nowrap;
 }
 
@@ -2677,13 +2688,13 @@
 .quickPromptPreview {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-top: 8px;
+  gap: var(--fn-space-xs);
+  padding-top: var(--fn-space-xs);
   border-top: 1px solid var(--fn-border-secondary);
 }
 
 .quickPromptPreviewLabel {
-  font-size: 11px;
+  font-size: var(--fn-text-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2694,7 +2705,7 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 10px var(--fn-space-sm);
   background: var(--fn-bg-primary);
   border: 1px solid var(--fn-card-border-normal);
   border-radius: var(--fn-radius-md);
@@ -2708,7 +2719,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 16px;
+  font-size: var(--fn-text-lg);
 }
 
 .quickCardBody {
@@ -2720,7 +2731,7 @@
 }
 
 .quickCardTitle {
-  font-size: 13px;
+  font-size: var(--fn-text-xs);
   font-weight: 600;
   color: var(--fn-text-primary);
   overflow: hidden;
@@ -2729,7 +2740,7 @@
 }
 
 .quickCardDesc {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2747,22 +2758,22 @@
 .publishDrawerLoading {
   display: flex;
   justify-content: center;
-  padding: 8px 0 12px;
+  padding: var(--fn-space-xs) 0 var(--fn-space-sm);
 }
 
 .publishDrawerHint {
-  margin-bottom: 16px;
+  margin-bottom: var(--fn-space-md);
 }
 
 .publishDrawerFooter {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--fn-space-xs);
 }
 
 /* Dark mode: white label needs a deeper brand surface than the light accent. */
 :global(html[data-theme="dark"]) .toolbarBtnPrimary {
-  background: #b93b52;
-  border-color: #b93b52;
+  background: var(--fn-color-brand-strong);
+  border-color: var(--fn-color-brand-strong);
   color: #ffffff;
 }

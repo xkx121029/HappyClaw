@@ -114,9 +114,17 @@ def main() -> int:
         print(f"[dashboard] 构建没有产出有效入口文件：{index}")
         return 1
 
+    # Whole-repo scope on purpose: a backend-only uncommitted change must not be
+    # stamped as clean, otherwise the stamp is worse than having no stamp.
+    dirty_lines = [line for line in git("status", "--porcelain").splitlines() if line.strip()]
     stamp = {
         "git_commit": env["VITE_BUILD_COMMIT"],
-        "git_dirty": bool(git("status", "--porcelain", "dashboard")),
+        "git_dirty": bool(dirty_lines),
+        "git_dirty_scope": "repo",
+        "git_dirty_count": len(dirty_lines),
+        # Split off the XY status prefix; the first line loses its leading space
+        # because ``git()`` strips stdout, so slice-by-offset is not safe here.
+        "git_dirty_paths": [line.split(None, 1)[-1] for line in dirty_lines[:20]],
         # Completion time: what a package reviewer means by "this build".
         "dashboard_built_at": datetime.now(tz=UTC).isoformat(timespec="seconds"),
         "index_sha256": sha256_file(index),

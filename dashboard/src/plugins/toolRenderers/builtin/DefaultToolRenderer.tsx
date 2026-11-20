@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Image, Button } from "antd";
 import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -62,6 +62,11 @@ export function DefaultToolRenderer({
 }: ToolRenderProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  // Expanded args/results can be arbitrarily long; cap the height and offer
+  // an explicit "show all" instead of letting one command eat the viewport.
+  const [showAllDetails, setShowAllDetails] = useState(false);
+  const [detailsOverflow, setDetailsOverflow] = useState(false);
+  const detailsBodyRef = useRef<HTMLDivElement>(null);
   const displayName = useToolDisplayNames();
 
   const toolData = useMemo(
@@ -133,16 +138,38 @@ export function DefaultToolRenderer({
         : null,
     [toolData.arguments, toolName, toolData.output],
   );
-  const statusLabel = completed
-    ? t("common.done", "Done")
-    : running
-    ? t("common.running", "Running")
-    : t("common.pending", "Pending");
+  const statusLabel =
+    status === "error"
+      ? t("common.failed", "Failed")
+      : completed
+      ? t("common.done", "Done")
+      : running
+      ? t("common.running", "Running")
+      : t("common.pending", "Pending");
   const deferredLabel = resolveDeferredToolLabel(toolName, args, displayName);
   const deferredTarget = deferredCallTargetName(args);
   const ToolIcon = builtinToolIcon(
     deferredLabel && deferredTarget ? deferredTarget : toolName,
   );
+
+  // Measure while clamped: a clamped scroll container reports a larger
+  // scrollHeight than clientHeight only when there is more content to show.
+  useLayoutEffect(() => {
+    if (!expanded || showAllDetails) return;
+    const el = detailsBodyRef.current;
+    if (!el) return;
+    setDetailsOverflow(el.scrollHeight > el.clientHeight + 4);
+  }, [expanded, showAllDetails, formattedArgs, formattedOutput]);
+
+  const toggleDetails = () => {
+    if (expanded) {
+      setExpanded(false);
+      setShowAllDetails(false);
+      setDetailsOverflow(false);
+      return;
+    }
+    setExpanded(true);
+  };
 
   return (
     <div className={styles.inlineToolBlock}>
@@ -151,8 +178,9 @@ export function DefaultToolRenderer({
         className={cx(
           styles.inlineToolSummary,
           running && styles.inlineToolSummaryRunning,
+          status === "error" && styles.inlineToolSummaryFailed,
         )}
-        onClick={() => setExpanded((v) => !v)}
+        onClick={toggleDetails}
         aria-expanded={expanded}
         aria-busy={running || undefined}
       >
@@ -221,28 +249,51 @@ export function DefaultToolRenderer({
 
       {expanded && (
         <div className={styles.inlineToolDetails}>
-          {toolData.arguments !== undefined && (
-            <div className={styles.inlineToolSection}>
-              <div className={styles.inlineToolSectionLabel}>
-                {t("chatUsage.arguments", "Arguments")}
+          <div
+            ref={detailsBodyRef}
+            className={cx(
+              styles.inlineToolDetailsBody,
+              !showAllDetails && styles.inlineToolDetailsClamped,
+            )}
+            data-tool-details-overflow={detailsOverflow ? "true" : undefined}
+          >
+            {toolData.arguments !== undefined && (
+              <div className={styles.inlineToolSection}>
+                <div className={styles.inlineToolSectionLabel}>
+                  {t("chatUsage.arguments", "Arguments")}
+                </div>
+                <pre className={styles.inlineToolCode}>{formattedArgs}</pre>
               </div>
-              <pre className={styles.inlineToolCode}>{formattedArgs}</pre>
-            </div>
-          )}
-          {(hasResult || (!isStreaming && hasMediaPreview)) && !mediaOnly && (
-            <div className={styles.inlineToolSection}>
-              <div className={styles.inlineToolSectionLabel}>
-                {t("chatUsage.result", "Result")}
+            )}
+            {(hasResult || (!isStreaming && hasMediaPreview)) && !mediaOnly && (
+              <div className={styles.inlineToolSection}>
+                <div className={styles.inlineToolSectionLabel}>
+                  {t("chatUsage.result", "Result")}
+                </div>
+                {formattedOutput ? (
+                  <pre className={styles.inlineToolCode}>{formattedOutput}</pre>
+                ) : (
+                  <pre className={styles.inlineToolCode}>
+                    [{t("chatUsage.mediaOutput", "Media output")}]
+                  </pre>
+                )}
               </div>
-              {formattedOutput ? (
-                <pre className={styles.inlineToolCode}>{formattedOutput}</pre>
-              ) : (
-                <pre className={styles.inlineToolCode}>
-                  [{t("chatUsage.mediaOutput", "Media output")}]
-                </pre>
-              )}
-            </div>
+            )}
+          </div>
+          {(detailsOverflow || showAllDetails) && (
+            <button
+              type="button"
+              className={styles.inlineToolExpandAll}
+              onClick={() => setShowAllDetails((v) => !v)}
+              aria-expanded={showAllDetails}
+            >
+              {showAllDetails
+                ? t("chat.showLess", "Show less")
+                : t("chat.showAll", "Show all")}
+            </button>
           )}
+          {/* Permission buttons stay outside the clamped body: a decision
+              prompt must never be hidden behind "show all". */}
           {acpPermission && onAcpPermissionSelect && !isStreaming && (
             <div className={styles.inlineToolSection}>
               <div className={styles.inlineToolSectionLabel}>

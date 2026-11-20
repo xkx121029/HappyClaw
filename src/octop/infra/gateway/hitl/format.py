@@ -237,7 +237,7 @@ def format_ask_card(
             )
         else:
             lines.append(tr("slash.ask.option_line", loc, opt=opt, label=label))
-        # A blank paragraph is preserved by plain-text IM clients such as Weixin,
+        # A blank paragraph is preserved by plain-text IM clients,
         # while a single newline may be collapsed into one dense line.
         lines.append("")
     if not options:

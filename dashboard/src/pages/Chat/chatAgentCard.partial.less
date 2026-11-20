@@ -116,45 +116,9 @@
   text-overflow: ellipsis;
 }
 
-.remoteExpertFlag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  flex-shrink: 0;
-  max-width: 12em;
-  padding: 0 5px;
-  height: 16px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  color: var(--fn-color-brand);
-  background: color-mix(in srgb, var(--fn-color-brand) 12%, transparent);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.remoteExpertFlagCompact {
-  max-width: none;
-  padding: 0 4px;
-  gap: 0;
-}
-
-.remoteExpertIcon {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  line-height: 0;
-  opacity: 0.9;
-}
-
-.remoteExpertName {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* The remote-expert badge moved to ``components/RemoteExpertHint.module.less``:
+   AgentSelector renders it on every page, and keeping it here dragged the whole
+   Chat stylesheet into the first paint. */
 
 .teamChatBadge {
   display: inline-flex;
@@ -230,7 +194,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--fn-brand);
+    outline: 2px solid var(--fn-color-brand);
     outline-offset: 2px;
   }
 }
@@ -257,14 +221,14 @@
   height: 14px;
   border-radius: 50%;
   flex: none;
-  background: var(--fn-skeleton-fill, color-mix(in srgb, var(--fn-text-primary) 8%, transparent));
+  background: var(--fn-bg-tertiary, color-mix(in srgb, var(--fn-text-primary) 8%, transparent));
   animation: sessionSkeletonPulse 1.5s ease-in-out infinite;
 }
 
 .sessionSkeletonLine {
   height: 9px;
   border-radius: 6px;
-  background: var(--fn-skeleton-fill, color-mix(in srgb, var(--fn-text-primary) 8%, transparent));
+  background: var(--fn-bg-tertiary, color-mix(in srgb, var(--fn-text-primary) 8%, transparent));
   animation: sessionSkeletonPulse 1.5s ease-in-out infinite;
 }
 
@@ -413,6 +377,24 @@
 .sessionRowActive .sessionRowTitle {
   font-size: var(--octop-list-font-size, 13px);
   font-weight: 400;
+}
+
+/* Flat "sessions" tab: which expert owns this thread. */
+.sessionRowAgent {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  max-width: 42%;
+  color: var(--fn-text-tertiary);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.sessionRowAgentName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sessionLoadMore {

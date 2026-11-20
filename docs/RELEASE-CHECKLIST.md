@@ -3,6 +3,7 @@
 > 适用范围：HappyClaw 本机单人发行包（PyPI wheel、安装脚本、Docker 镜像）。
 > 自动项：`powershell -File scripts/release-check.ps1`；本机链路：`powershell -File scripts/smoke_local.ps1`。
 > 人工项需要逐条勾选并记录证据（命令输出、截图路径、文件时间戳）。
+> 版本号、CHANGELOG、发布清单、标签与发版步骤见 [`docs/versioning-and-release.md`](./versioning-and-release.md)。
 
 发布版本：`__________`　检查人：`__________`　日期：`__________`
 

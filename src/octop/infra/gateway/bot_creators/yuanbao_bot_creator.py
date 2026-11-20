@@ -370,10 +370,10 @@ class YuanbaoBotCreator:
 
 
 # ============================================================
-# Auto-detect helpers (Tencent Cloud metadata service)
+# Auto-detect helpers (cloud metadata service)
 # ============================================================
 def _detect_instance_id() -> str:
-    """Try to fetch instance-id from Tencent Cloud metadata service."""
+    """Try to fetch instance-id from the cloud metadata service."""
     try:
         req = urllib.request.Request(
             "http://metadata.tencentyun.com/latest/meta-data/instance-id",
@@ -389,7 +389,7 @@ def _detect_instance_id() -> str:
 
 
 def _detect_public_ip() -> str:
-    """Try to fetch public IPv4 from Tencent Cloud metadata service."""
+    """Try to fetch public IPv4 from the cloud metadata service."""
     try:
         req = urllib.request.Request(
             "http://metadata.tencentyun.com/latest/meta-data/public-ipv4",

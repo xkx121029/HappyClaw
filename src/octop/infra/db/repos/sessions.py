@@ -192,7 +192,7 @@ class SessionRepo:
         token: str,
         token_ms: int,
     ) -> None:
-        """Store a newer iLink send token on matching WeChat sessions.
+        """Store a newer iLink send token on matching sessions.
 
         A session that already holds a newer token is left unchanged.
         """

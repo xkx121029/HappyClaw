@@ -91,14 +91,14 @@ export const channelApi = {
       body: JSON.stringify({ show_thinking: value }),
     }),
 
-  /** Generate a QQ Bot application-binding QR code. */
+  /** Generate a bot application-binding QR code. */
   qqQrcodeGenerate: (agentId: string) =>
     request<{ qrcode_token: string; qrcode_url: string }>(
       `/agents/${agentId}/channels/qq/qrcode/generate`,
       { method: "POST" },
     ),
 
-  /** Poll QQ Bot QR-code binding result. */
+  /** Poll bot QR-code binding result. */
   qqQrcodePoll: (agentId: string, qrcode_token: string) =>
     request<{
       status: string;
@@ -130,14 +130,14 @@ export const channelApi = {
       body: JSON.stringify({ scode }),
     }),
 
-  /** Generate a personal WeChat QR code. */
+  /** Generate a personal channel QR code. */
   weixinQrcodeGenerate: (agentId: string) =>
     request<{ qrcode_token: string; qrcode_url: string }>(
       `/agents/${agentId}/channels/weixin/qrcode/generate`,
       { method: "POST" },
     ),
 
-  /** Poll personal WeChat QR-code scan result. */
+  /** Poll personal channel QR-code scan result. */
   weixinQrcodePoll: (agentId: string, qrcode_token: string) =>
     request<{
       status: string;

@@ -25,6 +25,9 @@ SIDEBAR_NAV_KEYS = frozenset(
         "experts",
         "tasks",
         "token-usage",
+        "mobile-sessions",
+        "mobile-control",
+        "mobile-info",
         "personalization",
         "channels",
         "connectors",
@@ -42,7 +45,11 @@ SIDEBAR_NAV_KEYS = frozenset(
         "admin-advanced",
     }
 )
-_BUILTIN_SIDEBAR_GROUP_IDS = frozenset({"settings", "control", "admin"})
+# "mobile" / "control" / "admin" are kept so layouts saved before the nav was
+# collapsed to two levels still validate; new layouts only produce "settings".
+_BUILTIN_SIDEBAR_GROUP_IDS = frozenset(
+    {"mobile", "settings", "control", "admin"}
+)
 _CUSTOM_SIDEBAR_GROUP_ID = re.compile(r"^c_[a-z0-9]{8,32}$")
 _MAX_SIDEBAR_GROUPS = 24
 _MAX_SIDEBAR_GROUP_NAME = 40

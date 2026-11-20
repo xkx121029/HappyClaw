@@ -305,7 +305,7 @@ async def fetch_openai_compatible_models(
     locale: str = "en",
     provider_name: str | None = None,
 ) -> dict[str, Any]:
-    """Use Tencent plan catalogs; otherwise list models via ``GET {base}/models``."""
+    """Use provider plan catalogs; otherwise list models via ``GET {base}/models``."""
     url = _models_list_url(base_url)
     # Token Plan and HY Token Plan share a URL, so also match the selected preset.
     for preset in load_provider_presets():

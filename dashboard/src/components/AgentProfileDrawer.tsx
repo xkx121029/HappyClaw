@@ -345,7 +345,7 @@ export default function AgentProfileDrawer({
           <p
             style={{
               margin: 0,
-              fontSize: 13,
+              fontSize: "var(--fn-text-xs)",
               lineHeight: 1.6,
               color: "var(--fn-text-secondary)",
               wordBreak: "break-word",
@@ -398,7 +398,7 @@ export default function AgentProfileDrawer({
               {visibleTeamMembers.length === 0 ? (
                 <div
                   style={{
-                    fontSize: 13,
+                    fontSize: "var(--fn-text-xs)",
                     color: "var(--fn-text-tertiary)",
                     padding: "8px 0",
                   }}
@@ -492,7 +492,7 @@ export default function AgentProfileDrawer({
                     ) : workspaceFiles.length === 0 ? (
                       <div
                         style={{
-                          fontSize: 13,
+                          fontSize: "var(--fn-text-xs)",
                           color: "var(--fn-text-tertiary)",
                           padding: "8px 0",
                         }}
@@ -586,7 +586,7 @@ export default function AgentProfileDrawer({
                           {agentSkills.length === 0 ? (
                             <div
                               style={{
-                                fontSize: 13,
+                                fontSize: "var(--fn-text-xs)",
                                 color: "var(--fn-text-tertiary)",
                                 padding: "8px 0",
                               }}
@@ -680,7 +680,7 @@ export default function AgentProfileDrawer({
                           {subagents.length === 0 ? (
                             <div
                               style={{
-                                fontSize: 13,
+                                fontSize: "var(--fn-text-xs)",
                                 color: "var(--fn-text-tertiary)",
                                 padding: "8px 0",
                               }}
@@ -707,7 +707,7 @@ export default function AgentProfileDrawer({
                                     color="blue"
                                     style={{
                                       margin: 0,
-                                      fontSize: 11,
+                                      fontSize: "var(--fn-text-2xs)",
                                       lineHeight: "18px",
                                     }}
                                   >

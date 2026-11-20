@@ -52,6 +52,15 @@ def shadow_enabled() -> bool:
     return stage_enabled("shadow")
 
 
+def skills_prompts_enabled() -> bool:
+    """Switch for the opt-in DSH skills/prompt integration (``skills_prompts``).
+
+    Reads ``OCTOP_DSH_SKILLS_PROMPTS`` directly: this predates the master
+    switch and stays usable on its own, so it is not gated by ``OCTOP_DSH_RUNTIME``.
+    """
+    return _flag("OCTOP_DSH_SKILLS_PROMPTS")
+
+
 def llm_enabled() -> bool:
     """Switch for the S8 LangChain model adapter (stage ``llm``)."""
     return stage_enabled("llm")
@@ -78,5 +87,6 @@ __all__ = [
     "llm_refs",
     "runtime_enabled",
     "shadow_enabled",
+    "skills_prompts_enabled",
     "stage_enabled",
 ]

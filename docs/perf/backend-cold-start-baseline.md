@@ -204,7 +204,7 @@ numpy 带来的体积代价：+41 文件 / +27.7 MB（`numpy` 13 个 `.pyd` 6.0 
 后端产物内嵌 dashboard 静态文件，但打包以前不会自动重建前端，所以“只改前端”可能装出旧界面且无人发现。现在：
 
 - `make package-backend` 依赖 `package-dashboard`：`scripts/packaging/build_dashboard.py` 先跑 `npm ci`（`node_modules` 缺失或 `package-lock.json` 更新时）和 `npm run build`，**任何失败都中止打包**；Vite `emptyOutDir=true`，不存在沿用旧产物的路径。
-- 构建完成后写 `src/octop/dashboard/version.json`：`git_commit`、`git_dirty`、`dashboard_built_at`（完成时间）、`index_sha256`、`build_seconds`，随包进入 `_internal/octop/dashboard/`。
+- 构建完成后写 `src/octop/dashboard/version.json`：`git_commit`、`git_dirty`（**全仓**范围，`git_dirty_scope: "repo"`）、`git_dirty_count`/`git_dirty_paths`（未提交清单，最多 20 条）、`dashboard_built_at`（完成时间）、`index_sha256`、`build_seconds`，随包进入 `_internal/octop/dashboard/`。此前只统计 `dashboard/`，后端未提交改动会被误报为干净。
 - 运行时可查：`GET /api/health` 的 `build` 字段返回同一份内容，拿到安装包即可确认是哪一版前端。
 - 自检两道：`octop selfcheck` 校验包内 `index.html` 与其 `version.json` 的 sha256 一致；`verify_backend.py --dashboard-dir` 再把包内 `index.html` 与**本次**前端构建输出对比，并核对 `/api/health.build.index_sha256`。
 - 本次实测：commit `0652610c`（dashboard 有 46 个未提交改动，`git_dirty=true`），前端构建 1720s（本机慢 CPU），`index.html` sha256 `c69f6a36…`。

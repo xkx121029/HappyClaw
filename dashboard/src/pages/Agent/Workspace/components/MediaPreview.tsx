@@ -40,6 +40,7 @@ function useWorkspaceBlob(
   refreshToken = 0,
   fromWorkspace = true,
   fetchUrl?: string,
+  threadId?: string | null,
 ) {
   const [src, setSrc] = useState("");
   const objectUrlRef = useRef<string | undefined>(undefined);
@@ -50,10 +51,12 @@ function useWorkspaceBlob(
       agentId: agentId ?? "",
       fromWorkspace,
     });
+    const params = new URLSearchParams({ source });
+    if (threadId) params.set("thread_id", threadId);
     return `/agents/${encodeURIComponent(
       agentId ?? "",
-    )}/media/preview?${new URLSearchParams({ source }).toString()}`;
-  }, [agentId, path, fromWorkspace, fetchUrl]);
+    )}/media/preview?${params.toString()}`;
+  }, [agentId, path, fromWorkspace, fetchUrl, threadId]);
 
   useLayoutEffect(() => {
     let cancelled = false;
@@ -105,6 +108,7 @@ function WorkspaceImage({
   refreshToken = 0,
   fromWorkspace = true,
   fetchUrl,
+  threadId,
 }: {
   agentId?: string;
   path: string;
@@ -112,6 +116,7 @@ function WorkspaceImage({
   refreshToken?: number;
   fromWorkspace?: boolean;
   fetchUrl?: string;
+  threadId?: string | null;
 }) {
   const { t } = useTranslation();
   const src = useWorkspaceBlob(
@@ -122,6 +127,7 @@ function WorkspaceImage({
     refreshToken,
     fromWorkspace,
     fetchUrl,
+    threadId,
   );
 
   if (src === "missing") {
@@ -156,6 +162,7 @@ function WorkspaceVideo({
   refreshToken = 0,
   fromWorkspace = true,
   fetchUrl,
+  threadId,
 }: {
   agentId?: string;
   path: string;
@@ -163,6 +170,7 @@ function WorkspaceVideo({
   refreshToken?: number;
   fromWorkspace?: boolean;
   fetchUrl?: string;
+  threadId?: string | null;
 }) {
   const { t } = useTranslation();
   const toBlob = useMemo(
@@ -180,6 +188,7 @@ function WorkspaceVideo({
     refreshToken,
     fromWorkspace,
     fetchUrl,
+    threadId,
   );
 
   if (src === "missing") {
@@ -220,6 +229,7 @@ function WorkspaceAudio({
   refreshToken = 0,
   fromWorkspace = true,
   fetchUrl,
+  threadId,
 }: {
   agentId?: string;
   path: string;
@@ -227,6 +237,7 @@ function WorkspaceAudio({
   refreshToken?: number;
   fromWorkspace?: boolean;
   fetchUrl?: string;
+  threadId?: string | null;
 }) {
   const { t } = useTranslation();
   const toBlob = useMemo(
@@ -244,6 +255,7 @@ function WorkspaceAudio({
     refreshToken,
     fromWorkspace,
     fetchUrl,
+    threadId,
   );
 
   if (src === "missing") {
@@ -283,6 +295,7 @@ export default function MediaPreview({
   refreshToken = 0,
   fromWorkspace = true,
   fetchUrl,
+  threadId,
 }: {
   agentId?: string;
   path: string;
@@ -291,6 +304,7 @@ export default function MediaPreview({
   /** Workspace tree paths use leading ``/`` as workspace-relative keys. */
   fromWorkspace?: boolean;
   fetchUrl?: string;
+  threadId?: string | null;
 }) {
   const filename = path.split("/").filter(Boolean).pop() || path;
 
@@ -304,6 +318,7 @@ export default function MediaPreview({
           refreshToken={refreshToken}
           fromWorkspace={fromWorkspace}
           fetchUrl={fetchUrl}
+          threadId={threadId}
         />
       );
     case "video":
@@ -315,6 +330,7 @@ export default function MediaPreview({
           refreshToken={refreshToken}
           fromWorkspace={fromWorkspace}
           fetchUrl={fetchUrl}
+          threadId={threadId}
         />
       );
     case "audio":
@@ -326,6 +342,7 @@ export default function MediaPreview({
           refreshToken={refreshToken}
           fromWorkspace={fromWorkspace}
           fetchUrl={fetchUrl}
+          threadId={threadId}
         />
       );
     default:

@@ -216,6 +216,7 @@ export const BrowserViewer = forwardRef<
       <div className={styles.addressBar}>
         <Tooltip title={t("browserViewer.goBack")}>
           <Button
+                    aria-label={t("browserViewer.goBack")}
             size="small"
             icon={<ArrowLeft size={14} />}
             onClick={() => sendEvent({ type: "goback" })}
@@ -223,6 +224,7 @@ export const BrowserViewer = forwardRef<
         </Tooltip>
         <Tooltip title={t("browserViewer.goForward")}>
           <Button
+                    aria-label={t("browserViewer.goForward")}
             size="small"
             icon={<ArrowRight size={14} />}
             onClick={() => sendEvent({ type: "goforward" })}
@@ -230,6 +232,7 @@ export const BrowserViewer = forwardRef<
         </Tooltip>
         <Tooltip title={t("browserViewer.reload")}>
           <Button
+                    aria-label={t("browserViewer.reload")}
             size="small"
             icon={<RotateCcw size={14} />}
             onClick={() => sendEvent({ type: "reload" })}

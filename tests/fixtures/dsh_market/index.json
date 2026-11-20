@@ -1,0 +1,45 @@
+{
+  "format": 1,
+  "title": { "en": "Local DSH fixture index", "zh": "本地 DSH 测试索引" },
+  "plugins": [
+    {
+      "name": "dsh-plugin-demo",
+      "title": { "en": "Demo DSH plugin", "zh": "示例 DSH 插件" },
+      "description": {
+        "en": "Fixture plugin used for market install tests.",
+        "zh": "用于插件市场安装测试的本地示例。"
+      },
+      "icon": "icon.png",
+      "homepage": "https://example.invalid/dsh-plugin-demo",
+      "metadata": { "category": "testing", "labels": ["fixture"] },
+      "versions": [
+        {
+          "version": "1.1.0",
+          "publishTimestamp": 1788000100,
+          "source": { "type": "npm" }
+        },
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1788000000,
+          "source": { "type": "npm" }
+        }
+      ]
+    },
+    {
+      "name": "@demo/scoped-plugin",
+      "title": { "en": "Scoped demo plugin", "zh": "作用域示例插件" },
+      "description": {
+        "en": "Scoped npm name becomes dsh:demo__scoped-plugin.",
+        "zh": "作用域 npm 名会映射为 dsh:demo__scoped-plugin。"
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1788000200,
+          "source": { "type": "npm" },
+          "engines": { "dsh": ">=0.1.0" }
+        }
+      ]
+    }
+  ]
+}

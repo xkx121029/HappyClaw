@@ -28,18 +28,36 @@ _WEB_SEARCH_TOOLS: frozenset[str] = frozenset(
         "kimi_search",
         "yuanbao_search",
         "searchfree_search",
+        "happysearch_search",
     }
 )
 _MEDIA_TOOLS: frozenset[str] = frozenset({"generate_image", "generate_video"})
 _MEMORY_TOOLS: frozenset[str] = frozenset({"memory_search", "memory_get", "memory_save"})
-_MOBILE_TOOLS: frozenset[str] = frozenset(
+# 设备链路（HappyClaw ↔ 手机 App）：未配对时不可用；离线时也会从模型工具列表剔除。
+_DEVICE_LINK_TOOLS: frozenset[str] = frozenset(
     {
-        "mobile_screenshot",
-        "mobile_tap",
-        "mobile_swipe",
-        "mobile_launch_app",
-        "mobile_ui_dump",
-        "mobile_handoff_to_user",
+        "phone_screenshot",
+        "phone_ui_tree",
+        "phone_list_apps",
+        "phone_tap",
+        "phone_swipe",
+        "phone_type_text",
+    }
+)
+
+
+# 本机 adb 通道：主机没有 adb 可执行文件时不可用。
+_ADB_TOOLS: frozenset[str] = frozenset(
+    {
+        "adb_devices",
+        "adb_shell",
+        "adb_install",
+        "adb_uninstall",
+        "adb_screenshot",
+        "adb_tap",
+        "adb_swipe",
+        "adb_input_text",
+        "adb_keyevent",
     }
 )
 
@@ -78,6 +96,7 @@ BUILTIN_TOOL_CATALOG: tuple[BuiltinToolEntry, ...] = (
     BuiltinToolEntry("kimi_search", "web"),
     BuiltinToolEntry("yuanbao_search", "web"),
     BuiltinToolEntry("searchfree_search", "web"),
+    BuiltinToolEntry("happysearch_search", "web"),
     BuiltinToolEntry("generate_image", "media"),
     BuiltinToolEntry("generate_video", "media"),
     BuiltinToolEntry("memory_search", "memory"),
@@ -92,12 +111,21 @@ BUILTIN_TOOL_CATALOG: tuple[BuiltinToolEntry, ...] = (
     BuiltinToolEntry("cronjob_delete", "cron"),
     BuiltinToolEntry("cronjob_run_now", "cron"),
     BuiltinToolEntry("search_knowledge", "knowledge"),
-    BuiltinToolEntry("mobile_screenshot", "mobile"),
-    BuiltinToolEntry("mobile_tap", "mobile"),
-    BuiltinToolEntry("mobile_swipe", "mobile"),
-    BuiltinToolEntry("mobile_launch_app", "mobile"),
-    BuiltinToolEntry("mobile_ui_dump", "mobile"),
-    BuiltinToolEntry("mobile_handoff_to_user", "mobile"),
+    BuiltinToolEntry("phone_screenshot", "mobile"),
+    BuiltinToolEntry("phone_ui_tree", "mobile"),
+    BuiltinToolEntry("phone_list_apps", "mobile"),
+    BuiltinToolEntry("phone_tap", "mobile"),
+    BuiltinToolEntry("phone_swipe", "mobile"),
+    BuiltinToolEntry("phone_type_text", "mobile"),
+    BuiltinToolEntry("adb_devices", "mobile"),
+    BuiltinToolEntry("adb_shell", "mobile"),
+    BuiltinToolEntry("adb_install", "mobile"),
+    BuiltinToolEntry("adb_uninstall", "mobile"),
+    BuiltinToolEntry("adb_screenshot", "mobile"),
+    BuiltinToolEntry("adb_tap", "mobile"),
+    BuiltinToolEntry("adb_swipe", "mobile"),
+    BuiltinToolEntry("adb_input_text", "mobile"),
+    BuiltinToolEntry("adb_keyevent", "mobile"),
     BuiltinToolEntry("agent_list", "teams"),
     BuiltinToolEntry("ask_agent", "teams"),
 )
@@ -191,11 +219,15 @@ def builtin_tool_available(
     name: str,
     *,
     agent_cfg: Mapping[str, Any],
-    mobile_enabled: bool = False,
+    device_link_enabled: bool = False,
+    adb_enabled: bool = True,
+    search_source: str | None = None,
 ) -> bool:
     """Whether a catalog builtin is expected to be mounted for this agent."""
-    if name in _MOBILE_TOOLS:
-        return mobile_enabled
+    if name in _DEVICE_LINK_TOOLS:
+        return device_link_enabled
+    if name in _ADB_TOOLS:
+        return adb_enabled
     if name in _MEMORY_TOOLS:
         mem = agent_cfg.get("memory")
         if isinstance(mem, dict) and isinstance(mem.get("memory_enabled"), bool):
@@ -206,6 +238,17 @@ def builtin_tool_available(
         if media is False:
             return False
         return not (isinstance(media, dict) and media.get("enabled") is False)
+    if name == "happysearch_search":
+        effective = search_source or "happysearch"
+        return (
+            effective in ("happysearch", "both")
+            and agent_cfg.get("web_search_tools") is not False
+        )
+    if name == "searchfree_search":
+        return (
+            (search_source or "happysearch") == "searchfree"
+            and agent_cfg.get("web_search_tools") is not False
+        )
     if name in _WEB_SEARCH_TOOLS:
         return agent_cfg.get("web_search_tools") is not False
     if name == "acp_runner":

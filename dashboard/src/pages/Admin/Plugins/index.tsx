@@ -2,18 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Tabs } from "antd";
-import { Puzzle, Store } from "lucide-react";
+import { Boxes, Puzzle, Store } from "lucide-react";
 import PageShell from "../../../layouts/PageShell";
 import TabLabel from "../../../components/TabLabel";
+import { DshMarketPanel } from "./DshMarketPanel";
 import { InstalledPluginsPanel } from "./InstalledPluginsPanel";
 import { PluginMarketPanel } from "./PluginMarketPanel";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import { PLUGIN_TAB_PERMISSIONS, userCan } from "../../../utils/permissions";
 
-type TabKey = "installed" | "market";
+type TabKey = "installed" | "market" | "dsh";
 
 function parseTab(raw: string | null): TabKey {
   if (raw === "market") return "market";
+  if (raw === "dsh") return "dsh";
   // Legacy ?tab=agent-tools redirects to installed (tools live in plugin detail).
   return "installed";
 }
@@ -27,7 +29,7 @@ export default function AdminPluginsPage() {
   );
   const visibleTabs = useMemo(
     () =>
-      (["installed", "market"] as const).filter((key) =>
+      (["installed", "market", "dsh"] as const).filter((key) =>
         userCan(user, PLUGIN_TAB_PERMISSIONS[key]),
       ),
     [user],
@@ -81,6 +83,17 @@ export default function AdminPluginsPage() {
                     <TabLabel icon={Store}>{t("plugins.tabMarket")}</TabLabel>
                   ),
                   children: <PluginMarketPanel />,
+                },
+              ]
+            : []),
+          ...(visibleTabs.includes("dsh")
+            ? [
+                {
+                  key: "dsh",
+                  label: (
+                    <TabLabel icon={Boxes}>{t("plugins.tabDsh")}</TabLabel>
+                  ),
+                  children: <DshMarketPanel />,
                 },
               ]
             : []),

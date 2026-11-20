@@ -131,3 +131,23 @@ scripts/lh_image_install_octop_tencentos.sh
 .perf/
 .req-lock.txt
 .verify-electron.ps1
+
+# Local scratch that must never reach a public repo
+.tmp/
+.tmp-*.txt
+.verify-*.json
+.verify-*.jsonl
+site/
+.trae/
+.guidehome-*
+.guidehome-*-*.log
+
+# Local perf captures and UI screenshot scratch
+.perf-importtime-*.txt
+dashboard/mascot-shots/
+dashboard/mobile-shots/
+dashboard/.tmp/
+screenshots/
+octop-shots/
+qa-shots/
+.screenshots/

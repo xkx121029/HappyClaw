@@ -3,7 +3,11 @@ import type { Dayjs } from "dayjs";
 import { useTranslation } from "react-i18next";
 import { octopCronApi } from "../../../api/modules/cronjob";
 import { useAgent } from "../../../context/AgentContext";
-import type { CronJobSpecOutput, OctopCronRow } from "../../../api/types";
+import type {
+  CronJobSpecOutput,
+  OctopCronRow,
+  OctopCronRun,
+} from "../../../api/types";
 import { channelFromSessionKey } from "./cronDisplay";
 import { presetToCron, cronToPreset } from "./components/constants";
 import {
@@ -19,6 +23,26 @@ import {
 } from "../../../utils/modelOptions";
 
 type CronJob = CronJobSpecOutput;
+
+/** Poll the run ledger until it reaches a terminal state (max ~60s). */
+async function waitForRun(
+  agentId: string,
+  cronId: string,
+  runId: string,
+): Promise<OctopCronRun | null> {
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const runs = await octopCronApi.runs(agentId, cronId, 10);
+      const run = runs.find((item) => item.run_id === runId);
+      if (run && run.status !== "running") return run;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
 
 /** Octop-aligned form values for create / edit drawer. */
 export interface CronJobFormValues {
@@ -41,6 +65,9 @@ export interface CronJobFormValues {
   fresh_thread: boolean;
   session_key?: string | null;
   mcp_servers?: string[];
+  max_retries: number;
+  retry_backoff_seconds: number;
+  catch_up_misses: number;
 }
 
 function promptLabel(prompt: string, id: string): string {
@@ -52,6 +79,7 @@ function promptLabel(prompt: string, id: string): string {
 function fromOctop(row: OctopCronRow, timezone: string): CronJob {
   const cron = scheduleFieldFromTrigger(row.trigger);
   const channel = channelFromSessionKey(row.session_key);
+  const jobTimezone = row.timezone?.trim() || timezone;
 
   return {
     id: row.id,
@@ -60,7 +88,7 @@ function fromOctop(row: OctopCronRow, timezone: string): CronJob {
     schedule: {
       type: "cron",
       cron,
-      timezone,
+      timezone: jobTimezone,
     },
     task_type: row.task_type === "text" ? "text" : "agent",
     model: row.model ?? undefined,
@@ -91,6 +119,12 @@ function fromOctop(row: OctopCronRow, timezone: string): CronJob {
       octop_last_run_at: row.last_run_at,
       octop_last_status: row.last_status,
       octop_last_error: row.last_error,
+      octop_timezone: jobTimezone,
+      octop_next_run_at: row.next_run_at ?? null,
+      octop_max_retries: row.max_retries ?? 0,
+      octop_retry_backoff_seconds: row.retry_backoff_seconds ?? 60,
+      octop_catch_up_misses: row.catch_up_misses ?? 0,
+      octop_consecutive_failures: row.consecutive_failures ?? 0,
     },
   };
 }
@@ -121,7 +155,10 @@ export function jobToFormValues(
     schedule: {
       type: "cron",
       cron: cronExpr,
-      timezone,
+      timezone:
+        typeof meta.octop_timezone === "string" && meta.octop_timezone
+          ? meta.octop_timezone
+          : timezone,
     },
     run_at: once ? onceRunAtFromTrigger(rawTrigger) : undefined,
     prompt,
@@ -138,6 +175,16 @@ export function jobToFormValues(
     mcp_servers: Array.isArray(meta.octop_mcp_servers)
       ? (meta.octop_mcp_servers as string[])
       : [],
+    max_retries:
+      typeof meta.octop_max_retries === "number" ? meta.octop_max_retries : 0,
+    retry_backoff_seconds:
+      typeof meta.octop_retry_backoff_seconds === "number"
+        ? meta.octop_retry_backoff_seconds
+        : 60,
+    catch_up_misses:
+      typeof meta.octop_catch_up_misses === "number"
+        ? meta.octop_catch_up_misses
+        : 0,
     _scheduleMode: once
       ? "once"
       : mail
@@ -185,6 +232,10 @@ function toOctopCreateBody(values: CronJobFormValues) {
     enabled: Boolean(values.enabled),
     model: defaultModelFromForm(values.model),
     mcp_servers: values.mcp_servers ?? [],
+    timezone: values.schedule?.timezone?.trim() || null,
+    max_retries: values.max_retries ?? 0,
+    retry_backoff_seconds: values.retry_backoff_seconds ?? 60,
+    catch_up_misses: values.catch_up_misses ?? 0,
   };
 }
 
@@ -274,6 +325,9 @@ export function useCronJobs() {
       if (prev.length === 0) return prev;
       let changed = false;
       const next = prev.map((job) => {
+        // Jobs that already carry their own persisted zone must not be re-pinned
+        // to the server default when the settings response arrives late.
+        if (job.meta?.octop_timezone) return job;
         if (job.schedule.timezone === cronTimezone) return job;
         changed = true;
         return {
@@ -487,10 +541,28 @@ export function useCronJobs() {
 
   const executeNow = async (jobId: string) => {
     if (!activeAgentId) return false;
+    const agentId = activeAgentId;
     try {
-      await octopCronApi.runNow(activeAgentId, jobId);
-      await fetchJobs({ soft: true });
+      const { run_id: runId } = await octopCronApi.runNow(agentId, jobId);
       message.success(t("cronJobs.triggeredSuccess"));
+      await fetchJobs({ soft: true });
+      // Follow the run record the backend just created instead of assuming the
+      // call means success: retries and failures land on the same row.
+      void (async () => {
+        const terminal = await waitForRun(agentId, jobId, runId);
+        if (activeAgentRef.current === agentId) {
+          await fetchJobs({ soft: true });
+        }
+        if (terminal?.status === "error") {
+          message.error(
+            t("cronJobs.runFailedToast", {
+              error: terminal.error || t("cronJobs.executeFailed"),
+            }),
+          );
+        } else if (terminal?.status === "skipped") {
+          message.warning(t("cronJobs.runSkippedToast"));
+        }
+      })();
       return true;
     } catch (error) {
       console.error("Failed to execute cron job", error);

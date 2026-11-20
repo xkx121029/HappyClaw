@@ -6,9 +6,9 @@ import json
 from typing import TYPE_CHECKING, Annotated, Any
 
 from langchain_core.tools import StructuredTool
-from langgraph.config import get_config
 from pydantic import Field
 
+from octop.infra.agents.session_scope import current_session_scope
 from octop.infra.cron.manager import CronCreateSpec
 from octop.infra.cron.task_type import (
     CRON_NAME_MAX_LEN,
@@ -56,33 +56,28 @@ _CRONJOB_UPDATE_DESC = (
 )
 
 
-def _tool_ctx() -> tuple[str, int, str]:
-    cfg = get_config().get("configurable") or {}
-    agent_id = cfg.get("agent_id")
-    user_raw = cfg.get("user")
-    if not agent_id:
-        raise ValueError("missing configurable.agent_id")
-    if user_raw is None:
-        raise ValueError("missing configurable.user")
-    user_id = int(user_raw)
-    session_key = cfg.get("session_key")
-    if not session_key:
-        session_key = ThreadRegistry.dashboard_key(agent_id=str(agent_id), user_id=user_id)
-    return str(agent_id), user_id, str(session_key)
+def _tool_ctx(mgr: CronManager) -> tuple[str, int, str]:
+    """Resolve the conversation that owns this cron call.
+
+    Jobs belong to the expert running the conversation; the owner column is
+    read from that expert row instead of a turn-supplied ``user`` value, so a
+    single-owner turn can never be rejected by an ownership mismatch.
+    """
+    scope = current_session_scope(tool="cron")
+    row = mgr._repos.agent_repo.get(scope.agent_id)
+    if row is None:
+        raise ValueError(
+            "cron jobs are scoped to the expert of the current conversation, "
+            f"but expert {scope.agent_id!r} no longer exists"
+        )
+    user_id = int(row.user_id) if row.user_id is not None else scope.require_user("cron")
+    session_key = scope.session_key or ThreadRegistry.dashboard_key(
+        agent_id=scope.agent_id, user_id=user_id
+    )
+    return scope.agent_id, user_id, session_key
 
 
-def _user_owns_agent(mgr: CronManager, agent_id: str, user_id: int) -> bool:
-    row = mgr._repos.agent_repo.get(agent_id)
-    return row is not None and row.user_id == user_id
-
-
-def _require_agent_owner(mgr: CronManager, agent_id: str, user_id: int) -> None:
-    if not _user_owns_agent(mgr, agent_id, user_id):
-        raise ValueError("cron jobs can only be managed by the expert owner")
-
-
-def _get_owned(mgr: CronManager, cron_id: str, agent_id: str, user_id: int) -> CronJobRow:
-    _require_agent_owner(mgr, agent_id, user_id)
+def _get_owned(mgr: CronManager, cron_id: str, agent_id: str) -> CronJobRow:
     row = mgr.get(cron_id)
     if row is None or row.agent_id != agent_id:
         raise ValueError(f"cron job not found: {cron_id}")
@@ -103,9 +98,7 @@ def build_cronjob_tools(cron_manager: CronManager) -> list[StructuredTool]:
 
     async def cronjob_list(include_disabled: bool = True) -> str:
         try:
-            agent_id, user_id, _session_key = _tool_ctx()
-            if not _user_owns_agent(mgr, agent_id, user_id):
-                return _ok([])
+            agent_id, _user_id, _session_key = _tool_ctx(mgr)
             rows = mgr.list_by_agent(agent_id, include_disabled=include_disabled)
             return _ok([r.to_public_dict() for r in rows])
         except Exception as exc:
@@ -113,8 +106,8 @@ def build_cronjob_tools(cron_manager: CronManager) -> list[StructuredTool]:
 
     async def cronjob_get(cron_id: str) -> str:
         try:
-            agent_id, user_id, _session_key = _tool_ctx()
-            row = _get_owned(mgr, cron_id, agent_id, user_id)
+            agent_id, _user_id, _session_key = _tool_ctx(mgr)
+            row = _get_owned(mgr, cron_id, agent_id)
             return _ok(row.to_public_dict())
         except Exception as exc:
             return _err(exc)
@@ -157,8 +150,7 @@ def build_cronjob_tools(cron_manager: CronManager) -> list[StructuredTool]:
         ] = "text",
     ) -> str:
         try:
-            agent_id, user_id, session_key = _tool_ctx()
-            _require_agent_owner(mgr, agent_id, user_id)
+            agent_id, user_id, session_key = _tool_ctx(mgr)
             cron_id = new_cron_id()
             cleaned_prompt = require_cron_prompt(prompt)
             spec = CronCreateSpec(
@@ -191,8 +183,8 @@ def build_cronjob_tools(cron_manager: CronManager) -> list[StructuredTool]:
         task_type: Annotated[str | None, Field(description=_TASK_TYPE_HELP)] = None,
     ) -> str:
         try:
-            agent_id, user_id, _session_key = _tool_ctx()
-            existing = _get_owned(mgr, cron_id, agent_id, user_id)
+            agent_id, _user_id, _session_key = _tool_ctx(mgr)
+            existing = _get_owned(mgr, cron_id, agent_id)
             cleaned_prompt = require_cron_prompt(prompt) if prompt is not None else None
             row = await mgr.update(
                 cron_id,
@@ -217,8 +209,8 @@ def build_cronjob_tools(cron_manager: CronManager) -> list[StructuredTool]:
 
     async def cronjob_delete(cron_id: str) -> str:
         try:
-            agent_id, user_id, _session_key = _tool_ctx()
-            _get_owned(mgr, cron_id, agent_id, user_id)
+            agent_id, _user_id, _session_key = _tool_ctx(mgr)
+            _get_owned(mgr, cron_id, agent_id)
             await mgr.delete(cron_id)
             return _ok({"deleted": cron_id})
         except Exception as exc:
@@ -226,8 +218,8 @@ def build_cronjob_tools(cron_manager: CronManager) -> list[StructuredTool]:
 
     async def cronjob_run_now(cron_id: str) -> str:
         try:
-            agent_id, user_id, _session_key = _tool_ctx()
-            _get_owned(mgr, cron_id, agent_id, user_id)
+            agent_id, _user_id, _session_key = _tool_ctx(mgr)
+            _get_owned(mgr, cron_id, agent_id)
             await mgr.run_now(cron_id)
             return _ok({"triggered": cron_id})
         except Exception as exc:

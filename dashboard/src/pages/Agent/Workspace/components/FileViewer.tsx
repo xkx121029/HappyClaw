@@ -33,6 +33,8 @@ import styles from "../index.module.less";
 
 interface FileViewerProps {
   agentId?: string;
+  /** Conversation whose project/session directory holds the file. */
+  threadId?: string | null;
   path: string;
   /** Whether leading-slash paths come from the workspace UI. */
   fromWorkspace?: boolean;
@@ -53,6 +55,7 @@ interface FileViewerProps {
 
 export default function FileViewer({
   agentId,
+  threadId,
   path,
   fromWorkspace = true,
   fetchUrl,
@@ -76,6 +79,7 @@ export default function FileViewer({
     return (
       <MediaPreview
         agentId={agentId}
+        threadId={threadId}
         path={path}
         kind={mediaKind}
         refreshToken={refreshToken}
@@ -90,6 +94,7 @@ export default function FileViewer({
       <DocumentPreview
         key={`${path}:${refreshToken}`}
         agentId={agentId}
+        threadId={threadId}
         path={path}
         kind={docKind}
         fromWorkspace={fromWorkspace}

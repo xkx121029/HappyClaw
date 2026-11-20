@@ -88,7 +88,7 @@ describe("MinimalAgentSessionNav nav scopes", () => {
     vi.spyOn(octopThreadsApi, "list").mockResolvedValue([]);
   });
 
-  it("filters the same expert, team, and cloud tabs", async () => {
+  it("filters the same expert, team, and cloud scopes", async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -108,6 +108,13 @@ describe("MinimalAgentSessionNav nav scopes", () => {
       </MemoryRouter>,
     );
 
+    // 默认落在「会话」，专家目录不再占首屏。
+    expect(screen.getByRole("tab", { name: "会话" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+
+    await user.click(screen.getByRole("tab", { name: "专家" }));
     expect(screen.getByText("本地专家")).toBeInTheDocument();
     expect(screen.getByText("云端专家")).toBeInTheDocument();
     expect(screen.queryByText("对端实验室")).not.toBeInTheDocument();
@@ -116,7 +123,9 @@ describe("MinimalAgentSessionNav nav scopes", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText("本地团队")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "云端" }));
+    // 云端协同不再是 tab，而是标签下方的一项入口。
+    expect(screen.queryByRole("tab", { name: "云端" })).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("chat-cloud-entry"));
     expect(screen.getByText("云端专家")).toBeInTheDocument();
     expect(screen.getByText("云端团队")).toBeInTheDocument();
     expect(screen.queryByText("本地专家")).not.toBeInTheDocument();
@@ -181,6 +190,9 @@ describe("SessionList nav scopes", () => {
       </MemoryRouter>,
     );
 
+    // 专家目录在「专家」tab 下，默认落在「会话」。
+    await user.click(screen.getByRole("tab", { name: "专家" }));
+
     expect(screen.getByTitle("chat.expertPin")).toBeInTheDocument();
     expect(screen.queryByText("共享专家")).not.toBeInTheDocument();
     expect(screen.queryByText("闲置专家")).not.toBeInTheDocument();
@@ -232,6 +244,8 @@ describe("SessionList nav scopes", () => {
       </MemoryRouter>,
     );
 
+    await user.click(screen.getByRole("tab", { name: "专家" }));
+
     expect(screen.queryByText("闲置专家")).not.toBeInTheDocument();
     const toggle = screen.getByRole("button", {
       name: "chat.expertListHidden",
@@ -256,10 +270,15 @@ describe("SessionList nav scopes", () => {
     const user = userEvent.setup();
     renderList();
 
-    expect(screen.getByRole("tab", { name: "专家" })).toHaveAttribute(
+    // 四个 tab，会话优先；云端不在其中。
+    expect(screen.getByRole("tab", { name: "会话" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
+    expect(screen.getByRole("tab", { name: "项目" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "云端" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "专家" }));
     expect(screen.getByText("本地专家")).toBeInTheDocument();
     expect(screen.getByText("云端专家")).toBeInTheDocument();
     expect(screen.queryByText("对端实验室")).not.toBeInTheDocument();
@@ -275,14 +294,14 @@ describe("SessionList nav scopes", () => {
     expect(screen.queryByText("本地专家")).not.toBeInTheDocument();
     expect(screen.queryByText("云端专家")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "云端" }));
+    await user.click(screen.getByTestId("chat-cloud-entry"));
     expect(screen.getByText("云端专家")).toBeInTheDocument();
     expect(screen.getByText("云端团队")).toBeInTheDocument();
     expect(screen.queryByText("本地专家")).not.toBeInTheDocument();
     expect(screen.queryByText("本地团队")).not.toBeInTheDocument();
   });
 
-  it("links an empty team or cloud tab to the create page", async () => {
+  it("links an empty team tab to the create page", async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/chat"]}>

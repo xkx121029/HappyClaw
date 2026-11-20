@@ -1,7 +1,6 @@
 /**
- * Chat / social app WebViews (WeChat, WeCom, QQ, DingTalk, Feishu, Weibo,
- * Alipay) refuse to save `blob:` downloads and only tell the user to open the
- * page in a browser, which has no Octop session.
+ * Some chat / social app WebViews refuse to save `blob:` downloads and only
+ * tell the user to open the page in a browser, which has no Octop session.
  */
 const IN_APP_BROWSER_UA =
   /MicroMessenger|wxwork|\bQQ\/|DingTalk|Lark\/|Feishu|Weibo|AlipayClient/i;

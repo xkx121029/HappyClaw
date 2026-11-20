@@ -96,7 +96,7 @@ async def test_cronjob_create_and_list(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_cronjob_isolated_by_agent_and_user(tmp_path: Path) -> None:
+async def test_cronjob_isolated_by_session_agent(tmp_path: Path) -> None:
     services = _make_services(tmp_path)
     agent_a = new_ulid()
     agent_b = new_ulid()
@@ -120,15 +120,23 @@ async def test_cronjob_isolated_by_agent_and_user(tmp_path: Path) -> None:
         err = json.loads(await get_tool.ainvoke({"cron_id": cron_id}))
         assert "error" in err
 
+    # The conversation's expert owns the job; a turn-level user field that does
+    # not match must not hide the job or reject the call.
     with _configurable(agent_id=agent_a, user=str(other_uid)):
-        err = json.loads(await get_tool.ainvoke({"cron_id": cron_id}))
-        assert "error" in err
+        got = json.loads(await get_tool.ainvoke({"cron_id": cron_id}))
+        assert got["id"] == cron_id
         listed = json.loads(await list_tool.ainvoke({"include_disabled": True}))
-        assert listed == []
+        assert [row["id"] for row in listed] == [cron_id]
         created = json.loads(
-            await create.ainvoke({"trigger": "interval:60", "prompt": "nope", "name": "nope"})
+            await create.ainvoke({"trigger": "interval:60", "prompt": "ok", "name": "ok"})
         )
-        assert "error" in created
+        assert created["name"] == "ok"
+
+    # A turn whose expert no longer exists fails loudly instead of listing [].
+    with _configurable(agent_id=new_ulid(), user=str(uid)):
+        missing = json.loads(await list_tool.ainvoke({"include_disabled": True}))
+        assert "error" in missing
+        assert "no longer exists" in missing["error"]
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,5 @@
 /**
- * 腾讯云云服务器运维专家：授权后自动就绪，无需用户去专家市场手动添加。
+ * 云服务器运维专家：授权后自动就绪，无需用户去专家市场手动添加。
  *
  * 行为：
  * 1. 已存在该专家的 agent 实例 → 直接返回它的 id
@@ -13,7 +13,7 @@ import { knowledgeBasesApi } from "../api/modules/knowledgeBases";
 import { request } from "../api/request";
 import { useAgent, type OctopAgent } from "../context/AgentContext";
 
-/** 内置专家模板 id，对应 src/octop/infra/agents/experts/library/tencent-cvm-ops。 */
+/** 内置专家模板 id，对应专家库中的云运维模板。 */
 export const CVM_OPS_EXPERT_ID = "tencent-cvm-ops";
 
 /** 自动挑选用作运维知识库的命名特征。 */

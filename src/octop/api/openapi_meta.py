@@ -10,49 +10,30 @@ from fastapi.openapi.utils import get_openapi
 from octop.api.deps import is_jwt_exempt_path
 
 API_DESCRIPTION = """\
-**HappyClaw** is a smarter, self-hosted AI assistant for multiple users and agents. All routes are served under `/api`.
+**HappyClaw** is a local-first, single-user AI assistant. All routes are served under `/api`.
 
 ## Authentication
 
-Most endpoints require a JWT bearer token:
+HappyClaw runs as a single local owner on this machine. There is no login, session,
+role, or bearer-token gate: every request is handled as that owner, and
+`/api/setup/*` is available while the first-run wizard is still open.
 
-1. Complete initial setup via `/api/setup/*` (first install only).
-2. `GET /api/auth/captcha` then `POST /api/auth/login` with `username` and `password`
-   (and `captcha_token` when a strong provider is active), or complete SSO with
-   `/api/auth/oidc/*` or `/api/auth/oauth/*` when a provider is enabled. When a
-   directory is configured (`/api/auth/ldap/config`), `POST /api/auth/login` also
-   accepts LDAP credentials and provisions the account on first login.
-3. Send `Authorization: Bearer <access_token>` on subsequent requests.
+The desktop shell keeps its local credential bound through `/api/auth/device/*`
+(`register` records it, `token` exchanges it on cold start).
 
-Access tokens use sliding renewal: when less than two-thirds of
-`access_token_ttl_seconds` remains, authenticated responses may include a fresh
-token in the `X-Octop-Access-Token` header. Clients should replace the stored
-token when present. Changing the password invalidates previously issued tokens.
-
-Public endpoints (no token): `/api/docs`, `/api/openapi.json`, `/api/health`,
-`/api/setup/*`, `/api/auth/login`, `/api/auth/captcha`, `/api/auth/oidc/status`, `/api/auth/oidc/start`,
-`/api/auth/oidc/callback`, `/api/auth/oidc/exchange`, `/api/auth/oauth/status`,
-`/api/auth/oauth/start`, `/api/auth/oauth/callback`, `/api/auth/oauth/exchange`,
-`/api/auth/ldap/status`, `/api/auth/passkey/status`,
-`/api/auth/invite/validate`,
-`/api/auth/invite/redeem`, `/api/connectors/oauth/callback`,
-and `/api/internal/mcp/*`.
-
-## Agent scope
-
-Many agent-scoped routes use the agent ID in the URL path (`/api/agents/{agent_id}/…`).
-The caller must own the agent unless they are an admin.
+Multi-user endpoints from earlier releases (invites, roles, SSO/OIDC/OAuth, LDAP,
+MFA, passkey) are retired and answer `404` with `SINGLE_USER_UNSUPPORTED`.
 
 ## Streaming chat
 
-Dashboard live turns use **WebSocket** at `/api/agents/{agent_id}/chat/ws` (pass JWT as
-`?token=` query param). Send `{"type":"user_turn", ...}` frames; the server replies with JSON
-chunks matching the harness stream format, ending with `{"type":"done"}` or
+Dashboard live turns use **WebSocket** at `/api/agents/{agent_id}/chat/ws`. Send
+`{"type":"user_turn", ...}` frames; the server replies with JSON chunks matching the
+harness stream format, ending with `{"type":"done"}` or
 `{"type":"error","message":"..."}`.
 
 Text-type dashboard pushes (cron reminders, proactive care) also emit
-`{"type":"dashboard_push", ...}` on `/api/notifications/ws` (same `?token=` auth) so the
-SPA can show a toast even when the chat socket is not subscribed.
+`{"type":"dashboard_push", ...}` on `/api/notifications/ws` so the SPA can show a toast
+even when the chat socket is not subscribed.
 
 HITL resume still uses `POST /api/agents/{agent_id}/chat/hitl/resume` (SSE).
 """
@@ -169,10 +150,6 @@ OPENAPI_TAGS: list[dict[str, str]] = [
         "description": "Remote browser: env/install, harness sessions, live stream, record/replay.",
     },
     {
-        "name": "mobile",
-        "description": "Remote Phone stream and adb control (mobile permission).",
-    },
-    {
         "name": "desktop",
         "description": "Remote OS desktop stream and input injection (admin only).",
     },
@@ -181,18 +158,25 @@ OPENAPI_TAGS: list[dict[str, str]] = [
         "name": "onnx",
         "description": "Local ONNX / fastembed embedding service: enable, catalog, and download.",
     },
+    {"name": "i18n", "description": "Locale bundles served to the dashboard."},
+    {"name": "device-link", "description": "Paired phone App: pair, connect, command, screenshots, live events."},
+    {"name": "plugins", "description": "Plugin catalog, install/uninstall, market sources, and per-agent plugin tools."},
+    {"name": "memory", "description": "Agent memory: search, read, save, and portable import/export."},
+    {"name": "backup", "description": "Backup archives: create, list, restore, import/export, and schedule."},
+    {"name": "proactive-care", "description": "Proactive care messages generated from recent life events."},
+    {"name": "cloud", "description": "Cloud provider accounts: authorize, list regions/instances, and run actions."},
 ]
 
 _BEARER_SCHEME = {
     "type": "http",
     "scheme": "bearer",
     "bearerFormat": "JWT",
-    "description": "JWT from `POST /api/auth/login` (`access_token` field).",
+    "description": "Legacy bearer scheme kept for schema compatibility; single-user mode does not enforce tokens.",
 }
 
 
 def configure_openapi(app: FastAPI) -> None:
-    """Attach tag descriptions, API intro, and Bearer security to the OpenAPI schema."""
+    """Attach tag descriptions, the API intro, and the legacy security scheme."""
 
     def custom_openapi() -> dict[str, Any]:
         if app.openapi_schema:

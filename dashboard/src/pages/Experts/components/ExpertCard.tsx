@@ -50,6 +50,14 @@ export const ExpertCard = memo(function ExpertCard({
     <div
       className={styles.expertTemplateCard}
       onClick={() => onCreate(expert)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onCreate(expert);
+        }
+      }}
       style={
         {
           "--expert-accent": accent,

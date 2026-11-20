@@ -137,6 +137,17 @@ class MarketInstallSource:
         )
         if native is None:
             raise ValueError(f"{slot} 下没有发现 {plugin_id} 的 manifest")
+        if native.id != plugin_id:
+            # The ledger is authoritative for market installs. A scoped npm
+            # package is catalogued as ``<scope>__<name>`` (the market folder
+            # and ledger use that id) while the bundle manifest only carries the
+            # bare package name, so the adapter derives a shorter id. Accept the
+            # ledger id when it names the same slot; any other mismatch means
+            # the ledger points at a different manifest.
+            alias = _ledger_alias(kind, plugin_id, native.id)
+            if alias is None:
+                raise ValueError(f"{slot} 下没有发现 {plugin_id} 的 manifest")
+            native = replace(native, id=alias)
         payload = _read_json(slot / _ENVELOPE)
         if not payload:
             return native
@@ -151,6 +162,27 @@ class MarketInstallSource:
             requires=requirements,
             metadata=metadata,
         )
+
+
+def _ledger_alias(kind: PluginKind, ledger_id: str, native_id: str) -> str | None:
+    """Return the ledger id when it is the scoped form of the same DSH slot.
+
+    Only DSH needs this: ``DshSource`` stores ``@scope/name`` as
+    ``scope__name``, while ``DshPluginLoader`` derives ``name``. Legacy
+    installs are unaffected because their ledger ids already equal the adapter
+    value (no alias needed) and ids are never rewritten on disk.
+    """
+
+    if kind is not PluginKind.DSH:
+        return None
+    prefix = f"{PluginKind.DSH.value}:"
+    if not ledger_id.startswith(prefix) or not native_id.startswith(prefix):
+        return None
+    ledger_native = ledger_id[len(prefix) :]
+    native_native = native_id[len(prefix) :]
+    if ledger_native.endswith(f"__{native_native}"):
+        return ledger_id
+    return None
 
 
 def _current_record(plugin_root: Path) -> tuple[dict[str, Any] | None, str]:

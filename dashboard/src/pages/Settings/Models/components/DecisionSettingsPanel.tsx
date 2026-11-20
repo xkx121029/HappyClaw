@@ -659,8 +659,16 @@ export function DecisionSettingsPanel({
                   <div
                     key={id}
                     className={cx(styles.choice, selected && styles.choiceOn)}
+                    role="button"
+                    tabIndex={0}
                     aria-pressed={selected}
                     onClick={() => selectProvider(id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        selectProvider(id);
+                      }
+                    }}
                   >
                     <span className={styles.choiceTop}>
                       <span className={styles.logoTile}>
@@ -761,8 +769,15 @@ export function DecisionSettingsPanel({
                     key={name}
                     className={cx(styles.task, checked && styles.taskOn)}
                     role="checkbox"
+                    tabIndex={0}
                     aria-checked={checked}
                     onClick={() => form.setFieldValue(name, !checked)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        form.setFieldValue(name, !checked);
+                      }
+                    }}
                   >
                     <span className={styles.taskHead}>
                       <Checkbox

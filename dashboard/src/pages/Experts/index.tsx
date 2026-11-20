@@ -430,6 +430,7 @@ export default function ExpertsPage() {
       <Tooltip title={t("common.refresh")}>
         <button
           className={styles.toolbarIconBtn}
+          aria-label={t("common.refresh")}
           onClick={() => void handleRefresh()}
           disabled={refreshing}
           type="button"

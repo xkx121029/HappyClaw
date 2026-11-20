@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal } from "antd";
+import { useMemo } from "react";
 import {
   Bot,
   Brain,
@@ -10,14 +9,14 @@ import {
   Keyboard,
   MessageSquareText,
   Plus,
-  Search,
   Settings,
-  type LucideIcon,
 } from "lucide-react";
-import cx from "classnames";
 import { useTranslation } from "react-i18next";
 
-import styles from "../index.module.less";
+import PaletteSurface, {
+  type PaletteGroup,
+  type PaletteItem,
+} from "../../../components/CommandPalette/PaletteSurface";
 import type { Session } from "../hooks/useSessions";
 import { pickRecentSessions } from "../utils/recentSessions";
 
@@ -48,15 +47,6 @@ interface CommandPaletteProps {
   onExportTranscript?: () => void;
 }
 
-interface PaletteCommand {
-  kind: "action" | "model" | "session";
-  id: string;
-  label: string;
-  meta?: string;
-  icon: LucideIcon;
-  run: () => void;
-}
-
 /**
  * 单人本机命令面板（Ctrl/Cmd + K）。
  *
@@ -82,27 +72,15 @@ export default function CommandPalette({
   onExportTranscript,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
-  const [query, setQuery] = useState("");
-  const [activeIndex, setActiveIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
   // 只用已加载的会话列表，不额外请求；按最近访问而不是侧栏的收藏置顶顺序。
   const recentSessions = useMemo(
     () => pickRecentSessions(sessions),
     [sessions],
   );
 
-  useEffect(() => {
-    if (!open) return;
-    setQuery("");
-    setActiveIndex(0);
-    const timer = window.setTimeout(() => inputRef.current?.focus(), 30);
-    return () => window.clearTimeout(timer);
-  }, [open]);
-
-  const commands = useMemo<PaletteCommand[]>(() => {
-    const actions: PaletteCommand[] = [
+  const actionItems = useMemo<PaletteItem[]>(
+    () => [
       {
-        kind: "action",
         id: "new-chat",
         label: t("chat.palette.newChat", "新建会话"),
         meta: t("chat.palette.newChatHint", "Ctrl/Cmd + Shift + O"),
@@ -112,7 +90,6 @@ export default function CommandPalette({
       ...(onExportTranscript
         ? [
             {
-              kind: "action" as const,
               id: "export-transcript",
               label: t(
                 "chat.palette.exportTranscript",
@@ -125,7 +102,6 @@ export default function CommandPalette({
           ]
         : []),
       {
-        kind: "action",
         id: "settings",
         label: t("chat.palette.openSettings", "打开本机设置"),
         meta: t("chat.palette.openSettingsHint", "Ctrl/Cmd + ,"),
@@ -133,7 +109,6 @@ export default function CommandPalette({
         run: onOpenSettings,
       },
       {
-        kind: "action",
         id: "open-experts",
         label: t("chat.palette.openExperts", "打开专家页"),
         meta: t("chat.palette.openExpertsHint", "启用与配置专家"),
@@ -141,7 +116,6 @@ export default function CommandPalette({
         run: onOpenExperts,
       },
       {
-        kind: "action",
         id: "open-connectors",
         label: t("chat.palette.openConnectors", "打开连接器"),
         meta: t("chat.palette.openConnectorsHint", "管理本机工具接入"),
@@ -149,7 +123,6 @@ export default function CommandPalette({
         run: onOpenConnectors,
       },
       {
-        kind: "action",
         id: "open-memory",
         label: t("chat.palette.openMemory", "打开记忆库"),
         meta: t("chat.palette.openMemoryHint", "查看长期记忆"),
@@ -157,7 +130,6 @@ export default function CommandPalette({
         run: onOpenMemory,
       },
       {
-        kind: "action",
         id: "backup",
         label: t("chat.palette.backup", "本机数据备份与恢复"),
         meta: t("chat.palette.backupHint", "导出 / 导入"),
@@ -165,18 +137,29 @@ export default function CommandPalette({
         run: onOpenBackup,
       },
       {
-        kind: "action",
         id: "shortcuts",
         label: t("chat.palette.shortcuts", "键盘快捷键"),
         meta: t("chat.palette.shortcutsHint", "Ctrl/Cmd + /"),
         icon: Keyboard,
         run: onOpenShortcuts,
       },
-    ];
+    ],
+    [
+      onExportTranscript,
+      onNewChat,
+      onOpenBackup,
+      onOpenConnectors,
+      onOpenExperts,
+      onOpenMemory,
+      onOpenSettings,
+      onOpenShortcuts,
+      t,
+    ],
+  );
 
-    const modelCommands: PaletteCommand[] = modelsReady
+  const groups = useMemo<PaletteGroup[]>(() => {
+    const modelItems: PaletteItem[] = modelsReady
       ? models.map((model) => ({
-          kind: "model" as const,
           id: `model:${model.value}`,
           label: model.label,
           meta:
@@ -188,8 +171,7 @@ export default function CommandPalette({
         }))
       : [];
 
-    const sessionCommands: PaletteCommand[] = recentSessions.map((session) => ({
-      kind: "session" as const,
+    const sessionItems: PaletteItem[] = recentSessions.map((session) => ({
       id: `session:${session.id}`,
       label: session.name,
       meta: session.pinned
@@ -199,185 +181,56 @@ export default function CommandPalette({
       run: () => onSelectSession(session.id),
     }));
 
-    return [...actions, ...modelCommands, ...sessionCommands];
+    return [
+      { kind: "action", label: t("chat.palette.groupActions", "操作"), items: actionItems },
+      ...(modelItems.length > 0
+        ? [{ kind: "model", label: t("chat.palette.groupModels", "模型"), items: modelItems }]
+        : []),
+      ...(sessionItems.length > 0
+        ? [
+            {
+              kind: "session",
+              label: t("chat.palette.groupSessions", {
+                total: recentSessions.length,
+                defaultValue: "最近 {{total}} 条会话",
+              }),
+              items: sessionItems,
+            },
+          ]
+        : []),
+    ];
   }, [
+    actionItems,
     currentModel,
     models,
     modelsReady,
-    onNewChat,
-    onExportTranscript,
-    onOpenBackup,
-    onOpenConnectors,
-    onOpenExperts,
-    onOpenMemory,
-    onOpenSettings,
-    onOpenShortcuts,
     onSelectModel,
     onSelectSession,
     recentSessions,
     t,
   ]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return commands;
-    return commands.filter(
-      (cmd) =>
-        cmd.label.toLowerCase().includes(q) ||
-        cmd.meta?.toLowerCase().includes(q),
-    );
-  }, [commands, query]);
-
   // 空结果时列表里没有可选行，键盘仍要能落到「新建会话 / 打开设置」上，
-  // 否则 Enter 变成了死键。把这两个动作接进同一套上下键选择。
-  const noResults = filtered.length === 0;
+  // 否则 Enter 变成了死键。
   const emptyActions = useMemo(
-    () =>
-      commands.filter((cmd) => cmd.id === "new-chat" || cmd.id === "settings"),
-    [commands],
+    () => actionItems.filter((item) => item.id === "new-chat" || item.id === "settings"),
+    [actionItems],
   );
-  const navigable = noResults ? emptyActions : filtered;
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
-
-  const runCommand = (cmd: PaletteCommand | undefined) => {
-    if (!cmd) return;
-    onClose();
-    // 让面板先关闭，再执行导航/切换，避免 Modal 焦点抢回输入框。
-    window.setTimeout(cmd.run, 0);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveIndex((index) => Math.min(index + 1, navigable.length - 1));
-      return;
-    }
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveIndex((index) => Math.max(index - 1, 0));
-      return;
-    }
-    if (event.key === "Enter") {
-      event.preventDefault();
-      runCommand(navigable[activeIndex]);
-    }
-  };
-
-  let lastKind: PaletteCommand["kind"] | null = null;
-  let flatIndex = -1;
 
   return (
-    <Modal
+    <PaletteSurface
       open={open}
-      onCancel={onClose}
-      footer={null}
-      closable={false}
-      width={620}
-      centered
-      destroyOnHidden
-      className={styles.commandPaletteModal}
-      styles={{ body: { padding: 0 } }}
-    >
-      <div className={styles.commandPalette}>
-        <div className={styles.cpSearch}>
-          <Search size={16} strokeWidth={1.8} aria-hidden />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t(
-              "chat.palette.placeholder",
-              "搜索会话、切换模型，或输入命令…",
-            )}
-            aria-label={t(
-              "chat.palette.placeholder",
-              "搜索会话、切换模型，或输入命令…",
-            )}
-            spellCheck={false}
-          />
-          <kbd className={styles.cpKbd}>Esc</kbd>
-        </div>
-
-        <div className={styles.cpList} role="listbox">
-          {filtered.length === 0 ? (
-            <div className={styles.cpEmpty}>
-              <p className={styles.cpEmptyText}>
-                {t("chat.palette.noResults", "没有匹配项，换个关键词试试。")}
-              </p>
-              <div className={styles.cpEmptyActions}>
-                {emptyActions.map((cmd, index) => {
-                  const Icon = cmd.icon;
-                  return (
-                    <button
-                      key={cmd.id}
-                      type="button"
-                      className={cx(
-                        styles.cpEmptyAction,
-                        index === activeIndex && styles.cpEmptyActionActive,
-                      )}
-                      onMouseEnter={() => setActiveIndex(index)}
-                      onClick={() => runCommand(cmd)}
-                    >
-                      <Icon size={14} strokeWidth={1.8} aria-hidden />
-                      {cmd.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            filtered.map((cmd) => {
-              flatIndex += 1;
-              const index = flatIndex;
-              const showGroup = cmd.kind !== lastKind;
-              lastKind = cmd.kind;
-              const Icon = cmd.icon;
-              return (
-                <div key={cmd.id}>
-                  {showGroup ? (
-                    <div className={styles.cpGroup}>
-                      {cmd.kind === "action"
-                        ? t("chat.palette.groupActions", "操作")
-                        : cmd.kind === "model"
-                        ? t("chat.palette.groupModels", "模型")
-                        : t("chat.palette.groupSessions", {
-                            total: recentSessions.length,
-                            defaultValue: "最近 {{total}} 条会话",
-                          })}
-                    </div>
-                  ) : null}
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={index === activeIndex}
-                    className={cx(
-                      styles.cpItem,
-                      index === activeIndex && styles.cpItemActive,
-                    )}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    onClick={() => runCommand(cmd)}
-                  >
-                    <Icon size={16} strokeWidth={1.8} aria-hidden />
-                    <span className={styles.cpLabel}>{cmd.label}</span>
-                    {cmd.meta ? (
-                      <span className={styles.cpMeta}>{cmd.meta}</span>
-                    ) : null}
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        <div className={styles.cpFooter}>
-          <span>{t("chat.palette.footer", "↑↓ 选择 · ↵ 执行 · Esc 关闭")}</span>
-          <span>{t("chat.palette.localOnly", "仅本机")}</span>
-        </div>
-      </div>
-    </Modal>
+      onClose={onClose}
+      label={t("chat.palette.placeholder", "搜索会话、切换模型，或输入命令…")}
+      placeholder={t(
+        "chat.palette.placeholder",
+        "搜索会话、切换模型，或输入命令…",
+      )}
+      groups={groups}
+      emptyText={t("chat.palette.noResults", "没有匹配项，换个关键词试试。")}
+      emptyActions={emptyActions}
+      footerHint={t("chat.palette.footer", "↑↓ 选择 · ↵ 执行 · Esc 关闭")}
+      footerNote={t("chat.palette.localOnly", "仅本机")}
+    />
   );
 }

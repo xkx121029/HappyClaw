@@ -8,6 +8,9 @@ import { request } from "../../../api/request";
 import { loadFormDraft, saveFormDraft } from "../../../utils/formDraft";
 import ChannelsPanel from "./ChannelsPanel";
 
+// 用例含真实 sleep + antd 重交互，本机 vite-node 转换慢，默认 5s 超时不够。
+vi.setConfig({ testTimeout: 15000 });
+
 const api = vi.mocked(request, true);
 let interval: ReturnType<typeof vi.spyOn>;
 afterEach(() => interval?.mockRestore());

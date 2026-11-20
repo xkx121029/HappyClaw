@@ -224,6 +224,15 @@ function BookmarkBar({
         <Tooltip key={bm.url} title={bm.url} mouseEnterDelay={0.5}>
           <div
             onClick={() => onOpen(bm.url)}
+            role="button"
+            tabIndex={0}
+            aria-label={bm.title}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onOpen(bm.url);
+              }
+            }}
             style={{
               display: "flex",
               alignItems: "center",

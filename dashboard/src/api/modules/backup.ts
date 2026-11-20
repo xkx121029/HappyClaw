@@ -40,6 +40,21 @@ export interface CreateBackupOptions {
   include_chats: boolean;
 }
 
+/** Read-only verification report from GET /admin/backup/verify. */
+export interface BackupVerifyResponse {
+  ok: boolean;
+  name: string;
+  bytes: number;
+  files: number;
+  errors: string[];
+  manifest_version?: number;
+  schema_version?: number;
+  octop_version?: string;
+  created_at?: string;
+  database_driver?: string;
+  includes_chats?: boolean;
+}
+
 export type BackupOperationKind = "create" | "restore" | "auto" | "export";
 
 export interface BackupStatusResponse {
@@ -51,6 +66,12 @@ export const backupApi = {
   listBackups: () => request<BackupListResponse>("/admin/backup/list"),
 
   getStatus: () => request<BackupStatusResponse>("/admin/backup/status"),
+
+  /** Verify a stored archive (read-only, no restore). */
+  verifyBackup: (filename: string) =>
+    request<BackupVerifyResponse>(
+      `/admin/backup/verify?filename=${encodeURIComponent(filename)}`,
+    ),
 
   getAutoSettings: () => request<AutoBackupSettings>("/admin/backup/auto"),
 

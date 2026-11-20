@@ -80,6 +80,7 @@ export const PERSONALIZATION_TAB_PERMISSIONS = {
   tools: "tools",
   plugins: "agent_plugins",
   mbti: "mbti",
+  bao: [],
   memory: "memory",
   channels: "channels",
 } as const;
@@ -93,6 +94,7 @@ export const CONNECTOR_TAB_PERMISSIONS = {
 export const PLUGIN_TAB_PERMISSIONS = {
   installed: "plugins",
   market: "plugin_market",
+  dsh: "plugin_market",
 } as const;
 
 export const NAV_PERMISSIONS = {
@@ -107,7 +109,6 @@ export const NAV_PERMISSIONS = {
   bridge: PERM.bridge,
   workbench: PERM.workbench,
   "remote-desktop": ["desktop", "mobile"],
-  "remote-phone": PERM.mobile,
   acp: "admin",
   "admin-users": PERM.usersPage,
   models: PERM.modelsPage,
@@ -135,6 +136,7 @@ export const ADVANCED_TAB_PERMISSIONS = {
   observability: "observability",
   backup: "backup",
   https: "tls",
+  phone: "envs",
   updates: "update",
   captcha: "captcha",
   // Same gate as /api/settings/webauthn (require_permission("captcha")).

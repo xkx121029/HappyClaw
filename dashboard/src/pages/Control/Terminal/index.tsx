@@ -101,6 +101,7 @@ const TerminalTab = memo(function TerminalTab({
   onReconnect,
   themeDefinition,
   agentId,
+  threadId,
   onOutputCapture,
 }: {
   sessionId: string;
@@ -112,12 +113,19 @@ const TerminalTab = memo(function TerminalTab({
   onConnStateChange: (id: string, state: TerminalConnState) => void;
   sendInput: (id: string, data: string) => void;
   sendResize: (id: string, cols: number, rows: number) => void;
-  connect: (id: string, agentId: string, cbs: TerminalCallbacks) => void;
+  connect: (
+    id: string,
+    agentId: string,
+    cbs: TerminalCallbacks,
+    threadId?: string,
+  ) => void;
   unbind: (id: string, cbs: TerminalCallbacks) => void;
   onReconnect: (id: string) => void;
   themeDefinition: TerminalThemeDefinition;
   /** 运维工程师。终端进程挂在这个 agent 的工作区上。 */
   agentId: string;
+  /** New shells start in this conversation's project/session directory. */
+  threadId?: string | null;
   /** Capture PTY output for AI autopilot heuristics. */
   onOutputCapture?: (sessionId: string, data: string) => void;
 }) {
@@ -175,8 +183,16 @@ const TerminalTab = memo(function TerminalTab({
       },
     };
     callbacksRef.current = cbs;
-    connect(sessionId, agentId, cbs);
-  }, [connect, sessionId, agentId, onConnStateChange, onOutputCapture, t]);
+    connect(sessionId, agentId, cbs, threadId ?? undefined);
+  }, [
+    connect,
+    sessionId,
+    agentId,
+    threadId,
+    onConnStateChange,
+    onOutputCapture,
+    t,
+  ]);
 
   // Drop UI listener on unmount without closing the shared PTY socket.
   useEffect(() => {
@@ -258,11 +274,14 @@ interface TerminalPageProps {
   isVisible?: boolean;
   /** Hide standalone page chrome when hosted inside Workbench. */
   embedded?: boolean;
+  /** Root new shells in this conversation's project/session directory. */
+  threadId?: string | null;
 }
 
 export default function TerminalPage({
   isVisible = true,
   embedded = false,
+  threadId,
 }: TerminalPageProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -432,6 +451,7 @@ export default function TerminalPage({
     <div className={styles.tabBarActions}>
       <Tooltip title={t("terminal.ai.togglePanel")}>
         <Button
+                    aria-label={t("terminal.ai.togglePanel")}
           type={isPanelOpen ? "primary" : "default"}
           icon={<Bot size={14} />}
           size="small"
@@ -448,7 +468,8 @@ export default function TerminalPage({
         trigger={["click"]}
       >
         <Tooltip title={t("terminal.themes.label")}>
-          <Button type="text" icon={<Palette size={14} />} size="small" />
+          <Button
+                    aria-label={t("terminal.themes.label")} type="text" icon={<Palette size={14} />} size="small" />
         </Tooltip>
       </Dropdown>
     </div>
@@ -554,6 +575,7 @@ export default function TerminalPage({
                       onReconnect={reconnect}
                       themeDefinition={themeDefinition}
                       agentId={opsAgent?.agent_id || ""}
+                      threadId={threadId}
                       onOutputCapture={handleOutputCapture}
                     />
                   </div>
@@ -566,6 +588,7 @@ export default function TerminalPage({
         {isPanelOpen && (
           <AiPanel
             agent={opsAgent}
+            threadId={threadId}
             ensuring={opsEnsuring}
             ensureError={opsEnsureError}
             onEnsureRetry={retryOpsEngineer}

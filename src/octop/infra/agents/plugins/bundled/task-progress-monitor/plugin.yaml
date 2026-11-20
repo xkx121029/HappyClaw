@@ -1,0 +1,14 @@
+id: task-progress-monitor
+version: 0.1.0
+name: 实时任务进度
+description: 在首页右侧栏实时显示正在运行的会话、等待确认与运行时计数，数据来自真实运行时。
+icon: "📡"
+kind: tool
+entry: main.py
+ui:
+  entry: ui/dist/index.js
+  manifest: ui/dist/manifest.json
+  surfaces:
+    - id: task-progress
+      slot: home.sidebar
+      title: 实时任务进度

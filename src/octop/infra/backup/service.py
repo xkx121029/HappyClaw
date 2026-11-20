@@ -237,6 +237,75 @@ class BackupService:
         safe = normalize_backup_filename(filename)
         return write_backup_file(self._paths, safe, raw)
 
+    # -- integrity check ---------------------------------------------------
+
+    def verify_backup(self, filename: str) -> dict[str, Any]:
+        """Check a stored archive without restoring or modifying anything.
+
+        Reports the same manifest facts the restore path relies on (manifest
+        version, schema version, database member) so the UI can warn before a
+        restore instead of failing halfway through.
+        """
+        import tarfile
+
+        from octop.infra.backup.manifest import MANIFEST_VERSION, BackupManifest
+        from octop.infra.errors import ErrorCode, OctopError
+
+        safe = normalize_backup_filename(filename)
+        archive = resolve_backup_path(self._paths, safe)
+        if not archive.is_file():
+            raise OctopError(ErrorCode.NOT_FOUND, f"backup archive not found: {safe}")
+
+        errors: list[str] = []
+        files = 0
+        manifest: BackupManifest | None = None
+        try:
+            with tarfile.open(archive, mode="r:*") as tf:
+                members = tf.getmembers()
+                files = len(members)
+                manifest_member = next(
+                    (m for m in members if m.name == "manifest.json"), None
+                )
+                if manifest_member is None:
+                    errors.append("backup archive missing manifest.json")
+                else:
+                    handle = tf.extractfile(manifest_member)
+                    try:
+                        manifest = BackupManifest.load_text(
+                            (handle.read() if handle else b"").decode("utf-8")
+                        )
+                    except Exception as exc:  # noqa: BLE001 - surface as report line
+                        errors.append(f"invalid manifest: {exc}")
+                if manifest is not None:
+                    if manifest.manifest_version != MANIFEST_VERSION:
+                        errors.append(
+                            f"unsupported manifest version {manifest.manifest_version}"
+                        )
+                    if manifest.db_file not in {m.name for m in members}:
+                        errors.append(f"archive missing database file {manifest.db_file}")
+        except (tarfile.TarError, OSError) as exc:
+            errors.append(f"cannot read archive: {exc}")
+
+        payload: dict[str, Any] = {
+            "ok": not errors,
+            "name": safe,
+            "bytes": archive.stat().st_size,
+            "files": files,
+            "errors": errors,
+        }
+        if manifest is not None:
+            payload.update(
+                {
+                    "manifest_version": manifest.manifest_version,
+                    "schema_version": manifest.schema_version,
+                    "octop_version": manifest.octop_version,
+                    "created_at": manifest.created_at,
+                    "database_driver": manifest.database_driver,
+                    "includes_chats": manifest.includes_chats,
+                }
+            )
+        return payload
+
     # -- async wrappers (offload sync work to a worker thread) ------------
 
     async def alist_backups(self) -> list[BackupFileInfo]:
@@ -277,6 +346,9 @@ class BackupService:
 
     async def aimport_backup(self, filename: str, raw: bytes) -> BackupFileInfo:
         return await asyncio.to_thread(self.import_backup, filename, raw)
+
+    async def averify_backup(self, filename: str) -> dict[str, Any]:
+        return await asyncio.to_thread(self.verify_backup, filename)
 
 
 __all__ = [

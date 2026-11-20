@@ -36,6 +36,8 @@ export type AiPanelMode = "assist" | "autopilot";
 export interface AiPanelProps {
   /** 运维工程师。终端进程和这段对话都用它。 */
   agent: OctopAgent | null;
+  /** 当前会话；终端上下文跟随该会话的项目/临时目录。 */
+  threadId?: string | null;
   ensuring?: boolean;
   ensureError?: string | null;
   onEnsureRetry?: () => void;
@@ -138,6 +140,7 @@ function GateView({
 
 export default function AiPanel({
   agent,
+  threadId = null,
   ensuring = false,
   ensureError = null,
   onEnsureRetry,
@@ -174,7 +177,7 @@ export default function AiPanel({
   );
 
   const {
-    threadId,
+    threadId: aiThreadId,
     booting,
     bootError,
     messages,
@@ -195,7 +198,7 @@ export default function AiPanel({
     }
     let cancelled = false;
     terminalAiApi
-      .getContext(agent.agent_id)
+      .getContext(agent.agent_id, threadId)
       .then((data) => {
         if (!cancelled) setTerminalCtx(data);
       })
@@ -205,7 +208,7 @@ export default function AiPanel({
     return () => {
       cancelled = true;
     };
-  }, [agent?.agent_id]);
+  }, [agent?.agent_id, threadId]);
 
   useEffect(() => {
     if (!agent) {
@@ -239,12 +242,12 @@ export default function AiPanel({
   }, [agent]);
 
   useEffect(() => {
-    if (!threadId) {
+    if (!aiThreadId) {
       contextInjectedRef.current = false;
       return;
     }
     contextInjectedRef.current = messages.some((m) => m.role === "user");
-  }, [threadId, messages]);
+  }, [aiThreadId, messages]);
 
   const formatMessage = useCallback(
     (userText: string, autopilot?: boolean) => {
@@ -308,7 +311,7 @@ export default function AiPanel({
   );
 
   const inputDisabled =
-    isStreaming || booting || !threadId || autopilot.isActive;
+    isStreaming || booting || !aiThreadId || autopilot.isActive;
   const activeInputValue = mode === "autopilot" ? autopilot.goal : inputValue;
 
   return (
@@ -390,7 +393,7 @@ export default function AiPanel({
                   !!activeTerminalSessionId &&
                   !isStreaming &&
                   !booting &&
-                  !!threadId &&
+                  !!aiThreadId &&
                   !autopilot.isActive
                 }
               />
@@ -409,7 +412,7 @@ export default function AiPanel({
                 <MessageList
                   messages={messages}
                   isStreaming={isStreaming}
-                  sessionKey={threadId ?? undefined}
+                  sessionKey={aiThreadId ?? undefined}
                   onRunShellCommand={handleRunShellCommand}
                   shellCommandDisabled={shellDisabled}
                   shellCommandDisabledTitle={shellDisabledTitle}
@@ -429,7 +432,7 @@ export default function AiPanel({
                 <Input.TextArea
                   autoSize={{ minRows: 2, maxRows: 5 }}
                   value={activeInputValue}
-                  disabled={booting || !threadId || autopilot.isActive}
+                  disabled={booting || !aiThreadId || autopilot.isActive}
                   placeholder={
                     mode === "autopilot"
                       ? t("terminal.ai.autopilotGoalPlaceholder")
@@ -458,7 +461,7 @@ export default function AiPanel({
                         size="small"
                         danger
                         icon={<Square size={13} />}
-                        disabled={booting || !threadId}
+                        disabled={booting || !aiThreadId}
                         onClick={cancelStream}
                       >
                         {t("chat.stop")}

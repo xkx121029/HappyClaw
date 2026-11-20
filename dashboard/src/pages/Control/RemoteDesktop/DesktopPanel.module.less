@@ -17,7 +17,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  gap: 12px;
+  gap: var(--fn-space-sm);
 }
 
 .roleGate {
@@ -34,7 +34,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
+  padding: var(--fn-space-2xl) var(--fn-space-lg);
   background: radial-gradient(
       ellipse 70% 45% at 50% 0%,
       color-mix(in srgb, var(--fn-color-brand) 10%, transparent),
@@ -49,7 +49,7 @@
   align-items: center;
   text-align: center;
   max-width: 420px;
-  gap: 12px;
+  gap: var(--fn-space-sm);
 }
 
 .adminOnlyMascot {
@@ -62,16 +62,16 @@
 }
 
 .adminOnlyTitle {
-  margin: 8px 0 0;
-  font-size: 20px;
-  font-weight: 600;
+  margin: var(--fn-space-xs) 0 0;
+  font-size: var(--fn-text-xl);
+  font-weight: var(--fn-weight-semibold);
   color: var(--fn-text-primary);
   line-height: 1.4;
 }
 
 .adminOnlyDesc {
-  margin: 0 0 8px;
-  font-size: 14px;
+  margin: 0 0 var(--fn-space-xs);
+  font-size: var(--fn-text-sm);
   line-height: 1.6;
   color: var(--fn-text-secondary);
 }
@@ -81,14 +81,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: var(--fn-space-md);
   width: min(520px, 92%);
-  padding: 24px 20px;
+  padding: var(--fn-space-xl) var(--fn-space-lg);
 }
 
 .installProgressTitle {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--fn-text-md);
+  font-weight: var(--fn-weight-semibold);
   color: var(--fn-text-primary);
   text-align: center;
 }
@@ -97,13 +97,13 @@
   width: 100%;
   max-height: 280px;
   overflow: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
+  font-family: var(--fn-font-mono);
+  font-size: var(--fn-text-2xs);
   line-height: 1.5;
   background: var(--fn-bg-elevated);
   border: 1px solid var(--fn-border-secondary);
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 10px var(--fn-space-sm);
+  border-radius: var(--fn-radius-md);
   white-space: pre-wrap;
   color: var(--fn-text-secondary);
 }
@@ -125,7 +125,7 @@
   justify-content: center;
   background: var(--fn-bg-secondary);
   border: 1px solid var(--fn-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--fn-radius-md);
   overflow: auto;
   position: relative;
 }
@@ -149,7 +149,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--fn-space-sm);
   z-index: 2;
 }
 
@@ -174,7 +174,7 @@
 
 .viewportMobile {
   min-height: 0;
-  border-radius: 6px;
+  border-radius: var(--fn-radius-sm);
 }
 
 .canvas {
@@ -195,12 +195,12 @@
 .drawerContent {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--fn-space-md);
 }
 
 .settingsCard {
-  padding: 12px;
-  border-radius: 12px;
+  padding: var(--fn-space-sm);
+  border-radius: var(--fn-radius-lg);
   background: var(--fn-bg-secondary);
   border: 1px solid var(--fn-border-secondary);
 }
@@ -209,13 +209,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--fn-space-xs);
   margin-bottom: 10px;
 }
 
 .settingsCardTitle {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fn-text-xs);
+  font-weight: var(--fn-weight-semibold);
   color: var(--fn-text-primary);
 }
 
@@ -229,12 +229,13 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
+  /* Dense form row inside the settings drawer; 6px keeps the label close. */
+  gap: var(--fn-space-dense);
   min-width: 0;
 }
 
 .settingLabel {
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
 }
 
@@ -243,8 +244,8 @@
 }
 
 .shortcutsCard {
-  padding: 12px;
-  border-radius: var(--fn-radius-lg, 12px);
+  padding: var(--fn-space-sm);
+  border-radius: var(--fn-radius-lg);
   background: var(--fn-bg-secondary);
   border: 1px solid var(--fn-border-secondary);
 }
@@ -254,8 +255,8 @@
 }
 
 .shortcutsTitle {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fn-text-xs);
+  font-weight: var(--fn-weight-semibold);
   color: var(--fn-text-primary);
 }
 
@@ -263,7 +264,7 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--fn-border-primary);
-  border-radius: var(--fn-radius-md, 8px);
+  border-radius: var(--fn-radius-md);
   overflow: hidden;
   background: var(--fn-bg-elevated);
 }
@@ -271,10 +272,10 @@
 .shortcutRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--fn-space-sm);
   width: 100%;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px var(--fn-space-sm);
   border: none;
   border-bottom: 1px solid var(--fn-border-secondary);
   background: transparent;
@@ -304,7 +305,7 @@
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  border-radius: var(--fn-radius-md, 8px);
+  border-radius: var(--fn-radius-md);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -345,15 +346,15 @@
 .shortcutLabel {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: var(--fn-text-xs);
+  line-height: var(--fn-leading-tight);
   color: var(--fn-text-primary);
-  font-weight: 500;
+  font-weight: var(--fn-weight-medium);
 }
 
 .hintText {
   margin: 10px 0 0;
-  font-size: 12px;
+  font-size: var(--fn-text-2xs);
   color: var(--fn-text-tertiary);
   line-height: 1.5;
 }

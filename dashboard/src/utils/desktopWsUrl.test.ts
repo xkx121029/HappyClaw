@@ -24,8 +24,8 @@ afterEach(() => {
 describe("resolveWsUrl", () => {
   test("falls back to the page origin in a browser", async () => {
     const { resolveWsUrl } = await loadModule(undefined);
-    expect(resolveWsUrl("/api/mobile-stream/ws")).toBe(
-      `ws://${window.location.host}/api/mobile-stream/ws`,
+    expect(resolveWsUrl("/api/desktop/ws")).toBe(
+      `ws://${window.location.host}/api/desktop/ws`,
     );
   });
 

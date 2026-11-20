@@ -71,6 +71,13 @@ export interface OctopThread {
   contributed?: boolean;
   /** False when the thread was contributed by someone else. */
   owned?: boolean;
+  /** ``quick`` for lightweight no-workspace chats. */
+  workspace_kind?: string | null;
+  workspace_dir?: string | null;
+  /** True for quick chats (no workspace, file tools hidden). */
+  quick_chat?: boolean;
+  /** Display name of the user who started a quick chat. */
+  created_by_name?: string | null;
 }
 
 export interface OctopThreadHistory {
@@ -171,11 +178,24 @@ export const octopThreadsApi = {
       `/agents/${encodeURIComponent(agentId)}/threads?limit=${limit}`,
     ),
 
-  create: (agentId: string, options?: { rebind?: boolean }) =>
-    request<{ thread_id: string; session_key: string }>(
-      `/agents/${encodeURIComponent(agentId)}/threads${
-        options?.rebind === false ? "?rebind=false" : ""
-      }`,
+  create: (
+    agentId: string,
+    options?: { rebind?: boolean; projectId?: string | null },
+  ) => {
+    const search = new URLSearchParams();
+    if (options?.rebind === false) search.set("rebind", "false");
+    if (options?.projectId) search.set("project_id", options.projectId);
+    const qs = search.toString();
+    return request<{ thread_id: string; session_key: string }>(
+      `/agents/${encodeURIComponent(agentId)}/threads${qs ? `?${qs}` : ""}`,
+      { method: "POST" },
+    );
+  },
+
+  /** Lightweight conversation that never gets a workspace. */
+  createQuick: (agentId: string) =>
+    request<{ thread_id: string; session_key: string; quick: boolean }>(
+      `/agents/${encodeURIComponent(agentId)}/quick-chats`,
       { method: "POST" },
     ),
 
@@ -298,6 +318,19 @@ export const octopThreadsApi = {
         threadId,
       )}/read`,
       { method: "POST" },
+    ),
+
+  /** In-place: this conversation becomes the first thread of a project. */
+  convertToProject: (
+    agentId: string,
+    threadId: string,
+    body: { root_dir?: string; name?: string } = {},
+  ) =>
+    request<{ project_id: string; project_name: string; root_dir: string | null }>(
+      `/agents/${encodeURIComponent(agentId)}/threads/${encodeURIComponent(
+        threadId,
+      )}/project`,
+      { method: "POST", body: JSON.stringify(body) },
     ),
 
   rebind: (agentId: string, threadId: string) =>

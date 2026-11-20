@@ -5,6 +5,7 @@ import { Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
   ChevronRight,
+  FolderPlus,
   GitFork,
   MoreHorizontal,
   Pencil,
@@ -35,13 +36,23 @@ import HiddenExpertsToggle from "./HiddenExpertsToggle";
 import { usePinnedExperts } from "../hooks/usePinnedExperts";
 import { useSessionWorkIds } from "../hooks/useSessionWorkIds";
 import { sortExpertsByPin } from "../utils/pinnedExpertsPrefs";
+import { compareSessionsByRecency } from "../utils/sessionGroups";
+import {
+  isDefaultWorkspacePath,
+  normalizeWorkspaceDir,
+  useAgentWorkspaces,
+  workspaceBasename,
+} from "../hooks/useAgentWorkspaces";
 import {
   initialChatNavScope,
   matchesChatNavScope,
   type ChatNavScope,
 } from "../utils/chatNavScope";
 import AgentUnreadBadge from "./AgentUnreadBadge";
-import ChatNavScopeTabs, { ChatNavScopeEmpty } from "./ChatNavScopeTabs";
+import ChatNavScopeTabs, {
+  ChatNavCloudEntry,
+  ChatNavScopeEmpty,
+} from "./ChatNavScopeTabs";
 import {
   expertVisibleInNavSearch,
   matchesNavQuery,
@@ -87,6 +98,9 @@ async function fetchAgentPreview(
 
 const FOLDER_COLLAPSED_KEY = "octop:minimal-agent-folders-collapsed";
 
+/** Sessions without a workspace, and default-home experts, share this project. */
+const DEFAULT_PROJECT_KEY = "default";
+
 function loadCollapsedFolders(): Set<string> {
   try {
     const raw = localStorage.getItem(FOLDER_COLLAPSED_KEY);
@@ -118,7 +132,9 @@ interface MinimalAgentSessionNavProps {
   onSelect: (sessionId: string, agentId: string) => void;
   onAgentSelect: (agentId: string) => void;
   /** Start a fresh (unsaved) chat with the given expert. */
-  onNewChat: (agentId: string) => void;
+  onNewChat: (agentId: string, projectId?: string | null) => void;
+  /** Open the folder picker that creates a workspace-backed project. */
+  onNewProject?: () => void;
   onDeleteActive: (
     id: string,
     compact: boolean,
@@ -128,10 +144,13 @@ interface MinimalAgentSessionNavProps {
   onFork: (id: string, agentId?: string | null) => void;
   activeForkDisabled?: boolean;
   activeForkDisabledHint?: string;
+  /** Experts that exist but cannot chat yet (stopped / model not configured). */
+  unreadyExperts?: number;
 }
 
 const PreviewSessionRow = memo(function PreviewSessionRow({
   session,
+  agent,
   isActive,
   workStatus,
   onSelect,
@@ -145,6 +164,8 @@ const PreviewSessionRow = memo(function PreviewSessionRow({
   forkDisabledHint,
 }: {
   session: Session;
+  /** Set in the flat "sessions" list: shows which expert owns this thread. */
+  agent?: OctopAgent;
   isActive: boolean;
   workStatus: SessionWorkStatus;
   onSelect: (id: string) => void;
@@ -301,6 +322,16 @@ const PreviewSessionRow = memo(function PreviewSessionRow({
               owned={session.owned}
             />
           </span>
+          {agent ? (
+            <span className={styles.sessionRowAgent} title={agent.name}>
+              <ExpertIcon
+                iconUrl={agent.icon_url}
+                iconName={agent.icon_name}
+                size={12}
+              />
+              <span className={styles.sessionRowAgentName}>{agent.name}</span>
+            </span>
+          ) : null}
           {session.pinned ? (
             <span
               className={styles.sessionRowPinIndicator}
@@ -339,12 +370,14 @@ export default function MinimalAgentSessionNav({
   onSelect,
   onAgentSelect,
   onNewChat,
+  onNewProject,
   onDeleteActive,
   onRenameActive,
   onPinActive,
   onFork,
   activeForkDisabled,
   activeForkDisabledHint,
+  unreadyExperts = 0,
 }: MinimalAgentSessionNavProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -377,11 +410,10 @@ export default function MinimalAgentSessionNav({
   const [searchQuery, setSearchQuery] = useState("");
   const [editAgent, setEditAgent] = useState<OctopAgent | null>(null);
   const [showingHidden, setShowingHidden] = useState(false);
-  const [navScope, setNavScope] = useState<ChatNavScope>(() =>
-    initialChatNavScope(
-      agents.find((agent) => agent.agent_id === activeAgentId),
-    ),
-  );
+  const [navScope, setNavScope] = useState<ChatNavScope>(initialChatNavScope);
+  // "projects" groups by the workspace each expert already runs in, so
+  // workspaces are only resolved while that tab is open.
+  const workspaces = useAgentWorkspaces(agents, navScope === "projects");
   const { pinnedIds, isPinned, togglePin } = usePinnedExperts();
   const { filterVisible, pickHidden, hide, unhide, canHide } =
     useHiddenSharedExperts();
@@ -399,7 +431,10 @@ export default function MinimalAgentSessionNav({
     );
   }, [agents, filterVisible, pinnedIds, navScope]);
   const searching = searchQuery.trim().length > 0;
-  const catalog = useExpertSessionCatalog(sortedAgents, searching);
+  const catalog = useExpertSessionCatalog(
+    sortedAgents,
+    searching || navScope === "projects",
+  );
   const visibleAgents = useMemo(() => {
     if (!searching) return sortedAgents;
     return sortedAgents.filter((agent) => {
@@ -453,6 +488,208 @@ export default function MinimalAgentSessionNav({
     }
     return blocks;
   }, [hiddenAgents.length, listedHiddenAgents, showingHidden, visibleAgents]);
+
+  /** Sessions already loaded for one expert (live store wins for the active one). */
+  const previewFor = useCallback(
+    (agent: OctopAgent): Session[] =>
+      agent.agent_id === activeAgentId && activeSessions.length > 0
+        ? activeSessions
+        : byAgent[agent.agent_id] ?? [],
+    [activeAgentId, activeSessions, byAgent],
+  );
+
+  /**
+   * "sessions" tab: one recency-ordered list across experts. Preview pages are
+   * already fetched per expert, so this needs no extra requests.
+   */
+  const flatEntries = useMemo(() => {
+    if (navScope !== "sessions") return [];
+    const q = searchQuery.trim().toLowerCase();
+    const rows: Array<{ session: Session; agent: OctopAgent }> = [];
+    for (const agent of visibleAgents) {
+      const agentMatches = q.length > 0 && agent.name.toLowerCase().includes(q);
+      for (const session of previewFor(agent)) {
+        if (q && !agentMatches && !session.name.toLowerCase().includes(q)) {
+          continue;
+        }
+        rows.push({ session, agent });
+      }
+    }
+    rows.sort((a, b) => compareSessionsByRecency(a.session, b.session));
+    return rows;
+  }, [navScope, previewFor, searchQuery, visibleAgents]);
+
+  /**
+   * "projects" tab: one project per ``workspace_dir``. Experts bound to the same
+   * folder share a project; experts with no binding (or only the auto-created
+   * agent home) land in the default workspace project so nothing drops out.
+   */
+  const projectGroups = useMemo(() => {
+    if (navScope !== "projects") return [];
+    const q = searchQuery.trim().toLowerCase();
+    const groups = new Map<
+      string,
+      {
+        key: string;
+        title: string;
+        dir: string | null;
+        isDefault: boolean;
+        /** Expert that owns the project folder; used for "new chat" here. */
+        agentId: string;
+        /** ``projects`` table id; null for legacy workspace_dir groups. */
+        projectId: string | null;
+        entries: Array<{ session: Session; agent: OctopAgent }>;
+      }
+    >();
+    for (const agent of visibleAgents) {
+      const dir = workspaces.byAgent[agent.agent_id]?.workspaceDir ?? null;
+      const attributed =
+        Boolean(dir) && !isDefaultWorkspacePath(dir, workspaces.agentsRoot);
+      const legacyKey =
+        attributed && dir
+          ? `ws:${normalizeWorkspaceDir(dir)}`
+          : DEFAULT_PROJECT_KEY;
+      const agentMatches = q.length > 0 && agent.name.toLowerCase().includes(q);
+      for (const session of previewFor(agent)) {
+        if (q && !agentMatches && !session.name.toLowerCase().includes(q)) {
+          continue;
+        }
+        // Migrated conversations group by the projects table; un-migrated ones
+        // keep the legacy workspace_dir grouping until the upgrade runs.
+        const projectId = session.projectId ?? null;
+        const key = projectId ? `prj:${projectId}` : legacyKey;
+        const projectDir = projectId
+          ? session.workspaceDir ?? dir
+          : attributed
+          ? dir
+          : null;
+        let group = groups.get(key);
+        if (!group) {
+          group = {
+            key,
+            title: projectId
+              ? session.projectName ||
+                t("chat.workspaceDefaultName", "默认工作区")
+              : attributed && dir
+              ? workspaceBasename(dir)
+              : t("chat.workspaceDefaultName", "默认工作区"),
+            dir: projectDir,
+            isDefault: !projectId && !attributed,
+            agentId: agent.agent_id,
+            projectId,
+            entries: [],
+          };
+          groups.set(key, group);
+        } else if (agent.agent_id === activeAgentId) {
+          group.agentId = agent.agent_id;
+        }
+        group.entries.push({ session, agent });
+      }
+      // Keep parity with the classic sidebar: experts with a dedicated folder
+      // still show that folder as a project before it has any conversation.
+      if (!q && previewFor(agent).length === 0 && !groups.has(legacyKey)) {
+        groups.set(legacyKey, {
+          key: legacyKey,
+          title:
+            attributed && dir
+              ? workspaceBasename(dir)
+              : t("chat.workspaceDefaultName", "默认工作区"),
+          dir: attributed ? dir : null,
+          isDefault: !attributed,
+          agentId: agent.agent_id,
+          projectId: null,
+          entries: [],
+        });
+      }
+    }
+    const rows = [...groups.values()];
+    for (const group of rows) {
+      group.entries.sort((a, b) =>
+        compareSessionsByRecency(a.session, b.session),
+      );
+    }
+    rows.sort((a, b) => {
+      if (a.isDefault !== b.isDefault) return a.isDefault ? 1 : -1;
+      const ta = a.entries[0]?.session.updatedAt;
+      const tb = b.entries[0]?.session.updatedAt;
+      if (ta || tb) {
+        return (tb ? Date.parse(tb) : 0) - (ta ? Date.parse(ta) : 0);
+      }
+      return a.title.localeCompare(b.title);
+    });
+    return rows;
+  }, [
+    activeAgentId,
+    navScope,
+    previewFor,
+    searchQuery,
+    t,
+    visibleAgents,
+    workspaces.agentsRoot,
+    workspaces.byAgent,
+  ]);
+
+  /** Wait for every listed expert's workspace before grouping. */
+  const workspacesReady = useMemo(
+    () =>
+      workspaces.rootReady &&
+      visibleAgents.every((agent) => workspaces.byAgent[agent.agent_id]),
+    [visibleAgents, workspaces.byAgent, workspaces.rootReady],
+  );
+
+  /** Project holding the open conversation; expanded by default. */
+  const currentProjectKey = useMemo(() => {
+    if (!activeAgentId) return null;
+    const activeAgent = visibleAgents.find(
+      (agent) => agent.agent_id === activeAgentId,
+    );
+    const activeSession = activeAgent
+      ? previewFor(activeAgent).find((session) => session.isActive)
+      : undefined;
+    if (activeSession?.projectId) return `prj:${activeSession.projectId}`;
+    const dir = workspaces.byAgent[activeAgentId]?.workspaceDir ?? null;
+    if (!dir || isDefaultWorkspacePath(dir, workspaces.agentsRoot)) {
+      return DEFAULT_PROJECT_KEY;
+    }
+    return `ws:${normalizeWorkspaceDir(dir)}`;
+  }, [
+    activeAgentId,
+    previewFor,
+    visibleAgents,
+    workspaces.agentsRoot,
+    workspaces.byAgent,
+  ]);
+
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
+    () => new Set(),
+  );
+  useEffect(() => {
+    if (!currentProjectKey) return;
+    setExpandedProjects((prev) =>
+      prev.has(currentProjectKey) ? prev : new Set(prev).add(currentProjectKey),
+    );
+  }, [currentProjectKey]);
+  const toggleProject = useCallback((key: string) => {
+    setExpandedProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  // 每个项目各自挂一页会话，展开更多只影响该项目。
+  const [projectLimits, setProjectLimits] = useState<Record<string, number>>(
+    {},
+  );
+  const revealMoreProjectSessions = useCallback((key: string) => {
+    setProjectLimits((prev) => ({
+      ...prev,
+      [key]:
+        (prev[key] ?? MINIMAL_AGENT_SESSION_PREVIEW) +
+        MINIMAL_AGENT_SESSION_PREVIEW,
+    }));
+  }, []);
 
   // Ensure the active expert folder stays open.
   useEffect(() => {
@@ -701,18 +938,48 @@ export default function MinimalAgentSessionNav({
     [patchLocal, t],
   );
 
+  /** Flat rows (sessions / projects) share this wiring. */
+  const renderPreviewRow = (session: Session, agent: OctopAgent) => (
+    <PreviewSessionRow
+      key={`${agent.agent_id}:${session.id}`}
+      session={session}
+      agent={agent}
+      isActive={session.id === activeId}
+      workStatus={resolveSessionWorkStatus(session, liveWorkingIds)}
+      onSelect={(id) => onSelect(id, agent.agent_id)}
+      onDelete={(id, compact) => handleDelete(agent.agent_id, id, compact)}
+      onRename={(id, name) => handleRename(agent.agent_id, id, name)}
+      onPin={(id, pinned) => handlePin(agent.agent_id, id, pinned)}
+      onContribute={(id, contributed) =>
+        handleContribute(agent.agent_id, id, contributed)
+      }
+      shareable={Boolean(agent.is_shared)}
+      onFork={(id) => onFork(id, agent.agent_id)}
+      forkDisabled={session.id === activeId ? activeForkDisabled : undefined}
+      forkDisabledHint={
+        session.id === activeId ? activeForkDisabledHint : undefined
+      }
+    />
+  );
+
   if (agents.length === 0) {
+    // The rail only lists experts that can chat right now, so an empty list has
+    // two very different causes. Never answer "create your first expert" while
+    // the user still has experts (and their history) waiting to start.
+    const hasUnreadyExperts = unreadyExperts > 0;
     return (
       <div className={styles.sessionEmptyAgents}>
         <p className={styles.sessionEmptyAgentsText}>
-          {t("chat.noAgentsHint")}
+          {hasUnreadyExperts
+            ? t("chat.noChattableAgentsHint")
+            : t("chat.noAgentsHint")}
         </p>
         <button
           type="button"
           className={styles.sessionEmptyAgentsLink}
           onClick={() => navigate("/experts")}
         >
-          {t("chat.createExpert")}
+          {hasUnreadyExperts ? t("chat.goToExperts") : t("chat.createExpert")}
         </button>
       </div>
     );
@@ -740,7 +1007,17 @@ export default function MinimalAgentSessionNav({
         />
       </div>
       <ChatNavScopeTabs value={navScope} onChange={setNavScope} />
-      {visibleAgents.length === 0 &&
+      <ChatNavCloudEntry
+        active={navScope === "cloud"}
+        count={
+          agents.filter((agent) => matchesChatNavScope(agent, "cloud")).length
+        }
+        onOpen={() => setNavScope("cloud")}
+        onClose={() => setNavScope("sessions")}
+      />
+      {navScope !== "sessions" &&
+      navScope !== "projects" &&
+      visibleAgents.length === 0 &&
       (searching || loading || hiddenAgents.length === 0) ? (
         searching ? (
           <div className={styles.minimalAgentEmpty}>
@@ -752,202 +1029,350 @@ export default function MinimalAgentSessionNav({
           <ChatNavScopeEmpty scope={navScope} />
         )
       ) : null}
-      {navBlocks.map((block) => {
-        if (block.kind === "toggle") {
-          return (
-            <HiddenExpertsToggle
-              key={block.key}
-              expanded={showingHidden}
-              count={hiddenAgents.length}
-              onToggle={() => setShowingHidden((open) => !open)}
-            />
-          );
-        }
-        const agent = block.agent;
-        const preview = byAgent[agent.agent_id] ?? [];
-        const catalogList = catalog.byAgent[agent.agent_id] ?? [];
-        const live =
-          agent.agent_id === activeAgentId && activeSessions.length > 0
-            ? activeSessions
-            : null;
-        const source = searching
-          ? live && live.length >= catalogList.length
-            ? live
-            : catalogList.length > 0
-            ? catalogList
-            : preview
-          : preview;
-        const list = searching
-          ? source.filter((session) =>
-              matchesNavQuery(session.name, searchQuery),
-            )
-          : source;
-        const ready = isAgentChatReady(agent.state);
-        const expanded = searching
-          ? list.length > 0
-          : !collapsedFolders.has(agent.agent_id);
-
-        return (
-          <section key={block.key} className={styles.minimalAgentSection}>
-            <div className={styles.minimalAgentHeader}>
-              <span className={styles.minimalAgentIconSlot}>
-                <SharedExpertHint
-                  agent={agent}
-                  className={styles.minimalAgentAvatarHost}
-                >
-                  <span
-                    className={styles.minimalAgentAvatar}
-                    style={{
-                      color: agent.color || "var(--fn-text-tertiary)",
-                      background: `${agent.color || "#6366f1"}14`,
-                    }}
-                    aria-hidden
-                  >
-                    <ExpertIcon
-                      iconUrl={agent.icon_url}
-                      iconName={agent.icon_name}
-                      size={agent.icon_url?.trim() ? 22 : 14}
-                    />
-                  </span>
-                </SharedExpertHint>
+      {navScope === "sessions" ? (
+        <div className={styles.minimalAgentSessions}>
+          {flatEntries.length === 0 ? (
+            <div className={styles.minimalAgentEmpty}>
+              {searching
+                ? t("chat.noSearchResults", "没有匹配的会话")
+                : loading
+                ? t("common.loading")
+                : t("chat.noSessionsYet", "直接发消息即可开始对话")}
+            </div>
+          ) : (
+            <>
+              {flatEntries.map(({ session, agent }) =>
+                renderPreviewRow(session, agent),
+              )}
+              {visibleAgents.some((agent) => hasMoreByAgent[agent.agent_id]) ? (
                 <button
                   type="button"
-                  className={styles.minimalAgentChevronBtn}
-                  aria-expanded={expanded}
-                  aria-label={
-                    expanded ? t("nav.collapseSidebar") : t("nav.expandSidebar")
-                  }
-                  onClick={() => toggleFolder(agent.agent_id)}
+                  className={styles.sessionLoadMore}
+                  onClick={() => {
+                    for (const agent of visibleAgents) {
+                      if (hasMoreByAgent[agent.agent_id]) {
+                        void loadMore(agent.agent_id);
+                      }
+                    }
+                  }}
                 >
-                  <ChevronRight
-                    size={14}
-                    strokeWidth={2}
-                    className={cx(
-                      styles.minimalAgentChevron,
-                      expanded && styles.minimalAgentChevronOpen,
-                    )}
-                    aria-hidden
-                  />
+                  {t("chat.expandMore", "展开更多")}
                 </button>
-              </span>
+              ) : null}
+            </>
+          )}
+        </div>
+      ) : navScope === "projects" ? (
+        <div className={styles.minimalAgentSessions}>
+          <div className={styles.sessionProjectToolbar}>
+            <span className={styles.sessionProjectToolbarLabel}>
+              {t("chat.navScopeProjects", "项目")}
+            </span>
+            {onNewProject ? (
               <button
                 type="button"
-                className={styles.minimalAgentFolderBtn}
-                onClick={() => openFolderAndSelect(agent.agent_id)}
+                className={styles.sessionProjectCreate}
+                data-testid="chat-project-create"
+                onClick={onNewProject}
               >
-                <span className={styles.agentNameCluster}>
-                  <ExpertNameLabel
-                    name={agent.name}
-                    className={styles.minimalAgentName}
-                  />
-                  <ExpertOwnerShareFlag agent={agent} />
-                  <ExpertPinMark pinned={isPinned(agent.agent_id)} />
-                  <TeamChatBadge agent={agent} compact />
-                  <RemoteExpertHint agent={agent} compact />
-                </span>
+                <FolderPlus size={12} />
+                {t("chat.projectCreate", "新建项目")}
               </button>
-              <AgentUnreadBadge
-                count={agent.unread_count ?? 0}
-                onOpen={() => {
-                  void openAgentUnread(agent.agent_id, list, onSelect);
-                }}
-              />
-              <ExpertNavActions
-                variant="minimal"
-                pinned={isPinned(agent.agent_id)}
-                onTogglePin={() => togglePin(agent.agent_id)}
-                onNewChat={() => onNewChat(agent.agent_id)}
-                onEdit={
-                  canEditExpertFromChat(agent)
-                    ? () => setEditAgent(agent)
-                    : undefined
-                }
-                editingTeam={isTeamAgent(agent)}
-                onHide={
-                  canHide(agent) &&
-                  !hiddenAgents.some((row) => row.agent_id === agent.agent_id)
-                    ? () => hide(agent.agent_id)
-                    : undefined
-                }
-                onUnhide={
-                  hiddenAgents.some((row) => row.agent_id === agent.agent_id)
-                    ? () => unhide(agent.agent_id)
-                    : undefined
-                }
-              />
-            </div>
-
-            {expanded ? (
-              <div className={styles.minimalAgentSessions}>
-                {!ready ? (
-                  <div className={styles.minimalAgentEmpty}>
-                    {t("chat.agentNotRunningHint")}
-                  </div>
-                ) : loading && list.length === 0 ? (
-                  <div className={styles.minimalAgentEmpty}>
-                    {t("common.loading")}
-                  </div>
-                ) : list.length === 0 ? (
-                  <div className={styles.minimalAgentEmpty}>
-                    {t("chat.noSessionsYet", "直接发消息即可开始对话")}
-                  </div>
-                ) : (
-                  <>
-                    {list.map((session) => (
-                      <PreviewSessionRow
-                        key={session.id}
-                        session={session}
-                        isActive={session.id === activeId}
-                        workStatus={resolveSessionWorkStatus(
-                          session,
-                          liveWorkingIds,
-                        )}
-                        onSelect={(id) => onSelect(id, agent.agent_id)}
-                        onDelete={(id, compact) =>
-                          handleDelete(agent.agent_id, id, compact)
-                        }
-                        onRename={(id, name) =>
-                          handleRename(agent.agent_id, id, name)
-                        }
-                        onPin={(id, pinned) =>
-                          handlePin(agent.agent_id, id, pinned)
-                        }
-                        onContribute={(id, contributed) =>
-                          handleContribute(agent.agent_id, id, contributed)
-                        }
-                        shareable={Boolean(agent.is_shared)}
-                        onFork={(id) => onFork(id, agent.agent_id)}
-                        forkDisabled={
-                          session.id === activeId
-                            ? activeForkDisabled
-                            : undefined
-                        }
-                        forkDisabledHint={
-                          session.id === activeId
-                            ? activeForkDisabledHint
-                            : undefined
-                        }
-                      />
-                    ))}
-                    {!searching && hasMoreByAgent[agent.agent_id] ? (
-                      <button
-                        type="button"
-                        className={styles.sessionLoadMore}
-                        onClick={() => void loadMore(agent.agent_id)}
-                        disabled={loadingMoreByAgent[agent.agent_id]}
-                      >
-                        {loadingMoreByAgent[agent.agent_id]
-                          ? t("common.loading")
-                          : t("chat.expandMore", "展开更多")}
-                      </button>
-                    ) : null}
-                  </>
-                )}
-              </div>
             ) : null}
-          </section>
-        );
-      })}
+          </div>
+          {!workspacesReady || loading ? (
+            <div className={styles.minimalAgentEmpty}>
+              {t("common.loading")}
+            </div>
+          ) : projectGroups.length === 0 ? (
+            <div className={styles.minimalAgentEmpty}>
+              {t("chat.noSearchResults", "没有匹配的会话")}
+            </div>
+          ) : (
+            projectGroups.map((group) => {
+              const open = expandedProjects.has(group.key);
+              const limit =
+                projectLimits[group.key] ?? MINIMAL_AGENT_SESSION_PREVIEW;
+              const shown = group.entries.slice(0, limit);
+              return (
+                <div key={group.key}>
+                  <button
+                    type="button"
+                    className={styles.sessionProjectHeader}
+                    aria-expanded={open}
+                    onClick={() => {
+                      // 空项目没有可打开的会话：直接在该项目里开一个新会话，
+                      // 下一次发送由 useChatSend 在项目专家下建线程，而不是留在旧会话。
+                      if (
+                        group.entries.length === 0 &&
+                        group.agentId !== activeAgentId
+                      ) {
+                        setExpandedProjects((prev) =>
+                          prev.has(group.key)
+                            ? prev
+                            : new Set(prev).add(group.key),
+                        );
+                        onNewChat(group.agentId, group.projectId);
+                        return;
+                      }
+                      toggleProject(group.key);
+                    }}
+                  >
+                    <ChevronRight
+                      size={12}
+                      className={cx(
+                        styles.sessionProjectChevron,
+                        open && styles.sessionProjectChevronOpen,
+                      )}
+                    />
+                    <span
+                      className={styles.sessionProjectTitle}
+                      title={group.dir ?? undefined}
+                    >
+                      {group.title}
+                    </span>
+                    <span className={styles.sessionProjectCount}>
+                      {group.entries.length}
+                    </span>
+                  </button>
+                  {open ? (
+                    group.entries.length === 0 ? (
+                      <div className={styles.sessionProjectEmpty}>
+                        <span>
+                          {t("chat.projectEmptyHint", "这个项目下还没有会话")}
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.sessionEmptyAgentsLink}
+                          onClick={() =>
+                            onNewChat(group.agentId, group.projectId)
+                          }
+                        >
+                          {t("chat.palette.newChat", "新建会话")}
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {shown.map(({ session, agent }) =>
+                          renderPreviewRow(session, agent),
+                        )}
+                        {group.entries.length > shown.length ? (
+                          <button
+                            type="button"
+                            className={styles.sessionLoadMore}
+                            onClick={() => revealMoreProjectSessions(group.key)}
+                          >
+                            {t("chat.expandMore", "展开更多")}
+                          </button>
+                        ) : null}
+                      </>
+                    )
+                  ) : null}
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        navBlocks.map((block) => {
+          if (block.kind === "toggle") {
+            return (
+              <HiddenExpertsToggle
+                key={block.key}
+                expanded={showingHidden}
+                count={hiddenAgents.length}
+                onToggle={() => setShowingHidden((open) => !open)}
+              />
+            );
+          }
+          const agent = block.agent;
+          const preview = byAgent[agent.agent_id] ?? [];
+          const catalogList = catalog.byAgent[agent.agent_id] ?? [];
+          const live =
+            agent.agent_id === activeAgentId && activeSessions.length > 0
+              ? activeSessions
+              : null;
+          const source = searching
+            ? live && live.length >= catalogList.length
+              ? live
+              : catalogList.length > 0
+              ? catalogList
+              : preview
+            : preview;
+          const list = searching
+            ? source.filter((session) =>
+                matchesNavQuery(session.name, searchQuery),
+              )
+            : source;
+          const ready = isAgentChatReady(agent.state);
+          const expanded = searching
+            ? list.length > 0
+            : !collapsedFolders.has(agent.agent_id);
+
+          return (
+            <section key={block.key} className={styles.minimalAgentSection}>
+              <div className={styles.minimalAgentHeader}>
+                <span className={styles.minimalAgentIconSlot}>
+                  <SharedExpertHint
+                    agent={agent}
+                    className={styles.minimalAgentAvatarHost}
+                  >
+                    <span
+                      className={styles.minimalAgentAvatar}
+                      style={{
+                        color: agent.color || "var(--fn-text-tertiary)",
+                        background: `${agent.color || "#6366f1"}14`,
+                      }}
+                      aria-hidden
+                    >
+                      <ExpertIcon
+                        iconUrl={agent.icon_url}
+                        iconName={agent.icon_name}
+                        size={agent.icon_url?.trim() ? 22 : 14}
+                      />
+                    </span>
+                  </SharedExpertHint>
+                  <button
+                    type="button"
+                    className={styles.minimalAgentChevronBtn}
+                    aria-expanded={expanded}
+                    aria-label={
+                      expanded
+                        ? t("nav.collapseSidebar")
+                        : t("nav.expandSidebar")
+                    }
+                    onClick={() => toggleFolder(agent.agent_id)}
+                  >
+                    <ChevronRight
+                      size={14}
+                      strokeWidth={2}
+                      className={cx(
+                        styles.minimalAgentChevron,
+                        expanded && styles.minimalAgentChevronOpen,
+                      )}
+                      aria-hidden
+                    />
+                  </button>
+                </span>
+                <button
+                  type="button"
+                  className={styles.minimalAgentFolderBtn}
+                  onClick={() => openFolderAndSelect(agent.agent_id)}
+                >
+                  <span className={styles.agentNameCluster}>
+                    <ExpertNameLabel
+                      name={agent.name}
+                      className={styles.minimalAgentName}
+                    />
+                    <ExpertOwnerShareFlag agent={agent} />
+                    <ExpertPinMark pinned={isPinned(agent.agent_id)} />
+                    <TeamChatBadge agent={agent} compact />
+                    <RemoteExpertHint agent={agent} compact />
+                  </span>
+                </button>
+                <AgentUnreadBadge
+                  count={agent.unread_count ?? 0}
+                  onOpen={() => {
+                    void openAgentUnread(agent.agent_id, list, onSelect);
+                  }}
+                />
+                <ExpertNavActions
+                  variant="minimal"
+                  pinned={isPinned(agent.agent_id)}
+                  onTogglePin={() => togglePin(agent.agent_id)}
+                  onNewChat={() => onNewChat(agent.agent_id)}
+                  onEdit={
+                    canEditExpertFromChat(agent)
+                      ? () => setEditAgent(agent)
+                      : undefined
+                  }
+                  editingTeam={isTeamAgent(agent)}
+                  onHide={
+                    canHide(agent) &&
+                    !hiddenAgents.some((row) => row.agent_id === agent.agent_id)
+                      ? () => hide(agent.agent_id)
+                      : undefined
+                  }
+                  onUnhide={
+                    hiddenAgents.some((row) => row.agent_id === agent.agent_id)
+                      ? () => unhide(agent.agent_id)
+                      : undefined
+                  }
+                />
+              </div>
+
+              {expanded ? (
+                <div className={styles.minimalAgentSessions}>
+                  {!ready ? (
+                    <div className={styles.minimalAgentEmpty}>
+                      {t("chat.agentNotRunningHint")}
+                    </div>
+                  ) : loading && list.length === 0 ? (
+                    <div className={styles.minimalAgentEmpty}>
+                      {t("common.loading")}
+                    </div>
+                  ) : list.length === 0 ? (
+                    <div className={styles.minimalAgentEmpty}>
+                      {t("chat.noSessionsYet", "直接发消息即可开始对话")}
+                    </div>
+                  ) : (
+                    <>
+                      {list.map((session) => (
+                        <PreviewSessionRow
+                          key={session.id}
+                          session={session}
+                          isActive={session.id === activeId}
+                          workStatus={resolveSessionWorkStatus(
+                            session,
+                            liveWorkingIds,
+                          )}
+                          onSelect={(id) => onSelect(id, agent.agent_id)}
+                          onDelete={(id, compact) =>
+                            handleDelete(agent.agent_id, id, compact)
+                          }
+                          onRename={(id, name) =>
+                            handleRename(agent.agent_id, id, name)
+                          }
+                          onPin={(id, pinned) =>
+                            handlePin(agent.agent_id, id, pinned)
+                          }
+                          onContribute={(id, contributed) =>
+                            handleContribute(agent.agent_id, id, contributed)
+                          }
+                          shareable={Boolean(agent.is_shared)}
+                          onFork={(id) => onFork(id, agent.agent_id)}
+                          forkDisabled={
+                            session.id === activeId
+                              ? activeForkDisabled
+                              : undefined
+                          }
+                          forkDisabledHint={
+                            session.id === activeId
+                              ? activeForkDisabledHint
+                              : undefined
+                          }
+                        />
+                      ))}
+                      {!searching && hasMoreByAgent[agent.agent_id] ? (
+                        <button
+                          type="button"
+                          className={styles.sessionLoadMore}
+                          onClick={() => void loadMore(agent.agent_id)}
+                          disabled={loadingMoreByAgent[agent.agent_id]}
+                        >
+                          {loadingMoreByAgent[agent.agent_id]
+                            ? t("common.loading")
+                            : t("chat.expandMore", "展开更多")}
+                        </button>
+                      ) : null}
+                    </>
+                  )}
+                </div>
+              ) : null}
+            </section>
+          );
+        })
+      )}
     </div>
   );
 }

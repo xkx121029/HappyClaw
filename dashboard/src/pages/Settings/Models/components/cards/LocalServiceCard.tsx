@@ -298,6 +298,7 @@ export function LocalServiceCard({
           <div className={styles.cardActionsRight}>
             <Tooltip title={t("models.settings")}>
               <Button
+                    aria-label={t("models.settings")}
                 type="text"
                 size="small"
                 loading={ensuring}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Empty, Input, Result, Tag } from "antd";
+import { Alert, Button, Empty, Input, Popconfirm, Result, Tag } from "antd";
 import { message } from "@/utils/antdMessage";
 import {
   ArrowUpCircle,
@@ -7,6 +7,7 @@ import {
   Download,
   RefreshCw,
   Search,
+  Trash2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import cx from "classnames";
@@ -50,6 +51,7 @@ export function PluginMarketPanel() {
   const [networkFailure, setNetworkFailure] = useState(false);
   const itemsRef = useRef(items);
   const [installingId, setInstallingId] = useState<string | null>(null);
+  const [uninstallingId, setUninstallingId] = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<string>(GROUP_ALL);
   const [keyword, setKeyword] = useState("");
   itemsRef.current = items;
@@ -89,7 +91,11 @@ export function PluginMarketPanel() {
   const handleInstall = async (row: MarketPlugin) => {
     setInstallingId(row.id);
     try {
-      await pluginsApi.installFromMarket(row.id, row.version);
+      if (row.source === "bundled") {
+        await pluginsApi.installBundled(row.id, Boolean(row.installed));
+      } else {
+        await pluginsApi.installFromMarket(row.id, row.version);
+      }
       message.success(
         row.update_available
           ? t("plugins.marketUpdateSuccess")
@@ -101,6 +107,20 @@ export function PluginMarketPanel() {
       message.error(apiErrorMessage(err, t("plugins.installFailed"), t));
     } finally {
       setInstallingId(null);
+    }
+  };
+
+  const handleUninstall = async (row: MarketPlugin) => {
+    setUninstallingId(row.id);
+    try {
+      await pluginsApi.uninstall(row.id);
+      message.success(t("plugins.marketUninstallSuccess", { name: row.name || row.id }));
+      notifyPluginsChanged();
+      await fetchMarket(true);
+    } catch (err) {
+      message.error(apiErrorMessage(err, t("plugins.marketUninstallFailed"), t));
+    } finally {
+      setUninstallingId(null);
     }
   };
 
@@ -151,6 +171,13 @@ export function PluginMarketPanel() {
 
   return (
     <div className={styles.panel}>
+      <Alert
+        type="info"
+        showIcon
+        style={{ marginBottom: 12 }}
+        message={t("plugins.uiTrustTitle")}
+        description={t("plugins.uiTrustNotice")}
+      />
       {!catalogFailed && (
         <div className={styles.toolbar}>
           <div className={styles.toolbarLeft}>
@@ -262,15 +289,20 @@ export function PluginMarketPanel() {
                         group={row.group}
                         version={row.version}
                         trailing={
-                          canUpdate ? (
-                            <Tag color="processing" bordered={false}>
-                              {t("plugins.marketUpdateAvailable")}
-                            </Tag>
-                          ) : installed ? (
-                            <Tag color="success" bordered={false}>
-                              {t("plugins.marketInstalled")}
-                            </Tag>
-                          ) : null
+                          <>
+                            {row.source === "bundled" ? (
+                              <Tag bordered={false}>{t("plugins.marketBundled")}</Tag>
+                            ) : null}
+                            {canUpdate ? (
+                              <Tag color="processing" bordered={false}>
+                                {t("plugins.marketUpdateAvailable")}
+                              </Tag>
+                            ) : installed ? (
+                              <Tag color="success" bordered={false}>
+                                {t("plugins.marketInstalled")}
+                              </Tag>
+                            ) : null}
+                          </>
                         }
                       />
                     </div>
@@ -293,9 +325,27 @@ export function PluginMarketPanel() {
                       {t("plugins.marketUpdate")}
                     </Button>
                   ) : installed ? (
-                    <Button size="small" icon={<Check size={14} />} disabled>
-                      {t("plugins.marketInstalled")}
-                    </Button>
+                    <>
+                      <Button size="small" icon={<Check size={14} />} disabled>
+                        {t("plugins.marketInstalled")}
+                      </Button>
+                      <Popconfirm
+                        title={t("plugins.marketUninstallConfirm", {
+                          name: row.name || row.id,
+                        })}
+                        okButtonProps={{ danger: true }}
+                        onConfirm={() => void handleUninstall(row)}
+                      >
+                        <Button
+                          danger
+                          size="small"
+                          icon={<Trash2 size={14} />}
+                          loading={uninstallingId === row.id}
+                        >
+                          {t("plugins.marketUninstall")}
+                        </Button>
+                      </Popconfirm>
+                    </>
                   ) : (
                     <Button
                       type="primary"

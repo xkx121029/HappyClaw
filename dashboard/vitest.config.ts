@@ -13,6 +13,12 @@ import path from "path";
  */
 export default defineConfig({
   plugins: [react(), svgr()],
+  // `vite.config.ts` injects the build-time API base as a global constant.
+  // Tests must mirror that, otherwise any module resolving `getApiUrl` /
+  // `getWsUrl` throws `ReferenceError: BASE_URL is not defined`.
+  define: {
+    BASE_URL: JSON.stringify(""),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -25,6 +31,9 @@ export default defineConfig({
     css: false,
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     pool: "threads",
+    // 本机 vite-node 冷转换 antd / pdfjs 单个文件可达 10s+（见 collect 耗时），
+    // 默认 5s 会让「慢但正确」的用例在满载时成片超时，不是断言问题。
+    testTimeout: 20000,
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],

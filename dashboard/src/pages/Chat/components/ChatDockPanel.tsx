@@ -536,6 +536,7 @@ const ChatDockPanel: React.FC<ChatDockPanelProps> = ({
           >
             <ChatDockFileList
               agentId={agentId}
+              threadId={threadId}
               filePaths={filePaths}
               agentNameById={agentNameById}
               onOpenFile={onOpenFile}
@@ -556,6 +557,7 @@ const ChatDockPanel: React.FC<ChatDockPanelProps> = ({
             >
               <FilePanelContent
                 agentId={fileAgent}
+                threadId={threadId}
                 filePath={tab.path}
                 onActionsChange={getFileActionsHandler(tab.id)}
               />
@@ -591,6 +593,7 @@ const ChatDockPanel: React.FC<ChatDockPanelProps> = ({
           >
             <WorkspaceDrawer
               agentId={agentId}
+              threadId={threadId}
               open
               onClose={() => onCloseTab("workspace")}
               embedded
@@ -630,7 +633,11 @@ const ChatDockPanel: React.FC<ChatDockPanelProps> = ({
                 </div>
               }
             >
-              <TerminalPage embedded isVisible={terminalVisible} />
+              <TerminalPage
+              embedded
+              isVisible={terminalVisible}
+              threadId={threadId}
+            />
             </Suspense>
           </div>
         )}

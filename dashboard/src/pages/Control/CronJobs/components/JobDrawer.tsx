@@ -3,12 +3,14 @@ import {
   Drawer,
   Form,
   Input,
+  InputNumber,
   Select,
   Switch,
   Button,
   Divider,
   Typography,
   Alert,
+  AutoComplete,
   DatePicker,
 } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
@@ -21,6 +23,7 @@ import { isBridgeAgentId } from "../../../../utils/remoteExpert";
 import {
   buildDefaultFormValues,
   SCHEDULE_PRESETS,
+  TIMEZONE_OPTIONS,
   cronToPreset,
   presetToCron,
 } from "./constants";
@@ -60,7 +63,7 @@ function SectionHeader({
       <Divider
         orientation="left"
         orientationMargin={0}
-        style={{ marginBottom: 4, fontSize: 14, fontWeight: 600 }}
+        style={{ marginBottom: 4, fontSize: "var(--fn-text-sm)", fontWeight: 600 }}
       >
         {title}
       </Divider>
@@ -94,6 +97,17 @@ export function JobDrawer({
   const remote = isBridgeAgentId(activeAgentId);
   const scheduleMode = Form.useWatch("_scheduleMode", form);
   const freshThread = Form.useWatch("fresh_thread", form);
+  const timezoneOptions = useMemo(() => {
+    const known = new Set(TIMEZONE_OPTIONS.map((option) => option.value));
+    const extras = [cronTimezone, editingJob?.schedule?.timezone]
+      .map((zone) => (zone || "").trim())
+      .filter((zone) => zone && !known.has(zone))
+      .map((zone) => ({ value: zone }));
+    return [
+      ...TIMEZONE_OPTIONS.map(({ value, label }) => ({ value, label })),
+      ...extras,
+    ];
+  }, [cronTimezone, editingJob?.schedule?.timezone]);
 
   const [models, setModels] = useState<ModelPickerOption[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -455,8 +469,47 @@ export function JobDrawer({
           name={["schedule", "timezone"]}
           label={t("cronJobs.form.timezone")}
           tooltip={t("cronJobs.form.timezoneTooltip")}
+          extra={
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {t("cronJobs.form.timezoneHint")}
+            </Text>
+          }
         >
-          <Input readOnly disabled />
+          <AutoComplete
+            allowClear
+            placeholder={cronTimezone || "UTC"}
+            options={timezoneOptions}
+            filterOption={(input, option) =>
+              String(option?.value ?? "")
+                .toLowerCase()
+                .includes(input.toLowerCase())
+            }
+          />
+        </Form.Item>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <Form.Item
+            name="max_retries"
+            label={t("cronJobs.form.maxRetries")}
+            tooltip={t("cronJobs.form.maxRetriesTooltip")}
+          >
+            <InputNumber min={0} max={5} precision={0} style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item
+            name="retry_backoff_seconds"
+            label={t("cronJobs.form.retryBackoff")}
+            tooltip={t("cronJobs.form.retryBackoffTooltip")}
+          >
+            <InputNumber min={1} max={3600} precision={0} style={{ width: "100%" }} />
+          </Form.Item>
+        </div>
+
+        <Form.Item
+          name="catch_up_misses"
+          label={t("cronJobs.form.catchUpMisses")}
+          tooltip={t("cronJobs.form.catchUpMissesTooltip")}
+        >
+          <InputNumber min={0} max={10} precision={0} style={{ width: "100%" }} />
         </Form.Item>
 
         <SectionHeader

@@ -53,7 +53,9 @@ import {
 } from "../../../utils/teamAgent";
 import { rewritePeerSpeakerId } from "../../../utils/remoteExpert";
 import { accountDisplayName } from "../utils/accountDisplayName";
-import { ProfileAvatar } from "../../Admin/Users/ProfileAvatar";
+// Avatar primitives live in the shared AvatarPicker module; the user-management
+// page that used to wrap them is gone.
+import { ResourceAvatar, USER_AVATAR_PRESETS } from "../../../components/AvatarPicker";
 import {
   extractAskQuestions,
   isAskHitl,
@@ -61,7 +63,6 @@ import {
 } from "../../../api/types/hitl";
 import styles from "../index.module.less";
 import {
-  DefaultToolRenderer,
   builtinPluginHost,
   createPluginUiHost,
   parseOctopToolOutput,
@@ -71,6 +72,9 @@ import {
   type ToolRenderProps,
   type ToolRenderStatus,
 } from "../../../plugins/toolRenderers";
+// Direct import (not the barrel): the toolRenderers barrel is part of the app
+// shell, and this module carries the full Chat stylesheet.
+import { DefaultToolRenderer } from "../../../plugins/toolRenderers/builtin/DefaultToolRenderer";
 import { BuiltinOctopUiFallback } from "../../../plugins/toolRenderers/builtin/BuiltinOctopUiFallback";
 import { ToolUiErrorBoundary } from "../../../plugins/toolRenderers/ToolUiErrorBoundary";
 import { remotePluginUiUnavailable } from "../../../plugins/toolRenderers/remotePluginUi";
@@ -392,6 +396,7 @@ export function ToolDetailsInline({
   hideMediaPreview = false,
   agentId = null,
   forceInline = false,
+  forceError = false,
 }: {
   toolData: NonNullable<ChatMessage["toolData"]>;
   isStreaming: boolean;
@@ -400,6 +405,8 @@ export function ToolDetailsInline({
   agentId?: string | null;
   /** When true, skip dock attach / placeholder (full renderer in side panel). */
   forceInline?: boolean;
+  /** Legacy rows may only carry status="error" without toolData.errorCode. */
+  forceError?: boolean;
 }) {
   const { t } = useTranslation();
   const toolDock = useChatToolDock();
@@ -429,11 +436,12 @@ export function ToolDetailsInline({
     [toolData.name, pluginId, parsed, rendererVersion],
   );
 
-  const status: ToolRenderStatus = toolData.errorCode
-    ? "error"
-    : toolData.output !== undefined
-    ? "done"
-    : "running";
+  const status: ToolRenderStatus =
+    forceError || toolData.errorCode
+      ? "error"
+      : toolData.output !== undefined
+      ? "done"
+      : "running";
 
   let args: unknown = toolData.arguments;
   if (typeof toolData.arguments === "string") {
@@ -827,10 +835,10 @@ function MessageBubble({
       <MessageSender
         name={userName}
         avatar={
-          <ProfileAvatar
+          <ResourceAvatar
             url={userAvatarUrl}
             icon={userAvatarIcon}
-            kind="user"
+            presets={USER_AVATAR_PRESETS}
             className={styles.msgUserAvatar}
           />
         }

@@ -305,7 +305,12 @@ export default function SkillPackagesTab({
               onClick={() => void openDetail(pack)}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === "Enter" && void openDetail(pack)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  void openDetail(pack);
+                }
+              }}
             >
               <div className={styles.cardBody}>
                 <div className={styles.cardHeader}>

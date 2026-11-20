@@ -14,6 +14,13 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
+import { message, notification } from "antd";
+
+// Toasts in tests never need to auto-dismiss, and antd's close timer fires
+// after the jsdom environment is torn down (`window is not defined` from
+// rc-notification). `duration: 0` skips the timer entirely.
+message.config({ duration: 0 });
+notification.config({ duration: 0 });
 
 // Auto-mock react-i18next so components' ``t(key, fallback)`` calls
 // resolve synchronously to ``fallback`` without needing the real
@@ -60,19 +67,22 @@ afterEach(() => {
 
 if (typeof window !== "undefined") {
   // matchMedia
+  // A plain function, not ``vi.fn``: ``vi.restoreAllMocks()`` in a suite would
+  // strip a mock implementation mid-file, and components that probe
+  // ``prefers-reduced-motion`` (the mascot engine) would then throw.
   if (!window.matchMedia) {
     Object.defineProperty(window, "matchMedia", {
       writable: true,
-      value: vi.fn().mockImplementation((query: string) => ({
+      value: (query: string) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }),
     });
   }
 
@@ -106,6 +116,61 @@ if (typeof window !== "undefined") {
         IntersectionObserver: typeof _IntersectionObserver;
       }
     ).IntersectionObserver = _IntersectionObserver;
+  }
+
+  // DOMMatrix — pdfjs-dist evaluates matrix math on import, and jsdom has no
+  // DOMMatrix, which surfaces as ``ReferenceError: DOMMatrix is not defined``
+  // for every suite that transitively imports react-pdf. A stub with the
+  // 2D fields pdfjs reads is enough: these suites never rasterize a page.
+  if (!("DOMMatrix" in window)) {
+    class _DOMMatrix {
+      a = 1;
+      b = 0;
+      c = 0;
+      d = 1;
+      e = 0;
+      f = 0;
+      m11 = 1;
+      m12 = 0;
+      m21 = 0;
+      m22 = 1;
+      m41 = 0;
+      m42 = 0;
+      is2D = true;
+      isIdentity = true;
+      constructor(_init?: unknown) {}
+      multiplySelf() {
+        return this;
+      }
+      invertSelf() {
+        return this;
+      }
+      translateSelf() {
+        return this;
+      }
+      scaleSelf() {
+        return this;
+      }
+      rotateSelf() {
+        return this;
+      }
+      toString() {
+        return "matrix(1, 0, 0, 1, 0, 0)";
+      }
+      static fromMatrix() {
+        return new _DOMMatrix();
+      }
+      static fromFloat32Array() {
+        return new _DOMMatrix();
+      }
+      static fromFloat64Array() {
+        return new _DOMMatrix();
+      }
+    }
+    (window as unknown as { DOMMatrix: typeof _DOMMatrix }).DOMMatrix =
+      _DOMMatrix;
+    (globalThis as unknown as { DOMMatrix: typeof _DOMMatrix }).DOMMatrix =
+      _DOMMatrix;
   }
 
   // jsdom doesn't implement ``getComputedStyle().transition`` properly,

@@ -635,6 +635,7 @@ export function ModelListEditor({
                     type="text"
                     size="small"
                     danger
+                    aria-label={t("common.delete")}
                     icon={<Trash2 size={14} />}
                     onClick={() => handleRemoveModel(m.id, m.name)}
                   />

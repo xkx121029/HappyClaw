@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from octop_gateway.channel import ChannelCredentialsError
 from octop_gateway.channels import ChannelKind
@@ -49,6 +49,8 @@ if TYPE_CHECKING:
     from octop.infra.db.services import RepoBundle
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
 
 # Re-export for api/cli importers
 __all__ = [
@@ -124,6 +126,7 @@ class Gateway:
         self._repos = repos
         self._instance_id = instance_id or uuid.uuid4().hex
         self._trajectory_service = trajectory_service
+        self._bao_followup: Any | None = None
         self._thread_registry = ThreadRegistry(
             session_repo=repos.session_repo,
             thread_repo=repos.thread_repo,
@@ -299,6 +302,7 @@ class Gateway:
             hub=self._ws_hub,
             steer=self._steer,
             channel_id=WS_CHANNEL_ID,
+            on_turn_finished=self._record_bao_turn_finished,
         )
         await self._channel_manager.add_channel(self._ws_channel)
 
@@ -318,6 +322,77 @@ class Gateway:
             )
 
         logger.info("Gateway booted; instance %s", self._instance_id)
+
+    def _record_bao_turn_finished(
+        self,
+        *,
+        thread_id: str,
+        agent_id: str,
+        status: str,
+        result_text: str | None,
+        error_text: str | None,
+    ) -> None:
+        """Write a finished Worker turn back into Bao's dispatch ledger.
+
+        The callback is best-effort: a ledger failure must never affect the
+        conversation turn that just ended. ``complete_running`` only updates
+        tasks still in ``running``, so duplicate completion events are safe.
+        """
+        repo = getattr(self._repos, "bao_task_repo", None)
+        if repo is None:
+            return
+        repo.complete_running(
+            thread_id=thread_id,
+            agent_id=agent_id,
+            status=status,
+            result_text=result_text,
+            error_text=error_text,
+        )
+        if status in ("done", "failed", "awaiting"):
+            # Notify the owner's dashboard sockets so the Home inbox can show
+            # the finished task without polling. Best-effort only.
+            try:
+                asyncio.get_running_loop().create_task(
+                    self._push_bao_task_update(thread_id, agent_id)
+                )
+            except RuntimeError:
+                pass
+        followup = self._bao_followup
+        if followup is None:
+            return
+        try:
+            followup.on_turn_finished(
+                thread_id=thread_id,
+                agent_id=agent_id,
+                status=status,
+                result_text=result_text,
+                error_text=error_text,
+            )
+        except Exception:  # noqa: BLE001 - never disturb the finished turn
+            logger.exception("bao follow-up hook failed for %s", thread_id)
+
+    async def _push_bao_task_update(self, thread_id: str, agent_id: str) -> None:
+        """Push the newest ledger row for a finished thread to its owner."""
+        repo = getattr(self._repos, "bao_task_repo", None)
+        if repo is None:
+            return
+        try:
+            rows = repo.get_for_thread(thread_id, agent_id, limit=1)
+            if not rows:
+                return
+            row = rows[0]
+            await self._ws_hub.push_to_user(
+                row.user_id,
+                {"type": "bao_task_update", "task": row.to_dict()},
+            )
+        except Exception:  # noqa: BLE001 - delivery must not affect the turn
+            logger.debug(
+                "bao task inbox notify failed thread=%s", thread_id, exc_info=True
+            )
+
+    def set_bao_followup(self, followup: Any | None) -> None:
+        """Attach Bao's post-turn follow-through service (constructed by server)."""
+        self._bao_followup = followup
 
     async def refresh_media_backends(self) -> None:
         """Re-set media backends on all registered channels.
@@ -485,13 +560,13 @@ class Gateway:
         self,
         agent_id: str,
         session_key: str,
-        operation: Callable[[], Awaitable[None]],
-    ) -> None:
+        operation: Callable[[], Awaitable[T]],
+    ) -> T:
         """Serialize a proactive operation with inbound turns for its session."""
         session = self.require_session(agent_id, session_key)
         manager = self._require_channel_manager()
         channel_id = self._channel_id_for_session(session)
-        await manager.run_in_session(channel_id, session_key, operation)
+        return await manager.run_in_session(channel_id, session_key, operation)
 
     async def push_text_from_session(
         self,
@@ -580,6 +655,17 @@ class Gateway:
                 "text": text,
                 "agent_name": agent_name,
             },
+        )
+        # 手机端连接器同样是一条推送出口：已配对的手机在线时直接收到。
+        from octop.infra.control.connector.state import connector_hub  # noqa: PLC0415
+
+        await connector_hub().push_message(
+            {
+                "text": text,
+                "agentId": agent_id,
+                "agentName": agent_name,
+                "threadId": session.thread_id,
+            }
         )
 
     def _require_channel_manager(self) -> ChannelManager:
@@ -873,7 +959,7 @@ class Gateway:
             self._listen_for_weixin_context_token(registered, row)
 
     def _listen_for_weixin_context_token(self, channel: Any, row: ChannelRow) -> None:
-        """Persist a refreshed iLink send token onto the matching WeChat session."""
+        """Persist a refreshed iLink send token onto the matching session."""
         listener = getattr(channel, "set_context_token_listener", None)
         if listener is None:
             return

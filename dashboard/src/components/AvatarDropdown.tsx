@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Drawer, Form, Input, Button, Segmented, Tooltip, Popover } from "antd";
 import { message } from "@/utils/antdMessage";
 
@@ -28,10 +28,20 @@ import {
   writeFontScale,
   type FontScale,
 } from "../styles/fontScaleStorage";
-import { ProfileAvatar, ProfileAvatarPicker } from "../pages/Admin/Users/ProfileAvatar";
+// Import the avatar primitives directly: going through the Users page wrapper
+// pulled that page's 48 kB stylesheet into the first paint for every visitor.
+import {
+  ResourceAvatar,
+  ResourceAvatarPicker,
+  USER_AVATAR_PRESETS,
+} from "./AvatarPicker";
 import styles from "./AvatarDropdown.module.less";
 
-const GITHUB_URL = "https://github.com/TencentCloud/Octop";
+// The curve editor only appears inside the settings drawer, so keep it out of
+// the shell bundle.
+const MotionCurveEditor = lazy(() => import("./MotionCurveEditor"));
+
+const GITHUB_URL = "https://github.com/xkx121029/HappyClaw";
 const HELP_FEEDBACK_URL = "https://octop.cloud";
 const LOCAL_PROFILE_NAME_MAX = 32;
 
@@ -119,11 +129,11 @@ export default function AvatarDropdown({
   };
 
   const avatar = (
-    <ProfileAvatar
+    <ResourceAvatar
       key={`${profile.avatar_icon ?? ""}:${profile.avatar_url ?? ""}`}
       url={profile.avatar_url}
       icon={profile.avatar_icon}
-      kind="user"
+      presets={USER_AVATAR_PRESETS}
       className={styles.accountAvatar}
     />
   );
@@ -229,7 +239,19 @@ export default function AvatarDropdown({
         placement="right"
         mouseEnterDelay={0.3}
       >
-        <span role="button" tabIndex={0} className={styles.triggerCompact}>
+        <span
+          role="button"
+          tabIndex={0}
+          className={styles.triggerCompact}
+          aria-label={displayName}
+          aria-expanded={menuOpen}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setMenuOpen((open) => !open);
+            }
+          }}
+        >
           {avatar}
         </span>
       </Tooltip>
@@ -252,11 +274,11 @@ export default function AvatarDropdown({
           </p>
         </div>
         <div className={styles.settingsAvatarPicker}>
-          <ProfileAvatarPicker
-            kind="user"
-            avatarUrl={profile.avatar_url}
-            icon={profile.avatar_icon}
-            onSelectIcon={(icon) => {
+          <ResourceAvatarPicker
+            presets={USER_AVATAR_PRESETS}
+            imageUrl={profile.avatar_url}
+            presetId={profile.avatar_icon}
+            onSelectPreset={(icon) => {
               updateLocalProfile({ avatar_icon: icon, avatar_url: null });
             }}
             onPick={() => {
@@ -397,6 +419,25 @@ export default function AvatarDropdown({
             writeFontScale(next);
           }}
         />
+      </section>
+
+      <div className={styles.settingsDivider} />
+
+      <section className={styles.settingsSection}>
+        <div className={styles.settingsSectionHead}>
+          <h3 className={styles.settingsSectionTitle}>
+            {t("account.motion", "动效")}
+          </h3>
+          <p className={styles.settingsSectionDesc}>
+            {t(
+              "account.motionHint",
+              "统一页面转场、消息与卡片的进出手感；系统开启「减少动态效果」时会自动降级。",
+            )}
+          </p>
+        </div>
+        <Suspense fallback={null}>
+          <MotionCurveEditor />
+        </Suspense>
       </section>
 
       <div className={styles.settingsDivider} />

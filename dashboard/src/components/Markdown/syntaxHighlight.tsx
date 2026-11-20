@@ -157,7 +157,7 @@ interface HighlightedCodeProps {
 const plainCodeStyle: CSSProperties = {
   margin: 0,
   borderRadius: "0 0 8px 8px",
-  fontSize: 13,
+  fontSize: "var(--fn-text-xs)",
   padding: "12px 16px",
   overflow: "auto",
 };
@@ -211,7 +211,7 @@ export function HighlightedCode({
       customStyle={{
         margin: 0,
         borderRadius: "0 0 8px 8px",
-        fontSize: 13,
+        fontSize: "var(--fn-text-xs)",
         padding: "12px 16px",
       }}
     >

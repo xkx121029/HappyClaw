@@ -38,6 +38,7 @@ import { stripThinkingTags } from "../utils/chatAttachments";
 import { isSlashCommandText } from "../utils/slashText";
 import {
   ensureExpertMentions,
+  mentionedExpertIds,
   toggleExpertMention,
 } from "../utils/expertMention";
 import {
@@ -62,6 +63,7 @@ import type {
   QueuedChatItem,
 } from "../hooks/useChatMessageQueue";
 import type { HitlSessionPolicy } from "../utils/hitlSessionPolicy";
+import { PluginSurfaceSlot } from "../../../plugins/surfaces";
 import styles from "../index.module.less";
 
 /** Imperative handle exposed via ref for programmatic text injection. */
@@ -110,6 +112,8 @@ interface ChatInputProps {
   availableModels?: ResolvedModel[];
   selectedModel?: string | null;
   onModelChange?: (model: string | null) => void;
+  /** Show the active model as a one-click chip in the desktop actions row. */
+  showModelChip?: boolean;
   reasoningMode?: "auto" | "enabled" | "disabled";
   reasoningEffort?: string | null;
   onReasoningChange?: (
@@ -182,6 +186,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       availableModels,
       selectedModel,
       onModelChange,
+      showModelChip = false,
       reasoningMode = "auto",
       reasoningEffort = null,
       onReasoningChange,
@@ -218,6 +223,10 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const { commands: slashCommands, labelFor } = useSlashCommands("ui");
     const skillDisplayName = useSkillDisplayName();
     const isMobile = useIsMobile();
+    // Shown in the @-picker footer so users know a mention does not hand the
+    // turn over to that expert — it only travels as context.
+    const currentAgentName =
+      availableAgents.find((a) => a.agent_id === agentId)?.name ?? null;
     const shellRef = useRef<HTMLDivElement>(null);
     const [nativeDropActive, setNativeDropActive] = useState(false);
     useEffect(() => {
@@ -540,6 +549,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       availableExperts,
       availableSubagents,
       agentId,
+      threadId,
       selectedConnectors,
       onConnectorsChange,
       onSend,
@@ -671,6 +681,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             skills: selectedSkillSlugs,
             connectors: selectedConnectors,
             knowledgeBaseIds: selectedKnowledgeBaseIds,
+            targetAgents: mentionedExpertIds(wireText, availableAgents),
             selectedModel,
             reasoningMode,
             reasoningEffort,
@@ -959,6 +970,10 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             </div>
           )}
           <div className={styles.inputRow} style={{ position: "relative" }}>
+            <PluginSurfaceSlot
+              slot="conversation.input.left"
+              context={{ agentId, threadId }}
+            />
             <textarea
               ref={textareaRef}
               className={cx(styles.textarea, pasteFolded && styles.textareaFolded)}
@@ -1009,7 +1024,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   color: "var(--fn-color-brand)",
                   border: "1px solid var(--fn-color-brand)",
                   borderRadius: 999,
-                  fontSize: 11,
+                  fontSize: "var(--fn-text-2xs)",
                   fontWeight: 600,
                   lineHeight: "16px",
                   pointerEvents: "none",
@@ -1020,6 +1035,17 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 /<span style={{ fontWeight: 500 }}>slash</span>
               </span>
             )}
+          </div>
+
+          {/* Plugins may float UI over the composer without covering the text
+              field: the layer ignores pointer events, its content opts back in. */}
+          <div className={styles.inputOverlay}>
+            <div style={{ pointerEvents: "auto" }}>
+              <PluginSurfaceSlot
+                slot="conversation.input.overlay"
+                context={{ agentId, threadId }}
+              />
+            </div>
           </div>
 
           {mentionMenuOpen && (
@@ -1034,6 +1060,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               activeIndex={mentionMenuIndex}
               onSelect={handleMentionSelect}
               onHover={setMentionMenuIndex}
+              currentAgentName={currentAgentName}
             />
           )}
 
@@ -1094,6 +1121,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             availableModels={availableModels}
             selectedModel={selectedModel}
             onModelChange={onModelChange}
+            showModelChip={showModelChip}
             reasoningMode={reasoningMode}
             reasoningEffort={reasoningEffort}
             onReasoningChange={onReasoningChange}

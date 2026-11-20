@@ -124,13 +124,19 @@ async def list_tree(
     agent_id: str,
     path: str = "/",
     from_workspace: bool = Query(default=False, description=_FROM_WORKSPACE_DESC),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> list[dict[str, Any]]:
     """Single-level directory listing under ``path`` (agent must be running)."""
     ws = await require_running_workspace(
-        agent_id, user=user, as_user=as_user, server=server, owner_only=True
+        agent_id,
+        user=user,
+        as_user=as_user,
+        server=server,
+        owner_only=True,
+        thread_id=thread_id,
     )
     io_path = _workspace_io_path(path, from_workspace=from_workspace)
     result = await ws.als(io_path)
@@ -167,12 +173,15 @@ async def read_file(
     agent_id: str,
     path: str,
     from_workspace: bool = Query(default=False, description=_FROM_WORKSPACE_DESC),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
     """Read a UTF-8 text file."""
-    ws = await require_agent_workspace(agent_id, user=user, as_user=as_user, server=server)
+    ws = await require_agent_workspace(
+        agent_id, user=user, as_user=as_user, server=server, thread_id=thread_id
+    )
     content = await ws.aread_text(_workspace_io_path(path, from_workspace=from_workspace))
     if content is None:
         raise OctopError(ErrorCode.NOT_FOUND, f"cannot read {path!r}")
@@ -185,13 +194,19 @@ async def write_file(
     body: WriteFileBody,
     path: str,
     from_workspace: bool = Query(default=False, description=_FROM_WORKSPACE_DESC),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
     """Overwrite ``path`` with ``body.content`` (text)."""
     ws = await require_running_workspace(
-        agent_id, user=user, as_user=as_user, server=server, owner_only=True
+        agent_id,
+        user=user,
+        as_user=as_user,
+        server=server,
+        owner_only=True,
+        thread_id=thread_id,
     )
     converter = get_doc_converter(path)
     if converter is not None:
@@ -232,6 +247,7 @@ async def mkdir_workspace_dir(
         default=True,
         description="Mutating endpoints always treat paths as workspace-relative.",
     ),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
@@ -240,7 +256,12 @@ async def mkdir_workspace_dir(
     _ = from_workspace  # API surface; mutations always use workspace-relative paths.
     rel = _assert_workspace_mutable(path)
     ws = await require_running_workspace(
-        agent_id, user=user, as_user=as_user, server=server, owner_only=True
+        agent_id,
+        user=user,
+        as_user=as_user,
+        server=server,
+        owner_only=True,
+        thread_id=thread_id,
     )
     try:
         await ws.amkdir(rel)
@@ -262,6 +283,7 @@ async def delete_workspace_file(
         default=True,
         description="Mutating endpoints always treat paths as workspace-relative.",
     ),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
@@ -270,7 +292,12 @@ async def delete_workspace_file(
     _ = from_workspace
     rel = _assert_workspace_mutable(path)
     ws = await require_running_workspace(
-        agent_id, user=user, as_user=as_user, server=server, owner_only=True
+        agent_id,
+        user=user,
+        as_user=as_user,
+        server=server,
+        owner_only=True,
+        thread_id=thread_id,
     )
     try:
         await ws.adelete(rel)
@@ -291,6 +318,7 @@ async def move_workspace_file(
         default=True,
         description="Mutating endpoints always treat paths as workspace-relative.",
     ),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
@@ -300,7 +328,12 @@ async def move_workspace_file(
     src = _assert_workspace_mutable(path)
     dest = _assert_workspace_mutable(body.destination)
     ws = await require_running_workspace(
-        agent_id, user=user, as_user=as_user, server=server, owner_only=True
+        agent_id,
+        user=user,
+        as_user=as_user,
+        server=server,
+        owner_only=True,
+        thread_id=thread_id,
     )
     try:
         await ws.amove(src, dest)
@@ -316,13 +349,19 @@ async def upload_file(
     file: UploadFile = File(...),  # noqa: B008
     path: str | None = Query(default=None),
     from_workspace: bool = Query(default=False, description=_FROM_WORKSPACE_DESC),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
     """Upload a binary file via multipart ``file=@...``."""
     ws = await require_running_workspace(
-        agent_id, user=user, as_user=as_user, server=server, owner_only=True
+        agent_id,
+        user=user,
+        as_user=as_user,
+        server=server,
+        owner_only=True,
+        thread_id=thread_id,
     )
     target = path or f"/{file.filename or 'upload.bin'}"
     data = await file.read()
@@ -341,6 +380,7 @@ async def download_file(
     agent_id: str,
     path: str,
     from_workspace: bool = Query(default=False, description=_FROM_WORKSPACE_DESC),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
@@ -352,7 +392,9 @@ async def download_file(
     outputs (Desktop, ``~/.octop/agents/…``, workspace tree) but denied for
     sensitive system roots (``/etc``, ``.harness-browser``, ``.octop-browser``, Windows system dirs).
     """
-    ws = await require_agent_workspace(agent_id, user=user, as_user=as_user, server=server)
+    ws = await require_agent_workspace(
+        agent_id, user=user, as_user=as_user, server=server, thread_id=thread_id
+    )
     io_path = _workspace_io_path(path, from_workspace=from_workspace)
     if is_host_absolute_path(io_path) and not is_allowed_host_download_abs_path(
         io_path,
@@ -380,13 +422,16 @@ async def read_doc(
     agent_id: str,
     path: str,
     from_workspace: bool = Query(default=False, description=_FROM_WORKSPACE_DESC),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
     """Read an editable document (e.g. ``.docx``) as Markdown for online editing."""
     converter = _ensure_editable_doc(path)
-    ws = await require_agent_workspace(agent_id, user=user, as_user=as_user, server=server)
+    ws = await require_agent_workspace(
+        agent_id, user=user, as_user=as_user, server=server, thread_id=thread_id
+    )
     io_path = _workspace_io_path(path, from_workspace=from_workspace)
     try:
         blob = await ws.adownload_bytes(io_path)
@@ -410,6 +455,7 @@ async def write_doc(
         default=True,
         description="Mutating endpoints always treat paths as workspace-relative.",
     ),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
@@ -418,7 +464,9 @@ async def write_doc(
     _ = from_workspace  # Mutations always use workspace-relative paths.
     rel = _assert_workspace_mutable(path)
     converter = _ensure_editable_doc(path)
-    ws = await require_running_workspace(agent_id, user=user, as_user=as_user, server=server)
+    ws = await require_running_workspace(
+        agent_id, user=user, as_user=as_user, server=server, thread_id=thread_id
+    )
     try:
         data = converter.from_markdown(body.content)
     except Exception as exc:
@@ -442,6 +490,7 @@ async def preview_media(
     agent_id: str,
     source: str = Query(..., description="``file://`` URL or workspace-relative path"),
     mime_type: str | None = Query(default=None, alias="mime_type"),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
@@ -449,7 +498,9 @@ async def preview_media(
     """Stream an image or video inline for dashboard tool-result previews."""
     path_agent = _agent_id_from_media_source(source)
     effective_agent = path_agent or agent_id
-    ws = await require_running_workspace(effective_agent, user=user, as_user=as_user, server=server)
+    ws = await require_running_workspace(
+        effective_agent, user=user, as_user=as_user, server=server, thread_id=thread_id
+    )
     payload = await resolve_preview_payload(
         source=source,
         workspace=ws,
@@ -488,12 +539,18 @@ async def preview_media(
 )
 async def mention_index(
     agent_id: str,
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> MentionIndexBody:
     ws = await require_running_workspace(
-        agent_id, user=user, as_user=as_user, server=server, owner_only=True
+        agent_id,
+        user=user,
+        as_user=as_user,
+        server=server,
+        owner_only=True,
+        thread_id=thread_id,
     )
     paths, truncated = await collect_mention_paths(ws)
     return MentionIndexBody(paths=paths, truncated=truncated)
@@ -505,12 +562,18 @@ async def glob_files(
     pattern: str,
     path: str = "/",
     from_workspace: bool = Query(default=False, description=_FROM_WORKSPACE_DESC),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> list[dict[str, Any]]:
     ws = await require_running_workspace(
-        agent_id, user=user, as_user=as_user, server=server, owner_only=True
+        agent_id,
+        user=user,
+        as_user=as_user,
+        server=server,
+        owner_only=True,
+        thread_id=thread_id,
     )
     root = _workspace_io_path(path, from_workspace=from_workspace)
     if pattern in ("**/*.md", "*.md") and root == ".":
@@ -540,12 +603,18 @@ async def grep_files(
     pattern: str,
     path: str = "/",
     from_workspace: bool = Query(default=False, description=_FROM_WORKSPACE_DESC),
+    thread_id: str | None = Query(default=None),
     as_user: int | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> list[dict[str, Any]]:
     ws = await require_running_workspace(
-        agent_id, user=user, as_user=as_user, server=server, owner_only=True
+        agent_id,
+        user=user,
+        as_user=as_user,
+        server=server,
+        owner_only=True,
+        thread_id=thread_id,
     )
     result = await ws.agrep(pattern, _workspace_io_path(path, from_workspace=from_workspace))
     if result is None:

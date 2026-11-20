@@ -1,8 +1,8 @@
 .wrap {
   --sc-accent: #ea580c;
   --sc-accent-soft: rgba(234, 88, 12, 0.06);
-  --sc-muted: #71717a;
-  --sc-danger: #ef4444;
+  --sc-muted: var(--fn-text-tertiary);
+  --sc-danger: var(--fn-color-danger);
   --sc-mono: var(
     --fn-font-mono,
     ui-monospace,
@@ -20,8 +20,6 @@
 :global(html[data-theme="dark"]) .wrap {
   --sc-accent: #ff9f0a;
   --sc-accent-soft: rgba(255, 159, 10, 0.1);
-  --sc-muted: #a1a1aa;
-  --sc-danger: #f87171;
 }
 
 .header {

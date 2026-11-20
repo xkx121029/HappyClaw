@@ -1,4 +1,4 @@
-"""``voice.*`` — probe, realtime and Tencent provider error copy."""
+"""``voice.*`` — probe, realtime and provider error copy."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from octop.infra.utils.locale import Locale, normalize_locale
 
 
 def tencent_api_language(locale: str | Locale | None) -> str | None:
-    """``X-TC-Language`` value for Tencent Cloud common errors, or ``None``."""
+    """``X-TC-Language`` value for cloud API common errors, or ``None``."""
     if locale is None:
         return None
     return "zh-CN" if normalize_locale(str(locale)) == "zh" else "en-US"

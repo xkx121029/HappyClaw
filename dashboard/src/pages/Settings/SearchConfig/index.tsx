@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { App, Button, Drawer, Form, Input, Typography, Spin } from "antd";
+import { App, Button, Drawer, Form, Input, Radio, Typography, Spin } from "antd";
 
 import {
   Activity,
@@ -12,6 +12,12 @@ import {
 import { useTranslation } from "react-i18next";
 import cx from "classnames";
 import { envsApi } from "../../../api/modules/env";
+import {
+  octopSettingsApi,
+  type SearchSourceSettings,
+  type SearchSourceValue,
+  type SearchStatus,
+} from "../../../api/modules/settings";
 import api from "../../../api";
 import { customProviderLogo, getProviderLogo } from "../../../assets/providers";
 import { apiErrorMessage } from "../../../utils/apiError";
@@ -76,6 +82,28 @@ const SEARCH_PROVIDERS: SearchProvider[] = [
     docs_url: "https://cloud.tencent.com/document/product/1806/130615",
     required_keys: ["TENCENTCLOUD_WSA_APIKEY"],
     configured: false,
+  },
+];
+
+const SOURCE_OPTIONS: Array<{
+  value: SearchSourceValue;
+  titleKey: string;
+  descKey: string;
+}> = [
+  {
+    value: "happysearch",
+    titleKey: "advancedSettings.search.sourceHappyTitle",
+    descKey: "advancedSettings.search.sourceHappyDesc",
+  },
+  {
+    value: "searchfree",
+    titleKey: "advancedSettings.search.sourceNativeTitle",
+    descKey: "advancedSettings.search.sourceNativeDesc",
+  },
+  {
+    value: "both",
+    titleKey: "advancedSettings.search.sourceBothTitle",
+    descKey: "advancedSettings.search.sourceBothDesc",
   },
 ];
 
@@ -293,11 +321,16 @@ function ConfigureDrawer({
 
 export default function SearchConfigPage() {
   const { t } = useTranslation();
+  const { message } = App.useApp();
   const [providers, setProviders] =
     useState<SearchProvider[]>(SEARCH_PROVIDERS);
   const [loading, setLoading] = useState(true);
   const [envVars, setEnvVars] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<SearchProvider | null>(null);
+  const [sourceState, setSourceState] =
+    useState<SearchSourceSettings | null>(null);
+  const [status, setStatus] = useState<SearchStatus | null>(null);
+  const [sourceSaving, setSourceSaving] = useState(false);
 
   const fetchEnvVars = useCallback(async () => {
     try {
@@ -321,9 +354,60 @@ export default function SearchConfigPage() {
     }
   }, []);
 
+  const fetchSourceState = useCallback(async () => {
+    try {
+      setSourceState(await octopSettingsApi.searchSource());
+    } catch (err) {
+      console.error("Failed to load search source:", err);
+      return;
+    }
+    try {
+      setStatus(await octopSettingsApi.searchStatus());
+    } catch (err) {
+      console.error("Failed to load search runtime status:", err);
+    }
+  }, []);
+
   useEffect(() => {
     void fetchEnvVars();
-  }, [fetchEnvVars]);
+    void fetchSourceState();
+  }, [fetchEnvVars, fetchSourceState]);
+
+  const sourceLabel = useCallback(
+    (value?: string | null) => {
+      switch (value) {
+        case "happysearch":
+          return t("advancedSettings.search.sourceHappyName");
+        case "searchfree":
+          return t("advancedSettings.search.sourceNativeName");
+        case "both":
+          return t("advancedSettings.search.sourceBothName");
+        default:
+          return value || "—";
+      }
+    },
+    [t],
+  );
+
+  const handleSourceChange = async (value: SearchSourceValue) => {
+    setSourceSaving(true);
+    try {
+      const next = await octopSettingsApi.putSearchSource({ source: value });
+      setSourceState(next);
+      if (next.applied) {
+        message.success(t("advancedSettings.search.sourceSaveSuccess"));
+      } else {
+        message.warning(t("advancedSettings.search.sourceSavePending"), 6);
+      }
+      await fetchSourceState();
+    } catch (err) {
+      message.error(
+        apiErrorMessage(err, t("advancedSettings.search.sourceSaveFailed")),
+      );
+    } finally {
+      setSourceSaving(false);
+    }
+  };
 
   const sortedProviders = [...providers].sort((a, b) => {
     if (a.configured && !b.configured) return -1;
@@ -334,6 +418,16 @@ export default function SearchConfigPage() {
   const configuredProviders = providers.filter((p) => p.configured);
   const activeSource = configuredProviders[0];
   const configuredCount = configuredProviders.length;
+  const engineEntries = Object.entries(
+    status?.happysearch?.runtime?.engines_last ?? {},
+  );
+  const nativeLast = status?.searchfree?.runtime?.last;
+  const originLabel =
+    sourceState?.origin === "env"
+      ? t("advancedSettings.search.sourceOriginEnv")
+      : sourceState?.origin === "settings"
+        ? t("advancedSettings.search.sourceOriginSettings")
+        : t("advancedSettings.search.sourceOriginDefault");
 
   if (loading) {
     return (
@@ -347,35 +441,155 @@ export default function SearchConfigPage() {
     <>
       <p className={styles.intro}>{t("advancedSettings.search.desc")}</p>
 
-      <div className={cx(styles.status, activeSource && styles.statusOk)}>
+      <section className={styles.sourceSection}>
+        <div className={styles.sourceSectionHeader}>
+          <div>
+            <p className={styles.sourceSectionTitle}>
+              {t("advancedSettings.search.sourceSectionTitle")}
+            </p>
+            <p className={styles.sourceSectionDesc}>
+              {t("advancedSettings.search.sourceSectionDesc")}
+            </p>
+          </div>
+          <span className={styles.originBadge}>
+            {t("advancedSettings.search.sourceOriginLabel")}: {originLabel}
+          </span>
+        </div>
+        <Radio.Group
+          className={styles.sourceGroup}
+          value={sourceState?.effective}
+          disabled={sourceSaving || !sourceState}
+          onChange={(e) =>
+            void handleSourceChange(e.target.value as SearchSourceValue)
+          }
+        >
+          {SOURCE_OPTIONS.map((option) => (
+            <Radio
+              key={option.value}
+              value={option.value}
+              className={styles.sourceOption}
+            >
+              <span className={styles.sourceOptionTitle}>
+                {t(option.titleKey)}
+              </span>
+              <span className={styles.sourceOptionDesc}>
+                {t(option.descKey)}
+              </span>
+            </Radio>
+          ))}
+        </Radio.Group>
+      </section>
+
+      <div className={cx(styles.status, configuredCount > 0 && styles.statusOk)}>
         <span className={styles.statusIcon} aria-hidden="true">
-          {activeSource ? <CheckCircle size={18} /> : <Search size={18} />}
+          {configuredCount > 0 ? (
+            <CheckCircle size={18} />
+          ) : (
+            <Search size={18} />
+          )}
         </span>
         <div className={styles.statusBody}>
           <p className={styles.statusTitle}>
-            {activeSource
-              ? t(
-                  "advancedSettings.search.sourceConfiguredTitle",
-                  "当前搜索源：{{name}}",
-                  { name: activeSource.name },
-                )
-              : t(
-                  "advancedSettings.search.sourceBuiltinTitle",
-                  "当前搜索源：内置搜索",
-                )}
+            {configuredCount > 0
+              ? t("advancedSettings.search.thirdPartyAdditiveTitle", {
+                  count: configuredCount,
+                })
+              : t("advancedSettings.search.thirdPartyNoneTitle")}
           </p>
           <p className={styles.statusDesc}>
-            {activeSource
-              ? t(
-                  "advancedSettings.search.sourceConfiguredDesc",
-                  "已配置第三方搜索服务，内置搜索默认不再加载，避免多个搜索工具同时暴露给模型。",
-                )
-              : t(
-                  "advancedSettings.search.sourceBuiltinDesc",
-                  "未配置第三方搜索服务时，仍可使用产品内置搜索服务；该服务无需 API Key，但不保证稳定性和可用性。配置第三方服务后会自动切换。",
-                )}
+            {configuredCount > 0
+              ? t("advancedSettings.search.thirdPartyAdditiveDesc")
+              : t("advancedSettings.search.thirdPartyNoneDesc")}
           </p>
         </div>
+      </div>
+
+      <div className={styles.runtimeBlock}>
+        <div className={styles.runtimeTitle}>
+          {t("advancedSettings.search.statusTitle")}
+        </div>
+        {status?.last ? (
+          <div className={styles.statusGrid}>
+            <div className={styles.statusItem}>
+              <span className={styles.statusLabel}>
+                {t("advancedSettings.search.statusEffective")}
+              </span>
+              <span className={styles.statusValue}>
+                {sourceLabel(status.source.effective)}
+              </span>
+            </div>
+            <div className={styles.statusItem}>
+              <span className={styles.statusLabel}>
+                {t("advancedSettings.search.statusLastSource")}
+              </span>
+              <span className={styles.statusValue}>
+                {sourceLabel(status.last.used_source)}
+              </span>
+            </div>
+            <div className={styles.statusItem}>
+              <span className={styles.statusLabel}>
+                {t("advancedSettings.search.statusLatency")}
+              </span>
+              <span className={styles.statusValue}>
+                {status.last.elapsed_ms ?? 0} ms
+              </span>
+            </div>
+            <div className={styles.statusItem}>
+              <span className={styles.statusLabel}>
+                {t("advancedSettings.search.statusFallbackCount")}
+              </span>
+              <span className={styles.statusValue}>
+                {status.last.fallback_count}
+              </span>
+            </div>
+            <div className={styles.statusItem}>
+              <span className={styles.statusLabel}>
+                {t("advancedSettings.search.statusLastStatus")}
+              </span>
+              <span className={styles.statusValue}>
+                {status.last.status === "ok"
+                  ? t("advancedSettings.search.statusOk")
+                  : t("advancedSettings.search.statusError")}
+                {status.last.degraded
+                  ? ` · ${t("advancedSettings.search.statusDegraded")}`
+                  : ""}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p className={styles.statusDesc}>
+            {t("advancedSettings.search.statusNever")}
+          </p>
+        )}
+        {engineEntries.length > 0 ? (
+          <div className={styles.engineChips}>
+            {engineEntries.map(([name, info]) => (
+              <span
+                key={name}
+                className={cx(
+                  styles.engineChip,
+                  info.status === "ok"
+                    ? styles.engineChipOk
+                    : styles.engineChipBad,
+                )}
+              >
+                {name} · {info.count ?? 0}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <p className={styles.runtimeLine}>
+          {t("advancedSettings.search.statusNative")}:{" "}
+          {nativeLast
+            ? `${nativeLast.status ?? "—"} · ${nativeLast.elapsed_ms ?? 0} ms · ${
+                nativeLast.returned ?? 0
+              }${nativeLast.error ? ` · ${nativeLast.error}` : ""}`
+            : t("advancedSettings.search.statusNever")}
+        </p>
+        <p className={styles.runtimeLine}>
+          {t("advancedSettings.search.statusEngines")}:{" "}
+          {status?.tools_visible?.join(", ") || "—"}
+        </p>
       </div>
 
       <div className={styles.grid}>

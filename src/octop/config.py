@@ -111,7 +111,10 @@ _VALID_MOBILE_BACKENDS = frozenset({"physical", "redroid", "emulator", "none"})
 
 @dataclass(frozen=True)
 class MobileCapabilities:
-    """Install-time host capability for Remote Android (``capabilities.mobile``)."""
+    """Deprecated ``capabilities.mobile`` block kept for config compatibility.
+
+    The ADB-based Remote Phone chain was removed; no runtime code reads this.
+    """
 
     enabled: bool = False
     backend: str = "none"
@@ -133,6 +136,9 @@ class OctopConfig:
     login_max_attempts: int = 5
     login_lockout_seconds: int = 900
     cors_origins: list[str] = field(default_factory=list)
+    # Optional shared secret for phone clients / cross-origin dashboards.
+    # Empty means "no credential check" (single-user default).
+    access_token: str | None = None
     default_timezone: str = "Asia/Shanghai"
     enable_dashboard: bool = True
     enable_api_docs: bool = False
@@ -145,6 +151,11 @@ class OctopConfig:
     capabilities: CapabilitiesConfig = field(default_factory=CapabilitiesConfig)
     max_upload_mb: int = DEFAULT_MAX_UPLOAD_MB
     browser_idle_timeout_minutes: int = DEFAULT_BROWSER_IDLE_TIMEOUT_MINUTES
+    # Runtime instances for the same expert across projects. Each instance is a
+    # full harness agent (~150-250MB RSS), so both caps are deliberately small.
+    project_runtime_max_instances: int = 6
+    project_runtime_per_agent: int = 2
+    project_runtime_queue_timeout_s: float = 120.0
 
     @property
     def max_upload_bytes(self) -> int:
@@ -154,6 +165,8 @@ class OctopConfig:
 def _defaults_for_file() -> dict[str, Any]:
     data = asdict(OctopConfig())
     data.pop("database_in_file", None)
+    # Secrets stay out of the generated file; set them via env or by hand.
+    data.pop("access_token", None)
     db = dict(data["database"])
     db.pop("password", None)
     db.pop("url", None)
@@ -185,15 +198,29 @@ def _parse_tls_section(raw: object) -> TlsConfig:
 
 
 def _parse_mobile_capabilities(raw: object) -> MobileCapabilities:
+    """Deprecated ADB-era compat block: tolerated, never blocks startup.
+
+    The ADB mobile pipeline is removed, so this block is no longer validated
+    strictly; malformed or unknown values are ignored with a warning instead of
+    raising ``ValueError`` and failing startup for configs inherited from old
+    versions.
+    """
     if raw is None:
         return MobileCapabilities()
     if not isinstance(raw, dict):
-        raise ValueError("config.capabilities.mobile must be an object")
+        logger.warning(
+            "config.capabilities.mobile is deprecated and its invalid value was ignored "
+            "(the ADB mobile pipeline has been removed); the key can be deleted"
+        )
+        return MobileCapabilities()
     backend = str(raw.get("backend", "none")).strip().lower() or "none"
     if backend not in _VALID_MOBILE_BACKENDS:
-        allowed = ", ".join(sorted(_VALID_MOBILE_BACKENDS))
-        msg = f"capabilities.mobile.backend must be one of {allowed}, got {backend!r}"
-        raise ValueError(msg)
+        logger.warning(
+            "config.capabilities.mobile.backend=%r is deprecated/unknown and was "
+            "treated as 'none' (the ADB mobile pipeline has been removed)",
+            backend,
+        )
+        backend = "none"
     return MobileCapabilities(
         enabled=bool(raw.get("enabled", False)),
         backend=backend,
@@ -492,6 +519,8 @@ def load_config(path: Path) -> OctopConfig:
         merged["default_timezone"] = v
     if v := os.environ.get("OCTOP_CORS_ORIGINS"):
         merged["cors_origins"] = [s.strip() for s in v.split(",") if s.strip()]
+    if v := os.environ.get("OCTOP_ACCESS_TOKEN"):
+        merged["access_token"] = v.strip() or None
     if v := os.environ.get("OCTOP_ENABLE_DASHBOARD"):
         merged["enable_dashboard"] = _coerce_bool(
             "OCTOP_ENABLE_DASHBOARD", v, bool(merged["enable_dashboard"])
@@ -524,29 +553,10 @@ def load_config(path: Path) -> OctopConfig:
             ),
         )
 
+    # Deprecated: ``capabilities.mobile`` used to gate the ADB-based Remote
+    # Phone chain. That chain is gone; the key is still parsed so existing
+    # config files keep loading, but nothing reads it anymore.
     capabilities = _parse_capabilities_section(raw.get("capabilities"))
-    if v := os.environ.get("OCTOP_ENABLE_MOBILE"):
-        forced = _coerce_bool("OCTOP_ENABLE_MOBILE", v, capabilities.mobile.enabled)
-        capabilities = CapabilitiesConfig(
-            mobile=MobileCapabilities(
-                enabled=forced,
-                backend=capabilities.mobile.backend,
-                probed_at=capabilities.mobile.probed_at,
-                reason=capabilities.mobile.reason,
-            )
-        )
-
-    capabilities = _parse_capabilities_section(raw.get("capabilities"))
-    if v := os.environ.get("OCTOP_ENABLE_MOBILE"):
-        forced = _coerce_bool("OCTOP_ENABLE_MOBILE", v, capabilities.mobile.enabled)
-        capabilities = CapabilitiesConfig(
-            mobile=MobileCapabilities(
-                enabled=forced,
-                backend=capabilities.mobile.backend,
-                probed_at=capabilities.mobile.probed_at,
-                reason=capabilities.mobile.reason,
-            )
-        )
 
     backup = _parse_backup_section(raw.get("backup"))
     if v := os.environ.get("OCTOP_BACKUP_AUTO_ENABLED"):
@@ -613,6 +623,7 @@ def load_config(path: Path) -> OctopConfig:
         login_max_attempts=int(merged.get("login_max_attempts", 5)),
         login_lockout_seconds=int(merged.get("login_lockout_seconds", 900)),
         cors_origins=list(merged.get("cors_origins") or []),
+        access_token=(str(merged.get("access_token") or "").strip() or None),
         default_timezone=str(merged.get("default_timezone") or "Asia/Shanghai"),
         enable_dashboard=bool(merged["enable_dashboard"]),
         enable_api_docs=bool(merged["enable_api_docs"]),
@@ -631,5 +642,14 @@ def load_config(path: Path) -> OctopConfig:
                     DEFAULT_BROWSER_IDLE_TIMEOUT_MINUTES,
                 )
             ),
+        ),
+        project_runtime_max_instances=max(
+            1, int(merged.get("project_runtime_max_instances", 6))
+        ),
+        project_runtime_per_agent=max(
+            1, int(merged.get("project_runtime_per_agent", 2))
+        ),
+        project_runtime_queue_timeout_s=max(
+            0.0, float(merged.get("project_runtime_queue_timeout_s", 120.0))
         ),
     )

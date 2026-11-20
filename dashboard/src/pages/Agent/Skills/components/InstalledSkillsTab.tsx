@@ -336,6 +336,7 @@ export default function InstalledSkillsTab({
             <button
               type="button"
               className={styles.toolbarIconBtn}
+              aria-label={t("common.refresh")}
               onClick={() => void handleRefresh()}
               disabled={refreshing || loading}
             >

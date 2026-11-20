@@ -27,9 +27,12 @@ export const ConnectorCard = memo(function ConnectorCard({
       onClick={() => !disabled && onConfigure(entry, null)}
       role="button"
       tabIndex={disabled ? -1 : 0}
-      onKeyDown={(e) =>
-        e.key === "Enter" && !disabled && onConfigure(entry, null)
-      }
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && !disabled) {
+          e.preventDefault();
+          onConfigure(entry, null);
+        }
+      }}
     >
       <div className={styles.typeCardBody}>
         <div className={styles.typeCardHeader}>

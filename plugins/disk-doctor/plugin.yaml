@@ -1,0 +1,8 @@
+id: disk-doctor
+version: 0.1.0
+name: 磁盘体检
+description: 只读查看磁盘容量、目录体积与超大文件，快速定位占空间大户
+icon: "🩺"
+kind: tool
+entry: main.py
+group: ops

@@ -54,7 +54,7 @@ describe("setup lockdown handling", () => {
     fetchMock.mockClear();
     replace.mockClear();
 
-    await expect(mod.request("/settings/capabilities")).rejects.toThrow(
+    await expect(mod.request("/settings/timezone")).rejects.toThrow(
       mod.SetupRequiredError,
     );
 

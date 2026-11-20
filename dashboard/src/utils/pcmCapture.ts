@@ -1,7 +1,7 @@
 /**
  * 16 kHz mono PCM helpers for realtime speech recognition.
  *
- * Tencent's realtime ASR expects 16-bit mono PCM at 16 kHz, sent in ~40 ms
+ * The realtime ASR provider expects 16-bit mono PCM at 16 kHz, sent in ~40 ms
  * frames (640 samples / 1280 bytes) at roughly 1:1 realtime.
  */
 

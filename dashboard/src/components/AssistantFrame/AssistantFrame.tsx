@@ -367,6 +367,7 @@ export default function AssistantFrame({
               placements.map((item) => (
                 <Tooltip key={item} title={t(...placementLabel(item))}>
                   <Button
+                    aria-label={t(...placementLabel(item))}
                     size="small"
                     type="text"
                     className={
@@ -387,6 +388,9 @@ export default function AssistantFrame({
                 }
               >
                 <Button
+                    aria-label={placement === "right"
+                    ? t("assistant.undock", "取消停靠")
+                    : t("assistant.dockRight", "停靠在右侧")}
                   size="small"
                   type="text"
                   className={

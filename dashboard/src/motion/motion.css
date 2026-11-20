@@ -1,0 +1,244 @@
+/* ===================================================================
+   动效基础层
+   -------------------------------------------------------------------
+   数值由 src/motion/motionPrefs.ts 在启动时写到 <html> 的内联样式上，
+   这里只提供默认值与可复用的关键帧 / 工具类。
+
+   约定：
+   - 只动 transform 与 opacity，不动 width/height/top/left；
+   - 进场略慢、出场略快，默认减速进入、加速离开；
+   - 列表入场用 --octop-enter-index 做轻量错峰，最多 160ms，
+     不允许因为动画延迟真实内容的可交互时间。
+   =================================================================== */
+
+:root {
+  --motion-duration-instant: 90ms;
+  --motion-duration-fast: 130ms;
+  --motion-duration-base: 190ms;
+  --motion-duration-slow: 280ms;
+  --motion-duration-slower: 420ms;
+  --motion-duration-epic: 760ms;
+
+  --motion-ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --motion-shift-xs: 4px;
+  --motion-shift-sm: 8px;
+  --motion-shift-md: 14px;
+  --motion-shift-lg: 22px;
+  --motion-shift-xl: 34px;
+
+  --motion-scale-subtle: 0.99;
+  --motion-scale-card: 0.97;
+  --motion-scale-hero: 0.94;
+
+  --motion-stagger-step: 24ms;
+}
+
+/* JS 未执行时的兜底：系统要求减少动态效果时先取消位移。 */
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion-reduced]) {
+    --motion-shift-xs: 0px;
+    --motion-shift-sm: 0px;
+    --motion-shift-md: 0px;
+    --motion-shift-lg: 0px;
+    --motion-shift-xl: 0px;
+    --motion-scale-subtle: 1;
+    --motion-scale-card: 1;
+    --motion-scale-hero: 1;
+    --motion-stagger-step: 0ms;
+  }
+}
+
+html[data-motion-reduced="true"] {
+  --motion-shift-xs: 0px;
+  --motion-shift-sm: 0px;
+  --motion-shift-md: 0px;
+  --motion-shift-lg: 0px;
+  --motion-shift-xl: 0px;
+  --motion-scale-subtle: 1;
+  --motion-scale-card: 1;
+  --motion-scale-hero: 1;
+  --motion-stagger-step: 0ms;
+}
+
+/* ---------------- 关键帧 ---------------- */
+
+@keyframes octop-motion-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes octop-motion-rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--motion-enter-shift, var(--motion-shift-md)), 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes octop-motion-sink-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, calc(-1 * var(--motion-enter-shift, var(--motion-shift-sm))), 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes octop-motion-from-right-in {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--motion-enter-shift, var(--motion-shift-lg)), 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes octop-motion-from-left-in {
+  from {
+    opacity: 0;
+    transform: translate3d(calc(-1 * var(--motion-enter-shift, var(--motion-shift-lg))), 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes octop-motion-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--motion-enter-scale, var(--motion-scale-card)));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes octop-motion-fade-out {
+  to {
+    opacity: 0;
+    transform: translate3d(0, calc(-1 * var(--motion-exit-shift, var(--motion-shift-xs))), 0);
+  }
+}
+
+@keyframes octop-motion-scale-out {
+  to {
+    opacity: 0;
+    transform: scale(var(--motion-exit-scale, var(--motion-scale-card)));
+  }
+}
+
+@keyframes octop-motion-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ---------------- 工具类 ---------------- */
+
+.octop-enter {
+  animation-duration: var(--motion-duration-base);
+  animation-timing-function: var(--motion-ease-enter);
+  animation-fill-mode: both;
+  animation-delay: min(
+    calc(var(--octop-enter-index, 0) * var(--motion-stagger-step)),
+    160ms
+  );
+}
+
+.octop-enter[data-motion="rise"] {
+  animation-name: octop-motion-rise-in;
+}
+
+.octop-enter[data-motion="sink"] {
+  animation-name: octop-motion-sink-in;
+}
+
+.octop-enter[data-motion="from-right"] {
+  animation-name: octop-motion-from-right-in;
+  animation-duration: var(--motion-duration-slow);
+}
+
+.octop-enter[data-motion="from-left"] {
+  animation-name: octop-motion-from-left-in;
+  animation-duration: var(--motion-duration-slow);
+}
+
+.octop-enter[data-motion="scale"] {
+  animation-name: octop-motion-scale-in;
+}
+
+.octop-enter[data-motion="fade"] {
+  animation-name: octop-motion-fade-in;
+}
+
+.octop-enter[data-motion-duration="fast"] {
+  animation-duration: var(--motion-duration-fast);
+}
+
+.octop-enter[data-motion-duration="slow"] {
+  animation-duration: var(--motion-duration-slow);
+}
+
+.octop-exit {
+  animation-duration: var(--motion-duration-fast);
+  animation-timing-function: var(--motion-ease-exit);
+  animation-fill-mode: both;
+  animation-name: octop-motion-fade-out;
+  pointer-events: none;
+}
+
+.octop-exit[data-motion="scale"] {
+  animation-name: octop-motion-scale-out;
+}
+
+.octop-status-pop {
+  animation: octop-motion-pop var(--motion-duration-slow)
+    var(--motion-ease-enter);
+}
+
+.octop-transition {
+  transition-property: transform, opacity, background-color, border-color,
+    color;
+  transition-duration: var(--motion-duration-base);
+  transition-timing-function: var(--motion-ease-standard);
+}
+
+/* 动画结束后不再占用合成层。 */
+.octop-enter,
+.octop-exit {
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .octop-enter,
+  .octop-exit,
+  .octop-status-pop {
+    animation-duration: 1ms;
+  }
+}
+
+html[data-motion-reduced="true"] .octop-status-pop {
+  animation: none;
+}

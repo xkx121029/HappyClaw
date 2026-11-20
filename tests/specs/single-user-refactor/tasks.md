@@ -10,7 +10,7 @@
 ## 阶段 0.3：桌面壳首次启动（P0）
 
 - [x] T0.3a `should_defer_control_plane_db` 恒 False（废弃标记），启动始终建库 + 迁移后再监听
-- [ ] T0.3b 全新 `OCTOP_HOME` 实测 `/api/health` 首次 200 耗时，写入简报
+- [x] T0.3b 全新 `OCTOP_HOME` 实测 `/api/health` 首次 200 耗时，写入简报（2026-11-20 冒烟：隔离实例冷启动约 10–15s 后 health 200，setup/status、agents 同批 200）
 - [x] T0.3c 新增 `GET /api/runtime/activity`，返回 `{busy, counts, active_turns, terminal_sessions, running_agents, running_jobs, updated_at}`（`counts` 是桌面退出守卫实际读的契约）
 - [x] T0.3d 确认 `setUnsavedContent()` / 新建会话快捷键对接点（前端已实现于 `Chat/index.tsx` L1054–1070），写入简报交前端线
 - [x] T0.3e 监听后异步创建默认 `main` agent（fire-and-forget，失败只记日志，`OCTOP_DISABLE_DEFAULT_AGENT=1` 可关）
@@ -59,21 +59,21 @@
 - [x] T3.2 `users.py` / `user_groups.py` / `user_roles.py` / `invites.py`：读取单人化、写操作中文拒绝
 - [x] T3.3 `auth_mfa/device/oidc/oauth/ldap`：禁用态 + 中文提示
 - [x] T3.4a `test_jwt_auth_middleware.py` 重写为「单人访问」测试（无令牌 200、非法令牌忽略、/setup/status）
-- [ ] T3.4b 其余冲突测试待处理：`test_jwt_tokens.py`、`test_permissions_api.py`、`test_auth_flow.py`、`test_users_api.py`、`test_boundary_authz.py`、`test_setup_wizard.py`
+- [x] T3.4b 其余冲突测试待处理：`test_jwt_tokens.py`、`test_permissions_api.py`、`test_auth_flow.py`、`test_users_api.py`、`test_boundary_authz.py`、`test_setup_wizard.py`（2026-11-20 实测 6 个文件 63 passed / 14 skipped / 0 failed，多账号用例在单人模式下自动跳过）
 - [ ] **简报 3：认证路径下线完成**
 
 ## 阶段 4：OOP 服务化（每模块一次简报）
 
-- [ ] T4.1 `BackupService`（`infra/backup/service.py`）+ 测试，router 改为调用服务 → **简报 4**
-- [ ] T4.2 `UsageReportService`（`infra/usage/report.py`）+ 测试，router 简化 → **简报 5**
-- [ ] T4.3 `StartupSelfCheck`（`infra/selfcheck.py`）+ `/api/health/selfcheck` → **简报 6**
+- [x] T4.1 `BackupService`（`infra/backup/service.py`）+ 测试，router 改为调用服务 → **简报 4**（router 已用 `build_backup_service` DI）
+- [x] T4.2 `UsageReportService`（`infra/usage/report.py`）+ 测试，router 简化 → **简报 5**（usage router 已用 `get_usage_service` DI）
+- [x] T4.3 `StartupSelfCheck`（`infra/selfcheck.py`）+ `/api/health/selfcheck` → **简报 6**
 - [ ] T4.4 `LocalConfigService`（`infra/config_service.py`），收敛 `load_config` 调用 → **简报 7**
 
 ## 阶段 5：单人友好能力
 
-- [ ] T5.1 备份完整性校验 `GET /api/admin/backup/verify`，恢复前自动校验
+- [x] T5.1 备份完整性校验 `GET /api/admin/backup/verify`，恢复前自动校验（后端只读校验接口 + 前端恢复确认框接入：校验中/通过/失败阻断/不可得兜底，2026-11-20）
 - [ ] T5.2 启动自检输出中文摘要（端口/DB/目录/模型凭据/磁盘）
-- [ ] T5.3 用量接口单人化：`as_user` 忽略、`by_model` 可用、耗时字段确认
+- [x] T5.3 用量接口单人化：`as_user` 忽略、`by_model` 可用、耗时字段确认（2026-11-20：移除 `as_user` 参数与 `resolve_user_scope`，两个多账号契约用例替换为单人契约用例，冒烟实测 `?as_user=999` 返回 200 且 scope 固定 owner）
 - [ ] T5.4 错误中文抽检：`grep` 扫描 `OctopError(` 的英文 message，用户可见的改中文
 - [ ] **简报 8：第一阶段完成**
 
@@ -97,6 +97,6 @@
 ```powershell
 py -3.13 -m pip --python "E:\HAPPYclaw\Octop\.venv\Scripts\python.exe" install -e "E:\HAPPYclaw\Octop" pytest pytest-asyncio httpx
 & "E:\HAPPYclaw\Octop\.venv\Scripts\python.exe" -m pytest tests/unit/single_user tests/unit/db tests/unit/api -q
-$env:OCTOP_HOME="E:\HAPPYclaw\.octop-preview"; $env:OCTOP_PORT="8089"
-& "E:\HAPPYclaw\Octop\.venv\Scripts\python.exe" -m octop serve
+$env:OCTOP_HOME="E:\HAPPYclaw\.octop-preview"
+& "E:\HAPPYclaw\Octop\.venv\Scripts\python.exe" -m octop run --host 127.0.0.1 --port 8089
 ```

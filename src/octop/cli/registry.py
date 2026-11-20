@@ -46,4 +46,9 @@ COMMANDS: dict[str, tuple[str, str, str]] = {
         "migrate",
         "Migrate an OpenClaw or Hermes Agent setup into an expert.",
     ),
+    "upgrade": (
+        ".commands.upgrade",
+        "upgrade",
+        "Upgrade an Octop install: workspaces become projects, history is kept.",
+    ),
 }

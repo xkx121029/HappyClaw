@@ -1,6 +1,6 @@
 """Short-lived download links for browsers that cannot save a blob.
 
-In-app browsers (WeChat, QQ, DingTalk, …) refuse ``blob:`` downloads, and a
+Some in-app browsers refuse ``blob:`` downloads, and a
 plain API URL needs a JWT that the system browser does not have. The
 dashboard hands the bytes it already fetched back to Octop, which keeps them
 on disk behind an unguessable token for a few minutes so the link can be

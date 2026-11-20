@@ -7,7 +7,7 @@ Thank you for your interest in contributing! HappyClaw is the self-hosted AI wor
 **Prerequisites:** Python 3.12+, Node.js 18+, [uv](https://docs.astral.sh/uv/)
 
 ```bash
-git clone https://github.com/TencentCloud/Octop.git octop
+git clone https://github.com/xkx121029/HappyClaw.git octop
 cd octop
 make install          # backend dev dependencies
 make install-hooks    # once per clone: pre-commit runs make all + dashboard build
@@ -171,7 +171,7 @@ Branch from `main` → PR into `main` (tag if shipping a patch) → PR into `dev
 **前置条件：** Python 3.12+、Node.js 18+、[uv](https://docs.astral.sh/uv/)
 
 ```bash
-git clone https://github.com/TencentCloud/Octop.git octop
+git clone https://github.com/xkx121029/HappyClaw.git octop
 cd octop
 make install
 make install-hooks    # 每个 clone 执行一次：提交前跑 make all + 前端 build

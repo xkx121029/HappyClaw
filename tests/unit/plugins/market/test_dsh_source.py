@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 from collections.abc import Callable
 
 import pytest
@@ -73,6 +74,29 @@ def test_install_git_archive_with_sub_path(tmp_path, dsh_index_document, write_i
     assert payload.entry_path == "index.js"
 
 
+def test_relative_icon_resolves_against_index_url(dsh_index_document):
+    document = copy.deepcopy(dsh_index_document)
+    document["plugins"][0]["icon"] = "icons/weather.svg"
+    body = json.dumps(document).encode("utf-8")
+    source = DshSource(
+        "https://index.example.test/market/index.json",
+        transport=lambda url: body,
+    )
+
+    entries = source.fetch_index()
+
+    assert entries[0].icon == "https://index.example.test/market/icons/weather.svg"
+
+
+def test_absolute_icon_is_kept(dsh_index_document, write_index):
+    document = copy.deepcopy(dsh_index_document)
+    document["plugins"][0]["icon"] = "https://cdn.example.test/weather.png"
+
+    entries = DshSource(write_index(document)).fetch_index()
+
+    assert entries[0].icon == "https://cdn.example.test/weather.png"
+
+
 def _mutate_format(document):
     document["format"] = 2
 
@@ -101,12 +125,36 @@ def _mutate_missing_engine(document):
     document["plugins"][0]["versions"][0]["engines"] = {}
 
 
+def _mutate_absent_engines(document):
+    document["plugins"][0]["versions"][0].pop("engines")
+
+
+def _mutate_workspace_engine(document):
+    document["plugins"][0]["versions"][0]["engines"] = {"dsh": "workspace:~"}
+
+
 def _mutate_duplicate_version(document):
     document["plugins"][0]["versions"][1]["version"] = "1.0.0"
 
 
 def _mutate_bad_timestamp(document):
     document["plugins"][0]["versions"][0]["publishTimestamp"] = -1
+
+
+@pytest.mark.parametrize("mutate", [_mutate_missing_engine, _mutate_absent_engines])
+def test_absent_dsh_range_means_any_dsh_version(
+    dsh_index_document, write_index: Callable[[dict], object], mutate
+):
+    """The DSH format says an absent range constrains nothing; keep it that way."""
+
+    document = copy.deepcopy(dsh_index_document)
+    mutate(document)
+    entries = DshSource(write_index(document)).fetch_index()
+
+    release = entries[0].releases[0]
+    assert release.version == "1.0.0"
+    assert release.requires == {}
+    assert release.extra["dsh_engine"] is None
 
 
 @pytest.mark.parametrize(
@@ -118,7 +166,7 @@ def _mutate_bad_timestamp(document):
         (_mutate_duplicate_name, "$.plugins[1].name"),
         (_mutate_bad_commit, "$.plugins[1].versions[0].source.commit"),
         (_mutate_unknown_source_type, "$.plugins[0].versions[0].source.type"),
-        (_mutate_missing_engine, "$.plugins[0].versions[0].engines.dsh"),
+        (_mutate_workspace_engine, "$.plugins[0].versions[0].engines.dsh"),
         (_mutate_duplicate_version, "$.plugins[0].versions[1].version"),
         (_mutate_bad_timestamp, "$.plugins[0].versions[0].publishTimestamp"),
     ],

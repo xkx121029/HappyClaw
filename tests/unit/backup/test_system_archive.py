@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sqlite3
 import tarfile
+from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
 
@@ -24,6 +26,54 @@ def layout(tmp_path: Path) -> PathLayout:
     root = tmp_path / ".octop"
     root.mkdir()
     return PathLayout(root)
+
+
+def _insert_project(
+    conn: sqlite3.Connection,
+    project_id: str,
+    root_dir: str | None,
+) -> None:
+    conn.execute(
+        "INSERT INTO projects(project_id, user_id, name, root_dir, is_default,"
+        " origin, created_at, updated_at) VALUES (?, 1, ?, ?, 0, 'manual', 1, 1)",
+        (project_id, project_id, root_dir),
+    )
+
+
+def _rewrite_archive(
+    archive: Path,
+    *,
+    mutate_manifest: Callable[[dict], None] | None = None,
+    mutate_db: Callable[[sqlite3.Connection], None] | None = None,
+) -> None:
+    """Rewrite manifest.json (and optionally db/octop.db) inside *archive*."""
+    members: dict[str, bytes] = {}
+    with tarfile.open(archive, mode="r:gz") as tf:
+        for m in tf.getmembers():
+            if m.isfile():
+                f = tf.extractfile(m)
+                assert f is not None
+                members[m.name] = f.read()
+    if mutate_manifest is not None:
+        manifest = json.loads(members["manifest.json"])
+        mutate_manifest(manifest)
+        members["manifest.json"] = json.dumps(manifest).encode()
+    if mutate_db is not None:
+        tmp_db = archive.with_suffix(".tmp.db")
+        tmp_db.write_bytes(members["db/octop.db"])
+        conn = sqlite3.connect(tmp_db)
+        try:
+            mutate_db(conn)
+            conn.commit()
+        finally:
+            conn.close()
+        members["db/octop.db"] = tmp_db.read_bytes()
+        tmp_db.unlink()
+    with tarfile.open(archive, mode="w:gz") as tf:
+        for name, blob in members.items():
+            info = tarfile.TarInfo(name=name)
+            info.size = len(blob)
+            tf.addfile(info, BytesIO(blob))
 
 
 def test_manifest_roundtrip_includes_driver_fields() -> None:
@@ -57,6 +107,8 @@ def test_legacy_manifest_defaults_plugins_omitted() -> None:
     assert loaded.includes_plugins is False
     assert loaded.includes_knowledge is False
     assert loaded.includes_chats is True
+    assert loaded.includes_projects_external is False
+    assert loaded.external_projects == []
 
 
 def test_roundtrip_backup(layout: PathLayout, tmp_path: Path) -> None:
@@ -634,6 +686,368 @@ def test_backup_can_include_skill_packages_and_plugins_without_workspaces(
     assert "knowledge/kb01/docs/doc1.md" in names
 
 
+def test_backup_and_restore_project_and_session_roots(layout: PathLayout, tmp_path: Path) -> None:
+    pool = SqlitePool(layout.db)
+    run_migrations(pool)
+    with pool.connect() as conn:
+        conn.execute(
+            "INSERT INTO users(username, password_hash, role, created_at) VALUES (?, ?, ?, ?)",
+            ("alice", "hash", "admin", 1),
+        )
+
+    project_file = layout.project_root("prj_01") / "README.md"
+    project_file.parent.mkdir(parents=True, exist_ok=True)
+    project_file.write_text("# project", encoding="utf-8")
+    session_file = layout.session_root("thr_01") / "notes" / "todo.md"
+    session_file.parent.mkdir(parents=True, exist_ok=True)
+    session_file.write_text("- task", encoding="utf-8")
+
+    class Row:
+        agent_id = "agent01"
+        name = "Test"
+
+    archive = tmp_path / "project-roots.tar.gz"
+    create_system_backup(
+        paths=layout,
+        agent_rows=[Row()],
+        pool=pool,
+        db_config=DatabaseConfig(),
+        dest=archive,
+    )
+    pool.close()
+
+    with tarfile.open(archive, mode="r:gz") as tf:
+        names = set(tf.getnames())
+        manifest = json.loads(tf.extractfile("manifest.json").read().decode("utf-8"))
+    assert manifest["includes_projects"] is True
+    assert manifest["includes_sessions"] is True
+    assert "projects/prj_01/README.md" in names
+    assert "sessions/thr_01/notes/todo.md" in names
+
+    restore_layout = PathLayout(layout.root.parent / "restored-roots")
+    restore_pool = SqlitePool(restore_layout.db)
+    run_migrations(restore_pool)
+    result = restore_system_backup(
+        archive,
+        paths=restore_layout,
+        pool=restore_pool,
+        db_config=DatabaseConfig(),
+        restore_config=False,
+    )
+    restore_pool.close()
+
+    assert result["project_files"] == 1
+    assert result["session_files"] == 1
+    assert (restore_layout.project_root("prj_01") / "README.md").read_text(
+        encoding="utf-8"
+    ) == "# project"
+    assert (restore_layout.session_root("thr_01") / "notes" / "todo.md").read_text(
+        encoding="utf-8"
+    ) == "- task"
+
+
+def test_backup_skips_project_and_session_roots_without_workspaces(
+    layout: PathLayout, tmp_path: Path
+) -> None:
+    pool = SqlitePool(layout.db)
+    run_migrations(pool)
+    project_file = layout.project_root("prj_01") / "README.md"
+    project_file.parent.mkdir(parents=True, exist_ok=True)
+    project_file.write_text("# project", encoding="utf-8")
+
+    class Row:
+        agent_id = "agent01"
+        name = "Agent"
+
+    archive = tmp_path / "roots-skipped.tar.gz"
+    create_system_backup(
+        paths=layout,
+        agent_rows=[Row()],
+        pool=pool,
+        db_config=DatabaseConfig(),
+        dest=archive,
+        include_workspaces=False,
+    )
+    pool.close()
+
+    with tarfile.open(archive, mode="r:gz") as tf:
+        names = set(tf.getnames())
+        manifest = json.loads(tf.extractfile("manifest.json").read().decode("utf-8"))
+    assert manifest["includes_projects"] is False
+    assert manifest["includes_sessions"] is False
+    assert "projects/prj_01/README.md" not in names
+
+
+def test_backup_packs_external_project_roots(layout: PathLayout, tmp_path: Path) -> None:
+    pool = SqlitePool(layout.db)
+    run_migrations(pool)
+    with pool.connect() as conn:
+        conn.execute(
+            "INSERT INTO users(id, username, password_hash, role, created_at)"
+            " VALUES (1, 'alice', 'hash', 'admin', 1)"
+        )
+        _insert_project(conn, "prj_ext", str(tmp_path / "external" / "myproj"))
+        _insert_project(conn, "prj_home", str(layout.project_root("prj_home")))
+        _insert_project(conn, "prj_ghost", str(tmp_path / "external" / "missing"))
+        _insert_project(conn, "prj_null", None)
+
+    external = tmp_path / "external" / "myproj"
+    (external / "nested").mkdir(parents=True)
+    (external / "README.md").write_text("# external", encoding="utf-8")
+    (external / "nested" / "deep.txt").write_text("deep", encoding="utf-8")
+    home_file = layout.project_root("prj_home") / "README.md"
+    home_file.parent.mkdir(parents=True, exist_ok=True)
+    home_file.write_text("# home", encoding="utf-8")
+
+    class Row:
+        agent_id = "agent01"
+        name = "Test"
+
+    archive = tmp_path / "external-roots.tar.gz"
+    create_system_backup(
+        paths=layout,
+        agent_rows=[Row()],
+        pool=pool,
+        db_config=DatabaseConfig(),
+        dest=archive,
+    )
+    pool.close()
+
+    with tarfile.open(archive, mode="r:gz") as tf:
+        names = set(tf.getnames())
+        manifest = json.loads(tf.extractfile("manifest.json").read().decode("utf-8"))
+    assert manifest["includes_projects_external"] is True
+    assert manifest["external_projects"] == [{"project_id": "prj_ext", "root_dir": str(external)}]
+    assert "projects-external/prj_ext/README.md" in names
+    assert "projects-external/prj_ext/nested/deep.txt" in names
+    # root_dir inside OCTOP_HOME is covered by the default projects/ packing.
+    assert not any(name.startswith("projects-external/prj_home") for name in names)
+    # Missing external directories are skipped with a warning.
+    assert not any(name.startswith("projects-external/prj_ghost") for name in names)
+    assert "projects/prj_home/README.md" in names
+
+
+def test_backup_external_project_skips_chats_when_excluded(
+    layout: PathLayout, tmp_path: Path
+) -> None:
+    pool = SqlitePool(layout.db)
+    run_migrations(pool)
+    with pool.connect() as conn:
+        conn.execute(
+            "INSERT INTO users(id, username, password_hash, role, created_at)"
+            " VALUES (1, 'alice', 'hash', 'admin', 1)"
+        )
+        _insert_project(conn, "prj_ext", str(tmp_path / "external" / "myproj"))
+
+    external = tmp_path / "external" / "myproj"
+    (external / "sessions").mkdir(parents=True)
+    (external / "README.md").write_text("# external", encoding="utf-8")
+    (external / "sessions" / "chat.jsonl").write_text("chat", encoding="utf-8")
+
+    class Row:
+        agent_id = "agent01"
+        name = "Test"
+
+    archive = tmp_path / "external-no-chats.tar.gz"
+    create_system_backup(
+        paths=layout,
+        agent_rows=[Row()],
+        pool=pool,
+        db_config=DatabaseConfig(),
+        dest=archive,
+        include_chats=False,
+    )
+    pool.close()
+
+    with tarfile.open(archive, mode="r:gz") as tf:
+        names = set(tf.getnames())
+    assert "projects-external/prj_ext/README.md" in names
+    assert "projects-external/prj_ext/sessions/chat.jsonl" not in names
+
+
+def test_restore_external_project_files_to_db_root(layout: PathLayout, tmp_path: Path) -> None:
+    pool = SqlitePool(layout.db)
+    run_migrations(pool)
+    with pool.connect() as conn:
+        conn.execute(
+            "INSERT INTO users(id, username, password_hash, role, created_at)"
+            " VALUES (1, 'alice', 'hash', 'admin', 1)"
+        )
+        _insert_project(conn, "prj_ext", str(tmp_path / "external" / "myproj"))
+
+    external = tmp_path / "external" / "myproj"
+    external.mkdir(parents=True)
+    (external / "README.md").write_text("# external", encoding="utf-8")
+
+    class Row:
+        agent_id = "agent01"
+        name = "Test"
+
+    archive = tmp_path / "external-restore.tar.gz"
+    create_system_backup(
+        paths=layout,
+        agent_rows=[Row()],
+        pool=pool,
+        db_config=DatabaseConfig(),
+        dest=archive,
+    )
+    pool.close()
+    shutil.rmtree(external)  # simulate loss of the external project files
+
+    restore_layout = PathLayout(tmp_path / "restored-home")
+    restore_layout.root.mkdir()
+    restore_pool = SqlitePool(restore_layout.db)
+    run_migrations(restore_pool)
+    result = restore_system_backup(
+        archive,
+        paths=restore_layout,
+        pool=restore_pool,
+        db_config=DatabaseConfig(),
+        restore_config=False,
+    )
+    restore_pool.close()
+
+    assert result["project_external_files"] == 1
+    assert (external / "README.md").read_text(encoding="utf-8") == "# external"
+
+
+def test_restore_external_project_root_resolution(layout: PathLayout, tmp_path: Path) -> None:
+    db_root = tmp_path / "root-in-db"
+    pool = SqlitePool(layout.db)
+    run_migrations(pool)
+    with pool.connect() as conn:
+        conn.execute(
+            "INSERT INTO users(id, username, password_hash, role, created_at)"
+            " VALUES (1, 'alice', 'hash', 'admin', 1)"
+        )
+        _insert_project(conn, "prj_ext", str(db_root))
+
+    db_root.mkdir(parents=True)
+    (db_root / "a.txt").write_text("project", encoding="utf-8")
+
+    class Row:
+        agent_id = "agent01"
+        name = "Test"
+
+    source_archive = tmp_path / "external-src.tar.gz"
+    create_system_backup(
+        paths=layout,
+        agent_rows=[Row()],
+        pool=pool,
+        db_config=DatabaseConfig(),
+        dest=source_archive,
+    )
+    pool.close()
+    shutil.rmtree(db_root)
+
+    def point_manifest_elsewhere(manifest: dict) -> None:
+        manifest["external_projects"][0]["root_dir"] = str(tmp_path / "root-in-manifest")
+
+    db_wins_archive = tmp_path / "db-wins.tar.gz"
+    shutil.copy2(source_archive, db_wins_archive)
+    _rewrite_archive(db_wins_archive, mutate_manifest=point_manifest_elsewhere)
+
+    db_wins_layout = PathLayout(tmp_path / "restored-db-wins")
+    db_wins_layout.root.mkdir()
+    db_wins_pool = SqlitePool(db_wins_layout.db)
+    run_migrations(db_wins_pool)
+    result = restore_system_backup(
+        db_wins_archive,
+        paths=db_wins_layout,
+        pool=db_wins_pool,
+        db_config=DatabaseConfig(),
+        restore_config=False,
+    )
+    db_wins_pool.close()
+    assert result["project_external_files"] == 1
+    assert (db_root / "a.txt").read_text(encoding="utf-8") == "project"
+    assert not (tmp_path / "root-in-manifest").exists()
+
+    # Fallback: the restored DB lost the projects row (e.g. user pruning cascade),
+    # so the manifest's recorded root_dir is used.
+    manifest_root = tmp_path / "root-from-manifest"
+
+    def point_manifest_at_fallback(manifest: dict) -> None:
+        manifest["external_projects"][0]["root_dir"] = str(manifest_root)
+
+    fallback_archive = tmp_path / "manifest-fallback.tar.gz"
+    shutil.copy2(source_archive, fallback_archive)
+    _rewrite_archive(
+        fallback_archive,
+        mutate_manifest=point_manifest_at_fallback,
+        mutate_db=lambda conn: conn.execute("DELETE FROM projects"),
+    )
+
+    fallback_layout = PathLayout(tmp_path / "restored-fallback")
+    fallback_layout.root.mkdir()
+    fallback_pool = SqlitePool(fallback_layout.db)
+    run_migrations(fallback_pool)
+    fallback_result = restore_system_backup(
+        fallback_archive,
+        paths=fallback_layout,
+        pool=fallback_pool,
+        db_config=DatabaseConfig(),
+        restore_config=False,
+    )
+    fallback_pool.close()
+    assert fallback_result["project_external_files"] == 1
+    assert (manifest_root / "a.txt").read_text(encoding="utf-8") == "project"
+
+
+def test_restore_manifest_without_external_fields_is_backward_compatible(
+    layout: PathLayout, tmp_path: Path
+) -> None:
+    pool = SqlitePool(layout.db)
+    run_migrations(pool)
+    with pool.connect() as conn:
+        conn.execute(
+            "INSERT INTO users(id, username, password_hash, role, created_at)"
+            " VALUES (1, 'alice', 'hash', 'admin', 1)"
+        )
+        _insert_project(conn, "prj_ext", str(tmp_path / "external" / "myproj"))
+
+    external = tmp_path / "external" / "myproj"
+    external.mkdir(parents=True)
+    (external / "README.md").write_text("# external", encoding="utf-8")
+
+    class Row:
+        agent_id = "agent01"
+        name = "Test"
+
+    archive = tmp_path / "legacy-manifest.tar.gz"
+    create_system_backup(
+        paths=layout,
+        agent_rows=[Row()],
+        pool=pool,
+        db_config=DatabaseConfig(),
+        dest=archive,
+    )
+    pool.close()
+    shutil.rmtree(external)
+
+    def strip_external_fields(manifest: dict) -> None:
+        manifest.pop("includes_projects_external", None)
+        manifest.pop("external_projects", None)
+
+    _rewrite_archive(archive, mutate_manifest=strip_external_fields)
+
+    restore_layout = PathLayout(tmp_path / "restored-legacy")
+    restore_layout.root.mkdir()
+    restore_pool = SqlitePool(restore_layout.db)
+    run_migrations(restore_pool)
+    result = restore_system_backup(
+        archive,
+        paths=restore_layout,
+        pool=restore_pool,
+        db_config=DatabaseConfig(),
+        restore_config=False,
+    )
+    restore_pool.close()
+
+    assert result["project_external_files"] == 0
+    assert not external.exists()
+
+
 def test_restore_without_skill_packages_keeps_live_files(
     layout: PathLayout, tmp_path: Path
 ) -> None:
@@ -1180,7 +1594,7 @@ def test_restore_repairs_old_physical_schema_with_current_watermark(tmp_path: Pa
             "SELECT instance_id, shared FROM connectors WHERE instance_id = 'instance-1'"
         ).fetchone()
 
-    assert result["schema_version"] == 26
+    assert result["schema_version"] == 31
     assert "shared" in columns
     assert connector is not None
     assert connector["shared"] == 0
@@ -1234,7 +1648,7 @@ def test_refuse_newer_schema_backup_before_database_replace(
     assert excinfo.value.code == ErrorCode.BACKUP_SCHEMA_INCOMPATIBLE
     assert excinfo.value.details == {
         "archive_schema_version": 999,
-        "runtime_schema_version": 26,
+        "runtime_schema_version": 31,
     }
     with pool.connect() as conn:
         assert (

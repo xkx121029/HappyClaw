@@ -30,6 +30,8 @@ SKIP_MARKET_ROOT_MISSING = "market_root_missing"
 SKIP_MARKET_SLOT_UNREADABLE = "market_slot_unreadable"
 SKIP_DUPLICATE = "duplicate_plugin_id"
 SKIP_DISCOVERY_FAILED = "discovery_failed"
+SKIP_RUNTIME_NO_WORKSPACE = "runtime_requires_workspace"
+SKIP_RUNTIME_GRANT_NOT_FOUND = "runtime_grant_not_found"
 
 BLOCKING_PERMISSIONS: tuple[PermissionKind, ...] = (
     PermissionKind.FS_WRITE,
@@ -65,6 +67,8 @@ __all__ = [
     "SKIP_NOT_TOOL",
     "SKIP_NO_PROVIDER",
     "SKIP_PROVIDER_FAILED",
+    "SKIP_RUNTIME_GRANT_NOT_FOUND",
+    "SKIP_RUNTIME_NO_WORKSPACE",
     "SKIP_UNSAFE_PERMISSION",
     "blocking_permissions",
     "is_tool_plugin",

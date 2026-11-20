@@ -66,6 +66,11 @@ if (typeof window !== "undefined") {
 void initI18n()
   .then(() => {
     createRoot(document.getElementById("root")!).render(<App />);
+    // DSH compatibility adapter (browser half). Lazy: it stays out of the
+    // entry chunk and does nothing unless the backend reports it enabled.
+    void import("./plugins/dshCompat")
+      .then(({ startDshCompat }) => startDshCompat())
+      .catch((err) => console.warn("[dsh-compat] unavailable:", err));
     // Delay clearing the one-shot reload guard until after first paint / lazy
     // chunks settle. Clearing immediately let Firefox modulepreload noise and
     // aborted dynamic imports re-arm an infinite reload loop.

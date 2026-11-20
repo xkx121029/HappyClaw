@@ -108,7 +108,7 @@ export default function AdminStep({
         <div style={{ marginBottom: 20 }}>
           <div
             style={{
-              fontSize: 16,
+              fontSize: "var(--fn-text-lg)",
               fontWeight: 600,
               color: "var(--fn-text-primary)",
               marginBottom: 4,
@@ -116,7 +116,7 @@ export default function AdminStep({
           >
             {t("wizard.stepAdmin")}
           </div>
-          <Text type="secondary" style={{ fontSize: 13 }}>
+          <Text type="secondary" style={{ fontSize: "var(--fn-text-xs)" }}>
             {intro}
           </Text>
         </div>
@@ -144,7 +144,7 @@ export default function AdminStep({
       <div style={{ marginBottom: 20 }}>
         <div
           style={{
-            fontSize: 16,
+            fontSize: "var(--fn-text-lg)",
             fontWeight: 600,
             color: "var(--fn-text-primary)",
             marginBottom: 4,
@@ -152,7 +152,7 @@ export default function AdminStep({
         >
           {t("wizard.stepAdmin")}
         </div>
-        <Text type="secondary" style={{ fontSize: 13 }}>
+        <Text type="secondary" style={{ fontSize: "var(--fn-text-xs)" }}>
           {intro}
         </Text>
       </div>

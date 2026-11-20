@@ -259,7 +259,7 @@ async def stream_transcription(
     token: str | None = Query(default=None),
     locale: str | None = Query(default=None),
 ) -> None:
-    """Proxy one realtime ASR session to Tencent Cloud over WebSocket.
+    """Proxy one realtime ASR session upstream over WebSocket.
 
     The browser sends 16 kHz PCM16 mono frames as binary messages and
     ``{"type": "end"}`` when it is done; the server replies with ``ready`` /

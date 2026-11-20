@@ -17,6 +17,7 @@ from octop.infra.db.repos.sessions import SessionRepo
 from octop.infra.db.repos.thread_messages import ThreadMessageRepo
 from octop.infra.db.repos.threads import ThreadRepo
 from octop.infra.db.repos.users import UserRepo
+from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.gateway.threads import ThreadRegistry
 
 
@@ -39,6 +40,10 @@ def _command(**overrides: object) -> CronDeliveryCommand:
 
 async def _run_locked(_agent_id: str, _session_key: str, operation) -> None:
     await operation()
+
+
+async def _run_locked_with_result(_agent_id: str, _session_key: str, operation):
+    return await operation()
 
 
 def _session(*, channel_type: str, thread_id: str = "thr1") -> MagicMock:
@@ -143,6 +148,56 @@ async def test_text_checkpoint_failure_skips_push() -> None:
         await service.deliver(_command())
     gateway.push_session_text.assert_not_awaited()
     gateway.notify_dashboard_push.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_text_without_model_pushes_and_reports_note() -> None:
+    """A fixed reminder must still reach the user when no model is configured."""
+    session = _session(channel_type=ThreadRegistry.CHANNEL_DASHBOARD)
+    agent_manager = MagicMock()
+    agent_manager.get_agent.side_effect = OctopError(
+        ErrorCode.AGENT_NO_MODEL, "agent 'a1' has no model configured"
+    )
+
+    gateway = MagicMock()
+    gateway.run_in_session = _run_locked_with_result
+    gateway.require_session = MagicMock(return_value=session)
+    gateway.push_session_text = AsyncMock()
+    gateway.notify_dashboard_push = AsyncMock()
+
+    repos = MagicMock()
+    repos.user_repo.get.return_value = MagicMock(locale="en")
+
+    service = CronDeliveryService(gateway=gateway, agent_manager=agent_manager, repos=repos)
+    note = await service.deliver(_command())
+
+    assert note is not None and "no session history" in note
+    gateway.push_session_text.assert_awaited_once()
+    gateway.notify_dashboard_push.assert_awaited_once()
+    repos.thread_message_repo.append_if_ready.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_text_other_agent_errors_still_fail() -> None:
+    """Only a missing model degrades to push-only; anything else stays fatal."""
+    session = _session(channel_type=ThreadRegistry.CHANNEL_DASHBOARD)
+    agent_manager = MagicMock()
+    agent_manager.get_agent.side_effect = OctopError(ErrorCode.AGENT_NOT_FOUND, "gone")
+
+    gateway = MagicMock()
+    gateway.run_in_session = _run_locked
+    gateway.require_session = MagicMock(return_value=session)
+    gateway.push_session_text = AsyncMock()
+    gateway.notify_dashboard_push = AsyncMock()
+
+    service = CronDeliveryService(
+        gateway=gateway,
+        agent_manager=agent_manager,
+        repos=MagicMock(),
+    )
+    with pytest.raises(OctopError):
+        await service.deliver(_command())
+    gateway.push_session_text.assert_not_awaited()
 
 
 @pytest.mark.asyncio

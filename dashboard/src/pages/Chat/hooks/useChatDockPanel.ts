@@ -112,7 +112,11 @@ function fallbackActiveId(
 /**
  * Shared chat dock with tabbed file list / file viewers / browser / terminal.
  */
-export function useChatDockPanel(isMobile: boolean, agentId?: string | null) {
+export function useChatDockPanel(
+  isMobile: boolean,
+  agentId?: string | null,
+  threadId?: string | null,
+) {
   const [dockOpen, setDockOpen] = useState(false);
   const [dockMode, setDockMode] = useState<PanelMode>(loadPanelMode);
   const [openTabs, setOpenTabs] = useState<DockTab[]>([]);
@@ -133,6 +137,32 @@ export function useChatDockPanel(isMobile: boolean, agentId?: string | null) {
     setOpenTabs([]);
     setActiveTabId(null);
   }, [agentId]);
+
+  // File viewers / citations / tool UIs show one conversation's content. On a
+  // thread switch they must not survive into the next scope (project directory
+  // vs sessions/<thread_id>); scope-aware tabs (workspace / files / browser /
+  // terminal) stay open and re-read through their new threadId prop.
+  const prevThreadIdRef = useRef(threadId);
+  useEffect(() => {
+    const prev = prevThreadIdRef.current;
+    prevThreadIdRef.current = threadId;
+    if (prev === threadId) return;
+    setOpenTabs((tabs) => {
+      const next = tabs.filter(
+        (t) =>
+          t.kind === "files" ||
+          t.kind === "workspace" ||
+          t.kind === "browser" ||
+          t.kind === "terminal",
+      );
+      if (next.length === tabs.length) return tabs;
+      setActiveTabId((current) =>
+        next.some((t) => t.id === current) ? current : next[0]?.id ?? null,
+      );
+      if (next.length === 0) setDockOpen(false);
+      return next;
+    });
+  }, [threadId]);
 
   const openDock = useCallback(() => {
     setDockOpen(true);

@@ -2,8 +2,8 @@
 
 Three layers:
   1. UsageRepo round-trips rows and aggregates per granularity.
-  2. /api/usage/summary respects ?as_user= scope (admin) and pins
-     non-admins to their own user_id.
+  2. /api/usage/summary is scoped to the single local owner; the legacy
+     ``as_user`` query param is no longer accepted (ignored, spec T5.3).
   3. /api/admin/usage/summary returns global rollups.
 
 The chat-stream → ledger pipe is exercised in test_chat_ws via the
@@ -14,9 +14,16 @@ the test stays focused.
 from __future__ import annotations
 
 import time
+from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
+
+from octop.infra.server import OctopServer
+from tests.support.app import octop_client
+from tests.support.auth import auth_header, bootstrap_admin
 
 
 @pytest.fixture
@@ -27,6 +34,17 @@ async def env(env_usage):
     # rows up front (users alice_id / 1 already exist from bootstrap).
     _seed_usage_agents(srv, ["agt1", "agt-a", "agt-b", "x", "y"], user_id=ctx["alice_id"])
     yield env_usage
+
+
+@pytest.fixture
+async def solo_usage_env(
+    tmp_octop_home: Path,
+) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str]]]:
+    """Admin-only single-user client (no second account, unlike ``env``)."""
+    async with octop_client(tmp_octop_home) as (client, srv):
+        await bootstrap_admin(client, tmp_octop_home)
+        auth = await auth_header(client)
+        yield client, srv, auth
 
 
 def _seed_usage_agents(srv: Any, agent_ids: list[str], *, user_id: int) -> None:
@@ -137,26 +155,32 @@ async def test_user_summary_only_sees_own_data(env: Any) -> None:
     assert body["turns"] == 1
 
 
-async def test_admin_can_query_other_user_via_as_user(env: Any) -> None:
-    c, srv, admin_auth, _alice_auth, ctx = env
+async def test_as_user_param_is_ignored(solo_usage_env: Any) -> None:
+    """Single-user mode: the legacy ``as_user`` param is not accepted.
+
+    Unknown query params are ignored by FastAPI and the scope stays pinned
+    to the local owner (spec T5.3 — no more 403/404 on ``as_user``).
+    """
+    c, srv, auth = solo_usage_env
+    _seed_usage_agents(srv, ["x"], user_id=1)
     repo = srv.services.usage_repo
-    repo.record(agent_id="y", user_id=ctx["alice_id"], input_tokens=10, output_tokens=5)
+    repo.record(agent_id="x", user_id=1, input_tokens=100, output_tokens=50)
 
     r = await c.get(
-        f"/api/usage/summary?granularity=total&as_user={ctx['alice_id']}",
-        headers=admin_auth,
+        "/api/usage/summary?granularity=total&as_user=999", headers=auth
     )
     assert r.status_code == 200
-    assert r.json()["total_tokens"] == 15
+    assert r.json()["total_tokens"] == 150
 
 
-async def test_non_admin_as_user_is_forbidden(env: Any) -> None:
-    c, _srv, _admin_auth, alice_auth, _ctx = env
-    r = await c.get(
-        "/api/usage/summary?as_user=1",
-        headers=alice_auth,
-    )
-    assert r.status_code == 403
+async def test_user_export_ignores_as_user(solo_usage_env: Any) -> None:
+    c, srv, auth = solo_usage_env
+    _seed_usage_agents(srv, ["x"], user_id=1)
+    repo = srv.services.usage_repo
+    repo.record(agent_id="x", user_id=1, input_tokens=10, output_tokens=5)
+
+    r = await c.get("/api/usage/export.xlsx?as_user=999", headers=auth)
+    assert r.status_code == 200
 
 
 async def test_admin_summary_global(env: Any) -> None:

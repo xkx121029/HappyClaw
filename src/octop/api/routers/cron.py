@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from typing import Any, cast
+from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from octop.api.common.agent import assert_agent_access, require_agent_row, user_owns_agent
@@ -34,6 +35,13 @@ class CronCreateBody(BaseModel):
     model: str | None = None
     task_type: str = "text"
     mcp_servers: list[str] = Field(default_factory=list)
+    timezone: str | None = Field(
+        default=None,
+        description="IANA zone for cron:/date: specs. Empty means the server default.",
+    )
+    max_retries: int = Field(default=0, ge=0, le=5)
+    retry_backoff_seconds: int = Field(default=60, ge=1, le=3600)
+    catch_up_misses: int = Field(default=0, ge=0, le=10)
 
 
 class CronPatchBody(BaseModel):
@@ -49,6 +57,10 @@ class CronPatchBody(BaseModel):
     model: str | None = None
     task_type: str | None = None
     mcp_servers: list[str] | None = None
+    timezone: str | None = None
+    max_retries: int | None = Field(default=None, ge=0, le=5)
+    retry_backoff_seconds: int | None = Field(default=None, ge=1, le=3600)
+    catch_up_misses: int | None = Field(default=None, ge=0, le=10)
 
 
 class CronExamplesResponse(BaseModel):
@@ -60,6 +72,20 @@ class CronExamplesResponse(BaseModel):
 def _get_cron_manager(server: Any) -> Any:
     assert server.app_runtime is not None
     return server.app_runtime.cron_manager
+
+
+def _validated_timezone(name: str | None) -> str | None:
+    """Reject unknown IANA zones instead of letting them explode at fire time."""
+    if name is None:
+        return None
+    value = name.strip()
+    if not value:
+        return ""
+    try:
+        ZoneInfo(value)
+    except Exception as exc:
+        raise OctopError(ErrorCode.CRON_TRIGGER_INVALID, f"unknown timezone {value!r}") from exc
+    return value
 
 
 def _user_may_manage_agent_cron(*, agent_row: Any, user: Any) -> bool:
@@ -153,6 +179,10 @@ async def create_cron(
         model=(body.model or "").strip() or None,
         task_type=normalize_cron_task_type(body.task_type),
         mcp_servers=mcp_servers,
+        timezone=_validated_timezone(body.timezone),
+        max_retries=body.max_retries,
+        retry_backoff_seconds=body.retry_backoff_seconds,
+        catch_up_misses=body.catch_up_misses,
         username=user.username,
     )
     row = await _get_cron_manager(server).create(spec)
@@ -217,8 +247,33 @@ async def patch_cron(
         task_type=normalize_cron_task_type(body.task_type) if body.task_type is not None else None,
         **({"model": (body.model or "").strip() or None} if "model" in patch_fields else {}),
         mcp_servers=mcp_arg,
+        timezone=_validated_timezone(body.timezone),
+        max_retries=body.max_retries,
+        retry_backoff_seconds=body.retry_backoff_seconds,
+        catch_up_misses=body.catch_up_misses,
     )
     return cast(dict[str, Any], row.to_public_dict(include_agent=True))
+
+
+@router.get(
+    "/agents/{agent_id}/cron/{cron_id}/runs",
+    summary="List cron run history",
+)
+async def list_cron_runs(
+    agent_id: str,
+    cron_id: str,
+    limit: int = Query(default=20, ge=1, le=100),
+    user: Any = Depends(current_user),
+    server: Any = Depends(get_server),
+) -> list[dict[str, Any]]:
+    """Recent executions, newest first, including misses and manual runs."""
+    agent_row = require_agent_row(agent_id, user=user, as_user=None, server=server)
+    mgr = _get_cron_manager(server)
+    existing = mgr.get(cron_id)
+    if existing is None:
+        raise OctopError(ErrorCode.NOT_FOUND, "cron job not found")
+    _assert_cron_manage(agent_id=agent_id, agent_row=agent_row, user=user, row=existing)
+    return mgr.list_runs(cron_id, limit=limit)
 
 
 @router.delete("/agents/{agent_id}/cron/{cron_id}", status_code=204, summary="Delete cron job")
@@ -238,18 +293,23 @@ async def delete_cron(
     await mgr.delete(cron_id)
 
 
-@router.post("/agents/{agent_id}/cron/{cron_id}/run-now", status_code=204, summary="Run cron now")
+@router.post(
+    "/agents/{agent_id}/cron/{cron_id}/run-now",
+    status_code=202,
+    summary="Run cron now",
+)
 async def run_now(
     agent_id: str,
     cron_id: str,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
-) -> None:
-    """Trigger an immediate one-off run without waiting for the schedule."""
+) -> dict[str, str]:
+    """Trigger an immediate run and return the run id to follow."""
     agent_row = require_agent_row(agent_id, user=user, as_user=None, server=server)
     mgr = _get_cron_manager(server)
     existing = mgr.get(cron_id)
     if existing is None:
         raise OctopError(ErrorCode.NOT_FOUND, "cron job not found")
     _assert_cron_manage(agent_id=agent_id, agent_row=agent_row, user=user, row=existing)
-    await mgr.run_now(cron_id)
+    run_id = await mgr.run_now(cron_id)
+    return {"run_id": run_id}

@@ -1,4 +1,4 @@
-"""Durable WeChat send token stored on a session.
+"""Durable channel send token stored on a session.
 
 ``context_token`` itself is ephemeral: a proactive push strips it. These two
 keys are the copy cron still needs after a restart. They match

@@ -168,7 +168,7 @@ export default function OctopAgentsPage() {
                 text: id,
                 tooltips: [t("common.copy"), t("common.copied")],
               }}
-              style={{ fontSize: 11 }}
+              style={{ fontSize: "var(--fn-text-2xs)" }}
             >
               {id}
             </Text>
@@ -264,6 +264,7 @@ export default function OctopAgentsPage() {
               {STARTABLE.has(row.state) && (
                 <Tooltip title={t("adminAgents.action.start")}>
                   <Button
+                    aria-label={t("adminAgents.action.start")}
                     type="text"
                     size="small"
                     icon={<Play size={14} />}
@@ -275,6 +276,7 @@ export default function OctopAgentsPage() {
               {row.state === "running" && (
                 <Tooltip title={t("adminAgents.action.stop")}>
                   <Button
+                    aria-label={t("adminAgents.action.stop")}
                     type="text"
                     size="small"
                     icon={<Square size={14} />}
@@ -285,6 +287,7 @@ export default function OctopAgentsPage() {
               )}
               <Tooltip title={t("adminAgents.action.reload")}>
                 <Button
+                    aria-label={t("adminAgents.action.reload")}
                   type="text"
                   size="small"
                   icon={<RefreshCw size={14} />}
@@ -301,6 +304,7 @@ export default function OctopAgentsPage() {
               >
                 <Tooltip title={t("common.delete")}>
                   <Button
+                    aria-label={t("common.delete")}
                     type="text"
                     size="small"
                     danger

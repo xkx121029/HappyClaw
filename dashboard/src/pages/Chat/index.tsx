@@ -10,9 +10,16 @@ import {
   FilePen,
   Terminal,
   FolderOpen,
+  FolderPlus,
   Activity,
+  MoreHorizontal,
+  Search,
+  Download,
+  Plus,
+  Zap,
 } from "lucide-react";
-import { Alert, App, Button, Tooltip } from "antd";
+import { Alert, App, Button, Dropdown, Tooltip } from "antd";
+import type { MenuProps } from "antd";
 import cx from "classnames";
 import { message as antMessage } from "@/utils/antdMessage";
 import { showConfirmModal } from "../../utils/confirmModal";
@@ -23,6 +30,7 @@ import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { navAllowed, userCan } from "../../utils/permissions";
 import { useChat } from "./hooks/useChat";
 import { useSessions, fetchAndSyncSessionArtifacts } from "./hooks/useSessions";
+import { setActiveQuickChatThread } from "./quickChatState";
 import * as chatStore from "./hooks/chatStore";
 import { formatRunUsage, assistantTurnsFromEnd } from "./utils/chatMessages";
 import { findMessageHits } from "./utils/messageSearch";
@@ -37,6 +45,7 @@ import { useServerTimezone } from "../../hooks/useServerTimezone";
 import { useChatSidebarState } from "./hooks/useChatSidebarState";
 import { useChatHistoryRail } from "./hooks/useChatHistoryRail";
 import { useChatDockPanel } from "./hooks/useChatDockPanel";
+import { useChatPresentFile } from "./hooks/useChatPresentFile";
 import { useChatSend, type ChatSendOverrides } from "./hooks/useChatSend";
 import {
   useChatMessageQueue,
@@ -47,7 +56,21 @@ import { useChatNavigation } from "./hooks/useChatNavigation";
 import { useChatSessionActions } from "./hooks/useChatSessionActions";
 
 import { useChatComposerResources } from "./hooks/useChatComposerResources";
+import {
+  HAPPYCLAW_EXPERT_ID,
+  ensureHappyClawAgent,
+  hasHappyClawAgent,
+} from "./utils/ensureDefaultExpert";
 import type { HitlSessionPolicy } from "./utils/hitlSessionPolicy";
+import { mentionedExpertIds } from "./utils/expertMention";
+import {
+  isDefaultWorkspacePath,
+  useAgentWorkspaces,
+  workspaceBasename,
+} from "./hooks/useAgentWorkspaces";
+import { createWorkspaceAgent } from "./utils/workspaceAgent";
+import WorkspaceFolderPicker from "./components/WorkspaceFolderPicker";
+import WorkspaceNoticeBar from "./components/WorkspaceNoticeBar";
 import {
   mergeAllowTools,
   parseHitlSessionPolicy,
@@ -70,7 +93,10 @@ import { octopThreadsApi } from "../../api/modules/octopThreads";
 import type { TokenUsage } from "../../api/types";
 import type { ChatAttachment } from "./hooks/useChat";
 import MessageList from "./components/MessageList";
+import { PluginSurfaceSlot } from "../../plugins/surfaces";
 import MessageSearchBar from "./components/MessageSearchBar";
+import MobileActionSheet from "../../components/MobileActionSheet";
+import NewSessionSheet from "./components/NewSessionSheet";
 import ShortcutHelpDialog from "./components/ShortcutHelpDialog";
 import ChatInput, { type ChatInputHandle } from "./components/ChatInput";
 import WelcomeScreen from "./components/WelcomeScreen";
@@ -219,7 +245,71 @@ function ChatPageInner() {
     refresh: refreshAgents,
     loading: agentsLoading,
   } = useAgent();
-  const resolvedAgentId = routeAgentId || activeAgentId;
+  const happyClawAgent = useMemo(
+    () =>
+      agents.find(
+        (a) =>
+          a.template_name === HAPPYCLAW_EXPERT_ID ||
+          a.agent_id === HAPPYCLAW_EXPERT_ID,
+      ) ?? null,
+    [agents],
+  );
+  // Existing installs predate the built-in HappyClaw expert: create it once so
+  // the chat page always has a ready default entry to land on.
+  const ensuredHappyClawRef = useRef(false);
+  const [happyClawEnsureSettled, setHappyClawEnsureSettled] = useState(false);
+  useEffect(() => {
+    if (ensuredHappyClawRef.current || agentsLoading || agents.length === 0)
+      return;
+    if (hasHappyClawAgent(agents)) return;
+    ensuredHappyClawRef.current = true;
+    void ensureHappyClawAgent().then((created) => {
+      if (!created) {
+        setHappyClawEnsureSettled(true);
+        return;
+      }
+      void refreshAgents({ silent: true, force: true }).finally(() =>
+        setHappyClawEnsureSettled(true),
+      );
+    });
+  }, [agents, agentsLoading, refreshAgents]);
+
+  // A bare `/chat` entry is the "default conversation": land on HappyClaw.
+  // Explicit `/chat/:agentId` routes keep their expert, and the sidebar still
+  // lists every expert's sessions, so old conversations stay reachable. While
+  // HappyClaw is still being materialised, hold the landing instead of
+  // silently falling back to the previously stored expert.
+  const defaultEntryPending =
+    !routeAgentId &&
+    !happyClawAgent &&
+    !happyClawEnsureSettled &&
+    agents.length > 0;
+  const resolvedAgentId =
+    routeAgentId ??
+    (defaultEntryPending ? null : happyClawAgent?.agent_id ?? activeAgentId);
+
+  // Workspace = the executing expert's home. The harness has no per-turn cwd, so
+  // the folder is read from the agent and switching means switching to the
+  // expert bound to that folder.
+  const { byAgent: agentWorkspaces, agentsRoot } = useAgentWorkspaces(
+    agents,
+    agents.length > 0,
+  );
+  const {
+    sessions,
+    loading: sessionsLoading,
+    hasMore: sessionsHasMore,
+    loadingMore: sessionsLoadingMore,
+    createSession,
+    deleteSession,
+    renameSession,
+    pinSession,
+    fetchSessions,
+    loadMoreSessions,
+    fetchAllSessions,
+    ensureThreadInList,
+  } = useSessions(resolvedAgentId ?? null);
+
   const hitlEnabled = useHitlEnabled(resolvedAgentId);
   const activeAgent = useMemo(
     () => agents.find((a) => a.agent_id === resolvedAgentId) ?? null,
@@ -253,6 +343,283 @@ function ChatPageInner() {
     : t("chat.agentProfile.open");
   const ProfileIcon = isTeamChat ? Users : GraduationCap;
   const noAgents = !agentsLoading && agents.length === 0;
+
+  // ---- Workspace switcher -------------------------------------------------
+  const [workspacePickerOpen, setWorkspacePickerOpen] = useState(false);
+  const [workspaceSubmitting, setWorkspaceSubmitting] = useState(false);
+  const currentWorkspaceInfo = resolvedAgentId
+    ? agentWorkspaces[resolvedAgentId]
+    : undefined;
+  const currentWorkspacePath =
+    currentWorkspaceInfo?.workspaceDir ??
+    (resolvedAgentId && agentsRoot ? `${agentsRoot}/${resolvedAgentId}` : null);
+  const currentWorkspaceIsDefault = Boolean(
+    currentWorkspacePath &&
+      resolvedAgentId &&
+      ((currentWorkspaceInfo && !currentWorkspaceInfo.workspaceDir) ||
+        isDefaultWorkspacePath(currentWorkspacePath, agentsRoot) ||
+        new RegExp(`[\\\\/]agents[\\\\/]${resolvedAgentId}$`, "i").test(
+          currentWorkspacePath,
+        )),
+  );
+  // The chip must name the scope the conversation actually writes to: a project
+  // thread uses its project root, a conversation workspace uses
+  // ``sessions/<thread_id>``. The expert home is only the fallback.
+  const threadSession = useMemo(
+    () =>
+      activeThreadId
+        ? sessions.find((session) => session.id === activeThreadId) ?? null
+        : null,
+    [activeThreadId, sessions],
+  );
+  const threadScope: "project" | "session" | null = threadSession?.projectId
+    ? "project"
+    : threadSession?.workspaceKind === "session"
+    ? "session"
+    : null;
+  const threadScopePath =
+    threadScope === "session"
+      ? threadSession?.workspaceDir?.trim() || null
+      : null;
+  const workspaceLabel =
+    threadScope === "project"
+      ? threadSession?.projectName?.trim() ||
+        t("chat.workspaceDefaultName", { defaultValue: "默认工作区" })
+      : threadScope === "session"
+      ? t("chat.workspaceSessionName", { defaultValue: "临时工作区" })
+      : currentWorkspaceIsDefault || !currentWorkspacePath
+      ? t("chat.workspaceDefaultName", { defaultValue: "默认工作区" })
+      : workspaceBasename(currentWorkspacePath);
+  const workspaceDisplayPath =
+    threadScope === "session"
+      ? threadScopePath
+      : threadScope === "project"
+      ? null
+      : currentWorkspacePath;
+
+  const handleChooseWorkspace = useCallback(
+    async (path: string) => {
+      const normalize = (value: string) =>
+        value.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+      const normalized = normalize(path);
+      // Picking a folder that is already some expert's home just switches to
+      // that expert instead of creating a duplicate.
+      const existing = agents.find((agent) => {
+        const workspace = agentWorkspaces[agent.agent_id]?.workspaceDir;
+        return workspace != null && normalize(workspace) === normalized;
+      });
+      if (existing) {
+        setWorkspacePickerOpen(false);
+        navigate(`/chat/${encodeURIComponent(existing.agent_id)}`);
+        return;
+      }
+      if (!resolvedAgentId) return;
+      setWorkspaceSubmitting(true);
+      try {
+        const templateId =
+          currentWorkspaceInfo?.templateName || HAPPYCLAW_EXPERT_ID;
+        const expertName = activeAgent?.name || "HappyClaw";
+        const folder = workspaceBasename(path);
+        const { agentId } = await createWorkspaceAgent({
+          templateId,
+          name: `${expertName} · ${folder}`,
+          workspaceDir: path,
+        });
+        await refreshAgents({ silent: true, force: true });
+        setWorkspacePickerOpen(false);
+        navigate(`/chat/${encodeURIComponent(agentId)}`);
+      } catch (error) {
+        antMessage.error(
+          t("chat.workspaceCreateFailed", {
+            defaultValue: "创建工作区失败：{{message}}",
+            message: error instanceof Error ? error.message : String(error),
+          }),
+        );
+      } finally {
+        setWorkspaceSubmitting(false);
+      }
+    },
+    [
+      activeAgent?.name,
+      agentWorkspaces,
+      agents,
+      currentWorkspaceInfo?.templateName,
+      navigate,
+      refreshAgents,
+      resolvedAgentId,
+      t,
+    ],
+  );
+
+  // ---- Conversation workspace (spec §3.2) --------------------------------
+  const [sessionConverting, setSessionConverting] = useState(false);
+  const [workspacePickerMode, setWorkspacePickerMode] = useState<
+    "agent" | "thread"
+  >("agent");
+
+  const workspaceMenuItems = useMemo<MenuProps["items"]>(() => {
+    if (!resolvedAgentId) return [];
+    const seen = new Set<string>();
+    const options: NonNullable<MenuProps["items"]> = [];
+    for (const agent of agents) {
+      if (agent.kind === "team" || agent.agent_id === resolvedAgentId) continue;
+      const info = agentWorkspaces[agent.agent_id];
+      if (!info) continue;
+      const path =
+        info.workspaceDir ??
+        (agentsRoot ? `${agentsRoot}/${agent.agent_id}` : "");
+      if (!path) continue;
+      const key = path.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const isDefault =
+        !info.workspaceDir || isDefaultWorkspacePath(path, agentsRoot);
+      options.push({
+        key: `workspace:${agent.agent_id}`,
+        label: (
+          <div className={styles.chatWorkspaceOption}>
+            <span className={styles.chatWorkspaceOptionName}>
+              {isDefault
+                ? t("chat.workspaceDefaultName", {
+                    defaultValue: "默认工作区",
+                  })
+                : workspaceBasename(path)}
+            </span>
+            <span className={styles.chatWorkspaceOptionPath}>{path}</span>
+          </div>
+        ),
+        icon: <FolderOpen size={14} aria-hidden />,
+        onClick: () => navigate(`/chat/${encodeURIComponent(agent.agent_id)}`),
+      });
+    }
+    const items: NonNullable<MenuProps["items"]> = [
+      {
+        key: "workspace-current",
+        disabled: true,
+        label: (
+          <div className={styles.chatWorkspaceOption}>
+            <span className={styles.chatWorkspaceOptionName}>
+              {workspaceLabel}
+            </span>
+            {workspaceDisplayPath ? (
+              <span className={styles.chatWorkspaceOptionPath}>
+                {workspaceDisplayPath}
+              </span>
+            ) : null}
+          </div>
+        ),
+      },
+    ];
+    if (options.length > 0) {
+      items.push({ type: "divider" });
+      items.push({
+        key: "workspace-group",
+        type: "group",
+        label: t("chat.workspaceSwitch", { defaultValue: "切换工作区" }),
+        children: options,
+      });
+    }
+    items.push({ type: "divider" });
+    items.push({
+      key: "workspace-pick",
+      icon: <FolderPlus size={14} aria-hidden />,
+      label: t("chat.workspacePickFolder", {
+        defaultValue: "选择文件夹作为工作区…",
+      }),
+      onClick: () => {
+        setWorkspacePickerMode("agent");
+        setWorkspacePickerOpen(true);
+      },
+    });
+    return items;
+  }, [
+    agentWorkspaces,
+    agents,
+    agentsRoot,
+    currentWorkspacePath,
+    navigate,
+    resolvedAgentId,
+    t,
+    workspaceDisplayPath,
+    workspaceLabel,
+  ]);
+
+  // ``?quick=1`` keeps the URL self-describing: a quick thread must stay
+  // recognisable after reloads and must not be re-classified as a normal chat.
+  const quickQuery =
+    new URLSearchParams(location.search).get("quick") === "1";
+  const isQuickThread =
+    quickQuery ||
+    threadSession?.quickChat === true ||
+    threadSession?.workspaceKind === "quick";
+
+  // Thread metadata can arrive after navigation; make the URL carry the flag
+  // permanently instead of relying on the in-memory session list.
+  useEffect(() => {
+    if (
+      !activeThreadId ||
+      (threadSession?.quickChat !== true &&
+        threadSession?.workspaceKind !== "quick")
+    ) {
+      return;
+    }
+    const params = new URLSearchParams(location.search);
+    if (params.get("quick") === "1") return;
+    params.set("quick", "1");
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  }, [
+    activeThreadId,
+    location.pathname,
+    location.search,
+    navigate,
+    threadSession,
+  ]);
+
+  // Publish the quick thread so the first-level nav can highlight
+  // 「快速对话」 instead of 「对话」 while this conversation is open.
+  useEffect(() => {
+    setActiveQuickChatThread(isQuickThread ? activeThreadId : null);
+  }, [activeThreadId, isQuickThread]);
+  useEffect(() => () => setActiveQuickChatThread(null), []);
+  const workspaceChip = resolvedAgentId && (isQuickThread || currentWorkspacePath) ? (
+    isQuickThread ? (
+      // Quick chats never bind a workspace; keep the chip informative but
+      // non-interactive so users cannot accidentally "switch" out of the mode.
+      <span
+        className={styles.chatTitleQuickScope}
+        title={t("chat.quickChatNoWorkspace", {
+          defaultValue: "快速对话 · 不使用工作区",
+        })}
+      >
+        <Zap size={14} strokeWidth={2} aria-hidden />
+        <span className={styles.chatTitleWorkspaceLabel}>
+          {t("chat.quickChatNoWorkspace", {
+            defaultValue: "快速对话 · 不使用工作区",
+          })}
+        </span>
+      </span>
+    ) : (
+      <Dropdown
+        menu={{ items: workspaceMenuItems }}
+        trigger={["click"]}
+        placement="bottomRight"
+      >
+        <button
+          type="button"
+          className={styles.chatTitleWorkspaceBtn}
+          title={workspaceDisplayPath ?? workspaceLabel}
+          aria-label={t("chat.workspaceSwitch", {
+            defaultValue: "切换工作区",
+          })}
+        >
+          <FolderOpen size={14} strokeWidth={2} aria-hidden />
+          <span className={styles.chatTitleWorkspaceLabel}>
+            {workspaceLabel}
+          </span>
+        </button>
+      </Dropdown>
+    )
+  ) : null;
 
   // Sidebar only lists "enabled" experts (harness running). Stopped / failed
   // experts are hidden so the nav stays focused on agents that can actually
@@ -302,20 +669,6 @@ function ChatPageInner() {
   const [trajectoryDrawerOpen, setTrajectoryDrawerOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [turnRailVisible, setTurnRailVisible] = useState(false);
-  const {
-    sessions,
-    loading: sessionsLoading,
-    hasMore: sessionsHasMore,
-    loadingMore: sessionsLoadingMore,
-    createSession,
-    deleteSession,
-    renameSession,
-    pinSession,
-    fetchSessions,
-    loadMoreSessions,
-    fetchAllSessions,
-    ensureThreadInList,
-  } = useSessions(resolvedAgentId ?? null);
 
   const handleLoadMoreSessions = useCallback(() => {
     void loadMoreSessions(activeThreadId ?? undefined);
@@ -325,11 +678,55 @@ function ChatPageInner() {
     void fetchAllSessions(activeThreadId ?? undefined);
   }, [fetchAllSessions, activeThreadId]);
 
+  // In-place: the conversation becomes the first thread of a project (§3.2).
+  const convertActiveToProject = useCallback(
+    async (rootDir?: string) => {
+      if (!resolvedAgentId || !activeThreadId) return;
+      setSessionConverting(true);
+      try {
+        const result = await octopThreadsApi.convertToProject(
+          resolvedAgentId,
+          activeThreadId,
+          rootDir ? { root_dir: rootDir } : {},
+        );
+        antMessage.success(
+          t("chat.workspaceConverted", {
+            defaultValue: "已转为项目「{{name}}」",
+            name: result.project_name,
+          }),
+        );
+        await fetchSessions(activeThreadId);
+      } catch (error) {
+        antMessage.error(
+          t("chat.workspaceConvertFailed", {
+            defaultValue: "转为项目失败：{{message}}",
+            message: error instanceof Error ? error.message : String(error),
+          }),
+        );
+      } finally {
+        setSessionConverting(false);
+      }
+    },
+    [activeThreadId, fetchSessions, resolvedAgentId, t],
+  );
+
   useEffect(() => {
     if (routeAgentId && routeAgentId !== activeAgentId) {
       setActiveAgent(routeAgentId);
     }
   }, [routeAgentId, activeAgentId, setActiveAgent]);
+
+  // Keep the stored expert in sync with the landing agent, otherwise every
+  // bare `/chat` entry would keep reconciling back to the legacy default.
+  useEffect(() => {
+    if (
+      !routeAgentId &&
+      happyClawAgent &&
+      activeAgentId !== happyClawAgent.agent_id
+    ) {
+      setActiveAgent(happyClawAgent.agent_id);
+    }
+  }, [routeAgentId, happyClawAgent, activeAgentId, setActiveAgent]);
 
   // Agent profile is agent-scoped — close when switching between two agents.
   const prevProfileAgentRef = useRef(resolvedAgentId);
@@ -413,6 +810,9 @@ function ChatPageInner() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchHitIndex, setSearchHitIndex] = useState(0);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+  /** Phone header overflow: secondary actions live behind one sheet. */
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  const [newSessionOpen, setNewSessionOpen] = useState(false);
   const searchHits = useMemo(
     () => findMessageHits(messages, searchQuery),
     [messages, searchQuery],
@@ -486,7 +886,15 @@ function ChatPageInner() {
     focusToolUiTab,
     closeTab: closeDockTab,
     setActiveTab: setDockActiveTab,
-  } = useChatDockPanel(isMobile, resolvedAgentId);
+  } = useChatDockPanel(isMobile, resolvedAgentId, activeThreadId);
+
+  useChatPresentFile(
+    activeThreadId,
+    messages,
+    historyHydrated,
+    openFileAt,
+    resolvedAgentId,
+  );
 
   const chromeCheckInFlightRef = useRef(false);
   const bridgeConnectionId =
@@ -895,7 +1303,15 @@ function ChatPageInner() {
         antMessage.warning(t("chat.hitl.finishPendingFirst"));
         return;
       }
-      handleSend(text, attachments, overrides);
+      // ``@Name`` tokens travel as mention metadata so the message shows
+      // "已提及" chips. The turn still runs on the current expert — the host
+      // has no mid-session executor switch.
+      const mentionedIds = mentionedExpertIds(text, chatAgentOptions);
+      const withMentions =
+        mentionedIds.length > 0 && !overrides?.selectedTargetAgents?.length
+          ? { ...overrides, selectedTargetAgents: mentionedIds }
+          : overrides;
+      handleSend(text, attachments, withMentions);
     },
     [
       interceptUserMessage,
@@ -905,6 +1321,7 @@ function ChatPageInner() {
       activeThreadId,
       resumeHitl,
       sharedTurnBusy,
+      chatAgentOptions,
       t,
     ],
   );
@@ -1033,6 +1450,7 @@ function ChatPageInner() {
   const {
     handleNewChat: startNewChat,
     handleNewChatWithAgent,
+    handleQuickChat,
     handleSelectSession,
     navigateToAgent,
     handleDeleteSession,
@@ -1049,12 +1467,86 @@ function ChatPageInner() {
     clearMessages,
     resetNavForAgentSwitch,
     markInitialNavDone,
+    fetchSessions,
+    notifyError: (message) =>
+      antMessage.error(
+        t("chat.quickChatFailed", {
+          defaultValue: "快速对话创建失败：{{message}}",
+          message,
+        }),
+      ),
   });
+
+  // Selecting a quick conversation from the list must keep its flag in the URL.
+  const selectSessionWithQuick = useCallback(
+    (sessionId: string) => {
+      const meta = sessions.find((session) => session.id === sessionId);
+      handleSelectSession(
+        sessionId,
+        meta?.quickChat === true || meta?.workspaceKind === "quick",
+      );
+    },
+    [handleSelectSession, sessions],
+  );
 
   const handleNewChat = useCallback(() => {
     clearQueued();
     startNewChat();
   }, [clearQueued, startNewChat]);
+
+  // Quick chat: the sidebar entry lands here with ``?quick=1``. Create the
+  // no-workspace thread, then replace the URL with the real conversation.
+  const quickChatAgentId = happyClawAgent?.agent_id ?? null;
+  const [quickChatBusy, setQuickChatBusy] = useState(false);
+  const quickEntryHandledRef = useRef<string | null>(null);
+  const handleQuickChatEntry = useCallback(async () => {
+    if (quickChatBusy) return;
+    if (!quickChatAgentId) {
+      antMessage.warning(
+        t("chat.quickChatUnavailable", {
+          defaultValue: "HappyClaw 专家正在准备中，请稍后再试",
+        }),
+      );
+      return;
+    }
+    setQuickChatBusy(true);
+    try {
+      await handleQuickChat(quickChatAgentId);
+    } finally {
+      setQuickChatBusy(false);
+    }
+  }, [antMessage, handleQuickChat, quickChatAgentId, quickChatBusy, t]);
+
+  // Quick chat: the sidebar entry lands here with ``?quick=1``. Create or
+  // reuse the no-workspace thread, then navigate to it *with* the flag still
+  // attached. The thread URL keeps the flag so a reload stays in quick mode.
+  useEffect(() => {
+    const quick =
+      new URLSearchParams(location.search).get("quick") === "1";
+    // A thread id in the path means the URL already describes a concrete
+    // conversation (quick or not); never create a new thread on reload.
+    if (!quick || threadId) {
+      quickEntryHandledRef.current = null;
+      return;
+    }
+    const stamp = `${location.pathname}${location.search}`;
+    if (
+      !quickChatAgentId ||
+      quickChatBusy ||
+      quickEntryHandledRef.current === stamp
+    ) {
+      return;
+    }
+    quickEntryHandledRef.current = stamp;
+    void handleQuickChatEntry();
+  }, [
+    location.search,
+    location.pathname,
+    threadId,
+    quickChatAgentId,
+    quickChatBusy,
+    handleQuickChatEntry,
+  ]);
 
   const openLocalSettings = useCallback(() => {
     window.dispatchEvent(new CustomEvent("octop:open-settings"));
@@ -1593,18 +2085,25 @@ function ChatPageInner() {
       onFetchAllSessions={handleFetchAllSessions}
       onSelectSession={(sessionId, agentId) => {
         setActiveAgent(agentId);
+        const quick =
+          sessions.find((session) => session.id === sessionId)?.quickChat ===
+          true;
         if (agentId && agentId !== resolvedAgentId) {
           void octopThreadsApi.rebind(agentId, sessionId).catch(() => {});
-          navigate(`/chat/${agentId}/${sessionId}`);
+          navigate(`/chat/${agentId}/${sessionId}${quick ? "?quick=1" : ""}`);
           if (isMobile) setSidebarOpen(false);
           return;
         }
-        handleSelectSession(sessionId);
+        handleSelectSession(sessionId, quick);
       }}
       onAgentSelect={navigateToAgent}
-      onNewChatWithAgent={(agentId) => {
+      onNewChatWithAgent={(agentId, projectId) => {
         clearQueued();
-        handleNewChatWithAgent(agentId);
+        handleNewChatWithAgent(agentId, projectId);
+      }}
+      onNewProject={() => {
+        setWorkspacePickerMode("agent");
+        setWorkspacePickerOpen(true);
       }}
       onDeleteSession={handleDeleteSession}
       onRenameSession={renameSession}
@@ -1649,11 +2148,12 @@ function ChatPageInner() {
               turnRailVisible && styles.chatMainWithTurnRail,
             )}
           >
-            {/* Mobile toolbar — session list + optional title + agent profile */}
+            {/* Mobile header — session drawer, agent + title, overflow sheet */}
             {isMobile && (
-              <div className={styles.mobileToolbar}>
+              <header className={styles.mobileChatBar}>
                 <button
-                  className={styles.menuBtn}
+                  type="button"
+                  className={styles.mobileBarBtn}
                   onClick={() => {
                     if (isMinimalLayout) {
                       window.dispatchEvent(new Event(OPEN_NAV_RECORDS_EVENT));
@@ -1661,76 +2161,165 @@ function ChatPageInner() {
                     }
                     setSidebarOpen(!sidebarOpen);
                   }}
-                  title={t("nav.chatHistory") || "会话列表"}
+                  aria-label={t("nav.chatHistory", "会话列表")}
+                  aria-expanded={sidebarOpen}
                 >
-                  <PanelLeftOpen size={18} strokeWidth={1.8} />
+                  <PanelLeftOpen size={20} strokeWidth={1.8} />
                 </button>
-                {activeSessionTitle && (
-                  <div
-                    className={styles.mobileTitle}
-                    title={activeSessionTitle}
-                  >
-                    <span className={styles.mobileTitleText}>
-                      {activeSessionTitle}
+
+                <div className={styles.mobileChatHeading}>
+                  {isQuickThread ? (
+                    /* Quick chats never bind a workspace; the app header has no
+                       room for the desktop scope chip, so the mode lives in the
+                       eyebrow line where it is always visible. */
+                    <span
+                      className={cx(
+                        styles.mobileChatEyebrow,
+                        styles.mobileQuickScope,
+                      )}
+                    >
+                      <Zap size={12} strokeWidth={2} aria-hidden />
+                      <span className={styles.mobileQuickScopeText}>
+                        {t("chat.quickChatNoWorkspace", {
+                          defaultValue: "快速对话 · 不使用工作区",
+                        })}
+                      </span>
                     </span>
-                    <SessionShareMark
-                      contributed={activeSession?.contributed}
-                      owned={activeSession?.owned}
-                    />
-                    <TeamChatBadge show={isTeamChat} />
-                    <RemoteExpertHint agent={activeAgent} />
-                  </div>
-                )}
-                {resolvedAgentId && !sharedExpertViewer && (
-                  <div className={styles.mobileToolbarRight}>
+                  ) : activeAgent?.name ? (
+                    <span className={styles.mobileChatEyebrow}>
+                      {activeAgent.name}
+                    </span>
+                  ) : null}
+                  <span
+                    className={styles.mobileChatTitleRow}
+                    title={activeSessionTitle ?? undefined}
+                  >
+                    <span className={styles.mobileChatTitle}>
+                      {activeSessionTitle ?? t("chatWelcome.newChat", "新对话")}
+                    </span>
+                    {activeSession ? (
+                      <span className={styles.mobileChatMarks}>
+                        <SessionShareMark
+                          contributed={activeSession.contributed}
+                          owned={activeSession.owned}
+                        />
+                        <TeamChatBadge show={isTeamChat} />
+                        <RemoteExpertHint agent={activeAgent} />
+                      </span>
+                    ) : null}
+                  </span>
+                </div>
+
+                <div className={styles.mobileBarActions}>
+                  {/* Start a conversation without opening the drawer first. */}
+                  <button
+                    type="button"
+                    className={styles.mobileNewBtn}
+                    onClick={() => setNewSessionOpen(true)}
+                    aria-label={t("chat.newSessionTitle", "新建会话")}
+                    aria-haspopup="dialog"
+                  >
+                    <Plus size={20} strokeWidth={2.1} />
+                  </button>
+                  {resolvedAgentId && !sharedExpertViewer && (
                     <button
-                      className={styles.menuBtn}
+                      type="button"
+                      className={styles.mobileAvatarBtn}
                       onClick={() => setAgentProfileOpen(true)}
                       title={profileOpenLabel}
                       aria-label={profileOpenLabel}
                     >
                       <ProfileIcon size={18} strokeWidth={1.8} />
                     </button>
-                    <button
-                      className={styles.menuBtn}
-                      onClick={toggleWorkspacePanel}
-                      disabled={!agentChatReady}
-                      title={
-                        agentChatReady
-                          ? t("chat.openWorkspace", "工作区")
-                          : t("workspace.requiresRunning")
-                      }
-                      aria-label={t("chat.openWorkspace", "工作区")}
-                    >
-                      <FolderOpen size={18} strokeWidth={1.8} />
-                    </button>
-                    <button
-                      className={styles.menuBtn}
-                      onClick={() => void handleToggleBrowserPanel()}
-                      title={t("chat.openBrowser")}
-                      aria-label={t("chat.openBrowser")}
-                    >
-                      <Globe size={18} strokeWidth={1.8} />
-                    </button>
-                    {!sharedExpertViewer && panelFilePaths.length > 0 && (
-                      <button
-                        className={styles.menuBtn}
-                        onClick={() => openFileList()}
-                        title={t("chat.modifiedFiles", {
-                          count: panelFilePaths.length,
-                          defaultValue: "已修改文件（{{count}}）",
-                        })}
-                        aria-label={t("chat.modifiedFiles", {
-                          count: panelFilePaths.length,
-                          defaultValue: "已修改文件（{{count}}）",
-                        })}
-                      >
-                        <FilePen size={18} strokeWidth={1.8} />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.mobileBarBtn}
+                    onClick={() => setMobileActionsOpen(true)}
+                    aria-label={t("common.moreActions", "更多操作")}
+                    aria-haspopup="dialog"
+                  >
+                    <MoreHorizontal size={20} strokeWidth={1.8} />
+                  </button>
+                </div>
+              </header>
+            )}
+
+            {isMobile && (
+              <MobileActionSheet
+                open={mobileActionsOpen}
+                onClose={() => setMobileActionsOpen(false)}
+                title={t("chat.mobileActionsTitle", "会话操作")}
+                subtitle={activeSessionTitle ?? undefined}
+                items={[
+                  {
+                    key: "search",
+                    label: t("chat.searchInConversation", "搜索对话"),
+                    icon: <Search size={18} strokeWidth={1.8} />,
+                    disabled: !hasMessages,
+                    onSelect: () => setSearchOpen(true),
+                  },
+                  {
+                    key: "workspace",
+                    label: t("chat.openWorkspace", "工作区"),
+                    icon: <FolderOpen size={18} strokeWidth={1.8} />,
+                    hint: agentChatReady
+                      ? undefined
+                      : t("workspace.requiresRunning"),
+                    disabled: !agentChatReady,
+                    onSelect: toggleWorkspacePanel,
+                  },
+                  {
+                    key: "browser",
+                    label: t("chat.openBrowser", "查看浏览器"),
+                    icon: <Globe size={18} strokeWidth={1.8} />,
+                    onSelect: () => void handleToggleBrowserPanel(),
+                  },
+                  ...(!sharedExpertViewer && panelFilePaths.length > 0
+                    ? [
+                        {
+                          key: "files",
+                          label: t("chat.modifiedFiles", {
+                            count: panelFilePaths.length,
+                            defaultValue: "已修改文件（{{count}}）",
+                          }),
+                          icon: <FilePen size={18} strokeWidth={1.8} />,
+                          onSelect: () => openFileList(),
+                        },
+                      ]
+                    : []),
+                  {
+                    key: "export",
+                    label: t("chat.exportTranscript", "导出为 Markdown"),
+                    icon: <Download size={18} strokeWidth={1.8} />,
+                    disabled: !hasMessages,
+                    onSelect: handleExportTranscript,
+                  },
+                  ...(resolvedAgentId && !sharedExpertViewer
+                    ? [
+                        {
+                          key: "profile",
+                          label: profileOpenLabel,
+                          icon: <ProfileIcon size={18} strokeWidth={1.8} />,
+                          onSelect: () => setAgentProfileOpen(true),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+            )}
+
+            {isMobile && (
+              <NewSessionSheet
+                open={newSessionOpen}
+                onClose={() => setNewSessionOpen(false)}
+                experts={chatAgentOptionsPickable}
+                activeAgentId={resolvedAgentId}
+                onStart={(agentId, projectId) => {
+                  setNewSessionOpen(false);
+                  handleNewChatWithAgent(agentId, projectId);
+                }}
+              />
             )}
 
             {!isMobile &&
@@ -1750,12 +2339,26 @@ function ChatPageInner() {
                   onOpenSolo={() => navigate("/solo")}
                   isTeam={isTeamChat}
                   agent={activeAgent}
+                  workspaceChip={workspaceChip}
                 />
               ) : (
                 /* Empty chat: same row, same bounds — the composer must not
-                   jump up before the first message exists. */
-                <div className={styles.chatTitleBarEmpty} />
+                   jump up before the first message exists. The workspace chip
+                   stays reachable so a fresh workspace can be switched back. */
+                <div className={styles.chatTitleBarEmpty}>{workspaceChip}</div>
               ))}
+
+            {activeSession && !isTeamChat && !sharedExpertViewer && (
+              <WorkspaceNoticeBar
+                session={activeSession}
+                converting={sessionConverting}
+                onConvert={() => convertActiveToProject()}
+                onChooseFolder={() => {
+                  setWorkspacePickerMode("thread");
+                  setWorkspacePickerOpen(true);
+                }}
+              />
+            )}
 
             {memoryMaintVisible && memoryMaint && (
               <MemoryMaintenanceBanner
@@ -1797,7 +2400,7 @@ function ChatPageInner() {
                 <AgentNotReadyScreen
                   agent={activeAgent}
                   noAgents={noAgents}
-                  loading={agentsLoading}
+                  loading={agentsLoading || defaultEntryPending}
                   canConfigureModels={canConfigureModels}
                   hasUsableModels={
                     modelsReady ? availableModels.length > 0 : undefined
@@ -1827,6 +2430,7 @@ function ChatPageInner() {
                     }}
                     isTeam={isTeamChat}
                   >
+                    <PluginSurfaceSlot slot="chat.messages.top" />
                     <MessageList
                       messages={messages}
                       agentId={resolvedAgentId}
@@ -2138,6 +2742,7 @@ function ChatPageInner() {
               availableModels={availableModels}
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
+              showModelChip
               reasoningMode={reasoningMode}
               reasoningEffort={reasoningEffort}
               onReasoningChange={handleReasoningChange}
@@ -2226,6 +2831,23 @@ function ChatPageInner() {
               }}
             />
           )}
+          <WorkspaceFolderPicker
+            open={workspacePickerOpen}
+            mode={workspacePickerMode === "thread" ? "project" : "agent"}
+            submitting={workspaceSubmitting || sessionConverting}
+            onCancel={() => {
+              setWorkspacePickerOpen(false);
+              setWorkspacePickerMode("agent");
+            }}
+            onConfirm={(path) => {
+              setWorkspacePickerOpen(false);
+              if (workspacePickerMode === "thread") {
+                void convertActiveToProject(path);
+                return;
+              }
+              void handleChooseWorkspace(path);
+            }}
+          />
           {trajectoryEnabled && (
             <TrajectoryDrawer
               agentId={resolvedAgentId ?? ""}
@@ -2242,7 +2864,7 @@ function ChatPageInner() {
             currentModel={selectedModel}
             onClose={() => setPaletteOpen(false)}
             onNewChat={handleNewChat}
-            onSelectSession={handleSelectSession}
+            onSelectSession={selectSessionWithQuick}
             onSelectModel={setSelectedModel}
             onOpenSettings={openLocalSettings}
             onOpenBackup={openLocalBackup}

@@ -1,4 +1,7 @@
-export { DefaultToolRenderer } from "./builtin/DefaultToolRenderer";
+// ``DefaultToolRenderer`` is NOT re-exported here on purpose: this barrel is
+// imported by the app shell (``MainLayout`` → ``usePluginToolUis``), and that
+// renderer pulls the whole 182 kB Chat stylesheet. Import it from
+// ``builtin/DefaultToolRenderer`` where it is actually rendered.
 export {
   builtinPluginHost,
   createPluginUiHost,

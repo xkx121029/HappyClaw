@@ -66,7 +66,7 @@ function ComposerImagePreview({
         style={{
           background: "#fff1f0",
           color: "#cf1322",
-          fontSize: 10,
+          fontSize: "var(--fn-text-2xs)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -105,6 +105,7 @@ export default function ChatInputPreviewBar({
   availableModels,
   onModelChange,
 }: ChatInputPreviewBarProps) {
+  const { t } = useTranslation();
   // Show the chip whenever a model is explicitly selected, mirroring how
   // connectors behave — not only when it differs from the
   // agent default (that was the old "override" behavior).
@@ -150,6 +151,7 @@ export default function ChatInputPreviewBar({
                 />
                 <button
                   className={styles.imagePreviewRemove}
+                  aria-label={t("common.delete")}
                   onClick={() => onRemoveAttachment(idx)}
                   type="button"
                 >
@@ -187,6 +189,7 @@ export default function ChatInputPreviewBar({
               />
               <button
                 className={styles.imagePreviewRemove}
+                aria-label={t("common.delete")}
                 onClick={() => onRemoveAttachment(idx)}
                 type="button"
               >
@@ -208,6 +211,7 @@ export default function ChatInputPreviewBar({
             </div>
             <button
               className={styles.imagePreviewRemove}
+              aria-label={t("common.delete")}
               onClick={() => onRemoveAttachment(idx)}
               type="button"
             >

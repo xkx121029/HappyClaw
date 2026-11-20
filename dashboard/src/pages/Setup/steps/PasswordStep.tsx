@@ -50,7 +50,7 @@ export default function PasswordStep({ onVerified }: Props) {
       <div style={{ marginBottom: 20 }}>
         <div
           style={{
-            fontSize: 16,
+            fontSize: "var(--fn-text-lg)",
             fontWeight: 600,
             color: "var(--fn-text-primary)",
             marginBottom: 4,
@@ -58,7 +58,7 @@ export default function PasswordStep({ onVerified }: Props) {
         >
           {t("wizard.stepPassword")}
         </div>
-        <Text type="secondary" style={{ fontSize: 13 }}>
+        <Text type="secondary" style={{ fontSize: "var(--fn-text-xs)" }}>
           {t("wizard.password.hint")}
         </Text>
       </div>
@@ -70,7 +70,7 @@ export default function PasswordStep({ onVerified }: Props) {
         style={{ marginBottom: 16 }}
         message={t("wizard.password.whereTitle")}
         description={
-          <Paragraph style={{ marginBottom: 0, fontSize: 13 }}>
+          <Paragraph style={{ marginBottom: 0, fontSize: "var(--fn-text-xs)" }}>
             {passwordPath
               ? t("wizard.password.wherePath", { path: passwordPath })
               : t("wizard.password.whereDefault")}

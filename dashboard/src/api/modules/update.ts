@@ -44,10 +44,51 @@ export interface RestartResponse {
   service_mode: string;
 }
 
+export interface ReleaseArtifact {
+  platform: string;
+  arch: string;
+  kind: string | null;
+  filename: string;
+  url: string;
+  sha256: string;
+  size_bytes: number;
+}
+
+/** Read-only result of GET /update/check (published release manifest). */
+export interface ReleaseCheckResult {
+  ok: boolean;
+  configured: boolean;
+  current_version: string;
+  channel: string;
+  latest_version: string | null;
+  has_update: boolean;
+  supported: boolean;
+  minimum_supported_version: string | null;
+  release_notes: string | null;
+  published_at: string | null;
+  product: string | null;
+  artifacts: ReleaseArtifact[];
+  source: string | null;
+  cached: boolean;
+  stale: boolean;
+  checked_at: string;
+  error_code: string | null;
+  error: string | null;
+}
+
 export const updateApi = {
   getUpdateStatus: () => request<UpdateStatus>("/update/status"),
   checkForUpdates: () =>
     request<UpdateStatus>("/update/check", { method: "POST" }),
+  checkReleaseFeed: (params: {
+    currentVersion?: string | null;
+    channel: string;
+  }) => {
+    const query = new URLSearchParams({ channel: params.channel });
+    if (params.currentVersion)
+      query.set("current_version", params.currentVersion);
+    return request<ReleaseCheckResult>(`/update/check?${query.toString()}`);
+  },
   patchSettings: (stableOnly: boolean) =>
     request<UpdateStatus & { stable_only: boolean }>("/update/settings", {
       method: "PATCH",

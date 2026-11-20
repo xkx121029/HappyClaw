@@ -17,6 +17,8 @@ import styles from "../index.module.less";
 
 interface DocumentPreviewProps {
   agentId?: string;
+  /** Conversation whose project/session directory holds the document. */
+  threadId?: string | null;
   path: string;
   kind: DocKind;
   /** Workspace UI paths use true; chat/tool paths use false. */
@@ -28,15 +30,18 @@ function documentDownloadUrl(
   agentId: string,
   path: string,
   fromWorkspace: boolean,
+  threadId?: string | null,
 ): string {
+  const scope = threadId ? `&thread_id=${encodeURIComponent(threadId)}` : "";
   const url = `/agents/${encodeURIComponent(
     agentId,
-  )}/workspace/download?path=${encodeURIComponent(path)}`;
+  )}/workspace/download?path=${encodeURIComponent(path)}${scope}`;
   return fromWorkspace ? withFromWorkspace(url) : `${url}&from_workspace=false`;
 }
 
 export default function DocumentPreview({
   agentId,
+  threadId,
   path,
   kind,
   fromWorkspace = true,
@@ -45,7 +50,7 @@ export default function DocumentPreview({
   const { t } = useTranslation();
   const { message } = App.useApp();
   const apiPath =
-    fetchUrl || documentDownloadUrl(agentId ?? "", path, fromWorkspace);
+    fetchUrl || documentDownloadUrl(agentId ?? "", path, fromWorkspace, threadId);
   const filename = path.split("/").filter(Boolean).pop() || path;
 
   const fetchBlob = useCallback(

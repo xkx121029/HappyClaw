@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OctopAgent } from "../../../context/AgentContext";
 import type { Session } from "../hooks/useSessions";
 import { octopThreadsApi } from "../../../api/modules/octopThreads";
@@ -98,6 +98,8 @@ function renderList() {
 }
 
 describe("SessionList recency groups", () => {
+  // navScope 改造后有异步 setState（未包 act），隔离 localStorage 草稿避免用例间串扰。
+  beforeEach(() => localStorage.clear());
   beforeAll(() => {
     vi.spyOn(octopThreadsApi, "list").mockResolvedValue([]);
     vi.spyOn(octopSettingsApi, "timezone").mockRejectedValue(

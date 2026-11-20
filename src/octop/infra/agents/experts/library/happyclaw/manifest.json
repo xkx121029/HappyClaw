@@ -1,0 +1,131 @@
+{
+  "id": "happyclaw",
+  "label": {
+    "zh": "HappyClaw",
+    "en": "HappyClaw"
+  },
+  "description": {
+    "zh": "内置默认专家：看工作区、拆步骤、动手做，交付前自己验证，最后如实说明做到哪一步。",
+    "en": "Built-in default expert: inspects the workspace, plans, executes, verifies before delivery, and reports exactly what was done."
+  },
+  "welcome_message": {
+    "zh": "把要做的事发我。我会先看工作区和已有材料，拆好步骤再动手，做完给你文件路径和验证结果；没做成的地方也写清楚。",
+    "en": "Send me the task. I'll check the workspace and existing material, plan the steps, do the work, and give you file paths plus verification results — including what I couldn't finish."
+  },
+  "icon_name": "claw",
+  "color": "#0d9488",
+  "prompt_files": [
+    "AGENTS.md",
+    "SOUL.md"
+  ],
+  "task_examples": {
+    "zh": [
+      "每个工作日「09:00」检查一遍工作区里的待办文件，整理成今日清单发给我，任务创建后立即启用",
+      "每周五「17:00」汇总本周产出的文件和改动，写成周报草稿",
+      "每天「22:00」检查工作区有没有失败或未完成的记录，有就提醒我"
+    ],
+    "en": [
+      "Every weekday at 09:00, review the workspace todo file and send me today's list — enable immediately",
+      "Every Friday at 17:00, summarize this week's files and changes into a report draft",
+      "Every day at 22:00, check the workspace for failed or unfinished records and remind me"
+    ]
+  },
+  "quick_prompts": [
+    {
+      "title": {
+        "zh": "把这个目录读明白",
+        "en": "Make sense of this folder"
+      },
+      "description": {
+        "zh": "看结构、找问题，给结论",
+        "en": "Structure, problems, conclusions"
+      },
+      "prompt": {
+        "zh": "读一下下面这个目录或文件，告诉我：它在做什么、结构是否清楚、有哪些具体问题。结论放前面，依据标到具体文件。\n\n路径：",
+        "en": "Read the folder or file below and tell me what it does, whether the structure is clear, and what specific problems exist. Conclusion first, evidence tied to files.\n\nPath: "
+      },
+      "color": "#e6fffb",
+      "icon_name": "folder-search"
+    },
+    {
+      "title": {
+        "zh": "改完并验证",
+        "en": "Change and verify"
+      },
+      "description": {
+        "zh": "读完再改，改完自己验",
+        "en": "Read, edit, verify"
+      },
+      "prompt": {
+        "zh": "按下面的要求改工作区里的代码或文件。先读现状再改，改完跑一次最小验证，最后列出改动文件和验证命令。\n\n要求：",
+        "en": "Change the code or files in the workspace as described. Read the current state first, run a minimal verification after editing, then list changed files and the verification command.\n\nRequirement: "
+      },
+      "color": "#dcfce7",
+      "icon_name": "code"
+    },
+    {
+      "title": {
+        "zh": "查清楚，标出处",
+        "en": "Verify and cite"
+      },
+      "description": {
+        "zh": "查不到就说查不到",
+        "en": "No guessing; say when not found"
+      },
+      "prompt": {
+        "zh": "这个问题先别凭记忆回答。查工作区文件和可靠资料，给出有依据的结论并标出出处；查不到就直接说查不到。\n\n问题：",
+        "en": "Do not answer from memory. Check workspace files and reliable sources, then give a conclusion with citations; if you cannot find it, say so.\n\nQuestion: "
+      },
+      "color": "#fef3c7",
+      "icon_name": "search"
+    },
+    {
+      "title": {
+        "zh": "写一份能直接用的文档",
+        "en": "Write a usable document"
+      },
+      "description": {
+        "zh": "写完回读，给路径",
+        "en": "Write, re-read, give the path"
+      },
+      "prompt": {
+        "zh": "在工作区写一份能直接交付的文档，写完回读检查内容和格式，最后给我文件路径。\n\n主题与要求：",
+        "en": "Write a document in the workspace that is ready to hand over. Re-read it for content and formatting, then give me the file path.\n\nTopic and requirements: "
+      },
+      "color": "#f3e8ff",
+      "icon_name": "file-text"
+    },
+    {
+      "title": {
+        "zh": "跑起来，把错修掉",
+        "en": "Run it, fix the errors"
+      },
+      "description": {
+        "zh": "报错自己修，直到通过",
+        "en": "Fix failures until it passes"
+      },
+      "prompt": {
+        "zh": "在工作区运行下面这个命令或项目。报错就自己定位并修，直到通过；把命令、退出码、改了什么都写清楚。\n\n目标：",
+        "en": "Run the command or project below in the workspace. Diagnose and fix errors yourself until it passes; report the command, exit code, and what changed.\n\nGoal: "
+      },
+      "color": "#eef2ff",
+      "icon_name": "zap"
+    },
+    {
+      "title": {
+        "zh": "到点自动跑",
+        "en": "Run on a schedule"
+      },
+      "description": {
+        "zh": "确认命令和时间，创建即启用",
+        "en": "Confirm command and time; enable now"
+      },
+      "prompt": {
+        "zh": "创建一个定时任务，按下面节奏执行并把结果发我。先确认执行命令和时间表达式，创建后立即启用。\n\n任务：",
+        "en": "Create a scheduled task that runs on the cadence below and sends me the result. Confirm the command and time expression first, then enable it immediately.\n\nTask: "
+      },
+      "color": "#fdf4e7",
+      "icon_name": "calendar-clock"
+    }
+  ]
+}

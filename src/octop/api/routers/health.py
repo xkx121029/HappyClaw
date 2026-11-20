@@ -12,6 +12,11 @@ from octop.infra.utils.build_info import dashboard_build_info
 
 router = APIRouter()
 
+# Bumped whenever the phone client's expected API shape changes incompatibly.
+# ``dashboard/src/utils/mobileEndpoint.ts`` refuses to connect below its own
+# MIN_API_PROTOCOL, so an outdated server fails with a clear version error.
+API_PROTOCOL = 2
+
 
 @router.get("", summary="Health check")
 async def health(server: Any = Depends(get_server)) -> dict[str, Any]:
@@ -29,6 +34,7 @@ async def health(server: Any = Depends(get_server)) -> dict[str, Any]:
         channels = report()
     return {
         "ok": True,
+        "api_protocol": API_PROTOCOL,
         "started_at": server._started_at,
         "db": bound,
         "users_loaded": users,

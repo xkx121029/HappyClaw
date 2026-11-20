@@ -7,6 +7,7 @@ run-now invoking the cron manager and updating last_status.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
@@ -157,7 +158,19 @@ async def test_run_now_records_last_status(env: Any) -> None:
     cid = r.json()["id"]
 
     r = await c.post(f"/api/agents/{aid}/cron/{cid}/run-now", headers=alice_auth)
-    assert r.status_code == 204
+    assert r.status_code == 202
+    run_id = r.json()["run_id"]
+
+    # The API returns a run id before the turn finishes; follow that record the
+    # same way the dashboard does instead of assuming a synchronous status.
+    for _ in range(100):
+        runs = await c.get(f"/api/agents/{aid}/cron/{cid}/runs", headers=alice_auth)
+        assert runs.status_code == 200
+        record = next(item for item in runs.json() if item["run_id"] == run_id)
+        if record["status"] != "running":
+            break
+        await asyncio.sleep(0.05)
+    assert record["status"] in {"ok", "error"}
 
     r = await c.get(f"/api/agents/{aid}/cron/{cid}", headers=alice_auth)
     assert r.status_code == 200

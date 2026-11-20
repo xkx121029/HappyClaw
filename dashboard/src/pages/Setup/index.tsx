@@ -10,6 +10,7 @@ import { storeUiLocale, type UiLocale } from "../../utils/locale";
 import { authApi } from "../../api/modules/auth";
 import { preferencesApi } from "../../api/modules/preferences";
 import BootOfflinePanel from "../../components/BootOfflinePanel";
+import { Mascot } from "../../components/Mascot";
 import { useTheme } from "../../context/ThemeContext";
 import { isNetworkFetchError } from "../../utils/networkError";
 import { publicUrl } from "../../utils/publicUrl";
@@ -274,6 +275,18 @@ export default function SetupPage() {
                 }
                 alt="HappyClaw"
                 className={styles.wizardHeaderLogo}
+              />
+              <Mascot
+                size={22}
+                state={
+                  current === STEP_MODEL
+                    ? "curious"
+                    : current === STEP_FINISH
+                      ? "happy"
+                      : "curious"
+                }
+                surface="var(--fn-bg-base)"
+                className={styles.wizardHeaderMascot}
               />
               <div className={styles.wizardHeaderBrandText}>
                 <Text type="secondary" className={styles.wizardHeaderSubtitle}>

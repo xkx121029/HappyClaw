@@ -9,6 +9,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import cx from "classnames";
+import { useValuePulse } from "../../../../motion";
 import type { CronJobSpecOutput } from "../../../../api/types";
 import styles from "../index.module.less";
 import {
@@ -94,6 +96,10 @@ export function CronJobCard({
     ? t("common.enabled")
     : t("common.disabled");
   const statusTag = lastStatus ? lastRunStatusTag(lastStatus) : null;
+  // 状态就地变化时给一次轻微 pop，提示「刚刚变了」。
+  const statusPulse = useValuePulse(
+    `${job.enabled}|${phase ?? ""}|${lastStatus ?? ""}`,
+  );
   const triggerLabel = formatTriggerText(job.schedule?.cron, {
     mail: t("cronJobs.form.agentlyNewMail"),
     once: t("cronJobs.form.scheduleModeOnce"),
@@ -143,7 +149,10 @@ export function CronJobCard({
           <div className={styles.cronCardMeta}>
             {/* Status pill */}
             <div
-              className={styles.cronCardStatus}
+              className={cx(
+                styles.cronCardStatus,
+                statusPulse && "octop-status-pop",
+              )}
               style={{
                 color: pillColor,
                 background: `${pillColor}1a`,
@@ -156,7 +165,7 @@ export function CronJobCard({
               {statusLabel}
             </div>
             {/* Task type tag */}
-            <Tag style={{ fontSize: 11, margin: 0 }}>
+            <Tag style={{ fontSize: "var(--fn-text-2xs)", margin: 0 }}>
               {taskType === "text"
                 ? t("cronJobs.form.taskTypeText")
                 : t("cronJobs.form.taskTypeAgent")}
@@ -195,7 +204,7 @@ export function CronJobCard({
         {lastStatus && (
           <Tag
             color={statusTag?.color ?? "default"}
-            style={{ fontSize: 11, margin: 0 }}
+            style={{ fontSize: "var(--fn-text-2xs)", margin: 0 }}
           >
             {statusTag ? t(statusTag.labelKey) : lastStatus}
           </Tag>

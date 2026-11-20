@@ -207,6 +207,17 @@
   }
 }
 
+/* 卡片进出场的包裹层：保持卡片自身的网格拉伸行为。 */
+.cardCell {
+  display: flex;
+  min-width: 0;
+
+  > * {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 /* ── CronJob card (AgentCard-style) ──────────────────────────── */
 
 .cronCard {

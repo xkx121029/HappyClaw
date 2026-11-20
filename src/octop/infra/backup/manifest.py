@@ -17,6 +17,12 @@ class AgentBackupEntry:
 
 
 @dataclass
+class ExternalProjectEntry:
+    project_id: str
+    root_dir: str
+
+
+@dataclass
 class BackupManifest:
     manifest_version: int
     octop_version: str
@@ -32,6 +38,10 @@ class BackupManifest:
     includes_skill_packages: bool = True
     includes_plugins: bool = False
     includes_knowledge: bool = False
+    includes_projects: bool = False
+    includes_sessions: bool = False
+    includes_projects_external: bool = False
+    external_projects: list[ExternalProjectEntry] = field(default_factory=list)
     includes_chats: bool = True
 
     def to_json(self) -> str:
@@ -49,6 +59,10 @@ class BackupManifest:
             "includes_skill_packages": self.includes_skill_packages,
             "includes_plugins": self.includes_plugins,
             "includes_knowledge": self.includes_knowledge,
+            "includes_projects": self.includes_projects,
+            "includes_sessions": self.includes_sessions,
+            "includes_projects_external": self.includes_projects_external,
+            "external_projects": [asdict(e) for e in self.external_projects],
             "includes_chats": self.includes_chats,
             "agents": [asdict(a) for a in self.agents],
         }
@@ -87,6 +101,27 @@ class BackupManifest:
             includes_knowledge=(
                 bool(data["includes_knowledge"]) if "includes_knowledge" in data else False
             ),
+            # Older archives never packed ~/.octop/projects or ~/.octop/sessions.
+            includes_projects=(
+                bool(data["includes_projects"]) if "includes_projects" in data else False
+            ),
+            includes_sessions=(
+                bool(data["includes_sessions"]) if "includes_sessions" in data else False
+            ),
+            # Older archives never packed project roots outside ~/.octop.
+            includes_projects_external=(
+                bool(data["includes_projects_external"])
+                if "includes_projects_external" in data
+                else False
+            ),
+            external_projects=[
+                ExternalProjectEntry(
+                    project_id=str(row.get("project_id", "")),
+                    root_dir=str(row.get("root_dir", "")),
+                )
+                for row in (data.get("external_projects") or [])
+                if isinstance(row, dict)
+            ],
             # Legacy archives dumped the full database; missing key means chats are present.
             includes_chats=bool(data["includes_chats"]) if "includes_chats" in data else True,
         )

@@ -103,6 +103,20 @@ export default function MemoryLayerView<T>(props: MemoryLayerViewProps<T>) {
             <li
               key={keyOf(it)}
               onClick={onItemClick ? () => onItemClick(it) : undefined}
+              // Rows behave like buttons when they open a detail drawer, so they
+              // must be reachable by Tab and activate with Enter or Space.
+              role={onItemClick ? "button" : undefined}
+              tabIndex={onItemClick ? 0 : undefined}
+              onKeyDown={
+                onItemClick
+                  ? (event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onItemClick(it);
+                      }
+                    }
+                  : undefined
+              }
               style={{
                 ...itemStyle,
                 cursor: onItemClick ? "pointer" : "default",

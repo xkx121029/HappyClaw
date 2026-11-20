@@ -13,7 +13,6 @@ import yaml
     [
         "docker/docker-compose.yml",
         "docker/docker-compose.cn.yml",
-        "docker/docker-compose.mobile.yml",
         "fnos/docker/app/docker/docker-compose.yaml",
     ],
 )

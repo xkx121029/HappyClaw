@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { ChevronLeft, Cloud } from "lucide-react";
 import cx from "classnames";
 import { CHAT_NAV_SCOPES, type ChatNavScope } from "../utils/chatNavScope";
 import styles from "../index.module.less";
@@ -8,6 +9,18 @@ const NAV_SCOPE_LABELS: Record<
   ChatNavScope,
   { key: string; fallback: string; emptyKey: string; emptyFallback: string }
 > = {
+  sessions: {
+    key: "chat.navScopeSessions",
+    fallback: "会话",
+    emptyKey: "chat.navScopeEmptySessions",
+    emptyFallback: "还没有会话",
+  },
+  projects: {
+    key: "chat.navScopeProjects",
+    fallback: "项目",
+    emptyKey: "chat.navScopeEmptyProjects",
+    emptyFallback: "还没有项目",
+  },
   experts: {
     key: "chat.navScopeExperts",
     fallback: "专家",
@@ -80,7 +93,58 @@ export function ChatNavScopeEmpty({ scope }: { scope: ChatNavScope }) {
   );
 }
 
-/** Expert / team / cloud switch under the chat nav search box. */
+/**
+ * Cloud collaboration is a capability, not a peer tab. This entry sits under
+ * the tab strip; opening it shows the previous cloud list (remote experts and
+ * their sessions) with its operations intact, and offers a way back.
+ */
+export function ChatNavCloudEntry({
+  active,
+  count,
+  onOpen,
+  onClose,
+}: {
+  active: boolean;
+  count: number;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const label = t("chat.cloudEntry", "云端协同");
+  if (active) {
+    return (
+      <button
+        type="button"
+        className={cx(styles.sessionCloudEntry, styles.sessionCloudEntryActive)}
+        data-testid="chat-cloud-entry"
+        onClick={onClose}
+      >
+        <ChevronLeft size={13} />
+        <span>{label}</span>
+        <span className={styles.sessionCloudEntryCount}>
+          {t("chat.cloudEntryBack", "返回会话")}
+        </span>
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className={styles.sessionCloudEntry}
+      data-testid="chat-cloud-entry"
+      title={t("chat.cloudEntryHint", "查看云端专家与会话")}
+      onClick={onOpen}
+    >
+      <Cloud size={13} />
+      <span>{label}</span>
+      {count > 0 ? (
+        <span className={styles.sessionCloudEntryCount}>{count}</span>
+      ) : null}
+    </button>
+  );
+}
+
+/** Sessions / projects / experts / teams switch under the chat nav search box. */
 export default function ChatNavScopeTabs({
   value,
   onChange,

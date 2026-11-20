@@ -7,6 +7,7 @@ import path from "path";
 
 import { monacoSameOrigin } from "./vite/monaco.ts";
 import { suppressViteDisconnectReload } from "./vite/suppress-disconnect-reload.ts";
+import { designTokens } from "./vite/design-tokens.ts";
 
 // serialize-javascript@7 (pulled in by vite-plugin-pwa → @rollup/plugin-terser)
 // expects Web Crypto globals during `vite build`. Node <19 does not define them.
@@ -72,6 +73,9 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: path.resolve(__dirname, "../src/octop/dashboard"),
       emptyOutDir: true,
+      // Lazy route chunks legitimately reach ~1.5 MB (pptx renderer, mermaid).
+      // Keeping the bar below that makes every build print warnings nobody acts
+      // on, which hides a real regression in the vendor chunks.
       chunkSizeWarningLimit: 1600,
       // Limit Rollup worker concurrency to prevent OOM on memory-constrained hosts.
       // Without this, Rollup spawns one worker per CPU core and antd's 7000+ modules
@@ -79,7 +83,10 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         maxParallelFileOps: 3,
         output: {
-          entryFileNames: "assets/index.[hash].js",
+          // Named "entry" (not "index") so the service worker can precache the
+          // shell without also matching every lazy route chunk, which Vite
+          // names "index.<hash>.js" as well.
+          entryFileNames: "assets/entry.[hash].js",
           chunkFileNames: "assets/[name].[hash].js",
           assetFileNames: "assets/[name].[hash].[ext]",
           manualChunks(id) {
@@ -150,6 +157,7 @@ export default defineConfig(({ mode }) => {
       MOBILE: false,
     },
     plugins: [
+      designTokens(__dirname),
       monacoSameOrigin(__dirname),
       suppressViteDisconnectReload(),
       react(),
@@ -180,13 +188,19 @@ export default defineConfig(({ mode }) => {
           // Notification clicks are handled here. The production worker must
           // not skipWaiting; notify-sw.js only does that when it is the worker.
           importScripts: ["notify-sw.js"],
-          // Precache hashed entry + vendor chunks. Do NOT precache index.html:
-          // Cache-First on the shell pins a stale HTML that points at deleted
-          // hashes after deploy (white screen until a hard refresh).
+          // Precache only the shell and its vendor chunks. Lazy route chunks
+          // share Vite's "index.<hash>" naming with the shell stylesheet, so
+          // any "assets/index.*" pattern pulled every page into the first SW
+          // install (~8.7 MB of downloads for a visitor who may only open
+          // Chat). Everything else is cached on demand by the runtime rules
+          // below.
           globPatterns: [
-            "assets/index.*.js",
-            "assets/vendor-*.js",
-            "assets/*.{css,woff2}",
+            "assets/entry.*.js",
+            "assets/vendor-react.*.js",
+            "assets/vendor-antd.*.js",
+            "assets/vendor-utils.*.js",
+            "assets/vendor-icons.*.js",
+            "assets/*.woff2",
           ],
           // vendor-antd (incl. the ColorPicker color engine) exceeds the
           // 2 MiB workbox default; raise the precache limit so it stays

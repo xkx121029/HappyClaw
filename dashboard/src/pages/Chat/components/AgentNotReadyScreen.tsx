@@ -7,6 +7,11 @@ import { request } from "../../../api/request";
 import { apiErrorMessage } from "../../../utils/apiError";
 import { useAgent } from "../../../context/AgentContext";
 import { OctopEmptyMascot } from "../../../components/EmptyState";
+import {
+  Mascot,
+  mascotStatusInk,
+  useMascotAppearance,
+} from "../../../components/Mascot";
 import type { OctopAgent } from "../../../context/AgentContext";
 import {
   formatAgentError,
@@ -37,6 +42,7 @@ export default function AgentNotReadyScreen({
   hasUsableModels,
 }: AgentNotReadyScreenProps) {
   const { t } = useTranslation();
+  const baoLook = useMascotAppearance();
   const navigate = useNavigate();
   const { refresh } = useAgent();
   const [enabling, setEnabling] = useState(false);
@@ -161,7 +167,17 @@ export default function AgentNotReadyScreen({
   if (!agent) {
     return (
       <div className={styles.agentNotReady}>
-        <Result status="info" title={t("chat.pickAgent")} />
+        <Result
+          status="info"
+          icon={
+            <Mascot
+              size={64}
+              state="curious"
+              surface="var(--fn-bg-layout, var(--fn-bg-base))"
+            />
+          }
+          title={t("chat.pickAgent")}
+        />
       </div>
     );
   }
@@ -258,6 +274,24 @@ export default function AgentNotReadyScreen({
             : state === "stopped" || state === "created"
             ? "warning"
             : "info"
+        }
+        icon={
+          <Mascot
+            size={72}
+            color={
+              state === "failed" && !disconnected
+                ? mascotStatusInk(baoLook, "error")
+                : undefined
+            }
+            state={
+              disconnected
+                ? "suspicious"
+                : state === "failed"
+                  ? "sad"
+                  : "confused"
+            }
+            surface="var(--fn-bg-layout, var(--fn-bg-base))"
+          />
         }
         title={title}
         subTitle={subTitle}

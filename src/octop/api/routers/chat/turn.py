@@ -33,6 +33,7 @@ from octop.infra.gateway.process.message_keys import (
 from octop.infra.gateway.process.usage_record import extract_usage_from_chunk
 from octop.infra.gateway.threads import ThreadRegistry, thread_visible_to
 from octop.infra.gateway.ws import WS_CHANNEL_ID
+from octop.infra.projects.session import QUICK_KIND
 
 __all__ = [
     "COMPOSER_CTX_KEY",
@@ -73,6 +74,10 @@ async def resolve_thread_id(
             raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
         if not thread_visible_to(row, user_id):
             raise OctopError(ErrorCode.FORBIDDEN, "thread not owned by user")
+        # Quick chats keep their own session key: replying must never move the
+        # user's normal dashboard conversation onto the quick thread.
+        if (getattr(row, "workspace_kind", None) or "") == QUICK_KIND:
+            return thread_id, row.session_key
         await thread_registry.rebind(
             session_key=sk,
             thread_id=thread_id,

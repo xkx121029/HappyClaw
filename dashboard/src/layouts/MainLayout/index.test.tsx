@@ -19,6 +19,7 @@ const state = vi.hoisted(() => ({
 vi.mock("react-router-dom", () => ({
   useLocation: () => ({ pathname: state.pathname }),
   useNavigate: () => state.navigate,
+  useNavigationType: () => "PUSH",
   Routes: ({ children }: { children: ReactNode }) => children,
   Route: ({ path, element }: { path: string; element: ReactNode }) =>
     path === state.pathname ? element : null,
@@ -74,6 +75,7 @@ vi.mock("../../routes", () => ({
   MOBILE_FULLSCREEN_PATHS: new Set(["/chat"]),
   SELF_HEADER_PATHS: new Set(["/chat"]),
   isWorkbenchPath: () => false,
+  isRemoteDesktopPath: () => false,
 }));
 
 vi.mock("../../pages/Chat", () => ({

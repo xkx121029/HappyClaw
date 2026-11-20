@@ -1,4 +1,4 @@
-"""QQ mail and other IMAP/SMTP mailbox gateway."""
+"""Mail and other IMAP/SMTP mailbox gateway."""
 
 from __future__ import annotations
 

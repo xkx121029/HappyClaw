@@ -445,6 +445,7 @@ def _arm_detach_cleanup(session: _PtySession) -> None:
 @router.get("/agents/{agent_id}/terminal/context")
 async def terminal_context(
     agent_id: str,
+    thread_id: str | None = Query(default=None),
     user: Any = Depends(require_permission("terminal")),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
@@ -458,7 +459,10 @@ async def terminal_context(
     # PTY spawn still uses the host-mapped path via resolve_agent_workspace_dir.
     cfg = server.app_runtime.agent_registry.get_config(agent_id)
     raw_ws = cfg.get("workspace_dir") if isinstance(cfg, dict) else None
-    if isinstance(raw_ws, str) and raw_ws.strip():
+    if thread_id:
+        # A conversation in a project (or its own workspace) runs there.
+        workspace_dir = str(resolve_agent_workspace_dir(server, agent_id, thread_id))
+    elif isinstance(raw_ws, str) and raw_ws.strip():
         workspace_dir = raw_ws.strip()
     else:
         workspace_dir = str(resolve_agent_workspace_dir(server, agent_id))
@@ -503,6 +507,7 @@ async def terminal_ws(
     agent_id: str,
     token: str | None = Query(default=None),
     session_id: str | None = Query(default=None),
+    thread_id: str | None = Query(default=None),
     cols: int = Query(default=80),
     rows: int = Query(default=24),
 ) -> None:
@@ -550,7 +555,7 @@ async def terminal_ws(
     except OctopError:
         await websocket.close(code=4003, reason="agent not owned by user")
         return
-    workspace_dir = str(resolve_agent_workspace_dir(server, agent_id))
+    workspace_dir = str(resolve_agent_workspace_dir(server, agent_id, thread_id))
 
     supported, unsupported_reason = terminal_supported()
     if not supported:

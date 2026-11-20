@@ -1,4 +1,4 @@
-"""tests/unit/test_cron_manager.py
+﻿"""tests/unit/test_cron_manager.py
 
 Unit tests for CronManager.  APScheduler and Gateway are patched out so no
 real async tasks or LLM calls are made.
@@ -1005,7 +1005,7 @@ async def test_run_now_disables_one_shot_after_success(tmp_path: Path) -> None:
     services = _make_services(tmp_path)
     aid, uid = _make_agent(services)
     mgr = _make_manager(services)
-    mgr._delivery_service.deliver = AsyncMock()
+    mgr._delivery_service.deliver = AsyncMock(return_value=None)
     cid = _cron_id()
     await mgr.create(
         cron_id=cid,
@@ -1054,7 +1054,7 @@ async def test_run_now_keeps_recurring_job_enabled(tmp_path: Path) -> None:
     services = _make_services(tmp_path)
     aid, uid = _make_agent(services)
     mgr = _make_manager(services)
-    mgr._delivery_service.deliver = AsyncMock()
+    mgr._delivery_service.deliver = AsyncMock(return_value=None)
     cid = _cron_id()
     await mgr.create(
         cron_id=cid,
@@ -1178,7 +1178,7 @@ async def test_reenable_future_one_shot_schedules_again(tmp_path: Path) -> None:
     services = _make_services(tmp_path)
     aid, uid = _make_agent(services)
     mgr = _make_manager(services)
-    mgr._delivery_service.deliver = AsyncMock()
+    mgr._delivery_service.deliver = AsyncMock(return_value=None)
     cid = _cron_id()
     await mgr.create(
         cron_id=cid,
@@ -1268,3 +1268,4 @@ def test_scheduler_miss_leaves_recurring_job_enabled(tmp_path: Path) -> None:
     assert row is not None
     assert row.enabled == 1
     assert row.last_status is None
+

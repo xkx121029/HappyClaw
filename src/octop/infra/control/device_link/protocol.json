@@ -1,0 +1,177 @@
+{
+  "protocol": "happyclaw-device",
+  "version": 1,
+  "description": "HappyClaw 与设备服务的唯一协议定义。两端（Kotlin 设备侧 / Python HappyClaw 侧）都以本文件为准；任一端改了协议而没有同步本文件，对应用例必须失败。",
+  "defaults": {
+    "maxFrameBytes": 16777216,
+    "commandTimeoutMs": 10000,
+    "pingIntervalMs": 15000,
+    "pongTimeoutMs": 10000,
+    "idleTimeoutMs": 45000,
+    "idempotencyTtlMs": 600000,
+    "idempotencyMaxEntries": 512,
+    "tokenRotationMs": 604800000,
+    "tokenOverlapMs": 60000,
+    "pairingTtlMs": 180000,
+    "pairingMaxAttempts": 3,
+    "reconnectInitialMs": 500,
+    "reconnectMaxMs": 30000,
+    "reconnectJitter": 0.2
+  },
+  "envelope": {
+    "version": 1,
+    "keys": { "version": "version", "type": "type", "id": "id", "ts": "ts", "body": "body" }
+  },
+  "messageTypes": {
+    "clientToServer": ["pair.request", "hello", "cmd", "ping", "today.capture"],
+    "serverToClient": ["server.hello", "pair.ok", "pair.error", "hello.ok", "hello.error", "result", "pong", "event"]
+  },
+  "errorCodes": [
+    "BAD_FRAME",
+    "BAD_REQUEST",
+    "INVALID_PARAMS",
+    "UNSUPPORTED_COMMAND",
+    "NOT_AUTHENTICATED",
+    "TOKEN_INVALID",
+    "PAIRING_DISABLED",
+    "CODE_INVALID",
+    "CODE_EXPIRED",
+    "TOO_MANY_ATTEMPTS",
+    "TIMEOUT",
+    "UNAVAILABLE",
+    "DENIED",
+    "NOT_FOUND",
+    "UNKNOWN_OUTCOME",
+    "INTERNAL"
+  ],
+  "commands": [
+    {
+      "name": "device.info",
+      "summary": "设备与通道状态快照",
+      "params": {},
+      "result": "{deviceName,versionName,versionCode,androidSdk,apiVersion,a11y:{enabled,connected},watchdog:{...}}"
+    },
+    {
+      "name": "a11y.status",
+      "summary": "无障碍服务状态",
+      "params": {},
+      "result": "{enabled,connected,inList,masterEnabled}"
+    },
+    {
+      "name": "screen.tree",
+      "summary": "当前界面元素树（provider captureScreen JSON 原样透传）",
+      "params": { "displayId": "int? (-1 或省略=主屏)" },
+      "result": "{displayId,packageName,screenWidth,screenHeight,elements:[...]}"
+    },
+    {
+      "name": "screen.screenshot",
+      "summary": "无障碍截图（PNG，base64）",
+      "params": { "displayId": "int?" },
+      "result": "{format:\"png\",sizeBytes:int,base64:string}"
+    },
+    {
+      "name": "ui.click",
+      "summary": "点击坐标",
+      "params": { "x": "int", "y": "int" },
+      "result": "{success,reason,x,y}"
+    },
+    {
+      "name": "ui.longClick",
+      "summary": "长按坐标",
+      "params": { "x": "int", "y": "int", "durationMs": "int?" },
+      "result": "{success,reason,x,y}"
+    },
+    {
+      "name": "ui.clickNode",
+      "summary": "按定位线索点击控件",
+      "params": {
+        "selector": "object{ viewId?:string, label?:string, hintX?:int, hintY?:int }",
+        "longClick": "bool?",
+        "durationMs": "int?"
+      },
+      "result": "{success,reason,x,y}"
+    },
+    {
+      "name": "ui.swipe",
+      "summary": "滑动手势",
+      "params": { "x1": "int", "y1": "int", "x2": "int", "y2": "int", "durationMs": "int?" },
+      "result": "{success,reason,x,y}"
+    },
+    {
+      "name": "ui.scroll",
+      "summary": "可滚动容器内翻页",
+      "params": { "direction": "string(up|down|left|right)" },
+      "result": "{success,reason,x,y}"
+    },
+    {
+      "name": "ui.typeText",
+      "summary": "向输入框整段覆写文本",
+      "params": { "text": "string", "x": "int?", "y": "int?" },
+      "result": "{success,reason,x,y}"
+    },
+    {
+      "name": "ui.globalAction",
+      "summary": "全局按键（GLOBAL_ACTION_*）",
+      "params": { "action": "int" },
+      "result": "{success}"
+    },
+    {
+      "name": "app.launch",
+      "summary": "启动应用 LAUNCHER activity",
+      "params": { "package": "string" },
+      "result": "{success,reason,x,y}"
+    },
+    {
+      "name": "app.list",
+      "summary": "已安装应用列表（可筛选系统应用/可启动应用）",
+      "params": {
+        "includeSystem": "bool? (默认 true)",
+        "launchableOnly": "bool? (默认 false)"
+      },
+      "result": "{apps:[{package,label,isSystem,launchable}],count,truncated}"
+    },
+    {
+      "name": "notification.status",
+      "summary": "通知使用权与监听连接状态",
+      "params": {},
+      "result": "{granted,connected}"
+    },
+    {
+      "name": "notification.list",
+      "summary": "内存中的通知摘要（按时间倒序，最多保留 200 条，不落盘）",
+      "params": {
+        "limit": "int? (默认 50)",
+        "sinceMs": "long? (默认 0；按 postedAt 过滤)",
+        "allowPackages": "string? (逗号分隔包名白名单)",
+        "denyPackages": "string? (逗号分隔包名黑名单，优先级高于白名单)"
+      },
+      "result": "{granted,connected,notifications:[{key,package,appLabel,title,text,postedAt,ongoing,category}],count,settingsAction,message?}"
+    },
+    {
+      "name": "calendar.list",
+      "summary": "本机日历未来若干天的事件（只读）",
+      "params": {
+        "days": "int? (默认 7)",
+        "limit": "int? (默认 50)"
+      },
+      "result": "{granted,events:[{title,startAt,endAt,allDay,location,calendar}],count,settingsAction,message?}"
+    },
+    {
+      "name": "alarm.list",
+      "summary": "系统下一个闹钟（只读）",
+      "params": {},
+      "result": "{nextAlarm,hasAlarm}"
+    },
+    {
+      "name": "today.sync",
+      "summary": "HappyClaw 下发今日聚合数据（todos/reminders/proactive），设备侧缓存供 Today 首屏展示",
+      "params": {
+        "todos": "array[{id,text,done}]?",
+        "reminders": "array[{id,text,dueAt}]?",
+        "proactive": "array[{id,text,createdAt}]?",
+        "updatedAt": "long?"
+      },
+      "result": "{applied,todos,reminders,proactive,updatedAt}"
+    }
+  ]
+}

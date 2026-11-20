@@ -13,7 +13,12 @@ from fastapi.responses import JSONResponse, Response
 from octop.api.common.agent import agent_is_shared, require_agent_row
 from octop.api.common.agent_workspace import resolve_agent_workspace_dir
 from octop.api.deps import current_user, get_server
-from octop.api.routers.chat.models import ForkThreadBody, RebindSessionBody, RenameThreadBody
+from octop.api.routers.chat.models import (
+    ForkThreadBody,
+    RebindSessionBody,
+    RenameThreadBody,
+    ThreadProjectBody,
+)
 from octop.api.routers.chat.serialize import (
     HISTORY_DEFAULT_LIMIT,
     _backfill_thread_projection,
@@ -30,6 +35,7 @@ from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.gateway.hitl.coordinator import pending_hitl_payload
 from octop.infra.gateway.threads import ThreadRegistry, thread_row_has_messages, thread_visible_to
 from octop.infra.history.trajectory.service import TrajectoryService
+from octop.infra.projects.session import QUICK_KIND
 from octop.infra.utils.locale import resolve_request_locale
 
 router = APIRouter()
@@ -74,6 +80,22 @@ def _message_author_profile(server: Any, user_id: int) -> dict[str, Any] | None:
         "avatar_icon": icon if isinstance(icon, str) and icon else None,
         "avatar_url": avatar_url,
     }
+
+
+def _thread_creator_name(server: Any, user_id: int) -> str | None:
+    """Display name of a quick-chat initiator; ``None`` when unavailable."""
+    repo = getattr(getattr(server, "services", None), "user_repo", None)
+    get = getattr(repo, "get", None)
+    if not callable(get):
+        return None
+    try:
+        row = get(int(user_id))
+    except (AttributeError, TypeError, ValueError):
+        return None
+    if row is None:
+        return None
+    name = getattr(row, "display_name", None) or getattr(row, "username", None)
+    return name if isinstance(name, str) and name else None
 
 
 def _attach_message_authors(
@@ -130,8 +152,16 @@ def _history_migration_payload(server: Any, *, agent_id: str, user_id: int) -> d
     }
 
 
-def _agent_facing_workspace_dir(server: Any, agent_id: str) -> Path:
+def _agent_facing_workspace_dir(
+    server: Any, agent_id: str, thread_id: str | None = None
+) -> Path:
     """Agent-visible workspace_dir for artifact path joins (not host root_dir map)."""
+    if thread_id:
+        registry = getattr(getattr(server, "app_runtime", None), "agent_registry", None)
+        if registry is not None and hasattr(registry, "thread_workspace_path"):
+            resolved = registry.thread_workspace_path(agent_id, thread_id)
+            if resolved is not None:
+                return Path(resolved)
     registry = getattr(getattr(server, "app_runtime", None), "agent_registry", None)
     if registry is not None and hasattr(registry, "get_config"):
         facing = agent_facing_workspace_dir_from_config(registry.get_config(agent_id))
@@ -206,6 +236,20 @@ async def list_threads(
     # client fall back to an English literal. Stored titles are left untouched
     # so renaming and auto-titling keep working.
     untitled = tr("threads.new_chat_title", resolve_request_locale(request))
+    project_names: dict[str, str] = {}
+    try:
+        for project in server.services.project_repo.list_for_user(int(effective_uid)):
+            project_names[project.project_id] = project.name
+    except (AttributeError, TypeError, ValueError):
+        project_names = {}
+    # Quick chats show who started them; only those rows need the extra lookup.
+    creator_names: dict[int, str | None] = {}
+    for row in rows:
+        if (row.workspace_kind or "") != QUICK_KIND:
+            continue
+        uid = int(row.user_id)
+        if uid not in creator_names:
+            creator_names[uid] = _thread_creator_name(server, uid)
 
     def _has_messages(row: Any) -> bool:
         if not thread_row_has_messages(row):
@@ -235,6 +279,14 @@ async def list_threads(
             "conversation_mode": r.conversation_mode or "craft",
             "pending_plan_path": r.pending_plan_path,
             "hitl_policy": _hitl_policy_payload(r),
+            "project_id": r.project_id,
+            "project_name": project_names.get(r.project_id) if r.project_id else None,
+            "workspace_kind": r.workspace_kind,
+            "workspace_dir": r.workspace_dir,
+            "quick_chat": (r.workspace_kind or "") == QUICK_KIND,
+            "created_by_name": creator_names.get(int(r.user_id))
+            if (r.workspace_kind or "") == QUICK_KIND
+            else None,
             "turn_active": hub.is_turn_active(r.thread_id),
             "awaiting_user": r.thread_id
             in (shared_awaiting_ids if r.contributed else awaiting_ids),
@@ -321,6 +373,7 @@ async def create_thread(
     agent_id: str,
     as_user: int | None = None,
     rebind: bool = True,
+    project_id: str | None = None,
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
@@ -328,9 +381,16 @@ async def create_thread(
 
     ``rebind=false`` inserts a thread without moving the agent's current
     dashboard session, so an embedded panel can keep its own conversation.
+    ``project_id`` puts the conversation inside an existing project so it
+    starts in that project's folder.
     """
     require_agent_row(agent_id, user=user, as_user=as_user, server=server)
     effective_uid = as_user if as_user is not None else user.id
+    project = None
+    if project_id:
+        project = server.services.project_repo.get(project_id)
+        if project is None or int(project.user_id) != int(effective_uid):
+            raise OctopError(ErrorCode.NOT_FOUND, f"project {project_id!r} not found")
     sk = ThreadRegistry.dashboard_key(agent_id=agent_id, user_id=effective_uid)
     registry = server.app_runtime.gateway.thread_registry
     if rebind:
@@ -347,7 +407,88 @@ async def create_thread(
             channel_type=ThreadRegistry.CHANNEL_DASHBOARD,
             session_key=sk,
         )
+    if project is not None:
+        server.services.thread_repo.set_workspace(
+            tid,
+            project_id=project.project_id,
+            workspace_kind="project",
+            workspace_dir=None,
+        )
     return {"thread_id": tid, "session_key": sk}
+
+
+@router.post(
+    "/agents/{agent_id}/quick-chats",
+    status_code=200,
+    summary="Open quick chat (no workspace)",
+)
+async def create_quick_chat(
+    agent_id: str,
+    as_user: int | None = None,
+    user: Any = Depends(current_user),
+    server: Any = Depends(get_server),
+) -> dict[str, Any]:
+    """Open the lightweight conversation that never gets a workspace.
+
+    The thread is tagged ``workspace_kind="quick"`` so the session-workspace
+    binder skips it, and it uses a dedicated session key so sending a message
+    never rebinds the user's normal dashboard conversation. Repeat visits reuse
+    the most recent quick thread instead of piling up empty ones.
+    """
+    require_agent_row(agent_id, user=user, as_user=as_user, server=server)
+    effective_uid = as_user if as_user is not None else user.id
+    sk = ThreadRegistry.quick_key(agent_id=agent_id, user_id=effective_uid)
+    registry = server.app_runtime.gateway.thread_registry
+    existing = registry.list_threads_for_session(session_key=sk, limit=1)
+    tid = (
+        existing[0].thread_id
+        if existing
+        else registry.create_thread(
+            agent_id=agent_id,
+            user_id=effective_uid,
+            channel_type=ThreadRegistry.CHANNEL_DASHBOARD,
+            session_key=sk,
+            workspace_kind=QUICK_KIND,
+        )
+    )
+    return {"thread_id": tid, "session_key": sk, "quick": True}
+
+
+@router.post(
+    "/agents/{agent_id}/threads/{thread_id}/project",
+    summary="Turn this conversation into a project",
+)
+async def convert_thread_to_project_route(
+    agent_id: str,
+    thread_id: str,
+    body: ThreadProjectBody,
+    as_user: int | None = None,
+    user: Any = Depends(current_user),
+    server: Any = Depends(get_server),
+) -> dict[str, Any]:
+    """In-place upgrade: the thread becomes the project's first conversation.
+
+    Messages, artifacts, and files stay where they are; the chosen folder (or
+    the conversation's current directory) becomes the project root.
+    """
+    _require_thread(server, agent_id, thread_id, user, as_user, write=True)
+    from octop.infra.projects.session import convert_thread_to_project  # noqa: PLC0415
+
+    effective_uid = as_user if as_user is not None else user.id
+    project = convert_thread_to_project(
+        thread_repo=server.services.thread_repo,
+        project_repo=server.services.project_repo,
+        paths=server.services.paths,
+        thread_id=thread_id,
+        user_id=int(effective_uid),
+        root_dir=body.root_dir,
+        name=body.name,
+    )
+    return {
+        "project_id": str(getattr(project, "project_id", "") or ""),
+        "project_name": str(getattr(project, "name", "") or ""),
+        "root_dir": getattr(project, "root_dir", None),
+    }
 
 
 def _parse_csv_query(raw: str | None) -> list[str] | None:
@@ -464,7 +605,7 @@ async def get_thread_history(
         agent_id=agent_id,
         user_id=None if row.contributed else effective_uid,
     )
-    workspace_dir = _agent_facing_workspace_dir(server, agent_id)
+    workspace_dir = _agent_facing_workspace_dir(server, agent_id, thread_id)
     return {
         "thread_id": thread_id,
         "messages": messages,

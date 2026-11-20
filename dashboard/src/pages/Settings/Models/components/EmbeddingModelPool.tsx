@@ -229,6 +229,7 @@ export function EmbeddingModelPool({
                       ) : testState === "failure" ? (
                         <Tooltip title={t("models.embeddingPoolRetest")}>
                           <Button
+                    aria-label={t("models.embeddingPoolRetest")}
                             type="text"
                             size="small"
                             danger
@@ -246,6 +247,7 @@ export function EmbeddingModelPool({
                       ) : (
                         <Tooltip title={t("models.testConnection")}>
                           <Button
+                    aria-label={t("models.testConnection")}
                             type="text"
                             size="small"
                             icon={<Zap size={14} />}

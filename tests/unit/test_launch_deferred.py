@@ -1,4 +1,4 @@
-"""Launch composition root must expose config even with a lazy mobile probe."""
+"""Launch composition root must expose config loaded during startup."""
 
 from __future__ import annotations
 
@@ -11,19 +11,18 @@ from octop.infra.server import OctopServer
 
 @pytest.mark.asyncio
 async def test_deferred_start_exposes_config_for_listen(tmp_octop_home: Path, monkeypatch) -> None:
-    """``octop run`` reads bind host/port from config after the probe runs."""
+    """``octop run`` reads bind host/port from config after startup."""
     from octop.infra import server as server_module
-    from octop.infra.control.mobile import config_probe
 
     guarded = []
     monkeypatch.setattr(server_module, "ensure_nofile_limit", lambda: guarded.append(True))
-    original_probe = config_probe.ensure_mobile_capabilities_probed
+    original_load_config = server_module.load_config
 
-    def probe(path):
+    def load(path):
         assert guarded == [True]  # Resource guard runs before runtime/config initialization.
-        return original_probe(path)
+        return original_load_config(path)
 
-    monkeypatch.setattr(config_probe, "ensure_mobile_capabilities_probed", probe)
+    monkeypatch.setattr(server_module, "load_config", load)
     srv = OctopServer(home=tmp_octop_home)
     await srv.start()
     try:

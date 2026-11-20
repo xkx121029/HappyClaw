@@ -187,13 +187,29 @@ export default function AtomsList({ agentId }: Props) {
             }}
             onMouseEnter={() => setHoveredId(a.id)}
             onMouseLeave={() => setHoveredId(null)}
+            onFocus={() => setHoveredId(a.id)}
+            onBlur={(event) => {
+              // Keep the action buttons mounted while focus moves inside the
+              // row, otherwise Tab would unmount the element being focused.
+              if (
+                !event.currentTarget.contains(event.relatedTarget as Node | null)
+              ) {
+                setHoveredId(null);
+              }
+            }}
           >
             <Space size={4}>
               <ImportanceStars importance={a.importance} />
               {isAtomDeprecated(a) ? <Tag color="red">已忘记</Tag> : null}
             </Space>
-            <div style={{ marginTop: 4, fontSize: 13 }}>{a.assertion}</div>
-            <div style={{ marginTop: 2, fontSize: 12, color: "#8c8c8c" }}>
+            <div style={{ marginTop: 4, fontSize: "var(--fn-text-xs)" }}>{a.assertion}</div>
+            <div
+              style={{
+                marginTop: 2,
+                fontSize: "var(--fn-text-2xs)",
+                color: "var(--fn-text-tertiary)",
+              }}
+            >
               {formatRelativeTime(a.created_at)}
               {a.kind ? ` · ${kindLabel(a.kind)}` : ""}
             </div>
@@ -210,12 +226,22 @@ export default function AtomsList({ agentId }: Props) {
               >
                 <Tooltip title={t("memory.edit.tooltip", "编辑这条记忆")}>
                   <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t("memory.edit.tooltip", "编辑这条记忆")}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEdit(a);
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEdit(a);
+                      }
+                    }}
                     style={{
-                      color: "#1677ff",
+                      color: "var(--fn-color-brand)",
                       cursor: "pointer",
                       padding: "2px 4px",
                       borderRadius: 4,
@@ -229,12 +255,22 @@ export default function AtomsList({ agentId }: Props) {
                   title={t("memory.tree.deprecateTooltip", "弃用这条记忆")}
                 >
                   <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t("memory.tree.deprecateTooltip", "弃用这条记忆")}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeprecate(a);
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeprecate(a);
+                      }
+                    }}
                     style={{
-                      color: "#ff4d4f",
+                      color: "var(--fn-color-danger)",
                       cursor: "pointer",
                       padding: "2px 4px",
                       borderRadius: 4,
@@ -365,7 +401,7 @@ function ImportanceStars({ importance }: { importance: string }) {
           ? "重要"
           : "一般"
       }`}
-      style={{ color: "#faad14", fontSize: 13, letterSpacing: 1 }}
+      style={{ color: "#faad14", fontSize: "var(--fn-text-xs)", letterSpacing: 1 }}
     >
       {"★".repeat(n)}
       <span style={{ color: "#d9d9d9" }}>{"★".repeat(3 - n)}</span>

@@ -39,7 +39,7 @@ def gateway(tmp_path: Path) -> Gateway:
     gw._channel_manager.get_channel = MagicMock(return_value=None)
 
     async def run_in_session(_channel_id, _session_key, operation):
-        await operation()
+        return await operation()
 
     gw._channel_manager.run_in_session = run_in_session
     return gw
@@ -235,6 +235,17 @@ async def test_push_text_from_qq_group_session_preserves_proactive_routing(
     assert subject.metadata["msg_type"] == "group"
     assert subject.metadata["group_openid"] == "group-openid-1"
     assert args.args[2] == "proactive group message"
+
+
+@pytest.mark.asyncio
+async def test_run_in_session_propagates_operation_result(gateway: Gateway) -> None:
+    """Cron delivery reads its degraded-delivery note from this return value."""
+    sk = _insert_dashboard_session(gateway)
+
+    async def operation() -> str:
+        return "note"
+
+    assert await gateway.run_in_session("a1", sk, operation) == "note"
 
 
 def _insert_dashboard_session(gateway: Gateway, *, thread_id: str = "thr_dash") -> str:

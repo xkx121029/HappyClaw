@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Empty, Input, Spin } from "antd";
+import { Button, Empty, Spin } from "antd";
 import {
   ChevronDown,
   ChevronRight,
@@ -8,7 +8,6 @@ import {
   Folder,
   FolderOpen,
   RefreshCw,
-  Search,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import cx from "classnames";
@@ -22,6 +21,10 @@ interface SoloFileTreeProps {
   agentReady: boolean;
   activePath: string | null;
   onOpenFile: (path: string) => void;
+  /** 由外层资源管理器头部触发的刷新计数。 */
+  refreshToken?: number;
+  /** 外层已经提供标题栏时隐藏自带的「文件」头部。 */
+  hideHeader?: boolean;
 }
 
 function entryName(path: string): string {
@@ -41,6 +44,8 @@ export default function SoloFileTree({
   agentReady,
   activePath,
   onOpenFile,
+  refreshToken = 0,
+  hideHeader = false,
 }: SoloFileTreeProps) {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<Record<string, WorkspaceEntry[]>>({});
@@ -92,6 +97,14 @@ export default function SoloFileTree({
     await Promise.all(openDirs.map((dir) => loadDir(dir)));
     setRefreshing(false);
   }, [agentId, agentReady, expanded, loadDir]);
+
+  const refreshRef = useRef(handleRefresh);
+  refreshRef.current = handleRefresh;
+
+  // 外层头部的刷新按钮只改计数，避免把 handleRefresh 放进依赖导致重复刷新。
+  useEffect(() => {
+    if (refreshToken > 0) void refreshRef.current();
+  }, [refreshToken]);
 
   const toggleDir = useCallback(
     (path: string) => {
@@ -236,27 +249,29 @@ export default function SoloFileTree({
 
   return (
     <aside className={styles.treePane}>
-      <header className={styles.paneHeader}>
-        <span className={styles.paneTitle}>{t("solo.files")}</span>
-        <Button
-          type="text"
-          size="small"
-          icon={<RefreshCw size={13} />}
-          loading={refreshing}
-          onClick={() => void handleRefresh()}
-          disabled={!agentId || !agentReady}
-          aria-label={t("solo.refreshFiles")}
-        />
-      </header>
+      {!hideHeader ? (
+        <header className={styles.paneHeader}>
+          <span className={styles.paneTitle}>{t("solo.files")}</span>
+          <Button
+            type="text"
+            size="small"
+            icon={<RefreshCw size={13} />}
+            loading={refreshing}
+            onClick={() => void handleRefresh()}
+            disabled={!agentId || !agentReady}
+            aria-label={t("solo.refreshFiles")}
+          />
+        </header>
+      ) : null}
       <div className={styles.treeSearch}>
-        <Input
-          size="small"
-          allowClear
-          prefix={<Search size={12} />}
+        <input
+          className={styles.treeSearchInput}
+          type="text"
           placeholder={t("solo.searchFiles")}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           disabled={!agentId || !agentReady}
+          aria-label={t("solo.searchFiles")}
         />
       </div>
       {error && Object.keys(entries).length > 0 ? (

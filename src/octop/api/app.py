@@ -201,9 +201,6 @@ def build_app(server: OctopServer, *, defer_heavy: bool = False) -> FastAPI:
     cfg = server.services.config if server.services else getattr(server, "config", None)
     enable_dashboard = cfg.enable_dashboard if cfg else True
     enable_api_docs = cfg.enable_api_docs if cfg else False
-    enable_mobile = (
-        cfg.capabilities.mobile.enabled if cfg and cfg.capabilities.mobile.enabled else False
-    )
 
     app = FastAPI(
         title="HappyClaw API",
@@ -216,17 +213,33 @@ def build_app(server: OctopServer, *, defer_heavy: bool = False) -> FastAPI:
     app.state.octop_server = server
     _install_exception_handlers(app)
 
+    # Optional shared-secret gate for phones / cross-origin dashboards. It is
+    # installed *before* CORS so CORSMiddleware wraps its 401 responses —
+    # otherwise a browser cannot read the status and reports a network failure.
+    from octop.api.middleware.access_token import install as install_access_token
+
+    install_access_token(app, server)
+
     if cfg and cfg.cors_origins:
         from octop.api.deps import ACCESS_TOKEN_RESPONSE_HEADER
 
+        origins = list(cfg.cors_origins)
+        # "*" must not be combined with credentials: browsers reject that pair.
+        allow_all = "*" in origins
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=cfg.cors_origins,
-            allow_credentials=True,
+            allow_origins=["*"] if allow_all else origins,
+            allow_credentials=not allow_all,
             allow_methods=["*"],
             allow_headers=["*"],
             expose_headers=[ACCESS_TOKEN_RESPONSE_HEADER],
         )
+
+    # Added after CORS so compression wraps it (middleware added last runs
+    # first) and also shrinks the JSON payloads CORS decorates.
+    from octop.api.middleware.compression import install as install_compression
+
+    install_compression(app)
 
     from octop.api.middleware.bridge_proxy import install as install_bridge_proxy
 
@@ -253,20 +266,34 @@ def build_app(server: OctopServer, *, defer_heavy: bool = False) -> FastAPI:
     # mounted here. The remaining routers cost ~20s of module import on slow
     # volumes (langchain, aiohttp, ldap3, docx…), so ``mount_deferred_routers``
     # adds them once the socket is already accepting connections.
-    from octop.api.routers import auth, health, i18n, preferences, runtime, setup
+    from octop.api.routers import (
+        auth,
+        auth_device,
+        bao,
+        health,
+        i18n,
+        preferences,
+        runtime,
+        setup,
+    )
 
     _mount_routers(
         app,
         [
             _RouterMount(setup.router, "/api", ["setup"]),
+            # Bao is an always-on shell entry; mount it with first paint so the
+            # floating button never opens onto a 404.
+            _RouterMount(bao.router, "/api/bao", ["agents"]),
             _RouterMount(auth.router, "/api/auth", ["auth"]),
+            # The desktop shell exchanges its device credential for a token on
+            # cold start, before the deferred batch is mounted.
+            _RouterMount(auth_device.router, "/api/auth", ["auth"]),
             _RouterMount(preferences.router, "/api", ["auth"]),
             _RouterMount(i18n.router, "/api", ["i18n"]),
             _RouterMount(health.router, "/api/health", ["health"]),
             _RouterMount(runtime.router, "/api/runtime", ["health"]),
         ],
     )
-    app.state.octop_enable_mobile = enable_mobile
     if not defer_heavy:
         # Historical shape for tests and in-process callers: everything mounted.
         mount_critical_routers(app)
@@ -399,7 +426,7 @@ def mount_critical_routers(app: FastAPI) -> None:
     _mount_before_spa(app, critical_router_specs())
 
 
-def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
+def deferred_router_specs() -> list[_RouterMount]:
     """Import and describe every router that is not needed for first paint.
 
     Kept in the same relative order as the historical single-shot mount list so
@@ -410,9 +437,7 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         admin,
         agent_files,
         agent_mcp,
-        agent_mcp,
         agent_tools,
-        auth_device,
         backup,
         bridge,
         browser,
@@ -421,6 +446,8 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         connectors,
         cron,
         desktop,
+        device_link,
+        dsh_compat,
         envs,
         experts,
         internal_mcp,
@@ -430,12 +457,13 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         memory,
         memory_portable,
         memory_storage,
-        mobile,
         ollama_models,
         onnx_models,
+        phone_access,
         plugins,
         proactive_care,
         providers,
+        projects,
         search,
         settings,
         skill_packages,
@@ -454,6 +482,7 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
     )
     from octop.api.routers.decision import router as decision_router  # noqa: PLC0415
     from octop.api.routers.filesystem import router as filesystem_router  # noqa: PLC0415
+    from octop.infra.control.connector import router as connector_router  # noqa: PLC0415
     from octop.api.routers.observability import router as observability_router  # noqa: PLC0415
     from octop.api.routers.providers import admin_router as admin_providers_router  # noqa: PLC0415
     from octop.api.routers.security import router as security_router  # noqa: PLC0415
@@ -468,7 +497,6 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
 
     specs = [
         _RouterMount(_retired_multi_user_router(), "/api", []),
-        _RouterMount(auth_device.router, "/api/auth", ["auth"]),
         _RouterMount(user_groups.router, "/api/user-groups", ["users"]),
         _RouterMount(users.router, "/api/users", ["users"]),
         _RouterMount(agent_tools.router, "/api", ["agents"]),
@@ -482,6 +510,7 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         _RouterMount(cloud.router, "/api/cloud", ["cloud"]),
         _RouterMount(cron.router, "/api", ["cron"]),
         _RouterMount(settings.router, "/api", ["settings"]),
+        _RouterMount(phone_access.router, "/api/phone-access", ["settings"]),
         _RouterMount(decision_router, "/api", ["settings"]),
         _RouterMount(envs.router, "/api", ["envs"]),
         _RouterMount(search.router, "/api", ["search"]),
@@ -506,6 +535,7 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         _RouterMount(filesystem_router, "/api/filesystem", ["filesystem"]),
         _RouterMount(mbti.router, "/api", ["mbti"]),
         _RouterMount(experts.router, "/api", ["experts"]),
+        _RouterMount(projects.router, "/api", ["agents"]),
         _RouterMount(teams.router, "/api", ["teams"]),
         _RouterMount(text_assist.router, "/api", ["text-assist"]),
         _RouterMount(workspace.router, "/api", ["workspace"]),
@@ -524,18 +554,22 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         _RouterMount(update.router, "/api", ["update"]),
         _RouterMount(browser.router, "/api", ["browser"]),
         _RouterMount(desktop.router, "/api", ["desktop"]),
+        # 手机 App 直连（跨局域网 TLS）：服务端地址由用户显式配置，
+        # 与已移除的 ADB 手机能力开关无关。
+        _RouterMount(device_link.router, "/api", ["device-link"]),
+        # 手机端连接器：手机主动拨号进来配对，再由服务端推送消息、接收回复。
+        _RouterMount(connector_router.router, "/api", ["connector"]),
         _RouterMount(ollama_models.router, "/api", ["ollama"]),
         _RouterMount(onnx_models.router, "/api", ["onnx"]),
         _RouterMount(plugins.router, "/api", ["plugins"]),
+        _RouterMount(dsh_compat.router, "/api/dsh-compat", ["dsh-compat"]),
     ]
-    if enable_mobile:
-        specs.append(_RouterMount(mobile.router, "/api", ["mobile"]))
     return specs
 
 
 def import_deferred_router_modules() -> None:
     """Import the deferred routers without touching the app (worker thread)."""
-    deferred_router_specs(enable_mobile=True)
+    deferred_router_specs()
 
 
 def mount_deferred_routers(app: FastAPI) -> None:
@@ -548,7 +582,5 @@ def mount_deferred_routers(app: FastAPI) -> None:
     if getattr(app.state, "octop_deferred_mounted", False):
         return
     app.state.octop_deferred_mounted = True
-    specs = deferred_router_specs(
-        enable_mobile=bool(getattr(app.state, "octop_enable_mobile", False))
-    )
+    specs = deferred_router_specs()
     _mount_before_spa(app, specs)

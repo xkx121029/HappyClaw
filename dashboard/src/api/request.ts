@@ -5,6 +5,7 @@ import {
   renewDesktopSession,
 } from "./desktopSession";
 import i18n from "../i18n";
+import { mobileCredentialHeaders } from "../utils/mobileEndpoint";
 
 const AUTH_TOKEN_KEY = "auth_token";
 /** sessionStorage handoff for SSO redirects / popups (default = remember). */
@@ -257,6 +258,9 @@ function buildHeaders(path: string, extra?: HeadersInit): HeadersInit {
     headers.Authorization = `Bearer ${token}`;
   }
 
+  // Connected phone clients attach the server's optional access credential.
+  Object.assign(headers, mobileCredentialHeaders());
+
   // Caller-supplied headers win — needed so the setup wizard can pass
   // its short-TTL Bearer without being stomped by a stale localStorage
   // JWT.
@@ -294,6 +298,7 @@ function buildAuthHeaders(path: string): Record<string, string> {
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
+  Object.assign(headers, mobileCredentialHeaders());
   if (
     activeAgentId &&
     isAgentScopedPath(path) &&

@@ -1,4 +1,10 @@
 import type { ComponentType } from "react";
+import type {
+  DataDomain,
+  ProductEventName,
+  SurfaceRegistration,
+  SurfaceSlot,
+} from "../surfaces/types";
 
 /** Parsed ``octop_ui`` envelope from a tool JSON string output. */
 export interface OctopUiHint {
@@ -59,7 +65,32 @@ export interface OpenSidePanelOptions {
   toolName?: string;
 }
 
+export interface PluginSurfacesHostApi {
+  /** True only for slots the current Dashboard actually renders. */
+  supports(slot: string): slot is SurfaceSlot;
+  list(slot: SurfaceSlot): Array<{ id: string; title: string; order: number }>;
+  /** Register a component into a slot; returns its dispose function. */
+  register(reg: SurfaceRegistration): () => void;
+}
+
+export interface PluginDataHostApi {
+  read<T = unknown>(domain: DataDomain): Promise<T>;
+  subscribe<T = unknown>(
+    domain: DataDomain,
+    cb: (value: T) => void,
+  ): () => void;
+}
+
+export interface PluginEventsHostApi {
+  on<T = unknown>(
+    event: ProductEventName,
+    cb: (payload: T) => void,
+  ): () => void;
+}
+
 export interface OctopPluginUIHost {
+  /** Host contract version; v1 = 1. */
+  apiVersion: 1;
   registerRenderer(
     reg: Omit<ToolRendererRegistration, "pluginId"> & { pluginId?: string },
   ): void;
@@ -72,12 +103,21 @@ export interface OctopPluginUIHost {
   openSidePanel(opts: OpenSidePanelOptions): void;
   /** Close the side dock tab for this tool call, if open. */
   closeSidePanel(callId: string): void;
+  /** v1: mount a plugin-owned information view into a host slot. */
+  surfaces: PluginSurfacesHostApi;
+  /** v1: read-only product data domains. */
+  data: PluginDataHostApi;
+  /** v1: product events derived from real backend state. */
+  events: PluginEventsHostApi;
+  context: { locale: string; theme: "light" | "dark" };
 }
 
 /** Shape expected from ``ui/dist/index.js``. */
 export interface PluginUiModule {
-  setup?: (host: OctopPluginUIHost) => void;
-  default?: { setup?: (host: OctopPluginUIHost) => void };
+  setup?: (host: OctopPluginUIHost) => void | (() => void);
+  default?: {
+    setup?: (host: OctopPluginUIHost) => void | (() => void);
+  };
 }
 
 export interface PluginUiManifest {

@@ -3,7 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { octopThreadsApi } from "../../../api/modules/octopThreads";
 import * as chatStore from "./chatStore";
 import { EMPTY_CHAT_SESSION_KEY } from "../constants";
-import { pickPreferredSession, toSession, type Session } from "./useSessions";
+import {
+  markPendingThread,
+  pickPreferredSession,
+  toSession,
+  type Session,
+} from "./useSessions";
 
 interface UseChatSessionActionsParams {
   resolvedAgentId: string | null | undefined;
@@ -18,6 +23,10 @@ interface UseChatSessionActionsParams {
   clearMessages: () => void;
   resetNavForAgentSwitch: () => void;
   markInitialNavDone: (agentId: string) => void;
+  /** Refresh the sidebar after a quick thread was created. */
+  fetchSessions?: (activeThreadId?: string) => Promise<unknown>;
+  /** Surface quick-chat creation failures (hook stays i18n-free). */
+  notifyError?: (message: string) => void;
 }
 
 export function useChatSessionActions({
@@ -33,6 +42,8 @@ export function useChatSessionActions({
   clearMessages,
   resetNavForAgentSwitch,
   markInitialNavDone,
+  fetchSessions,
+  notifyError,
 }: UseChatSessionActionsParams) {
   const navigate = useNavigate();
 
@@ -47,9 +58,11 @@ export function useChatSessionActions({
   /**
    * New chat with an arbitrary expert. Unlike {@link navigateToAgent} this stays
    * on the empty-chat view instead of jumping to that expert's latest thread.
+   * With ``projectId`` the conversation is created inside that project so it
+   * starts in the project folder instead of the expert's default workspace.
    */
   const handleNewChatWithAgent = useCallback(
-    (agentId: string) => {
+    (agentId: string, projectId?: string | null) => {
       if (!agentId) return;
       setSelectedModel(null);
       setHasBrowserTool(false);
@@ -58,7 +71,15 @@ export function useChatSessionActions({
         setActiveAgent(agentId);
       }
       markInitialNavDone(agentId);
-      navigate(`/chat/${agentId}`);
+      if (projectId) {
+        void octopThreadsApi
+          .create(agentId, { projectId })
+          .then((created) => navigate(`/chat/${agentId}/${created.thread_id}`))
+          // 建不出来就退回空对话，至少还能继续聊
+          .catch(() => navigate(`/chat/${agentId}`));
+      } else {
+        navigate(`/chat/${agentId}`);
+      }
       chatStore.clearMessages(EMPTY_CHAT_SESSION_KEY);
       if (isMobile) setSidebarOpen(false);
     },
@@ -75,14 +96,61 @@ export function useChatSessionActions({
     ],
   );
 
+  /**
+   * Quick chat: a sidebar-level entry that lands on a brand-new no-workspace
+   * conversation with the given expert (HappyClaw). The server tags the thread
+   * as ``quick`` so it never gets a directory and never rebinds the normal
+   * dashboard session.
+   */
+  const handleQuickChat = useCallback(
+    async (agentId: string) => {
+      if (!agentId) return;
+      setSelectedModel(null);
+      setHasBrowserTool(false);
+      if (agentId !== resolvedAgentId) {
+        resetNavForAgentSwitch();
+        setActiveAgent(agentId);
+      }
+      markInitialNavDone(agentId);
+      chatStore.clearMessages(EMPTY_CHAT_SESSION_KEY);
+      if (isMobile) setSidebarOpen(false);
+      try {
+        const created = await octopThreadsApi.createQuick(agentId);
+        markPendingThread(created.thread_id);
+        // Keep ``quick=1`` on the thread URL so the quick identity survives
+        // reloads and the sidebar keeps 快速对话 selected.
+        navigate(`/chat/${agentId}/${created.thread_id}?quick=1`);
+        void fetchSessions?.(created.thread_id);
+      } catch (error) {
+        notifyError?.(error instanceof Error ? error.message : String(error));
+        navigate(`/chat/${agentId}`);
+      }
+    },
+    [
+      navigate,
+      resolvedAgentId,
+      isMobile,
+      setActiveAgent,
+      setSidebarOpen,
+      setSelectedModel,
+      setHasBrowserTool,
+      resetNavForAgentSwitch,
+      markInitialNavDone,
+      fetchSessions,
+      notifyError,
+    ],
+  );
+
+  // Keep the quick flag on the URL when switching into a quick conversation,
+  // so the sidebar highlight and the "no workspace" chip stay correct.
   const handleSelectSession = useCallback(
-    (id: string) => {
+    (id: string, quick = false) => {
       const agent = resolvedAgentId;
       if (!agent) return;
       if (id === activeThreadId) return;
       setSelectedModel(null);
       void octopThreadsApi.rebind(agent, id).catch(() => {});
-      navigate(`/chat/${agent}/${id}`);
+      navigate(`/chat/${agent}/${id}${quick ? "?quick=1" : ""}`);
       if (isMobile) setSidebarOpen(false);
     },
     [
@@ -162,6 +230,7 @@ export function useChatSessionActions({
   return {
     handleNewChat,
     handleNewChatWithAgent,
+    handleQuickChat,
     handleSelectSession,
     navigateToAgent,
     handleDeleteSession,

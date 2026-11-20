@@ -61,7 +61,7 @@ export default function LanguageSwitcher() {
                 boxShadow: active ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
-                fontSize: 13,
+                fontSize: "var(--fn-text-xs)",
                 fontWeight: active ? 600 : 400,
               }}
             >
