@@ -58,6 +58,7 @@ async def require_running_workspace(
     checker = require_agent_owner_row if owner_only else require_agent_row
     row = checker(agent_id, user=user, as_user=as_user, server=server)
     agent = None
+    not_running: OctopError | None = None
     try:
         agent = require_running_agent(server, agent_id)
     except OctopError as exc:
@@ -66,6 +67,9 @@ async def require_running_workspace(
         state = str(getattr(row, "last_state", "") or "").strip().lower()
         if state != "running":
             raise
+        # Keep the original error: if the rebuild-gap fallback below is also
+        # gone, this is the honest reason the workspace is unavailable.
+        not_running = exc
     assert server.app_runtime is not None
     if thread_id:
         workspace = server.app_runtime.agent_registry.workspace_for_thread(
@@ -78,7 +82,9 @@ async def require_running_workspace(
         return agent.workspace
     fallback = server.app_runtime.agent_registry.workspace_for_agent(agent_id)
     if fallback is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        if not_running is not None:
+            raise not_running
+        raise OctopError(ErrorCode.AGENT_NOT_RUNNING, f"agent {agent_id!r} not running")
     return cast("BackendWorkspace", fallback)
 
 
