@@ -114,7 +114,7 @@ def test_compose_followup_team_host_asks_for_wrapup(processor_env: dict) -> None
 
 
 def test_compose_followup_truncates_long_member_result(processor_env: dict) -> None:
-    from octop.infra.agents.teams.team_manager import _FOLLOWUP_RESULT_MAX_CHARS
+    from octop.infra.agents.teams.room.constants import _FOLLOWUP_RESULT_MAX_CHARS
 
     processor = processor_env["processor"]
     processor._agent_repo.create(agent_id="host", user_id=1, name="Host", kind="team")
@@ -448,7 +448,7 @@ async def test_member_stream_does_not_relay_decision_custom(processor_env: dict)
 async def test_wrapup_request_marks_decision_followup() -> None:
     from types import SimpleNamespace
 
-    from octop.infra.agents.teams.team_manager import _patch_inbox_wrapup
+    from octop.infra.agents.teams.room.wiring import _patch_inbox_wrapup
 
     seen: dict[str, object] = {}
 
@@ -1263,9 +1263,9 @@ async def test_member_tokens_stay_off_the_room_until_the_host_is_idle(
     from langchain_core.messages import AIMessage
     from octop_harness.request import ChatRequest
 
-    import octop.infra.agents.teams.team_manager as team_mod
+    import octop.infra.agents.teams.room.turns as turns_mod
 
-    monkeypatch.setattr(team_mod, "_HOST_IDLE_WAIT_SEC", 0)
+    monkeypatch.setattr(turns_mod, "_HOST_IDLE_WAIT_SEC", 0)
     processor = processor_env["processor"]
     gateway = processor_env["gateway"]
     room_frames: list[dict[str, object]] = []
@@ -1409,9 +1409,9 @@ async def test_member_hitl_timeout_does_not_finish_the_job(
 ) -> None:
     from octop_harness.request import ChatRequest
 
-    import octop.infra.agents.teams.team_manager as team_mod
+    import octop.infra.agents.teams.room.hitl as hitl_mod
 
-    monkeypatch.setattr(team_mod, "_MEMBER_HITL_WAIT_SEC", 0.05)
+    monkeypatch.setattr(hitl_mod, "_MEMBER_HITL_WAIT_SEC", 0.05)
     processor = processor_env["processor"]
 
     async def fake_stream(_agent_id: str, _request: dict[str, object]) -> object:
@@ -1688,7 +1688,7 @@ async def test_fan_in_truncates_large_tool_results(
     from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
     from octop_harness.teams.util import PeerCall
 
-    from octop.infra.agents.teams.team_manager import _HISTORY_TOOL_RESULT_MAX_CHARS
+    from octop.infra.agents.teams.room.constants import _HISTORY_TOOL_RESULT_MAX_CHARS
 
     processor = processor_env["processor"]
     processor._agent_repo.create(agent_id="host", user_id=1, name="Host", kind="team")
@@ -2090,7 +2090,7 @@ async def test_on_reply_failed_releases_job(processor_env: dict) -> None:
 
 @pytest.mark.asyncio
 async def test_failed_host_wrapup_is_excluded_from_memory() -> None:
-    from octop.infra.agents.teams.team_manager import _patch_inbox_wrapup
+    from octop.infra.agents.teams.room.wiring import _patch_inbox_wrapup
 
     inbox = SimpleNamespace(
         _synthesize_reply=AsyncMock(return_value="fallback"),
