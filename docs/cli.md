@@ -70,31 +70,37 @@ next time `octop run` starts.
 
 ## `octop init`
 
-Prepare `~/.octop` and migrate the control-plane database. It also creates a
-first **admin user row**: without `--yes` it prompts for a username and
-password, and with `--yes` it requires `--admin-username` / `--admin-password`
-(or `OCTOP_ADMIN_USERNAME` / `OCTOP_ADMIN_PASSWORD`).
+Prepare `~/.octop`: create the runtime directories, seed the bundled plugins,
+and run the control-plane database migrations. A single-user install has no
+account step — the local owner is bound by the first `octop run`.
+
+The `--admin-*` options are legacy: they create a named admin row for packages
+that still provision one (the fnOS build does), never prompt, and the
+single-user path ignores them.
 
 ```
 Usage: octop init [OPTIONS]
 
-  Bootstrap an Octop server (~/.octop dir, DB migrations, first admin).
+  Bootstrap a HappyClaw install (~/.octop dir, DB migrations).
 
 Options:
-  --admin-username TEXT      First admin username (or set OCTOP_ADMIN_USERNAME).
-  --admin-password TEXT      First admin password (or set OCTOP_ADMIN_PASSWORD).
-  --admin-display-name TEXT  Optional display name for the admin user.
+  --admin-username TEXT      Legacy: also create a named admin row (or set
+                             OCTOP_ADMIN_USERNAME). Single-user installs need
+                             no account and pass neither admin option.
+  --admin-password TEXT      Legacy: password for --admin-username (or set
+                             OCTOP_ADMIN_PASSWORD).
+  --admin-display-name TEXT  Legacy: optional display name for the admin row.
   --force                    Delete HappyClaw application state under ~/.octop
                              before bootstrapping. Keeps the install runtime
                              (venv/, bin/).
-  --yes                      Skip all interactive prompts.
+  --yes                      Skip the --force confirmation prompt.
   -h, --help                 Show this message and exit.
 ```
 
 A normal install does not need this command: the first `octop run` creates the
 data directory and resolves the local owner by itself. Use `octop init` when
-you want to migrate the database ahead of time, or to script an unattended
-install together with the `--admin-*` flags.
+you want to migrate the database ahead of time, or from a package that still
+needs a named admin row.
 
 ## `octop run`
 
