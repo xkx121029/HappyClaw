@@ -268,9 +268,19 @@ def test_unreadable_portal_origin_disables_the_catalog(monkeypatch: pytest.Monke
             list_market_plugins()
 
 
-def test_unset_portal_origin_falls_back_to_the_default(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_unset_portal_origin_leaves_the_remote_catalog_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.delenv("OCTOP_PORTAL_ORIGIN", raising=False)
-    assert market_http.portal_base() == market_http.DEFAULT_PORTAL_BASE
+    assert market_http.DEFAULT_PORTAL_BASE == ""
+    assert market_http.portal_base() == ""
+    with pytest.raises(PortalMarketError, match="portal url is empty"):
+        list_market_plugins()
+
+
+def test_a_configured_portal_origin_turns_the_catalog_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "http://market.internal:9000")
+    assert market_http.portal_base() == "http://market.internal:9000"
 
 
 def test_unparsable_url_is_a_catalog_failure_not_a_crash(monkeypatch: pytest.MonkeyPatch) -> None:

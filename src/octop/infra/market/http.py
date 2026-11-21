@@ -14,7 +14,11 @@ from urllib.request import Request, urlopen
 from octop.infra.market.errors import PortalMarketError
 
 DEFAULT_REMOTE_BASE = "https://download.octop.cloud"
-DEFAULT_PORTAL_BASE = "https://octop.cloud"
+# Off by default: this ships as a single-user self-hosted install, and pointing
+# every fresh install at a catalog site we do not run is a dependency, not a
+# feature. Set ``OCTOP_PORTAL_ORIGIN`` to a self-hosted market (see
+# ``docs/private-market.md``) to turn the plugin and expert catalogs on.
+DEFAULT_PORTAL_BASE = ""
 
 FETCH_TIMEOUT_SECONDS = 8.0
 MAX_INDEX_BYTES = 1024 * 1024
@@ -28,7 +32,9 @@ _LOCAL_NETWORK_ERRNOS = frozenset(
 
 
 def portal_base() -> str:
-    """Site origin. An empty ``OCTOP_PORTAL_ORIGIN`` disables the remote catalog.
+    """Site origin. The remote catalog is off unless ``OCTOP_PORTAL_ORIGIN`` is set.
+
+    An explicitly empty value means the same as unset.
 
     A bare host is treated as ``https://``. Anything that cannot be read as an
     http(s) origin disables the catalog rather than reaching ``urlopen``: a
