@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "./tokens.css";
-@import "./directions/a.css";
+@import "./skin-a.css";
 @import "./directions/b.css";
 @import "./directions/c.css";
 

@@ -1,14 +1,14 @@
 /* ==========================================================================
-   Direction A · 仪器 (Instrument)
+   HappyClaw default skin · 仪器 (Instrument)
    --------------------------------------------------------------------------
    Achromatic by rule: the only colour on the page is state. Radii collapse to
    2px so the grid reads as machined edges; every shadow is replaced by a 1px
    rule, which is what makes panels look measured instead of floating.
-   Scoped to html[data-direction="a"] so the shared components restyle
+   Scoped to :root so the shared components restyle
    themselves without a second copy of every component.
    ========================================================================== */
 
-html[data-direction="a"] {
+:root {
   --hc-font-sans: "Segoe UI Variable Text", "Segoe UI", "Noto Sans SC",
     "Microsoft YaHei", sans-serif;
   --hc-font-mono: "Cascadia Mono", "Cascadia Code", Consolas, "Noto Sans SC",
@@ -50,7 +50,7 @@ html[data-direction="a"] {
   --hc-signal-soft: rgba(27, 68, 200, 0.1);
 }
 
-html[data-direction="a"]:not(.dark) {
+:root:not(.dark) {
   color-scheme: light;
 
   --hc-bg-canvas: #fafaf8;
@@ -105,7 +105,7 @@ html[data-direction="a"]:not(.dark) {
   --hc-shadow-glow: 0 0 0 2px #1b44c8;
 }
 
-html[data-direction="a"].dark {
+:root.dark {
   color-scheme: dark;
 
   --hc-bg-canvas: #0b0b0a;
