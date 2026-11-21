@@ -291,122 +291,7 @@ EOF
     return 0
 }
 
-# ---------------------------------------------------------------------------
-# 管理员密码：生成 / 校验 / 凭据回落保存。
-#
-# 背景（issue #502）：src/octop/infra/users/password.py 的弱密码黑名单包含
-# "octop123"，而 FPK 旧版把初始密码写死为 Octop123，导致 octop init 在首次
-# 启动时报 "password is too common" 直接退出、应用永远起不来。这里的函数
-# 让安装向导接管密码设置：用户自定义（先本地校验，杜绝无效密码进入 init）
-# 或自动生成随机强密码，并回落保存到数据目录，保证用户不丢密码。
-# ---------------------------------------------------------------------------
-
-# 向导字段值清洗：去掉会破坏 .env / JSON / shell 的字符。
-# 与各回调脚本内历史 sanitize() 等价，但额外去除反斜杠（JSON 注入面）。
-octop_sanitize_value() {
-    printf '%s' "$1" | tr -d '\n\r"'"'"'\\'
-}
-
-# 生成随机密码：首字符为字母、末字符为数字，全部取自无易混淆字符的字母数字表。
-# 长度默认 16（至少 8）。依赖 /dev/urandom（飞牛与容器内均可用）。
-octop_generate_password() {
-    local letters='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
-    local digits='23456789'
-    local all="${letters}${digits}"
-    local n="${1:-16}" out="" i b
-    case "$n" in ''|*[!0-9]*) n=16 ;; esac
-    [ "$n" -lt 8 ] && n=8
-    b="$(od -An -N1 -tu1 /dev/urandom 2>/dev/null | tr -d '[:space:]')"
-    [ -n "$b" ] || b=7
-    out="${letters:$((b % ${#letters})):1}"
-    for ((i = 1; i < n - 1; i++)); do
-        b="$(od -An -N1 -tu1 /dev/urandom 2>/dev/null | tr -d '[:space:]')"
-        [ -n "$b" ] || b=$((RANDOM % 255))
-        out+="${all:$((b % ${#all})):1}"
-    done
-    b="$(od -An -N1 -tu1 /dev/urandom 2>/dev/null | tr -d '[:space:]')"
-    [ -n "$b" ] || b=3
-    out+="${digits:$((b % ${#digits})):1}"
-    printf '%s' "$out"
-}
-
-# 校验密码是否满足应用侧策略（src/octop/infra/users/password.py）：
-# ≥8 位、同时含字母和数字、不在常见弱密码黑名单内。
-# 黑名单须与 password.py 的 _COMMON_PASSWORDS 保持一致（有单测对拍）。
-# 校验失败时向 stderr 输出中文原因，返回非零。
-octop_validate_password() {
-    local pw="$1" reason=""
-    if [ -z "$pw" ]; then
-        reason="密码为空"
-    elif [ "${#pw}" -lt 8 ]; then
-        reason="密码长度至少 8 位"
-    elif [ "${#pw}" -gt 64 ]; then
-        reason="密码长度不能超过 64 位"
-    elif ! printf '%s' "$pw" | grep -q '[A-Za-z]'; then
-        reason="密码必须同时包含字母和数字"
-    elif ! printf '%s' "$pw" | grep -q '[0-9]'; then
-        reason="密码必须同时包含字母和数字"
-    elif printf '%s' "$pw" | tr 'A-Z' 'a-z' | grep -qx \
-        -e 'password' -e 'password1' -e 'password12' -e 'password123' \
-        -e '12345678' -e '123456789' -e 'qwerty123' -e 'admin123' \
-        -e 'welcome1' -e 'letmein1' -e 'changeme1' -e 'octop123' \
-        -e 'abc12345' -e 'iloveyou1'
-    then
-        reason="密码过于常见（password is too common），请换一个更复杂的密码"
-    fi
-    if [ -n "$reason" ]; then
-        echo "$reason" >&2
-        return 1
-    fi
-    return 0
-}
-
-# 安装向导账号字段：用户名 + 密码/确认必填，邮箱可选。失败时 stderr 输出中文原因。
-octop_validate_install_fields() {
-    local user="$1" pass="$2" confirm="$3" email="${4:-}" display="${5:-}"
-    if [ -z "$user" ]; then
-        echo "管理员用户名不能为空" >&2
-        return 1
-    fi
-    if ! printf '%s' "$user" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9_.-]{1,31}$'; then
-        echo "管理员用户名「${user}」无效：只能包含字母、数字、点、下划线和连字符（2-32 位）" >&2
-        return 1
-    fi
-    if [ "${#display}" -gt 64 ]; then
-        echo "显示名称不能超过 64 个字符" >&2
-        return 1
-    fi
-    if [ -n "$email" ] && ! printf '%s' "$email" | grep -qE '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'; then
-        echo "邮箱「${email}」格式不正确" >&2
-        return 1
-    fi
-    if [ -z "$pass" ]; then
-        echo "请输入管理员密码" >&2
-        return 1
-    fi
-    if [ "$pass" != "$confirm" ]; then
-        echo "两次输入的密码不一致，请重新输入" >&2
-        return 1
-    fi
-    octop_validate_password "$pass"
-}
-
-# 设置窗口改密：两栏都空 = 保持不变；只填一栏或两次不一致则拒绝。
-octop_validate_optional_password_change() {
-    local pass="$1" confirm="$2"
-    if [ -z "$pass" ] && [ -z "$confirm" ]; then
-        return 0
-    fi
-    if [ -z "$pass" ] || [ -z "$confirm" ]; then
-        echo "请同时填写新密码和确认密码，或都留空以保持当前密码" >&2
-        return 1
-    fi
-    if [ "$pass" != "$confirm" ]; then
-        echo "两次输入的密码不一致，请重新输入" >&2
-        return 1
-    fi
-    octop_validate_password "$pass"
-}
+# 单人自托管没有账号：安装向导不再收集用户名/密码，下列回调也不读凭据。
 
 # 从 .env 文件读取 KEY=VALUE 的值（容忍引号与行尾空白）。
 octop_env_get() {
@@ -551,12 +436,6 @@ octop_sync_fnos_compose() {
             *":/data/.octop"*)
                 printf '      - "%s:/data/.octop"\n' "$bind" >> "$tmp"
                 ;;
-            *"/fnos-boot.sh:"*)
-                printf '      - "%s/fnos-boot.sh:/usr/local/bin/fnos-boot.sh:ro"\n' "$data_dir" >> "$tmp"
-                ;;
-            *"/fnos-admin.env:"*)
-                printf '      - "%s/fnos-admin.env:/data/fnos-admin.env:ro"\n' "$data_dir" >> "$tmp"
-                ;;
             *)
                 printf '%s\n' "$line" >> "$tmp"
                 ;;
@@ -606,111 +485,6 @@ octop_restore_docker_env() {
     cp -a "${pkgvar}/docker.env" "$env_file" 2>/dev/null || true
 }
 
-# 一次性改密标记：保留数据重装、设置窗口改密未成功时写入。
-# 容器启动看到此文件才 passwd，避免每次重启覆盖用户在网页里改的密码。
-octop_mark_fnos_passwd_pending() {
-    local data_dir="$1"
-    [ -n "$data_dir" ] || return 0
-    mkdir -p "${data_dir}/.octop"
-    : > "${data_dir}/.octop/.fnos-apply-wizard-password"
-}
-
-# 向导凭据落到 data-share（不进 .octop，避免 published init 因目录非空失败）。
-# 容器用 fnos-boot.sh 读取后 init；仅待处理标记或首次遗留同步时才 passwd。
-octop_write_fnos_bootstrap() {
-    local data_dir="$1" username="${2:-admin}" password="$3" display="${4:-}" email="${5:-}"
-    [ -n "$data_dir" ] || return 0
-    [ -n "$password" ] || return 0
-    mkdir -p "$data_dir" "${data_dir}/.octop"
-    cat > "${data_dir}/fnos-admin.env" << EOF
-OCTOP_ADMIN_USERNAME=${username}
-OCTOP_DEFAULT_PASSWORD=${password}
-OCTOP_ADMIN_DISPLAY_NAME=${display}
-OCTOP_ADMIN_EMAIL=${email}
-EOF
-    chmod 600 "${data_dir}/fnos-admin.env" 2>/dev/null || true
-    cat > "${data_dir}/fnos-boot.sh" << 'EOF'
-#!/bin/bash
-set -euo pipefail
-export HOME="${HOME:-/data}"
-export OCTOP_HOME="${OCTOP_HOME:-${HOME}/.octop}"
-PORT="${OCTOP_PORT:-8088}"
-USER_NAME="${OCTOP_ADMIN_USERNAME:-admin}"
-PASSWORD="${OCTOP_DEFAULT_PASSWORD:-}"
-DISPLAY_NAME="${OCTOP_ADMIN_DISPLAY_NAME:-}"
-ADMIN_EMAIL="${OCTOP_ADMIN_EMAIL:-}"
-if [ -f /data/fnos-admin.env ]; then
-    set -a
-    # shellcheck disable=SC1091
-    . /data/fnos-admin.env
-    set +a
-    USER_NAME="${OCTOP_ADMIN_USERNAME:-$USER_NAME}"
-    PASSWORD="${OCTOP_DEFAULT_PASSWORD:-$PASSWORD}"
-    DISPLAY_NAME="${OCTOP_ADMIN_DISPLAY_NAME:-$DISPLAY_NAME}"
-    ADMIN_EMAIL="${OCTOP_ADMIN_EMAIL:-$ADMIN_EMAIL}"
-fi
-if [ -z "$PASSWORD" ]; then
-    echo "[fnos-boot] 缺少管理员密码（/data/fnos-admin.env），无法启动。" >&2
-    exit 1
-fi
-mkdir -p "$OCTOP_HOME"
-PENDING="${OCTOP_HOME}/.fnos-apply-wizard-password"
-APPLIED="${OCTOP_HOME}/.fnos-wizard-password-applied"
-if [ ! -f "${OCTOP_HOME}/octop.db" ]; then
-    echo "[fnos-boot] 首次初始化，使用安装向导密码 ..."
-    if [ -n "$DISPLAY_NAME" ]; then
-        octop init --yes \
-            --admin-username "$USER_NAME" \
-            --admin-password "$PASSWORD" \
-            --admin-display-name "$DISPLAY_NAME"
-    else
-        octop init --yes \
-            --admin-username "$USER_NAME" \
-            --admin-password "$PASSWORD"
-    fi
-    if [ ! -f "${OCTOP_HOME}/octop.db" ]; then
-        echo "[fnos-boot] 初始化失败，未创建数据库。请查看上方日志后重启应用。" >&2
-        exit 1
-    fi
-    if [ -n "$ADMIN_EMAIL" ]; then
-        octop user set-email "$USER_NAME" "$ADMIN_EMAIL" || true
-    fi
-    : > "$APPLIED"
-    rm -f "$PENDING"
-elif [ -f "$PENDING" ]; then
-    echo "[fnos-boot] 应用待处理的向导密码到管理员 ${USER_NAME} ..."
-    octop user passwd "$USER_NAME" --password "$PASSWORD" || true
-    if [ -n "$ADMIN_EMAIL" ]; then
-        octop user set-email "$USER_NAME" "$ADMIN_EMAIL" || true
-    fi
-    : > "$APPLIED"
-    rm -f "$PENDING"
-elif [ ! -f "$APPLIED" ]; then
-    echo "[fnos-boot] 首次升级到不再每次改密的引导脚本，同步一次向导密码 ..."
-    octop user passwd "$USER_NAME" --password "$PASSWORD" || true
-    : > "$APPLIED"
-fi
-echo "[fnos-boot] 正在启动 HappyClaw，端口 $PORT ..."
-exec octop run --host 0.0.0.0 --port "$PORT"
-EOF
-    chmod 755 "${data_dir}/fnos-boot.sh" 2>/dev/null || true
-}
-
-# 库已存在时（上次用随机密码 init），把向导密码同步进容器。
-octop_apply_wizard_password() {
-    local env_file="$1" user pass
-    [ -f "$env_file" ] || return 0
-    user="$(octop_env_get "$env_file" OCTOP_ADMIN_USERNAME)"
-    pass="$(octop_env_get "$env_file" OCTOP_DEFAULT_PASSWORD)"
-    [ -n "$user" ] || user="admin"
-    [ -n "$pass" ] || return 0
-    if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx octop; then
-        if docker exec octop octop user passwd "$user" --password "$pass" >/dev/null 2>&1; then
-            echo "[octop] 已将向导密码同步到容器内管理员 ${user}" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true
-        fi
-    fi
-}
-
 # 解析 data-share、迁旧数据、把路径写进 compose 插值用的 .env。
 octop_prepare_docker_persist() {
     local env_file="$1" data_dir compose
@@ -720,14 +494,6 @@ octop_prepare_docker_persist() {
     octop_migrate_legacy_docker_data "$data_dir"
     octop_env_set "$env_file" TRIM_DATA_SHARE_PATHS "$data_dir"
     octop_env_set "$env_file" OCTOP_DATA "$data_dir"
-    _boot_user="$(octop_env_get "$env_file" OCTOP_ADMIN_USERNAME)"
-    _boot_pass="$(octop_env_get "$env_file" OCTOP_DEFAULT_PASSWORD)"
-    _boot_display="$(octop_env_get "$env_file" OCTOP_ADMIN_DISPLAY_NAME)"
-    _boot_email="$(octop_env_get "$env_file" OCTOP_ADMIN_EMAIL)"
-    [ -n "$_boot_user" ] || _boot_user="admin"
-    if [ -n "$_boot_pass" ]; then
-        octop_write_fnos_bootstrap "$data_dir" "$_boot_user" "$_boot_pass" "$_boot_display" "$_boot_email"
-    fi
     octop_persist_docker_env "$env_file"
     compose="$(dirname "$env_file")/docker-compose.yaml"
     octop_sync_fnos_compose "$compose" "$data_dir" "$env_file"
@@ -735,42 +501,16 @@ octop_prepare_docker_persist() {
     printf '%s' "$data_dir"
 }
 
-# 管理员凭据应急备份（数据目录 octop-login.txt，只随安装/设置窗口改密刷新）。
-# 设置窗口不再明文展示密码；本文件是找回安装密码的最后防线。
-# 调用方需保证 data_dir 已存在；文件属主交给 fix_ownership_and_perms 统一修正。
-octop_write_login_file() {
-    local data_dir="$1" username="$2" password="$3" port="${4:-8089}" file
-    [ -n "$data_dir" ] && [ -d "$data_dir" ] || return 0
-    file="${data_dir}/octop-login.txt"
-    cat > "$file" << EOF
-==========================================================
- HappyClaw 管理员登录信息（请妥善保管，勿泄露给他人）
-==========================================================
-访问地址：http://<飞牛IP>:${port}
-管理员账号：${username}
-管理员密码：${password}
-
-说明：
-- 本文件只记录安装或应用「设置」改密时的密码，不是实时密码本，改密后不会自动更新。
-- 若你在 Web 控制台「头像菜单 → 修改密码」中改过密码，请用网页密码登录。
-- 模型 API Key 请在 Web 控制台「设置 → 模型」中配置。
-EOF
-    chmod 600 "$file" 2>/dev/null || true
-}
-
-# 用当前用户名渲染应用「设置」窗口表单（wizard/config）。
-# 模板含 <octop-current-username>；不再写入明文密码。
+# 渲染应用「设置」窗口（wizard/config）：单人版只提示数据目录与配置入口。
 # wizard_dir 为已安装包的向导目录（/var/apps/<app>/wizard），template 为
 # 包内载荷自带的模板文件路径。任一文件缺失则静默跳过（不影响安装）。
 octop_render_config_wizard() {
-    local template="$1" wizard_dir="$2" username="$3" password="${4:-}" data_dir="${5:-}" target tmp content dir_label
+    local template="$1" wizard_dir="$2" data_dir="${3:-}" target tmp content dir_label
     [ -f "$template" ] || return 0
     [ -d "$wizard_dir" ] || return 0
     target="${wizard_dir}/config"
     content="$(cat "$template" 2>/dev/null)" || return 0
     dir_label="${data_dir:-应用共享 / HappyClaw 数据目录}"
-    content="${content//<octop-current-username>/${username}}"
-    content="${content//<octop-current-password>/${password}}"
     content="${content//<octop-data-dir>/${dir_label}}"
     tmp="${target}.tmp.$$"
     if printf '%s\n' "$content" > "$tmp" 2>/dev/null; then

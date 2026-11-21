@@ -110,9 +110,10 @@ def test_publish_skill_leaves_fnos_versions_as_placeholders() -> None:
 def test_fnos_docker_compose_uses_trim_data_share_paths() -> None:
     text = COMPOSE.read_text(encoding="utf-8")
     assert "${TRIM_DATA_SHARE_PATHS}/.octop:/data/.octop" in text
-    assert "${TRIM_DATA_SHARE_PATHS}/fnos-boot.sh:/usr/local/bin/fnos-boot.sh:ro" in text
-    assert "${TRIM_DATA_SHARE_PATHS}/fnos-admin.env:/data/fnos-admin.env:ro" in text
-    assert 'entrypoint: ["bash", "/usr/local/bin/fnos-boot.sh"]' in text
+    # Single-user: the image entrypoint bootstraps on its own, no account mounts.
+    assert "fnos-boot.sh" not in text
+    assert "fnos-admin.env" not in text
+    assert "entrypoint:" not in text
     assert "healthcheck:" in text
     assert "/api/health" in text
     assert "users_loaded" in text
@@ -231,7 +232,7 @@ def test_octop_sync_fnos_compose_bakes_absolute_bind(tmp_path: Path) -> None:
     env_file = tmp_path / "docker" / ".env"
     env_file.parent.mkdir()
     env_file.write_text(
-        "OCTOP_DEFAULT_PASSWORD=WizardPass1\nOCTOP_ADMIN_USERNAME=alice\nOCTOP_PORT=8088\n",
+        "OCTOP_PORT=8088\nOCTOP_LOG_LEVEL=info\n",
         encoding="utf-8",
     )
     script = f"""
@@ -243,49 +244,9 @@ octop_sync_fnos_compose "{compose}" "{data_dir}" "{env_file}"
     text = compose.read_text(encoding="utf-8")
     assert f"{data_dir}/.octop:/data/.octop" in text
     assert "env_file:" not in text
-    assert f"{data_dir}/fnos-boot.sh:/usr/local/bin/fnos-boot.sh:ro" in text
-    assert f"{data_dir}/fnos-admin.env:/data/fnos-admin.env:ro" in text
+    assert "fnos-boot.sh" not in text
+    assert "fnos-admin.env" not in text
     assert (data_dir / ".octop").is_dir()
-
-
-@posix_only
-def test_octop_write_fnos_bootstrap_script(tmp_path: Path) -> None:
-    share = tmp_path / "share"
-    script = f"""
-set -euo pipefail
-source "{COMMON_SH}"
-octop_write_fnos_bootstrap "{share}" alice WizardPass1
-bash -n "{share}/fnos-boot.sh"
-"""
-    subprocess.check_call(["bash", "-c", script])
-    env_text = (share / "fnos-admin.env").read_text(encoding="utf-8")
-    assert "OCTOP_ADMIN_USERNAME=alice" in env_text
-    assert "OCTOP_DEFAULT_PASSWORD=WizardPass1" in env_text
-    boot = (share / "fnos-boot.sh").read_text(encoding="utf-8")
-    assert "octop user passwd" in boot
-    assert "octop init" in boot
-    assert "set-email" in boot
-    assert "初始化失败" in boot
-    assert ".fnos-apply-wizard-password" in boot
-    assert ".fnos-wizard-password-applied" in boot
-    assert "首次升级到不再每次改密" in boot
-
-
-@posix_only
-def test_octop_write_login_file_is_backup_only(tmp_path: Path) -> None:
-    script = f"""
-set -euo pipefail
-source "{COMMON_SH}"
-octop_write_login_file "{tmp_path}" alice WizardPass1 8088
-"""
-    subprocess.check_call(["bash", "-c", script])
-    text = (tmp_path / "octop-login.txt").read_text(encoding="utf-8")
-    assert "管理员账号：alice" in text
-    assert "管理员密码：WizardPass1" in text
-    assert "http://<飞牛IP>:8088" in text
-    assert "设置」窗口中直接查看" not in text
-    assert "应急备份" in text or "不是实时密码本" in text
-    assert "不会自动更新" in text
 
 
 @posix_only
@@ -398,66 +359,36 @@ def _wizard_fields(path: Path, step: int = 0) -> set[str]:
     return {item["field"] for item in data[step]["items"] if "field" in item}
 
 
-def test_fnos_install_wizard_is_account_then_next_steps() -> None:
-    required = {
+def test_fnos_install_wizard_has_no_account_step() -> None:
+    forbidden = {
         "wizard_admin_username",
         "wizard_admin_display_name",
         "wizard_admin_email",
         "wizard_admin_password",
         "wizard_admin_password_confirm",
-    }
-    forbidden = {
         "wizard_password_mode",
         "wizard_log_level",
         "wizard_openai_api_key",
         "wizard_dashscope_api_key",
     }
-    for rel, port in (
-        ("fnos/docker/wizard/install", "8088"),
-        ("fnos/native/wizard/install", "8089"),
+    for rel, port, extra in (
+        ("fnos/docker/wizard/install", "8088", "ghcr.io"),
+        ("fnos/native/wizard/install", "8089", "octop-start-error.txt"),
     ):
         path = REPO / rel
         data = json.loads(path.read_text(encoding="utf-8"))
-        assert len(data) == 2
-        assert data[1]["stepTitle"] == "接下来怎么用"
-        assert port in json.dumps(data[1], ensure_ascii=False)
-        assert "设置 → 模型" in json.dumps(data[1], ensure_ascii=False)
-        assert "不要再走网页" not in json.dumps(data, ensure_ascii=False)
-        fields = _wizard_fields(path, 0)
-        assert required <= fields
-        assert not (fields & forbidden)
-        assert not _wizard_fields(path, 1)
-        pw_rules = next(
-            item["rules"]
-            for item in data[0]["items"]
-            if item.get("field") == "wizard_admin_password"
-        )
-        patterns = {rule.get("pattern") for rule in pw_rules if "pattern" in rule}
-        assert "^.{8,64}$" in patterns
-        assert "[A-Za-z]" in patterns
-        assert "[0-9]" in patterns
-        confirm = next(
-            item
-            for item in data[0]["items"]
-            if item.get("field") == "wizard_admin_password_confirm"
-        )
-        assert any(
-            rule.get("sameAs") == "wizard_admin_password" for rule in confirm.get("rules", [])
-        )
-        if rel.startswith("fnos/docker/"):
-            assert "ghcr.io" in json.dumps(data[1], ensure_ascii=False)
-        else:
-            assert "octop-start-error.txt" in json.dumps(data[1], ensure_ascii=False)
+        text = json.dumps(data, ensure_ascii=False)
+        assert len(data) == 1, rel
+        assert not _wizard_fields(path, 0), f"{rel} must not collect any field"
+        assert not (forbidden & set(text.split('"')))
+        assert port in text
+        assert "设置 → 模型" in text
+        assert extra in text
+        assert "用户名" not in text
+        assert "密码" not in text
 
 
-def test_fnos_config_wizard_is_password_change_only() -> None:
-    required = {"wizard_admin_password", "wizard_admin_password_confirm"}
-    forbidden = {
-        "wizard_password_mode",
-        "wizard_log_level",
-        "wizard_openai_api_key",
-        "wizard_dashscope_api_key",
-    }
+def test_fnos_config_wizard_is_info_only() -> None:
     paths = [
         REPO / "fnos/docker/wizard/config",
         REPO / "fnos/native/wizard/config",
@@ -466,16 +397,32 @@ def test_fnos_config_wizard_is_password_change_only() -> None:
     ]
     for path in paths:
         data = json.loads(path.read_text(encoding="utf-8"))
-        assert len(data) == 1
+        assert len(data) == 1, path
+        assert not _wizard_fields(path, 0), f"{path} must not collect any field"
         text = path.read_text(encoding="utf-8")
-        assert "octop-current-password" not in text
-        assert "octop-current-username" in text
-        assert "octop-data-dir" in text
-        assert "不会自动更新" in text
-        assert "/volX/@appshare" not in text
-        fields = _wizard_fields(path, 0)
-        assert required <= fields
-        assert not (fields & forbidden)
+        assert "<octop-data-dir>" in text
+        assert "新密码" not in text
+        assert "octop-login.txt" not in text
+
+
+def test_fnos_packages_do_not_collect_admin_accounts() -> None:
+    """Single-user: nothing in either package may ask for or write an account."""
+    hits = []
+    for path in sorted((REPO / "fnos").rglob("*")):
+        if not path.is_file() or path.suffix.lower() == ".png":
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for needle in (
+            "wizard_admin_username",
+            "wizard_admin_password",
+            "OCTOP_DEFAULT_PASSWORD",
+            "fnos-admin.env",
+            "fnos-boot.sh",
+            "octop-login.txt",
+        ):
+            if needle in text:
+                hits.append(f"{path.relative_to(REPO)}: {needle}")
+    assert not hits, "account leftovers: " + ", ".join(hits)
 
 
 @posix_only
@@ -544,27 +491,13 @@ test "$found" = "{node}"
     subprocess.check_call(["bash", "-c", script])
 
 
-@posix_only
-def test_octop_validate_install_fields_rejects_mismatch_and_bad_email() -> None:
-    script = f"""
-set -euo pipefail
-source "{COMMON_SH}"
-octop_validate_install_fields admin 'GoodPass1' 'GoodPass1' '' '' || exit 10
-octop_validate_install_fields admin 'GoodPass1' 'GoodPass2' '' '' && exit 11
-octop_validate_install_fields admin 'GoodPass1' 'GoodPass1' 'not-an-email' '' && exit 12
-octop_validate_install_fields admin 'GoodPass1' 'GoodPass1' 'a@b.co' 'Ada' || exit 13
-"""
-    subprocess.check_call(["bash", "-c", script])
-
-
-def test_fnos_upgrade_wizard_explains_password_kept() -> None:
+def test_fnos_upgrade_wizard_states_no_account() -> None:
     for rel in ("fnos/docker/wizard/upgrade", "fnos/native/wizard/upgrade"):
         text = (REPO / rel).read_text(encoding="utf-8")
         data = json.loads(text)
         assert len(data) == 1
-        assert "不会改你的登录密码" in text
-        assert "文件管理" in text
-        assert "不会自动更新" in text
+        assert "没有账号或密码" in text
+        assert "octop-login.txt" not in text
         assert not {item.get("field") for item in data[0]["items"] if "field" in item}
 
 
@@ -578,44 +511,14 @@ def test_octop_render_config_wizard_injects_data_dir(tmp_path: Path) -> None:
     template = tmp_path / "config.template"
     wizard_dir = tmp_path / "wizard"
     wizard_dir.mkdir()
-    template.write_text(
-        "user=<octop-current-username> dir=<octop-data-dir>\n",
-        encoding="utf-8",
-    )
+    template.write_text("dir=<octop-data-dir>\n", encoding="utf-8")
     data_dir = tmp_path / "share"
     script = f"""
 set -euo pipefail
 source "{COMMON_SH}"
-octop_render_config_wizard "{template}" "{wizard_dir}" alice Secret1 "{data_dir}"
+octop_render_config_wizard "{template}" "{wizard_dir}" "{data_dir}"
 """
     subprocess.check_call(["bash", "-c", script])
     text = (wizard_dir / "config").read_text(encoding="utf-8")
-    assert "user=alice" in text
     assert f"dir={data_dir}" in text
     assert "<octop-data-dir>" not in text
-
-
-@posix_only
-def test_octop_mark_fnos_passwd_pending(tmp_path: Path) -> None:
-    share = tmp_path / "share"
-    script = f"""
-set -euo pipefail
-source "{COMMON_SH}"
-octop_mark_fnos_passwd_pending "{share}"
-"""
-    subprocess.check_call(["bash", "-c", script])
-    assert (share / ".octop" / ".fnos-apply-wizard-password").is_file()
-
-
-@posix_only
-def test_octop_validate_optional_password_change() -> None:
-    script = f"""
-set -euo pipefail
-source "{COMMON_SH}"
-octop_validate_optional_password_change '' '' || exit 10
-octop_validate_optional_password_change 'GoodPass1' '' && exit 11
-octop_validate_optional_password_change '' 'GoodPass1' && exit 12
-octop_validate_optional_password_change 'GoodPass1' 'GoodPass2' && exit 13
-octop_validate_optional_password_change 'GoodPass1' 'GoodPass1' || exit 14
-"""
-    subprocess.check_call(["bash", "-c", script])

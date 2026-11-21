@@ -6,7 +6,7 @@
 
 HappyClaw 单人版启动后即绑定本机使用者：没有注册、登录、邀请，也没有团队成员与角色，打开 Web 控制台就能用。
 
-> FnOS 安装包目前仍沿用旧版账号向导（兼容保留）：向导里填写的用户名与密码，是这台设备唯一本机账号的兼容凭据，不会创建多用户体系。密码至少 8 位，且必须同时包含字母和数字（过于常见的密码如 `Octop123` 会被拒绝，无效输入会在安装时直接提示）。旧版会把初始凭据写到应用共享数据目录的 `octop-login.txt`；单人化接口落地后不再需要登录。
+> 安装向导不收集用户名或密码：`.fpk` 装好后打开控制台就是本机使用者。应用「设置」窗口只显示数据目录与配置入口，没有改密表单；旧版安装留下的凭据文件可以直接删掉。
 
 ### 官方命令行管理
 
@@ -55,9 +55,9 @@ fnos/
 │   │   ├── privilege       # 权限声明（docker-octop 用户）
 │   │   └── resource        # 资源声明（docker-project + 数据共享目录）
 │   ├── wizard/
-│   │   ├── install       # 安装向导（旧版账号兼容表单 + 接下来怎么用）
-│   │   ├── config        # 应用「设置」窗口（旧版改密入口，不展示明文密码）
-│   │   ├── upgrade       # 升级说明（不改网页密码）
+│   │   ├── install       # 安装向导（安装说明 + 首次使用步骤）
+│   │   ├── config        # 应用「设置」窗口（只显示数据目录与配置入口）
+│   │   ├── upgrade       # 升级说明（数据保留，无账号）
 │   │   └── uninstall     # 卸载向导（数据清理方式）
 │   ├── app/
 │   │   ├── docker/
@@ -130,7 +130,7 @@ FPK_ARCH=arm64 bash scripts/build-fpk.sh native   # ARM 本地版（需已放入
    - 已装 Docker，需要这些能力 → `Octop-fnos-docker-<version>.fpk`（x86 / ARM 通用）
    - 不想依赖 Docker、x86_64 飞牛 → `Octop-fnos-native-amd64-<version>.fpk`
    - 不想依赖 Docker、ARM64 飞牛 → `Octop-fnos-native-arm64-<version>.fpk`（不要装到 x86）
-2. 安装向导里的账号表单是旧版兼容项；单人版不创建多用户体系，启动后直接使用本机使用者。
+2. 安装向导不收集账号；装好后打开控制台就是本机使用者。
 3. 等到应用中心显示「运行中」再点「打开」，或用浏览器访问 Docker 版 `http://<设备IP>:8088` / 本地版 `http://<设备IP>:8089`。
 4. 打开控制台后到「设置 → 模型」配置 API Key。Docker 版首次会从 `ghcr.io` 拉取与本包版本相同的镜像（设备需能访问 GitHub Container Registry），请等下载完成；之后重启不会重拉。容器数据挂在飞牛 `data-share`（`TRIM_DATA_SHARE_PATHS`，一般为 `/volX/@appshare/octop/data`），应用重启后保留。本地版无需联网拉镜像。Playwright Chromium 不预装，需要远程浏览器时在控制台按需安装。
 
