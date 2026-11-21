@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://www.python.org/downloads/"><img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white" /></a>
-  <a href="https://github.com/TencentCloud/Octop/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green" /></a>
-  <a href="https://github.com/TencentCloud/Octop/releases"><img alt="Version" src="https://img.shields.io/badge/version-1.0.3b5-orange" /></a>
+  <a href="https://github.com/xkx121029/HappyClaw/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green" /></a>
+  <img alt="Version 1.0.3b5" src="https://img.shields.io/badge/version-1.0.3b5-orange" />
   <a href="https://github.com/astral-sh/ruff"><img alt="Code Style: Ruff" src="https://img.shields.io/badge/code%20style-ruff-000000?logo=ruff&logoColor=white" /></a>
 </p>
 
@@ -75,12 +75,14 @@ Open **http://127.0.0.1:8088**. The first boot creates the local user automatica
 |-------|-----------|
 | Language | Python 3.12+ |
 | Web framework | FastAPI + uvicorn |
-| Agent runtime | [HappyClaw Harness](https://github.com/TencentCloud/octop-harness) |
-| Gateway | [HappyClaw Gateway](https://github.com/TencentCloud/octop-gateway) |
+| Agent runtime | `octop-harness` (installed with the `[all]` extra) |
+| Memory & retrieval | `octop-memory` |
+| IM bridge | `octop-gateway` |
+| Browser host | `octop-browser` + Playwright |
 | Control-plane DB | SQLite (WAL, default) or PostgreSQL (optional) |
 | Frontend | React 18 + TypeScript + Vite + Ant Design |
 | Scheduling | APScheduler |
-| ACP | agent-client-protocol |
+| ACP | stdio JSON-RPC — inbound server (`octop acp`) and outbound `acp_runner` tool |
 | Build / quality | hatchling · ruff · mypy · pytest |
 
 Single process: the web UI, IM channels, and cron all go through one in-process `HarnessProcessor`. No external queue or broker; state is rebuilt from the control-plane database on restart.
@@ -93,7 +95,7 @@ Single process: the web UI, IM channels, and cron all go through one in-process 
 | One-liner | Windows | `irm https://download.octop.cloud/octop/scripts/install.ps1 \| iex` |
 | Repo script | macOS / Linux | `bash scripts/install.sh` |
 | Repo script | Windows | `powershell -ExecutionPolicy Bypass -File scripts/install.ps1` |
-| PyPI | Any | `pip install octop` |
+| PyPI | Any | `pip install octop` (latest stable; `--pre` for the 1.0.3 beta line) |
 | Docker | Any | `docker compose -f docker/docker-compose.yml up -d --build` |
 
 Installers provision an isolated environment at `~/.octop/venv` and a command wrapper at `~/.octop/bin/octop`. System Python is untouched. Open a new terminal afterwards so `octop` is on your PATH.
@@ -271,7 +273,7 @@ See [docs/architecture.md](docs/architecture.md).
 
 ## 🛠️ Development
 
-**Prerequisites:** Python 3.12+, Node 18+, [uv](https://docs.astral.sh/uv/)
+**Prerequisites:** Python 3.12+, Node 20 with npm 10 (the frontend lockfile is npm 10; `mise.toml` pins the toolchain), and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 # Backend
