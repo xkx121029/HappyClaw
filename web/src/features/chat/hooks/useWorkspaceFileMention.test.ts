@@ -4,7 +4,7 @@ import { request } from "../lib/http";
 import { clearWorkspaceMentionIndexCache } from "../lib/fileMention";
 import { useWorkspaceFileMention } from "./useWorkspaceFileMention";
 
-vi.mock("../../../api/request", () => ({
+vi.mock("../lib/http", () => ({
   request: vi.fn(),
 }));
 

@@ -1,5 +1,5 @@
-import { bridgeAgentHeaders, request, getAuthToken } from "../request";
-import { getApiUrl, getWsUrl } from "../config";
+import { bridgeAgentHeaders, request, getAuthToken } from "./http";
+import { getApiUrl, getWsUrl } from "./http";
 import type {
   BrowserReplayRequest,
   BrowserReplayResponse,

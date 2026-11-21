@@ -22,7 +22,7 @@ function subscribe(listener: () => void): () => void {
 
 export function chatThreadIdFromPath(pathname: string): string | null {
   const match = /^\/chat\/[^/]+\/([^/]+)/.exec(pathname);
-  return match ? decodeURIComponent(match[1]) : null;
+  return match ? decodeURIComponent(match[1]!) : null;
 }
 
 /** True when the URL search carries ``quick=1`` (the durable quick marker). */

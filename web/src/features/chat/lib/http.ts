@@ -20,6 +20,16 @@ import { readStored, storageKeys } from "@/lib/storage";
 
 export { getAuthToken };
 
+/**
+ * Explicit agent-scope header for a caller that hops through the remote bridge
+ * (`dashboard/src/api/request.ts#bridgeAgentHeaders`).
+ */
+export function bridgeAgentHeaders(agentId?: string | null): Record<string, string> | undefined {
+  const id = (agentId ?? "").trim();
+  if (!id) return undefined;
+  return { "X-Octop-Agent-Id": id };
+}
+
 /** Agent the legacy `X-Octop-Agent-Id` header names, when a route needs it. */
 let activeAgentId: string | null = null;
 
@@ -101,4 +111,64 @@ export async function requestStream(
     ...options,
     headers: buildHeaders(path, options.headers),
   });
+}
+
+/** `fetch` an `/api` path and return its body as a Blob (trajectory export). */
+export async function requestBlob(
+  path: string,
+  options: RequestInit = {},
+): Promise<Blob> {
+  const response = await fetch(getApiUrl(path), {
+    ...options,
+    headers: buildHeaders(path, options.headers),
+  });
+  if (!response.ok) throw ApiError.fromResponse(response.status, await response.text());
+  return response.blob();
+}
+
+/**
+ * `FormData` upload with progress. XHR rather than `fetch` because antd's
+ * Uploader renders a real progress bar from `upload.onprogress`.
+ */
+export function requestUpload<T = unknown>(
+  path: string,
+  body: FormData,
+  options: RequestInit = {},
+  onProgress?: (loaded: number, total: number) => void,
+): Promise<T> {
+  // Multipart bodies must not carry a JSON content type; the browser sets the
+  // boundary, so drop the header `buildHeaders` adds.
+  const headers = buildHeaders(path, options.headers);
+  headers.delete("Content-Type");
+
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(options.method ?? "POST", getApiUrl(path));
+    headers.forEach((value, key) => xhr.setRequestHeader(key, value));
+    if (onProgress) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) onProgress(event.loaded, event.total);
+      };
+    }
+    xhr.onload = () => {
+      let parsed: unknown = null;
+      try {
+        parsed = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+      } catch {
+        parsed = xhr.responseText;
+      }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(parsed as T);
+      else reject(ApiError.fromResponse(xhr.status, parsed));
+    };
+    xhr.onerror = () => reject(new TypeError("Network request failed"));
+    xhr.send(body);
+  });
+}
+
+/**
+ * Access credential a phone-hosted dashboard passes in a query string, where
+ * headers are unavailable. The desktop and local builds have none.
+ */
+export function mobileCredentialToken(): string | null {
+  return null;
 }

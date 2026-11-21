@@ -541,7 +541,7 @@ function convertCallEntries(entries: CallEntry[]): ChatMessage[] {
       const callId = current.toolData?.callId;
       const targetIdx = callId ? callIdToMergedIndex[callId] : undefined;
       if (targetIdx !== undefined) {
-        const existing = merged[targetIdx];
+        const existing = merged[targetIdx]!;
         merged[targetIdx] = {
           ...existing,
           toolData: {
@@ -620,7 +620,7 @@ function convertCallEntries(entries: CallEntry[]): ChatMessage[] {
       const target = turnLastPlainAiIdx ?? turnLastAiIdx;
       if (target !== null) {
         merged[target] = {
-          ...merged[target],
+          ...merged[target]!,
           usage: {
             ...turnAcc,
             ...(turnLastInputTokens > 0
@@ -637,7 +637,7 @@ function convertCallEntries(entries: CallEntry[]): ChatMessage[] {
   };
 
   for (let i = 0; i < merged.length; i++) {
-    const m = merged[i];
+    const m = merged[i]!;
     if (m.role === "user") {
       flushTurn();
       turnAcc = emptyUsage();
@@ -799,7 +799,7 @@ async function loadThreadHistory(
   retryAfterMs: number;
 }> {
   const { octopThreadsApi, CHAT_HISTORY_PAGE_SIZE, normalizeThreadArtifacts } =
-    await import("../../../api/modules/octopThreads");
+    await import("../lib/octopThreads");
   const {
     syncSessionArtifacts,
     syncSessionConversationMode,

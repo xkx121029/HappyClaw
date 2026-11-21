@@ -50,7 +50,7 @@ export function findPendingApproval(
   messages: ChatMessage[],
 ): PendingApproval | null {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
+    const message = messages[index]!;
     const hitl = message.hitlData;
     if (
       !hitl ||
@@ -115,7 +115,7 @@ export function promoteAskUserToolMessage(message: ChatMessage): ChatMessage {
 /** Latest pending ``ask_user_question`` card, if any. */
 export function findPendingAsk(messages: ChatMessage[]): PendingAsk | null {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
+    const message = messages[index]!;
     const hitl = message.hitlData;
     if (
       !hitl ||

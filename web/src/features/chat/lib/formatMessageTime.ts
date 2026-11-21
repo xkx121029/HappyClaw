@@ -73,7 +73,7 @@ export function calendarDaysAgo(
   const [ty, tm, td] = todayKey.split("-").map(Number);
   const [oy, om, od] = thenKey.split("-").map(Number);
   return Math.floor(
-    (Date.UTC(ty, tm - 1, td) - Date.UTC(oy, om - 1, od)) / 86_400_000,
+    (Date.UTC(ty!, tm! - 1, td!) - Date.UTC(oy!, om! - 1, od!)) / 86_400_000,
   );
 }
 

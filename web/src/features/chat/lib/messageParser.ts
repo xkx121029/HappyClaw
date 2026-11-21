@@ -335,7 +335,7 @@ export function mergeAttachments(
   for (const attachment of incoming) {
     let matched = false;
     for (let i = 0; i < merged.length; i++) {
-      const item = merged[i];
+      const item = merged[i]!;
       const samePath =
         Boolean(attachment.workspacePath) &&
         item.workspacePath === attachment.workspacePath;

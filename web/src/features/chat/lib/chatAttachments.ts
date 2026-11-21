@@ -114,8 +114,8 @@ export function buildUserMessageContent(
   }
 
   if (blocks.length === 0) return "";
-  if (blocks.length === 1 && blocks[0].type === "text") {
-    return String(blocks[0].text ?? "");
+  if (blocks.length === 1 && blocks[0]!.type === "text") {
+    return String(blocks[0]!.text ?? "");
   }
   return blocks;
 }

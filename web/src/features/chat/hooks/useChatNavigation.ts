@@ -1,5 +1,8 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import {
+  useChatLocation as useLocation,
+  useChatNavigate as useNavigate,
+} from "../lib/chatRouter";
 import { octopThreadsApi } from "../lib/octopThreads";
 import { octopAgentsApi } from "../lib/octopAgents";
 import * as chatStore from "../store/chatStore";

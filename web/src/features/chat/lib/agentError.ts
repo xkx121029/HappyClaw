@@ -49,10 +49,14 @@ export function formatAgentError(
     return t(key, { defaultValue: error });
   }
   if (isRawModelRefError(error)) {
-    return t("agent_errors.model_ref_unavailable");
+    return t("agent_errors.model_ref_unavailable", {
+      defaultValue: "agent_errors.model_ref_unavailable",
+    });
   }
   if (isRawNoModelsError(error)) {
-    return t("agent_errors.no_models_configured");
+    return t("agent_errors.no_models_configured", {
+      defaultValue: "agent_errors.no_models_configured",
+    });
   }
   return error;
 }
@@ -73,13 +77,17 @@ export function shortAgentError(
     error === "octop:agent_errors.model_ref_unavailable" ||
     isRawModelRefError(error)
   ) {
-    return t("agent_errors.model_ref_unavailable_short");
+    return t("agent_errors.model_ref_unavailable_short", {
+      defaultValue: "agent_errors.model_ref_unavailable_short",
+    });
   }
   if (
     error === "octop:agent_errors.no_models_configured" ||
     isRawNoModelsError(error)
   ) {
-    return t("agent_errors.no_models_configured_short");
+    return t("agent_errors.no_models_configured_short", {
+      defaultValue: "agent_errors.no_models_configured_short",
+    });
   }
   return formatAgentError(error, t);
 }

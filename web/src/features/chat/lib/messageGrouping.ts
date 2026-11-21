@@ -90,7 +90,7 @@ export function findSpeakerTextToContinue(
   let lastTool = -1;
   let lastText = -1;
   for (let i = messages.length - 1; i >= 0; i--) {
-    const message = messages[i];
+    const message = messages[i]!;
     if (message.role === "user") break;
     if (message.role !== "assistant") continue;
     if (
@@ -128,7 +128,7 @@ export function speakerTurnWasInterrupted(
   teamRoom = false,
 ): boolean {
   for (let i = targetIdx + 1; i < messages.length; i++) {
-    const message = messages[i];
+    const message = messages[i]!;
     if (message.role === "user") break;
     if (message.role !== "assistant" || message.toolData) continue;
     if (
@@ -165,7 +165,7 @@ export function groupConsecutiveAssistantMessages(
       if (
         currentGroup.length > 0 &&
         !sameGroupedSpeaker(
-          currentGroup[currentGroup.length - 1].speakerAgentId,
+          currentGroup[currentGroup.length - 1]!.speakerAgentId,
           msg.speakerAgentId,
           hostAgentId,
         )

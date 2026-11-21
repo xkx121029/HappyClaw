@@ -1,4 +1,4 @@
-import { request } from "../request";
+import { request } from "./http";
 import type { LocalizedText } from "./localizedText";
 
 export interface SubagentCatalogDivision {

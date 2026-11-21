@@ -1,0 +1,106 @@
+src/features/chat/lib/agentError.ts(52,14): error TS2345: Argument of type '["agent_errors.model_ref_unavailable"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/agentError.ts(55,14): error TS2345: Argument of type '["agent_errors.no_models_configured"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/agentError.ts(76,14): error TS2345: Argument of type '["agent_errors.model_ref_unavailable_short"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/agentError.ts(82,14): error TS2345: Argument of type '["agent_errors.no_models_configured_short"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/apiError.ts(92,26): error TS2345: Argument of type '[string, Record<string, unknown>]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/apiError.ts(139,26): error TS2345: Argument of type '[string, Record<string, unknown>]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/chatAttachments.ts(117,30): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/chatAttachments.ts(118,19): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/deleteConversation.ts(20,46): error TS2345: Argument of type '["chat.deleteSessionCompacted"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/deleteConversation.ts(21,25): error TS2345: Argument of type '["chat.deleteSessionCompactLater"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/deleteConversation.ts(22,12): error TS2345: Argument of type '["chat.deleteSessionLater"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/deleteConversation.ts(41,28): error TS2345: Argument of type '["chat.deleteSessionCompacting"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/deleteConversation.ts(51,26): error TS2345: Argument of type '["apiErrors.THREAD_TURN_ACTIVE"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/deleteConversation.ts(54,47): error TS2345: Argument of type '["sessions.deleteFailed"]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string] | [key: string | string[], defaultValue: string, options: TOptionsBase & $Dictionary] | [key: ...] | [key: ...]'.
+src/features/chat/lib/dockFilePath.ts(239,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/dockFilePath.ts(242,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/dockFilePath.ts(245,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/dockFilePath.ts(251,27): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/dockFilePath.ts(255,7): error TS2322: Type 'Trie | undefined' is not assignable to type 'Trie'.
+src/features/chat/lib/dockFilePath.ts(267,7): error TS2322: Type 'Trie | undefined' is not assignable to type 'Trie'.
+src/features/chat/lib/formatMessageTime.ts(76,15): error TS2769: No overload matches this call.
+src/features/chat/lib/formatMessageTime.ts(76,19): error TS18048: 'tm' is possibly 'undefined'.
+src/features/chat/lib/formatMessageTime.ts(76,42): error TS2769: No overload matches this call.
+src/features/chat/lib/formatMessageTime.ts(76,46): error TS18048: 'om' is possibly 'undefined'.
+src/features/chat/lib/injectPendingHitlMessage.ts(47,5): error TS2322: Type '{ id: string; hitlData: { pending_id?: string; action_requests: HitlActionRequest[]; review_configs: HitlReviewConfig[] | undefined; status: "pending"; resolution?: HitlRequestResolution; }; ... 20 more ...; decision?: DecisionNotice; }' is not assignable to type 'ChatMessage'.
+src/features/chat/lib/injectPendingHitlMessage.ts(49,25): error TS18048: 'current' is possibly 'undefined'.
+src/features/chat/lib/injectPendingHitlMessage.ts(51,12): error TS18048: 'current' is possibly 'undefined'.
+src/features/chat/lib/mentionAtCursor.ts(7,33): error TS18048: 'query' is possibly 'undefined'.
+src/features/chat/lib/mentionAtCursor.ts(8,12): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/mergeHistoryTail.ts(5,9): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/mergeHistoryTail.ts(62,7): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/mergeHistoryTail.ts(62,32): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/mergeHistoryTail.ts(104,60): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/mergeHistoryTail.ts(136,23): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/mergeHistoryTail.ts(181,23): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/mergeHistoryTail.ts(217,21): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/messageContent.ts(195,44): error TS2322: Type '{ content: string | undefined; contentBlocks: undefined; status: "done" | "error" | "streaming" | undefined; id: string; role: "assistant" | "tool" | "user" | "system"; author?: MessageAuthor | undefined; ... 16 more ...; decision?: DecisionNotice | undefined; } | null' is not assignable to type 'ChatMessage | null'.
+src/features/chat/lib/messageContent.ts(247,10): error TS18048: 'group' is possibly 'undefined'.
+src/features/chat/lib/messageContent.ts(248,52): error TS18048: 'group' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(94,9): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(95,9): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(98,9): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(105,9): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(108,9): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(109,9): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(110,20): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(111,48): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(132,9): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(133,9): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(133,41): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(136,9): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(144,10): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/messageGrouping.ts(168,11): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/messageParser.ts(341,9): error TS18048: 'item' is possibly 'undefined'.
+src/features/chat/lib/messageParser.ts(342,50): error TS18048: 'item' is possibly 'undefined'.
+src/features/chat/lib/messageParser.ts(350,15): error TS18048: 'item' is possibly 'undefined'.
+src/features/chat/lib/messageParser.ts(350,28): error TS18048: 'item' is possibly 'undefined'.
+src/features/chat/lib/messageParser.ts(351,15): error TS18048: 'item' is possibly 'undefined'.
+src/features/chat/lib/messageParser.ts(353,52): error TS18048: 'item' is possibly 'undefined'.
+src/features/chat/lib/messageParser.ts(354,42): error TS18048: 'item' is possibly 'undefined'.
+src/features/chat/lib/messageParser.ts(355,44): error TS18048: 'item' is possibly 'undefined'.
+src/features/chat/lib/messageParser.ts(356,34): error TS18048: 'item' is possibly 'undefined'.
+src/features/chat/lib/octopAgents.ts(1,19): error TS2305: Module '"./http"' has no exported member 'requestUpload'.
+src/features/chat/lib/pendingHitl.ts(54,18): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/pendingHitl.ts(64,18): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/pendingHitl.ts(119,18): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/pendingHitl.ts(131,20): error TS18048: 'message' is possibly 'undefined'.
+src/features/chat/lib/quickChatState.ts(25,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/skillSlash.ts(91,18): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/skillSlash.ts(168,43): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/slashShortcutStyles.ts(4,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/slashShortcutStyles.ts(5,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/slashShortcutStyles.ts(6,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/slashShortcutStyles.ts(7,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/slashShortcutStyles.ts(8,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/slashShortcutStyles.ts(9,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/slashShortcutStyles.ts(10,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+src/features/chat/lib/summarizeHitlAction.ts(77,10): error TS2532: Object is possibly 'undefined'.
+src/features/chat/lib/toolMediaBlocks.ts(34,45): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(35,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(36,51): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(37,50): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(38,53): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(39,54): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(40,58): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(41,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(42,53): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(43,58): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(46,7): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(302,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(305,35): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(315,35): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/toolMediaBlocks.ts(318,35): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+src/features/chat/lib/trajectoryApi.ts(2,33): error TS2305: Module '"./http"' has no exported member 'requestBlob'.
+src/features/chat/lib/trajectoryApi.ts(3,39): error TS2307: Cannot find module '../../utils/mobileEndpoint' or its corresponding type declarations.
+src/features/chat/lib/turnBlocks.ts(267,7): error TS18048: 'lastText' is possibly 'undefined'.
+src/features/chat/lib/turnBlocks.ts(274,45): error TS18048: 'lastText' is possibly 'undefined'.
+src/features/chat/lib/turnBlocks.ts(286,56): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+src/features/chat/lib/turnBlocks.ts(296,17): error TS18048: 'lastText' is possibly 'undefined'.
+src/features/chat/lib/turnTimeline.ts(139,9): error TS18048: 'msg' is possibly 'undefined'.
+src/features/chat/lib/turnTimeline.ts(140,50): error TS18048: 'msg' is possibly 'undefined'.
+src/features/chat/lib/turnTimeline.ts(146,11): error TS18048: 'next' is possibly 'undefined'.
+src/features/chat/lib/turnTimeline.ts(147,11): error TS18048: 'next' is possibly 'undefined'.
+src/features/chat/lib/turnTimeline.ts(147,52): error TS2345: Argument of type 'ChatMessage | undefined' is not assignable to parameter of type 'ChatMessage'.
+src/features/chat/lib/turnTimeline.ts(176,18): error TS18048: 'msg' is possibly 'undefined'.
+src/features/chat/lib/turnTimeline.ts(178,53): error TS2345: Argument of type 'ChatMessage | undefined' is not assignable to parameter of type 'ChatMessage'.

@@ -1,5 +1,5 @@
 import type { HitlPendingPayload, HitlSessionPolicy } from "./hitl";
-import { request } from "../request";
+import { request } from "./http";
 
 /** Workspace file produced in a thread; ``agent_id`` is the producer. */
 export type ThreadArtifact = {

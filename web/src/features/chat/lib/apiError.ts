@@ -89,7 +89,7 @@ export function apiErrorMessage(
   const parsed = parseApiError(error);
   if (parsed?.code && t) {
     const key = `apiErrors.${parsed.code}`;
-    const translated = t(key, parsed.details ?? {});
+    const translated = t(key, { ...(parsed.details ?? {}), defaultValue: key });
     if (translated !== key) {
       const reason = parsed.details?.reason;
       if (typeof reason === "string" && reason.trim()) {
@@ -136,7 +136,7 @@ export function probeErrorMessage(
 ): string {
   if (result.error_code && t) {
     const key = `apiErrors.${result.error_code}`;
-    const translated = t(key, result.details ?? {});
+    const translated = t(key, { ...(result.details ?? {}), defaultValue: key });
     if (translated !== key) return translated;
   }
   if (result.error?.trim()) return result.error.trim();

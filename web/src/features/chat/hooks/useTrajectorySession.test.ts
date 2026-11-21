@@ -10,7 +10,7 @@ const streamUrlMock = vi.fn(
     `http://trajectory.test/stream?after_seq=${afterSeq ?? ""}`,
 );
 
-vi.mock("../../../api/modules/trajectory", () => ({
+vi.mock("../lib/trajectoryApi", () => ({
   trajectoryApi: {
     history: (...args: unknown[]) => historyMock(...args),
     metrics: (...args: unknown[]) => metricsMock(...args),

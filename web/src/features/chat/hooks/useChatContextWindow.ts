@@ -93,7 +93,7 @@ export function useChatContextWindow(
     const fromStream = usageContextInput(contextUsage);
     if (fromStream != null) return fromStream;
     for (let i = messages.length - 1; i >= 0; i -= 1) {
-      const fromMsg = usageContextInput(messages[i].usage);
+      const fromMsg = usageContextInput(messages[i]!.usage);
       if (fromMsg != null) return fromMsg;
     }
     return null;

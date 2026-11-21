@@ -1,6 +1,5 @@
-import { getApiUrl } from "../config";
-import { getAuthToken, request, requestBlob } from "../request";
-import { mobileCredentialToken } from "../../utils/mobileEndpoint";
+import { getApiUrl } from "./http";
+import { getAuthToken, mobileCredentialToken, request, requestBlob } from "./http";
 
 export type TrajectoryKind =
   | "user"

@@ -42,7 +42,7 @@ export function injectPendingHitlMessage(
     (m) => m.hitlData?.status === "pending" && !m.hitlData.pending_id,
   );
   if (reconstructedIdx >= 0) {
-    const current = messages[reconstructedIdx];
+    const current = messages[reconstructedIdx]!;
     const next = [...messages];
     next[reconstructedIdx] = {
       ...current,

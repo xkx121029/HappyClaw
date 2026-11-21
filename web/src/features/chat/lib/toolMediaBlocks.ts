@@ -28,7 +28,7 @@ export function isDataUrl(url: string): boolean {
 export function needsAuthBlobFetch(url: string): boolean {
   const path = url.startsWith("http")
     ? new URL(url).pathname
-    : url.split("?")[0];
+    : url.split("?")[0]!;
   if (path === "/api/workspace/media") return true;
   // Bridge agent ids contain ``:`` (or ``%3A``); ``[^/]+`` still matches.
   if (/^\/api\/agents\/[^/]+\/avatar$/.test(path)) return true;
@@ -291,8 +291,8 @@ export function canonicalizeMediaApiUrl(
     );
     if (!pathMatch) return url;
 
-    const urlAgent = pathMatch[1];
-    const endpoint = pathMatch[2];
+    const urlAgent = pathMatch[1]!;
+    const endpoint = pathMatch[2]!;
 
     if (endpoint === "workspace/download") {
       const pathParam = parsed.searchParams.get("path") || "";

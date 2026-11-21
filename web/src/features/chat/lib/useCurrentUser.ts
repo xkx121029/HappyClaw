@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { OctopUser } from "../api/modules/auth";
+import type { OctopUser } from "./octopUser";
 
 /**
  * 单人本机模式：控制台不再有「当前登录用户」这个概念。

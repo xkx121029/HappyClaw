@@ -1,4 +1,4 @@
-import { request, requestUpload } from "../request";
+import { request, requestUpload } from "./http";
 
 export const octopAgentsApi = {
   markRead: (agentId: string) =>

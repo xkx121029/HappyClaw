@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { request } from "../lib/http";
 import { useMemoryMaintenance } from "./useMemoryMaintenance";
 
-vi.mock("../../../api/request", () => ({ request: vi.fn() }));
+vi.mock("../lib/http", () => ({ request: vi.fn() }));
 
 afterEach(() => {
   vi.useRealTimers();

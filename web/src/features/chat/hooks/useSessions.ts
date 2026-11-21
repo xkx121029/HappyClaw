@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { useTranslation } from "react-i18next";
 import { deleteConversation } from "../lib/deleteConversation";
 import {
   normalizeThreadArtifacts,
@@ -11,6 +10,7 @@ import * as chatStore from "../store/chatStore";
 import { onSessionEvent } from "../store/chatStore";
 import { formatThreadTitle } from "../lib/threadTitle";
 import { parseHitlSessionPolicy } from "../lib/hitlSessionPolicy";
+import { useChatT } from "../lib/useChatT";
 
 export interface Session {
   id: string;
@@ -155,7 +155,7 @@ export function pickPreferredSession(sessions: Session[]): Session | null {
     pool.find((s) => s.hasActivity && s.name !== "New Chat") ??
     pool.find((s) => s.hasActivity) ??
     pool.find((s) => s.name !== "New Chat") ??
-    pool[0]
+    pool[0]!
   );
 }
 
@@ -189,7 +189,7 @@ export function syncSessionHitlPolicy(
   setModuleSessions((prev) => {
     const idx = prev.findIndex((s) => s.id === threadId);
     if (idx < 0) return prev;
-    const current = prev[idx];
+    const current = prev[idx]!;
     const currentPolicy = current.hitlPolicy ?? null;
     if (
       (currentPolicy?.mode ?? "ask") === (nextPolicy?.mode ?? "ask") &&
@@ -216,7 +216,7 @@ export function syncSessionConversationMode(
   setModuleSessions((prev) => {
     const idx = prev.findIndex((s) => s.id === threadId);
     if (idx < 0) return prev;
-    const current = prev[idx];
+    const current = prev[idx]!;
     if (
       (current.conversationMode ?? null) === mode &&
       (current.pendingPlanPath ?? null) === path
@@ -239,7 +239,7 @@ export function syncSessionArtifacts(
   setModuleSessions((prev) => {
     const idx = prev.findIndex((s) => s.id === threadId);
     if (idx < 0) return prev;
-    const current = prev[idx].artifacts ?? [];
+    const current = prev[idx]!.artifacts ?? [];
     if (
       current.length === normalized.length &&
       current.every(
@@ -251,7 +251,7 @@ export function syncSessionArtifacts(
       return prev;
     }
     const next = [...prev];
-    next[idx] = { ...next[idx], artifacts: normalized };
+    next[idx] = { ...next[idx]!, artifacts: normalized };
     return next;
   });
 }
@@ -433,7 +433,7 @@ export function resetSessionStoreForTests() {
 }
 
 export function useSessions(agentId: string | null) {
-  const { t } = useTranslation();
+  const t = useChatT();
   syncStoreToAgent(agentId);
   const { sessions, loading, hasMore, loadingMore } = useSyncExternalStore(
     subscribeSessionStore,

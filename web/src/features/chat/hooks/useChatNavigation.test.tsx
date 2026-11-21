@@ -1,5 +1,4 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { useChatNavigation } from "./useChatNavigation";
@@ -8,23 +7,18 @@ import type { Session } from "./useSessions";
 const navigateMock = vi.fn();
 const rebindMock = vi.fn().mockResolvedValue({});
 
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom",
-  );
-  return {
-    ...actual,
-    useNavigate: () => navigateMock,
-  };
-});
+vi.mock("../lib/chatRouter", () => ({
+  useChatNavigate: () => navigateMock,
+  useChatLocation: () => ({ pathname: "/chat", state: null }),
+}));
 
-vi.mock("../../../api/modules/octopThreads", () => ({
+vi.mock("../lib/octopThreads", () => ({
   octopThreadsApi: {
     rebind: (...args: unknown[]) => rebindMock(...args),
   },
 }));
 
-vi.mock("../../../api/modules/octopAgents", () => ({
+vi.mock("../lib/octopAgents", () => ({
   octopAgentsApi: {
     markRead: vi.fn().mockResolvedValue(undefined),
   },
@@ -49,7 +43,7 @@ vi.mock("./chatStore", () => ({
 }));
 
 function wrapper({ children }: { children: ReactNode }) {
-  return <MemoryRouter>{children}</MemoryRouter>;
+  return <>{children}</>;
 }
 
 function session(id: string): Session {

@@ -262,7 +262,7 @@ export function planTurnBlocks(blocks: TurnBlock[]): PlannedTurnBlock[] {
     if (block.kind === "text") textIndexes.push(index);
   });
   const lastText =
-    textIndexes.length >= 2 ? textIndexes[textIndexes.length - 1] : -1;
+    textIndexes.length >= 2 ? textIndexes[textIndexes.length - 1]! : -1;
 
   if (lastText < 0) {
     return blocks.map((block) =>

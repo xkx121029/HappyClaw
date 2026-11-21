@@ -234,7 +234,7 @@ export function buildDockPathTree(
     let node = root;
     let acc = "";
     for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
+      const part = parts[i]!;
       const isLast = i === parts.length - 1;
       acc =
         acc === "" && abs ? `/${part}` : acc === "" ? part : `${acc}/${part}`;
@@ -252,7 +252,7 @@ export function buildDockPathTree(
       } else if (!isLast) {
         child.isDir = true;
       }
-      node = child;
+      node = child!;
     }
   }
 
@@ -264,7 +264,7 @@ export function buildDockPathTree(
       cur.children.size === 1 &&
       [...cur.children.values()][0]?.isDir
     ) {
-      cur = [...cur.children.values()][0];
+      cur = [...cur.children.values()][0]!;
       names.push(cur.name);
     }
     const children = [...cur.children.values()].map(collapse).sort((a, b) => {

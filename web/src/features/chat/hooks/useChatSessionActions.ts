@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useChatNavigate as useNavigate } from "../lib/chatRouter";
 import { octopThreadsApi } from "../lib/octopThreads";
 import * as chatStore from "../store/chatStore";
 import { EMPTY_CHAT_SESSION_KEY } from "../lib/constants";

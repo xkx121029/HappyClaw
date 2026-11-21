@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import type { TFunction } from "i18next";
-import { useNavigate } from "react-router-dom";
+import { useChatNavigate as useNavigate } from "../lib/chatRouter";
 import type { ChatAttachment, UserComposerContext } from "./useChat";
 import {
   isPendingThread,
@@ -260,7 +260,7 @@ export function useChatSend({
       if (autoRecord) {
         setTimeout(async () => {
           try {
-            const { browserApi } = await import("../../../api/modules/browser");
+            const { browserApi } = await import("../lib/browserApi");
             const data = await browserApi.startRecording({
               name: activeThreadId
                 ? `chat-${activeThreadId}`
@@ -272,18 +272,19 @@ export function useChatSend({
                 onAutoRecordingStarted(data.recordingId);
               }
               // Push a system message into the chat about recording started
-              const { generateId } = await import(
-                "../../../utils/messageParser"
-              );
+              const { generateId } = await import("../lib/messageParser");
               const pushMsg = {
                 id: generateId(),
                 role: "assistant" as const,
-                content: t("skillRecord.recordingStartedMessage"),
+                content: t(
+                  "skillRecord.recordingStartedMessage",
+                  "skillRecord.recordingStartedMessage",
+                ),
                 timestamp: Date.now(),
                 status: "done" as const,
               };
               // Append directly to chat store
-              const { appendPushMessage } = await import("./chatStore");
+              const { appendPushMessage } = await import("../store/chatStore");
               appendPushMessage(pushMsg.content);
             }
           } catch {

@@ -17,9 +17,17 @@ function deleteResultText(
   compact: boolean,
   result: ThreadDeleteResult | undefined,
 ): string {
-  if (compact && result?.compacted) return t("chat.deleteSessionCompacted");
-  if (compact) return t("chat.deleteSessionCompactLater");
-  return t("chat.deleteSessionLater");
+  if (compact && result?.compacted)
+    return t("chat.deleteSessionCompacted", {
+      defaultValue: "chat.deleteSessionCompacted",
+    });
+  if (compact)
+    return t("chat.deleteSessionCompactLater", {
+      defaultValue: "chat.deleteSessionCompactLater",
+    });
+  return t("chat.deleteSessionLater", {
+    defaultValue: "chat.deleteSessionLater",
+  });
 }
 
 /**
@@ -38,7 +46,11 @@ export async function deleteConversation(
   t: TFunction,
 ): Promise<DeleteConversationResult> {
   const closeLoading = compact
-    ? antMessage.loading(t("chat.deleteSessionCompacting"))
+    ? antMessage.loading(
+        t("chat.deleteSessionCompacting", {
+          defaultValue: "chat.deleteSessionCompacting",
+        }),
+      )
     : undefined;
   try {
     const result = await octopThreadsApi.delete(agentId, threadId, compact);
@@ -48,10 +60,20 @@ export async function deleteConversation(
   } catch (error) {
     closeLoading?.();
     if (parseApiError(error)?.code === "THREAD_TURN_ACTIVE") {
-      antMessage.error(t("apiErrors.THREAD_TURN_ACTIVE"));
+      antMessage.error(
+        t("apiErrors.THREAD_TURN_ACTIVE", {
+          defaultValue: "apiErrors.THREAD_TURN_ACTIVE",
+        }),
+      );
       return null;
     }
-    antMessage.error(apiErrorMessage(error, t("sessions.deleteFailed"), t));
+    antMessage.error(
+      apiErrorMessage(
+        error,
+        t("sessions.deleteFailed", { defaultValue: "sessions.deleteFailed" }),
+        t,
+      ),
+    );
     return false;
   }
 }

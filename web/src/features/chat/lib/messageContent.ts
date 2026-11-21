@@ -184,7 +184,7 @@ export function splitAssistantTurn(
           ...answerTemplate,
           content: joinFragments
             ? joinAnswerParts(textParts)
-            : textParts[textParts.length - 1],
+            : textParts[textParts.length - 1]!,
           contentBlocks: undefined,
           status: answerStreaming
             ? ("streaming" as const)
@@ -243,7 +243,7 @@ export function findLastBrowserTurnGroupIndex(
   groups: ReadonlyArray<{ messages: ReadonlyArray<ChatMessage> }>,
 ): number {
   for (let i = groups.length - 1; i >= 0; i--) {
-    const group = groups[i];
+    const group = groups[i]!;
     if (!group.messages.some((m) => m.role === "assistant")) continue;
     if (turnUsedBrowserTool(splitAssistantTurn([...group.messages]))) return i;
   }

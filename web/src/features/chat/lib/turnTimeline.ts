@@ -135,14 +135,14 @@ export function buildTurnTimelineItems(
 
   const items: TurnTimelineItem[] = [];
   for (let i = 0; i < messages.length; i++) {
-    const msg = messages[i];
+    const msg = messages[i]!;
     if (msg.role !== "user") continue;
     const groupIndex = groupIndexByMessageId.get(msg.id);
     if (groupIndex === undefined) continue;
 
     let assistant: ChatMessage | undefined;
     for (let j = i + 1; j < messages.length; j++) {
-      const next = messages[j];
+      const next = messages[j]!;
       if (next.role === "user") break;
       if (next.role === "assistant" && messageText(next)) {
         assistant = next;

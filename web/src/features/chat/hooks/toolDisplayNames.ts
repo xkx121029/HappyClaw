@@ -1,12 +1,15 @@
+import { useChatT } from "../lib/useChatT";
 /**
  * Localised labels for built-in agent tools shown in chat message bubbles.
  * Labels are defined in backend ``src/octop/i18n/*.json`` (``tools.*``).
  */
 
-import { useTranslation } from "react-i18next";
 
 export function useToolDisplayNames(): (name?: string) => string {
-  const { t } = useTranslation();
+  const t = useChatT() as unknown as (
+    key: string,
+    defaultValue?: string,
+  ) => string;
 
   return (name?: string) => {
     if (!name) return t("tools.unknown", "unknown");

@@ -74,7 +74,7 @@ function resolve(
 export function humanizeArgKey(key: string): string {
   const cleaned = key.replace(/[_-]+/g, " ").trim();
   if (!cleaned) return key;
-  return cleaned[0].toUpperCase() + cleaned.slice(1);
+  return cleaned[0]!.toUpperCase() + cleaned.slice(1);
 }
 
 function isEmpty(value: unknown): boolean {

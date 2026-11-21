@@ -10,13 +10,13 @@
  * sending the message to the agent.
  */
 import { useCallback, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 import { browserApi } from "../lib/browserApi";
 import { request } from "../lib/http";
 import * as chatStore from "../store/chatStore";
 
 import { message as antMessage } from "../lib/message";
+import { useChatT } from "../lib/useChatT";
 
 interface UseSkillRecordingWorkflowParams {
   agentId: string | null;
@@ -43,7 +43,10 @@ export function useSkillRecordingWorkflow({
   setBrowserRecordingId,
   setBrowserLastRecordingId,
 }: UseSkillRecordingWorkflowParams) {
-  const { t } = useTranslation();
+  const t = useChatT() as unknown as (
+    key: string,
+    options?: Record<string, unknown> | string,
+  ) => string;
   const [pendingSkillContent, setPendingSkillContent] = useState<string | null>(
     null,
   );

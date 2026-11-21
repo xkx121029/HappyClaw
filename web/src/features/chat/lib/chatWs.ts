@@ -1,5 +1,5 @@
-import { getAuthToken } from "../request";
-import { getWsUrl } from "../config";
+import { getAuthToken } from "./http";
+import { getWsUrl } from "./http";
 
 export function buildDashboardChatWsUrl(agentId: string): string {
   const token = getAuthToken();

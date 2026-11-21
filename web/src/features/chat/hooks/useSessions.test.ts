@@ -12,7 +12,7 @@ import {
 const listMock = vi.fn();
 const createMock = vi.fn();
 
-vi.mock("../../../api/modules/octopThreads", () => ({
+vi.mock("../lib/octopThreads", () => ({
   octopThreadsApi: {
     list: (...args: unknown[]) => listMock(...args),
     create: (...args: unknown[]) => createMock(...args),

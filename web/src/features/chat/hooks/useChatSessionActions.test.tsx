@@ -1,5 +1,4 @@
 import { renderHook, act } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { useChatSessionActions } from "./useChatSessionActions";
@@ -13,14 +12,12 @@ import { EMPTY_CHAT_SESSION_KEY } from "../lib/constants";
 
 const navigateMock = vi.fn();
 
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom",
-  );
-  return { ...actual, useNavigate: () => navigateMock };
-});
+vi.mock("../lib/chatRouter", () => ({
+  useChatNavigate: () => navigateMock,
+  useChatLocation: () => ({ pathname: "/chat", state: null }),
+}));
 
-vi.mock("../../../api/modules/octopThreads", () => ({
+vi.mock("../lib/octopThreads", () => ({
   octopThreadsApi: {
     rebind: vi.fn().mockResolvedValue({}),
     list: vi.fn().mockResolvedValue([]),
@@ -28,7 +25,7 @@ vi.mock("../../../api/modules/octopThreads", () => ({
 }));
 
 function wrapper({ children }: { children: ReactNode }) {
-  return <MemoryRouter>{children}</MemoryRouter>;
+  return <>{children}</>;
 }
 
 const THREAD = "thr_leaving";

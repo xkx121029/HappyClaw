@@ -2,7 +2,7 @@ import type { ChatMessage } from "../hooks/sseHelpers";
 
 function lastUserIndex(messages: ChatMessage[]): number {
   for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].role === "user") return i;
+    if (messages[i]!.role === "user") return i;
   }
   return -1;
 }
@@ -59,7 +59,7 @@ function sameUserTurn(
   const baseUserIdx = lastUserIndex(base);
   const tailUserIdx = lastUserIndex(tail);
   if (baseUserIdx < 0 || tailUserIdx < 0) return null;
-  if (base[baseUserIdx].id !== tail[tailUserIdx].id) return null;
+  if (base[baseUserIdx]!.id !== tail[tailUserIdx]!.id) return null;
   return { baseUserIdx, tailUserIdx };
 }
 
@@ -101,7 +101,7 @@ export function serverCaughtUp(
   const userIdx = lastUserIndex(tail);
   if (userIdx < 0) return false;
   const loadedUserIdx = loaded.findIndex(
-    (message) => message.role === "user" && message.id === tail[userIdx].id,
+    (message) => message.role === "user" && message.id === tail[userIdx]!.id,
   );
   if (loadedUserIdx < 0) return false;
   const localReply = tail.slice(userIdx + 1);
@@ -133,7 +133,7 @@ export function retainedHistoryPrefix(
 ): ChatMessage[] {
   const ids = new Set(loaded.map((message) => message.id));
   const overlap = current.findIndex((message) => ids.has(message.id));
-  if (overlap <= 0 || current[overlap].localPending) return [];
+  if (overlap <= 0 || current[overlap]!.localPending) return [];
   const prefix = current.slice(0, overlap);
   return prefix.every(
     (message) => !message.localPending && message.status !== "streaming",
@@ -178,7 +178,7 @@ export function mergeHistoryWithLocalTail(
 
   let lastOverlap = firstOverlap;
   for (let i = current.length - 1; i >= 0; i--) {
-    if (loadedIds.has(current[i].id)) {
+    if (loadedIds.has(current[i]!.id)) {
       lastOverlap = i;
       break;
     }
@@ -214,7 +214,7 @@ export function mergeHistoryWithLocalTail(
     return [...beforeSend, ...localTail.slice(freshSend), ...afterSend];
   }
 
-  const overlapId = current[lastOverlap].id;
+  const overlapId = current[lastOverlap]!.id;
   const loadedOverlap = loaded.findIndex((message) => message.id === overlapId);
   const serverAfter = loadedOverlap >= 0 ? loaded.slice(loadedOverlap + 1) : [];
   // User row is stored and the reply is not in this page yet.

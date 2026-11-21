@@ -935,7 +935,7 @@ export function truncateAndReplaceUserMessage(
   state.abortController?.abort();
   state.abortController = null;
 
-  const original = state.messages[idx];
+  const original = state.messages[idx]!;
   const replacementId = generateId();
   state.historyEpoch = ++nextHistoryEpoch;
   clearInflightTail(sessionId);
@@ -1437,7 +1437,7 @@ function findLastToolMessageIndex(
 ): number {
   const hostId = sessionHostAgentId(state);
   for (let i = state.messages.length - 1; i >= 0; i--) {
-    const m = state.messages[i];
+    const m = state.messages[i]!;
     if (
       m.role === "assistant" &&
       m.toolData &&
@@ -1595,7 +1595,7 @@ function handleHarnessChunk(
         mediaType: mime !== "application/octet-stream" ? mime : undefined,
       };
       if (targetIdx >= 0) {
-        const target = state.messages[targetIdx];
+        const target = state.messages[targetIdx]!;
         const attachments = [...(target.attachments || []), attachment];
         state.messages = [
           ...state.messages.slice(0, targetIdx),
@@ -1652,7 +1652,7 @@ function applyDecisionNotice(
   const hostId = sessionHostAgentId(state);
   const teamRoom = Boolean(state.isTeamRoom);
   for (let index = state.messages.length - 1; index >= 0; index -= 1) {
-    const message = state.messages[index];
+    const message = state.messages[index]!;
     if (message.role === "user") break;
     if (message.role !== "assistant" || message.toolData || message.hitlData) {
       continue;
@@ -1674,7 +1674,7 @@ function applyDecisionNotice(
   if (wrapup) {
     const wrapIdx = findWrapupTextToContinue(state.messages, speaker, hostId);
     if (wrapIdx >= 0) {
-      const target = state.messages[wrapIdx];
+      const target = state.messages[wrapIdx]!;
       state.messages = [
         ...state.messages.slice(0, wrapIdx),
         { ...target, decision: notice },
@@ -1705,7 +1705,7 @@ function applyDecisionNotice(
     continueTokenOpts(state),
   );
   if (idx >= 0) {
-    const target = state.messages[idx];
+    const target = state.messages[idx]!;
     state.messages = [
       ...state.messages.slice(0, idx),
       { ...target, decision: notice },
@@ -1759,7 +1759,7 @@ function findWrapupTextToContinue(
   hostId?: string,
 ): number {
   for (let i = messages.length - 1; i >= 0; i--) {
-    const message = messages[i];
+    const message = messages[i]!;
     if (message.role === "user") break;
     if (message.role !== "assistant" || message.toolData) continue;
     if (!message.teamWrapup) continue;
@@ -1797,7 +1797,7 @@ function appendToTextBubble(
     forceStatus ?? (target.status === "done" ? "streaming" : target.status);
   if (target.contentBlocks && target.contentBlocks.length > 0) {
     const blocks = [...target.contentBlocks];
-    const lastBlock = blocks[blocks.length - 1];
+    const lastBlock = blocks[blocks.length - 1]!;
     if (lastBlock.type === "text") {
       blocks[blocks.length - 1] = {
         ...lastBlock,
@@ -1851,7 +1851,7 @@ function noteTurnOwner(
 
 function noteTurnOwnerFromLatestUser(state: SessionStreamState): void {
   for (let i = state.messages.length - 1; i >= 0; i--) {
-    const message = state.messages[i];
+    const message = state.messages[i]!;
     if (message.role !== "user") continue;
     noteTurnOwner(state, message.author?.userId);
     return;
@@ -2029,7 +2029,7 @@ function appendStreamingToken(
     const nextStatus = target.status === "done" ? "streaming" : target.status;
     if (target.contentBlocks && target.contentBlocks.length > 0) {
       const blocks = [...target.contentBlocks];
-      const lastBlock = blocks[blocks.length - 1];
+      const lastBlock = blocks[blocks.length - 1]!;
       if (lastBlock.type === "text") {
         blocks[blocks.length - 1] = {
           ...lastBlock,
@@ -2118,8 +2118,8 @@ function appendStreamingReasoning(
   if (last && turnId && !last.turnId) last.turnId = turnId;
   if (last && last.role === "assistant" && !last.toolData) {
     const blocks = last.contentBlocks ? [...last.contentBlocks] : [];
-    if (blocks.length > 0 && blocks[blocks.length - 1].type === "thinking") {
-      const tail = blocks[blocks.length - 1];
+    if (blocks.length > 0 && blocks[blocks.length - 1]!.type === "thinking") {
+      const tail = blocks[blocks.length - 1]!;
       blocks[blocks.length - 1] = { ...tail, content: tail.content + content };
     } else {
       blocks.push({ type: "thinking", content });
@@ -2235,7 +2235,7 @@ function upsertToolCall(
   if (existingMsgId) {
     const idx = state.messages.findIndex((m) => m.id === existingMsgId);
     if (idx >= 0) {
-      const m = state.messages[idx];
+      const m = state.messages[idx]!;
       const prevArgs = m.toolData?.arguments ?? "";
       const nextArgs = prevArgs + (chunk.args ?? "");
       const nextName = chunk.name || m.toolData?.name;
@@ -2377,7 +2377,7 @@ function closeToolCall(
     }
     if (toolIdx < 0) {
       for (let i = state.messages.length - 1; i >= 0; i--) {
-        const m = state.messages[i];
+        const m = state.messages[i]!;
         if (
           m.role === "assistant" &&
           m.toolData?.callId === toolCallId &&
@@ -2398,7 +2398,7 @@ function closeToolCall(
 
   if (toolIdx < 0) {
     for (let i = state.messages.length - 1; i >= 0; i--) {
-      const m = state.messages[i];
+      const m = state.messages[i]!;
       if (
         m.role === "assistant" &&
         m.toolData &&
@@ -2416,7 +2416,7 @@ function closeToolCall(
     }
   }
   if (toolIdx < 0) return;
-  const target = state.messages[toolIdx];
+  const target = state.messages[toolIdx]!;
   const output = extractToolResultOutput(messages);
   const artifact = extractToolResultArtifact(messages);
   const explicitToolError = messages.some(
@@ -2481,7 +2481,7 @@ export function patchToolResultData(callId: string, nextData: unknown): void {
       );
     }
     if (idx < 0) return false;
-    const target = state.messages[idx];
+    const target = state.messages[idx]!;
     const output = mergePatchedToolOutput(target.toolData?.output, nextData);
     state.messages = [
       ...state.messages.slice(0, idx),
@@ -2543,7 +2543,7 @@ function stampTurnDuration(
   const hostId = sessionHostAgentId(state, sessionId);
   const rounded = Math.round(durationMs);
   for (let index = state.messages.length - 1; index >= 0; index -= 1) {
-    const message = state.messages[index];
+    const message = state.messages[index]!;
     if (message.role !== "assistant" || message.toolData) continue;
     if (
       !speakerMatchesFinalize(
@@ -2596,7 +2596,7 @@ function finalizeStreamingMessages(
   });
   if (state.runUsage && isRoomHostSpeaker(speaker, hostId)) {
     for (let index = state.messages.length - 1; index >= 0; index -= 1) {
-      const message = state.messages[index];
+      const message = state.messages[index]!;
       if (message.role !== "assistant" || message.toolData) continue;
       if (
         !speakerMatchesFinalize(
@@ -2746,7 +2746,7 @@ function handleHitlRequired(
       );
     })?.index;
   if (existingIdx !== undefined) {
-    const current = state.messages[existingIdx];
+    const current = state.messages[existingIdx]!;
     state.messages = [
       ...state.messages.slice(0, existingIdx),
       {

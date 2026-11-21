@@ -85,15 +85,15 @@ function pathFromText(text: string): string {
   const outbound = text.match(
     /(?:^|[\s"'`])((?:outbound|inbound)\/[^\s"'<>]+)/i,
   );
-  if (outbound) return outbound[1];
+  if (outbound) return outbound[1]!;
   const relMatch = text.match(
     /(?:^|\s)((?:generated|outbound|inbound)\/[^\s"'<>]+)/i,
   );
-  if (relMatch) return relMatch[1];
+  if (relMatch) return relMatch[1]!;
   const fileMatch = text.match(
     /(?:^|\s)([^\s"'<>]+\/[^\s"'<>]+\.[A-Za-z][A-Za-z0-9._+-]{0,11})(?=\s|$)/,
   );
-  if (fileMatch && isDockListablePath(fileMatch[1])) return fileMatch[1];
+  if (fileMatch && isDockListablePath(fileMatch[1]!)) return fileMatch[1]!;
   return "";
 }
 

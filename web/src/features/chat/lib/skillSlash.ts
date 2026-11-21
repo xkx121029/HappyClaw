@@ -88,7 +88,7 @@ export function parseSkillSlugsInText(
   const seen = new Set<string>();
 
   for (const match of text.matchAll(SKILL_SLASH_TOKEN)) {
-    const slug = match[1].slice(1).toLowerCase();
+    const slug = match[1]!.slice(1).toLowerCase();
     if (!seen.has(slug)) {
       seen.add(slug);
       out.push(slug);
@@ -164,7 +164,7 @@ export function deleteSkillTokenAtCursor(
 
   const slashMatch = before.match(SKILL_SLASH_BEFORE_CURSOR);
   if (slashMatch) {
-    const token = slashMatch[1];
+    const token = slashMatch[1]!;
     const tokenStart = before.lastIndexOf(token);
     if (tokenStart >= 0) {
       return spliceToken(text, tokenStart, cursor);
