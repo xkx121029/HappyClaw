@@ -19,7 +19,7 @@ __all__ = ["LEGACY_PREFIX", "CURRENT_PREFIX", "alias_legacy_env", "legacy_env_na
 
 def legacy_env_name(name: str) -> str:
     """Return the pre-rename spelling of a ``HAPPYCLAW_*`` variable name."""
-    return LEGACY_PREFIX + name[len(CURRENT_PREFIX):]
+    return LEGACY_PREFIX + name[len(CURRENT_PREFIX) :]
 
 
 def alias_legacy_env(environ: MutableMapping[str, str] | None = None) -> list[str]:

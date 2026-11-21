@@ -33,7 +33,9 @@ def _seed_legacy(home: pathlib.Path) -> pathlib.Path:
     return legacy
 
 
-def test_first_start_copies_the_legacy_directory(tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_first_start_copies_the_legacy_directory(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     home = pathlib.Path.home()
     legacy = _seed_legacy(home)
 
@@ -93,7 +95,9 @@ def test_happyclaw_home_wins(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.
     assert paths.PathLayout.from_env().root == tmp_path / "h-new"
 
 
-def test_legacy_home_variable_still_honoured(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+def test_legacy_home_variable_still_honoured(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
+) -> None:
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path / "h-old"))
     assert paths.PathLayout.from_env().root == tmp_path / "h-old"
 

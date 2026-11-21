@@ -55,7 +55,9 @@ class PathLayout:
         A data directory left behind under the pre-rename name is copied across
         on first use; see :func:`migrate_legacy_home`.
         """
-        raw = os.environ.get("HAPPYCLAW_HOME", "").strip() or os.environ.get("OCTOP_HOME", "").strip()
+        raw = (
+            os.environ.get("HAPPYCLAW_HOME", "").strip() or os.environ.get("OCTOP_HOME", "").strip()
+        )
         if raw:
             return cls(Path(raw).expanduser())
         target = Path.home() / HOME_DIRNAME

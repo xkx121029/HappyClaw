@@ -21,7 +21,6 @@ from dataclasses import fields
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
-from langchain_core.messages import AIMessage, HumanMessage
 from happyclaw_harness.messages import extract_call_response
 from happyclaw_harness.teams.inbox import InboxMessage
 from happyclaw_harness.teams.processor import ReplyEvent
@@ -31,6 +30,7 @@ from happyclaw_harness.teams.util import (
     build_one_shot_request,
     derive_peer_thread_id,
 )
+from langchain_core.messages import AIMessage, HumanMessage
 
 from octop.i18n import tr
 from octop.i18n.domains.stream import format_stream_error
@@ -1405,7 +1405,9 @@ class TeamManager:
         if wrapup:
             extra["team_wrapup"] = True
         if error:
-            extra.update(protocol_keys.both("stream_error", {"code": "stream_error", "source": "team_task"}))
+            extra.update(
+                protocol_keys.both("stream_error", {"code": "stream_error", "source": "team_task"})
+            )
         if decision:
             extra.update(protocol_keys.both("decision", dict(decision)))
         msg = AIMessage(

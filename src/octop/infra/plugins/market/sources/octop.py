@@ -15,9 +15,9 @@ envelope loads without rewriting. Reading the live catalog reuses
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from octop.infra.plugins.market.download import Transport, fetch_bytes
 from octop.infra.plugins.market.errors import (
@@ -173,9 +173,7 @@ def _normalize(item: Any, language: str, index_label: str) -> MarketEntry:
         ) from exc
     kind = _text(item.get("kind")) or "tool"
     raw_requires = tuple(
-        str(name).strip()
-        for name in _as_list(item.get("requires"))
-        if str(name).strip()
+        str(name).strip() for name in _as_list(item.get("requires")) if str(name).strip()
     )
     requirements = _requirements(raw_requires)
     ui = item.get("ui") if isinstance(item.get("ui"), dict) else None
@@ -240,8 +238,7 @@ def _suggestion(exc: InvalidManifestError) -> str:
     if isinstance(spec, str):
         if isinstance(details.get("constraint"), str):
             return (
-                f"把 requires 条目 {spec!r} 的版本约束改成 >=1.0.0、<2 或 "
-                ">=1.0.0,<2.0.0 这类写法"
+                f"把 requires 条目 {spec!r} 的版本约束改成 >=1.0.0、<2 或 >=1.0.0,<2.0.0 这类写法"
             )
         valid = details.get("valid")
         if isinstance(valid, list):
@@ -263,10 +260,7 @@ def _suggestion(exc: InvalidManifestError) -> str:
         return "补齐 version 字段（每行都要有该插件的最新版本号）"
     if field == "download_url":
         return "补齐 download_url 字段（指向该版本 zip 包的下载地址）"
-    return (
-        "按门户清单格式检查该条目：id / version / download_url 必填，"
-        "requires 必须带生态前缀"
-    )
+    return "按门户清单格式检查该条目：id / version / download_url 必填，requires 必须带生态前缀"
 
 
 def _python_requirements(item: Mapping[str, Any]) -> tuple[str, ...]:
@@ -339,7 +333,6 @@ def _split_constraint(text: str) -> tuple[str, str]:
         if char in "<>=^~!":
             return text[:index].strip(), text[index:].strip()
     return text, "*"
-
 
 
 def _capabilities(kind: str, ui: Mapping[str, Any] | None) -> tuple[CapabilityKind, ...]:

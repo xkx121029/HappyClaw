@@ -54,11 +54,15 @@ RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     # such as ``octop-browser-profiles`` out of scope.
     (
         "pre-rename library import",
-        re.compile(r"(?<![A-Za-z0-9_])octop_(?:harness|memory|gateway|browser)(?![A-Za-z0-9_])", re.I),
+        re.compile(
+            r"(?<![A-Za-z0-9_])octop_(?:harness|memory|gateway|browser)(?![A-Za-z0-9_])", re.I
+        ),
     ),
     (
         "pre-rename library distribution",
-        re.compile(r"(?<![A-Za-z0-9_-])octop-(?:harness|memory|gateway|browser)(?![A-Za-z0-9_-])", re.I),
+        re.compile(
+            r"(?<![A-Za-z0-9_-])octop-(?:harness|memory|gateway|browser)(?![A-Za-z0-9_-])", re.I
+        ),
     ),
 )
 
@@ -71,33 +75,50 @@ ALLOWED: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
         ),
     ),
     "tests/unit/test_fnos_docker_persist.py": (
-        (re.compile(r'assert "TencentCloud" not in text'), "guard: asserts our own output carries no upstream name"),
+        (
+            re.compile(r'assert "TencentCloud" not in text'),
+            "guard: asserts our own output carries no upstream name",
+        ),
     ),
     "tests/unit/test_release_download_links.py": (
-        (re.compile(r'not in body'), "guard: asserts release notes carry no upstream link"),
+        (re.compile(r"not in body"), "guard: asserts release notes carry no upstream link"),
     ),
     "dashboard/src/pages/Agent/Channels/components/constants.ts": (
-        (re.compile(r'octopbot: "https://octop\.cloud\.tencent\.com"'),
-         "functional endpoint of the OctopBot channel; the service is theirs, not a link to our code"),
+        (
+            re.compile(r'octopbot: "https://octop\.cloud\.tencent\.com"'),
+            "functional endpoint of the OctopBot channel; the service is theirs, not a link to our code",
+        ),
     ),
     "dashboard/src/pages/Control/CloudHosts/index.tsx": (
-        (re.compile(r'"octop\.cloud\.(?:snapshot|overview)\.v1"'),
-         "localStorage keys: renaming them silently discards the owner's saved view state"),
+        (
+            re.compile(r'"octop\.cloud\.(?:snapshot|overview)\.v1"'),
+            "localStorage keys: renaming them silently discards the owner's saved view state",
+        ),
     ),
     "src/octop/infra/plugins/market/sources/octop.py": (
-        (re.compile(r'"origin": "octop\.cloud"'),
-         "plugin provenance label stored with installed envelopes; must match what is already on disk"),
+        (
+            re.compile(r'"origin": "octop\.cloud"'),
+            "plugin provenance label stored with installed envelopes; must match what is already on disk",
+        ),
     ),
     "scripts/fnos/vendor/storage_errors.py": (
-        (re.compile(r"Vendored from octop-harness"), "provenance note for a module copied out of the library"),
+        (
+            re.compile(r"Vendored from octop-harness"),
+            "provenance note for a module copied out of the library",
+        ),
     ),
     "docs/memory-slim.md": (
-        (re.compile(r"feature/octop-harness-bump"), "historical branch name quoted from the source repository"),
+        (
+            re.compile(r"feature/octop-harness-bump"),
+            "historical branch name quoted from the source repository",
+        ),
     ),
     "src/octop/infra/agents/providers/onnx_download.py": (
-        (re.compile(r"COS_ENDPOINT_DEFAULT = \"https://octop-"),
-         "default embedding-model bucket, overridable with OCTOP_ONNX_COS_BASE; clearing it degrades "
-         "first-run downloads and needs an owner decision"),
+        (
+            re.compile(r"COS_ENDPOINT_DEFAULT = \"https://octop-"),
+            "default embedding-model bucket, overridable with OCTOP_ONNX_COS_BASE; clearing it degrades "
+            "first-run downloads and needs an owner decision",
+        ),
     ),
 }
 
@@ -169,8 +190,12 @@ def main() -> int:
         for rel, number, name, line in hits:
             print(f"  {rel}:{number} [{name}] {line}")
         return 1
-    print(f"OK: {root} has no link, domain, or registry path pointing at the pre-migration upstream project")
-    print(f"    {len(ALLOWED)} documented exception file(s), each listed in reports/DEOCTOP-SWEEP.md")
+    print(
+        f"OK: {root} has no link, domain, or registry path pointing at the pre-migration upstream project"
+    )
+    print(
+        f"    {len(ALLOWED)} documented exception file(s), each listed in reports/DEOCTOP-SWEEP.md"
+    )
     return 0
 
 

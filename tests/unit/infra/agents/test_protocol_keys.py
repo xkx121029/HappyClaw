@@ -11,12 +11,16 @@ from octop.infra.agents import protocol_keys
 
 
 def test_read_accepts_the_current_spelling() -> None:
-    assert protocol_keys.read({"happyclaw_decision": {"kind": "decision"}}, "decision") == {"kind": "decision"}
+    assert protocol_keys.read({"happyclaw_decision": {"kind": "decision"}}, "decision") == {
+        "kind": "decision"
+    }
 
 
 def test_read_accepts_the_legacy_spelling() -> None:
     # Messages persisted before the rename carry only the old key.
-    assert protocol_keys.read({"octop_decision": {"kind": "decision"}}, "decision") == {"kind": "decision"}
+    assert protocol_keys.read({"octop_decision": {"kind": "decision"}}, "decision") == {
+        "kind": "decision"
+    }
 
 
 def test_read_prefers_the_current_spelling() -> None:
