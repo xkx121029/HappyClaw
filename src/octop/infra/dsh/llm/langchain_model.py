@@ -59,7 +59,7 @@ __all__ = [
 #: The ``happyclaw_harness`` release this adapter was implemented and verified
 #: against. Bump only together with the parity fixtures in
 #: ``tests/unit/infra/dsh/test_llm_parity.py``.
-REQUIRED_HARNESS_VERSION = "1.0.9"
+REQUIRED_HARNESS_VERSION = "1.0.14"
 
 # OpenAI wire vocabulary for the reasons DSH normalizes.
 _FINISH_TO_WIRE = {
