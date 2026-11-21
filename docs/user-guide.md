@@ -20,9 +20,9 @@
 
 ## 一、简介
 
-**HappyClaw** 是一个装在自己电脑上的单人 AI 工作台。它在单进程里同时提供 Web 控制台、CLI、IM 通道（飞书、钉钉、QQ、微信、企业微信等）和定时任务，所有数据都保存在本机。
+**HappyClaw** 是一个装在自己电脑上的单人 AI 工作台。一个服务进程（`octop run`）同时提供 Web 控制台、IM 通道和定时任务；命令行 `octop` 是另一个进程，读写同一个 `~/.octop` 数据库。所有数据都保存在本机。
 
-![图 1.1 — HappyClaw 产品总览](assets/overview.png)
+![图 1.1 — HappyClaw 品牌图](assets/overview.png)
 
 核心特性速览：
 
@@ -41,7 +41,8 @@
 - 操作系统：**macOS / Linux / Windows**（Windows 10/11 64 位）。
 - **无需**预先安装 Python —— 安装脚本会通过 [uv](https://docs.astral.sh/uv/) 在 `~/.octop/` 下自动创建隔离的 Python 3.12 虚拟环境。
 - 需要可访问外网，用于下载安装包与依赖。
-- 建议预留 2 GB 以上内存；磁盘空间用于数据库、专家工作区与文档语料。
+- 磁盘：`~/.octop/` 下会放独立 Python 3.12 环境、wheel 依赖、数据库、专家工作区与备份，建议预留数 GB；本地模型与知识库语料另计。
+- 内存：没有硬性下限，实际占用取决于所选模型；在本机跑 Ollama 大模型时按模型规模另算。
 
 ### 2.2 一键脚本安装（推荐）
 
@@ -57,15 +58,10 @@ irm https://download.octop.cloud/octop/scripts/install.ps1 | iex
 curl -fsSL https://download.octop.cloud/octop/scripts/install.sh | bash
 ```
 
-安装完成后，**打开一个新终端**或重新加载 shell 配置，使 PATH 生效：
+安装脚本会在 `~/.octop/venv` 创建隔离环境，**不会改动系统 Python**。
 
-```bash
-source ~/.zshrc   # Zsh
-# 或
-source ~/.bashrc  # Bash
-```
-
-安装脚本会把 `octop` 命令放入 `~/.octop/bin` 并加入 PATH，并在 `~/.octop/venv` 创建隔离环境；**不会改动系统 Python**。
+- macOS / Linux：安装器会把 `octop` 软链到一个已经在 PATH 里的目录（优先 `/usr/local/bin`），当前终端即可直接使用；若那个目录不可写，脚本会提示你手动补一行。
+- Windows：安装器把 `~/.octop/bin` 写进用户级 `Path`（`HKCU:\Environment`），同时更新当前窗口的 PATH；**新开的终端**才会从注册表读到你之前的其它 PATH 变更。
 
 > **可选附加组件**：浏览器自动化需要 Chromium，可加 `--extras browser`；国内网络可用 `--mirror <url>` 指定 PyPI 镜像。更多选项见 [scripts/README.md](../scripts/README.md)。
 
@@ -76,7 +72,7 @@ octop --version
 octop run --help
 ```
 
-若提示找不到 `octop` 命令，请确认已重新加载 shell，或检查 `~/.octop/bin` 是否在 PATH 中。
+若提示找不到 `octop` 命令，重开一个终端，或检查 `~/.octop/bin` 是否在 PATH 里。
 
 ### 2.4 Docker 安装
 
@@ -135,7 +131,7 @@ HappyClaw 通过**供应商（Provider）**接入大模型。每个专家可使�
 
 ### 4.1 在控制台配置
 
-打开 **设置 → 模型**：
+打开 **管理 → 模型配置**（`/admin/models`）：
 
 1. 选择预设供应商（OpenAI、Anthropic、DeepSeek、智谱、Kimi、Ollama 等），或选择「自定义」。
 2. 填写 **Base URL** 与 **API Key**。
@@ -161,7 +157,7 @@ HappyClaw 通过**供应商（Provider）**接入大模型。每个专家可使�
 
 ### 4.4 图片与视频生成
 
-在 **设置 → 模型 → 生成模型** 中配置火山方舟 Seedream / Seedance：
+在 **管理 → 模型配置** 页的「生成模型」分区里配置火山方舟 Seedream / Seedance：
 
 1. 在[火山方舟控制台](https://console.volcengine.com/ark)开通所需模型。
 2. 创建方舟 API Key。
@@ -173,10 +169,13 @@ HappyClaw 通过**供应商（Provider）**接入大模型。每个专家可使�
 ### 4.5 通过 CLI 配置
 
 ```bash
-octop models              # 查看供应商预设与模型解析
-octop provider list       # 列出已配置供应商
-octop provider --help     # 供应商增删改查
+octop models presets       # 列出内置供应商模板
+octop models config        # 交互式从模板建供应商并设为当前模型
+octop provider list        # 列出已配置供应商
+octop provider test <id>   # 用一次单 token 请求探测供应商
 ```
+
+CLI 只能新增、删除、探测供应商，没有 `provider edit`：改已有的供应商用控制台 **管理 → 模型配置**。
 
 ---
 
@@ -184,7 +183,7 @@ octop provider --help     # 供应商增删改查
 
 ### 5.1 对话（Chat）
 
-- 打开 **对话** 页面，选择当前专家即可开始实时聊天。
+- 打开 **对话**（`/chat`）页面，选择当前专家即可开始实时聊天。
 - 支持多轮对话、附件上传、工具调用展示。
 - 可在对话中通过斜杠命令触发特定能力。
 
@@ -192,7 +191,7 @@ octop provider --help     # 供应商增删改查
 
 ### 5.2 创建专家（专家库 / MBTI 人格）
 
-- 进入 **专家** 页面，从专家库选择模板一键创建，也可以新建空白专家。
+- 进入 **专家**（`/experts`）页面，从专家库选择模板一键创建，也可以新建空白专家。
 - 选择 **MBTI 人格** 模板为专家赋予性格，或做人格测试自动生成。
 - 为该专家指定供应商、模型与工作区后端。
 
@@ -200,28 +199,33 @@ octop provider --help     # 供应商增删改查
 
 ### 5.3 连接器（Connectors）
 
-- 进入 **Connectors** 页面，配置 OAuth 应用与 MCP 网关。
-- 通过连接器接入外部服务（腾讯文档、Notion、新闻等）。完整列表见 [内置连接器](connectors.md)。
+- 进入 **设置 → 连接器**（`/connectors`），配置 OAuth 应用与 MCP 网关。
+- 内置 30 个预设连接器，覆盖腾讯文档、Notion、新闻等；也可以添加自定义 MCP。完整列表见 [内置连接器](connectors.md)。
 
 ### 5.4 通道（Channels / IM）
 
-- 进入 **通道** 页面，安装并配置 IM 平台。
-- 各通道所需凭证：
+- 进入 **设置 → 通道**（`/personalization/channels`），安装并配置 IM 平台。
+- 内置 10 种通道。飞书、钉钉、QQ、微信、元宝可以在面板里扫码创建/绑定，凭据自动写入；企业微信、Telegram、Discord、小艺、MQTT 需要手填凭据。
 
-| 通道 | 所需凭证 |
-|------|----------|
-| 飞书 | App ID、App Secret |
-| 钉钉 | App Key、App Secret |
-| QQ | Bot AppID、Token |
-| 微信 | 扫码绑定 / 账号凭证 |
-| 企业微信 | Corp ID、Agent Secret |
-| Web 控制台 | 默认启用 |
+| 通道 | 绑定方式 | 需要的凭据 |
+|------|----------|------------|
+| 飞书 | 扫码创建（也可手填） | App ID、App Secret |
+| 钉钉 | 扫码授权，自动建应用 | Client ID、Client Secret |
+| QQ | 扫码绑定机器人 | App ID、密钥（扫码后自动填入） |
+| 微信 | 扫码登录个人号 | 机器人 UIN、Token |
+| 企业微信 | 开放平台创建应用后手填 | 企业凭据（Corp ID、Agent Secret） |
+| 元宝 | 扫码绑定 | App Key、App Secret |
+| Telegram | Bot API，手填 | Bot Token |
+| Discord | 机器人，手填 | Bot Token、允许的频道/用户 ID |
+| 小艺 | A2A 协议，手填 | Access Key、Secret Key、Agent ID |
+| MQTT | Broker，手填 | 主机、端口、用户名/密码、订阅/发布主题 |
+| Web 控制台 | 默认启用 | 无 |
 
 ![图 5.3 — 通道配置](assets/use-04-channels.png)
 
-### 5.5 定时任务（Cron）
+### 5.5 自动化（定时任务）
 
-- 进入 **定时任务** 页面，可视化创建任务。
+- 进入 **自动化**（`/tasks`）页面，可视化创建任务。
 - 支持自然语言或 Cron 表达式，让专家按时推送或执行任务。
 
 ![图 5.4 — 定时任务管理](assets/use-05-cron.png)
@@ -234,30 +238,36 @@ octop provider --help     # 供应商增删改查
    octop acp --agent main
    ```
 
-2. **出站** —— 在对话中把编码任务委派给外部 Agent（OpenCode、CodeBuddy、Claude Code、Codex）：
-   - 控制台 → **ACP**：配置 Runner。
+2. **出站** —— 在对话中把编码任务委派给外部 Agent（内置 7 个 Runner：OpenCode、CodeBuddy、Claude Code、Codex、Kimi Code、Cursor CLI、pi）：
+   - 控制台 → **ACP 协作**（`/acp`）：配置 Runner。
    - 为专家启用 `acp_runner`，然后在对话中委派。
 
 完整配置见 [docs/acp.md](acp.md)。
 
 ### 5.7 设置
 
-- **模型** — 供应商、模型、生成模型。
-- **备份** — 自动备份计划与保留份数。
-- **安全** — 工具审批、Shell 命令护栏（`~/.octop/security/tool_guard/`）。
-- **系统** — 监听地址、端口、日志级别、时区。
-- **TLS** — 配置 HTTPS（自签或自有证书）。
+侧边栏分三组，界面里没有单独的「系统」页：
 
-配置也可以直接编辑 `~/.octop/config.json`，或用环境变量覆盖（如 `OCTOP_PORT`、`OCTOP_BIND_HOST`）。详见 [docs/configuration.md](configuration.md)。
+- **设置** 组：
+  - **个性化**（`/personalization`）— 子页含技能、工具、插件、子智能体、人格（MBTI）、记忆。
+  - **通道**、**连接器**、**技能包**、**知识库**、**云端协同**（Bridge）。
+- **控制** 组：**工作台**、**远程桌面**、**ACP 协作**。
+- **管理** 组：
+  - **模型配置**（`/admin/models`）— 供应商、模型、生成模型。
+  - **存储管理**（`/admin/backend`）— 工作区后端（本地 / 对象存储）。
+  - **插件管理**（`/admin/plugins`）、**安全防护**（`/admin/security`）— 工具审批、Shell 命令护栏（`~/.octop/security/tool_guard/`）、PII 与凭据策略。
+  - **应用设置**（`/admin/advanced`）— 环境变量、可观测、**备份与恢复**、HTTPS、应用更新五个标签页。
+
+监听地址与端口没有面板开关：它们来自 `octop run --host/--port`、`OCTOP_BIND_HOST`/`OCTOP_PORT` 或 `config.json`；时区是 `config.json` 的 `default_timezone`。详见 [docs/configuration.md](configuration.md)。
 
 ![图 5.5 — 设置页面](assets/use-06-settings.png)
 
-### 5.8 远程桌面与浏览器 AI
+### 5.8 工作台与远程桌面
 
-在 **控制台 → 控制（Control）** 页面中可使用：
+**控制** 组下是两个独立入口，不是一个页面里的开关：
 
-- **远程桌面**：实时查看屏幕并控制键鼠，支持 Linux / Windows / macOS。
-- **浏览器 AI+**：基于 Chromium 的会话，支持网页自动化、截图与远程浏览。
+- **工作台**（`/workbench`）—— 三个标签页：**终端**（`/workbench/terminal`）、**浏览器**（`/workbench/browser`）、**云端**（`/workbench/cloud`）。浏览器标签页是基于 Chromium 的会话，支持网页自动化、截图与远程浏览。
+- **远程桌面**（`/remote-desktop`）—— 浏览器里看这台机器的屏幕并控制键鼠，另有手机端入口（`/remote-desktop/phone`）。
 
 ![图 5.6 — 远程桌面](assets/use-07-remote-desktop.png)
 
@@ -265,8 +275,8 @@ octop provider --help     # 供应商增删改查
 
 **找东西：两个搜索入口**
 
-- 左侧会话栏顶部的搜索框（占位文字「搜索专家或会话」）只过滤会话列表，按专家名和会话名匹配，输入即筛。
-- `Ctrl/Cmd + K` 打开命令面板，同一个输入框同时搜会话、模型和本机动作（新建会话、打开设置、备份与恢复）。会话多的时候先用它跳转，比翻列表快。
+- `Ctrl/Cmd + K`（或 `Ctrl/Cmd + Shift + M`）打开命令面板，一个输入框同时搜**会话**、**模型**和**本机动作**（新建会话、导出当前会话、打开本机设置、专家页、连接器、记忆库、备份与恢复、快捷键说明）。会话多的时候先用它跳转，比翻列表快。
+- 在会话里按 `Ctrl/Cmd + F` 搜**当前会话的消息**（要在这一步的弹层里输入，输入框不在侧边栏）。
 
 **导出一次会话**
 
@@ -282,7 +292,7 @@ octop backup restore D:\backup\happyclaw-full.tar.gz --yes               # 停�
 octop backup auto status                                                 # 看自动备份是否开启
 ```
 
-图形界面在 **设置 → 备份**：可以创建备份、上传归档导入、从列表恢复，也能看到自动备份计划和保留份数。恢复会替换数据库，操作前先 `Ctrl+C` 停掉 `octop run`；细节与失败回退见 [单机迁移与恢复](migration-and-restore.md)。
+图形界面在 **管理 → 应用设置 → 备份与恢复**：可以创建备份、上传归档导入、从列表恢复，也能看到自动备份计划和保留份数。恢复会替换数据库，操作前先 `Ctrl+C` 停掉 `octop run`；细节与失败回退见 [单机迁移与恢复](migration-and-restore.md)。
 
 **快捷键（mod = macOS 的 ⌘，其他平台 Ctrl）**
 
@@ -290,10 +300,13 @@ octop backup auto status                                                 # 看�
 |--------|------|
 | `mod + K` | 命令面板（搜索会话 / 模型 / 动作） |
 | `mod + Shift + O` | 新建会话 |
-| `mod + Shift + M` | 打开命令面板切模型 |
+| `mod + Shift + M` | 命令面板（与 `mod + K` 同一入口） |
+| `mod + F` | 搜索当前会话的消息（会话为空时不接管） |
+| `mod + /` | 快捷键说明弹层 |
 | `mod + ,` | 打开本机设置 |
 | `mod + B` | 收起 / 展开最左侧导航栏 |
 | `mod + Shift + B` | 收起 / 展开会话历史栏 |
+| `Esc` | 关闭当前弹层 / 退出消息搜索 |
 
 这些键在聊天输入框里同样有效；只有富文本编辑器会自己接管 `mod + B`（加粗），此时侧栏不响应。
 
@@ -314,9 +327,14 @@ octop backup auto status                                                 # 看�
 ├── config.json              # 进程配置（地址、端口、TLS、database …）
 ├── env                      # 可选环境变量（API Key 等）
 ├── octop.db                 # 默认 SQLite 控制面（专家、通道、定时任务 …）
-├── secrets/                 # 腾讯云授权缓存（cloud/、cloud.key）
+├── cli_state.json           # CLI 固定项（default_user / default_agent）
+├── secrets/                 # 加密凭据（cloud/、cloud.key：工作台的腾讯云登录）
 ├── agents/<agent_id>/       # 各专家工作区（SOUL.md、skills …）
+├── plugins/                 # 已安装插件（含内置插件）
+├── skill-packages/          # 全局技能包（SQLite 后端下的文件）
+├── knowledge/               # 知识库原始文件（SQLite 后端下的文件）
 ├── security/tool_guard/     # Shell 命令允许 / 拒绝规则
+├── ssl/                     # octop run --ssl 自签证书
 ├── logs/                    # 运行日志
 ├── backups/                 # octop backup create 的归档
 ├── venv/                    # 安装脚本创建的 Python 环境
@@ -407,7 +425,7 @@ octop service stop      # 已注册为系统服务时
 - `octop run --host 0.0.0.0 --port 8088`，或设置 `OCTOP_BIND_HOST=0.0.0.0`、`OCTOP_PORT=8088`。
 
 **Q：局域网访问不了插件市场和专家市场？**
-- 这两处默认请求公网 `octop.cloud`。内网自建方式见 [内网自建市场](private-market.md)。
+- HappyClaw 不内置任何远程目录：没设 `OCTOP_PORTAL_ORIGIN` 时这两页不会发出请求，只显示「暂时不可用」。内网自建（或指向你自己的公网目录）见 [内网自建市场](private-market.md)。
 
 **Q：局域网访问不了技能市场？**
 - 技能页默认请求 `https://api.skillhub.cn`。按同一接口自建并设置 `SKILL_MARKET_ORIGIN`，见 [技能市场](skill-market.md)。
@@ -431,7 +449,7 @@ octop service stop      # 已注册为系统服务时
 
 | 编号 | 位置 | 文件名 | 内容说明 |
 |------|------|--------|----------|
-| 图 1.1 | 一、简介 | `overview.png` | HappyClaw 品牌 Banner |
+| 图 1.1 | 一、简介 | `overview.png` | HappyClaw 品牌图（与 `octop-banner.png` 同一张图） |
 | 图 4.1 | 四、配置模型 | `model-01-custom.png` | 自定义供应商弹窗 |
 | 图 5.1 | 5.1 对话 | `use-02-chat.png` | 对话主界面 |
 | 图 5.2 | 5.2 专家 | `use-03-agent.png` | 专家库模板列表 |

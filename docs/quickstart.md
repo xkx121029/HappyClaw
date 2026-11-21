@@ -15,7 +15,7 @@
 
 **不需要**预装 Python、Node 或数据库：安装脚本会在 `%USERPROFILE%\.octop\venv` 创建隔离环境。
 
-> 磁盘建议预留 2 GB 以上；模型与知识库文件另计。
+> 磁盘：`~/.octop` 下要放独立 Python 3.12 环境、依赖、数据库与备份，建议预留数 GB；本地模型与知识库文件另计。内存没有硬性下限，取决于你选的模型。
 
 ---
 
@@ -91,7 +91,7 @@ http://127.0.0.1:8088
 
 ## 4. 配置模型（约 1 分钟）
 
-1. 左侧进入 **设置 → 模型**。
+1. 左侧进入 **管理 → 模型配置**（`/admin/models`）。
 2. 点 **添加供应商**，选择预设（OpenAI、DeepSeek、通义千问、Kimi、Ollama 等）或「自定义」。
 3. 填写 **Base URL** 与 **API Key**；本地 Ollama 不需要 Key。
 4. 勾选要使用的模型，点 **测试连接**。
@@ -126,7 +126,8 @@ started_at     : 2026-11-11T12:00:00+08:00
 db             : True
 users_loaded   : 1
 agents_running : 1
-channels       : {}
+channels       : []
+build          : @{commit=...}
 ```
 
 macOS / Linux：
@@ -190,7 +191,7 @@ octop run
 |------|------|------|
 | `octop` 不是内部或外部命令 | 安装后没有重开终端 | 重开 PowerShell，或检查 `%USERPROFILE%\.octop\bin` 是否在 PATH |
 | 8088 被占用 | 其他程序占用端口 | `octop run --port 8090`，再用新端口访问（端口会写回 `config.json`，之后直接 `octop run` 也是 8090） |
-| 页面能开但对话报错 | 模型未配置或 Key 无效 | 设置 → 模型 → 测试连接 |
+| 页面能开但对话报错 | 模型未配置或 Key 无效 | 管理 → 模型配置 → 测试连接 |
 | 模型测试超时 | 网络不通 / Base URL 错 | 检查代理与 URL 路径（通常以 `/v1` 结尾） |
 | 想从别的设备访问 | 默认只监听本机 | `octop run --host 0.0.0.0 --port 8088`，注意局域网暴露风险 |
 | 安装下载很慢 | 默认源慢 | 先设置 `$env:UV_DEFAULT_INDEX="https://pypi.tuna.tsinghua.edu.cn/simple"` 再执行安装；macOS/Linux 可用 `install.sh --mirror <url>` |

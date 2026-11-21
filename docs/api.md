@@ -44,9 +44,12 @@ injected before the JWT middleware, which is why `GET /api/users` and
 `GET /api/teams` return `200` without an `Authorization` header (verified
 2026-11-12 07:06).
 
-Captcha, OIDC, OAuth, LDAP, passkey, and MFA endpoints are retained for
-compatibility and report disabled; starting any of those flows returns `400`.
-Observed values are in the table below.
+Captcha and the local-owner auth routes still answer. OIDC, OAuth, LDAP,
+passkey and MFA are **retired** with the rest of the multi-account surface:
+`src/octop/api/app.py` mounts a catch-all router for those prefixes **before**
+every real router, so any path under them returns `404` with
+`this endpoint was removed in single-user mode` — status, start, callback and
+config-test paths alike. Do not build against them.
 
 If you serve the dashboard behind a CSP, allow
 `challenges.cloudflare.com`; `js.hcaptcha.com`, `newassets.hcaptcha.com`,
@@ -68,10 +71,7 @@ does not set these headers itself.
 | `POST`   | `/auth/logout` | public | `204` — no session to clear |
 | `POST`   | `/auth/change-password` | public | `400` — single-user mode has no password |
 | `GET`    | `/auth/captcha` | public | `200` — `{provider: "none"}` |
-| `GET`    | `/auth/oidc/status`, `/auth/ldap/status` | public | `200` — `{enabled: false, display_name: ""}` |
-| `GET`    | `/auth/oauth/status` | public | `200` — `{providers: [{kind, display_name, enabled: false}, ...]}` |
-| `GET`    | `/auth/passkey/status` | public | `200` — `{passwordless_login: false}` |
-| `POST`   | `/auth/oidc/start`, `/auth/oauth/start`, `/auth/ldap/config/test` | public | `400` — single-user mode does not support these flows |
+| `*`      | `/auth/oidc/*`, `/auth/oauth/*`, `/auth/ldap/*`, `/auth/passkey/*`, `/auth/mfa/*`, `/auth/invite`, `/users/roles`, `/users/invites` | public | `404` — `this endpoint was removed in single-user mode` (retired-prefix catch-all) |
 | `GET`    | `/users` | public | `200` — a single-element list for the local owner (rendered with `role: "admin"`; `/auth/me` reports `role: "local"`) |
 | `POST`   | `/users` | public | `400` — single-user mode does not support multiple accounts |
 | `GET`    | `/users/{id}` | public | `200` for the local owner |

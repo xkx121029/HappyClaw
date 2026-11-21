@@ -1,11 +1,12 @@
 # Architecture
 
 HappyClaw is a single-user, local AI assistant workspace with multiple agents,
-delivered as a single Python process.
-It glues three reusable libraries — `octop-harness` (LangGraph-based
-chat runtime), `octop-gateway` (IM channel pipeline), and a React
-+ TypeScript dashboard — into one wheel that ships with a CLI, an
-HTTP/WebSocket API, and a web UI.
+delivered as one server process.
+It glues four reusable libraries — `octop-harness` (LangGraph-based chat
+runtime), `octop-gateway` (IM channel pipeline), `octop-memory` (capture,
+recall, ranking, per-agent storage), and `octop-browser` (Chrome CDP sessions)
+— plus a React + TypeScript dashboard, into one wheel that ships with a CLI,
+an HTTP/WebSocket API, and a web UI.
 
 > Looking for the contributor-facing navigation guide (module boundaries,
 > change workflow, hard bans)? See [AGENTS.md](../AGENTS.md) at the repo
@@ -15,23 +16,26 @@ HTTP/WebSocket API, and a web UI.
 ## 1. Layering
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│  Surface          │  Dashboard (React)   CLI (click)   HTTP API │
-├──────────────────────────────────────────────────────────────────┤
-│  API layer        │  FastAPI routers       WS / SSE / JSON        │
-├──────────────────────────────────────────────────────────────────┤
-│  Domain layer     │  AgentManager   Gateway   GlobalProcessor     │
-│                   │  CronManager    LocalOwner  SharedServices    │
-├──────────────────────────────────────────────────────────────────┤
-│  Reusable libs    │  octop-harness   octop-gateway            │
-├──────────────────────────────────────────────────────────────────┤
-│  Storage          │  SQLite or PostgreSQL control plane + file workspaces│
-└──────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│  Surface          │  Dashboard (React)   CLI (click)   HTTP API           │
+├───────────────────────────────────────────────────────────────────────────┤
+│  API layer        │  FastAPI routers       WS / SSE / JSON                │
+├───────────────────────────────────────────────────────────────────────────┤
+│  Domain layer     │  AgentManager   Gateway   GlobalProcessor             │
+│                   │  CronManager  OwnerIdentityService  SharedServices    │
+├───────────────────────────────────────────────────────────────────────────┤
+│  Reusable libs    │  octop-harness  octop-gateway  octop-memory  octop-browser │
+├───────────────────────────────────────────────────────────────────────────┤
+│  Storage          │  SQLite or PostgreSQL control plane + file workspaces │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
-The whole stack is one process. There is no separate worker, no
+The server stack is one process. There is no separate worker, no
 external queue, no required external services beyond whatever LLM
-provider the user configures.
+provider the user configures. The `octop` CLI is a **second** process that
+reads and writes the same control-plane database (and boots a short-lived
+in-process server for runtime commands) — see
+[CLI reference](cli.md#transport-layers).
 
 ## 2. Process model
 
@@ -47,7 +51,7 @@ OctopServer.start()
  ├─ open_database()                  (SQLite WAL or PostgreSQL via PostgresPool)
  ├─ run_migrations()                 (infra/db/migrations/*.sql, versioned)
  ├─ SharedServices (repos + factories)
- ├─ LocalOwner                       (resolve-or-create the single owner row)
+ ├─ OwnerIdentityService             (resolve-or-create the single owner row)
  ├─ ExpertCatalog  / SubagentCatalog (bundled MD libraries)
  ├─ PluginManager.seed_bundled() then load_installed()  (~/.octop/plugins/*; bundled default off)
  ├─ AgentManager (global registry — one per process)
@@ -56,9 +60,8 @@ OctopServer.start()
  │       ├─ GlobalProcessor (slash dispatch + chunk projection)
  │       └─ BackendWorkspace (filesystem or remote storage adapter)
  ├─ Gateway                         (IM channels + WS hub + cron trigger source)
- │    ├─ ChannelManager (one per agent that has a channel row)
- │    └─ WebSocketHub  (dashboard + CLI channel)
- ├─ CronManager (process-wide APScheduler)
+ │    ├─ ChannelManager (octop-gateway; one per agent that has a channel row)
+ │    └─ WebSocketHub  (local: infra/gateway/ws/ws_hub.py; dashboard + CLI channel)
  └─ CronManager (process-wide APScheduler)
 ```
 
@@ -80,7 +83,7 @@ file directly.
 
 ## 3. Conversation surfaces
 
-Three surfaces share the same agent runtime:
+Four surfaces share the same agent runtime:
 
 | Surface | Wire | Session key (default) | Notes |
 |---------|------|-----------------------|-------|
@@ -115,8 +118,10 @@ PostgreSQL extensions (e.g. `vector`) are docker/ops init, not app
 migrations. Agent memory DDL is owned by octop-memory. See
 [ADR 002](./adr/002-database-backends.md).
 
-The wheel ships the built dashboard SPA, so the entire stack is one
-`pip install`.
+The wheel ships the built dashboard SPA under `src/octop/dashboard/`, so the
+entire stack is one `pip install`. In the source tree that directory holds only
+`__init__.py` and `.gitkeep` until `make build-frontend` runs; edit the React
+sources in `dashboard/`, never the built copy.
 
 Per-agent workspace files (Markdown, skills, expert templates) are
 read and written through the agent's `BackendWorkspace`

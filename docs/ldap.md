@@ -1,6 +1,8 @@
 # LDAP 目录登录（单人模式下已停用）
 
-> **状态：单人模式下不可用。** HappyClaw 已改为「本机单人使用」：启动后自动绑定本机使用者，没有登录表单、账号开通与角色映射。`/api/auth/ldap/status` 返回 `{enabled: false}`，`/api/auth/ldap/config/test` 返回 `400` 并给出中文提示。
+> **状态：单人模式下已无 HTTP 入口。** HappyClaw 已改为「本机单人使用」：启动后自动绑定本机使用者，没有登录表单、账号开通与角色映射。
+> `src/octop/api/app.py` 把 `/auth/ldap`（连同 `/auth/oidc`、`/auth/oauth`、`/auth/passkey`、`/auth/mfa`）放进 `_RETIRED_MULTI_USER_PREFIXES`，并在所有真实路由之前挂了兜底路由，所以 `/api/auth/ldap/status`、`/api/auth/ldap/config/test` 等路径一律返回 `404 this endpoint was removed in single-user mode`，**不再是** `{enabled: false}` 或 `400`。
+> `src/octop/infra/auth/ldap/` 的服务层代码仍在（`server.ldap_service` 会被构造），但除已被停用的 MFA 再认证外没有任何调用方，`/api/auth/login` 也不再回退目录认证。
 >
 > 本文仅作为历史实现与兼容配置的参考保留，方便读取旧备份或迁移旧部署；新安装无需、也无法启用 LDAP 登录。
 
@@ -284,7 +286,7 @@ curl -sS -X POST "$API/setup/finish" -H 'Content-Type: application/json' \
 
 ### 3.4 配置 LDAP
 
-**方式 A：浏览器** — 用 `admin` 登录后进入 **管理 → 用户 → LDAP** 页，按 3.5 的表格填写，点「保存」再点「测试连接」。
+**方式 A：浏览器** — 早期版本在「用户 → LDAP」页填写；当前版本侧边栏已没有用户页，也没有 LDAP 配置入口（见文首状态说明），只能用下面的方式 B 直接写 `sso_providers` 行。旧备份里保留的配置行仍可读出。
 
 **方式 B：API**
 
@@ -494,7 +496,7 @@ uv run pytest tests/live/test_ldap_live.py -m live -v
 
 ### 7.4 浏览器验证要点
 
-1. 管理 → 用户 → **LDAP** 页应回填已保存配置，「测试连接」显示 `已连接 LDAP 目录服务`。
+1. 直接用 SQL 读 `sso_providers` 里 `kind='ldap'` 的行，确认配置回写正确（旧版本的 LDAP 页面已随多账号能力一起下线）。
 2. 退出登录后，登录页密码框下出现「使用 Corp Directory 账号登录」提示（名称取自 `display_name`）。
 3. 用 `bob/bobpw` 登录后进入 `/chat`，左侧导航**无**「管理」栏目（角色为 `user`）。
 
@@ -544,8 +546,8 @@ cd dashboard && npx tsc -b
 | `src/octop/infra/auth/ldap/config.py` | 配置模型、校验、`extra` 序列化与组名解析 |
 | `src/octop/infra/auth/ldap/client.py` | `ldap3` 客户端：服务 bind、检索、用户 bind 验证 |
 | `src/octop/infra/auth/ldap/service.py` | 配置读写、开通账号、角色映射 |
-| `src/octop/api/routers/auth_ldap.py` | 4 个 HTTP 端点 |
-| `src/octop/api/routers/auth.py` | 登录时回退目录（`_authenticate_ldap`） |
+| `src/octop/api/app.py`（`_RETIRED_MULTI_USER_PREFIXES`） | 现在的唯一 HTTP 行为：整段前缀返回 `404` |
+| `src/octop/infra/server.py`（`ldap_service`） | 惰性构造服务的唯一入口，当前没有业务调用方 |
 | `dashboard/src/pages/Admin/Users/LdapPanel.tsx` | 管理端配置表单 |
 | `tests/support/ldap_fake.py` | 测试用假目录（替换 `ldap3.Connection`） |
 | `tests/live/test_ldap_live.py` | 对真实目录的端到端测试 |
