@@ -1,0 +1,234 @@
+import { request } from "./http";
+import { withFromWorkspace } from "./fromWorkspace";
+
+export const WORKSPACE_MENTION_LIMIT = 20;
+
+// Same names as ``MENTION_SKIP_DIRS`` in ``src/octop/infra/backend/mention_index.py``.
+// The index already omits them; this filter still applies to the truncated-index glob.
+const SKIP_SEGMENTS = new Set([
+  ".octop",
+  ".octop-auth",
+  "_builtin_skills",
+  "node_modules",
+  ".git",
+  ".venv",
+  "__pycache__",
+  "inbound",
+  "outbound",
+]);
+
+export type WorkspaceMentionEntry = {
+  path: string;
+  is_dir?: boolean;
+};
+
+export type WorkspaceMentionFile = {
+  path: string;
+  label: string;
+};
+
+export type WorkspaceMentionHint =
+  | "searching"
+  | "need_agent"
+  | "failed"
+  | "typeToSearch"
+  | "typeMore"
+  | "filesEmpty"
+  | "filesTruncated";
+
+const WORKSPACE_MENTION_MIN_CHARS = 2;
+
+/** Workspace-relative POSIX path: no leading slash, no `..`. */
+export function normalizeWorkspaceRelPath(path: string): string {
+  return path.replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, "");
+}
+
+export function workspaceFileShortName(path: string): string {
+  const rel = normalizeWorkspaceRelPath(path);
+  return rel.split("/").pop() || rel;
+}
+
+export function isSkippedWorkspacePath(path: string): boolean {
+  const rel = normalizeWorkspaceRelPath(path);
+  if (!rel || rel.split("/").includes("..")) return true;
+  return rel.split("/").some((seg) => SKIP_SEGMENTS.has(seg));
+}
+
+/** True when the cached file index should be filtered. Empty `@` and one character stay hints. */
+export function shouldSearchWorkspaceMentions(query: string): boolean {
+  return query.trim().length >= WORKSPACE_MENTION_MIN_CHARS;
+}
+
+/** Path-shaped queries (`docs/a`, `api.md`) should surface files first. */
+export function isPathLikeMentionQuery(query: string): boolean {
+  const q = query.trim();
+  return q.includes("/") || q.includes(".");
+}
+
+/** Replace the open ``@query`` with ``@workspace/rel/path`` (Claude Code style). */
+export function replaceFileMentionQuery(
+  text: string,
+  atIndex: number,
+  query: string,
+  path: string,
+): { text: string; cursor: number } {
+  const rel = normalizeWorkspaceRelPath(path);
+  const token = rel ? `@${rel}` : "";
+  const before = text.slice(0, atIndex);
+  const after = text.slice(atIndex + 1 + query.length);
+  if (!token) {
+    const next = `${before}${after}`.replace(/^\s+/, "");
+    return { text: next, cursor: before.length };
+  }
+  const next = `${before}${token} ${after.replace(/^\s*/, "")}`;
+  return { text: next, cursor: before.length + token.length + 1 };
+}
+
+export function workspaceMentionHintState(input: {
+  query: string;
+  loading: boolean;
+  error: "need_agent" | "failed" | null;
+  fileCount: number;
+  truncated?: boolean;
+}): WorkspaceMentionHint | null {
+  if (input.loading) return "searching";
+  if (input.error) return input.error;
+  const q = input.query.trim();
+  if (!q) return "typeToSearch";
+  if (!shouldSearchWorkspaceMentions(q)) return "typeMore";
+  if (input.truncated) return "filesTruncated";
+  if (input.fileCount === 0) return "filesEmpty";
+  return null;
+}
+
+/** Glob used only when the cached index was truncated and the query is path-shaped. */
+export function workspaceGlobPattern(query: string): string {
+  const trimmed = query.trim().replace(/\\/g, "/");
+  const escaped = trimmed.replace(/[*?[\]{}]/g, "\\$&");
+  if (escaped.includes("/")) return `**/${escaped}*`;
+  return `**/*${escaped}*`;
+}
+
+export function rankWorkspaceMentionFiles(
+  entries: WorkspaceMentionEntry[],
+  query: string,
+): WorkspaceMentionFile[] {
+  const q = query.trim().toLowerCase();
+  const hits: WorkspaceMentionFile[] = [];
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    if (entry.is_dir) continue;
+    const path = normalizeWorkspaceRelPath(String(entry.path || ""));
+    if (!path || isSkippedWorkspacePath(path) || seen.has(path)) continue;
+    const label = workspaceFileShortName(path);
+    if (!label) continue;
+    const pathLower = path.toLowerCase();
+    const labelLower = label.toLowerCase();
+    if (q && !pathLower.includes(q) && !labelLower.includes(q)) continue;
+    seen.add(path);
+    hits.push({ path, label });
+  }
+  hits.sort((a, b) => {
+    const score = (item: WorkspaceMentionFile) => {
+      const name = item.label.toLowerCase();
+      const stem = name.includes(".")
+        ? name.slice(0, name.lastIndexOf("."))
+        : name;
+      if (name === q || stem === q) return 0;
+      if (name.startsWith(q) || stem.startsWith(q)) return 1;
+      if (name.includes(q)) return 2;
+      if (item.path.toLowerCase().includes(q)) return 3;
+      return 4;
+    };
+    const diff = score(a) - score(b);
+    if (diff !== 0) return diff;
+    const depth = a.path.split("/").length - b.path.split("/").length;
+    if (depth !== 0) return depth;
+    return a.path.localeCompare(b.path);
+  });
+  return hits.slice(0, WORKSPACE_MENTION_LIMIT);
+}
+
+const MENTION_INDEX_TTL_MS = 30_000;
+
+export type WorkspaceMentionIndex = {
+  paths: WorkspaceMentionEntry[];
+  truncated: boolean;
+};
+
+type MentionIndexCacheEntry = WorkspaceMentionIndex & {
+  at: number;
+};
+
+const mentionIndexCache = new Map<string, MentionIndexCacheEntry>();
+
+export function clearWorkspaceMentionIndexCache(): void {
+  mentionIndexCache.clear();
+}
+
+function mentionScopeKey(agentId: string, threadId?: string | null): string {
+  return threadId ? `${agentId}:${threadId}` : agentId;
+}
+
+export function cachedWorkspaceMentionIndex(
+  agentId: string,
+  threadId?: string | null,
+): WorkspaceMentionIndex | null {
+  const scope = mentionScopeKey(agentId, threadId);
+  const hit = mentionIndexCache.get(scope);
+  if (!hit) return null;
+  if (Date.now() - hit.at >= MENTION_INDEX_TTL_MS) {
+    mentionIndexCache.delete(scope);
+    return null;
+  }
+  return { paths: hit.paths, truncated: hit.truncated };
+}
+
+/** One pruned listing per agent. Callers filter it locally. */
+export async function loadWorkspaceMentionIndex(
+  agentId: string,
+  signal?: AbortSignal,
+  threadId?: string | null,
+): Promise<WorkspaceMentionIndex> {
+  const cached = cachedWorkspaceMentionIndex(agentId, threadId);
+  if (cached) return cached;
+  const scope = threadId ? `&thread_id=${encodeURIComponent(threadId)}` : "";
+  const body = await request<{ paths?: string[]; truncated?: boolean }>(
+    `/agents/${encodeURIComponent(agentId)}/workspace/mention-index?${scope}`,
+    signal ? { signal } : {},
+  );
+  const index: WorkspaceMentionIndex = {
+    paths: (body?.paths ?? [])
+      .map((path) => ({ path: String(path || "") }))
+      .filter((entry) => entry.path),
+    truncated: Boolean(body?.truncated),
+  };
+  mentionIndexCache.set(mentionScopeKey(agentId, threadId), {
+    ...index,
+    at: Date.now(),
+  });
+  return index;
+}
+
+/** One bounded glob for a path-shaped query that the capped index may have missed. */
+export async function searchWorkspaceMentionFiles(
+  agentId: string,
+  query: string,
+  signal?: AbortSignal,
+  threadId?: string | null,
+): Promise<WorkspaceMentionEntry[]> {
+  if (!shouldSearchWorkspaceMentions(query) || !isPathLikeMentionQuery(query)) {
+    return [];
+  }
+  const pattern = workspaceGlobPattern(query);
+  const scope = threadId ? `&thread_id=${encodeURIComponent(threadId)}` : "";
+  const entries = await request<WorkspaceMentionEntry[]>(
+    withFromWorkspace(
+      `/agents/${encodeURIComponent(
+        agentId,
+      )}/workspace/glob?pattern=${encodeURIComponent(pattern)}&path=/${scope}`,
+    ),
+    signal ? { signal } : {},
+  );
+  return entries ?? [];
+}
