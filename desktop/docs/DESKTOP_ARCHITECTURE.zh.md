@@ -359,10 +359,12 @@ Preload 仅暴露最小类型化桥梁 `window.octopDesktop`：
 
 ### 6.1 更新检测
 
-主进程用固定地址检测更新，渲染进程不能改这个地址，也不能提交另一个安装包 URL。
+主进程按固定配置检测更新，渲染进程不能改这个地址，也不能提交另一个安装包 URL。
 
-- 请求：`GET https://octop.cloud/api/downloads`
+- 默认请求：`GET https://api.github.com/repos/xkx121029/HappyClaw/releases?per_page=30`，即本仓库自己的 GitHub Releases。桌面安装包由 `octop-desktop.yml` upsert 到同一个 Release（`Octop-desktop-<plat>-<version>.<ext>`），壳不再依赖任何上游站点。
+- 覆盖：`OCTOP_UPDATE_ENDPOINT`。写成 GitHub Releases API 地址（`https://api.github.com/repos/<owner>/<repo>/releases`）时按下面的 release 结构读；写成其他 https 地址时，必须返回 `data.client` 信封（见下文「另一种目录格式」）。
 - 时机：启动后，以及用户在设置里点击「检查更新」时。请求不经过 Python 后端。
+- 地址非法（非 https、无法解析）时回退到默认地址，不会变成「不检测」。
 - 成功响应使用 `data.client`。`data.pet` 是另一个产品，桌面壳不读。
 
 `data.client` 有两个通道：
@@ -372,7 +374,22 @@ Preload 仅暴露最小类型化桥梁 `window.octopDesktop`：
 | 稳定版 | `data.client.stable` | 正式发布。`tag` 形如 `v1.0.2` |
 | 测试版 | `data.client.beta` | 预发布。`tag` 形如 `v1.0.3b1` |
 
-每个通道包含 `tag`、`releasesUrl` 和 `assets`。安装包只从 `assets` 里取。`releasesUrl` 只用于打开对应的发布说明。每个 asset 有 `name`、`ext` 和 `url`，当前包放在 `https://download.octop.cloud/`。壳只接受该主机上的 `https` URL。
+每个通道包含 `tag`、`releasesUrl` 和 `assets`。安装包只从 `assets` 里取。`releasesUrl` 只用于打开对应的发布说明。每个 asset 有 `name`、`ext` 和 `url`。
+
+**安装包只允许从配置好的 https 前缀下载。** 前缀来自 `OCTOP_UPDATE_DOWNLOAD_ORIGINS`（逗号分隔，如 `https://dl.example.com/`）；不设时按目录地址推断：GitHub 目录 → `https://github.com/<owner>/<repo>/releases/download/`，自建目录 → 目录自身的源站。前缀比较带结尾 `/`，`https://dl.example.com` 不会放行 `https://dl.example.com.evil`。前缀表为空时一切安装包都被拒绝，这是坏配置的安全读法。
+
+从 GitHub 目录读时，安装包按文件名里的平台串匹配，而不是按 assets 顺序：
+
+| `assets` 键 | 文件名里的平台串 | 扩展名 |
+|---|---|---|
+| `mac_arm` | `darwin-arm64` | `.dmg` |
+| `mac_intel` | `darwin-amd64` | `.dmg` |
+| `win_x64` | `windows-amd64` | `.exe` |
+| `win_arm` | `windows-arm64` | `.exe` |
+
+release 的 `prerelease` 进 `beta` 通道，其余进 `stable`；`draft` 跳过；每个通道只保留版本号最高的那一个。
+
+**另一种目录格式**：`OCTOP_UPDATE_ENDPOINT` 指向自建站点时，响应必须是 `{"success": true, "data": {"client": {...}}}`，结构与上面的 `data.client` 相同。
 
 按当前系统选择 asset 键：
 
@@ -546,7 +563,7 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 > 更新链路现状：[§6.3](#63-安装顺序) 的「页面确认 → 下载 → 校验 → Python 干净退出 →
 > 交给安装器」已实现。确认框在 Web 设置页，安装由不带参数的 `installUpdate()` 开始，
 > 渲染进程无法传入包地址。检查失败和安装失败仍是主进程系统框。清单 asset 不带校验和，
-> 所以当前只校验「下载链路绑定 `download.octop.cloud` 的 https」。
+> 所以当前只校验「下载链路绑定配置好的 https 下载前缀」（[§6.1](#61-更新检测)）。
 > 尚未实现：[§3.4](#34-任务感知退出与全进程树清理) 第 1 步的「退出前任务检查确认框」
 > （后端还没有对应的任务查询接口），以及真机安装包端到端验证。
 >
@@ -593,7 +610,7 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
    - 验证安装升级后用户数据库、工作区、密钥和 `config.json` 不被覆盖。
    - 验证换旧安装包时，三个平台的运行时都随安装目录一起换掉。只有安装目录里没有展开树、退回解压到 `OCTOP_HOME` 时，才比较本地 `version` 与随包版本：本地更高则启动失败，错误提示包含检测到的本地版本和当前随包版本，不启动 Python，并保留已解压的 `portable/` 与用户数据。
    - 验证客户端设置作为新增项出现在 Web 设置里，浏览器版不出现这些项；Web 里的应用内升级和 `octop update` 被拒绝，壳、前端和 Python 运行时保持同一发布版本。
-   - 验证更新检测由主进程 `GET https://octop.cloud/api/downloads` 完成。「只跟随稳定版」默认开启，此时忽略更高的 `data.client.beta`；关闭后才在稳定版和测试版中选择更高且带有当前平台安装包的版本。已安装测试版高于当前稳定版时不降级，「最新版本」仍显示稳定通道的 tag。
+   - 验证更新检测由主进程 `GET https://api.github.com/repos/xkx121029/HappyClaw/releases` 完成。「只跟随稳定版」默认开启，此时忽略更高的 `data.client.beta`；关闭后才在稳定版和测试版中选择更高且带有当前平台安装包的版本。已安装测试版高于当前稳定版时不降级，「最新版本」仍显示稳定通道的 tag。
    - 验证已设置的 `OCTOP_HOME` 被用作数据根目录；未设置时才使用 `~/.octop`。macOS / Linux 上，登录 Shell 中的值在 GUI 进程没有该变量时生效，进程环境里已有的值保持不变。运行时不放在这个目录里。
    - 验证 Windows 安装向导可以把程序装到另一个盘符，升级仍落在该目录，卸载不删除 `OCTOP_HOME`（默认 `%USERPROFILE%\.octop`）。
    - 验证 Windows 和 POSIX 平台均无遗留进程树。
@@ -626,7 +643,7 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 ### 阶段四：跨平台构建与壳更新
 
 - 完善 Electron 构建配置和 CI 矩阵，使一次发布同时钉住壳、Dashboard 和绿色 Python 包。
-- 更新检测使用 `GET https://octop.cloud/api/downloads`，并提供「只跟随稳定版」。安装包不签名、不公证。
+- 更新检测默认读本仓库的 GitHub Releases，并提供「只跟随稳定版」。目录地址与下载前缀都可配置（见 [§6.1](#61-更新检测)）。安装包不签名、不公证。
 - 客户端设置加在原有 Web 设置里；桌面进程拒绝应用内升级。更新确认、准入锁和干净退出后再交给安装器。
 - Windows 安装向导提供目录页，用户可选安装位置和盘符；升级沿用该目录。
 - 对每个平台执行干净安装、壳升级、卸载与残留进程检查。Windows 额外覆盖非系统盘安装。
@@ -642,6 +659,6 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 5. 就绪信号来自 `/api/health`，不解析日志文本。
 6. 渲染进程不知道后台凭据，不获得 Node.js 或原始 IPC 能力。
 7. 正常退出优先，强制进程树回收仅作为超时兜底。
-8. 桌面更新由壳检测：`GET https://octop.cloud/api/downloads`，用 `data.client.stable` 与 `data.client.beta` 区分稳定版和测试版。用户默认只跟随稳定版，可以关闭该选项以接收测试版。壳、Dashboard 和绿色 Python 运行时同一发布版本。客户端设置加在原有 Web 设置里，不另开壳设置页；桌面进程拒绝 Web 应用内更新。
+8. 桌面更新由壳检测，默认 `GET https://api.github.com/repos/xkx121029/HappyClaw/releases`（可用 `OCTOP_UPDATE_ENDPOINT` 换成自建目录），用 `data.client.stable` 与 `data.client.beta` 区分稳定版和测试版。用户默认只跟随稳定版，可以关闭该选项以接收测试版。壳、Dashboard 和绿色 Python 运行时同一发布版本。客户端设置加在原有 Web 设置里，不另开壳设置页；桌面进程拒绝 Web 应用内更新。
 9. Windows 安装使用带目录页的 NSIS 向导，用户可以选择安装位置和盘符。升级沿用该目录；用户数据仍在 `OCTOP_HOME`（未设置时为 `%USERPROFILE%\.octop`）。
 10. 三个平台的运行时都随安装目录替换。只有退回把 zip 解压到 `OCTOP_HOME` 时，才用随包 `portable-version.json` 与 `<OCTOP_HOME>/portable/version.json` 的 `version` 比较。本地版本更高则停止启动，错误提示写出检测到的本地版本，并保留现有运行时与用户数据。

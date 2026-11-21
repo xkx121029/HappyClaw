@@ -9,18 +9,29 @@ import {
   isValidAssetUrl,
 } from "./update-coordinator";
 
+// The default download prefix (§6.1): the project's own release assets.
+const RELEASE_ORIGIN = "https://github.com/xkx121029/HappyClaw/releases/download";
+
 const stable = {
   tag: "v1.0.2",
   releasesUrl: "https://github.com/x/releases",
   assets: {
-    mac_arm: { name: "Octop.dmg", ext: "dmg", url: "https://download.octop.cloud/Octop-1.0.2-arm64.dmg" },
+    mac_arm: {
+      name: "Octop.dmg",
+      ext: "dmg",
+      url: `${RELEASE_ORIGIN}/v1.0.2/Octop-desktop-darwin-arm64-1.0.2.dmg`,
+    },
   },
 };
 const beta = {
   tag: "v1.0.3b1",
   releasesUrl: "https://github.com/x/releases",
   assets: {
-    mac_arm: { name: "Octop.dmg", ext: "dmg", url: "https://download.octop.cloud/Octop-1.0.3b1-arm64.dmg" },
+    mac_arm: {
+      name: "Octop.dmg",
+      ext: "dmg",
+      url: `${RELEASE_ORIGIN}/v1.0.3b1/Octop-desktop-darwin-arm64-1.0.3b1.dmg`,
+    },
   },
 };
 
@@ -114,8 +125,16 @@ test("failed or incomplete downloads envelope is a check failure", () => {
   );
 });
 
-test("non-download-host urls are rejected", () => {
-  assert.equal(isValidAssetUrl("https://download.octop.cloud/a.dmg"), true);
-  assert.equal(isValidAssetUrl("http://download.octop.cloud/a.dmg"), false);
-  assert.equal(isValidAssetUrl("https://evil.example/a.dmg"), false);
+test("asset urls must sit under a trusted https prefix", () => {
+  const origins = [`${RELEASE_ORIGIN}/`];
+  assert.equal(isValidAssetUrl(`${RELEASE_ORIGIN}/v1.0.2/Octop.dll.dmg`, origins), true);
+  assert.equal(isValidAssetUrl("http://github.com/xkx121029/HappyClaw/releases/download/a.dmg", origins), false);
+  assert.equal(isValidAssetUrl("https://evil.example/a.dmg", origins), false);
+  assert.equal(isValidAssetUrl("https://download.octop.cloud/a.dmg", origins), false);
+  // The upstream host is no longer trusted by default.
+  assert.equal(isValidAssetUrl("https://download.octop.cloud/a.dmg"), false);
+  // A host that only shares the prefix text must not pass.
+  assert.equal(isValidAssetUrl("https://github.com.evil.example/a.dmg"), false);
+  // An empty allow-list trusts nothing.
+  assert.equal(isValidAssetUrl(`${RELEASE_ORIGIN}/a.dmg`, []), false);
 });
