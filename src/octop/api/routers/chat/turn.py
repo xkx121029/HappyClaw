@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from octop_gateway.models import (
+from happyclaw_gateway.models import (
     ChannelSubject,
     ContentPart,
     FileContent,
@@ -261,7 +261,7 @@ async def prepare_dashboard_turn(
     """Validate MCP/skills, resolve thread, return data for gateway enqueue."""
     row = require_agent_row(agent_id, user=user, as_user=None, server=server)
     # Refuse before the gateway dispatches: an agent that never started (no
-    # model configured) would otherwise blow up inside octop_harness with a raw
+    # model configured) would otherwise blow up inside happyclaw_harness with a raw
     # ``KeyError: '<agent_id>'``. This raises AGENT_NO_MODEL / AGENT_NOT_RUNNING
     # (409) so channels can surface actionable copy instead of a model failure.
     server.app_runtime.agent_registry.ensure_dispatchable(agent_id)

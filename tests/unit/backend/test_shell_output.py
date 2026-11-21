@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from octop_harness.backends.local_shell import HarnessLocalShellBackend
+from happyclaw_harness.backends.local_shell import HarnessLocalShellBackend
 
 from octop.infra.backend.shell_output import (
     _ShellSubprocess,
@@ -71,8 +71,8 @@ def test_cp1252_locale_accepts_gbk_text_but_not_every_gbk_byte(monkeypatch) -> N
 
 
 def test_install_is_idempotent_and_leaves_stdlib() -> None:
-    import octop_harness.backends.bwrap_shell as bwrap_shell
-    import octop_harness.backends.local_shell as local_shell
+    import happyclaw_harness.backends.bwrap_shell as bwrap_shell
+    import happyclaw_harness.backends.local_shell as local_shell
 
     install_shell_output_decoding()
     first = local_shell.subprocess
@@ -90,7 +90,7 @@ def test_install_is_idempotent_and_leaves_stdlib() -> None:
 
 
 def test_explicit_encoding_is_left_alone() -> None:
-    import octop_harness.backends.local_shell as local_shell
+    import happyclaw_harness.backends.local_shell as local_shell
 
     install_shell_output_decoding()
     result = local_shell.subprocess.run(
@@ -128,8 +128,8 @@ def test_execute_decodes_utf8_and_gbk(tmp_path: Path) -> None:
 
 
 def test_bwrap_module_run_uses_the_same_decoder() -> None:
-    import octop_harness.backends.bwrap_shell as bwrap_shell
-    import octop_harness.backends.local_shell as local_shell
+    import happyclaw_harness.backends.bwrap_shell as bwrap_shell
+    import happyclaw_harness.backends.local_shell as local_shell
 
     install_shell_output_decoding()
     # Production execute() captures bytes and decodes them; it no longer
@@ -139,7 +139,7 @@ def test_bwrap_module_run_uses_the_same_decoder() -> None:
 
 
 def test_skips_install_when_harness_already_decodes(monkeypatch) -> None:
-    import octop_harness.backends.local_shell as local_shell
+    import happyclaw_harness.backends.local_shell as local_shell
 
     import octop.infra.backend.shell_output as shell_output
 

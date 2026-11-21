@@ -152,13 +152,13 @@ robocopy dist\backend\octop E:\HAPPYclaw\.perf\cold\a\octop /E /MT:16 /NFL /NDL 
 | `octop` | 1 138 | 57.5 MB | `dashboard` 509（assets 296 + monaco 151 + `version.json`）、`infra` 627（专家库/skills/migrations） | 低（业务数据，dashboard 属前端线） |
 | `tzdata` | 605 | 0.5 MB | IANA 时区库，一个时区一个文件 | 中（见 7.4） |
 | `googleapiclient` | 0 | 0 | 原 586 文件 / 97.7 MB，已裁剪（见 7.1） | 已完成 |
-| `octop_harness` | 157 | 2.0 MB | 模板 / 技能 / 子代理清单 | 低 |
+| `happyclaw_harness` | 157 | 2.0 MB | 模板 / 技能 / 子代理清单 | 低 |
 | `playwright` | 110 | 100.3 MB | driver（`node.exe`） | 无（浏览器能力依赖） |
 | 其余（含 dist-info 250 文件、根目录 DLL） | 609 | 116.8 MB | 扩展模块 / 运行库 | 低 |
 
 ### 7.1 `googleapiclient/discovery_cache/documents`（−586 文件 / −97.7 MB，已落地）
 
-`octop` 与 `octop_harness` 源码里**没有** `import googleapiclient`（它只是 `octop_harness` 的 `web-search-all` extra 依赖，被装进 venv 后被 PyInstaller 收进来）。真正会用到它的是 `langchain_community` 的 Gmail / Google Drive / YouTube loader。
+`octop` 与 `happyclaw_harness` 源码里**没有** `import googleapiclient`（它只是 `happyclaw_harness` 的 `web-search-all` extra 依赖，被装进 venv 后被 PyInstaller 收进来）。真正会用到它的是 `langchain_community` 的 Gmail / Google Drive / YouTube loader。
 
 - 实现：`octop.spec` 在 **Analysis 之后**过滤 `a.datas` 里 `googleapiclient/discovery_cache/documents/` 开头的条目（hook 在 Analysis 阶段才把数据塞进来，过滤必须放在其后）。
 - 副作用处理：`googleapiclient.discovery.build()` 默认 `static_discovery=True`，文档缺失会抛 `UnknownApiNameOrVersion`。冻结包的 `discovery.py` 在 PYZ 里不可改写，因此新增 `src/octop/infra/utils/google_discovery.py`：用 `sys.meta_path` finder 在该模块首次 import 时包装 `build()`，静态文档缺失就自动以 `static_discovery=False` 重试（联网获取）；联网也失败时抛中文 `RuntimeError` 提示检查网络/代理。`server.py` preflight 里安装该 finder（零导入成本，不进入 health 关键路径）。
@@ -174,7 +174,7 @@ robocopy dist\backend\octop E:\HAPPYclaw\.perf\cold\a\octop /E /MT:16 /NFL /NDL 
 
 ### 7.3 裁剪 `dist-info`（−约 200 文件 / <1 MB）
 
-36 个 `.dist-info` 共 250 文件，绝大多数只为 `importlib.metadata.version()` 服务。可只保留 `octop` / `octop_harness` / `octop_memory` 等会被运行时查询的元数据。收益小、排查成本高（缺 metadata 的报错很隐晦），优先级低。
+36 个 `.dist-info` 共 250 文件，绝大多数只为 `importlib.metadata.version()` 服务。可只保留 `octop` / `happyclaw_harness` / `happyclaw_memory` 等会被运行时查询的元数据。收益小、排查成本高（缺 metadata 的报错很隐晦），优先级低。
 
 ### 7.4 压缩 `tzdata`（−约 560 文件 / 体积不变）
 

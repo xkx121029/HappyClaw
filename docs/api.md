@@ -265,7 +265,7 @@ an optional display label; when omitted, the server derives one from
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `GET` | `/models/presets` | user | provider templates from `octop-harness` |
+| `GET` | `/models/presets` | user | provider templates from `happyclaw-harness` |
 | `GET` | `/models` | user | resolved models across enabled providers |
 | `GET` | `/models/active` | user | `{provider_name, model}` |
 | `PUT` | `/models/active` | admin | body `{provider_name, model}` |
@@ -530,11 +530,11 @@ for servers that publish no metadata; both must be public HTTPS URLs. Register
 `<public base>/api/connectors/oauth/callback` as the redirect URI of the OAuth app. Changing
 the client drops the stored tokens, so the server asks for authorization again.
 
-## Internal MCP (octop-harness agents)
+## Internal MCP (happyclaw-harness agents)
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `POST`/`GET`/… | `/internal/mcp/*` | public (mTLS / network-isolated) | MCP gateway used by octop-harness agents (not the dashboard) |
+| `POST`/`GET`/… | `/internal/mcp/*` | public (mTLS / network-isolated) | MCP gateway used by happyclaw-harness agents (not the dashboard) |
 
 ## HappyClaw Agent MCP Gateway
 
@@ -613,7 +613,7 @@ endpoint (public, mounted directly in `api/app.py`).
 |--------|------|------|-------|
 | `WS`/`POST`/`GET`/… | `/agents/{aid}/terminal` | owner | AI-assisted remote PTY |
 | `GET` | `/agents/{aid}/terminal/context` | owner | recent terminal context for the AI helper |
-| `WS`/`POST`/`GET`/… | `/browser/...` | user | octop-browser sessions, live stream, record/replay |
+| `WS`/`POST`/`GET`/… | `/browser/...` | user | happyclaw-browser sessions, live stream, record/replay |
 | `POST` | `/browser/shutdown` | user | stop the current user's HappyClaw-managed Chrome |
 | `POST` | `/agents/{aid}/upload` | user | multipart upload → `{workspace}/inbound/` |
 | `POST` | `/agents/{aid}/files/access-urls` | user | refresh inbound media URLs (signed) |

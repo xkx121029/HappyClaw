@@ -84,10 +84,10 @@ octop run
 |------|------|
 | 语言 | Python 3.12+ |
 | Web 框架 | FastAPI + uvicorn |
-| Agent 运行时 | `octop-harness`（以 `[all]` 附加项安装） |
-| 记忆与检索 | `octop-memory` |
-| IM 桥接 | `octop-gateway` |
-| 浏览器宿主 | `octop-browser` + Playwright |
+| Agent 运行时 | `happyclaw-harness`（以 `[all]` 附加项安装） |
+| 记忆与检索 | `happyclaw-memory` |
+| IM 桥接 | `happyclaw-gateway` |
+| 浏览器宿主 | `happyclaw-browser` + Playwright |
 | 控制面数据库 | SQLite（WAL，默认）或 PostgreSQL（可选） |
 | 前端 | React 18 + TypeScript + Vite + Ant Design |
 | 调度 | APScheduler |
@@ -281,7 +281,7 @@ OctopServer                        launch.py → infra/server.py
  ├─ ExpertCatalog                  启动时扫描专家库
  ├─ OwnerIdentityService           本机使用者（启动时解析/创建）
  ├─ AgentManager                   为每个专家持有 HarnessAgent
- ├─ ChannelManager（octop-gateway） IM 连接
+ ├─ ChannelManager（happyclaw-gateway） IM 连接
  └─ CronManager                    APScheduler
 ```
 

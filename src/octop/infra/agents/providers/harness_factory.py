@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from octop_harness.config import ProviderConfig
+from happyclaw_harness.config import ProviderConfig
 
 if TYPE_CHECKING:
-    from octop_harness import HarnessAgentManager
+    from happyclaw_harness import HarnessAgentManager
 
 logger = logging.getLogger(__name__)
 

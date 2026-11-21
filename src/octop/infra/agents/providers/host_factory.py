@@ -11,10 +11,10 @@ import logging
 from collections.abc import Callable
 from typing import cast
 
-from octop_harness.config import HarnessAgentConfig, ProviderConfig
-from octop_harness.llm.access import ModelAccess
-from octop_harness.llm.factory import ChatModelFactory
-from octop_harness.protocols.base import ChatProtocol
+from happyclaw_harness.config import HarnessAgentConfig, ProviderConfig
+from happyclaw_harness.llm.access import ModelAccess
+from happyclaw_harness.llm.factory import ChatModelFactory
+from happyclaw_harness.protocols.base import ChatProtocol
 
 from octop.infra.errors import ErrorCode, OctopError
 

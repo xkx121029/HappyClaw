@@ -6,8 +6,8 @@ import os
 import tempfile
 
 import pytest
-from octop_harness.backends import resolve_backend
-from octop_harness.backends.workspace import BackendWorkspace
+from happyclaw_harness.backends import resolve_backend
+from happyclaw_harness.backends.workspace import BackendWorkspace
 
 from octop.infra.agents.experts.catalog import ExpertCatalog, default_library_root
 

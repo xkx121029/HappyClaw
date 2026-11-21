@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from octop_harness.backends.postgres import PostgresBackend, PostgresConfig
+from happyclaw_harness.backends.postgres import PostgresBackend, PostgresConfig
 
 from octop.config import DatabaseConfig
 

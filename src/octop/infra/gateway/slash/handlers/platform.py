@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from octop_harness.slash import SlashCommand, SlashSink
+from happyclaw_harness.slash import SlashCommand, SlashSink
 
 from octop.i18n.domains.slash import localized_rows, tr
 from octop.infra.agents.security import tool_execution_may_pause

@@ -355,7 +355,7 @@ Commands:
   ollama-list  List models available in the local Ollama daemon.
   ollama-pull  Pull an Ollama model from the local daemon.
   ollama-rm    Delete a model from the local Ollama daemon.
-  presets      List built-in provider templates from octop-harness.
+  presets      List built-in provider templates from happyclaw-harness.
 ```
 
 The `ollama-*` subcommands talk to the Ollama daemon on this machine

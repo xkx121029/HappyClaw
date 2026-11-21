@@ -90,7 +90,7 @@ def _checkpoint_backup_policy_from_env() -> tuple[Literal["first", "always", "of
 def _checkpoint_policy(reclaimable_bytes: int) -> dict[str, Any]:
     """Retention window shown on the storage page.
 
-    Matches idle maintenance in octop-harness: keep the newest 20 checkpoints
+    Matches idle maintenance in happyclaw-harness: keep the newest 20 checkpoints
     unless ``OCTOP_CHECKPOINT_RETENTION`` is turned off.
     """
     keep_last = _optional_positive_int("OCTOP_CHECKPOINT_KEEP_LAST")

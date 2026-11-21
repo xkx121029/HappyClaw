@@ -722,15 +722,15 @@ async def qq_qrcode_poll(
 
 
 def _get_weixin_qr_login() -> Any:
-    """Import WeixinQRLogin lazily from octop-gateway weixin channel."""
+    """Import WeixinQRLogin lazily from happyclaw-gateway weixin channel."""
     try:
-        from octop_gateway.channels.weixin.login_qr import WeixinQRLogin
+        from happyclaw_gateway.channels.weixin.login_qr import WeixinQRLogin
 
         return WeixinQRLogin
     except ImportError:
         raise HTTPException(
             status_code=501,
-            detail="WeChat QR login requires octop-gateway with weixin channel support.",
+            detail="WeChat QR login requires happyclaw-gateway with weixin channel support.",
         ) from None
 
 

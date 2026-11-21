@@ -21,9 +21,9 @@ def test_normalize_download_rejects_harness_browser() -> None:
         normalize_workspace_download_path("/Users/me/.harness-browser/screenshots/x.png")
 
 
-def test_normalize_download_rejects_octop_browser() -> None:
+def test_normalize_download_rejects_happyclaw_browser() -> None:
     with pytest.raises(ValueError):
-        normalize_workspace_download_path("/Users/me/.octop-browser/screenshots/x.png")
+        normalize_workspace_download_path("/Users/me/.happyclaw-browser/screenshots/x.png")
 
 
 def test_normalize_download_rejects_windows_users_path() -> None:

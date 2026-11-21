@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from deepagents.backends.local_shell import LocalShellBackend
 from langchain_core.messages import HumanMessage
-from octop_gateway.models import FileContent, ImageContent, InboundMessage, TextContent
-from octop_harness.backends.workspace import BackendWorkspace
+from happyclaw_gateway.models import FileContent, ImageContent, InboundMessage, TextContent
+from happyclaw_harness.backends.workspace import BackendWorkspace
 from PIL import Image
 
 from octop.api.routers.chat.models import ChatTurnBody
@@ -189,7 +189,7 @@ async def test_file_typed_image_path_still_materializes_via_content_parts() -> N
         parts = content_parts_from_dashboard_turn(turn)
         assert any(isinstance(p, ImageContent) for p in parts)
         backend = AgentBackedMediaBackend(workspace)
-        from octop_gateway.models import InboundMessage
+        from happyclaw_gateway.models import InboundMessage
 
         msg = InboundMessage(
             channel_id=WS_CHANNEL_ID,

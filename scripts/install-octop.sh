@@ -628,7 +628,7 @@ prepare_console() {
 }
 
 # TEMP: mcp 2.x 移除 RequestContext，与 langchain-mcp-adapters 不兼容。
-# octop-harness>=0.9.18 已在依赖中 pin；此处在验证前再钉一次，覆盖仍拉取到
+# happyclaw-harness>=0.9.18 已在依赖中 pin；此处在验证前再钉一次，覆盖仍拉取到
 # 旧版 harness / 镜像滞后的安装路径。待 HappyClaw 发版跟上后可删除。
 _pin_mcp_compat() {
     info "Pinning mcp<2 (langchain-mcp-adapters compatibility; temporary)..."
@@ -651,10 +651,10 @@ _clone_source_workspace() {
     local workdir="$1"
     command -v git &>/dev/null || die "git is required to clone the repos. Install git or use --from-pypi."
     mkdir -p "$workdir"
-    info "Cloning octop-harness / octop-gateway / HappyClaw sources..."
-    git clone --depth 1 "$HARNESS_AGENT_REPO" "$workdir/octop-harness"
-    git clone --depth 1 "$HARNESS_GATEWAY_REPO" "$workdir/octop-gateway"
-    git clone --depth 1 "$HARNESS_BROWSER_REPO" "$workdir/octop-browser"
+    info "Cloning happyclaw-harness / happyclaw-gateway / HappyClaw sources..."
+    git clone --depth 1 "$HARNESS_AGENT_REPO" "$workdir/happyclaw-harness"
+    git clone --depth 1 "$HARNESS_GATEWAY_REPO" "$workdir/happyclaw-gateway"
+    git clone --depth 1 "$HARNESS_BROWSER_REPO" "$workdir/happyclaw-browser"
     git clone --depth 1 "$OCTOP_REPO" "$workdir/orca"
 }
 
@@ -845,12 +845,12 @@ _install_playwright_browsers() {
 # 检测系统是否已安装 Chrome / Chromium。
 # GUI 系统（macOS / Windows / Linux 桌面）通常已自带，无需再下载 Playwright 自带 Chromium。
 _detect_system_chrome() {
-    # 优先复用 octop-browser 的探测器（与运行期 launch 路径一致）
+    # 优先复用 happyclaw-browser 的探测器（与运行期 launch 路径一致）
     local chrome
     chrome="$("$OCTOP_VENV/bin/python" -c '
 import sys
 try:
-    from octop_browser.cdp.launcher import find_chrome
+    from happyclaw_browser.cdp.launcher import find_chrome
 except Exception:
     sys.exit(0)
 p = find_chrome()

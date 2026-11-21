@@ -2,7 +2,7 @@
 
 Dashboard / gateway code uses this module — **not**
 :class:`~octop.infra.gateway.media.ingress.AgentBackedMediaBackend`,
-which is only the octop-gateway ``MediaBackend`` adapter for IM ingress.
+which is only the happyclaw-gateway ``MediaBackend`` adapter for IM ingress.
 
 Path rule for ``BackendWorkspace``
 ----------------------------------
@@ -33,7 +33,7 @@ from octop.infra.gateway.media.constants import OUTBOUND_DIR
 from octop.infra.utils.browser_media import legacy_harness_screenshots_dir
 
 if TYPE_CHECKING:
-    from octop_harness.backends.workspace import BackendWorkspace
+    from happyclaw_harness.backends.workspace import BackendWorkspace
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +58,9 @@ _BLOCKED_WIN_DRIVE_PREFIXES = (
     "c:/program files (x86)/",
 )
 
-# New default is ``~/.octop-browser``; keep ``~/.harness-browser`` as a deny
+# New default is ``~/.happyclaw-browser``; keep ``~/.harness-browser`` as a deny
 # source so leftover profiles cannot be downloaded after migration.
-_DENIED_BROWSER_HOME_SEGMENTS = (".harness-browser", ".octop-browser")
+_DENIED_BROWSER_HOME_SEGMENTS = (".harness-browser", ".happyclaw-browser")
 
 
 def _contains_denied_browser_home(text: str) -> bool:

@@ -118,8 +118,8 @@ async def test_mobile_handoff_admin_bypass() -> None:
 
 
 def _local_workspace(tmp_path):
-    from octop_harness.backends import resolve_backend
-    from octop_harness.backends.workspace import BackendWorkspace
+    from happyclaw_harness.backends import resolve_backend
+    from happyclaw_harness.backends.workspace import BackendWorkspace
 
     from octop.infra.backend.compat import adapt_backend_protocol
 

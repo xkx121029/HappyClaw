@@ -1,7 +1,7 @@
 """Adapter that maps existing Octop plugins onto the unified contract.
 
 Discovery is read-only: it reads ``plugin.yaml`` files and never imports plugin
-entry points. The existing ``octop_harness`` loader remains the only code path
+entry points. The existing ``happyclaw_harness`` loader remains the only code path
 that executes Octop plugins, so behavior of installed plugins is unchanged.
 """
 
@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from octop_harness.plugins import PluginManifest
+from happyclaw_harness.plugins import PluginManifest
 
 from octop.infra.agents.plugins.bundled import default_bundled_plugins_root
 from octop.infra.plugins.runtime._activation import (

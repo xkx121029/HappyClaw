@@ -18,7 +18,7 @@
 
 | 类型 | 模块 | 耗时 | 说明 |
 | --- | --- | --- | --- |
-| cumulative | `octop.infra.server` → `octop_harness` → `deepagents`/`langchain` | ~13.5s | 拖入整棵 LangChain 树 |
+| cumulative | `octop.infra.server` → `happyclaw_harness` → `deepagents`/`langchain` | ~13.5s | 拖入整棵 LangChain 树 |
 | self | `apscheduler.schedulers.base` | 1.19s | 自身初始化重 |
 | self | `mcp.types` | 1.16s | Pydantic 模型构建 |
 | self | `langsmith.schemas` | 650ms | — |
@@ -40,7 +40,7 @@
 | 指标 | 改造前 | 改造后 |
 | --- | --- | --- |
 | `import gateway` + `wecom_creds` 累计 | ~8.8s（另 wecom_creds 33s） | **1.83s** |
-| 启动期加载 langchain_core / octop_harness / cryptography | 全部加载 | **均不加载** |
+| 启动期加载 langchain_core / happyclaw_harness / cryptography | 全部加载 | **均不加载** |
 | 导入模块数 | 2221 | 316 |
 
 验证：`tests/unit/connectors/` + `gateway/test_gateway.py` **314 passed, 1 skipped**；加密加解密往返正常。
@@ -126,7 +126,7 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 | `import octop.infra.cron.delivery` | 6.88s | 1.78s | **-5.10s（-74%）** |
 | `import octop.infra.cron.manager` | 7.62s | 2.12s | **-5.50s（-72%）** |
 
-剩余 1.6s 来自 `gateway.threads` → `db.repos.sessions` → `octop_gateway.models`（aiohttp/pydantic），
+剩余 1.6s 来自 `gateway.threads` → `db.repos.sessions` → `happyclaw_gateway.models`（aiohttp/pydantic），
 属共享基础设施，本轮不动。守卫：`tests/unit/test_import_lightweight.py` 新增
 「cron manager 不拉 agent 栈」与「惰性化后符号仍可解析」两项；`tests/unit/cron` 157 passed。
 

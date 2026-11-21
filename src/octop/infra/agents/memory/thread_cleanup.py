@@ -32,7 +32,7 @@ from octop.infra.errors import ErrorCode, OctopError
 logger = logging.getLogger(__name__)
 
 # ~8MB at the default 4KB page size. Matches
-# octop_memory.pipeline.lifecycle.vacuum.DELETE_INCREMENTAL_VACUUM_PAGES.
+# happyclaw_memory.pipeline.lifecycle.vacuum.DELETE_INCREMENTAL_VACUUM_PAGES.
 _DELETE_VACUUM_PAGES = 2000
 
 # Full VACUUM rewrites the file and needs about one extra copy on disk.
@@ -44,7 +44,7 @@ _compact_disk_warned: set[str] = set()
 RECLAIM_MIN_FREELIST_BYTES = 8 * 1024 * 1024
 
 # Shared memory tables that carry a ``namespace`` column. Kept in sync with
-# octop_memory's postgres ``_TABLES``. ``meta`` is instance-wide and stays.
+# happyclaw_memory's postgres ``_TABLES``. ``meta`` is instance-wide and stays.
 _NAMESPACE_TABLES = (
     "memory_nodes",
     "raw_events",
@@ -60,7 +60,7 @@ _NAMESPACE_TABLES = (
 )
 # Schemas that hold every agent's rows. Never DROP these; only DELETE
 # the namespace. ``harness_memory`` is the pre-rename shared schema.
-_SHARED_MEMORY_SCHEMAS = frozenset({"octop_memory", "harness_memory", "public"})
+_SHARED_MEMORY_SCHEMAS = frozenset({"happyclaw_memory", "harness_memory", "public"})
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
@@ -142,7 +142,7 @@ def delete_agent_memory_and_checkpoints(
     Call this before deleting the ``agents`` row. A failure leaves that
     row in place so the delete can be retried. SQLite with no file yet
     is a no-op. Postgres deletes the namespace from every shared memory
-    schema (``octop_memory`` and the older ``harness_memory``).
+    schema (``happyclaw_memory`` and the older ``harness_memory``).
     """
     for thread_id in sorted(thread_ids):
         delete_thread_from_agent_stores(
@@ -360,7 +360,7 @@ def _memory_location(
 
 
 def _open_memory(ns: str, backend: str, backend_config: dict[str, Any] | None) -> Any:
-    from octop_memory.core import Memory
+    from happyclaw_memory.core import Memory
 
     return Memory(namespace=ns, backend=backend, backend_config=backend_config)
 
@@ -603,7 +603,7 @@ def compact_live_sqlite(memory: Any) -> bool:
     can retry after the expert is idle. Postgres is left to autovacuum:
     ``VACUUM FULL`` would lock checkpoint tables shared by every agent.
     """
-    from octop_memory.storage.backends.sqlite import SqliteMemoryBackend
+    from happyclaw_memory.storage.backends.sqlite import SqliteMemoryBackend
 
     backend = getattr(memory, "_backend", None)
     if not isinstance(backend, SqliteMemoryBackend):
@@ -614,7 +614,7 @@ def compact_live_sqlite(memory: Any) -> bool:
     if not _disk_allows_compact(path):
         return False
     try:
-        from octop_memory.pipeline.lifecycle.vacuum import compact_vacuum
+        from happyclaw_memory.pipeline.lifecycle.vacuum import compact_vacuum
 
         compact_vacuum(memory)
     except Exception:
@@ -649,8 +649,8 @@ def compact_agent_store_file(
 
 
 def _reclaim_sqlite(memory: Any, *, agent_id: str, thread_id: str) -> None:
-    from octop_memory.pipeline.lifecycle.vacuum import nudge_vacuum
-    from octop_memory.storage.backends.sqlite import SqliteMemoryBackend
+    from happyclaw_memory.pipeline.lifecycle.vacuum import nudge_vacuum
+    from happyclaw_memory.storage.backends.sqlite import SqliteMemoryBackend
 
     if not isinstance(getattr(memory, "_backend", None), SqliteMemoryBackend):
         return

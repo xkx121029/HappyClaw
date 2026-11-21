@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from octop_harness.security.models import DEFAULT_HITL_TOOLS, SecurityPolicy
+from happyclaw_harness.security.models import DEFAULT_HITL_TOOLS, SecurityPolicy
 from pydantic import BaseModel, Field
 
 from octop.api.deps import current_user, get_server, require_any_permission, require_permission
@@ -191,7 +191,7 @@ async def put_tool_guard_rules_raw(
     count, errors = store.save_text(body.content)
     if errors:
         raise HTTPException(status_code=400, detail={"errors": errors})
-    registry.reload_octop_harnesss()
+    registry.reload_happyclaw_harness()
     server.services.audit_repo.write(
         actor=ACTOR_ADMIN,
         action="security.tool_guard_rules.update",
@@ -209,7 +209,7 @@ async def post_tool_guard_rules_reset(
     store = _rules_store(server)
     registry = server.app_runtime.agent_registry
     content = store.reset_to_bundled()
-    registry.reload_octop_harnesss()
+    registry.reload_happyclaw_harness()
     server.services.audit_repo.write(
         actor=ACTOR_ADMIN,
         action="security.tool_guard_rules.reset",

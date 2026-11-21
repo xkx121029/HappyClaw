@@ -7,7 +7,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from octop_harness.config import ModelConfig, ProviderConfig
+from happyclaw_harness.config import ModelConfig, ProviderConfig
 
 from octop.infra.agents.providers.model_flags import (
     is_chat_eligible_model,

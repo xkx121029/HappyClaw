@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 from langgraph.checkpoint.base import empty_checkpoint
-from octop_memory import Memory
+from happyclaw_memory import Memory
 
 from octop.infra.agents.memory.sqlite_restore import backup_path, list_backups, restore_sqlite
 

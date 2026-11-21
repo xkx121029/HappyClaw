@@ -12,10 +12,10 @@ from langchain_core.exceptions import ModelAuthenticationError
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import InMemorySaver
-from octop_harness.middleware.memory import MemoryMiddleware
-from octop_harness.middleware.model_retry import ModelRetryMiddleware
-from octop_harness.request import ChatRequest
-from octop_memory import Memory, MemoryService
+from happyclaw_harness.middleware.memory import MemoryMiddleware
+from happyclaw_harness.middleware.model_retry import ModelRetryMiddleware
+from happyclaw_harness.request import ChatRequest
+from happyclaw_memory import Memory, MemoryService
 
 
 class FaultModel(FakeMessagesListChatModel):

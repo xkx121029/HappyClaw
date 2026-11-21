@@ -84,10 +84,10 @@ Open **http://127.0.0.1:8088**. The first boot creates the local owner and the d
 |-------|-----------|
 | Language | Python 3.12+ |
 | Web framework | FastAPI + uvicorn |
-| Agent runtime | `octop-harness` (installed with the `[all]` extra) |
-| Memory & retrieval | `octop-memory` |
-| IM bridge | `octop-gateway` |
-| Browser host | `octop-browser` + Playwright |
+| Agent runtime | `happyclaw-harness` (installed with the `[all]` extra) |
+| Memory & retrieval | `happyclaw-memory` |
+| IM bridge | `happyclaw-gateway` |
+| Browser host | `happyclaw-browser` + Playwright |
 | Control-plane DB | SQLite (WAL, default) or PostgreSQL (optional) |
 | Frontend | React 18 + TypeScript + Vite + Ant Design |
 | Scheduling | APScheduler |
@@ -281,7 +281,7 @@ OctopServer                        launch.py → infra/server.py
  ├─ ExpertCatalog                   scans the expert library at boot
  ├─ OwnerIdentityService            the local owner (resolved/created at boot)
  ├─ AgentManager                    owns one HarnessAgent per expert
- ├─ ChannelManager (octop-gateway)  IM connections
+ ├─ ChannelManager (happyclaw-gateway)  IM connections
  └─ CronManager                     APScheduler
 ```
 

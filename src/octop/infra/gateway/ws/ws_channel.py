@@ -6,9 +6,9 @@ import base64
 import logging
 from typing import Any
 
-from octop_gateway.channel import BaseChannel, MessageProcessor
-from octop_gateway.constraints import ChannelConstraints
-from octop_gateway.models import (
+from happyclaw_gateway.channel import BaseChannel, MessageProcessor
+from happyclaw_gateway.constraints import ChannelConstraints
+from happyclaw_gateway.models import (
     AudioContent,
     ChannelSubject,
     ContentPart,
@@ -18,7 +18,7 @@ from octop_gateway.models import (
     TextContent,
     VideoContent,
 )
-from octop_gateway.utils import close_event_stream
+from happyclaw_gateway.utils import close_event_stream
 
 from octop.i18n.domains.stream import format_stream_error
 from octop.infra.gateway.media.attachment_hints import (

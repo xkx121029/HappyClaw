@@ -15,7 +15,7 @@
 | 1.1 | Python | `requires-python >=3.12`；安装脚本使用 3.12 | ✅ | ☐ |
 | 1.2 | 项目版本 | `pyproject.toml` version 与 README / README_CN 徽章一致 | ✅ | ☐ |
 | 1.3 | CHANGELOG | 包含当前版本条目，且「单人化改造」已记录 | ✅ | ☐ |
-| 1.4 | 运行时依赖 | `octop-harness[all]>=1.0.9`、`octop-gateway>=1.0.3`、`fastapi>=0.110`、`uvicorn[standard]>=0.27` 已发布到 PyPI | ☐ | ☐ |
+| 1.4 | 运行时依赖 | `happyclaw-harness[all]>=1.0.9`、`happyclaw-gateway>=1.0.3`、`fastapi>=0.110`、`uvicorn[standard]>=0.27` 已发布到 PyPI | ☐ | ☐ |
 | 1.5 | 前端构建 | `make build-frontend` 成功，产物写入 `src/octop/dashboard/` | ☐ | ☐ |
 | 1.6 | 锁文件 | `uv.lock` 与 `pyproject.toml` 同步（`uv lock --check`） | ☐ | ☐ |
 | 1.7 | 静态检查 | `make all`（format + lint + typecheck + test）全绿 | ☐ | ☐ |

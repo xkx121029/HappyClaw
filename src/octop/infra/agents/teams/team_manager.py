@@ -22,10 +22,10 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, HumanMessage
-from octop_harness.messages import extract_call_response
-from octop_harness.teams.inbox import InboxMessage
-from octop_harness.teams.processor import ReplyEvent
-from octop_harness.teams.util import (
+from happyclaw_harness.messages import extract_call_response
+from happyclaw_harness.teams.inbox import InboxMessage
+from happyclaw_harness.teams.processor import ReplyEvent
+from happyclaw_harness.teams.util import (
     PeerCall,
     PeerSession,
     build_one_shot_request,
@@ -2137,7 +2137,7 @@ def _clean_peer_names(raw: Sequence[str] | None) -> tuple[str, ...] | None:
 
 
 def _request_peer_allowlist() -> tuple[str, ...] | None:
-    from octop_harness.teams.team_manager import _request_team_peers  # noqa: PLC0415
+    from happyclaw_harness.teams.team_manager import _request_team_peers  # noqa: PLC0415
 
     return _clean_peer_names(_request_team_peers())
 

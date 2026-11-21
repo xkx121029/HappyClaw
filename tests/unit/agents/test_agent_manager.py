@@ -78,7 +78,7 @@ async def test_manual_review_serializes_profile_edits_without_changing_session(
     manager: AgentManager, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cancel_review: bool
 ) -> None:
     from deepagents.backends import FilesystemBackend
-    from octop_harness.backends.workspace import BackendWorkspace
+    from happyclaw_harness.backends.workspace import BackendWorkspace
 
     ws = BackendWorkspace(FilesystemBackend(root_dir=str(tmp_path), virtual_mode=True), tmp_path)
     ws.write_text("USER.md", "Original profile", force=True)
@@ -121,7 +121,7 @@ async def test_stopped_agent_manual_review_closes_temporary_runtime(
     manager: AgentManager, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: bool
 ) -> None:
     from deepagents.backends import FilesystemBackend
-    from octop_harness.backends.workspace import BackendWorkspace
+    from happyclaw_harness.backends.workspace import BackendWorkspace
 
     ws = BackendWorkspace(FilesystemBackend(root_dir=str(tmp_path), virtual_mode=True), tmp_path)
     ws.write_text("USER.md", "Current profile", force=True)
@@ -140,8 +140,8 @@ async def test_stopped_agent_manual_review_closes_temporary_runtime(
         runtime.service.reconcile_manual_documents.side_effect = RuntimeError("audit failed")
     factory_type = MagicMock(return_value=factory)
     runtime_type = MagicMock(return_value=runtime)
-    monkeypatch.setattr("octop_harness.llm.factory.ChatModelFactory", factory_type)
-    monkeypatch.setattr("octop_harness.memory.runtime.MemoryRuntime", runtime_type)
+    monkeypatch.setattr("happyclaw_harness.llm.factory.ChatModelFactory", factory_type)
+    monkeypatch.setattr("happyclaw_harness.memory.runtime.MemoryRuntime", runtime_type)
     if failure:
         with pytest.raises(RuntimeError, match="audit failed"):
             await manager.review_manual_memory_documents("a1")
@@ -242,7 +242,7 @@ def test_strip_team_host_runtime_tools_drops_mcp(manager: AgentManager) -> None:
 def test_apply_team_host_config_forces_async_ask_agent(manager: AgentManager) -> None:
     from dataclasses import replace as dc_replace
 
-    from octop_harness.config import HarnessAgentConfig
+    from happyclaw_harness.config import HarnessAgentConfig
 
     manager._teams.member_ids = MagicMock(return_value=["mem-a", "mem-b"])  # type: ignore[method-assign]
     cfg = HarnessAgentConfig(workspace_dir=manager.paths.ensure_agent_workspace("host"))
@@ -259,7 +259,7 @@ def test_apply_team_host_config_forces_async_ask_agent(manager: AgentManager) ->
 
 
 def test_apply_expert_config_forces_sync_ask_agent(manager: AgentManager) -> None:
-    from octop_harness.config import HarnessAgentConfig
+    from happyclaw_harness.config import HarnessAgentConfig
 
     cfg = HarnessAgentConfig(workspace_dir=manager.paths.ensure_agent_workspace("expert"))
     out = manager._apply_team_host_config(cfg, _row(agent_id="expert"))
@@ -769,7 +769,7 @@ def test_memory_extract_settings_handles_legacy_limits_and_stale_model() -> None
 
 
 def test_memory_extract_settings_skips_aux_call_options_on_legacy_harness() -> None:
-    # Older octop-harness releases predate the aux call options; the stored
+    # Older happyclaw-harness releases predate the aux call options; the stored
     # values must be ignored (not rejected) so hot reload keeps working.
     settings = _memory_extract_settings(
         {
@@ -787,9 +787,9 @@ def test_memory_extract_settings_skips_aux_call_options_on_legacy_harness() -> N
 def test_memory_extract_budget_reaches_actual_extractor(tmp_path: Path) -> None:
     from dataclasses import fields
 
-    from octop_harness.config import HarnessAgentConfig
-    from octop_harness.memory.runtime import MemoryRuntime
-    from octop_memory.pipeline.extractor import CandidateExtractor
+    from happyclaw_harness.config import HarnessAgentConfig
+    from happyclaw_harness.memory.runtime import MemoryRuntime
+    from happyclaw_memory.pipeline.extractor import CandidateExtractor
 
     settings = _memory_extract_settings(
         {"memory": {"extract_max_tokens": 1024, "extract_light_timeout_s": 45}},
@@ -955,7 +955,7 @@ def test_build_harness_config_defaults_local_shell_backend(manager: AgentManager
 async def test_boot_reuses_process_log_instead_of_dated_harness_files(
     manager: AgentManager,
 ) -> None:
-    from octop_harness.observability.logging import teardown_logging
+    from happyclaw_harness.observability.logging import teardown_logging
 
     await manager.boot()
     try:
@@ -1632,9 +1632,9 @@ async def test_delete_still_removes_db_row_when_workspace_rmtree_fails(
 
 
 def test_bootstrap_pending_detects_unfinished_onboarding(tmp_path: Path) -> None:
-    from octop_harness.backends import resolve_backend
-    from octop_harness.backends.workspace import BackendWorkspace
-    from octop_harness.middleware.bootstrap import bootstrap_marker_exists
+    from happyclaw_harness.backends import resolve_backend
+    from happyclaw_harness.backends.workspace import BackendWorkspace
+    from happyclaw_harness.middleware.bootstrap import bootstrap_marker_exists
 
     backend = resolve_backend(
         {"type": "filesystem", "root_dir": str(tmp_path), "virtual_mode": False},
@@ -1681,8 +1681,8 @@ def test_build_harness_config_keeps_fs_permissions_for_local_shell_guard(
 
     Octop must not re-mount the guard (or ModelSettings) via cfg.middleware.
     """
-    from octop_harness.middleware.filesystem_guard import FilesystemGuardMiddleware
-    from octop_harness.middleware.model_settings import ModelSettingsMiddleware
+    from happyclaw_harness.middleware.filesystem_guard import FilesystemGuardMiddleware
+    from happyclaw_harness.middleware.model_settings import ModelSettingsMiddleware
 
     cfg = manager._build_harness_config(
         _row(config_json=json.dumps({"backend": {"type": "local_shell", "virtual_mode": True}})),
@@ -1716,8 +1716,8 @@ async def test_model_retry_exhaustion_fails_background_job(
 ) -> None:
     from langchain.agents.middleware import ModelRetryMiddleware
     from langchain_core.messages import AIMessage
-    from octop_harness.teams.inbox import HarnessAgentInboxManager, InboxMessage
-    from octop_harness.teams.processor import default_compose_followup
+    from happyclaw_harness.teams.inbox import HarnessAgentInboxManager, InboxMessage
+    from happyclaw_harness.teams.processor import default_compose_followup
 
     cfg = manager._build_harness_config(_row())
     retries = [m for m in cfg.middleware or [] if isinstance(m, ModelRetryMiddleware)]
@@ -1980,7 +1980,7 @@ def test_build_harness_config_tolerates_bad_config_json(manager: AgentManager) -
 @pytest.mark.asyncio
 async def test_start_agent_real_harness_seeds_agents_md(manager: AgentManager) -> None:
     """Uses real HarnessAgentManager — no LLM call, only workspace init."""
-    from octop_harness import HarnessAgentManager
+    from happyclaw_harness import HarnessAgentManager
 
     _seed_test_provider(manager)
     manager._harness_manager = HarnessAgentManager(
@@ -1996,7 +1996,7 @@ async def test_start_agent_real_harness_seeds_agents_md(manager: AgentManager) -
     row = manager._repos.agent_repo.get("REAL01")
     assert row is not None
 
-    from octop_harness import HarnessAgent
+    from happyclaw_harness import HarnessAgent
 
     agent = await manager._start_agent(row)
     assert isinstance(agent, HarnessAgent)
@@ -2011,7 +2011,7 @@ async def test_start_agent_real_harness_seeds_agents_md(manager: AgentManager) -
 
 @pytest.mark.asyncio
 async def test_stop_and_start_round_trip(manager: AgentManager) -> None:
-    from octop_harness import HarnessAgentManager
+    from happyclaw_harness import HarnessAgentManager
 
     _seed_test_provider(manager)
     manager._harness_manager = HarnessAgentManager(
@@ -2046,8 +2046,8 @@ async def test_stop_and_start_round_trip(manager: AgentManager) -> None:
 
 
 @pytest.mark.asyncio
-async def test_save_security_rebuilds_running_octop_harness(manager: AgentManager) -> None:
-    from octop_harness import HarnessAgentManager
+async def test_save_security_rebuilds_running_happyclaw_harness(manager: AgentManager) -> None:
+    from happyclaw_harness import HarnessAgentManager
 
     _seed_test_provider(manager)
     manager._harness_manager = HarnessAgentManager(
@@ -2076,7 +2076,7 @@ async def test_save_security_rebuilds_running_octop_harness(manager: AgentManage
 
 @pytest.mark.asyncio
 async def test_reload_skips_stopped_agent(manager: AgentManager) -> None:
-    from octop_harness import HarnessAgentManager
+    from happyclaw_harness import HarnessAgentManager
 
     _seed_test_provider(manager)
     manager._harness_manager = HarnessAgentManager(
@@ -2107,7 +2107,7 @@ async def test_reload_skips_stopped_agent(manager: AgentManager) -> None:
 @pytest.mark.asyncio
 async def test_create_seeds_bootstrap_files(manager: AgentManager) -> None:
     """create() must seed harness workspace (BOOTSTRAP.md, AGENTS.md, …) before start."""
-    from octop_harness import HarnessAgentManager
+    from happyclaw_harness import HarnessAgentManager
 
     from octop.infra.agents.manager import AgentCreateSpec
 
@@ -2138,7 +2138,7 @@ async def test_create_seeds_bootstrap_files(manager: AgentManager) -> None:
 @pytest.mark.asyncio
 async def test_start_team_host_does_not_copy_builtin_skills(manager: AgentManager) -> None:
     """Team hosts skip harness init_workspace so skills are never copied."""
-    from octop_harness import HarnessAgent, HarnessAgentManager
+    from happyclaw_harness import HarnessAgent, HarnessAgentManager
 
     _seed_test_provider(manager)
     manager._harness_manager = HarnessAgentManager(
@@ -2170,7 +2170,7 @@ async def test_create_keeps_user_workspace_dir(
     tmp_path: Path,
 ) -> None:
     """Explicit config.workspace_dir must not be replaced by the scoped default."""
-    from octop_harness import HarnessAgentManager
+    from happyclaw_harness import HarnessAgentManager
 
     from octop.infra.agents.manager import AgentCreateSpec
 
@@ -2209,7 +2209,7 @@ async def test_create_persists_rootfs_workspace_under_scoped_root(
     tmp_path: Path,
 ) -> None:
     """Non-host root_dir → config.workspace_dir is rootfs-absolute under that root."""
-    from octop_harness import HarnessAgentManager
+    from happyclaw_harness import HarnessAgentManager
 
     from octop.infra.agents.manager import AgentCreateSpec
 
@@ -2350,7 +2350,7 @@ async def test_templated_agent_keeps_expert_soul_on_reload(
     manager: AgentManager, tmp_path: Path
 ) -> None:
     """Reload must not overwrite expert template SOUL.md with persona defaults."""
-    from octop_harness import HarnessAgentManager
+    from happyclaw_harness import HarnessAgentManager
 
     from octop.infra.agents.experts.catalog import ExpertCatalog
     from octop.infra.agents.manager import AgentCreateSpec
@@ -2786,7 +2786,7 @@ def test_build_mcp_configs_shared_agent_uses_connector_user_override(manager: Ag
 
 def test_mcp_tool_filter_uses_server_prefix(manager: AgentManager) -> None:
     """Harness exposes MCP tools as {mcp_server_name}_{tool}; chat filters by prefix."""
-    from octop_harness.mcp import filter_tools_for_mcp_servers, mcp_tool_names
+    from happyclaw_harness.mcp import filter_tools_for_mcp_servers, mcp_tool_names
 
     mcp_name = "tencent-ima__01INST"
     tools = [{"name": f"{mcp_name}_list_notes"}, {"name": f"{mcp_name}_search_notes"}]
@@ -3160,7 +3160,7 @@ def test_unavailable_error_keeps_not_running_when_model_present() -> None:
 
 
 def test_require_live_agent_converts_harness_keyerror_to_no_model() -> None:
-    """A turn for an unstarted agent must fail before octop_harness sees it."""
+    """A turn for an unstarted agent must fail before happyclaw_harness sees it."""
 
     class _EmptyRegistry:
         def get_agent(self, agent_id: str) -> None:
@@ -3189,8 +3189,8 @@ async def test_restore_respects_runtime_capability_and_expert_scope(
     from contextlib import closing
 
     from langgraph.checkpoint.base import empty_checkpoint
-    from octop_harness import HarnessAgentManager
-    from octop_harness.middleware.memory import MemoryMiddleware
+    from happyclaw_harness import HarnessAgentManager
+    from happyclaw_harness.middleware.memory import MemoryMiddleware
 
     from octop.infra.agents.manager import AgentCreateSpec
     from octop.infra.agents.memory.sqlite_restore import restore_sqlite

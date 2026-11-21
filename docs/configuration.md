@@ -197,7 +197,7 @@ Each variable, when set, takes precedence over the matching key in
 | `OCTOP_ENABLE_DASHBOARD` | bool | `true` | Serve the built React SPA at `/` |
 | `OCTOP_ENABLE_API_DOCS` | bool | `false` | Expose Scalar API docs at `/api/docs` |
 | `OCTOP_MAX_UPLOAD_MB` | int | `100` | Max upload size in MiB for chat attachments, IM inbound, and knowledge documents (1–1024) |
-| `OCTOP_BROWSER_IDLE_TIMEOUT_MINUTES` | int | `30` | Idle minutes before a browser session (`octop-browser`) is reclaimed |
+| `OCTOP_BROWSER_IDLE_TIMEOUT_MINUTES` | int | `30` | Idle minutes before a browser session (`happyclaw-browser`) is reclaimed |
 | `OCTOP_ENABLE_MOBILE` | bool | from `capabilities.mobile.enabled` | Force the Remote Android capability on or off for this process |
 | `OCTOP_DATABASE_URL` | string | empty | Full DSN — overrides the `OCTOP_DATABASE_*` fields below |
 | `OCTOP_DATABASE_DRIVER` | `sqlite` \| `postgresql` | `sqlite` | Storage backend |
@@ -244,9 +244,9 @@ Control-plane `database` and agent memory are separate layers. Defaults:
 - Control plane SQLite → agent memory stays `{workspace}/memory.sqlite`
   (or `{workspace}/.octop/memory.sqlite` for new agents).
 - Control plane PostgreSQL → agent memory **defaults to the same DSN**
-  (octop-memory per-agent PG schema `agent_<id>`). Runtime also needs
+  (happyclaw-memory per-agent PG schema `agent_<id>`). Runtime also needs
   ``langgraph-checkpoint-postgres`` (pulled in via
-  ``octop-memory[langgraph-postgres]``) so LangGraph checkpoints work.
+  ``happyclaw-memory[langgraph-postgres]``) so LangGraph checkpoints work.
   To keep file memory while the control plane is PG, set on the agent:
 
 ```json

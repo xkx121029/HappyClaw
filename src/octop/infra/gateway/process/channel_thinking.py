@@ -1,4 +1,4 @@
-"""Patch octop-gateway inbound cleaning to honour Octop thinking helpers."""
+"""Patch happyclaw-gateway inbound cleaning to honour Octop thinking helpers."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ def install_channel_thinking_clean() -> None:
     global _PATCHED
     if _PATCHED:
         return
-    from octop_gateway.channel import BaseChannel
+    from happyclaw_gateway.channel import BaseChannel
 
     def _clean_output(self: BaseChannel, text: str) -> str:  # noqa: ANN001
         constraints = self.constraints

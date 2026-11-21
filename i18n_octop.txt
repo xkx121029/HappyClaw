@@ -30,7 +30,7 @@ Explain what this skill does and how to us
    channels.label_octopbot => OctopBot
    channels.octopbotGetCredentialsHint => Get your API credentials from OctopBot platform
    channels.intro_octopbot => Connect the OctopBot platform to Tencent Cloud-hosted bots and your agent.
-   channels.rawConfigTooltip => Channel-specific config — see octop-gateway docs
+   channels.rawConfigTooltip => Channel-specific config — see happyclaw-gateway docs
    environments.description => Global variables in ~/.octop/env. Every agent inherits them in shell and Docker. Per-agent values go in that agent's workspace .env (override globals on execute). Search 
    tls.domainPlaceholder => octop.example.com
    advancedSettings.bridge.peerUrlPlaceholder => https://octop.example.com
@@ -45,9 +45,9 @@ Explain what this skill does and how to us
    advancedSettings.webauthn.rpIdPlaceholder => octop.example.com
    advancedSettings.webauthn.originsHint => One origin per line (scheme + host + optional port), e.g. https://octop.example.com
    advancedSettings.webauthn.originsPlaceholder => https://octop.example.com
-   memory.settings.upgradeHint => Update the memory runtime (octop-harness) alongside HappyClaw. Unavailable settings are disabled until the update.
+   memory.settings.upgradeHint => Update the memory runtime (happyclaw-harness) alongside HappyClaw. Unavailable settings are disabled until the update.
    remoteBrowser.playwrightMissing => The playwright package is missing. Install octop[browser] extras first.
-   remoteBrowser.playwrightOptionalDesc => octop-browser (CDP) is ready; browser features work. Install octop[browser] extras only if you need Playwright fallback.
+   remoteBrowser.playwrightOptionalDesc => happyclaw-browser (CDP) is ready; browser features work. Install octop[browser] extras only if you need Playwright fallback.
    remoteDesktop.macPermStep3Detail => Restart HappyClaw (octop run), come back to this page, and click Recheck.
    storage.sandboxPrefixExtra => Default octop_sandbox; names like {prefix}_agent_{id}
    login.forgotPasswordCommand => octop user passwd <username> --password <new-password>
@@ -96,9 +96,9 @@ metadata:
    channels.label_octopbot => OctopBot
    channels.octopbotGetCredentialsHint => 前往 OctopBot 平台获取 API 凭据
    channels.intro_octopbot => 配置 OctopBot 平台频道，对接腾讯云托管机器人与你的专家。
-   channels.rawConfigTooltip => 渠道特定配置 — 详见 octop-gateway 文档
+   channels.rawConfigTooltip => 渠道特定配置 — 详见 happyclaw-gateway 文档
    environments.description => 全局变量保存在 ~/.octop/env，所有智能体的 shell / Docker 会继承。单个智能体的变量写入其工作区 .env，执行时覆盖同名全局变量。搜索类 API Key 请放全局，以便工具完成注册。
-   security.toolGuardResetConfirm => 恢复为 octop-harness 内置默认规则？当前修改将丢失。
+   security.toolGuardResetConfirm => 恢复为 happyclaw-harness 内置默认规则？当前修改将丢失。
    tls.domainPlaceholder => octop.example.com
    advancedSettings.bridge.peerUrlPlaceholder => https://octop.example.com
    advancedSettings.update.manualUpgradeHint => 也可手动运行：octop update --verbose
@@ -112,9 +112,9 @@ metadata:
    advancedSettings.webauthn.rpIdPlaceholder => octop.example.com
    advancedSettings.webauthn.originsHint => 每行一个 Origin（协议 + 主机 + 可选端口），例如 https://octop.example.com
    advancedSettings.webauthn.originsPlaceholder => https://octop.example.com
-   memory.settings.upgradeHint => 请配套更新记忆运行组件（octop-harness）。当前不可用的设置已禁用，更新后会恢复。
+   memory.settings.upgradeHint => 请配套更新记忆运行组件（happyclaw-harness）。当前不可用的设置已禁用，更新后会恢复。
    remoteBrowser.playwrightMissing => playwright 包未安装，请先安装 octop[browser] extras。
-   remoteBrowser.playwrightOptionalDesc => octop-browser (CDP) 已就绪，浏览器功能可用。如需 Playwright 备用模式，可安装 octop[browser] extras。
+   remoteBrowser.playwrightOptionalDesc => happyclaw-browser (CDP) 已就绪，浏览器功能可用。如需 Playwright 备用模式，可安装 octop[browser] extras。
    remoteDesktop.macPermStep3Detail => 重启 HappyClaw（octop run），回到本页点击「重新检测」。
    storage.sandboxPrefixExtra => 默认 octop_sandbox；命名如 {prefix}_agent_{id}
    login.forgotPasswordCommand => octop user passwd <用户名> --password <新密码>

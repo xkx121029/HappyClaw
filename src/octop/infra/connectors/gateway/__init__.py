@@ -4,7 +4,7 @@ The public helpers are loaded lazily (PEP 562) so that importing any submodule
 under ``octop.infra.connectors.gateway`` — e.g. the lightweight credential
 materializer in ``wecom_creds`` — does not drag in the whole LangChain /
 harness / cryptography tree at interpreter startup. This matters for cold boot,
-where ``langchain_core`` + ``octop_harness`` alone cost ~9s of import time.
+where ``langchain_core`` + ``happyclaw_harness`` alone cost ~9s of import time.
 """
 
 from __future__ import annotations

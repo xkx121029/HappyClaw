@@ -1,6 +1,6 @@
 """LangChain ``BaseChatModel`` adapter over the DSH LLM seam.
 
-This is the S8 bridge: it lets ``octop_harness`` keep its own routing,
+This is the S8 bridge: it lets ``happyclaw_harness`` keep its own routing,
 middleware and graph while a single, explicitly listed ``provider/model`` ref
 is served by :class:`~octop.infra.dsh.llm.runtime.LlmRuntime`.
 
@@ -56,7 +56,7 @@ __all__ = [
     "installed_harness_version",
 ]
 
-#: The ``octop_harness`` release this adapter was implemented and verified
+#: The ``happyclaw_harness`` release this adapter was implemented and verified
 #: against. Bump only together with the parity fixtures in
 #: ``tests/unit/infra/dsh/test_llm_parity.py``.
 REQUIRED_HARNESS_VERSION = "1.0.9"
@@ -76,9 +76,9 @@ class DshModelError(RuntimeError):
 
 
 def installed_harness_version() -> str | None:
-    """Return the installed ``octop-harness`` version, or ``None`` when absent."""
+    """Return the installed ``happyclaw-harness`` version, or ``None`` when absent."""
     try:
-        return version("octop-harness")
+        return version("happyclaw-harness")
     except PackageNotFoundError:
         return None
 
@@ -87,10 +87,10 @@ def harness_version_warning() -> str | None:
     """Return a warning when the installed harness is not the verified one."""
     installed = installed_harness_version()
     if installed is None:
-        return "octop-harness is not installed; the DSH LLM adapter cannot be verified"
+        return "happyclaw-harness is not installed; the DSH LLM adapter cannot be verified"
     if installed != REQUIRED_HARNESS_VERSION:
         return (
-            f"octop-harness {installed} differs from the verified "
+            f"happyclaw-harness {installed} differs from the verified "
             f"{REQUIRED_HARNESS_VERSION}; re-run the LLM parity fixtures before enabling"
         )
     return None

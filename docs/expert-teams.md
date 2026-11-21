@@ -79,9 +79,9 @@
 
 ## 运行时
 
-### octop-harness
+### happyclaw-harness
 
-octop-harness 增加 `peer_invoke_mode: "sync" | "async" | "both"`（默认 `both`，保持旧行为）：
+happyclaw-harness 增加 `peer_invoke_mode: "sync" | "async" | "both"`（默认 `both`，保持旧行为）：
 
 - `sync`：只注入同步 `ask_agent`
 - `async`：只注入异步派工（发完即返回）

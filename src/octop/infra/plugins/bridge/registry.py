@@ -10,7 +10,7 @@ Ids follow the unified plugin runtime contract
 tool names are prefixed with the plugin's native id (``dsh__<native>__<tool>``)
 so two DSH plugins cannot collide on a short name like ``read_file``.
 
-Octop's existing registry is ``octop_harness.plugins.PluginRegistry``. The
+Octop's existing registry is ``happyclaw_harness.plugins.PluginRegistry``. The
 bridge maps DSH definitions onto its ``ToolRegistration`` records (same
 ``plugin_id`` / ``name`` / ``fn`` / ``description`` shape) so registration,
 unregistration, and the agent tool-settings listing keep working without
@@ -51,7 +51,7 @@ from octop.infra.plugins.runtime.contract import (
 )
 
 if TYPE_CHECKING:
-    from octop_harness.plugins.registry import ToolRegistration
+    from happyclaw_harness.plugins.registry import ToolRegistration
 
 GLOBAL_SCOPE = "global"
 DEFAULT_PLUGIN_ID = "dsh:tools"
@@ -210,7 +210,7 @@ class DshToolRegistry:
         primitive types). Property descriptions are lost on this path; use
         :meth:`to_structured_tools` when full schema fidelity matters.
         """
-        from octop_harness.plugins.registry import ToolRegistration
+        from happyclaw_harness.plugins.registry import ToolRegistration
 
         active = pipeline or self.build_pipeline(scope=scope)
         registrations: list[ToolRegistration] = []
@@ -237,7 +237,7 @@ class DshToolRegistry:
         plugin_registry: Any | None = None,
     ) -> str:
         """Register this scope's tools as one Octop plugin; returns the plugin id."""
-        from octop_harness.plugins import LoadedPlugin, PluginManifest, PluginRegistry
+        from happyclaw_harness.plugins import LoadedPlugin, PluginManifest, PluginRegistry
 
         registrations = self.to_tool_registrations(scope=scope, pipeline=pipeline)
         loaded = LoadedPlugin(
@@ -262,7 +262,7 @@ class DshToolRegistry:
         plugin_id: str,
         plugin_registry: Any | None = None,
     ) -> bool:
-        from octop_harness.plugins import PluginRegistry
+        from happyclaw_harness.plugins import PluginRegistry
 
         registry = plugin_registry if plugin_registry is not None else PluginRegistry()
         return registry.unregister(plugin_id) is not None

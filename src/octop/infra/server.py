@@ -24,7 +24,7 @@ from octop.infra.utils.paths import PathLayout
 from octop.infra.utils.process_resources import ensure_nofile_limit
 
 # Everything below is imported lazily inside the boot phases. Importing the agent
-# stack (octop_harness → deepagents → langchain, plus the expert catalogs and the
+# stack (happyclaw_harness → deepagents → langchain, plus the expert catalogs and the
 # scheduler) at module scope costs tens of seconds on slow volumes, and it all
 # happens again from scratch during ``start_runtime()`` — which runs *after* the
 # socket is bound. Keep this module import cheap so the listener comes up early.
@@ -221,7 +221,7 @@ class _OctopLogFormatter(logging.Formatter):
         text = super().format(record)
         agent = getattr(record, "agent", None)
         if not agent:
-            from octop_harness.observability.logging import current_log_agent_id
+            from happyclaw_harness.observability.logging import current_log_agent_id
 
             agent = current_log_agent_id()
         if not agent:
@@ -1003,7 +1003,7 @@ class OctopServer:
 
     async def refresh_plugin_channels(self) -> None:
         """Reconcile only changed kinds and report registration failures to callers."""
-        from octop_harness.plugins.registry import PluginRegistry  # noqa: PLC0415
+        from happyclaw_harness.plugins.registry import PluginRegistry  # noqa: PLC0415
 
         from octop.infra.errors import ErrorCode, OctopError
         from octop.infra.gateway.plugin_channels import (
@@ -1037,7 +1037,7 @@ class OctopServer:
         if self.plugin_manager is None:
             return
         try:
-            from octop_harness.plugins.registry import PluginRegistry  # noqa: PLC0415
+            from happyclaw_harness.plugins.registry import PluginRegistry  # noqa: PLC0415
 
             from octop.infra.gateway.plugin_channels import apply_plugin_channels  # noqa: PLC0415
 

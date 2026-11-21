@@ -319,7 +319,7 @@ def test_fnos_native_site_packages_has_storage_errors() -> None:
     sp = FNOS_NATIVE / "app" / "site-packages"
     if not (sp / "octop").is_dir():
         return
-    assert (sp / "octop_harness" / "backends" / "storage_errors.py").is_file()
+    assert (sp / "happyclaw_harness" / "backends" / "storage_errors.py").is_file()
 
 
 def test_fnos_native_start_reports_failure() -> None:

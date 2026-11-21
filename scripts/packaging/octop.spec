@@ -29,7 +29,7 @@ hiddenimports += [
 ]
 
 datas = []
-for package in ("octop", "octop_harness", "octop_browser", "octop_gateway", "octop_memory"):
+for package in ("octop", "happyclaw_harness", "happyclaw_browser", "happyclaw_gateway", "happyclaw_memory"):
     try:
         datas += collect_data_files(package)
     except Exception as exc:  # package missing or ships no data files

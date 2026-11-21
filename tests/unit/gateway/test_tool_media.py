@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 from deepagents.backends.local_shell import LocalShellBackend
-from octop_harness.backends import resolve_backend
-from octop_harness.backends.workspace import BackendWorkspace
+from happyclaw_harness.backends import resolve_backend
+from happyclaw_harness.backends.workspace import BackendWorkspace
 
 from octop.infra.backend.resolver import default_agent_backend_spec
 from octop.infra.gateway.media.backend_files import (
@@ -414,7 +414,7 @@ def test_dashboard_media_url_uses_path_agent_id() -> None:
 async def test_resolve_preview_keeps_host_absolute_screenshot() -> None:
     """Browser screenshots under agent outbound/ must load via absolute path."""
     from deepagents.backends.local_shell import LocalShellBackend
-    from octop_harness.backends.workspace import BackendWorkspace
+    from happyclaw_harness.backends.workspace import BackendWorkspace
 
     from octop.infra.gateway.media.backend_files import resolve_preview_payload
 
@@ -765,7 +765,7 @@ def test_attachment_frame_dedup_key_prefers_path() -> None:
 async def test_block_to_content_part_reads_workspace_relative_image() -> None:
     import base64
 
-    from octop_gateway.models import ImageContent
+    from happyclaw_gateway.models import ImageContent
 
     from octop.infra.gateway.media.tool_media import block_to_content_part
 
@@ -804,7 +804,7 @@ async def test_block_to_content_part_reads_workspace_relative_image() -> None:
 
 @pytest.mark.asyncio
 async def test_block_to_content_part_drops_unsafe_paths_and_keeps_http() -> None:
-    from octop_gateway.models import ImageContent
+    from happyclaw_gateway.models import ImageContent
 
     from octop.infra.gateway.media.tool_media import block_to_content_part
 
@@ -860,7 +860,7 @@ async def test_project_stream_sends_only_this_turn_relative_image() -> None:
     from types import SimpleNamespace
 
     from langchain_core.messages import ToolMessage
-    from octop_gateway.models import ImageContent, MessageEventType
+    from happyclaw_gateway.models import ImageContent, MessageEventType
 
     from octop.infra.gateway.process.stream_project import project_stream
 
@@ -914,7 +914,7 @@ async def test_project_stream_drops_media_when_tool_call_has_no_id() -> None:
     from types import SimpleNamespace
 
     from langchain_core.messages import ToolMessage
-    from octop_gateway.models import ImageContent, MessageEventType
+    from happyclaw_gateway.models import ImageContent, MessageEventType
 
     from octop.infra.gateway.process.stream_project import project_stream
 

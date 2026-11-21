@@ -291,7 +291,7 @@ async def probe_storage_backend_config(
 
 
 def _storage_browse_octop_error(exc: BaseException) -> OctopError:
-    from octop_harness.backends.storage_errors import classify_storage_error
+    from happyclaw_harness.backends.storage_errors import classify_storage_error
 
     from octop.infra.backend.browse import StorageBrowseError
 

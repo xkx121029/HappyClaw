@@ -11,8 +11,8 @@ import os
 import shutil
 from pathlib import Path
 
-from octop_harness.backends.cloud_storage_base import CloudStorageBackend
-from octop_harness.backends.postgres import PostgresBackend
+from happyclaw_harness.backends.cloud_storage_base import CloudStorageBackend
+from happyclaw_harness.backends.postgres import PostgresBackend
 
 
 class SkillPackageBlobMirror:

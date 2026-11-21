@@ -28,7 +28,7 @@ def test_build_chat_model_includes_provider_id_and_model_name() -> None:
         ],
     )
 
-    with patch("octop_harness.llm.factory.build_chat_model") as mock_build:
+    with patch("happyclaw_harness.llm.factory.build_chat_model") as mock_build:
         mock_build.return_value = object()
         _build_chat_model(row, model_id="MiniMax-M2.7")
 
@@ -68,7 +68,7 @@ def test_build_chat_model_allows_probe_api_mode_override() -> None:
         get_models=lambda: [{"id": "gpt-X", "api_mode": "chat_completions"}],
     )
 
-    with patch("octop_harness.llm.factory.build_chat_model") as mock_build:
+    with patch("happyclaw_harness.llm.factory.build_chat_model") as mock_build:
         mock_build.return_value = object()
         _build_chat_model(row, model_id="gpt-X", api_mode="responses")
 
@@ -84,7 +84,7 @@ def test_build_chat_model_allows_probe_api_fallback_override() -> None:
         get_models=lambda: [{"id": "gpt-X", "api_mode": "responses"}],
     )
 
-    with patch("octop_harness.llm.factory.build_chat_model") as mock_build:
+    with patch("happyclaw_harness.llm.factory.build_chat_model") as mock_build:
         mock_build.return_value = object()
         _build_chat_model(
             row,

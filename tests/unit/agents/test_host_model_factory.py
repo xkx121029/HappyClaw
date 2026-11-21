@@ -5,8 +5,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from octop_harness.config import ModelConfig, ProviderConfig
-from octop_harness.llm.factory import ChatModelFactory
+from happyclaw_harness.config import ModelConfig, ProviderConfig
+from happyclaw_harness.llm.factory import ChatModelFactory
 
 from octop.infra.agents.providers.host_factory import HostModelFactory
 from octop.infra.errors import ErrorCode, OctopError

@@ -45,10 +45,10 @@ HappyClaw hosts four libraries. Put the change in the library that owns the beha
 
 | Change | Repository |
 |--------|------------|
-| Agent loop, tools, skills, backends, middleware; turn wiring for memory and `browser_use` | [octop-harness](https://github.com/xkx121029/happyclaw-harness) |
-| IM platform protocol, media upload, group activation | [octop-gateway](https://github.com/xkx121029/happyclaw-gateway) |
-| Memory capture, recall, ranking, schema, storage | [octop-memory](https://github.com/xkx121029/happyclaw-memory) |
-| Chrome CDP, profiles, DOM, `browser_tool` | [octop-browser](https://github.com/xkx121029/happyclaw-browser) |
+| Agent loop, tools, skills, backends, middleware; turn wiring for memory and `browser_use` | [happyclaw-harness](https://github.com/xkx121029/happyclaw-harness) |
+| IM platform protocol, media upload, group activation | [happyclaw-gateway](https://github.com/xkx121029/happyclaw-gateway) |
+| Memory capture, recall, ranking, schema, storage | [happyclaw-memory](https://github.com/xkx121029/happyclaw-memory) |
+| Chrome CDP, profiles, DOM, `browser_tool` | [happyclaw-browser](https://github.com/xkx121029/happyclaw-browser) |
 | Local owner, auth compatibility, threads, cron, experts, dashboard | this repo |
 
 Do not copy that behavior into `src/octop/`. Follow the library's `AGENTS.md`. When the library releases, bump its pin in `pyproject.toml`.
@@ -61,10 +61,10 @@ Do not copy that behavior into `src/octop/`. Follow the library's `AGENTS.md`. W
 | Web framework | FastAPI + uvicorn |
 | Async runtime | asyncio (no threads except `run_in_executor`) |
 | Database | SQLite via sync `sqlite3` (WAL) **or** PostgreSQL via `psycopg` / `psycopg_pool` |
-| Agent runtime | `octop-harness` |
-| IM channels | `octop-gateway` |
-| Memory | `octop-memory` |
-| Browser | `octop-browser` |
+| Agent runtime | `happyclaw-harness` |
+| IM channels | `happyclaw-gateway` |
+| Memory | `happyclaw-memory` |
+| Browser | `happyclaw-browser` |
 | Frontend | React 18 + TypeScript + Vite |
 | Package manager | uv — always `uv run pytest`, never bare `pytest` |
 | API docs UI | Scalar (`scalar-fastapi`) at `/api/docs` |
@@ -157,7 +157,7 @@ Only `launch.py` may import both `infra/server` and `api/app` in the same module
 | `api/openapi_meta.py` | Scalar tags, API intro text | route handlers |
 | `api/errors.py` | Map `OctopError` → HTTP status + JSON | new error semantics (add to `infra/errors.py`) |
 | `api/routers/` | One resource per module; Pydantic request/response models | persistence, harness calls — delegate to `infra/` |
-| `api/routers/browser/` | Browser session/stream HTTP surface | CDP, profiles, and DOM stay in `octop-browser`; this router is glue |
+| `api/routers/browser/` | Browser session/stream HTTP surface | CDP, profiles, and DOM stay in `happyclaw-browser`; this router is glue |
 
 ### `cli/` layout
 
@@ -225,7 +225,7 @@ make build-frontend                     # dashboard/ → src/octop/dashboard/
 
 **Agent scope:** Most agent routes use `/api/agents/{agent_id}/…` in the URL. A few legacy endpoints (e.g. MBTI) still take `X-Octop-Agent-Id`. Always validate ownership: load the agent row → `_assert_agent_owner(row, user)` (or admin bypass).
 
-**Agent workspace I/O:** All reads/writes of agent workspace **content files** go through `HarnessAgent.workspace` (`BackendWorkspace` from `octop-harness`). Do **not** use `agent.backend` directly, `resolve_harness_backend`, or `Path.write_text` / `read_text` on `~/.octop/agents/<id>/` for workspace content. Do **not** branch on backend type or `virtual_mode` in HappyClaw — path rules live in `BackendWorkspace`.
+**Agent workspace I/O:** All reads/writes of agent workspace **content files** go through `HarnessAgent.workspace` (`BackendWorkspace` from `happyclaw-harness`). Do **not** use `agent.backend` directly, `resolve_harness_backend`, or `Path.write_text` / `read_text` on `~/.octop/agents/<id>/` for workspace content. Do **not** branch on backend type or `virtual_mode` in HappyClaw — path rules live in `BackendWorkspace`.
 
 New agents additionally keep system-scoped files under `{workspace}/.octop/` (e.g. sessions/sqlite, skills/agents system trees, auth tokens under `.octop/auth`). `system_files_path` is internal and not user-configurable; the `.octop` directory is created on first harness workspace init. Legacy agents keep auth at `{workspace}/.octop-auth`.
 
@@ -297,7 +297,7 @@ i18n/
 
 **API errors:** `ErrorCode` values map to `errors.<CODE>` in JSON. `OctopError.to_envelope(locale=…)` and the global exception handler localize `message`. Dashboard mirrors codes under `apiErrors.*` in `dashboard/src/locales/{en,zh}.json` — tests require backend and frontend keys to match.
 
-**IM channels:** Tool names and hint lines must be localized in `stream_project.py` — pass localized `tool_name` and pre-formatted `tool_hint_text` on `MessageEvent.tool_start/end` (octop-gateway reads `tool_hint_text` when present). Do not rely on English `ChannelConstraints.tool_hint_template` alone.
+**IM channels:** Tool names and hint lines must be localized in `stream_project.py` — pass localized `tool_name` and pre-formatted `tool_hint_text` on `MessageEvent.tool_start/end` (happyclaw-gateway reads `tool_hint_text` when present). Do not rely on English `ChannelConstraints.tool_hint_template` alone.
 
 **Frontend split**
 
@@ -354,7 +354,7 @@ User-facing datetime display and cron/scheduling defaults MUST use the server ti
 
 Boundary rules are in [§5](#5-module-boundaries). Additionally:
 
-- Do not reimplement `octop-harness`, `octop-gateway`, `octop-memory`, or `octop-browser` under `src/octop/` (see [Runtime libraries](#runtime-libraries)).
+- Do not reimplement `happyclaw-harness`, `happyclaw-gateway`, `happyclaw-memory`, or `happyclaw-browser` under `src/octop/` (see [Runtime libraries](#runtime-libraries)).
 - Do not import legacy top-level modules — use current paths:
   - `octop.agents.*` → `octop.infra.agents.*`
   - `octop.channels.*` → `octop.infra.gateway.*`

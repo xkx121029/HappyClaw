@@ -260,12 +260,12 @@ jobs:
               python3.12 -m zipfile -e "$whl" "$SP"
             done
             cp dist/octop-*.whl "$SP/octop.whl"
-            mkdir -p "$SP/octop_harness/backends"
+            mkdir -p "$SP/happyclaw_harness/backends"
             cp "${{ github.workspace }}/scripts/fnos/vendor/storage_errors.py" \
-              "$SP/octop_harness/backends/storage_errors.py"
+              "$SP/happyclaw_harness/backends/storage_errors.py"
             bash "${{ github.workspace }}/scripts/fnos/slim-site-packages.sh" "$SP"
             PYTHONPATH="$SP" python3.12 \
-              -c "import octop, mcp, langchain_mcp_adapters; from octop.launch import run_foreground_blocking; from octop_harness.backends.storage_errors import classify_storage_error; print('octop', octop.__version__, '| mcp', mcp.__name__, '| lcma', langchain_mcp_adapters.__name__, '| storage_errors', classify_storage_error.__name__)"
+              -c "import octop, mcp, langchain_mcp_adapters; from octop.launch import run_foreground_blocking; from happyclaw_harness.backends.storage_errors import classify_storage_error; print('octop', octop.__version__, '| mcp', mcp.__name__, '| lcma', langchain_mcp_adapters.__name__, '| storage_errors', classify_storage_error.__name__)"
           } 2>&1 | tee -a "$LOG"
 
       - name: Build native FPK
@@ -386,12 +386,12 @@ jobs:
               python3.12 -m zipfile -e "$whl" "$SP"
             done
             cp dist/octop-*.whl "$SP/octop.whl"
-            mkdir -p "$SP/octop_harness/backends"
+            mkdir -p "$SP/happyclaw_harness/backends"
             cp "${{ github.workspace }}/scripts/fnos/vendor/storage_errors.py" \
-              "$SP/octop_harness/backends/storage_errors.py"
+              "$SP/happyclaw_harness/backends/storage_errors.py"
             bash "${{ github.workspace }}/scripts/fnos/slim-site-packages.sh" "$SP"
             PYTHONPATH="$SP" python3.12 \
-              -c "import octop, mcp, langchain_mcp_adapters; from octop.launch import run_foreground_blocking; from octop_harness.backends.storage_errors import classify_storage_error; print('octop', octop.__version__, '| mcp', mcp.__name__, '| lcma', langchain_mcp_adapters.__name__, '| storage_errors', classify_storage_error.__name__)"
+              -c "import octop, mcp, langchain_mcp_adapters; from octop.launch import run_foreground_blocking; from happyclaw_harness.backends.storage_errors import classify_storage_error; print('octop', octop.__version__, '| mcp', mcp.__name__, '| lcma', langchain_mcp_adapters.__name__, '| storage_errors', classify_storage_error.__name__)"
           } 2>&1 | tee -a "$LOG"
 
       - name: Upload aarch64 site-packages

@@ -18,7 +18,7 @@ from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.gateway.media.constants import INBOUND_DIR
 
 if TYPE_CHECKING:
-    from octop_harness.backends.workspace import BackendWorkspace
+    from happyclaw_harness.backends.workspace import BackendWorkspace
 
 MAX_INBOUND_BYTES = upload_mb_to_bytes(DEFAULT_MAX_UPLOAD_MB)
 
@@ -287,7 +287,7 @@ def _cloud_facing_root(workspace: BackendWorkspace) -> str | None:
     Postgres/S3/COS store the workspace at ``/.octop/workspaces/<id>``. The
     on-disk ``workspace_dir`` is not a path ``read_file`` can open.
     """
-    from octop_harness.backends.workspace import (
+    from happyclaw_harness.backends.workspace import (
         is_cloud_storage_backend,
         remote_workspace_virtual_root,
     )

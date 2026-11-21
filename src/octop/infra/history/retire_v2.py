@@ -366,7 +366,7 @@ def _read_checkpoint(
     thread_id: str,
     anchor: Mapping[str, Any],
 ) -> list[Any]:
-    from octop_memory.storage.backends.sqlite_checkpoint import CompactSqliteSaver  # noqa: PLC0415
+    from happyclaw_memory.storage.backends.sqlite_checkpoint import CompactSqliteSaver  # noqa: PLC0415
 
     config = anchor["checkpoint_config"]
     ref = config["configurable"]
@@ -407,7 +407,7 @@ def _read_checkpoint(
             options["dsn"], autocommit=True, row_factory=dict_row, prepare_threshold=0
         ) as conn:
             conn.execute("SET default_transaction_read_only=on")
-            conn.execute("SET search_path TO octop_memory, public")
+            conn.execute("SET search_path TO happyclaw_memory, public")
             messages = _checkpoint_messages(PostgresSaver(conn), config)
             if messages is not None:
                 return messages

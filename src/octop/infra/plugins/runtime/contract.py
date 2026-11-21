@@ -2,7 +2,7 @@
 
 The contract in this module is deliberately stdlib-only: the Octop host, the
 DSH manifest adapters, and the integration API layer all import it, so it must
-not depend on ``octop-harness``, PyYAML, or the DSH TypeScript runtime.
+not depend on ``happyclaw-harness``, PyYAML, or the DSH TypeScript runtime.
 
 Design notes
 ------------

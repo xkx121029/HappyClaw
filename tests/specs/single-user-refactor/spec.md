@@ -149,7 +149,7 @@ class OwnerIdentityService:
 参考资料：`e:\HAPPYclaw\2026-11-11\dsh-解析\outputs\providers-persistence.md`（token 估算 `CHARS_PER_TOKEN=4`，中文长会话压缩触发偏晚）
 
 - 本仓库现状（已确认）：`src/` 内**没有** `CHARS_PER_TOKEN` 之类的字符估算；上下文占用取自 provider/harness 回传的 `usage.input_tokens / prompt_tokens / used_tokens`（见 `infra/agents/threads/context_breakdown.py`）
-- 未确认：压缩阈值与裁剪策略在外部依赖 `octop-harness` 内，需要读该包实现或配置才能判断是否存在「按 4 字符/token 估算」导致的触发偏晚
+- 未确认：压缩阈值与裁剪策略在外部依赖 `happyclaw-harness` 内，需要读该包实现或配置才能判断是否存在「按 4 字符/token 估算」导致的触发偏晚
 - 处理方式：本轮只把结论写进简报，**不改代码**；单人化收口后单独评估是否引入中文加权估算或按 provider 真实 usage 触发
 
 ## 6. 第二轮后端优化（单人化完成即进入）

@@ -17,7 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import yaml
-from octop_harness.plugins import (
+from happyclaw_harness.plugins import (
     LoadedPlugin,
     PluginManifest,
     PluginRegistry,
@@ -1105,7 +1105,7 @@ class PluginManager:
         *,
         agent_plugins: object = None,
     ) -> None:
-        from octop_harness.backends.workspace import BackendWorkspace
+        from happyclaw_harness.backends.workspace import BackendWorkspace
 
         from octop.infra.agents.plugins.plugin_tool_defaults import agent_plugin_enabled
 

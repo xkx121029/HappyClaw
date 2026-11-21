@@ -12,7 +12,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from octop_harness.backends.storage_errors import (
+from happyclaw_harness.backends.storage_errors import (
     ClassifiedStorageError,
     classify_probe_exception,
     classify_storage_error,

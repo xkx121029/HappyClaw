@@ -164,7 +164,7 @@ Runner shape:
 
 ## Prerequisites
 
-- **octop-harness `[acp]` extra** — pulls in `agent-client-protocol` (included in the HappyClaw wheel dependency on octop-harness).
+- **happyclaw-harness `[acp]` extra** — pulls in `agent-client-protocol` (included in the HappyClaw wheel dependency on happyclaw-harness).
 - **Outbound:** install external CLIs (`opencode`, `codebuddy`, …) on the machine running `octop run`.
 - **Inbound:** agent must start successfully (provider + model configured).
 
@@ -190,4 +190,4 @@ Runner shape:
 - Dashboard: `/acp`
 - CLI: `octop acp --help`
 - OpenAPI: `/api/docs`
-- Harness implementation: `octop-harness` → `octop_harness.acp` (server + `acp_runner` tool)
+- Harness implementation: `happyclaw-harness` → `happyclaw_harness.acp` (server + `acp_runner` tool)

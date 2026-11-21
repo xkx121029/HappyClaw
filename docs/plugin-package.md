@@ -104,7 +104,7 @@ requires:
 `kind: tool` 的最小入口：
 
 ```python
-from octop_harness.plugins import PluginContext
+from happyclaw_harness.plugins import PluginContext
 
 
 async def city_weather(city: str) -> str:
