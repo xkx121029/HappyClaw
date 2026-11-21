@@ -17,6 +17,8 @@ import { Route as AppChatRouteImport } from './routes/_app.chat'
 import { Route as AppDesignRouteImport } from './routes/_app.design'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as DirectionsIndexRouteImport } from './routes/directions.index'
+import { Route as DirectionsDirPageRouteImport } from './routes/directions.$dir.$page'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -57,6 +59,16 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const DirectionsIndexRoute = DirectionsIndexRouteImport.update({
+  id: '/directions/',
+  path: '/directions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DirectionsDirPageRoute = DirectionsDirPageRouteImport.update({
+  id: '/directions/$dir/$page',
+  path: '/directions/$dir/$page',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -66,6 +78,8 @@ export interface FileRoutesByFullPath {
   '/design': typeof AppDesignRoute
   '/home': typeof AppHomeRoute
   '/settings': typeof AppSettingsRoute
+  '/directions/': typeof DirectionsIndexRoute
+  '/directions/$dir/$page': typeof DirectionsDirPageRoute
 }
 export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
@@ -75,6 +89,8 @@ export interface FileRoutesByTo {
   '/home': typeof AppHomeRoute
   '/settings': typeof AppSettingsRoute
   '/': typeof AppIndexRoute
+  '/directions': typeof DirectionsIndexRoute
+  '/directions/$dir/$page': typeof DirectionsDirPageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,12 +102,32 @@ export interface FileRoutesById {
   '/_app/home': typeof AppHomeRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/': typeof AppIndexRoute
+  '/directions/': typeof DirectionsIndexRoute
+  '/directions/$dir/$page': typeof DirectionsDirPageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/setup' | '/$' | '/chat' | '/design' | '/home' | '/settings'
+  fullPaths:
+    | '/'
+    | '/setup'
+    | '/$'
+    | '/chat'
+    | '/design'
+    | '/home'
+    | '/settings'
+    | '/directions/'
+    | '/directions/$dir/$page'
   fileRoutesByTo: FileRoutesByTo
-  to: '/setup' | '/$' | '/chat' | '/design' | '/home' | '/settings' | '/'
+  to:
+    | '/setup'
+    | '/$'
+    | '/chat'
+    | '/design'
+    | '/home'
+    | '/settings'
+    | '/'
+    | '/directions'
+    | '/directions/$dir/$page'
   id:
     | '__root__'
     | '/_app'
@@ -102,11 +138,15 @@ export interface FileRouteTypes {
     | '/_app/home'
     | '/_app/settings'
     | '/_app/'
+    | '/directions/'
+    | '/directions/$dir/$page'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   SetupRoute: typeof SetupRoute
+  DirectionsIndexRoute: typeof DirectionsIndexRoute
+  DirectionsDirPageRoute: typeof DirectionsDirPageRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -167,6 +207,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/directions/': {
+      id: '/directions/'
+      path: '/directions'
+      fullPath: '/directions/'
+      preLoaderRoute: typeof DirectionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/directions/$dir/$page': {
+      id: '/directions/$dir/$page'
+      path: '/directions/$dir/$page'
+      fullPath: '/directions/$dir/$page'
+      preLoaderRoute: typeof DirectionsDirPageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -193,6 +247,8 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   SetupRoute: SetupRoute,
+  DirectionsIndexRoute: DirectionsIndexRoute,
+  DirectionsDirPageRoute: DirectionsDirPageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

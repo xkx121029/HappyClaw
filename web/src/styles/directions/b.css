@@ -1,0 +1,238 @@
+/* ==========================================================================
+   Direction B · 读本 (Reader)
+   --------------------------------------------------------------------------
+   A book page, not a dashboard: warm paper, 宋体 for anything you read, a
+   single 朱砂 mark per screen used the way a seal is used — once. Rules are
+   hairlines on paper, never shadows, so nothing floats.
+   ========================================================================== */
+
+html[data-direction="b"] {
+  --hc-font-sans: "Noto Sans SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  --hc-font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC",
+    "SimSun", serif;
+  --hc-font-mono: "Cascadia Mono", Consolas, "Noto Serif SC", monospace;
+
+  --hc-text-2xs: 0.75rem;
+  --hc-text-xs: 0.75rem;
+  --hc-text-sm: 0.8125rem;
+  --hc-text-base: 0.875rem;
+  --hc-text-md: 1rem;
+  --hc-text-lg: 1.0625rem;
+  --hc-text-xl: 1.375rem;
+  --hc-text-2xl: 1.75rem;
+  --hc-text-3xl: 2.125rem;
+  --hc-text-4xl: 2.5rem;
+
+  --hc-leading-tight: 1.3;
+  --hc-leading-snug: 1.5;
+  --hc-leading-normal: 1.75;
+  --hc-leading-relaxed: 1.95;
+
+  --hc-tracking-wide: 0.04em;
+
+  --hc-radius-xs: 0px;
+  --hc-radius-sm: 0px;
+  --hc-radius-md: 2px;
+  --hc-radius-lg: 2px;
+  --hc-radius-xl: 3px;
+  --hc-radius-2xl: 4px;
+  --hc-radius-full: 2px;
+
+  --hc-sidebar-width: 268px;
+  --hc-topbar-height: 52px;
+  --hc-reading-max: 640px;
+
+  --hc-seal: #a63a22;
+  --hc-gutter: 76px;
+}
+
+html[data-direction="b"]:not(.dark) {
+  color-scheme: light;
+
+  --hc-bg-canvas: #eae3d4;
+  --hc-bg-surface: #f7f2e7;
+  --hc-bg-raised: #fbf7ee;
+  --hc-bg-sunken: #e5ddcb;
+  --hc-bg-inset: #f1ebdd;
+  --hc-bg-hover: rgba(60, 48, 32, 0.05);
+  --hc-bg-active: rgba(60, 48, 32, 0.09);
+  --hc-bg-selected: rgba(166, 58, 34, 0.07);
+  --hc-bg-inverse: #1e1a14;
+  --hc-bg-overlay: rgba(30, 26, 20, 0.34);
+  --hc-bg-glass: rgba(247, 242, 231, 0.92);
+  --hc-bg-skeleton: #e2dac8;
+
+  --hc-fg-default: #1e1a14;
+  --hc-fg-muted: #5c5344;
+  --hc-fg-subtle: #6d6453;
+  --hc-fg-disabled: #a79c87;
+  --hc-fg-onaccent: #fbf7ee;
+  --hc-fg-inverse: #f7f2e7;
+  --hc-fg-link: #93331d;
+
+  --hc-border-default: #d7cdb9;
+  --hc-border-strong: #bdb098;
+  --hc-border-subtle: #e3dac8;
+  --hc-border-focus: #a63a22;
+
+  --hc-accent-default: #a63a22;
+  --hc-accent-hover: #8d2f1a;
+  --hc-accent-active: #742614;
+  --hc-accent-soft: rgba(166, 58, 34, 0.09);
+  --hc-accent-soft-strong: rgba(166, 58, 34, 0.16);
+  --hc-accent-fg: #93331d;
+
+  --hc-success-default: #4a6b3c;
+  --hc-success-soft: rgba(74, 107, 60, 0.1);
+  --hc-warning-default: #8a6218;
+  --hc-warning-soft: rgba(138, 98, 24, 0.1);
+  --hc-danger-default: #8c1f12;
+  --hc-danger-soft: rgba(140, 31, 18, 0.09);
+  --hc-info-default: #3b5570;
+  --hc-info-soft: rgba(59, 85, 112, 0.09);
+
+  --hc-shadow-xs: none;
+  --hc-shadow-sm: 0 1px 0 rgba(60, 48, 32, 0.07);
+  --hc-shadow-md: 0 1px 0 rgba(60, 48, 32, 0.09);
+  --hc-shadow-lg: 0 24px 48px -36px rgba(60, 48, 32, 0.55);
+  --hc-shadow-overlay: 0 0 0 1px var(--hc-border-strong),
+    0 30px 60px -40px rgba(60, 48, 32, 0.7);
+  --hc-shadow-glow: 0 0 0 2px rgba(166, 58, 34, 0.28);
+}
+
+html[data-direction="b"].dark {
+  color-scheme: dark;
+
+  --hc-bg-canvas: #14110c;
+  --hc-bg-surface: #1a1610;
+  --hc-bg-raised: #201b14;
+  --hc-bg-sunken: #100d09;
+  --hc-bg-inset: #17130e;
+  --hc-bg-hover: rgba(237, 227, 210, 0.05);
+  --hc-bg-active: rgba(237, 227, 210, 0.09);
+  --hc-bg-selected: rgba(210, 103, 74, 0.14);
+  --hc-bg-inverse: #ede3d2;
+  --hc-bg-overlay: rgba(0, 0, 0, 0.64);
+  --hc-bg-glass: rgba(26, 22, 16, 0.92);
+  --hc-bg-skeleton: #241e16;
+
+  --hc-fg-default: #ede3d2;
+  --hc-fg-muted: #b0a48e;
+  --hc-fg-subtle: #8c8069;
+  --hc-fg-disabled: #5e5445;
+  --hc-fg-onaccent: #17110c;
+  --hc-fg-inverse: #14110c;
+  --hc-fg-link: #e2836a;
+
+  --hc-border-default: #332c22;
+  --hc-border-strong: #483e30;
+  --hc-border-subtle: #262019;
+  --hc-border-focus: #d2674a;
+
+  --hc-accent-default: #d2674a;
+  --hc-accent-hover: #e07a5c;
+  --hc-accent-active: #b8563c;
+  --hc-accent-soft: rgba(210, 103, 74, 0.13);
+  --hc-accent-soft-strong: rgba(210, 103, 74, 0.22);
+  --hc-accent-fg: #e2836a;
+
+  --hc-success-default: #82a96d;
+  --hc-success-soft: rgba(130, 169, 109, 0.13);
+  --hc-warning-default: #d2a04a;
+  --hc-warning-soft: rgba(210, 160, 74, 0.13);
+  --hc-danger-default: #e0604a;
+  --hc-danger-soft: rgba(224, 96, 74, 0.13);
+  --hc-info-default: #8aa6c4;
+  --hc-info-soft: rgba(138, 166, 196, 0.13);
+
+  --hc-shadow-xs: none;
+  --hc-shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.5);
+  --hc-shadow-md: 0 1px 0 rgba(0, 0, 0, 0.55);
+  --hc-shadow-lg: 0 30px 60px -40px rgba(0, 0, 0, 0.9);
+  --hc-shadow-overlay: 0 0 0 1px var(--hc-border-strong),
+    0 36px 72px -44px rgba(0, 0, 0, 0.95);
+  --hc-shadow-glow: 0 0 0 2px rgba(210, 103, 74, 0.4);
+
+  --hc-seal: #d2674a;
+}
+
+.db-serif {
+  font-family: var(--hc-font-serif);
+}
+
+.db-reading {
+  font-family: var(--hc-font-serif);
+  font-size: 1rem;
+  line-height: 1.95;
+  letter-spacing: 0.01em;
+  text-align: justify;
+  text-justify: inter-character;
+}
+
+.db-chapter {
+  font-family: var(--hc-font-serif);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.db-rule {
+  border-block-start: 1px solid var(--hc-border-default);
+}
+
+.db-rule-dotted {
+  border-block-start: 1px dotted var(--hc-border-strong);
+}
+
+/* The one seal: a 朱砂 square holding a single 宋体 character. */
+.db-seal {
+  display: inline-grid;
+  place-items: center;
+  background: var(--hc-seal);
+  color: var(--hc-bg-surface);
+  font-family: var(--hc-font-serif);
+  border-radius: 1px;
+}
+
+.db-note-label {
+  font-family: var(--hc-font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--hc-fg-subtle);
+}
+
+.db-drop::first-letter {
+  font-family: var(--hc-font-serif);
+  font-size: 2.6em;
+  line-height: 0.9;
+  float: inline-start;
+  padding-inline-end: 0.08em;
+  color: var(--hc-fg-default);
+}
+
+.db-paper {
+  background-image:
+    radial-gradient(
+      circle at 18% 8%,
+      rgba(120, 96, 62, 0.055) 0,
+      rgba(120, 96, 62, 0) 42%
+    ),
+    radial-gradient(
+      circle at 82% 92%,
+      rgba(120, 96, 62, 0.05) 0,
+      rgba(120, 96, 62, 0) 46%
+    );
+}
+
+html[data-direction="b"].dark .db-paper {
+  background-image:
+    radial-gradient(
+      circle at 18% 8%,
+      rgba(237, 227, 210, 0.035) 0,
+      rgba(237, 227, 210, 0) 42%
+    ),
+    radial-gradient(
+      circle at 82% 92%,
+      rgba(237, 227, 210, 0.03) 0,
+      rgba(237, 227, 210, 0) 46%
+    );
+}

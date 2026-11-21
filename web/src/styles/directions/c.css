@@ -1,0 +1,252 @@
+/* ==========================================================================
+   Direction C · 工作台 (Workbench)
+   --------------------------------------------------------------------------
+   Panels carry meaning with tint, not with borders: each surface is a slightly
+   different warm neutral, so a screen reads as a set of trays laid on a desk.
+   The one chromatic family is 青瓷 (celadon), reserved for "this is live" and
+   "press here". Depth is soft and short, never a glow.
+   ========================================================================== */
+
+html[data-direction="c"] {
+  --hc-font-sans: "Noto Sans SC", "Segoe UI Variable Text", "Segoe UI",
+    "Microsoft YaHei", sans-serif;
+  --hc-font-serif: "Noto Serif SC", "Songti SC", serif;
+  --hc-font-mono: "Cascadia Mono", Consolas, "Noto Sans SC", monospace;
+
+  --hc-text-2xs: 0.75rem;
+  --hc-text-xs: 0.75rem;
+  --hc-text-sm: 0.8125rem;
+  --hc-text-base: 0.875rem;
+  --hc-text-md: 1rem;
+  --hc-text-lg: 1.125rem;
+  --hc-text-xl: 1.375rem;
+  --hc-text-2xl: 1.75rem;
+  --hc-text-3xl: 2.125rem;
+  --hc-text-4xl: 2.5rem;
+
+  --hc-leading-tight: 1.25;
+  --hc-leading-snug: 1.45;
+  --hc-leading-normal: 1.62;
+  --hc-leading-relaxed: 1.8;
+
+  --hc-tracking-tight: -0.011em;
+
+  --hc-radius-xs: 6px;
+  --hc-radius-sm: 8px;
+  --hc-radius-md: 10px;
+  --hc-radius-lg: 14px;
+  --hc-radius-xl: 18px;
+  --hc-radius-2xl: 22px;
+  --hc-radius-full: 999px;
+
+  --hc-sidebar-width: 288px;
+  --hc-topbar-height: 56px;
+  --hc-reading-max: 720px;
+
+  --hc-live: #3e7d6b;
+  --hc-live-soft: #e6f0ec;
+}
+
+html[data-direction="c"]:not(.dark) {
+  color-scheme: light;
+
+  --hc-bg-canvas: #f3f1ec;
+  --hc-bg-surface: #ffffff;
+  --hc-bg-raised: #ffffff;
+  --hc-bg-sunken: #eae7e0;
+  --hc-bg-inset: #f7f5f0;
+  --hc-bg-hover: rgba(27, 29, 27, 0.05);
+  --hc-bg-active: rgba(27, 29, 27, 0.09);
+  --hc-bg-selected: #e9f1ed;
+  --hc-bg-inverse: #1b1d1b;
+  --hc-bg-overlay: rgba(27, 29, 27, 0.36);
+  --hc-bg-glass: rgba(255, 255, 255, 0.82);
+  --hc-bg-skeleton: #e7e4dd;
+
+  --hc-fg-default: #1b1d1b;
+  --hc-fg-muted: #575e59;
+  --hc-fg-subtle: #6b716c;
+  --hc-fg-disabled: #a8ada8;
+  --hc-fg-onaccent: #ffffff;
+  --hc-fg-inverse: #ffffff;
+  --hc-fg-link: #2f6355;
+
+  --hc-border-default: #e1ded7;
+  --hc-border-strong: #cdc9c0;
+  --hc-border-subtle: #ebe8e1;
+  --hc-border-focus: #3e7d6b;
+
+  --hc-accent-default: #3e7d6b;
+  --hc-accent-hover: #336958;
+  --hc-accent-active: #2a5749;
+  --hc-accent-soft: #e6f0ec;
+  --hc-accent-soft-strong: #d3e6de;
+  --hc-accent-fg: #2f6355;
+
+  --hc-success-default: #2c7a5b;
+  --hc-success-soft: #e7f2ec;
+  --hc-warning-default: #9c701d;
+  --hc-warning-soft: #f8f0dd;
+  --hc-danger-default: #b0423a;
+  --hc-danger-soft: #f9e9e7;
+  --hc-info-default: #3b6e9e;
+  --hc-info-soft: #e9f1f8;
+
+  --hc-shadow-xs: 0 1px 2px rgba(38, 42, 38, 0.05);
+  --hc-shadow-sm: 0 1px 2px rgba(38, 42, 38, 0.05),
+    0 3px 10px -4px rgba(38, 42, 38, 0.09);
+  --hc-shadow-md: 0 2px 6px -3px rgba(38, 42, 38, 0.1),
+    0 14px 28px -16px rgba(38, 42, 38, 0.18);
+  --hc-shadow-lg: 0 8px 18px -10px rgba(38, 42, 38, 0.14),
+    0 30px 54px -28px rgba(38, 42, 38, 0.24);
+  --hc-shadow-overlay: 0 10px 24px -12px rgba(38, 42, 38, 0.18),
+    0 40px 72px -36px rgba(38, 42, 38, 0.3);
+  --hc-shadow-glow: 0 0 0 3px rgba(62, 125, 107, 0.22);
+}
+
+html[data-direction="c"].dark {
+  color-scheme: dark;
+
+  --hc-bg-canvas: #101312;
+  --hc-bg-surface: #171b19;
+  --hc-bg-raised: #1c211f;
+  --hc-bg-sunken: #0b0e0d;
+  --hc-bg-inset: #131716;
+  --hc-bg-hover: rgba(233, 237, 234, 0.055);
+  --hc-bg-active: rgba(233, 237, 234, 0.1);
+  --hc-bg-selected: rgba(100, 183, 155, 0.14);
+  --hc-bg-inverse: #e9edea;
+  --hc-bg-overlay: rgba(0, 0, 0, 0.66);
+  --hc-bg-glass: rgba(23, 27, 25, 0.86);
+  --hc-bg-skeleton: #202623;
+
+  --hc-fg-default: #e9edea;
+  --hc-fg-muted: #a7afaa;
+  --hc-fg-subtle: #838c87;
+  --hc-fg-disabled: #5b625e;
+  --hc-fg-onaccent: #08201a;
+  --hc-fg-inverse: #101312;
+  --hc-fg-link: #8acfb6;
+
+  --hc-border-default: #272c2a;
+  --hc-border-strong: #39413d;
+  --hc-border-subtle: #1e2321;
+  --hc-border-focus: #64b79b;
+
+  --hc-accent-default: #64b79b;
+  --hc-accent-hover: #7ac9ae;
+  --hc-accent-active: #4e9c82;
+  --hc-accent-soft: rgba(100, 183, 155, 0.14);
+  --hc-accent-soft-strong: rgba(100, 183, 155, 0.24);
+  --hc-accent-fg: #8acfb6;
+
+  --hc-success-default: #63c79b;
+  --hc-success-soft: rgba(99, 199, 155, 0.14);
+  --hc-warning-default: #e0b166;
+  --hc-warning-soft: rgba(224, 177, 102, 0.14);
+  --hc-danger-default: #ec7a6e;
+  --hc-danger-soft: rgba(236, 122, 110, 0.14);
+  --hc-info-default: #7fb3e0;
+  --hc-info-soft: rgba(127, 179, 224, 0.14);
+
+  --hc-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --hc-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 3px 10px -4px rgba(0, 0, 0, 0.45);
+  --hc-shadow-md: 0 2px 6px -3px rgba(0, 0, 0, 0.45),
+    0 16px 30px -18px rgba(0, 0, 0, 0.7);
+  --hc-shadow-lg: 0 10px 20px -12px rgba(0, 0, 0, 0.6),
+    0 34px 60px -30px rgba(0, 0, 0, 0.8);
+  --hc-shadow-overlay: 0 12px 28px -14px rgba(0, 0, 0, 0.6),
+    0 44px 80px -40px rgba(0, 0, 0, 0.9);
+  --hc-shadow-glow: 0 0 0 3px rgba(100, 183, 155, 0.3);
+
+  --hc-live: #64b79b;
+  --hc-live-soft: rgba(100, 183, 155, 0.14);
+}
+
+/* Panels: a tray on a desk. Tint does the separating, not a border. */
+.dc-panel {
+  background: var(--hc-bg-surface);
+  border: 1px solid var(--hc-border-subtle);
+  border-radius: 18px;
+  box-shadow: var(--hc-shadow-sm);
+}
+
+.dc-panel-flat {
+  background: var(--hc-bg-inset);
+  border-radius: 18px;
+}
+
+.dc-dock {
+  background: var(--hc-bg-surface);
+  border: 1px solid var(--hc-border-subtle);
+  border-radius: 20px;
+  box-shadow: var(--hc-shadow-md);
+}
+
+.dc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--hc-bg-inset);
+  border: 1px solid var(--hc-border-subtle);
+  font-size: 0.75rem;
+  color: var(--hc-fg-muted);
+}
+
+.dc-chip[data-on="1"] {
+  background: var(--hc-accent-soft);
+  border-color: color-mix(in oklab, var(--hc-accent-default) 28%, transparent);
+  color: var(--hc-accent-fg);
+}
+
+.dc-live-dot {
+  display: inline-block;
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 999px;
+  background: var(--hc-live);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--hc-live) 18%, transparent);
+}
+
+.dc-rail-item {
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: 12px;
+  color: var(--hc-fg-subtle);
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.dc-rail-item:hover {
+  background: var(--hc-bg-hover);
+  color: var(--hc-fg-default);
+}
+
+.dc-rail-item[data-active="1"] {
+  background: var(--hc-accent-soft);
+  color: var(--hc-accent-fg);
+}
+
+.dc-bubble-agent {
+  background: var(--hc-bg-inset);
+  border-radius: 4px 16px 16px 16px;
+}
+
+.dc-bubble-user {
+  background: var(--hc-accent-soft);
+  border-radius: 16px 4px 16px 16px;
+}
+
+.dc-meter-ring {
+  background: conic-gradient(
+    var(--hc-accent-default) calc(var(--pct) * 1%),
+    var(--hc-bg-sunken) 0
+  );
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+}

@@ -1,0 +1,255 @@
+/* ==========================================================================
+   Direction A · 仪器 (Instrument)
+   --------------------------------------------------------------------------
+   Achromatic by rule: the only colour on the page is state. Radii collapse to
+   2px so the grid reads as machined edges; every shadow is replaced by a 1px
+   rule, which is what makes panels look measured instead of floating.
+   Scoped to html[data-direction="a"] so the shared components restyle
+   themselves without a second copy of every component.
+   ========================================================================== */
+
+html[data-direction="a"] {
+  --hc-font-sans: "Segoe UI Variable Text", "Segoe UI", "Noto Sans SC",
+    "Microsoft YaHei", sans-serif;
+  --hc-font-mono: "Cascadia Mono", "Cascadia Code", Consolas, "Noto Sans SC",
+    monospace;
+  --hc-font-serif: "Noto Serif SC", "Songti SC", serif;
+
+  --hc-text-2xs: 0.75rem;
+  --hc-text-xs: 0.75rem;
+  --hc-text-sm: 0.8125rem;
+  --hc-text-base: 0.84375rem;
+  --hc-text-md: 1rem;
+  --hc-text-lg: 1.0625rem;
+  --hc-text-xl: 1.25rem;
+  --hc-text-2xl: 1.5rem;
+  --hc-text-3xl: 1.875rem;
+  --hc-text-4xl: 2.25rem;
+
+  --hc-leading-tight: 1.25;
+  --hc-leading-snug: 1.45;
+  --hc-leading-normal: 1.6;
+  --hc-leading-relaxed: 1.75;
+
+  --hc-tracking-tight: -0.01em;
+  --hc-tracking-wide: 0.06em;
+
+  --hc-radius-xs: 0px;
+  --hc-radius-sm: 2px;
+  --hc-radius-md: 2px;
+  --hc-radius-lg: 2px;
+  --hc-radius-xl: 2px;
+  --hc-radius-2xl: 3px;
+  --hc-radius-full: 2px;
+
+  --hc-sidebar-width: 236px;
+  --hc-topbar-height: 48px;
+  --hc-reading-max: 680px;
+
+  --hc-signal: #1b44c8;
+  --hc-signal-soft: rgba(27, 68, 200, 0.1);
+}
+
+html[data-direction="a"]:not(.dark) {
+  color-scheme: light;
+
+  --hc-bg-canvas: #fafaf8;
+  --hc-bg-surface: #ffffff;
+  --hc-bg-raised: #ffffff;
+  --hc-bg-sunken: #f2f2ef;
+  --hc-bg-inset: #f7f7f4;
+  --hc-bg-hover: rgba(18, 18, 15, 0.045);
+  --hc-bg-active: rgba(18, 18, 15, 0.08);
+  --hc-bg-selected: #f0f1f4;
+  --hc-bg-inverse: #131311;
+  --hc-bg-overlay: rgba(18, 18, 15, 0.38);
+  --hc-bg-glass: rgba(250, 250, 248, 0.9);
+  --hc-bg-skeleton: #ececE7;
+
+  --hc-fg-default: #131311;
+  --hc-fg-muted: #55554f;
+  --hc-fg-subtle: #6b6b62;
+  --hc-fg-disabled: #a6a69d;
+  --hc-fg-onaccent: #fbfbf7;
+  --hc-fg-inverse: #ffffff;
+  --hc-fg-link: #1b44c8;
+
+  --hc-border-default: #d7d7d1;
+  --hc-border-strong: #b7b7ae;
+  --hc-border-subtle: #e6e6e0;
+  --hc-border-focus: #1b44c8;
+
+  /* The "accent" is ink: a filled black button, no brand colour. */
+  --hc-accent-default: #17170f;
+  --hc-accent-hover: #000000;
+  --hc-accent-active: #2b2b23;
+  --hc-accent-soft: #efefea;
+  --hc-accent-soft-strong: #e2e2db;
+  --hc-accent-fg: #17170f;
+
+  --hc-success-default: #0d7a45;
+  --hc-success-soft: #e9f6ee;
+  --hc-warning-default: #9d6608;
+  --hc-warning-soft: #fbf3e2;
+  --hc-danger-default: #b62a1b;
+  --hc-danger-soft: #fbebe8;
+  --hc-info-default: #1b44c8;
+  --hc-info-soft: #eaeefb;
+
+  --hc-shadow-xs: none;
+  --hc-shadow-sm: 0 0 0 1px var(--hc-border-default);
+  --hc-shadow-md: 0 0 0 1px var(--hc-border-default);
+  --hc-shadow-lg: 0 0 0 1px var(--hc-border-strong);
+  --hc-shadow-overlay: 0 0 0 1px var(--hc-border-strong),
+    0 18px 40px -22px rgba(18, 18, 15, 0.4);
+  --hc-shadow-glow: 0 0 0 2px #1b44c8;
+}
+
+html[data-direction="a"].dark {
+  color-scheme: dark;
+
+  --hc-bg-canvas: #0b0b0a;
+  --hc-bg-surface: #111110;
+  --hc-bg-raised: #151514;
+  --hc-bg-sunken: #080807;
+  --hc-bg-inset: #0e0e0d;
+  --hc-bg-hover: rgba(255, 255, 250, 0.055);
+  --hc-bg-active: rgba(255, 255, 250, 0.1);
+  --hc-bg-selected: #17171a;
+  --hc-bg-inverse: #edede8;
+  --hc-bg-overlay: rgba(0, 0, 0, 0.66);
+  --hc-bg-glass: rgba(11, 11, 10, 0.9);
+  --hc-bg-skeleton: #1a1a18;
+
+  --hc-fg-default: #edede8;
+  --hc-fg-muted: #a3a39b;
+  --hc-fg-subtle: #7c7c74;
+  --hc-fg-disabled: #55554f;
+  --hc-fg-onaccent: #0b0b0a;
+  --hc-fg-inverse: #0b0b0a;
+  --hc-fg-link: #8fa9ff;
+
+  --hc-border-default: #262622;
+  --hc-border-strong: #3a3a34;
+  --hc-border-subtle: #1b1b19;
+  --hc-border-focus: #7b9bff;
+
+  --hc-accent-default: #edede8;
+  --hc-accent-hover: #ffffff;
+  --hc-accent-active: #d3d3cc;
+  --hc-accent-soft: rgba(255, 255, 250, 0.06);
+  --hc-accent-soft-strong: rgba(255, 255, 250, 0.11);
+  --hc-accent-fg: #edede8;
+
+  --hc-success-default: #46c48c;
+  --hc-success-soft: rgba(70, 196, 140, 0.13);
+  --hc-warning-default: #e6a93d;
+  --hc-warning-soft: rgba(230, 169, 61, 0.13);
+  --hc-danger-default: #ff7059;
+  --hc-danger-soft: rgba(255, 112, 89, 0.13);
+  --hc-info-default: #8fa9ff;
+  --hc-info-soft: rgba(143, 169, 255, 0.13);
+
+  --hc-shadow-xs: none;
+  --hc-shadow-sm: 0 0 0 1px var(--hc-border-default);
+  --hc-shadow-md: 0 0 0 1px var(--hc-border-default);
+  --hc-shadow-lg: 0 0 0 1px var(--hc-border-strong);
+  --hc-shadow-overlay: 0 0 0 1px var(--hc-border-strong),
+    0 20px 48px -24px rgba(0, 0, 0, 0.9);
+  --hc-shadow-glow: 0 0 0 2px rgba(123, 155, 255, 0.55);
+
+  --hc-signal: #7b9bff;
+  --hc-signal-soft: rgba(123, 155, 255, 0.14);
+}
+
+/* Direction A's own primitives: mono labels, hairlines, live caret. */
+.da-label {
+  font-family: var(--hc-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hc-fg-subtle);
+}
+
+.da-num {
+  font-family: var(--hc-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.da-live {
+  display: inline-block;
+  inline-size: 6px;
+  block-size: 6px;
+  background: var(--hc-signal);
+  animation: da-pulse 2.4s steps(1, end) infinite;
+}
+
+.da-caret {
+  display: inline-block;
+  inline-size: 7px;
+  block-size: 0.95em;
+  vertical-align: -0.12em;
+  background: var(--hc-fg-default);
+  animation: da-blink 1.05s steps(1, end) infinite;
+}
+
+.da-rule {
+  border-block-start: 1px solid var(--hc-border-default);
+}
+
+.da-hair {
+  background: var(--hc-border-subtle);
+  block-size: 1px;
+}
+
+.da-meter {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  block-size: 10px;
+  align-items: end;
+}
+
+.da-meter > i {
+  display: block;
+  inline-size: 4px;
+  background: var(--hc-border-default);
+}
+
+.da-meter > i[data-on="1"] {
+  background: var(--hc-fg-default);
+}
+
+.da-meter > i[data-live="1"] {
+  background: var(--hc-signal);
+}
+
+@keyframes da-pulse {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  61%,
+  100% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes da-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .da-live,
+  .da-caret {
+    animation: none;
+  }
+}
