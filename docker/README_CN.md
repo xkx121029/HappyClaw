@@ -46,7 +46,7 @@ docker run -d \
   octop:latest
 ```
 
-已发布标签：`ghcr.io/xkx121029/happyclaw:<version>` 和 `:latest` 是精简版。`:<version>-full` 和 `:full` 才带桌面、OCR 和本地向量。本地构建默认是完整版，精简版要加 `--build-arg OCTOP_IMAGE_VARIANT=lite`。
+已发布标签：`ghcr.io/xkx121029/happyclaw:<version>` 和 `:latest` 是精简版。`:<version>-full` 和 `:full` 才带桌面、OCR 和本地向量。本地构建默认是完整版，精简版要加 `--build-arg OCTOP_IMAGE_VARIANT=lite`。镜像名取自运行 `docker-publish` 的仓库，因此要等该 workflow 在本仓跑完第一次，标签才可拉取；在那之前请本地构建。
 
 ### 国内镜像加速
 

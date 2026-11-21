@@ -14,8 +14,17 @@
 - **README 与 docs 按代码现状重写对齐**：README 与 README_CN 22 处、`docs/` 12 个文件 54 处会误导使用的偏差全部改掉（命令树、参数、默认值、面板路径、环境变量）。
 - **桌面更新源与市场不再指向上游**：更新目录与安装包下载前缀改为可配置、默认取本仓库 Releases；插件市场与专家市场默认关闭，未配置源站时不发任何请求；助手知识库外链改指本仓库文档。
 - **安装包与安装脚本的自有身份**：一键命令改从本仓库 GitHub `main` 取脚本（可用 `OCTOP_INSTALL_BASE` 指向镜像）；fnOS 包的上架身份改为 `xkx121029`。
+- **全仓不再指向上游 octop**：四个运行库的地址统一到 `xkx121029/happyclaw-*`，安装脚本的 `OCTOP_LIBS_BASE` 默认值、`AGENTS.md` 的库链接、仓库元数据（`pyproject.toml` 的 `[project.urls]`、`CONTRIBUTING`、`SECURITY`、issue 模板、OCI 标签、桌面端 `package.json`）、界面帮助与反馈入口一并改指本仓；新增 `scripts/check_no_upstream_refs.py` 并在 CI 的 quality job 里拦截回退。
 
 ### 变更
+- **去掉对上游 octop 的指向**（依赖名与 import 不动，等四个库改名发布后再单独一轮）
+  - `scripts/install.sh` / `scripts/install-octop.sh`：`OCTOP_LIBS_BASE` 默认 `https://github.com/xkx121029`，克隆目标改为 `happyclaw-harness` / `happyclaw-gateway` / `happyclaw-browser`；`--help` 文本同步
+  - **镜像名修正**：`docker-publish.yml` 推的是 `ghcr.io/$(github.repository)`，即 `ghcr.io/xkx121029/happyclaw`，而 `docker/README*.md`、`docker-compose.cn.yml`、`fnos/*`（含 `build-fpk.sh` 的标签改写）与 `scripts/release_download_links.py` 一直写着上游的 `ghcr.io/tencentcloud/octop`——照文档 `docker pull` 拿到的是上游镜像。现统一改为从仓库名推导。**新名字要等 `docker-publish` 在本仓跑完第一次才有镜像可拉**，在那之前 compose 会拉取失败
+  - 仓库与发布元数据：`[project.urls]` 新增、`CONTRIBUTING.md`（中英）、`SECURITY.md`、`.github/ISSUE_TEMPLATE/config.yml`、`docs/octop-introduction.html` 页脚、`fnos/README.md`、`docker/Dockerfile` 与 `fnos/docker/Dockerfile` 的 OCI 标签（原本指向 `TencentCloud/orca` 与 `maintainer="TencentCloud"`）、`desktop/src/package.json`
+  - 安全上报只留本仓的 GitHub Security Advisories，删掉上游维护者的个人邮箱
+  - 界面：帮助/反馈入口改指本仓 issues 与仓库；升级指南的一键命令改从本仓 `raw.githubusercontent.com` 取安装脚本；TLS/WebAuthn 输入框的示例域名改为 `happyclaw.example.com`
+  - 文案：专家市场与私有市场文档不再提已停的 `octop.cloud`；OctopBot 渠道明确标注「由腾讯云托管，启用即向第三方服务发送内容」
+  - `OCTOP_ONNX_COS_BASE` 默认值保持公开桶（官方 Hugging Face 在大陆不可达，换默认会让首次运行失败），文档写明可置空改走 HF 镜像、自托管权重属后续工作
 - **单人化改造（文档与交付）**：产品定位收敛为「本机单人使用」，不再有注册、登录、账号、角色、邀请与多租户部署语义
   - 重写 `README.md` / `README_CN.md`：删除登录、团队、权限、多租户章节，保留并补全安装、启动、模型配置、数据目录、备份恢复、常见问题
   - 重写 `docs/user-guide.md`：以「启动即进入工作台」为主线，新增日志位置、卸载步骤与备份迁移说明

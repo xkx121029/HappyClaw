@@ -46,7 +46,7 @@ docker run -d \
   octop:latest
 ```
 
-Published tags: `ghcr.io/xkx121029/happyclaw:<version>` and `:latest` are the lite image. `:<version>-full` and `:full` add desktop, OCR, and local embedding. A local build is full unless you pass `--build-arg OCTOP_IMAGE_VARIANT=lite`.
+Published tags: `ghcr.io/xkx121029/happyclaw:<version>` and `:latest` are the lite image. `:<version>-full` and `:full` add desktop, OCR, and local embedding. A local build is full unless you pass `--build-arg OCTOP_IMAGE_VARIANT=lite`. The image name comes from the repository that runs `docker-publish`, so a tag is pullable only after that workflow has completed once for it; until then build locally.
 
 ### Faster downloads (China mirrors)
 

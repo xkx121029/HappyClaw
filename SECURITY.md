@@ -11,8 +11,10 @@
 
 **Please do not open a public GitHub issue for security vulnerabilities.**
 
-- **GitHub Security Advisory:** [Create advisory](https://github.com/xkx121029/HappyClaw/security/advisories/new)
-- **Email:** jubaoliang@gmail.com
+Open a [GitHub Security Advisory](https://github.com/xkx121029/HappyClaw/security/advisories/new)
+on this repository. It is the only reporting channel: it keeps the report private
+between you and the maintainers, and it threads the fix and the disclosure in one
+place. Do not email individuals about a vulnerability.
 
 We aim to acknowledge reports within **3 business days** and provide a fix timeline within **7 business days** for confirmed issues.
 

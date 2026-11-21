@@ -35,6 +35,9 @@ jobs:
       - name: Lint
         run: make lint
 
+      - name: Upstream reference check
+        run: make check-upstream
+
       - name: Type check
         run: make typecheck
 

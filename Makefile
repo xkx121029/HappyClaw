@@ -72,6 +72,7 @@ help:
 	@echo "  all              format-all + lint + typecheck + test (backend lint/typecheck/test)"
 	@echo "  precommit        fast change-aware gate for the git pre-commit hook (testmon-scoped tests)"
 	@echo "  lint             Ruff check + format check (src, tests)"
+	@echo "  check-upstream   Fail on any link or domain pointing at the pre-migration upstream octop project"
 	@echo "  format           Ruff auto-fix + format (src, tests)"
 	@echo "  typecheck        mypy --strict src/octop"
 	@echo "  test             pytest -m \"not live\""
@@ -255,6 +256,11 @@ lint:
 	$(RUN) ruff check src tests
 	@echo "[lint] Ruff format check..."
 	$(RUN) ruff format --check src tests
+
+.PHONY: check-upstream
+check-upstream:
+	@echo "[check-upstream] No links or domains pointing at the pre-migration upstream project..."
+	$(RUN) python scripts/check_no_upstream_refs.py
 
 .PHONY: format
 format:
