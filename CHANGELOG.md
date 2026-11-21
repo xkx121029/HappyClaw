@@ -58,6 +58,10 @@
 - 插件市场与专家市场默认关闭：`DEFAULT_PORTAL_BASE` 置空，未设置 `OCTOP_PORTAL_ORIGIN` 时两者都不发请求，页面显示「暂时不可用」；自建市场照旧按 `docs/private-market.md` 配置
 - 内置助手的产品知识库外链改指向本仓库文档，不再跳上游站点
 - `OCTOP_ONNX_COS_BASE` 显式置空时不再回落到上游存储桶：需要离线或私有时直接留空即可，模型由本地提供
+- 安装一键脚本改为从本仓库 GitHub `main` 取脚本（`raw.githubusercontent.com/xkx121029/HappyClaw`），不再指上游 CDN；网络访问 GitHub 受限时用 `OCTOP_INSTALL_BASE` 指向提供同样 `scripts/` 目录的镜像，四个安装脚本的头部注释都写明了这个用法。README、quickstart、user-guide、迁移手册与旧版 HTML 指南同步
+- 市场安装包默认源由 `download.octop.cloud` 改为本仓库 Releases（`DEFAULT_REMOTE_BASE = https://github.com`），自建市场仍用 `OCTOP_MARKET_REMOTE_ORIGIN` 指定自己的源站
+- fnOS 两个安装包的 `manifest` 里 `maintainer` / `maintainer_url` 改为 `xkx121029` 与本仓库，门店文案与上架身份一致
+- `docs/configuration.md` 的环境变量表补上 `OCTOP_ONNX_COS_BASE`：此前这个开关没有任何文档
 - `tests/integration/test_docker_image_boot.py` 缺镜像时的 skip 明确标注为「发布前必须补跑」并指向验证步骤
 
 ## [1.0.3b5] - 2026-11-11
