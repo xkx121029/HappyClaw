@@ -1,6 +1,6 @@
 # octop_ui 大 payload 旁路设计 Spec（artifact 剥离方案）
 
-> 关联 issue：TencentCloud/Octop #1032（bilibili 插件返回结果过大）
+> 关联 issue：#1032（bilibili 插件返回结果过大；编号沿用迁移前的上游仓库，供追溯）
 > 状态：v2 · 三方评审已合入（2026-09-23）
 > 评审：step-5-preview / mimo-v2.6-pro / MiniMax-M3 三方独立审核，一致 **APPROVE WITH CHANGES**，必改项已全部合入本文（评审记录见 `tmp/spec-review-*.log`）。
 > 本文所有论断均经代码阅读 + 运行时 PoC 双重验证（`tmp/verify_offload_poc.py`，真实 LangGraph agent loop，含原地修改模式复验）。

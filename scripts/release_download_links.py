@@ -19,6 +19,9 @@ from pathlib import Path
 # GitHub Actions sets this for forks too; local invocation keeps the upstream default.
 GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "xkx121029/HappyClaw")
 DOWNLOAD_BASE = f"https://github.com/{GITHUB_REPO}/releases/download"
+# docker-publish.yml publishes to GHCR under the repository that runs it, so the
+# release notes must name the same registry path instead of a fixed upstream one.
+GHCR_IMAGE = f"ghcr.io/{GITHUB_REPO.lower()}"
 
 
 def split_tag(raw: str) -> tuple[str, str]:
@@ -62,9 +65,9 @@ def fnos_assets(version: str) -> tuple[tuple[str, str], ...]:
 def docker_image_section(version: str, *, lite: bool, full: bool) -> str:
     lines = ["### Docker image", ""]
     if lite:
-        lines.append(f"- Lite: `ghcr.io/tencentcloud/octop:{version}` (`:latest`)")
+        lines.append(f"- Lite: `{GHCR_IMAGE}:{version}` (`:latest`)")
     if full:
-        lines.append(f"- Full: `ghcr.io/tencentcloud/octop:{version}-full` (`:full`)")
+        lines.append(f"- Full: `{GHCR_IMAGE}:{version}-full` (`:full`)")
     if len(lines) == 2:
         return ""
     return "\n".join(lines)

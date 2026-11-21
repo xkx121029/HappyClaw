@@ -12,7 +12,7 @@
 | `../.dockerignore` | 构建上下文忽略规则（Podman 与 BuildKit 均适用） |
 | `docker_build.sh` | 从源码构建镜像（默认开启 BuildKit 缓存） |
 | `docker-compose.yml` | 本地开发 / 自托管一键启动 |
-| `docker-compose.cn.yml` | 同一套服务，拉取 `ghcr.nju.edu.cn/tencentcloud/octop:latest`（不本地构建） |
+| `docker-compose.cn.yml` | 同一套服务，拉取 `ghcr.nju.edu.cn/xkx121029/happyclaw:latest`（不本地构建） |
 | `docker-compose.postgres.yml` | 仅 PostgreSQL（+ pgvector）开发/测试库；扩展在 `postgres/init-vector.sql` |
 | `postgres/init-vector.sql` | 实例级 `CREATE EXTENSION vector`（initdb.d；**不**进 HappyClaw 迁移） |
 | `docker-entrypoint.sh` | 容器入口：首次仅初始化目录与数据库（不建账号），然后启动服务 |
@@ -46,7 +46,7 @@ docker run -d \
   octop:latest
 ```
 
-已发布标签：`ghcr.io/tencentcloud/octop:<version>` 和 `:latest` 是精简版。`:<version>-full` 和 `:full` 才带桌面、OCR 和本地向量。本地构建默认是完整版，精简版要加 `--build-arg OCTOP_IMAGE_VARIANT=lite`。
+已发布标签：`ghcr.io/xkx121029/happyclaw:<version>` 和 `:latest` 是精简版。`:<version>-full` 和 `:full` 才带桌面、OCR 和本地向量。本地构建默认是完整版，精简版要加 `--build-arg OCTOP_IMAGE_VARIANT=lite`。
 
 ### 国内镜像加速
 

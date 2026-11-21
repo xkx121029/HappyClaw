@@ -56,6 +56,13 @@ dependencies = [
     "webauthn>=3.0.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/xkx121029/HappyClaw"
+Repository = "https://github.com/xkx121029/HappyClaw"
+Issues = "https://github.com/xkx121029/HappyClaw/issues"
+Documentation = "https://github.com/xkx121029/HappyClaw/tree/main/docs"
+Changelog = "https://github.com/xkx121029/HappyClaw/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 # PEP 621 extras — kept so `pip install -e ".[dev]"` keeps working for
 # legacy / CI flows. `uv sync` reads `[dependency-groups].dev` below.

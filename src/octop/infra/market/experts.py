@@ -1,4 +1,4 @@
-"""Expert records from the octop.cloud market portal."""
+"""Expert records from the remote market portal."""
 
 from __future__ import annotations
 

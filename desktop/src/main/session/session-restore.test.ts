@@ -42,7 +42,7 @@ test("garbage on disk falls back to a clean default", () => {
 test("only same-origin app routes are restorable", () => {
   assert.equal(isRestorableUrl("octop://app/chat/thr_1", ORIGIN), true);
   assert.equal(isRestorableUrl("octop://app/", ORIGIN), true);
-  assert.equal(isRestorableUrl("https://octop.cloud/chat", ORIGIN), false);
+  assert.equal(isRestorableUrl("https://web.example.com/chat", ORIGIN), false);
   assert.equal(isRestorableUrl("octop://other/chat", ORIGIN), false);
   assert.equal(isRestorableUrl("octop://app/login", ORIGIN), false);
   assert.equal(isRestorableUrl("octop://app/setup", ORIGIN), false);

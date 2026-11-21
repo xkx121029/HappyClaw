@@ -66,7 +66,7 @@ def test_list_market_network_failure_is_not_a_market_outage(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://octop.cloud")
+    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://market.example.com")
     clear_market_cache()
 
     def fake_fetch(url: str, *, limit: int) -> bytes:
@@ -84,7 +84,7 @@ def test_install_from_market_does_not_copy_bundled_plugin(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://octop.cloud")
+    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://market.example.com")
     clear_market_cache()
 
     def fake_fetch(url: str, *, limit: int) -> bytes:

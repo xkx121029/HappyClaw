@@ -2,9 +2,9 @@
   "name": "octop-desktop",
   "version": "0.1.0",
   "private": true,
-  "author": "octop contributors",
+  "author": "HappyClaw contributors",
   "license": "MIT",
-  "homepage": "https://octop.cloud",
+  "homepage": "https://github.com/xkx121029/HappyClaw",
   "main": "./out/main/index.js",
   "packageManager": "pnpm@12.15.0",
   "devEngines": {

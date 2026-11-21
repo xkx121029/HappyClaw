@@ -47,8 +47,8 @@ def test_render_download_section_matches_github_asset_names() -> None:
     assert f"{base}/Octop-fnos-docker-lite-0.9.31.fpk" in body
     assert f"{base}/Octop-fnos-native-amd64-0.9.31.fpk" in body
     assert f"{base}/Octop-fnos-native-arm64-0.9.31.fpk" in body
-    assert "ghcr.io/tencentcloud/octop:0.9.31` (`:latest`)" in body
-    assert "ghcr.io/tencentcloud/octop:0.9.31-full" in body
+    assert "ghcr.io/xkx121029/happyclaw:0.9.31` (`:latest`)" in body
+    assert "ghcr.io/xkx121029/happyclaw:0.9.31-full" in body
     assert "-full-0.9.31." not in body
     assert "browser extra only" in body
     assert "Docker lite (x86 and ARM)" in body
@@ -69,8 +69,8 @@ def test_patch_release_body_drops_unpublished_fnos_packages() -> None:
     ]
     patched = mod.patch_release_body(body, "0.9.31", present)
     assert "Octop-fnos-docker-lite-0.9.31.fpk" not in patched
-    assert "ghcr.io/tencentcloud/octop:0.9.31` (`:latest`)" not in patched
-    assert "ghcr.io/tencentcloud/octop:0.9.31-full" in patched
+    assert "ghcr.io/xkx121029/happyclaw:0.9.31` (`:latest`)" not in patched
+    assert "ghcr.io/xkx121029/happyclaw:0.9.31-full" in patched
     assert "Octop-fnos-docker-0.9.31.fpk" in patched
     assert "Octop-fnos-native-amd64-0.9.31.fpk" in patched
     assert "Native ARM64" not in patched
@@ -85,8 +85,8 @@ def test_patch_release_body_keeps_lite_when_its_package_shipped() -> None:
     names = [filename for filename, _label in mod.fnos_assets("0.9.31")]
     patched = mod.patch_release_body(body, "v0.9.31", names)
     assert patched == body if body.endswith("\n") else patched == body + "\n"
-    assert "ghcr.io/tencentcloud/octop:0.9.31` (`:latest`)" in patched
-    assert "ghcr.io/tencentcloud/octop:0.9.31-full" in patched
+    assert "ghcr.io/xkx121029/happyclaw:0.9.31` (`:latest`)" in patched
+    assert "ghcr.io/xkx121029/happyclaw:0.9.31-full" in patched
 
 
 def test_download_links_follow_the_fork(monkeypatch) -> None:

@@ -1,4 +1,4 @@
-"""The octop.cloud marketplace as a normalized catalog source.
+"""The remote market portal as a normalized catalog source.
 
 The portal returns ``{"success": true, "data": {"items": [...]}}`` from
 ``/api/market/plugins``. Each item already carries the newest release of one

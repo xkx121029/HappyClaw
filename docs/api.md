@@ -380,9 +380,9 @@ version. The file save remains successful if the subsequent semantic check fails
 
 ### Current-expert memory storage maintenance
 
-SQLite restore requires a harness runtime with `MemoryMiddleware.pause_background`
-([octop-harness #69](https://github.com/TencentCloud/octop-harness/pull/69)). Older runtimes
-reject restore before stopping the expert or changing its database. Independent retry
+SQLite restore requires a harness runtime that ships
+`MemoryMiddleware.pause_background`. Older runtimes reject restore before stopping the
+expert or changing its database. Independent retry
 controls also require this runtime; the extraction config API reports supported options.
 
 | Method | Path | Auth | Notes |

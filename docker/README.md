@@ -12,7 +12,7 @@ This directory contains the Docker build and deployment assets for HappyClaw.
 | `../.dockerignore` | Build context ignore rules (applies to both Podman and BuildKit) |
 | `docker_build.sh` | Build image from source (BuildKit cache enabled by default) |
 | `docker-compose.yml` | One-command local / self-hosted deployment |
-| `docker-compose.cn.yml` | Same stack, pulls `ghcr.nju.edu.cn/tencentcloud/octop:latest` (no local build) |
+| `docker-compose.cn.yml` | Same stack, pulls `ghcr.nju.edu.cn/xkx121029/happyclaw:latest` (no local build) |
 | `docker-compose.postgres.yml` | PostgreSQL (+ pgvector) for dual-backend dev/tests |
 | `postgres/init-vector.sql` | Instance-level `CREATE EXTENSION vector` (initdb.d; **not** HappyClaw migrations) |
 | `docker-entrypoint.sh` | Container entrypoint: first-run bootstrap (dirs + DB, no account) + start server |
@@ -46,7 +46,7 @@ docker run -d \
   octop:latest
 ```
 
-Published tags: `ghcr.io/tencentcloud/octop:<version>` and `:latest` are the lite image. `:<version>-full` and `:full` add desktop, OCR, and local embedding. A local build is full unless you pass `--build-arg OCTOP_IMAGE_VARIANT=lite`.
+Published tags: `ghcr.io/xkx121029/happyclaw:<version>` and `:latest` are the lite image. `:<version>-full` and `:full` add desktop, OCR, and local embedding. A local build is full unless you pass `--build-arg OCTOP_IMAGE_VARIANT=lite`.
 
 ### Faster downloads (China mirrors)
 

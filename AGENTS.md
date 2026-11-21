@@ -45,10 +45,10 @@ HappyClaw hosts four libraries. Put the change in the library that owns the beha
 
 | Change | Repository |
 |--------|------------|
-| Agent loop, tools, skills, backends, middleware; turn wiring for memory and `browser_use` | [octop-harness](https://github.com/TencentCloud/octop-harness) |
-| IM platform protocol, media upload, group activation | [octop-gateway](https://github.com/TencentCloud/octop-gateway) |
-| Memory capture, recall, ranking, schema, storage | [octop-memory](https://github.com/TencentCloud/octop-memory) |
-| Chrome CDP, profiles, DOM, `browser_tool` | [octop-browser](https://github.com/TencentCloud/octop-browser) |
+| Agent loop, tools, skills, backends, middleware; turn wiring for memory and `browser_use` | [octop-harness](https://github.com/xkx121029/happyclaw-harness) |
+| IM platform protocol, media upload, group activation | [octop-gateway](https://github.com/xkx121029/happyclaw-gateway) |
+| Memory capture, recall, ranking, schema, storage | [octop-memory](https://github.com/xkx121029/happyclaw-memory) |
+| Chrome CDP, profiles, DOM, `browser_tool` | [octop-browser](https://github.com/xkx121029/happyclaw-browser) |
 | Local owner, auth compatibility, threads, cron, experts, dashboard | this repo |
 
 Do not copy that behavior into `src/octop/`. Follow the library's `AGENTS.md`. When the library releases, bump its pin in `pyproject.toml`.

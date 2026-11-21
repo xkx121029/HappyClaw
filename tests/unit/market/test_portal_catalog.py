@@ -45,7 +45,7 @@ def _portal_body(items: list[dict[str, Any]]) -> bytes:
 
 
 def test_portal_catalog_lists_plugins_and_experts(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://octop.cloud")
+    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://market.example.com")
     plugin = {
         "id": "weather",
         "version": "0.1.0",
@@ -91,14 +91,14 @@ def test_portal_catalog_lists_plugins_and_experts(monkeypatch: pytest.MonkeyPatc
     assert [item["slug"] for item in items] == ["ops-engineer"]
     assert scenes == ["tech"]
     assert calls == [
-        "https://octop.cloud/api/market/plugins",
-        "https://octop.cloud/api/market/experts",
+        "https://market.example.com/api/market/plugins",
+        "https://market.example.com/api/market/experts",
     ]
     assert all("index.json" not in url and "meta.json" not in url for url in calls)
 
 
 def test_portal_failure_does_not_fetch_object_index(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://octop.cloud")
+    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://market.example.com")
     calls: list[str] = []
 
     def fake_fetch(url: str, *, limit: int) -> bytes:
@@ -109,14 +109,14 @@ def test_portal_failure_does_not_fetch_object_index(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(market_http, "fetch_bytes", fake_fetch)
     with pytest.raises(PortalMarketError, match="timeout"):
         list_market_plugins()
-    assert calls == ["https://octop.cloud/api/market/plugins"]
+    assert calls == ["https://market.example.com/api/market/plugins"]
 
 
 def test_install_portal_expert_extracts_library(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://octop.cloud")
+    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://market.example.com")
     package = _zip_bytes(
         {"manifest.json": json.dumps({"id": "ops-engineer", "label": {"zh": "运维", "en": "Ops"}})}
     )
@@ -206,7 +206,7 @@ def test_dns_failure_is_a_local_network_error(monkeypatch: pytest.MonkeyPatch) -
 
     monkeypatch.setattr(market_http, "urlopen", boom)
     with pytest.raises(PortalMarketError) as raised:
-        market_http.fetch_bytes("https://octop.cloud/api/market/plugins", limit=64)
+        market_http.fetch_bytes("https://market.example.com/api/market/plugins", limit=64)
     assert raised.value.network is True
 
 
@@ -216,14 +216,14 @@ def test_other_urlerror_is_not_a_local_network_error(monkeypatch: pytest.MonkeyP
 
     monkeypatch.setattr(market_http, "urlopen", boom)
     with pytest.raises(PortalMarketError) as raised:
-        market_http.fetch_bytes("https://octop.cloud/api/market/plugins", limit=64)
+        market_http.fetch_bytes("https://market.example.com/api/market/plugins", limit=64)
     assert raised.value.network is False
 
 
 def test_http_catalog_error_is_a_market_outage(monkeypatch: pytest.MonkeyPatch) -> None:
     def boom(*_args: object, **_kwargs: object) -> bytes:
         raise HTTPError(
-            "https://octop.cloud/api/market/plugins",
+            "https://market.example.com/api/market/plugins",
             502,
             "bad gateway",
             EmailMessage(),
@@ -232,7 +232,7 @@ def test_http_catalog_error_is_a_market_outage(monkeypatch: pytest.MonkeyPatch) 
 
     monkeypatch.setattr(market_http, "urlopen", boom)
     with pytest.raises(PortalMarketError) as raised:
-        market_http.fetch_bytes("https://octop.cloud/api/market/plugins", limit=64)
+        market_http.fetch_bytes("https://market.example.com/api/market/plugins", limit=64)
     assert raised.value.network is False
     assert raised.value.status == 502
 

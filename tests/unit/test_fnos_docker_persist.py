@@ -120,11 +120,11 @@ def test_fnos_docker_compose_uses_trim_data_share_paths() -> None:
     assert "users_loaded" in text
     assert "pull_policy: missing" in text
     assert "pull_policy: always" not in text
-    assert "ghcr.io/tencentcloud/octop:latest" not in text
-    assert "ghcr.io/tencentcloud/octop:0.0.0" in text
-    assert f"ghcr.io/tencentcloud/octop:{_pyproject_version()}" not in text
+    assert "ghcr.io/xkx121029/happyclaw:latest" not in text
+    assert "ghcr.io/xkx121029/happyclaw:0.0.0" in text
+    assert f"ghcr.io/xkx121029/happyclaw:{_pyproject_version()}" not in text
     build = (REPO / "scripts" / "build-fpk.sh").read_text(encoding="utf-8")
-    assert "ghcr.io/tencentcloud/octop:${image_tag}" in build
+    assert "ghcr.io/xkx121029/happyclaw:${image_tag}" in build
     assert "env_file:" not in text
     volume_lines = [
         line
