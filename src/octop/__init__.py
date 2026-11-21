@@ -11,7 +11,7 @@ PROCESS_EPOCH_ORIGIN = _time.time()
 
 from octop.infra.utils.httpx_proxy import install_lazy_httpx_proxy_patch
 
-__version__ = "1.0.3b5"
+__version__ = "1.0.3b6"
 
 # httpx 0.28 treats NO_PROXY CIDR as an exact IP (see issue #1347). Register a
 # one-shot import hook so the patch is applied the moment httpx first loads —

@@ -33,7 +33,7 @@ if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githu
 octop --version
 ```
 
-能看到版本号（例如 `1.0.3b5`）就说明安装成功。
+能看到版本号（例如 `1.0.3b6`）就说明安装成功。
 
 <details>
 <summary>安装脚本被策略拦截？</summary>
