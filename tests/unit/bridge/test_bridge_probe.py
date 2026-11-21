@@ -120,7 +120,7 @@ async def test_probe_owned_uses_stored_password(monkeypatch: pytest.MonkeyPatch)
     )
     mgr.get_owned = MagicMock(return_value=row)  # type: ignore[method-assign]
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.decrypt_payload",
+        "octop.infra.bridge.connections.decrypt_payload",
         lambda _secrets, _blob: {"password": "stored-secret"},
     )
     probe = AsyncMock(return_value={"agent_count": 0, "agents": []})
@@ -170,7 +170,7 @@ async def test_probe_owned_prefers_typed_password(monkeypatch: pytest.MonkeyPatc
     )
     mgr.get_owned = MagicMock(return_value=row)  # type: ignore[method-assign]
     decrypt = MagicMock()
-    monkeypatch.setattr("octop.infra.bridge.manager.decrypt_payload", decrypt)
+    monkeypatch.setattr("octop.infra.bridge.connections.decrypt_payload", decrypt)
     probe = AsyncMock(return_value={"agent_count": 0, "agents": []})
     mgr.probe_peer = probe  # type: ignore[method-assign]
     await mgr.probe_owned_connection(

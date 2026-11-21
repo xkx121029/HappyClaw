@@ -41,7 +41,7 @@ async def test_bridge_probe_returns_expert_list(env: Any) -> None:
 
     with (
         patch(
-            "octop.infra.bridge.manager.login_peer",
+            "octop.infra.bridge.connections.login_peer",
             new=AsyncMock(
                 return_value={
                     "access_token": "peer-token",
@@ -49,7 +49,7 @@ async def test_bridge_probe_returns_expert_list(env: Any) -> None:
                 }
             ),
         ),
-        patch("octop.infra.bridge.manager.httpx.AsyncClient", return_value=mock_client),
+        patch("octop.infra.bridge.connections.httpx.AsyncClient", return_value=mock_client),
     ):
         r = await client.post(
             "/api/bridge/probe",
@@ -78,7 +78,7 @@ async def test_bridge_probe_peer_rejection_stays_logged_in(env: Any) -> None:
     """Peer credential failure is 400, so the dashboard does not clear the local session."""
     client, _srv, auth = env
     with patch(
-        "octop.infra.bridge.manager.login_peer",
+        "octop.infra.bridge.connections.login_peer",
         new=AsyncMock(
             side_effect=OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "peer rejected credentials")
         ),

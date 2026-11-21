@@ -54,7 +54,7 @@ async def test_update_meta_only_skips_reauth(monkeypatch: pytest.MonkeyPatch) ->
     mgr._repo.find_by_display_name = MagicMock(return_value=None)
     mgr._repo.update_settings = MagicMock(return_value=updated)
     login = AsyncMock()
-    monkeypatch.setattr("octop.infra.bridge.manager.login_peer", login)
+    monkeypatch.setattr("octop.infra.bridge.lifecycle.login_peer", login)
 
     out = await mgr.update_connection_meta(
         "cid1",
@@ -87,17 +87,17 @@ async def test_update_endpoint_reauths_and_reconnects(
     mgr.disconnect = AsyncMock()  # type: ignore[method-assign]
     mgr.connect = AsyncMock(return_value=after)  # type: ignore[method-assign]
     login = AsyncMock(return_value={"access_token": "tok", "expires_in": 3600})
-    monkeypatch.setattr("octop.infra.bridge.manager.login_peer", login)
+    monkeypatch.setattr("octop.infra.bridge.lifecycle.login_peer", login)
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.normalize_peer_base_url",
+        "octop.infra.bridge.lifecycle.normalize_peer_base_url",
         lambda raw: raw.strip().rstrip("/"),
     )
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.encrypt_payload",
+        "octop.infra.bridge.lifecycle.encrypt_payload",
         lambda _repo, payload: f"enc:{payload}".encode(),
     )
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.decrypt_payload",
+        "octop.infra.bridge.lifecycle.decrypt_payload",
         lambda _repo, _blob: {"password": "old-secret"},
     )
 
@@ -133,7 +133,7 @@ async def test_update_endpoint_rejects_duplicate_peer(
     mgr._repo.find_by_display_name = MagicMock(return_value=None)
     mgr._repo.list_for_owner = MagicMock(return_value=[row, other])
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.normalize_peer_base_url",
+        "octop.infra.bridge.lifecycle.normalize_peer_base_url",
         lambda raw: raw.strip().rstrip("/"),
     )
     with pytest.raises(OctopError) as ei:

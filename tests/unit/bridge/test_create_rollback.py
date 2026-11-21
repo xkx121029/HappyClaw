@@ -54,19 +54,19 @@ async def test_create_connection_rolls_back_when_connect_fails(
         advertise_base_url="http://local.test",
     )
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.normalize_peer_base_url",
+        "octop.infra.bridge.connections.normalize_peer_base_url",
         lambda url: url.rstrip("/"),
     )
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.new_short_id",
+        "octop.infra.bridge.connections.new_short_id",
         lambda: "01CONN",
     )
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.login_peer",
+        "octop.infra.bridge.connections.login_peer",
         AsyncMock(return_value={"access_token": "tok", "expires_in": 3600}),
     )
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.encrypt_payload",
+        "octop.infra.bridge.connections.encrypt_payload",
         lambda _s, _p: b"enc",
     )
     mgr.connect = AsyncMock(  # type: ignore[method-assign]
@@ -102,7 +102,7 @@ async def test_create_connection_rejects_taken_display_name(
         advertise_base_url="http://local.test",
     )
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.normalize_peer_base_url",
+        "octop.infra.bridge.connections.normalize_peer_base_url",
         lambda url: url.rstrip("/"),
     )
     with pytest.raises(OctopError) as ei:
@@ -134,7 +134,7 @@ async def test_create_connection_rejects_duplicate_peer_account(
         advertise_base_url="http://127.0.0.1:9",
     )
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.normalize_peer_base_url",
+        "octop.infra.bridge.connections.normalize_peer_base_url",
         lambda url: url.rstrip("/"),
     )
     with pytest.raises(OctopError) as ei:
@@ -173,7 +173,7 @@ async def test_create_connection_rejects_at_user_limit(
         advertise_base_url="http://127.0.0.1:9",
     )
     monkeypatch.setattr(
-        "octop.infra.bridge.manager.normalize_peer_base_url",
+        "octop.infra.bridge.connections.normalize_peer_base_url",
         lambda url: url.rstrip("/"),
     )
     with pytest.raises(OctopError) as ei:
