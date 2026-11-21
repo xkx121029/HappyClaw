@@ -1,9 +1,10 @@
-import { ArrowUp, Square } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/cn";
 import { readStored, storageKeys, writeStored } from "@/lib/storage";
 
@@ -73,7 +74,7 @@ export function Composer({
             disabled={disabled || !value.trim() || sending}
             onClick={submit}
           >
-            {sending ? <Square className="fill-current" /> : <ArrowUp />}
+            {sending ? <Spinner size="xs" className="border-white/40 border-t-white" /> : <ArrowUp />}
           </Button>
         </div>
         <p className="mt-1.5 flex items-center gap-1.5 px-1 text-2xs text-fg-subtle">

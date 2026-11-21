@@ -98,11 +98,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     if (asChild && isValidElement(children)) {
       const child = children as ReactElement<{ className?: string }>;
-      return cloneElement(
-        child,
-        { className: cn(classes, child.props.className) },
-        content,
-      );
+      // The child keeps its own content (a router <Link> already renders its
+      // label); only the visual classes are borrowed.
+      return cloneElement(child, { className: cn(classes, child.props.className) });
     }
 
     return (

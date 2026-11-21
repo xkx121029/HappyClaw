@@ -106,7 +106,12 @@ export function ThreadRail({
                       ) : null}
                     </span>
                     <span className="flex items-center gap-2 text-2xs text-fg-subtle">
-                      <span>{formatRelativeTime(thread.last_active, timezone)}</span>
+                      <span>
+                        {formatRelativeTime(
+                          thread.last_active || thread.created_at,
+                          timezone,
+                        )}
+                      </span>
                       {thread.model_ref ? (
                         <>
                           <span aria-hidden>·</span>

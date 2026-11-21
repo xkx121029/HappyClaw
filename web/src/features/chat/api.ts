@@ -24,7 +24,10 @@ export async function listThreads(agentId: string, limit = 50): Promise<Thread[]
   const rows: unknown[] = Array.isArray(data.data) ? data.data : [];
   return rows
     .filter(isThread)
-    .sort((left, right) => (right.last_active ?? 0) - (left.last_active ?? 0));
+    .sort(
+      (left, right) =>
+        (right.last_active || right.created_at) - (left.last_active || left.created_at),
+    );
 }
 
 export async function getHistory(

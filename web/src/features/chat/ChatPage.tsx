@@ -57,7 +57,12 @@ export function ChatPage() {
 
   const createThread = useCreateThread(activeAgentId);
 
+  // `sending` stays true until the server reports the turn done, so the
+  // composer cannot queue a second turn behind a running one.
+  const [sending, setSending] = useState(false);
+
   const socket = useChatSocket(activeAgentId, threadId, () => {
+    setSending(false);
     void queryClient.invalidateQueries({
       queryKey: chatKeys.history(activeAgentId ?? "", threadId ?? ""),
     });
@@ -65,8 +70,6 @@ export function ChatPage() {
       queryKey: chatKeys.threads(activeAgentId ?? ""),
     });
   });
-
-  const [sending, setSending] = useState(false);
 
   const source = agentsQuery.data?.source ?? threadsQuery.data?.source ?? "live";
   const socketReady = socket.status === "open" && Boolean(threadId);
@@ -201,13 +204,16 @@ export function ChatPage() {
                   : undefined
             }
             onSend={(text) => {
-              setSending(true);
-              const ok = socket.send(text);
-              if (!ok) {
-                setSending(false);
-                return;
+              const sent = socket.send(text);
+              setSending(sent);
+              if (sent) {
+                window.setTimeout(
+                  () => void queryClient.invalidateQueries({
+                    queryKey: chatKeys.history(activeAgentId ?? "", threadId ?? ""),
+                  }),
+                  1200,
+                );
               }
-              window.setTimeout(() => setSending(false), 800);
             }}
           />
         </div>
