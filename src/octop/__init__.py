@@ -9,6 +9,7 @@ import time as _time
 PROCESS_MONO_ORIGIN = _time.perf_counter()
 PROCESS_EPOCH_ORIGIN = _time.time()
 
+from octop.infra.utils.env_alias import alias_legacy_env
 from octop.infra.utils.httpx_proxy import install_lazy_httpx_proxy_patch
 
 __version__ = "1.0.3b6"
@@ -18,3 +19,7 @@ __version__ = "1.0.3b6"
 # every client still honors it, but CLI meta-commands and imports that never
 # touch the network no longer pay httpx's ~1s import cost up front.
 install_lazy_httpx_proxy_patch()
+
+# Every reader in the tree still asks for OCTOP_* names, so mirror the renamed
+# HAPPYCLAW_* variables onto them once, before any configuration is loaded.
+alias_legacy_env()
