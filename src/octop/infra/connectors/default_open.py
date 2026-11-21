@@ -13,6 +13,17 @@ def read_default_open(config: dict[str, Any] | None) -> bool:
     return config.get("default_open") is True
 
 
+def parse_instance_config_json(config_json: str | None) -> dict[str, object]:
+    """Decode ``connectors.config_json``; malformed values read as empty."""
+    if not config_json:
+        return {}
+    try:
+        data = json.loads(config_json)
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def build_instance_config_json(
     *,
     kind: str,

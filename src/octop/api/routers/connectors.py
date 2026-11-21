@@ -38,6 +38,7 @@ from octop.infra.connectors.custom_mcp import (
 )
 from octop.infra.connectors.default_open import (
     build_instance_config_json,
+    parse_instance_config_json,
     read_default_open,
 )
 from octop.infra.connectors.gateway.cli_dirs import cleanup_creds_cli_dirs
@@ -68,7 +69,6 @@ from octop.infra.connectors.probe import (
     probe_custom_mcp_server,
 )
 from octop.infra.connectors.service import ConnectorNameTakenError, ConnectorService
-from octop.infra.db.repos.connectors import ConnectorRepo
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.users.groups import (
     CONNECTOR_FEATURE_KEY,
@@ -308,7 +308,7 @@ def _connector_service(server: Any) -> ConnectorService:
 
 
 def _instance_to_dict(inst: Any, *, access: GroupAccess | None = None) -> dict[str, Any]:
-    config = ConnectorRepo.parse_config_json(inst) if hasattr(inst, "config_json") else {}
+    config = parse_instance_config_json(getattr(inst, "config_json", None))
     shared = bool(inst.shared)
     payload: dict[str, Any] = {
         "instance_id": inst.instance_id,
@@ -990,7 +990,7 @@ async def patch_instance(
             )
         repo.update_status(instance_id, status)
     if body.default_open is not None or body.description is not None:
-        config = dict(ConnectorRepo.parse_config_json(inst))
+        config = dict(parse_instance_config_json(inst.config_json))
         if body.default_open is not None:
             if body.default_open:
                 config["default_open"] = True
