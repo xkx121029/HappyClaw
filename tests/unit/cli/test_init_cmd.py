@@ -14,9 +14,9 @@ from octop.cli.main import cli
 
 @pytest.fixture
 def fake_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    octop_home = tmp_path / ".octop"
+    happyclaw_home = tmp_path / ".happyclaw"
     monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.setenv("OCTOP_HOME", str(octop_home))
+    monkeypatch.setenv("HAPPYCLAW_HOME", str(happyclaw_home))
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
     for key in list(os.environ):
         if key.startswith("OCTOP_DATABASE_"):
@@ -38,19 +38,19 @@ def test_init_non_interactive_creates_admin(fake_home: Path) -> None:
         ],
     )
     assert result.exit_code == 0, result.output
-    assert (fake_home / ".octop").is_dir()
-    assert (fake_home / ".octop" / "octop.db").is_file()
+    assert (fake_home / ".happyclaw").is_dir()
+    assert (fake_home / ".happyclaw" / "octop.db").is_file()
     # New catalog plugins are installed via the marketplace, not auto-seeded.
-    weather = fake_home / ".octop" / "plugins" / "weather" / "plugin.yaml"
+    weather = fake_home / ".happyclaw" / "plugins" / "weather" / "plugin.yaml"
     assert not weather.is_file()
-    cfg = json.loads((fake_home / ".octop" / "config.json").read_text(encoding="utf-8"))
+    cfg = json.loads((fake_home / ".happyclaw" / "config.json").read_text(encoding="utf-8"))
     assert "weather" not in (cfg.get("plugins") or {})
 
     from octop.infra.db.pool import SqlitePool
     from octop.infra.db.repos.users import UserRepo
     from octop.infra.utils.paths import PathLayout
 
-    paths = PathLayout(fake_home / ".octop")
+    paths = PathLayout(fake_home / ".happyclaw")
     db = SqlitePool(paths.db)
     row = UserRepo(db).get_by_username("alice")
     assert row is not None
@@ -59,7 +59,7 @@ def test_init_non_interactive_creates_admin(fake_home: Path) -> None:
 
 def test_init_allows_sidecar_files_without_database(fake_home: Path) -> None:
     """NAS / Docker shares often have login.txt before the first octop.db exists."""
-    home = fake_home / ".octop"
+    home = fake_home / ".happyclaw"
     home.mkdir()
     (home / "octop-login.txt").write_text("placeholder\n", encoding="utf-8")
     runner = CliRunner()
@@ -100,7 +100,7 @@ def test_init_refuses_to_overwrite_without_force(fake_home: Path) -> None:
 def test_init_force_keeps_install_runtime(fake_home: Path) -> None:
     if os.name == "nt":
         pytest.skip("Windows may lock SQLite during init force reset")
-    home = fake_home / ".octop"
+    home = fake_home / ".happyclaw"
     runner = CliRunner()
     first = runner.invoke(
         cli,
@@ -144,7 +144,7 @@ def test_init_force_keeps_install_runtime(fake_home: Path) -> None:
 def test_init_force_refuses_when_home_is_the_runtime(
     fake_home: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    home = fake_home / ".octop"
+    home = fake_home / ".happyclaw"
     home.mkdir()
     (home / "octop.db").write_text("db", encoding="utf-8")
     monkeypatch.setattr("octop.infra.utils.install_reset.sys.prefix", str(home))
@@ -179,7 +179,7 @@ def test_init_without_admin_creates_no_account(fake_home: Path) -> None:
     from octop.infra.db.repos.users import UserRepo
     from octop.infra.utils.paths import PathLayout
 
-    home = fake_home / ".octop"
+    home = fake_home / ".happyclaw"
     assert (home / "octop.db").is_file()
     assert UserRepo(SqlitePool(PathLayout(home).db)).count() == 0
 
@@ -190,7 +190,7 @@ def test_init_rejects_half_a_legacy_admin_pair(fake_home: Path) -> None:
     result = runner.invoke(cli, ["init", "--admin-username", "alice"], input="Wonderland1\n")
     assert result.exit_code != 0
     assert "only meaningful together" in result.output
-    assert not (fake_home / ".octop" / "octop.db").exists()
+    assert not (fake_home / ".happyclaw" / "octop.db").exists()
 
 
 def test_init_force_resets(fake_home: Path) -> None:
@@ -223,7 +223,7 @@ def test_init_force_resets(fake_home: Path) -> None:
     from octop.infra.db.repos.users import UserRepo
     from octop.infra.utils.paths import PathLayout
 
-    paths = PathLayout(fake_home / ".octop")
+    paths = PathLayout(fake_home / ".happyclaw")
     repo = UserRepo(SqlitePool(paths.db))
     assert repo.get_by_username("bob") is not None
 
@@ -252,7 +252,7 @@ def test_init_rerun_skips_existing_admin_without_local_db(
     ]
     r1 = runner.invoke(cli, args)
     assert r1.exit_code == 0, r1.output
-    assert not (fake_home / ".octop" / "octop.db").exists()
+    assert not (fake_home / ".happyclaw" / "octop.db").exists()
 
     r2 = runner.invoke(cli, args)
     assert r2.exit_code == 0, r2.output or str(r2.exception)
@@ -285,6 +285,6 @@ def test_init_env_vars_supply_credentials(fake_home: Path, monkeypatch: pytest.M
     from octop.infra.db.repos.users import UserRepo
     from octop.infra.utils.paths import PathLayout
 
-    paths = PathLayout(fake_home / ".octop")
+    paths = PathLayout(fake_home / ".happyclaw")
     repo = UserRepo(SqlitePool(paths.db))
     assert repo.get_by_username("fromenv") is not None
