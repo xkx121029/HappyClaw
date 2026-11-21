@@ -37,6 +37,7 @@ dependencies = [
     "acme>=5.6.0",
     "josepy>=2.2.0",
     "boto3>=1.40.61",
+    "google-api-python-client>=2.100",
     "happyclaw-browser>=1.0.2",
     "playwright>=1.40",
     "psycopg[binary]>=3.2",
