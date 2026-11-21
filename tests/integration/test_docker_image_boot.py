@@ -1,4 +1,4 @@
-"""Live Docker image boot: valid vs invalid OCTOP_DEFAULT_PASSWORD.
+"""Live Docker image boot: single-user first start with no account step.
 
 Requires a built image (default ``octop:test``) and a working Docker daemon.
 These tests start real containers; they are marked ``slow``.
@@ -208,73 +208,20 @@ def _exec_text(name: str, path: str) -> str:
 
 @pytest.mark.slow
 @docker_live
-def test_docker_valid_password_creates_admin_and_serves(docker_boot: Any) -> None:
-    password = "GoodPass1"
-    boot = docker_boot(password)
+def test_docker_boot_serves_without_any_account(docker_boot: Any) -> None:
+    """Legacy password env vars are ignored: first boot serves as the local owner."""
+    boot = docker_boot("GoodPass1")
     name = boot["name"]
     status, setup = _http_json(name, "/api/setup/status")
     assert status == 200
     assert setup["setup_required"] is False
-    login_status, login = _http_json(
-        name,
-        "/api/auth/login",
-        data={"username": "admin", "password": password},
-    )
-    assert login_status == 200, login
-    assert login.get("access_token")
-    assert (login.get("user") or {}).get("username") == "admin"
-    cred = _exec_text(name, "/data/.octop/credential.txt")
-    assert "HappyClaw Login Credential" in cred
-    assert f"Password: {password}" in cred
-    wizard = _run(["docker", "exec", name, "test", "-f", "/data/.octop/octop-login.txt"])
-    assert wizard.returncode != 0
-
-
-@pytest.mark.slow
-@docker_live
-@pytest.mark.parametrize("password", ["password1", "Ab1", "abcdefgh"])
-def test_docker_invalid_password_starts_setup_wizard(docker_boot: Any, password: str) -> None:
-    boot = docker_boot(password)
-    name = boot["name"]
-    status, setup = _http_json(name, "/api/setup/status")
-    assert status == 200
-    assert setup["setup_required"] is True
-    assert setup["wizard_password_exists"] is True
-    login_status, login = _http_json(
-        name,
-        "/api/auth/login",
-        data={"username": "admin", "password": password},
-    )
-    # Setup lockdown blocks /api/auth/login before the route can emit SETUP_REQUIRED.
-    assert login_status == 503, login
-    assert login.get("setup_required") is True
-    hint = _exec_text(name, "/data/.octop/credential.txt")
-    assert "Setup Required" in hint
-    wizard = _exec_text(name, "/data/.octop/octop-login.txt").strip()
-    assert wizard
-    logs = _run(["docker", "logs", name], timeout=20).stdout
-    assert "未通过密码策略" in logs
-
-
-@pytest.mark.slow
-@docker_live
-def test_docker_unset_password_starts_setup_wizard(docker_boot: Any) -> None:
-    boot = docker_boot(None)
-    name = boot["name"]
-    status, setup = _http_json(name, "/api/setup/status")
-    assert status == 200
-    assert setup["setup_required"] is True
-    assert setup["wizard_password_exists"] is True
-    logs = _run(["docker", "logs", name], timeout=20).stdout
-    assert "未设置 OCTOP_DEFAULT_PASSWORD" in logs
-    assert "Setup Required" in _exec_text(name, "/data/.octop/credential.txt")
-    login_status, login = _http_json(
-        name,
-        "/api/auth/login",
-        data={"username": "admin", "password": "GoodPass1"},
-    )
-    assert login_status == 503, login
-    assert login.get("setup_required") is True
+    me_status, me = _http_json(name, "/api/auth/me")
+    assert me_status == 200, me
+    assert me.get("role") == "admin"
+    assert me.get("is_local_owner") is True
+    for legacy_file in ("credential.txt", "octop-login.txt"):
+        probe = _run(["docker", "exec", name, "test", "-f", f"/data/.octop/{legacy_file}"])
+        assert probe.returncode != 0, f"{legacy_file} must not be written in single-user mode"
 
 
 @pytest.mark.live
