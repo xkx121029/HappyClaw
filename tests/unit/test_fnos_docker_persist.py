@@ -29,8 +29,9 @@ def _pyproject_version() -> str:
 @pytest.mark.parametrize("manifest", [FNOS_DOCKER / "manifest", FNOS_NATIVE / "manifest"])
 def test_fnos_manifest_maintainer_and_tags(manifest: Path) -> None:
     text = manifest.read_text(encoding="utf-8")
-    assert "maintainer=TencentCloud\n" in text
-    assert "maintainer=TencentCloud OrcaKit" not in text
+    assert "maintainer=xkx121029\n" in text
+    assert "maintainer_url=https://github.com/xkx121029/HappyClaw\n" in text
+    assert "TencentCloud" not in text
     assert "tags=AI,Practical Efficiency" in text
 
 
