@@ -61,9 +61,12 @@ owner directly.
 | **Embedded (bridge)** | In-process `BridgeManager` only; the CLI cannot hold the Bridge WebSocket after exit | `bridge probe/create/patch/delete/connect/disconnect/agents` |
 | **External** | Talks to an OS daemon or the system service manager; no HappyClaw HTTP | `models ollama-list/pull/rm` (local Ollama daemon), `service start/stop/restart/status`, `update`, `completion install` |
 
-`octop run` itself is the server; most embedded commands boot a short-lived
-`OctopServer` when `octop run` is not running, then exit. Config changes made
-offline (channels, cron) take effect the next time `octop run` starts.
+`octop run` itself is the server. Embedded commands always boot their own
+short-lived in-process `OctopServer` (`octop.cli.support.embedded_ops` →
+`embedded_runtime()`) — they do not attach to a running `octop run`, and they
+exit when the command finishes. Data changes made offline (channels, cron,
+providers) are written to the same control-plane database and are picked up the
+next time `octop run` starts.
 
 ## `octop init`
 
