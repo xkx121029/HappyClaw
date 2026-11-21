@@ -37,7 +37,7 @@ export interface Thread {
 
 export const agent = {
   name: "HappyClaw",
-  role: "本机主机 · HAPA-20",
+  role: "本机 · 默认智能体",
   model: "claude-fable-5-2",
   workspace: "E:\\HAPPYclaw\\Octop",
 };
