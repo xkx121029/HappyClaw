@@ -18,6 +18,12 @@ else
     DATA_DIR="${APPDEST}/shares/octop-native/data"
 fi
 
+# 升级上来的旧安装可能还留着可登录的包内账户，这里一并锁掉（重复执行无副作用）。
+if id octop-native >/dev/null 2>&1; then
+    passwd -l octop-native >/dev/null 2>&1 \
+        && echo "[octop-native] 已锁定系统账户 octop-native（仅作包内服务身份）" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
+fi
+
 WIZARD_TEMPLATE="$APPDEST/wizard/config.template"
 WIZARD_DIR="$(dirname "$APPDEST")/wizard"
 [ -f "$WIZARD_TEMPLATE" ] || WIZARD_TEMPLATE="${APPDEST}/../wizard/config"

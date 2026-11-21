@@ -522,3 +522,13 @@ octop_render_config_wizard "{template}" "{wizard_dir}" "{data_dir}"
     text = (wizard_dir / "config").read_text(encoding="utf-8")
     assert f"dir={data_dir}" in text
     assert "<octop-data-dir>" not in text
+
+
+def test_fnos_native_locks_the_service_account() -> None:
+    """`octop-native` is a service identity: locked, never given a login password."""
+    install = (FNOS_NATIVE / "cmd" / "install_callback").read_text(encoding="utf-8")
+    upgrade = (FNOS_NATIVE / "cmd" / "upgrade_callback").read_text(encoding="utf-8")
+    for text in (install, upgrade):
+        assert "passwd -l" in text
+    assert "chpasswd" not in install
+    assert "NOPASSWD: ALL" in install

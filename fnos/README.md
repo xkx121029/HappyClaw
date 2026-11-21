@@ -23,6 +23,8 @@ octop backup --help     # 备份/恢复
 
 > `octop user` 系列属于旧版多用户兼容命令，单人版不再需要账号管理，`octop user passwd` 也不再是改密入口。
 
+> 本地版的系统账户 `octop-native` 已锁定（`passwd -l`），仅作包内服务身份使用，不能登录；它需要的 `/etc/sudoers.d/octop-native`（`NOPASSWD: ALL`）保持不变。
+
 > 注意：不要手动执行 `octop run`（会与飞牛应用中心托管的服务实例抢 8089 端口）；Web 服务一律由应用中心启停。
 
 ## 两种安装包

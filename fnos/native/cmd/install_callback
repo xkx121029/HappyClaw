@@ -103,6 +103,19 @@ fi
 echo "[octop-native] 已配置 ${OCTOP_USER} 免密码 sudo" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
 
 # ---------------------------------------------------------------------------
+# 锁定系统账户 octop-native：它只是包内服务身份，不提供登录。
+# 显式锁定，而不是设随机密码——随机密码看起来像能登录，实际没人记得，
+# 还会诱使后来的人把它抄进某个文件。免密码 sudo 走 NOPASSWD，不受影响。
+# ---------------------------------------------------------------------------
+if id "$OCTOP_USER" >/dev/null 2>&1; then
+    if passwd -l "$OCTOP_USER" >/dev/null 2>&1; then
+        echo "[octop-native] 已锁定系统账户 ${OCTOP_USER}（仅作包内服务身份，不能登录）" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
+    else
+        echo "[octop-native] 警告：无法锁定系统账户 ${OCTOP_USER}，请手动执行 passwd -l ${OCTOP_USER}" >&2 || true
+    fi
+fi
+
+# ---------------------------------------------------------------------------
 # 将官方 octop CLI 暴露到 PATH，让用户安装后像官方一样直接用 `octop` 命令
 # （例如 `octop --help` / `octop provider list` / `octop agent list` /
 #   `octop skills ...` / `octop backup ...`）。真正的服务由飞牛应用中心托管
