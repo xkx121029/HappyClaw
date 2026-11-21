@@ -16,9 +16,10 @@ OCTOP_VENV="$OCTOP_HOME/venv"
 OCTOP_BIN="$OCTOP_HOME/bin"
 PYTHON_VERSION="3.12"
 OCTOP_REPO="${OCTOP_REPO:-https://github.com/xkx121029/HappyClaw.git}"
-# The four runtime libraries are still published from the TencentCloud org until
-# the HappyClaw republish lands; they are pinned through PyPI (see pyproject.toml),
-# and the clones below exist for source checkouts.
+# The four runtime libraries live in the TencentCloud org until Phase 2 publishes
+# them under xkx121029 (xkx121029/octop-harness does not exist yet). They are also
+# pinned through PyPI in pyproject.toml; the clones below serve source checkouts.
+# Phase 2: point OCTOP_LIBS_BASE at https://github.com/xkx121029 once those repos exist.
 OCTOP_LIBS_BASE="${OCTOP_LIBS_BASE:-https://github.com/TencentCloud}"
 HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${OCTOP_LIBS_BASE}/octop-harness.git}"
 HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${OCTOP_LIBS_BASE}/octop-gateway.git}"

@@ -16,8 +16,9 @@ OCTOP_VENV="$OCTOP_HOME/venv"
 OCTOP_BIN="$OCTOP_HOME/bin"
 PYTHON_VERSION="3.12"
 OCTOP_REPO="${OCTOP_REPO:-https://github.com/xkx121029/HappyClaw.git}"
-# 四个运行库在 HappyClaw 重新发布前仍托管在 TencentCloud 组织；此处只用于源码
-# 克隆，实际安装走 pyproject.toml 里的 PyPI 依赖。
+# 四个运行库在 Phase 2 重新发布前仍托管在 TencentCloud 组织（xkx121029/octop-harness 目前不存在）；
+# 此处只用于源码克隆，实际安装走 pyproject.toml 里的 PyPI 依赖。
+# Phase 2：三个仓库在 xkx121029 下建好后，把 OCTOP_LIBS_BASE 改成 https://github.com/xkx121029。
 OCTOP_LIBS_BASE="${OCTOP_LIBS_BASE:-https://github.com/TencentCloud}"
 HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${OCTOP_LIBS_BASE}/octop-harness.git}"
 HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${OCTOP_LIBS_BASE}/octop-gateway.git}"
