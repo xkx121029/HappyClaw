@@ -52,7 +52,7 @@ def test_portal_catalog_lists_plugins_and_experts(monkeypatch: pytest.MonkeyPatc
         "name": {"zh": "天气", "en": "Weather"},
         "description": {"zh": "天气", "en": "Weather"},
         "download_url": (
-            "https://download.octop.cloud/octop/market/plugins/weather/0.1.0/weather-0.1.0.zip"
+            "https://github.com/xkx121029/HappyClaw/releases/download/v0.9.31/plugins/weather/0.1.0/weather-0.1.0.zip"
         ),
     }
     expert = {
@@ -63,7 +63,7 @@ def test_portal_catalog_lists_plugins_and_experts(monkeypatch: pytest.MonkeyPatc
         "description": {"zh": "描述", "en": "Description"},
         "scene": "tech",
         "download_url": (
-            "https://download.octop.cloud/octop/market/experts/ops-engineer/1.0.0/"
+            "https://github.com/xkx121029/HappyClaw/releases/download/v0.9.31/experts/ops-engineer/1.0.0/"
             "ops-engineer-1.0.0.zip"
         ),
     }
@@ -121,7 +121,7 @@ def test_install_portal_expert_extracts_library(
         {"manifest.json": json.dumps({"id": "ops-engineer", "label": {"zh": "运维", "en": "Ops"}})}
     )
     archive_url = (
-        "https://download.octop.cloud/octop/market/experts/ops-engineer/1.0.0/"
+        "https://github.com/xkx121029/HappyClaw/releases/download/v0.9.31/experts/ops-engineer/1.0.0/"
         "ops-engineer-1.0.0.zip"
     )
 
@@ -136,7 +136,7 @@ def test_install_portal_expert_extracts_library(
                         "slug": "ops-engineer",
                         "label": {"zh": "运维", "en": "Ops"},
                         "icon_url": (
-                            "https://download.octop.cloud/octop/market/experts/"
+                            "https://github.com/xkx121029/HappyClaw/releases/download/v0.9.31/experts/"
                             "ops-engineer/1.0.0/avatar.svg"
                         ),
                         "download_url": archive_url,
@@ -183,7 +183,7 @@ def test_market_remote_origin_overrides_object_origin(monkeypatch: pytest.Monkey
     assert market_http.remote_base() == "https://files.example.com"
     archive = "https://files.example.com/octop/market/plugins/weather/0.1.0/weather-0.1.0.zip"
     assert market_http.is_market_archive_url(archive)
-    public = archive.replace("files.example.com", "download.octop.cloud")
+    public = archive.replace("files.example.com", "evil.example.com")
     assert not market_http.is_market_archive_url(public)
 
 

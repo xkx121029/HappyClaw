@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 from octop.infra.market.errors import PortalMarketError
 
-DEFAULT_REMOTE_BASE = "https://download.octop.cloud"
+DEFAULT_REMOTE_BASE = "https://github.com"
 # Off by default: this ships as a single-user self-hosted install, and pointing
 # every fresh install at a catalog site we do not run is a dependency, not a
 # feature. Set ``OCTOP_PORTAL_ORIGIN`` to a self-hosted market (see

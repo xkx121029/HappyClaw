@@ -42,7 +42,7 @@ OCTOP_MARKET_REMOTE_ORIGIN=http://market.internal:9000
 | 变量 | 含义 |
 |---|---|
 | `OCTOP_PORTAL_ORIGIN` | 目录源站，只写协议、主机和端口，**不要带路径**。未设置即为空：HappyClaw 不连任何远程目录，市场显示「暂时不可用」。要启用目录（自建或公网）就显式写上源站。 |
-| `OCTOP_MARKET_REMOTE_ORIGIN` | 安装包源站，同样只保留源站。未设置或无法解析时默认 `https://download.octop.cloud`。 |
+| `OCTOP_MARKET_REMOTE_ORIGIN` | 安装包源站，同样只保留源站。未设置或无法解析时默认 `https://github.com`，即本仓库的 Releases；自建市场要按自己的源站显式设置。 |
 
 目录和安装包可以放同一台机器，所以上面两个变量可以相同。`download_url` 的协议、主机必须与 `OCTOP_MARKET_REMOTE_ORIGIN` 一致；环境变量里写了端口时，URL 的端口也要相同，没写端口就用该协议的默认端口。路径和查询参数不限制，自建市场可以按自己的接口给出地址。下面只是静态文件的一种放法：
 
