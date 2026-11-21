@@ -29,7 +29,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 Open `http://localhost:8088`. Single-user mode needs no administrator password and no setup wizard: the first boot initializes the database and binds the local owner automatically, and the dashboard opens straight into the workspace.
 
-> **Compatibility:** `OCTOP_DEFAULT_PASSWORD`, `OCTOP_ADMIN_USERNAME`, and `OCTOP_ADMIN_DISPLAY_NAME` are no longer read by the entrypoint at all. The container creates no account: first boot runs `octop init --yes`, which only builds the runtime directory and runs migrations, and the server binds the local owner on start. Reusing an old data volume keeps its existing rows untouched.
+> **Upgrading from an older image:** the container no longer reads `OCTOP_DEFAULT_PASSWORD`, `OCTOP_ADMIN_USERNAME`, or `OCTOP_ADMIN_DISPLAY_NAME`, and creates no account. First boot runs `octop init --yes` (runtime directory + migrations only) and the server binds the local owner on start, so an existing data volume keeps every user row and you open the dashboard as that owner. `credential.txt` and `octop-login.txt` are no longer written; leftovers from an older image are harmless.
 
 Compose sets the open-file limit to 65535 for multi-agent workloads. Server startup also raises the soft limit up to 65535 within the inherited hard limit and logs the effective limits. Recreate existing containers to apply changed Compose limits; a restart alone does not change their hard limit.
 
@@ -67,8 +67,6 @@ bash docker/docker_build.sh
 | `HOME` | `/data` | Must be `/data` so `~/.octop` maps to the data volume |
 | `OCTOP_PORT` | `8088` | HTTP listen port |
 | `OCTOP_DATA` | `~/.octop` | Host data directory (mounted at `/data/.octop`) |
-| `OCTOP_DEFAULT_PASSWORD` | _(unset)_ | **Legacy**: ignored by the container; no account is created on first boot. `octop init --admin-*` still accepts it for the fnOS installer |
-| `OCTOP_ADMIN_USERNAME` | `admin` | **Legacy**: ignored by the container, same as above |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN (or other `OCTOP_DATABASE_*`; see [configuration.md](../docs/configuration.md)) |
 | `OCTOP_DATABASE_DRIVER` | — | `sqlite` \| `postgresql` when overriding defaults via env |
 | `OPENAI_API_KEY` | — | OpenAI-compatible API key |

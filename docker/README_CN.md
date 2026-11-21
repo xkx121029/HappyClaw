@@ -29,7 +29,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 访问 `http://localhost:8088`。单人模式不需要预置管理员密码，也不需要走设置向导：首次启动会初始化数据库并自动绑定本机使用者，打开页面直接进入工作台。
 
-> **兼容说明**：入口脚本已完全不读取 `OCTOP_DEFAULT_PASSWORD`、`OCTOP_ADMIN_USERNAME`、`OCTOP_ADMIN_DISPLAY_NAME`。容器首次启动只执行 `octop init --yes`（建目录 + 跑迁移），账号由服务启动时自动绑定的本机使用者承担。复用旧数据卷时原有用户行保持不变。
+> **从旧镜像升级：** 容器不再读取 `OCTOP_DEFAULT_PASSWORD`、`OCTOP_ADMIN_USERNAME`、`OCTOP_ADMIN_DISPLAY_NAME`，首次启动也不创建账号：只执行 `octop init --yes`（建目录 + 跑迁移），账号由服务启动时自动绑定的本机使用者承担。旧数据卷里的用户行全部保留，打开控制台就是该使用者。`credential.txt` 与 `octop-login.txt` 不再生成，旧镜像留下的这两个文件无害，可以删掉。
 
 Compose 将多 agent 服务的文件描述符限制设为 65535。服务启动时也会在继承的 hard limit 内将 soft limit 提升至最多 65535，并记录实际限额。已有容器需重新创建才能应用 Compose 限额变化；仅重启不会改变容器的 hard limit。
 
@@ -67,8 +67,6 @@ bash docker/docker_build.sh
 | `HOME` | `/data` | 必须为 `/data`，数据目录映射到 `~/.octop` |
 | `OCTOP_PORT` | `8088` | HTTP 服务端口 |
 | `OCTOP_DATA` | `~/.octop` | 宿主机数据目录（Compose 挂载到 `/data/.octop`） |
-| `OCTOP_DEFAULT_PASSWORD` | _(未设置)_ | **Legacy**：容器不读取；首次启动不创建任何账号。仅 fnOS 安装脚本通过 `octop init --admin-*` 使用 |
-| `OCTOP_ADMIN_USERNAME` | `admin` | **Legacy**：容器忽略，同上 |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN（或其他 `OCTOP_DATABASE_*`，见 [configuration.md](../docs/configuration.md)） |
 | `OCTOP_DATABASE_DRIVER` | — | 通过环境变量覆盖时：`sqlite` \| `postgresql` |
 | `OPENAI_API_KEY` | — | OpenAI 兼容 API Key |

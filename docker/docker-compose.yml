@@ -13,8 +13,7 @@
 #   OCTOP_DATABASE_DRIVER=postgresql
 #   OCTOP_DATABASE_URL=postgresql://octop:octop@host.docker.internal:5432/octop
 #
-# Legacy 变量（保留用于兼容旧部署，单人版启动后不参与账号逻辑）:
-#   OCTOP_DEFAULT_PASSWORD / OCTOP_ADMIN_USERNAME / OCTOP_ADMIN_DISPLAY_NAME
+# 单人版没有账号：容器不读取 OCTOP_DEFAULT_PASSWORD 等旧变量。
 #
 # 注意: docker/.env 仅用于 Compose 插值；变量必须列在下方 environment
 # 才会进入容器。也可写入数据卷内的 ~/.octop/env（宿主机挂载目录下的 env）。
@@ -43,10 +42,6 @@ services:
       - OCTOP_BIND_HOST=0.0.0.0
       - OCTOP_PORT=${OCTOP_PORT:-8088}
       - OCTOP_LOG_LEVEL=${OCTOP_LOG_LEVEL:-info}
-      # Legacy only — single-user mode binds the local owner without these.
-      - OCTOP_DEFAULT_PASSWORD=${OCTOP_DEFAULT_PASSWORD:-}
-      - OCTOP_ADMIN_USERNAME=${OCTOP_ADMIN_USERNAME:-admin}
-      - OCTOP_ADMIN_DISPLAY_NAME=${OCTOP_ADMIN_DISPLAY_NAME:-Admin}
       - OCTOP_DATABASE_URL=${OCTOP_DATABASE_URL:-}
       - OCTOP_DATABASE_DRIVER=${OCTOP_DATABASE_DRIVER:-}
       - OCTOP_DATABASE_SQLITE_PATH=${OCTOP_DATABASE_SQLITE_PATH:-}

@@ -52,9 +52,18 @@ def _image_present() -> bool:
     return result.returncode == 0
 
 
+# Release gate: this file is the only check of the real image's single-user first
+# boot. It cannot run without a built image, so a skip here means "unverified" and
+# must be closed out before shipping. Build with `bash docker/docker_build.sh`
+# (or set OCTOP_TEST_IMAGE to a published tag), then run:
+#   pytest tests/integration/test_docker_image_boot.py -m "slow and not live" -q
 docker_live = pytest.mark.skipif(
     not _docker_available() or not _image_present(),
-    reason=f"need docker and image {IMAGE}",
+    reason=(
+        f"needs docker and the built image {IMAGE}; REQUIRED before a release "
+        "(bash docker/docker_build.sh, then rerun this file): see "
+        "reports/INSTALL-CONTRADICTIONS.md"
+    ),
 )
 
 
