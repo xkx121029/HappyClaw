@@ -27,6 +27,11 @@
 - 备份文档区分手动与自动：`octop backup create` 默认不含会话，需 `--include-chats`；自动备份与托盘「立即备份」默认包含（`backup.include_chats: true`）
 - 安装脚本说明补充：Windows 无 `-Mirror`，需通过 `UV_DEFAULT_INDEX` 指定镜像
 
+### 发布说明（本轮面向升级用户）
+
+- **旧 Docker 部署升级后不再创建账号**：`OCTOP_DEFAULT_PASSWORD` 等变量不再被容器读取，首次启动只建库并跑迁移，打开控制台即是本机使用者。已有数据卷里的用户行、会话、配置全部保留，迁移 026 会把既有 admin 认成 owner；`credential.txt` / `octop-login.txt` 不再生成，旧文件可删。
+- **fnOS 安装/设置向导不再要账号**：装好直接进工作台；旧版写下的 `octop-login.txt` 与 `fnos-admin.env` 可以删掉。
+
 ### 修复
 - 文档中的健康检查示例改为实际返回结构（`{"ok": true, ...}`）
 - 发布清单新增 3.7「空目录自建」阻断项：安装/升级不得依赖 `~/.octop` 已存在，首次启动必须能在空目录创建全部结构
@@ -46,6 +51,10 @@
 - `octop init` 去掉交互式建号：单人版不再询问 admin 用户名/密码，直接建目录、跑迁移后退出；`--admin-username/--admin-password/--admin-display-name` 降级为 legacy 参数（只给旧部署与 fnOS 包的 `octop init --admin-*` 用），单独传一个即报用法错误而非转为提问
 - `docker/docker-entrypoint.sh` 与 Docker 文档对齐：容器首次启动只跑 `octop init --yes`，不再读取 `OCTOP_DEFAULT_PASSWORD` / `OCTOP_ADMIN_USERNAME` / `OCTOP_ADMIN_DISPLAY_NAME`，不再写 `credential.txt` 与 `octop-login.txt`；`docker/README.md`、`docker/README_CN.md` 删除「入口脚本仍读取这些变量、清理另开提交」的兼容说明
 - `pyproject.toml` 元数据改为单人自托管口径：description 不再写 multi-user，authors 由 `octop contributors` 改为 `xkx121029`（`name` / `version` 未动，发布名变更留给 Phase 2）
+- fnOS 安装包（`fnos/docker` 与 `fnos/native`）去掉管理员账号向导：`wizard/install` 只剩安装说明与首次使用步骤，`wizard/config` 只显示数据目录与配置入口，`wizard/upgrade` 说明数据保留；`cmd/install_init` / `cmd/config_init` 不再校验账号字段，`cmd/*_callback` 不再写 `fnos-admin.env`、`fnos-boot.sh` 与 `octop-login.txt`；native 启动器首次启动只跑 `octop init --yes`。`scripts/fnos/common.sh` 删除密码生成/校验/改密/凭据回落共 8 个函数，`octop_render_config_wizard` 收窄为只替换数据目录。两个 `manifest` 的门店文案与 `fnos/README.md` 同步改为单人自托管口径（原文仍写「用安装向导里设置的账号登录」）
+- `docker-compose.yml` / `docker-compose.cn.yml` / `docker-compose.mobile.yml` 删掉三行 legacy 管理员环境变量；容器已不读取，留着只会让人以为还有用
+- `scripts/release_download_links.py` 的 `GITHUB_REPO` 兜底由 `TencentCloud/Octop` 改为 `xkx121029/HappyClaw`，与桌面端更新源一致（Actions 内仍由 `GITHUB_REPOSITORY` 覆盖）
+- `tests/integration/test_docker_image_boot.py` 缺镜像时的 skip 明确标注为「发布前必须补跑」并指向验证步骤
 
 ## [1.0.3b5] - 2026-11-11
 
