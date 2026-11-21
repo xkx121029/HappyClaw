@@ -39,7 +39,7 @@ export const agent = {
   name: "HappyClaw",
   role: "本机 · 默认智能体",
   model: "claude-fable-5-2",
-  workspace: "E:\\HAPPYclaw\\Octop",
+  workspace: "~/happyclaw/workspace",
 };
 
 export const threads: Thread[] = [
