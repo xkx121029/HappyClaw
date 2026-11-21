@@ -1,5 +1,8 @@
 # HappyClaw Installer for Windows (PowerShell)
-# Usage: irm <url>/install.ps1 | iex
+# Usage: irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
+#    or: irm https://raw.githubusercontent.com/xkx121029/HappyClaw/main/scripts/install.ps1 | iex
+# The one-liner defaults to this repository's main branch; set OCTOP_INSTALL_BASE
+# with a mirror that serves the same scripts/ tree when GitHub is unreachable.
 #    or: .\install.ps1 [-Version X.Y.Z] [-FromSource] [-SourceDir DIR] [-Extras "browser"]
 #
 # Installs HappyClaw into ~/.octop with a uv-managed Python environment.

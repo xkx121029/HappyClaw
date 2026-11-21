@@ -21,10 +21,10 @@
 
 ## 1. 安装（约 2 分钟）
 
-打开 **PowerShell**（普通权限即可），执行：
+打开 **PowerShell**（普通权限即可），执行（命令默认从本仓库 GitHub `main` 拉脚本；GitHub 访问受限时先把 `$env:OCTOP_INSTALL_BASE` 指向提供同样 `scripts/` 目录的镜像）：
 
 ```powershell
-irm https://download.octop.cloud/octop/scripts/install.ps1 | iex
+if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 安装完成后**关闭当前窗口，重新打开一个 PowerShell**，让 PATH 生效。然后验证：
@@ -41,7 +41,7 @@ octop --version
 如果提示「禁止运行脚本」，用下面这条替代（只对当前进程放行）：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "irm https://download.octop.cloud/octop/scripts/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/xkx121029/HappyClaw/main/scripts/install.ps1 | iex"
 ```
 
 </details>
@@ -50,7 +50,7 @@ powershell -ExecutionPolicy Bypass -Command "irm https://download.octop.cloud/oc
 <summary>macOS / Linux</summary>
 
 ```bash
-curl -fsSL https://download.octop.cloud/octop/scripts/install.sh | bash
+curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
 source ~/.zshrc   # 或 source ~/.bashrc
 octop --version
 ```

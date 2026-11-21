@@ -49,13 +49,13 @@
 **Windows（PowerShell）**
 
 ```powershell
-irm https://download.octop.cloud/octop/scripts/install.ps1 | iex
+if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 **macOS / Linux**
 
 ```bash
-curl -fsSL https://download.octop.cloud/octop/scripts/install.sh | bash
+curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
 ```
 
 安装脚本会在 `~/.octop/venv` 创建隔离环境，**不会改动系统 Python**。

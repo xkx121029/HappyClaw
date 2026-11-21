@@ -2,7 +2,9 @@
 # HappyClaw installer (macOS / Linux)
 # Usage: bash scripts/install.sh                 # install from PyPI (default)
 #    or: bash scripts/install.sh --from-source   # install from a local checkout
-#    or: curl -fsSL <url>/install.sh | bash      # remote install
+#    or: curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash   # remote install
+# The one-liner defaults to this repository's main branch; export OCTOP_INSTALL_BASE
+# with a mirror that serves the same scripts/ tree when GitHub is unreachable.
 #
 # Installs HappyClaw into ~/.octop and uses uv to manage the Python environment.
 # Python does not need to be installed first; uv handles that.

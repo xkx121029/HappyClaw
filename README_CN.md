@@ -41,14 +41,16 @@
 **Windows（PowerShell）**
 
 ```powershell
-irm https://download.octop.cloud/octop/scripts/install.ps1 | iex
+if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 **macOS / Linux**
 
 ```bash
-curl -fsSL https://download.octop.cloud/octop/scripts/install.sh | bash
+curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
 ```
+
+> 两条一键命令都读 `OCTOP_INSTALL_BASE`，默认取本仓库 GitHub `main` 分支。若你的网络访问 GitHub 受限，把该变量指向提供同样 `scripts/` 目录的自建镜像，再重跑一键命令。
 
 安装完成后打开一个新终端，启动服务：
 
@@ -98,8 +100,8 @@ Web UI、IM 通道与定时任务都在同一个 `OctopServer` 进程里，不�
 
 | 方式 | 平台 | 命令 |
 |------|------|------|
-| 一键脚本 | macOS / Linux | `curl -fsSL https://download.octop.cloud/octop/scripts/install.sh \| bash` |
-| 一键脚本 | Windows | `irm https://download.octop.cloud/octop/scripts/install.ps1 \| iex` |
+| 一键脚本 | macOS / Linux | `curl -fsSL https://raw.githubusercontent.com/xkx121029/HappyClaw/main/scripts/install.sh \| bash` |
+| 一键脚本 | Windows | `irm https://raw.githubusercontent.com/xkx121029/HappyClaw/main/scripts/install.ps1 \| iex` |
 | 仓库内脚本 | macOS / Linux | `bash scripts/install.sh` |
 | 仓库内脚本 | Windows | `powershell -ExecutionPolicy Bypass -File scripts/install.ps1` |
 | PyPI | 全平台 | `pip install octop` |

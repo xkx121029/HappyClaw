@@ -41,14 +41,16 @@ One server process serves the web console, the IM channels, and the scheduled jo
 **Windows (PowerShell)**
 
 ```powershell
-irm https://download.octop.cloud/octop/scripts/install.ps1 | iex
+if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 **macOS / Linux**
 
 ```bash
-curl -fsSL https://download.octop.cloud/octop/scripts/install.sh | bash
+curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
 ```
+
+> Both one-liners read `OCTOP_INSTALL_BASE` and default to this repository's `main` branch on GitHub. If GitHub is unreachable from your network, export that variable with a mirror that serves the same `scripts/` tree and re-run the one-liner.
 
 Then open a new terminal and start the server:
 
@@ -98,8 +100,8 @@ The web UI, the IM channels, and the scheduled jobs all run inside one `OctopSer
 
 | Method | Platform | Command |
 |--------|----------|---------|
-| One-liner | macOS / Linux | `curl -fsSL https://download.octop.cloud/octop/scripts/install.sh \| bash` |
-| One-liner | Windows | `irm https://download.octop.cloud/octop/scripts/install.ps1 \| iex` |
+| One-liner | macOS / Linux | `curl -fsSL https://raw.githubusercontent.com/xkx121029/HappyClaw/main/scripts/install.sh \| bash` |
+| One-liner | Windows | `irm https://raw.githubusercontent.com/xkx121029/HappyClaw/main/scripts/install.ps1 \| iex` |
 | Repo script | macOS / Linux | `bash scripts/install.sh` |
 | Repo script | Windows | `powershell -ExecutionPolicy Bypass -File scripts/install.ps1` |
 | PyPI | Any | `pip install octop` |

@@ -2,7 +2,9 @@
 # HappyClaw 安装脚本 (macOS / Linux)
 # 用法: bash scripts/install.sh              # 从 PyPI 安装（默认）
 #   或: bash scripts/install.sh --from-source  # 从本地源码安装
-#   或: curl -fsSL <url>/install.sh | bash   # 远程安装
+#   或: curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash   # 远程安装
+# 一键安装默认取本仓库 main 分支；GitHub 访问受限时把 OCTOP_INSTALL_BASE
+# 指向提供同样 scripts/ 目录的自建镜像。
 #
 # 将 HappyClaw 安装到 ~/.octop，使用 uv 管理 Python 环境。
 # 用户无需预先安装 Python — uv 会处理一切。
