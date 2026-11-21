@@ -10,18 +10,31 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppSplatRouteImport } from './routes/_app.$'
 import { Route as AppChatRouteImport } from './routes/_app.chat'
 import { Route as AppDesignRouteImport } from './routes/_app.design'
+import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSplatRoute = AppSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
   getParentRoute: () => AppRoute,
 } as any)
 const AppChatRoute = AppChatRouteImport.update({
@@ -34,6 +47,11 @@ const AppDesignRoute = AppDesignRouteImport.update({
   path: '/design',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHomeRoute = AppHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -42,40 +60,53 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/setup': typeof SetupRoute
+  '/$': typeof AppSplatRoute
   '/chat': typeof AppChatRoute
   '/design': typeof AppDesignRoute
+  '/home': typeof AppHomeRoute
   '/settings': typeof AppSettingsRoute
 }
 export interface FileRoutesByTo {
+  '/setup': typeof SetupRoute
+  '/$': typeof AppSplatRoute
   '/chat': typeof AppChatRoute
   '/design': typeof AppDesignRoute
+  '/home': typeof AppHomeRoute
   '/settings': typeof AppSettingsRoute
   '/': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/setup': typeof SetupRoute
+  '/_app/$': typeof AppSplatRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/design': typeof AppDesignRoute
+  '/_app/home': typeof AppHomeRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/chat' | '/design' | '/settings'
+  fullPaths: '/' | '/setup' | '/$' | '/chat' | '/design' | '/home' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/chat' | '/design' | '/settings' | '/'
+  to: '/setup' | '/$' | '/chat' | '/design' | '/home' | '/settings' | '/'
   id:
     | '__root__'
     | '/_app'
+    | '/setup'
+    | '/_app/$'
     | '/_app/chat'
     | '/_app/design'
+    | '/_app/home'
     | '/_app/settings'
     | '/_app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  SetupRoute: typeof SetupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -87,11 +118,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/': {
       id: '/_app/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/$': {
+      id: '/_app/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AppSplatRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/chat': {
@@ -108,6 +153,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDesignRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/home': {
+      id: '/_app/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AppHomeRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -119,15 +171,19 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppSplatRoute: typeof AppSplatRoute
   AppChatRoute: typeof AppChatRoute
   AppDesignRoute: typeof AppDesignRoute
+  AppHomeRoute: typeof AppHomeRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppSplatRoute: AppSplatRoute,
   AppChatRoute: AppChatRoute,
   AppDesignRoute: AppDesignRoute,
+  AppHomeRoute: AppHomeRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
 }
@@ -136,6 +192,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  SetupRoute: SetupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

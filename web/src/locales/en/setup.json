@@ -1,0 +1,50 @@
+{
+  "title": "First run",
+  "subtitle": "What this instance is bound to, and whether its database and provider answer",
+  "loading": "Reading the server state…",
+  "unreachable": "The backend did not answer, so its setup state cannot be read.",
+  "state": {
+    "heading": "Instance state",
+    "body": "Reported by the server on every load; nothing here writes to it.",
+    "driver": "Database driver",
+    "bound": "Database bound at boot",
+    "owner": "Local owner",
+    "mode": "Mode",
+    "singleUser": "Single local owner",
+    "multiUser": "Multi-user",
+    "ownerLocal": "Created automatically",
+    "ownerMissing": "Missing",
+    "yes": "Yes",
+    "no": "Not yet",
+    "ready": "Bound and ready for a first conversation.",
+    "required": "Setup still required",
+    "requiredBody": "This build answers SINGLE_USER_UNSUPPORTED for the wizard write endpoints (database, initial-admin, finish). A single-user instance binds SQLite and creates its owner at boot, so there is no step to complete here.",
+    "enter": "Open the workspace"
+  },
+  "database": {
+    "heading": "Database probe",
+    "body": "Read-only connectivity test against a candidate control-plane database.",
+    "driver": "Driver",
+    "sqlitePath": "SQLite path",
+    "sqlitePathHint": "Empty probes the default path under the HappyClaw home.",
+    "host": "Host",
+    "database": "Database",
+    "user": "User",
+    "probe": "Probe database",
+    "probing": "Probing…",
+    "ok": "Database answered",
+    "failed": "Database did not answer"
+  },
+  "provider": {
+    "heading": "Provider probe",
+    "body": "Sends one test request. The key is used for this call only; add providers for real in Settings.",
+    "preset": "Preset",
+    "modelId": "Model id",
+    "apiKey": "API key",
+    "baseUrl": "Base URL",
+    "probe": "Probe provider",
+    "probing": "Probing…",
+    "ok": "Provider answered",
+    "failed": "Provider did not answer"
+  }
+}

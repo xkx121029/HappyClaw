@@ -1,5 +1,6 @@
 import {
   ChevronLeft,
+  House,
   Languages,
   MessageSquare,
   Moon,
@@ -19,11 +20,12 @@ import { useUiStore } from "@/stores/ui";
 
 interface NavItem {
   to: string;
-  labelKey: "nav.chat" | "nav.settings" | "nav.design";
+  labelKey: "nav.home" | "nav.chat" | "nav.settings" | "nav.design";
   icon: ReactNode;
 }
 
 const mainItems: NavItem[] = [
+  { to: "/home", labelKey: "nav.home", icon: <House /> },
   { to: "/chat", labelKey: "nav.chat", icon: <MessageSquare /> },
 ];
 

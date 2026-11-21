@@ -33,7 +33,7 @@
 
 | 路由 | 页面模块（文件） | 行数 | 判定 | 后续批次 |
 | --- | --- | --- | --- | --- |
-| `/home` | `pages/Home/index.tsx`（11 文件） | 5,534 | **重写**：活动流 + 卡片，逻辑简单但样式全换 | B1 |
+| `/home` | `pages/Home/index.tsx`（11 文件） | 5,534 | **重写**：活动流 + 卡片，逻辑简单但样式全换 | B1 完成 |
 | `/chat`、`/chat/:agentId`、`/chat/:agentId/:threadId` | `pages/Chat/index.tsx`（303 文件） | 62,719 | **拆分重写**：见 §3 的 Chat 拆解 | B5a/b/c |
 | `/solo` | `pages/Solo/index.tsx`（21 文件） | 4,988 | **重写**：chat + monaco + xterm 组合，依赖 B5、B6 | B6 |
 | `/bao` | `components/Bao/BaoPage.tsx`（9 文件） | 2,575 | **重写**：Router 页，`?project=` 作用域 | B3 |
@@ -62,12 +62,27 @@
 | `/admin/advanced` | `pages/Settings/AdvancedSettings/**`（12 文件）+ `Settings/{Environments,Observability,BackupRestore,HttpsSettings,PhoneAccess}` | 4,489 | **重写** | B4 |
 | `/admin/security` | `pages/Settings/Security/index.tsx`（6 文件） | 1,429 | **重写** | B4 |
 | `/agent-config` | `pages/Agent/Config/index.tsx`（3 文件） | 290 | **复用逻辑**：体积小、无 antd 布局依赖，逻辑近乎可直接搬 | B1 |
-| `/setup`（壳外） | `pages/Setup/**`（8 文件） | 3,317 | **重写**：首次启动向导，要能在空 `OCTOP_HOME` 上跑通 | B1 |
+| `/setup`（壳外） | `pages/Setup/**`（8 文件） | 3,317 | **重写为诊断页**：见下方「Setup 的真相」 | B1 完成 |
 | `*` | `components/NotFoundPage.tsx` | 23 | **已在 `web/` 内实现**（`routes/__root.tsx`） | 完成 |
 | `/pwa-debug` | `pages/PwaDebug/index.tsx` | 710 | **删**：调试页，新 PWA 用 `vite-plugin-pwa` 重做 | — |
 | `/motion-preview` | `pages/MotionPreview/index.tsx`（2 文件） | 796 | **删**：已被 `/design` 取代 | 完成 |
 | `/m/*`（13 条） | `mobile/**` | 6,803 | **删**（待产品确认）：新外壳响应式，不再维护第二套页面树 | B7 |
-| 38 条重定向 | `routes/index.tsx` | — | **直接搬**：`RedirectPreserveSearch` 语义必须保留 `?search` + `#hash` | B1 |
+| 38 条重定向 | `routes/index.tsx` | — | **直接搬**：`RedirectPreserveSearch` 语义必须保留 `?search` + `#hash` | B1 完成 |
+
+### Setup 的真相（B1 实测）
+
+这个构建里向导的**写入**接口全部直接抛 `SINGLE_USER_UNSUPPORTED`：
+`POST /api/setup/database`、`/setup/begin`、`/setup/initial-admin`、`/setup/finish`、
+`/setup/verify-password`（`api/routers/setup.py` 里的 `_single_user()`）。单人模式下
+SQLite 与本地所有者在启动时自动绑定创建——用一个全新的 `OCTOP_HOME` 起服务，
+`GET /api/setup/status` 直接返回 `{"setup_required": false, "database_bound": true,
+"single_user": true}`，向导从来不会被触发。
+
+所以 `web/src/features/setup/` 没有复刻旧的多步向导（那会是一条每步都 500 的假流程），
+而是做成本构建里**真实可用**的首次运行页：实例状态（驱动/绑定/所有者/模式）+
+`POST /api/setup/test-database` 数据库探测 + `POST /api/setup/test-provider` 供应商探测。
+旧向导（8 文件 3,317 行）只有在后端真的重新支持多用户初始化时才值得搬，届时按
+`docs/dashboard-inventory.md` 的 (b) 表逐文件对照即可。
 
 **明确不迁移的死代码**（已核实）：
 
@@ -98,7 +113,8 @@
 | 批次 | 范围 | 规模 | 依赖 | 验收 |
 | --- | --- | --- | --- | --- |
 | **B0**（本轮，已完成） | 外壳 + 设计系统 + token + i18n + 路由 + API 客户端 + Chat/设置样板页 | 新写 ~4.2k | — | `npm ci && npm run build && npx tsc -b && npm run lint` 全绿；`/chat`、`/settings`、`/design` 渲染；对 `/api/agents`、`/api/agents/{id}/threads`、`/api/agents/{id}/threads/{tid}/history`、`/api/settings/*`、`/api/preferences` 发起真实请求 |
-| **B1** | 静态/只读页：Home、TokenUsage、NotFound（已完成）、Setup 向导、AgentConfig、38 条重定向 + `/m/*` 到桌面路径的兼容重定向 | ~10k | B0 | `/home` 用真实数据渲染；`GET /api/usage/summary` 200 且图表出数；空 `OCTOP_HOME` 下 `/setup` 能走完首次启动；所有重定向保留 `?search`/`#hash` |
+| **B1**（已完成，本轮） | Home、38 条旧路由重定向（含 `/m/*`）、`/setup` 首次运行诊断页 | 实做 2.1k | B0 | `/home` 用真实数据渲染（agents/threads/activity/usage/HITL 全 200）；旧路由落地且保留 `?search`/`#hash`；未迁移目标回落到 `/home` 而不是 404；`/setup` 能读到实例状态并跑通数据库探测 |
+| **B1-余** | TokenUsage 图表、AgentConfig | ~2k | B1 | `/api/usage/summary` 的 `buckets` 出图；`/agent-config` 保存生效 |
 | **B2** | 内容 CRUD：KnowledgeBases、SkillPackages、Connectors、Plugins、Storage | ~16k | B0 | 每类各完成一次「新建→列表→删除」；`/api/knowledge-bases`、`/api/skill-packages`、`/api/connectors` 200；上传预览可用 |
 | **B3** | 智能体域：Experts（含 SubagentManager）、CronJobs、Personalization 四个 tab（Skills/Tools/Memory/Channels）、ACP、Bao | ~29k | B2 | 智能体 create/start/stop 往返；cron 新建 + run-now 产出一次运行；Memory tab 能列并改一条记忆 |
 | **B4** | 设置/管理：Models（含 Voice/Search/媒体/Embedding 面板）、AdvancedSettings（含 Environments/Observability/Backup/TLS/PhoneAccess）、Security、`/bridge` 并入 | ~18k | B2 | 供应商「测试连接」成功；`POST /api/update/check` 200；主题/语言切换免刷新持久化 |
@@ -146,11 +162,11 @@ Chat 一个模块 62,719 行，是本轮唯一需要三批的页面。按**谁�
 | 1 | **Chat 不能因 `:threadId` 变化而重挂载**，否则输入框草稿与流式中断 | TanStack Router 的 `loaderDeps` + 保留父路由组件的组合；B5a 验收里专门卡这条 |
 | 2 | **Workbench 三个面板常驻 + `display:none`** | 用路由 `match` 保留挂载或显式 keep-alive，不能在 tab 切换时卸载终端 |
 | 3 | 43 个导航 key 与 15 条带 `?search` 的重定向 | B1 里对齐 `pathToKey`，重定向统一走同一个 `RedirectPreserveSearch` 组件 |
-| 4 | 手机端是否保留独立页面树 | 待产品确认；倾向删（B7），外壳本身已响应式 |
+| 4 | ~~手机端是否保留独立页面树~~ | **已决定删除**（产品负责人）。`web/src/lib/legacy-routes.ts` 里 13 条 `/m/*` 已按「重定向到新外壳对应页」落地，老链接不会 404；`mobile/**` 6,803 行随 B7 一起删 |
 | 5 | 桌面 Electron 壳是否也加载 `web/` | 若加载，B0 需要补 `window.octopDesktop` 门控与窗口拖拽区 |
 | 6 | `tests/unit/i18n/` 强制后端 `errors.*` 与旧前端 `apiErrors.*` 对齐 | 新前端不改后端文案；错误码映射沿用后端 envelope，见 `src/lib/api/errors.ts` |
 | 7 | 手机托管场景要把 API 源指向用户输入的 host | `env.apiBase` 已可注入，B7 前补 `mobileApiBase` 等价逻辑 |
-| 8 | 部分聊天接口没有 `response_model`（返回 `dict`），生成类型是 `Record<string, unknown>` | 在 `features/*/types.ts` 声明实际读取的字段并在 `api.ts` 收窄；建议后端补 `response_model`，这会让生成类型真正可用 |
+| 8 | 部分聊天接口没有 `response_model`（返回 `dict`），生成类型是 `Record<string, unknown>` | 在 `features/*/types.ts` 声明实际读取的字段并在 `api.ts` 收窄；建议后端补 `response_model`，这会让生成类型真正可用。**B1 又撞上同一处**：`/api/runtime/activity`、`/api/usage/summary`、`/api/setup/status` 同样是 `dict`，Home 与 Setup 的字段声明都在各自 `types.ts`/`api.ts` 里 |
 
 ## 6. 本轮之后第一件该做的事
 

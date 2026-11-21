@@ -3,7 +3,9 @@ import "i18next";
 import type enCommon from "@/locales/en/common.json";
 import type enChat from "@/locales/en/chat.json";
 import type enDesign from "@/locales/en/design.json";
+import type enHome from "@/locales/en/home.json";
 import type enSettings from "@/locales/en/settings.json";
+import type enSetup from "@/locales/en/setup.json";
 
 /**
  * Typed i18n keys: `t("chat.composer.placeholder")` is checked at compile time
@@ -15,7 +17,9 @@ declare module "i18next" {
     resources: {
       common: typeof enCommon;
       chat: typeof enChat;
+      home: typeof enHome;
       settings: typeof enSettings;
+      setup: typeof enSetup;
       design: typeof enDesign;
     };
   }

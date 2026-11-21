@@ -1,0 +1,60 @@
+{
+  "title": "Home",
+  "subtitle": "What your workspace is doing right now",
+  "greeting": "Welcome back",
+  "activity": {
+    "title": "Live activity",
+    "updated": "Updated {{time}}",
+    "busy": "Working",
+    "idle": "Idle",
+    "runningAgents": "Agents running",
+    "activeTurns": "Active turns",
+    "terminalSessions": "Terminal sessions",
+    "connections": "Dashboard connections"
+  },
+  "usage": {
+    "title": "Usage, last 30 days",
+    "tokens": "Total tokens",
+    "turns": "Turns",
+    "modelCalls": "Model calls",
+    "cacheHit": "Cache hit",
+    "empty": "No model calls recorded in this window yet.",
+    "unavailable": "Usage statistics are unavailable."
+  },
+  "needsYou": {
+    "title": "Needs you",
+    "count_one": "{{count}} item waiting",
+    "count_other": "{{count}} items waiting",
+    "empty": "Nothing needs your decision",
+    "emptyDescription": "Approvals and questions from your agents will show up here.",
+    "open": "Open conversation"
+  },
+  "threads": {
+    "title": "Recent conversations",
+    "empty": "No conversations yet",
+    "emptyDescription": "Start one from the Chat page.",
+    "open": "Open chat",
+    "untitled": "Untitled conversation",
+    "noMessages": "Empty"
+  },
+  "agents": {
+    "title": "Agents",
+    "empty": "No agents yet",
+    "emptyDescription": "Create one with `octop agent create`.",
+    "chat": "Chat",
+    "state": {
+      "running": "Running",
+      "stopped": "Stopped",
+      "starting": "Starting",
+      "stopping": "Stopping",
+      "failed": "Failed",
+      "created": "Not started"
+    }
+  },
+  "quick": {
+    "title": "Quick actions",
+    "chat": "Open chat",
+    "settings": "Settings",
+    "design": "Design system"
+  }
+}

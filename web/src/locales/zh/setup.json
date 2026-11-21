@@ -1,0 +1,50 @@
+{
+  "title": "首次运行",
+  "subtitle": "这个实例绑定了什么，数据库与供应商是否可用",
+  "loading": "正在读取服务端状态…",
+  "unreachable": "后端没有响应，读不到初始化状态。",
+  "state": {
+    "heading": "实例状态",
+    "body": "每次打开都由服务端实时返回，本页不写入任何内容。",
+    "driver": "数据库驱动",
+    "bound": "启动时已绑定数据库",
+    "owner": "本地所有者",
+    "mode": "运行模式",
+    "singleUser": "单一本地所有者",
+    "multiUser": "多用户",
+    "ownerLocal": "已自动创建",
+    "ownerMissing": "缺失",
+    "yes": "是",
+    "no": "尚未",
+    "ready": "已绑定，可以开始第一次对话。",
+    "required": "仍需初始化",
+    "requiredBody": "这个构建对向导的写入接口（database / initial-admin / finish）一律返回 SINGLE_USER_UNSUPPORTED。单人模式下 SQLite 与本地所有者在启动时自动绑定并创建，所以这里没有需要走的步骤。",
+    "enter": "进入工作区"
+  },
+  "database": {
+    "heading": "数据库探测",
+    "body": "对候选控制面数据库做只读连通性测试。",
+    "driver": "驱动",
+    "sqlitePath": "SQLite 路径",
+    "sqlitePathHint": "留空则探测 HappyClaw 主目录下的默认路径。",
+    "host": "主机",
+    "database": "数据库名",
+    "user": "用户名",
+    "probe": "探测数据库",
+    "probing": "探测中…",
+    "ok": "数据库已响应",
+    "failed": "数据库没有响应"
+  },
+  "provider": {
+    "heading": "供应商探测",
+    "body": "只发一次测试请求。密钥仅用于这次调用；正式接入请在设置里添加供应商。",
+    "preset": "预设",
+    "modelId": "模型 ID",
+    "apiKey": "API 密钥",
+    "baseUrl": "Base URL",
+    "probe": "探测供应商",
+    "probing": "探测中…",
+    "ok": "供应商已响应",
+    "failed": "供应商没有响应"
+  }
+}

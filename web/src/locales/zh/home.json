@@ -1,0 +1,60 @@
+{
+  "title": "首页",
+  "subtitle": "你的工作区此刻正在做什么",
+  "greeting": "欢迎回来",
+  "activity": {
+    "title": "实时状态",
+    "updated": "更新于 {{time}}",
+    "busy": "执行中",
+    "idle": "空闲",
+    "runningAgents": "运行中的智能体",
+    "activeTurns": "进行中的回合",
+    "terminalSessions": "终端会话",
+    "connections": "面板连接数"
+  },
+  "usage": {
+    "title": "近 30 天用量",
+    "tokens": "总 token",
+    "turns": "回合",
+    "modelCalls": "模型调用",
+    "cacheHit": "缓存命中",
+    "empty": "这个窗口内还没有模型调用记录。",
+    "unavailable": "用量统计暂不可用。"
+  },
+  "needsYou": {
+    "title": "等你处理",
+    "count_one": "{{count}} 项待处理",
+    "count_other": "{{count}} 项待处理",
+    "empty": "没有待你决定的事项",
+    "emptyDescription": "智能体的审批与提问会出现在这里。",
+    "open": "打开会话"
+  },
+  "threads": {
+    "title": "最近会话",
+    "empty": "还没有会话",
+    "emptyDescription": "在会话页新建一个。",
+    "open": "进入会话",
+    "untitled": "未命名会话",
+    "noMessages": "空"
+  },
+  "agents": {
+    "title": "智能体",
+    "empty": "还没有智能体",
+    "emptyDescription": "用 `octop agent create` 创建一个。",
+    "chat": "去对话",
+    "state": {
+      "running": "运行中",
+      "stopped": "已停止",
+      "starting": "启动中",
+      "stopping": "停止中",
+      "failed": "失败",
+      "created": "未启动"
+    }
+  },
+  "quick": {
+    "title": "快捷入口",
+    "chat": "打开会话",
+    "settings": "设置",
+    "design": "设计系统"
+  }
+}

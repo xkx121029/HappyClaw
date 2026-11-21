@@ -8,7 +8,7 @@ backend route the other needs exclusively, so both can be served at once.
 
 | Concern | Choice | Why |
 | --- | --- | --- |
-| Build | Vite 8 + React 19 + TypeScript 5.9 (strict) | Same toolchain the team already runs, one generation newer. |
+| Build | Vite 8 + React 19 + TypeScript 5.9 (strict) | Same toolchain the team already runs, one generation newer. **TypeScript is pinned to `~5.9` on purpose**: `typescript-eslint@8.73` declares a peer range of `>=4.8.4 <6.1`, so installing TS 6.x makes `npm install` fail with ERESOLVE. Bump both together, never one alone. |
 | Styling | Tailwind CSS 4 + a local component layer | No Ant Design: its reset, spacing rhythm and DOM shape were the thing being replaced. Tokens are CSS variables, so theming is a variable swap. |
 | Routing | TanStack Router (file-based, auto code-splitting) | Typed links and params; each route ships as its own chunk. |
 | Server state | TanStack Query | Retries, staleness and cache invalidation in one place. |
