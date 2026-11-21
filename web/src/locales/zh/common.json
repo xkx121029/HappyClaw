@@ -48,6 +48,8 @@
     "home": "首页",
     "chat": "会话",
     "settings": "设置",
-    "design": "设计系统"
+    "design": "设计系统",
+    "usage": "用量",
+    "agentConfig": "智能体配置"
   }
 }

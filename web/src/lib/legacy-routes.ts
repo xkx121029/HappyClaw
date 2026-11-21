@@ -94,6 +94,8 @@ const liveRoutes = new Set([
   "/home",
   "/chat",
   "/settings",
+  "/token-usage",
+  "/agent-config",
   "/design",
   "/setup",
 ]);

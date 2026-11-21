@@ -1,0 +1,41 @@
+{
+  "title": "Agent configuration",
+  "subtitle": "Runtime limits and identity for one agent",
+  "agent": "Agent",
+  "loading": "Loading agents…",
+  "unreachable": "The backend did not answer, so agent settings cannot be read.",
+  "noAgents": "No agents yet",
+  "noAgentsHint": "Create one with `happyclaw agent create`, then reload this page.",
+  "desc": "Leave a number empty to use the server default for that field.",
+  "serverDefault": "server default",
+  "identity": "Identity",
+  "prompt": "System prompt",
+  "promptHint": "Sent with every turn. Markdown is fine.",
+  "runtime": "Runtime limits",
+  "runtimeHint": "Bounds that stop a single turn from running away.",
+  "fields": {
+    "name": "Name",
+    "description": "Description",
+    "model": "Default model",
+    "modelHint": "Model reference, e.g. claude-sonnet-5-5. Empty means the global default.",
+    "systemPrompt": "System prompt",
+    "maxIters": "Max iterations",
+    "maxInput": "Max input length",
+    "temperature": "Temperature",
+    "topP": "Top P",
+    "maxTokens": "Max output tokens"
+  },
+  "hints": {
+    "maxIters": "Tool-call rounds before the turn is stopped.",
+    "maxInput": "Characters of context accepted per turn.",
+    "temperature": "0 – 2. Lower is more repeatable.",
+    "topP": "0 – 1. Nucleus sampling cutoff.",
+    "maxTokens": "Upper bound on one reply."
+  },
+  "unsaved": "Unsaved changes",
+  "reset": "Reset",
+  "save": "Save changes",
+  "saving": "Saving…",
+  "saved": "Agent configuration saved",
+  "saveFailed": "Could not save"
+}

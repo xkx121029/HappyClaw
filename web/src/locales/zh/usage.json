@@ -1,0 +1,33 @@
+{
+  "title": "用量",
+  "subtitle": "这个工作区的模型调用花了多少",
+  "window": "时间窗口",
+  "windows": {
+    "last_7d": "近 7 天",
+    "last_30d": "近 30 天",
+    "last_90d": "近 90 天"
+  },
+  "totals": {
+    "tokens": "总 token",
+    "turns": "回合",
+    "calls": "模型调用",
+    "cacheHit": "缓存命中"
+  },
+  "chart": {
+    "title": "每日 token",
+    "description": "每天一根条，以窗口内最忙的一天为基准。",
+    "empty": "这个窗口内没有模型调用记录。"
+  },
+  "table": {
+    "title": "逐日明细",
+    "description": "同样的数字做成表，需要精确值时看这里。",
+    "empty": "这些天没有记录。",
+    "bucket": "日期",
+    "input": "输入",
+    "output": "输出",
+    "cached": "缓存",
+    "total": "合计",
+    "turns": "回合"
+  },
+  "unreachable": "后端没有响应，读不到用量数据。"
+}

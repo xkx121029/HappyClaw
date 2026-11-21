@@ -1,0 +1,41 @@
+{
+  "title": "智能体配置",
+  "subtitle": "单个智能体的运行限制与身份设置",
+  "agent": "智能体",
+  "loading": "正在加载智能体…",
+  "unreachable": "后端没有响应，读不到智能体设置。",
+  "noAgents": "还没有智能体",
+  "noAgentsHint": "用 `happyclaw agent create` 创建一个，然后刷新本页。",
+  "desc": "数字留空表示使用服务端默认值。",
+  "serverDefault": "服务端默认",
+  "identity": "身份",
+  "prompt": "系统提示词",
+  "promptHint": "每个回合都会带上。支持 Markdown。",
+  "runtime": "运行限制",
+  "runtimeHint": "用来阻止单个回合失控的边界。",
+  "fields": {
+    "name": "名称",
+    "description": "描述",
+    "model": "默认模型",
+    "modelHint": "模型引用，例如 claude-sonnet-5-5。留空则用全局默认。",
+    "systemPrompt": "系统提示词",
+    "maxIters": "最大迭代轮数",
+    "maxInput": "最大输入长度",
+    "temperature": "温度",
+    "topP": "Top P",
+    "maxTokens": "最大输出 token"
+  },
+  "hints": {
+    "maxIters": "一轮里最多几次工具调用后停止。",
+    "maxInput": "每回合接受的上下文字符数。",
+    "temperature": "0 – 2，越低越稳定。",
+    "topP": "0 – 1，核采样截断。",
+    "maxTokens": "单次回复的上限。"
+  },
+  "unsaved": "有未保存的改动",
+  "reset": "重置",
+  "save": "保存改动",
+  "saving": "保存中…",
+  "saved": "智能体配置已保存",
+  "saveFailed": "保存失败"
+}

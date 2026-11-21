@@ -48,6 +48,8 @@
     "home": "Home",
     "chat": "Chat",
     "settings": "Settings",
-    "design": "Design system"
+    "design": "Design system",
+    "usage": "Usage",
+    "agentConfig": "Agent config"
   }
 }

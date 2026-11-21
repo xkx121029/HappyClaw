@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   ChevronLeft,
   House,
   Languages,
@@ -7,6 +8,7 @@ import {
   Palette,
   PanelLeft,
   Settings,
+  SlidersHorizontal,
   Sun,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -20,16 +22,24 @@ import { useUiStore } from "@/stores/ui";
 
 interface NavItem {
   to: string;
-  labelKey: "nav.home" | "nav.chat" | "nav.settings" | "nav.design";
+  labelKey:
+  | "nav.home"
+  | "nav.chat"
+  | "nav.usage"
+  | "nav.agentConfig"
+  | "nav.settings"
+  | "nav.design";
   icon: ReactNode;
 }
 
 const mainItems: NavItem[] = [
   { to: "/home", labelKey: "nav.home", icon: <House /> },
   { to: "/chat", labelKey: "nav.chat", icon: <MessageSquare /> },
+  { to: "/token-usage", labelKey: "nav.usage", icon: <BarChart3 /> },
 ];
 
 const manageItems: NavItem[] = [
+  { to: "/agent-config", labelKey: "nav.agentConfig", icon: <SlidersHorizontal /> },
   { to: "/settings", labelKey: "nav.settings", icon: <Settings /> },
   { to: "/design", labelKey: "nav.design", icon: <Palette /> },
 ];

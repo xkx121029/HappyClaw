@@ -13,10 +13,12 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppSplatRouteImport } from './routes/_app.$'
+import { Route as AppAgentConfigRouteImport } from './routes/_app.agent-config'
 import { Route as AppChatRouteImport } from './routes/_app.chat'
 import { Route as AppDesignRouteImport } from './routes/_app.design'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppTokenUsageRouteImport } from './routes/_app.token-usage'
 import { Route as DirectionsIndexRouteImport } from './routes/directions.index'
 import { Route as DirectionsDirPageRouteImport } from './routes/directions.$dir.$page'
 
@@ -39,6 +41,11 @@ const AppSplatRoute = AppSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAgentConfigRoute = AppAgentConfigRouteImport.update({
+  id: '/agent-config',
+  path: '/agent-config',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppChatRoute = AppChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -59,6 +66,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTokenUsageRoute = AppTokenUsageRouteImport.update({
+  id: '/token-usage',
+  path: '/token-usage',
+  getParentRoute: () => AppRoute,
+} as any)
 const DirectionsIndexRoute = DirectionsIndexRouteImport.update({
   id: '/directions/',
   path: '/directions/',
@@ -74,20 +86,24 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/setup': typeof SetupRoute
   '/$': typeof AppSplatRoute
+  '/agent-config': typeof AppAgentConfigRoute
   '/chat': typeof AppChatRoute
   '/design': typeof AppDesignRoute
   '/home': typeof AppHomeRoute
   '/settings': typeof AppSettingsRoute
+  '/token-usage': typeof AppTokenUsageRoute
   '/directions/': typeof DirectionsIndexRoute
   '/directions/$dir/$page': typeof DirectionsDirPageRoute
 }
 export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/$': typeof AppSplatRoute
+  '/agent-config': typeof AppAgentConfigRoute
   '/chat': typeof AppChatRoute
   '/design': typeof AppDesignRoute
   '/home': typeof AppHomeRoute
   '/settings': typeof AppSettingsRoute
+  '/token-usage': typeof AppTokenUsageRoute
   '/': typeof AppIndexRoute
   '/directions': typeof DirectionsIndexRoute
   '/directions/$dir/$page': typeof DirectionsDirPageRoute
@@ -97,10 +113,12 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/setup': typeof SetupRoute
   '/_app/$': typeof AppSplatRoute
+  '/_app/agent-config': typeof AppAgentConfigRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/design': typeof AppDesignRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/token-usage': typeof AppTokenUsageRoute
   '/_app/': typeof AppIndexRoute
   '/directions/': typeof DirectionsIndexRoute
   '/directions/$dir/$page': typeof DirectionsDirPageRoute
@@ -111,20 +129,24 @@ export interface FileRouteTypes {
     | '/'
     | '/setup'
     | '/$'
+    | '/agent-config'
     | '/chat'
     | '/design'
     | '/home'
     | '/settings'
+    | '/token-usage'
     | '/directions/'
     | '/directions/$dir/$page'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/setup'
     | '/$'
+    | '/agent-config'
     | '/chat'
     | '/design'
     | '/home'
     | '/settings'
+    | '/token-usage'
     | '/'
     | '/directions'
     | '/directions/$dir/$page'
@@ -133,10 +155,12 @@ export interface FileRouteTypes {
     | '/_app'
     | '/setup'
     | '/_app/$'
+    | '/_app/agent-config'
     | '/_app/chat'
     | '/_app/design'
     | '/_app/home'
     | '/_app/settings'
+    | '/_app/token-usage'
     | '/_app/'
     | '/directions/'
     | '/directions/$dir/$page'
@@ -179,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSplatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/agent-config': {
+      id: '/_app/agent-config'
+      path: '/agent-config'
+      fullPath: '/agent-config'
+      preLoaderRoute: typeof AppAgentConfigRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/chat': {
       id: '/_app/chat'
       path: '/chat'
@@ -207,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/token-usage': {
+      id: '/_app/token-usage'
+      path: '/token-usage'
+      fullPath: '/token-usage'
+      preLoaderRoute: typeof AppTokenUsageRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/directions/': {
       id: '/directions/'
       path: '/directions'
@@ -226,19 +264,23 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
+  AppAgentConfigRoute: typeof AppAgentConfigRoute
   AppChatRoute: typeof AppChatRoute
   AppDesignRoute: typeof AppDesignRoute
   AppHomeRoute: typeof AppHomeRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTokenUsageRoute: typeof AppTokenUsageRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
+  AppAgentConfigRoute: AppAgentConfigRoute,
   AppChatRoute: AppChatRoute,
   AppDesignRoute: AppDesignRoute,
   AppHomeRoute: AppHomeRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTokenUsageRoute: AppTokenUsageRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
