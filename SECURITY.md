@@ -24,8 +24,8 @@ HappyClaw is a single-user workspace bound to the local owner. There is no
 login, JWT secret, or administrator password to rotate. You are responsible for:
 
 - Securing the host and network exposure of `octop run`
-- Protecting `~/.octop/` — the database, `config.json`, `env`, and `secrets/`
-- Reviewing tool guard rules under `~/.octop/security/tool_guard/`
+- Protecting `~/.happyclaw/` — the database, `config.json`, `env`, and `secrets/`
+- Reviewing tool guard rules under `~/.happyclaw/security/tool_guard/`
 - Protecting LLM API keys and IM channel credentials
 
 See [docs/configuration.md](docs/configuration.md) for deployment hardening guidance.

@@ -64,15 +64,15 @@ bash docker/docker_build.sh
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `HOME` | `/data` | Must be `/data` so `~/.octop` maps to the data volume |
+| `HOME` | `/data` | Must be `/data` so `~/.happyclaw` maps to the data volume |
 | `OCTOP_PORT` | `8088` | HTTP listen port |
-| `OCTOP_DATA` | `~/.octop` | Host data directory (mounted at `/data/.octop`) |
+| `OCTOP_DATA` | `~/.happyclaw` | Host data directory (mounted at `/data/.octop`) |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN (or other `OCTOP_DATABASE_*`; see [configuration.md](../docs/configuration.md)) |
 | `OCTOP_DATABASE_DRIVER` | — | `sqlite` \| `postgresql` when overriding defaults via env |
 | `OPENAI_API_KEY` | — | OpenAI-compatible API key |
 | `DASHSCOPE_API_KEY` | — | Alibaba DashScope API key |
 
-For Compose, put these in `docker/.env`. Values only reach the container if listed under `environment:` in `docker-compose.yml` (Compose interpolates `.env`; it does not auto-export every key). Alternatively write the same keys into the mounted data dir as `~/.octop/env`.
+For Compose, put these in `docker/.env`. Values only reach the container if listed under `environment:` in `docker-compose.yml` (Compose interpolates `.env`; it does not auto-export every key). Alternatively write the same keys into the mounted data dir as `~/.happyclaw/env`.
 
 ### Node.js
 
@@ -94,7 +94,7 @@ image to receive these dependencies; restarting an older image is insufficient.
 
 ### Data persistence
 
-- Compose mounts host `~/.octop` → container `/data/.octop`
+- Compose mounts host `~/.happyclaw` → container `/data/.octop`
 - `docker run` example uses named volume `octop-data`
 - First boot: initializes the runtime directory and database, then creates the local owner; no password, wizard, or `credential.txt`
 - Upgrade: keep the data volume and rebuild the image; schema migrations run at startup

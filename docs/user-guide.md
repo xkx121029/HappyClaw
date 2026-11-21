@@ -1,7 +1,7 @@
 # HappyClaw 用户帮助文档
 
 > 本机单人使用。装好、启动、打开浏览器即可，不需要注册、登录，也没有账号与权限配置。
-> 所有运行时数据默认存放在 `~/.octop/`（可通过 `OCTOP_HOME` 覆盖）。
+> 所有运行时数据默认存放在 `~/.happyclaw/`（可通过 `HAPPYCLAW_HOME` 覆盖）。
 
 ---
 
@@ -20,7 +20,7 @@
 
 ## 一、简介
 
-**HappyClaw** 是一个装在自己电脑上的单人 AI 工作台。一个服务进程（`octop run`）同时提供 Web 控制台、IM 通道和定时任务；命令行 `octop` 是另一个进程，读写同一个 `~/.octop` 数据库。所有数据都保存在本机。
+**HappyClaw** 是一个装在自己电脑上的单人 AI 工作台。一个服务进程（`octop run`）同时提供 Web 控制台、IM 通道和定时任务；命令行 `octop` 是另一个进程，读写同一个 `~/.happyclaw` 数据库。所有数据都保存在本机。
 
 ![图 1.1 — HappyClaw 品牌图](assets/overview.png)
 
@@ -39,9 +39,9 @@
 ### 2.1 环境要求
 
 - 操作系统：**macOS / Linux / Windows**（Windows 10/11 64 位）。
-- **无需**预先安装 Python —— 安装脚本会通过 [uv](https://docs.astral.sh/uv/) 在 `~/.octop/` 下自动创建隔离的 Python 3.12 虚拟环境。
+- **无需**预先安装 Python —— 安装脚本会通过 [uv](https://docs.astral.sh/uv/) 在 `~/.happyclaw/` 下自动创建隔离的 Python 3.12 虚拟环境。
 - 需要可访问外网，用于下载安装包与依赖。
-- 磁盘：`~/.octop/` 下会放独立 Python 3.12 环境、wheel 依赖、数据库、专家工作区与备份，建议预留数 GB；本地模型与知识库语料另计。
+- 磁盘：`~/.happyclaw/` 下会放独立 Python 3.12 环境、wheel 依赖、数据库、专家工作区与备份，建议预留数 GB；本地模型与知识库语料另计。
 - 内存：没有硬性下限，实际占用取决于所选模型；在本机跑 Ollama 大模型时按模型规模另算。
 
 ### 2.2 一键脚本安装（推荐）
@@ -58,10 +58,10 @@ if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githu
 curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
 ```
 
-安装脚本会在 `~/.octop/venv` 创建隔离环境，**不会改动系统 Python**。
+安装脚本会在 `~/.happyclaw/venv` 创建隔离环境，**不会改动系统 Python**。
 
 - macOS / Linux：安装器会把 `octop` 软链到一个已经在 PATH 里的目录（优先 `/usr/local/bin`），当前终端即可直接使用；若那个目录不可写，脚本会提示你手动补一行。
-- Windows：安装器把 `~/.octop/bin` 写进用户级 `Path`（`HKCU:\Environment`），同时更新当前窗口的 PATH；**新开的终端**才会从注册表读到你之前的其它 PATH 变更。
+- Windows：安装器把 `~/.happyclaw/bin` 写进用户级 `Path`（`HKCU:\Environment`），同时更新当前窗口的 PATH；**新开的终端**才会从注册表读到你之前的其它 PATH 变更。
 
 > **可选附加组件**：浏览器自动化需要 Chromium，可加 `--extras browser`；国内网络可用 `--mirror <url>` 指定 PyPI 镜像。更多选项见 [scripts/README.md](../scripts/README.md)。
 
@@ -72,7 +72,7 @@ octop --version
 octop run --help
 ```
 
-若提示找不到 `octop` 命令，重开一个终端，或检查 `~/.octop/bin` 是否在 PATH 里。
+若提示找不到 `octop` 命令，重开一个终端，或检查 `~/.happyclaw/bin` 是否在 PATH 里。
 
 ### 2.4 Docker 安装
 
@@ -255,7 +255,7 @@ CLI 只能新增、删除、探测供应商，没有 `provider edit`：改已有
 - **管理** 组：
   - **模型配置**（`/admin/models`）— 供应商、模型、生成模型。
   - **存储管理**（`/admin/backend`）— 工作区后端（本地 / 对象存储）。
-  - **插件管理**（`/admin/plugins`）、**安全防护**（`/admin/security`）— 工具审批、Shell 命令护栏（`~/.octop/security/tool_guard/`）、PII 与凭据策略。
+  - **插件管理**（`/admin/plugins`）、**安全防护**（`/admin/security`）— 工具审批、Shell 命令护栏（`~/.happyclaw/security/tool_guard/`）、PII 与凭据策略。
   - **应用设置**（`/admin/advanced`）— 环境变量、可观测、**备份与恢复**、HTTPS、应用更新五个标签页。
 
 监听地址与端口没有面板开关：它们来自 `octop run --host/--port`、`OCTOP_BIND_HOST`/`OCTOP_PORT` 或 `config.json`；时区是 `config.json` 的 `default_timezone`。详见 [docs/configuration.md](configuration.md)。
@@ -323,7 +323,7 @@ octop backup auto status                                                 # 看�
 ### 6.1 数据目录
 
 ```
-~/.octop/
+~/.happyclaw/
 ├── config.json              # 进程配置（地址、端口、TLS、database …）
 ├── env                      # 可选环境变量（API Key 等）
 ├── octop.db                 # 默认 SQLite 控制面（专家、通道、定时任务 …）
@@ -341,7 +341,7 @@ octop backup auto status                                                 # 看�
 └── bin/octop                # 命令入口
 ```
 
-用 `OCTOP_HOME` 可以把整个数据目录改到其他磁盘。
+用 `HAPPYCLAW_HOME` 可以把整个数据目录改到其他磁盘。
 
 ### 6.2 备份
 
@@ -353,7 +353,7 @@ octop backup auto status                           # 查看自动备份配置
 octop backup auto run                              # 立即执行一次自动备份
 ```
 
-默认输出到 `~/.octop/backups/`，文件名形如 `octop-backup-20261111T120000Z.tar.gz`（UTC）。归档包含数据库、`config.json`、`env`、专家工作区、技能包、插件与知识库；`secrets/`、`security/`、`ssl/`、`logs/` 不进归档，需要时手工复制。默认不含聊天历史，完整迁移加 `--include-chats`。
+默认输出到 `~/.happyclaw/backups/`，文件名形如 `octop-backup-20261111T120000Z.tar.gz`（UTC）。归档包含数据库、`config.json`、`env`、专家工作区、技能包、插件与知识库；`secrets/`、`security/`、`ssl/`、`logs/` 不进归档，需要时手工复制。默认不含聊天历史，完整迁移加 `--include-chats`。
 
 自动备份默认**关闭**（`backup.auto_enabled: false`），开启后在 `octop run` 进程内按 `backup.schedule` 执行，默认每天 04:00，默认保留 7 份。自动归档以 `octop-auto-backup-` 开头，保留策略不会删除手动备份。用 `octop backup auto status` 查看当前值。
 
@@ -384,8 +384,8 @@ octop backup restore <归档文件> --yes                    # 跳过确认
 
 ### 7.1 日志位置
 
-- 前台运行：直接输出到终端，同时写入 `~/.octop/logs/octop.log`。
-- 系统服务：日志同样在 `~/.octop/logs/`，按日期轮转为 `octop.YYYY-MM-DD.log`。
+- 前台运行：直接输出到终端，同时写入 `~/.happyclaw/logs/octop.log`。
+- 系统服务：日志同样在 `~/.happyclaw/logs/`，按日期轮转为 `octop.YYYY-MM-DD.log`。
 - Linux 可查看 journal：`journalctl --user -u octop -f`。
 
 ### 7.2 停止服务
@@ -401,10 +401,10 @@ octop service stop      # 已注册为系统服务时
 2. 停止服务并删除系统服务注册：`octop service stop`。
 3. 删除安装与数据目录：
    - Windows：删除 `%USERPROFILE%\.octop`
-   - macOS / Linux：`rm -rf ~/.octop`
-4. 从 PATH 中移除 `~/.octop/bin`（安装脚本添加的那一行）。
+   - macOS / Linux：`rm -rf ~/.happyclaw`
+4. 从 PATH 中移除 `~/.happyclaw/bin`（安装脚本添加的那一行）。
 
-> 删除 `~/.octop` 会连同数据库、专家工作区、密钥与备份一起删除。确认归档已另行保存后再执行。
+> 删除 `~/.happyclaw` 会连同数据库、专家工作区、密钥与备份一起删除。确认归档已另行保存后再执行。
 
 ---
 
@@ -434,14 +434,14 @@ octop service stop      # 已注册为系统服务时
 - `octop update`；升级前先 `octop backup create`。数据库结构会在下次启动时自动迁移。
 
 **Q：数据目录丢了，或者要换一台机器怎么办？**
-- 数据目录就是 `~/.octop/`（Windows 下是 `C:\Users\你的用户名\.octop\`），配置、会话数据库、专家工作区、密钥和备份都放在这里。
+- 数据目录就是 `~/.happyclaw/`（Windows 下是 `C:\Users\你的用户名\.octop\`），配置、会话数据库、专家工作区、密钥和备份都放在这里。
 - 如果这个目录被删除或清空，下次启动不会报错，程序会自动建出一套全新的空目录。看起来能正常打开，但原来的会话、专家和配置都不在了。
-- 空目录里没有历史数据可以恢复。想找回内容，只能依靠之前做过的备份：`~/.octop/backups/` 里的归档，或你另存到其他磁盘的备份包。
+- 空目录里没有历史数据可以恢复。想找回内容，只能依靠之前做过的备份：`~/.happyclaw/backups/` 里的归档，或你另存到其他磁盘的备份包。
 - 正确做法是先停掉服务，不要在残缺目录里继续操作；确认最近一次备份的位置，再按 [单机迁移与恢复](migration-and-restore.md) 恢复。换机器时，整目录拷贝或先执行 `octop backup create --include-chats`，到新机器再恢复。
 - 之后建议打开自动备份，并把重要备份另存到别的磁盘。
 
 **Q：数据会传到云端吗？**
-- 不会。配置、对话、工作区与凭据都在 `~/.octop/`；只有你主动配置的模型供应商与 Connector 会收到相应请求。
+- 不会。配置、对话、工作区与凭据都在 `~/.happyclaw/`；只有你主动配置的模型供应商与 Connector 会收到相应请求。
 
 ---
 

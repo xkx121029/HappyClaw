@@ -37,7 +37,7 @@
 
 | 级别 | 问题 | 决策与验收方式 |
 | --- | --- | --- |
-| P0-1 | `/api/setup/status` 仍可能 `setup_required=true` / `wizard_password_required=true` | 固定 `setup_required=false`、`wizard_password_required=false`、`needs_admin=false`；不返回数据库选择项、不写 `octop-login.txt`；`/api/setup/begin|initial-admin|verify-password|finish` → 400 中文「单人模式无需初始化账号」。验证：干净 `OCTOP_HOME` 下 `GET /api/setup/status` 200 且两字段为 false |
+| P0-1 | `/api/setup/status` 仍可能 `setup_required=true` / `wizard_password_required=true` | 固定 `setup_required=false`、`wizard_password_required=false`、`needs_admin=false`；不返回数据库选择项、不写 `octop-login.txt`；`/api/setup/begin|initial-admin|verify-password|finish` → 400 中文「单人模式无需初始化账号」。验证：干净 `HAPPYCLAW_HOME` 下 `GET /api/setup/status` 200 且两字段为 false |
 | P0-2 | 全站依赖 24h JWT，直进 401 | JWT 门禁整体移除；`/api/*` 无令牌均按本机使用者解析。验证：无 `Authorization` 头请求 `/api/sessions`、`/api/tasks`、`/api/preferences`、`/api/agents` 均 200 |
 | P0-3 | `/api/providers` 明文返回 `api_key` | 响应中 `api_key` 改为脱敏（`****` + 末四位；无 key 为 `null`），新增 `api_key_set: bool`；`PATCH` 收到脱敏值视为「未修改」，不会覆盖真实密钥；全仓日志审计，禁止打印完整 key。验证：`GET /api/providers` 不含完整 key；`PATCH` 回传脱敏值后 DB 中 key 不变 |
 | P1-4 | `/auth/me` 返回 admin 权限与 `sso_*` | `me` 仅返回 `{id, username, display_name, locale, role: "local", is_local_owner: true}`；不返回 `permissions`、`sso_*`、密码/MFA 字段。`/api/user-groups/audience` 返回 `[]`；`/api/teams` **保留原实现**（专家团是单人功能，见 §2.0.2 决策表） |
@@ -49,7 +49,7 @@
 
 | 问题 | 决策 |
 | --- | --- |
-| 全新 `OCTOP_HOME` 下 `should_defer_control_plane_db` 跳过建库，`/api/health` 90 秒不可用 | 单人版删除「选后端」概念：`should_defer_control_plane_db()` 恒返回 `False`（保留函数名标 `@deprecated`），`server.start()` 始终 `open_database()` + `run_migrations()` 后再监听；桌面模式（`OCTOP_DESKTOP_SHELL=1`）不再等待向导 |
+| 全新 `HAPPYCLAW_HOME` 下 `should_defer_control_plane_db` 跳过建库，`/api/health` 90 秒不可用 | 单人版删除「选后端」概念：`should_defer_control_plane_db()` 恒返回 `False`（保留函数名标 `@deprecated`），`server.start()` 始终 `open_database()` + `run_migrations()` 后再监听；桌面模式（`OCTOP_DESKTOP_SHELL=1`）不再等待向导 |
 | 首次可用耗时无证据 | 用全新目录实测：进程启动 → `/api/health` 首次 200 的毫秒数，写入简报（改前为 ≥90s 不可用） |
 | `GET /api/runtime/activity` 未实现，退出守卫拿不到繁忙状态 | 新增只读接口。桌面 `quit-guard.ts` 实际读的是 `body.counts`（kind→数量，`agent_turn`/`terminal`），因此返回 `{busy, counts, active_turns, terminal_sessions, running_agents, running_jobs, updated_at}`，且 `busy === sum(counts) > 0`；无 DB 依赖，2s 内缓存 |
 | 前端 `window.octopDesktop.setUnsavedContent()` 与新建会话快捷键对接点 | 已确认前端实现完毕：`dashboard/src/pages/Chat/index.tsx` L1054–1070，`composerDirty \|\| 排队项` → `setUnsavedContent`，壳层转发 Ctrl/Cmd+Shift+N → `onNewSessionShortcut` → `handleNewChat`；后端无需新端点 |
@@ -167,7 +167,7 @@ class OwnerIdentityService:
 - `.venv` 依赖：`pip --python .venv install -r .req-lock.txt`（`uv` 在此网络下 wheel 会被截断，已弃用）
 - 可编辑安装：需先装 `hatchling / editables / trove-classifiers`，再 `--no-build-isolation -e .`；当前 `import octop` 正常（1.0.3b5）
 - 测试：`& .venv\Scripts\python.exe -m pytest ... -q`（pytest 9.2 + pytest-asyncio 已装）
-- 冒烟：`OCTOP_HOME=E:\HAPPYclaw\.octop-preview`，端口 8089，禁止浏览器操作
+- 冒烟：`HAPPYCLAW_HOME=E:\HAPPYclaw\.octop-preview`，端口 8089，禁止浏览器操作
 - 基线记录（T0.2）：本轮开始前的 `tests/unit` 通过项、启动耗时、接口 P50/P95，将写入第一份节点简报
 
 ## 8. 逐条验证请求（QA 七条）

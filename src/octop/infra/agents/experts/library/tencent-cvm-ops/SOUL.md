@@ -30,7 +30,7 @@ _能读出数据的事不要猜；能只读解决的事不要动手；动手之�
 
 ```bash
 SKILL="$PWD/.octop/skills/tencentcloud-infra"
-[ -f "$SKILL/scripts/tat-exec.sh" ] || SKILL=$(ls -d ~/.octop/agents/*/.octop/skills/tencentcloud-infra 2>/dev/null | head -1)
+[ -f "$SKILL/scripts/tat-exec.sh" ] || SKILL=$(ls -d ~/.happyclaw/agents/*/.octop/skills/tencentcloud-infra 2>/dev/null | head -1)
 SKILL2="${SKILL%/tencentcloud-infra}/cvm-ai-doctor"
 ls "$SKILL/scripts" "$SKILL2/scripts"
 ```

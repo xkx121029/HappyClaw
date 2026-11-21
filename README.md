@@ -30,9 +30,9 @@
 
 **HappyClaw** is a local AI workbench for one person. There is no account system, no login page, and no member or permission setup: install it, start it, open the browser, and you are working as the local owner.
 
-One server process serves the web console, the IM channels, and the scheduled jobs; the CLI talks to the same control-plane database. Everything stays under `~/.octop/`. You can create several experts, each with its own model, workspace, skills, and cron jobs, then reach them from the browser or from Feishu, DingTalk, WeCom, WeChat, QQ, Yuanbao, Xiaoyi, MQTT, Telegram, and Discord.
+One server process serves the web console, the IM channels, and the scheduled jobs; the CLI talks to the same control-plane database. Everything stays under `~/.happyclaw/`. You can create several experts, each with its own model, workspace, skills, and cron jobs, then reach them from the browser or from Feishu, DingTalk, WeCom, WeChat, QQ, Yuanbao, Xiaoyi, MQTT, Telegram, and Discord.
 
-> The product is called HappyClaw, but the Python distribution, the `octop` command, the `~/.octop/` data root, and the `OCTOP_*` environment variables keep their original names. Both names refer to the same thing.
+> The product is called HappyClaw, but the Python distribution, the `octop` command, the `~/.happyclaw/` data root, and the `OCTOP_*` environment variables keep their original names. Both names refer to the same thing.
 
 ## 🚀 Quick Start
 
@@ -76,7 +76,7 @@ Open **http://127.0.0.1:8088**. The first boot creates the local owner and the d
 | 🌐 | **Browser AI+** | Chromium sessions for web automation, screenshots, and remote browsing |
 | 🖥️ | **Remote desktop** | Live screen and input from the console on Linux, Windows, and macOS |
 | 🌉 | **Bridge** | Pair this machine with another HappyClaw instance and hand tasks to it |
-| 🏠 | **Fully local** | Config, chats, workspaces, and credentials stay in `~/.octop/` |
+| 🏠 | **Fully local** | Config, chats, workspaces, and credentials stay in `~/.happyclaw/` |
 
 ## 🧠 Core Technology
 
@@ -107,7 +107,7 @@ The web UI, the IM channels, and the scheduled jobs all run inside one `OctopSer
 | PyPI | Any | `pip install octop` |
 | Docker | Any | `docker compose -f docker/docker-compose.yml up -d --build` |
 
-Installers provision an isolated environment at `~/.octop/venv` and a command wrapper at `~/.octop/bin/octop`; the system Python is untouched. On macOS and Linux the installer also links `octop` into a directory that is already on `PATH`, so it works in the current shell. On Windows it appends `%USERPROFILE%\.octop\bin` to your user `PATH`, which a newly opened terminal picks up.
+Installers provision an isolated environment at `~/.happyclaw/venv` and a command wrapper at `~/.happyclaw/bin/octop`; the system Python is untouched. On macOS and Linux the installer also links `octop` into a directory that is already on `PATH`, so it works in the current shell. On Windows it appends `%USERPROFILE%\.octop\bin` to your user `PATH`, which a newly opened terminal picks up.
 
 `pip install octop` installs the latest **stable** release from PyPI. The version in this repository is a beta line: use `pip install --pre octop` to get a `1.0.3b*` prerelease.
 
@@ -131,7 +131,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 # open http://localhost:8088
 ```
 
-The container runs `octop init` on first boot, starts the server, and keeps data in `/data/.octop` (Compose mounts `${OCTOP_DATA:-~/.octop}` there). No administrator password is required for single-user mode. See [docker/README.md](docker/README.md).
+The container runs `octop init` on first boot, starts the server, and keeps data in `/data/.octop` (Compose mounts `${OCTOP_DATA:-~/.happyclaw}` there). No administrator password is required for single-user mode. See [docker/README.md](docker/README.md).
 
 Other Compose files in the same directory: `docker-compose.postgres.yml` (PostgreSQL + pgvector) and `docker-compose.cn.yml` (pull the published image instead of building).
 
@@ -142,7 +142,7 @@ octop update --check    # show whether a newer release exists
 octop update            # install it
 ```
 
-`octop update` replaces the program only; the database, workspaces, secrets, and `config.json` under `~/.octop/` are preserved, and schema migrations run on the next boot. Back up first:
+`octop update` replaces the program only; the database, workspaces, secrets, and `config.json` under `~/.happyclaw/` are preserved, and schema migrations run on the next boot. Back up first:
 
 ```bash
 octop backup create
@@ -177,7 +177,7 @@ Environment variables and the full `config.json` schema: [docs/configuration.md]
 ## 📁 Data Directory & Backups
 
 ```
-~/.octop/                          ← install and data root
+~/.happyclaw/                          ← install and data root
 ├── config.json                    # process settings (port, TLS, database, …)
 ├── env                            # optional environment variables (API keys, …)
 ├── octop.db                       # SQLite control plane (settings table for PostgreSQL installs)
@@ -193,13 +193,13 @@ Environment variables and the full `config.json` schema: [docs/configuration.md]
 └── bin/octop                      # command wrapper
 ```
 
-Set `OCTOP_HOME` to move the whole data root to another disk.
+Set `HAPPYCLAW_HOME` to move the whole data root to another disk.
 
 ### Backup and restore
 
 ```bash
 octop backup create              # archive DB + workspaces + config
-octop backup restore <archive>   # restore into ~/.octop
+octop backup restore <archive>   # restore into ~/.happyclaw
 octop backup auto status         # automatic backup settings
 octop backup auto run            # run one automatic backup now
 ```
@@ -215,7 +215,7 @@ Step-by-step move / rollback commands: [docs/migration-and-restore.md](docs/migr
 | Command | Description |
 |---------|-------------|
 | `octop run` | Start the server in the foreground (`--host`, `--port`, `--ssl`, `--workers`) |
-| `octop init` | Re-bootstrap `~/.octop/` and run migrations; `--force` wipes application state. Optional — a normal install bootstraps on first run |
+| `octop init` | Re-bootstrap `~/.happyclaw/` and run migrations; `--force` wipes application state. Optional — a normal install bootstraps on first run |
 | `octop service` | Install / start / stop / restart / status as a system service (Linux systemd, macOS launchd; **not** Windows) |
 | `octop agent` | Create, list, use, start, stop, delete experts; `agent experts` lists library templates |
 | `octop chats` | Thread list, history, one-shot `send`, and an interactive `repl` |
@@ -231,7 +231,7 @@ Step-by-step move / rollback commands: [docs/migration-and-restore.md](docs/migr
 | `octop acp` | stdio ACP server for IDE clients |
 | `octop bridge` | Remote bridge peers: `list`, `create`, `connect`, `probe`, … |
 | `octop migrate` | Import an OpenClaw or Hermes Agent setup into an expert |
-| `octop clean` | Clear CLI state, or wipe `~/.octop/` with `--all` |
+| `octop clean` | Clear CLI state, or wipe `~/.happyclaw/` with `--all` |
 | `octop config` | Show or pin the CLI defaults (`config show`, `config set-user`) |
 | `octop admin` | Admin operations: `overview`, `audit`, `rotate-jwt-secret`, user `list` / `create` / `delete` |
 | `octop user` | User rows kept for compatibility: `list`, `create`, `passwd`, `role`, … |
@@ -270,7 +270,7 @@ After `octop run`, open **http://127.0.0.1:8088**; it opens straight into the ch
 | Control | **Workbench** — terminal AI+, browser AI+, cloud browser; **Remote desktop**; **ACP** (outbound coding-agent runners) |
 | Admin | **Models**, **Storage** (database and object storage), **Plugins**, **Security** (tool approval, command guard, filesystem rules, PII redaction), **Advanced** (TLS, bind address, logging, backups, updates) |
 
-Interactive API docs are off by default; set `"enable_api_docs": true` in `~/.octop/config.json` (or `OCTOP_ENABLE_API_DOCS=1`) to enable `/api/docs`.
+Interactive API docs are off by default; set `"enable_api_docs": true` in `~/.happyclaw/config.json` (or `OCTOP_ENABLE_API_DOCS=1`) to enable `/api/docs`.
 
 ## 🏗️ Architecture & Layout
 
@@ -321,9 +321,9 @@ Individual targets: `make test`, `make test-fast` (skips `slow`), `make test-liv
 
 ## 🔒 Security & Privacy
 
-- **Local-first** — config, chats, workspaces, and credentials live in `~/.octop/`.
+- **Local-first** — config, chats, workspaces, and credentials live in `~/.happyclaw/`.
 - **Local boundary** — binds to `127.0.0.1` by default; exposing it on a LAN requires an explicit `--host`.
-- **Security policy** — tool approval (human-in-the-loop), command guard rules, filesystem rules, and PII redaction are configured per agent under **Admin → Security**; shell rules are editable in `~/.octop/security/tool_guard/dangerous_shell_commands.yaml`.
+- **Security policy** — tool approval (human-in-the-loop), command guard rules, filesystem rules, and PII redaction are configured per agent under **Admin → Security**; shell rules are editable in `~/.happyclaw/security/tool_guard/dangerous_shell_commands.yaml`.
 - **Secret masking** — the environment API returns masked values, and agent CLI output is redacted before it reaches the console.
 - **No vendor lock-in** — swap model providers, storage backends, and channels.
 
@@ -336,7 +336,7 @@ Make sure `octop run` is still running without errors, and use the actual port i
 No. Single-user mode has no login page and no account system; the console opens as the local owner. `/login` and `/invite` simply redirect to the chat.
 
 **Do I have to run `octop init` first?**
-No. The first `octop run` creates `~/.octop/`, the database, and the local owner. `octop init` exists for re-bootstrapping and migrations; `octop init --force` deletes application state.
+No. The first `octop run` creates `~/.happyclaw/`, the database, and the local owner. `octop init` exists for re-bootstrapping and migrations; `octop init --force` deletes application state.
 
 **How do I reach it from another device on my LAN?**
 `octop run --host 0.0.0.0 --port 8088`, or set `OCTOP_BIND_HOST=0.0.0.0`. Note that `--host` / `--port` on the command line are persisted to `config.json`. This exposes the console to your LAN — make sure that is what you want.
@@ -345,10 +345,10 @@ No. The first `octop run` creates `~/.octop/`, the database, and the local owner
 Check the API key, base URL, network access, and account quota. For local models, confirm Ollama is running.
 
 **Where is my data, and how do I move it?**
-Everything is under `~/.octop/`. Run `octop backup create --include-chats -o <path>`, copy the archive to the new machine, then `octop backup restore <archive> --yes`. Full steps and rollback: [docs/migration-and-restore.md](docs/migration-and-restore.md).
+Everything is under `~/.happyclaw/`. Run `octop backup create --include-chats -o <path>`, copy the archive to the new machine, then `octop backup restore <archive> --yes`. Full steps and rollback: [docs/migration-and-restore.md](docs/migration-and-restore.md).
 
 **Port already in use?**
-Start on another port with `octop run --port 8090`, or edit `port` in `~/.octop/config.json`.
+Start on another port with `octop run --port 8090`, or edit `port` in `~/.happyclaw/config.json`.
 
 **Why is the package still called `octop`?**
 The distribution, the CLI command, the data directory, and the `OCTOP_*` variables predate the HappyClaw name and are kept for compatibility. HappyClaw is the product you install; `octop` is what it ships as.

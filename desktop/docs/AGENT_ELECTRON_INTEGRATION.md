@@ -36,11 +36,11 @@ Octop-<plat>/
      with `tar.exe` into `<install>\resources\sidecar\`.
 2. Keep the tree **outside** `app.asar`. First launch uses that tree and does
    not unzip.
-3. Set `OCTOP_HOME` to HappyClaw's default data dir (`~/.octop`, or `$OCTOP_HOME`
+3. Set `HAPPYCLAW_HOME` to HappyClaw's default data dir (`~/.happyclaw`, or `$HAPPYCLAW_HOME`
    if already set). Do **not** use the zip's `./data` folder when launching
    from the Electron shell (`desktop/src`). User data stays there. The runtime
    does not.
-4. Set `PYTHONPYCACHEPREFIX` to `<OCTOP_HOME>/pyc` so bytecode is not written
+4. Set `PYTHONPYCACHEPREFIX` to `<HAPPYCLAW_HOME>/pyc` so bytecode is not written
    into the app bundle or the install directory.
 5. Set `PYTHONNOUSERSITE=1` and `OCTOP_GREEN_PACKAGES=<extract>/packages`.
    **Do not set `PYTHONPATH`.**
@@ -50,7 +50,7 @@ Octop-<plat>/
    `bind_host` on every start. Pass them only when the user asked to change
    the saved listen address. If `GET /api/health` on the preferred port is
    already HappyClaw (`ok`, `users_loaded`, and `agents_running`), do not spawn;
-   load that URL. Also check `OCTOP_HOME/desktop-port` when the preferred port
+   load that URL. Also check `HAPPYCLAW_HOME/desktop-port` when the preferred port
    is not HappyClaw: that file is the port a previous desktop start actually bound
    after a conflict, and a live health check there means attach instead of
    starting a second server. If the port is taken by something else, set
@@ -63,7 +63,7 @@ Octop-<plat>/
    - macOS / Linux: `<extract>/runtime/bin/python3 <extract>/launch.py run`
    - Windows: `<extract>/runtime/python.exe <extract>/launch.py run`
 
-7. Read `bind_host` and `port` from `OCTOP_HOME/config.json` (defaults
+7. Read `bind_host` and `port` from `HAPPYCLAW_HOME/config.json` (defaults
    `127.0.0.1` and `8088` when the file or keys are absent; `OCTOP_BIND_HOST`
    / `OCTOP_PORT` override the file for this process and are not saved).
    When `bind_host` is `0.0.0.0` or `::`, poll and load

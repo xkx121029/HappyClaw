@@ -30,9 +30,9 @@
 
 **HappyClaw** 是给个人用的本地 AI 工作台。没有账号体系，没有登录页，也不需要配置成员与权限：装好、启动、打开浏览器，就是以本机使用者的身份在工作。
 
-服务端是一个进程，Web 控制台、IM 通道与定时任务都在它里面；CLI 连的是同一个控制面数据库。所有数据都留在 `~/.octop/`。你可以创建多个专家，每个专家有自己的模型、工作区、技能与定时任务，日常可以在网页里对话，也可以把飞书、钉钉、企业微信、微信、QQ、元宝、小艺、MQTT、Telegram、Discord 接进来。
+服务端是一个进程，Web 控制台、IM 通道与定时任务都在它里面；CLI 连的是同一个控制面数据库。所有数据都留在 `~/.happyclaw/`。你可以创建多个专家，每个专家有自己的模型、工作区、技能与定时任务，日常可以在网页里对话，也可以把飞书、钉钉、企业微信、微信、QQ、元宝、小艺、MQTT、Telegram、Discord 接进来。
 
-> 产品叫 HappyClaw，但 Python 分发名、`octop` 命令、`~/.octop/` 数据根目录和 `OCTOP_*` 环境变量沿用原来的命名。两个名字说的是同一个东西。
+> 产品叫 HappyClaw，但 Python 分发名、`octop` 命令、`~/.happyclaw/` 数据根目录和 `OCTOP_*` 环境变量沿用原来的命名。两个名字说的是同一个东西。
 
 ## 🚀 快速开始
 
@@ -76,7 +76,7 @@ octop run
 | 🌐 | **浏览器 AI+** | 基于 Chromium 的会话，支持网页自动化、截图与远程浏览 |
 | 🖥️ | **远程桌面** | 控制台内看屏与键鼠操作，跨 Linux / Windows / macOS |
 | 🌉 | **Bridge** | 把本机与另一台 HappyClaw 配对，互相交派任务 |
-| 🏠 | **完全本地** | 配置、对话、工作区与凭据都在 `~/.octop/` |
+| 🏠 | **完全本地** | 配置、对话、工作区与凭据都在 `~/.happyclaw/` |
 
 ## 🧠 技术栈
 
@@ -107,7 +107,7 @@ Web UI、IM 通道与定时任务都在同一个 `OctopServer` 进程里，不�
 | PyPI | 全平台 | `pip install octop` |
 | Docker | 全平台 | `docker compose -f docker/docker-compose.yml up -d --build` |
 
-安装脚本把运行环境放在 `~/.octop/venv`，命令入口放在 `~/.octop/bin/octop`，不改动系统 Python。macOS 与 Linux 上还会把 `octop` 链接进一个已在 `PATH` 里的目录，当前终端即可使用；Windows 上会把 `%USERPROFILE%\.octop\bin` 写入用户 `PATH`，新开的终端生效。
+安装脚本把运行环境放在 `~/.happyclaw/venv`，命令入口放在 `~/.happyclaw/bin/octop`，不改动系统 Python。macOS 与 Linux 上还会把 `octop` 链接进一个已在 `PATH` 里的目录，当前终端即可使用；Windows 上会把 `%USERPROFILE%\.octop\bin` 写入用户 `PATH`，新开的终端生效。
 
 `pip install octop` 装的是 PyPI 上最新的**稳定版**。本仓库当前处在 beta 线，要装 `1.0.3b*` 预发布版本请用 `pip install --pre octop`。
 
@@ -131,7 +131,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 # 打开 http://localhost:8088
 ```
 
-容器首次启动会执行 `octop init` 并拉起服务，数据放在 `/data/.octop`（Compose 把 `${OCTOP_DATA:-~/.octop}` 挂到这里）。单人模式不需要预置管理员密码。完整说明见 [docker/README_CN.md](docker/README_CN.md)。
+容器首次启动会执行 `octop init` 并拉起服务，数据放在 `/data/.octop`（Compose 把 `${OCTOP_DATA:-~/.happyclaw}` 挂到这里）。单人模式不需要预置管理员密码。完整说明见 [docker/README_CN.md](docker/README_CN.md)。
 
 同目录下还有 `docker-compose.postgres.yml`（PostgreSQL + pgvector）与 `docker-compose.cn.yml`（直接拉取已发布镜像，不在本地构建）。
 
@@ -142,7 +142,7 @@ octop update --check    # 只看有没有新版本
 octop update            # 安装
 ```
 
-`octop update` 只替换程序本体，`~/.octop/` 下的数据库、工作区、密钥与 `config.json` 都会保留，数据库结构在下次启动时自动迁移。升级前建议先备份：
+`octop update` 只替换程序本体，`~/.happyclaw/` 下的数据库、工作区、密钥与 `config.json` 都会保留，数据库结构在下次启动时自动迁移。升级前建议先备份：
 
 ```bash
 octop backup create
@@ -177,7 +177,7 @@ octop cron list                  # 定时任务
 ## 📁 数据目录与备份
 
 ```
-~/.octop/                          ← 安装与数据根目录
+~/.happyclaw/                          ← 安装与数据根目录
 ├── config.json                    # 进程配置（端口、TLS、数据库等）
 ├── env                            # 可选环境变量（API Key 等）
 ├── octop.db                       # SQLite 控制面（PostgreSQL 部署下为设置表）
@@ -193,13 +193,13 @@ octop cron list                  # 定时任务
 └── bin/octop                      # 命令入口
 ```
 
-数据目录可用 `OCTOP_HOME` 整体改到其他磁盘。
+数据目录可用 `HAPPYCLAW_HOME` 整体改到其他磁盘。
 
 ### 备份与恢复
 
 ```bash
 octop backup create              # 生成归档（数据库 + 工作区 + 配置）
-octop backup restore <归档文件>   # 恢复到 ~/.octop
+octop backup restore <归档文件>   # 恢复到 ~/.happyclaw
 octop backup auto status         # 自动备份配置
 octop backup auto run            # 立即执行一次自动备份
 ```
@@ -215,7 +215,7 @@ octop backup auto run            # 立即执行一次自动备份
 | 命令 | 说明 |
 |------|------|
 | `octop run` | 前台启动服务（`--host`、`--port`、`--ssl`、`--workers`） |
-| `octop init` | 重新初始化 `~/.octop/` 并执行迁移；`--force` 会清空应用数据。正常安装不需要，首次 `octop run` 会自动完成 |
+| `octop init` | 重新初始化 `~/.happyclaw/` 并执行迁移；`--force` 会清空应用数据。正常安装不需要，首次 `octop run` 会自动完成 |
 | `octop service` | 注册为系统服务并 start / stop / restart / status（Linux systemd、macOS launchd，**不支持 Windows**） |
 | `octop agent` | 创建、列出、切换、启停、删除专家；`agent experts` 列出内置模板 |
 | `octop chats` | 会话列表与历史、单条 `send`、交互式 `repl` |
@@ -231,7 +231,7 @@ octop backup auto run            # 立即执行一次自动备份
 | `octop acp` | 为 IDE 提供 stdio ACP 服务 |
 | `octop bridge` | 远端 Bridge 节点：`list`、`create`、`connect`、`probe` 等 |
 | `octop migrate` | 把 OpenClaw 或 Hermes Agent 的配置导入成专家 |
-| `octop clean` | 清理 CLI 状态；`--all` 清空 `~/.octop/` |
+| `octop clean` | 清理 CLI 状态；`--all` 清空 `~/.happyclaw/` |
 | `octop config` | 查看或固定 CLI 默认值（`config show`、`config set-user`） |
 | `octop admin` | 管理操作：`overview`、`audit`、`rotate-jwt-secret`，用户 `list` / `create` / `delete` |
 | `octop user` | 为兼容保留的用户记录：`list`、`create`、`passwd`、`role` 等 |
@@ -270,7 +270,7 @@ octop backup auto run            # 立即执行一次自动备份
 | 控制 | **工作台** — 终端 AI+、浏览器 AI+、云浏览器；**远程桌面**；**ACP**（出站编程 Agent Runner） |
 | 管理 | **模型管理**、**存储管理**（数据库与对象存储）、**插件管理**、**安全管理**（工具审批、命令护栏、文件规则、PII 脱敏）、**应用设置**（TLS、监听地址、日志、备份、更新） |
 
-交互式 API 文档默认关闭，在 `~/.octop/config.json` 里设置 `"enable_api_docs": true`（或 `OCTOP_ENABLE_API_DOCS=1`）后访问 `/api/docs`。
+交互式 API 文档默认关闭，在 `~/.happyclaw/config.json` 里设置 `"enable_api_docs": true`（或 `OCTOP_ENABLE_API_DOCS=1`）后访问 `/api/docs`。
 
 ## 🏗️ 架构与项目结构
 
@@ -321,9 +321,9 @@ make build-frontend        # 生产构建 → src/octop/dashboard/
 
 ## 🔒 安全与隐私
 
-- **本地优先**：配置、对话、工作区与凭据都在 `~/.octop/`。
+- **本地优先**：配置、对话、工作区与凭据都在 `~/.happyclaw/`。
 - **本机边界**：默认只监听 `127.0.0.1`；要暴露到局域网必须显式改 `--host`。
-- **安全策略**：工具审批（人工确认）、命令护栏、文件系统规则与 PII 脱敏按专家在「管理 → 安全管理」中配置；Shell 规则可直接编辑 `~/.octop/security/tool_guard/dangerous_shell_commands.yaml`。
+- **安全策略**：工具审批（人工确认）、命令护栏、文件系统规则与 PII 脱敏按专家在「管理 → 安全管理」中配置；Shell 规则可直接编辑 `~/.happyclaw/security/tool_guard/dangerous_shell_commands.yaml`。
 - **密钥遮盖**：环境变量接口返回值经过遮盖，Agent 命令行输出进入控制台前也会脱敏。
 - **无厂商锁定**：模型供应商、存储后端与 IM 通道都可替换。
 
@@ -336,7 +336,7 @@ make build-frontend        # 生产构建 → src/octop/dashboard/
 不需要。单人模式没有登录页与账号体系，启动后直接以本机使用者身份进入；访问 `/login`、`/invite` 会直接跳回对话页。
 
 **要先跑 `octop init` 吗？**
-不需要。首次 `octop run` 会创建 `~/.octop/`、数据库与本机使用者。`octop init` 用于重新初始化和执行迁移，`octop init --force` 会清空应用数据。
+不需要。首次 `octop run` 会创建 `~/.happyclaw/`、数据库与本机使用者。`octop init` 用于重新初始化和执行迁移，`octop init --force` 会清空应用数据。
 
 **怎么让局域网里的其他设备访问？**
 `octop run --host 0.0.0.0 --port 8088`，或设置 `OCTOP_BIND_HOST=0.0.0.0`。注意命令行上的 `--host` / `--port` 会被写进 `config.json`，并且这等于把控制台暴露给局域网，请自行确认网络环境。
@@ -345,10 +345,10 @@ make build-frontend        # 生产构建 → src/octop/dashboard/
 检查 API Key、Base URL、网络连通性与账户配额；本地模型确认 Ollama 已在运行。
 
 **数据在哪里？怎么迁移到新机器？**
-全部在 `~/.octop/`。用 `octop backup create --include-chats -o <路径>` 生成归档，把归档拷到新机器后执行 `octop backup restore <归档> --yes`。完整步骤与回退方式见 [docs/migration-and-restore.md](docs/migration-and-restore.md)。
+全部在 `~/.happyclaw/`。用 `octop backup create --include-chats -o <路径>` 生成归档，把归档拷到新机器后执行 `octop backup restore <归档> --yes`。完整步骤与回退方式见 [docs/migration-and-restore.md](docs/migration-and-restore.md)。
 
 **端口被别的程序占用？**
-换端口启动：`octop run --port 8090`；或修改 `~/.octop/config.json` 的 `port`。
+换端口启动：`octop run --port 8090`；或修改 `~/.happyclaw/config.json` 的 `port`。
 
 **为什么包名还是 `octop`？**
 分发名、CLI 命令、数据目录与 `OCTOP_*` 变量都在 HappyClaw 这个名字之前就定了，为兼容保留。你安装的产品叫 HappyClaw，它以 `octop` 的名字发布。

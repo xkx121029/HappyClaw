@@ -16,7 +16,7 @@ server side, and `/api/auth/me` returns that owner with `role: "admin"` so the
 dashboard exposes the full surface.
 
 > **Verification status (2026-11-12 07:06, local smoke):** verified against a
-> running server on a temporary `OCTOP_HOME` (fresh database, port 7462).
+> running server on a temporary `HAPPYCLAW_HOME` (fresh database, port 7462).
 > Observed: no credential is required for `/api/users` or `/api/teams`;
 > `/api/auth/me` returns the pre-provisioned `local-owner`; `/api/setup/status`
 > reports `setup_required: false`. Remaining schema differences are called out
@@ -417,7 +417,7 @@ because maintenance preserves history; concurrent background writes may affect t
 
 PostgreSQL limits every read/delete to the live expert's verified namespace and
 backs up exact target rows to a private JSONL file under
-`OCTOP_HOME/backups/memory-maintenance/` before committing a single transaction:
+`HAPPYCLAW_HOME/backups/memory-maintenance/` before committing a single transaction:
 
 - Rejected candidates decided more than 30 days ago, with no atom referencing them.
 - Operational journal entries older than 14 days (`extract_run`, `gc_*`,

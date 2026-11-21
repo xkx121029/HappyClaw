@@ -35,15 +35,15 @@
 
 | # | 检查项 | 判据 | 自动 | 结果 |
 |---|--------|------|------|------|
-| 3.1 | 全新安装 | 空 `OCTOP_HOME` 首次启动自动建库并创建本机使用者 | ✅ | ☐ |
+| 3.1 | 全新安装 | 空 `HAPPYCLAW_HOME` 首次启动自动建库并创建本机使用者 | ✅ | ☐ |
 | 3.2 | 旧库升级 | 用上一版本 `octop.db` 启动，迁移成功且专家 / 会话 / 通道数量与升级前一致 | ☐ | ☐ |
 | 3.3 | 旧字段兼容 | 旧 `config.json` 中的 `access_token_ttl_seconds`、`login_*`、`require_setup_password` 不导致启动失败 | ☐ | ☐ |
 | 3.4 | PostgreSQL | `OCTOP_DATABASE_URL` 指向 PG 时迁移成功（可选） | ☐ | ☐ |
-| 3.5 | 数据目录可写 | `~/.octop` 可写；`OCTOP_HOME` 改到其他磁盘后正常启动 | ✅ | ☐ |
+| 3.5 | 数据目录可写 | `~/.happyclaw` 可写；`HAPPYCLAW_HOME` 改到其他磁盘后正常启动 | ✅ | ☐ |
 | 3.6 | 工作区完整 | 专家工作区文件、技能包、插件、知识库在升级后仍可读 | ☐ | ☐ |
-| 3.7 | **空目录自建（阻断项）** | 安装/升级流程不依赖 `~/.octop` 已存在：在完全不存在该目录的机器或路径上执行安装与首次启动，能自动创建数据库、配置、日志、备份目录与工作区等全部结构，并正常返回 `/api/health` | ☐ | ☐ |
+| 3.7 | **空目录自建（阻断项）** | 安装/升级流程不依赖 `~/.happyclaw` 已存在：在完全不存在该目录的机器或路径上执行安装与首次启动，能自动创建数据库、配置、日志、备份目录与工作区等全部结构，并正常返回 `/api/health` | ☐ | ☐ |
 
-> 3.7 为硬性发布门槛：安装脚本、桌面端引导、Docker entrypoint 与 `octop run` 都不得假设用户数据目录已被预建；任一环节因目录缺失而失败，禁止发布。验证时必须使用独立临时目录，不得对真实 `~/.octop` 做删除或改名。
+> 3.7 为硬性发布门槛：安装脚本、桌面端引导、Docker entrypoint 与 `octop run` 都不得假设用户数据目录已被预建；任一环节因目录缺失而失败，禁止发布。验证时必须使用独立临时目录，不得对真实 `~/.happyclaw` 做删除或改名。
 
 ## 四、备份与恢复
 
@@ -59,7 +59,7 @@
 | # | 检查项 | 判据 | 自动 | 结果 |
 |---|--------|------|------|------|
 | 5.1 | 前台日志 | `octop run` 终端可见启动、监听地址与错误 | ☐ | ☐ |
-| 5.2 | 文件日志 | 日志写入 `~/.octop/logs/octop.log`，按天轮转为 `octop.YYYY-MM-DD.log`；旧版 `~/.octop/octop.log` 首次启动时迁移 | ☐ | ☐ |
+| 5.2 | 文件日志 | 日志写入 `~/.happyclaw/logs/octop.log`，按天轮转为 `octop.YYYY-MM-DD.log`；旧版 `~/.happyclaw/octop.log` 首次启动时迁移 | ☐ | ☐ |
 | 5.3 | 日志不含密钥 | 抽查日志无 `sk-`、Bearer Token、通道 Secret 明文 | ✅ | ☐ |
 | 5.4 | 关键错误可诊断 | 模型连接失败、通道认证失败在日志中有可定位的中文/英文提示 | ☐ | ☐ |
 
@@ -71,7 +71,7 @@
 | 6.2 | macOS / Linux 安装 | `install.sh` 后 `octop --version` 可用 | ☐ | ☐ |
 | 6.3 | Docker 启动 | `docker compose -f docker/docker-compose.yml up -d --build` 后 8088 可访问，且无管理员密码步骤 | ✅ | ☐ |
 | 6.4 | 数据卷 | Docker 数据落在 `/data/.octop`，重建容器后数据仍在 | ☐ | ☐ |
-| 6.5 | 卸载 | 按文档删除 `~/.octop` 并移除 PATH 后无残留进程 / 服务 | ☐ | ☐ |
+| 6.5 | 卸载 | 按文档删除 `~/.happyclaw` 并移除 PATH 后无残留进程 / 服务 | ☐ | ☐ |
 | 6.6 | 升级 | `octop update` 后版本变化，数据与配置保留 | ☐ | ☐ |
 
 ## 七、文档与单人化一致性
@@ -96,15 +96,15 @@
 | 7.9.1 | `auth.py` 仍注册 `POST /api/auth/login`、`POST /api/auth/logout`、`GET /api/auth/me`、`POST /api/auth/change-password`、`GET /api/auth/captcha` | `docs/api.md` 与 `docs/user-guide.md` 按「无登录」描述 | ☑ 已达成（实测 login 200 占位 token、me 200、logout 204、change-password 400、captcha 200 `provider:none`） |
 | 7.9.2 | `auth_device.py`、`auth_mfa.py`、`auth_oauth.py`、`auth_oidc.py`、`auth_ldap.py` 仍挂在 `/api/auth` | 文档已不再提及这些登录方式 | ◐ oidc/oauth/ldap/passkey 已核实（status 200 且禁用、start/config-test 400）；device/mfa 未测 |
 | 7.9.3 | `users.py`、`invites.py`、`user_roles.py`、`user_groups.py` 仍挂载（`/api/users`、`/api/users/invites`、`/api/users/roles`、`/api/user-groups`） | 文档声明账号 / 邀请 / 角色已移除 | ◐ `/api/users` 已核实（读 200、写 400）；invites / roles / user-groups 未测 |
-| 7.9.4 | `setup.py` 挂在 `/api`，`setup_lockdown` 中间件仍安装；无初始用户时抛 `SETUP_REQUIRED` | 快速开始与帮助文档已不包含 setup 向导 | ☑ 已达成（干净 `OCTOP_HOME` 下 `setup_required:false`、本地 owner 自动创建、begin/finish 400） |
+| 7.9.4 | `setup.py` 挂在 `/api`，`setup_lockdown` 中间件仍安装；无初始用户时抛 `SETUP_REQUIRED` | 快速开始与帮助文档已不包含 setup 向导 | ☑ 已达成（干净 `HAPPYCLAW_HOME` 下 `setup_required:false`、本地 owner 自动创建、begin/finish 400） |
 | 7.9.5 | `middleware/jwt_auth.py` 全局校验 `/api/*`，仅放行 health、login、captcha、MFA、OIDC/OAuth、LDAP 等白名单 | 文档按「直接调用 API、无需 Authorization」描述 | ☑ 已达成（无 token 时 `/api/users`、`/api/teams` 均 200） |
 | 7.9.6 | `admin.py` / `backup.py` 挂在 `/api/admin`；`octop user` 系列 CLI 仍注册但标注 deprecated | 文档把多用户管理描述为纯兼容层 | ☐ 待后端落地后复核 |
-| 7.9.7 | `src/octop/infra/users/`（`manager.py`、`invites.py`、`password.py`、`permissions.py`、`groups.py` 等）仍存在；`api/common/sso_cookie.py`、`user_manager.count()`、`~/.octop/users/` 旧目录仍在代码路径中 | 文档未描述这些兼容面 | ☐ 待后端落地后复核 |
+| 7.9.7 | `src/octop/infra/users/`（`manager.py`、`invites.py`、`password.py`、`permissions.py`、`groups.py` 等）仍存在；`api/common/sso_cookie.py`、`user_manager.count()`、`~/.happyclaw/users/` 旧目录仍在代码路径中 | 文档未描述这些兼容面 | ☐ 待后端落地后复核 |
 
 > 7.8 记录（2026-11-12 07:10）：WSL 仍缺 `/bin/bash`，改用 Git Bash `GNU bash 5.2.37(1)-release` 执行 `bash -n`，以下 12 个脚本全部通过：`scripts/install.sh`、`scripts/install-octop.sh`、`scripts/build-fpk.sh`、`scripts/fnos/common.sh`、`scripts/fnos/slim-site-packages.sh`、`scripts/fnos/store_version.sh`、`scripts/wheel_build.sh`、`scripts/ci/upload_release_cos.sh`、`scripts/run-discord-local.sh`、`docker/docker_build.sh`、`docker/docker-entrypoint.sh`、`docker/bake-desktop.sh`。仅做语法校验，未在 POSIX 上执行。
 
-> 7.2 冒烟记录（2026-11-12 07:03）：`scripts/release-check.ps1` → 11 通过 / 0 警告 / 0 失败，退出码 `0`。`scripts/smoke_local.ps1` 用临时 `OCTOP_HOME`、空闲端口 3320 → `/api/health` 首次可用耗时 **52.1s**，响应 `{"ok":true,"db":true,"users_loaded":1,"agents_running":0}`，退出码 `0`。另两次接口探测的 health 就绪时间分别为 49.2s、48.1s（冷启动波动区间 48–53s）。
-> 7.5 核对记录（2026-11-12 07:06；临时 `OCTOP_HOME` + 空闲端口 7462，`.venv\Scripts\octop.exe run`）：
+> 7.2 冒烟记录（2026-11-12 07:03）：`scripts/release-check.ps1` → 11 通过 / 0 警告 / 0 失败，退出码 `0`。`scripts/smoke_local.ps1` 用临时 `HAPPYCLAW_HOME`、空闲端口 3320 → `/api/health` 首次可用耗时 **52.1s**，响应 `{"ok":true,"db":true,"users_loaded":1,"agents_running":0}`，退出码 `0`。另两次接口探测的 health 就绪时间分别为 49.2s、48.1s（冷启动波动区间 48–53s）。
+> 7.5 核对记录（2026-11-12 07:06；临时 `HAPPYCLAW_HOME` + 空闲端口 7462，`.venv\Scripts\octop.exe run`）：
 > - **已达成** — setup 固定为不需要初始化：`GET /api/setup/status` 返回 `200 {setup_required:false, local_account:true, single_user:true}`；`POST /api/setup/begin`、`POST /api/setup/finish` 均返回 `400`（单人模式无需向导）。
 > - **已达成** — JWT 放宽：不带 `Authorization` 时 `GET /api/users` 返回 `200`（仅 local-owner 一条）、`GET /api/teams` 返回 `200 []`、`GET /api/auth/me` 返回 `200` 的 local-owner。
 > - **差异（已按实测回填 `docs/api.md`）**：① `/setup/status` 字段名为 `setup_required` / `local_account` / `single_user`，不是旧文里的 `required` / `completed` / `has_admin`；② `/auth/me` 的 `role` 为 `"local"`，而 `/users` 列表里同一账号渲染为 `"admin"`；③ passkey 状态字段是 `passwordless_login`，不是 `enabled`；④ oauth 状态返回 `providers` 数组。
@@ -118,7 +118,7 @@
 |---|--------|------|------|------|
 | 8.1 | 明文密钥 | 仓库文档 / 脚本 / docker 无 `sk-`、AK、私钥、Bearer 明文 | ✅ | ☐ |
 | 8.2 | 默认监听 | 默认只监听回环；文档明确提示 `0.0.0.0` 的风险 | ✅ | ☐ |
-| 8.3 | 工具护栏 | `~/.octop/security/tool_guard/` 默认规则生效 | ☐ | ☐ |
+| 8.3 | 工具护栏 | `~/.happyclaw/security/tool_guard/` 默认规则生效 | ☐ | ☐ |
 | 8.4 | 上传限制 | 超过 `OCTOP_MAX_UPLOAD_MB` 的上传被拒绝并给出中文提示 | ☐ | ☐ |
 | 8.5 | 路径穿越 | 附件、知识库、插件名不含越权路径 | ☐ | ☐ |
 
@@ -130,7 +130,7 @@
 # 仓库根目录
 powershell -File scripts/release-check.ps1
 
-# 本机链路（临时数据目录，不碰真实 ~/.octop）
+# 本机链路（临时数据目录，不碰真实 ~/.happyclaw）
 powershell -File scripts/smoke_local.ps1
 ```
 

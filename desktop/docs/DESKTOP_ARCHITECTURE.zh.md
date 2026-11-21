@@ -45,7 +45,7 @@ HappyClaw Desktop 每次随壳启动自己的 Python 进程，监听回环地址
 └───────────────────────────────────────────┘     └──────────────────────────────────────┘
 ```
 
-`$OCTOP_HOME` 是数据根目录。进程环境或 macOS / Linux 登录 Shell 里已经设置了非空 `OCTOP_HOME` 时使用该路径；都没有时为 `~/.octop`（Windows 为 `%USERPROFILE%\.octop`）。数据库、工作区和 `config.json` 都在这个根目录下。三个平台的绿色运行时都在安装目录里。
+`$HAPPYCLAW_HOME` 是数据根目录。进程环境或 macOS / Linux 登录 Shell 里已经设置了非空 `HAPPYCLAW_HOME` 时使用该路径；都没有时为 `~/.happyclaw`（Windows 为 `%USERPROFILE%\.octop`）。数据库、工作区和 `config.json` 都在这个根目录下。三个平台的绿色运行时都在安装目录里。
 
 ---
 
@@ -75,37 +75,37 @@ start.sh/bat   # 独立启动脚本
 
 1. `OCTOP_PORTABLE_DIR`（开发时指向已经展开的目录）。
 2. 安装目录里已经展开的树：先看 `resources/sidecar`（Windows 安装器写入），再看 `resources/portable`（macOS 与 Linux 打包时写入）。两者都要同时有 `launch.py` 和解释器；只有 zip 的目录不算。
-3. 都没有时，才把随包 zip 解压到 `<OCTOP_HOME>/portable/`。正式安装包不会走这里。
+3. 都没有时，才把随包 zip 解压到 `<HAPPYCLAW_HOME>/portable/`。正式安装包不会走这里。
 
-运行时跟安装目录走。升级替换安装目录（macOS 换掉 `.app`，Linux 换掉 deb / rpm 里的文件，Windows 由 NSIS 重新解压 `resources\sidecar`）。卸载删掉安装目录里的运行时。`OCTOP_HOME` 里的数据库、工作区、密钥和 `config.json` 保留。以前解压在 `<OCTOP_HOME>/portable/` 的旧副本不再使用，卸载也不删它。
+运行时跟安装目录走。升级替换安装目录（macOS 换掉 `.app`，Linux 换掉 deb / rpm 里的文件，Windows 由 NSIS 重新解压 `resources\sidecar`）。卸载删掉安装目录里的运行时。`HAPPYCLAW_HOME` 里的数据库、工作区、密钥和 `config.json` 保留。以前解压在 `<HAPPYCLAW_HOME>/portable/` 的旧副本不再使用，卸载也不删它。
 
-子进程设置 `PYTHONPYCACHEPREFIX=<OCTOP_HOME>/pyc`，避免把 `.pyc` 写进 macOS 应用包，或 Windows / deb / rpm 安装目录。Windows 安装器在展开 `resources\sidecar` 之后，用其中的 `runtime\python.exe` 对 `packages` 执行 `compileall`，写入同一个 `pyc` 目录（`OCTOP_HOME` 未设置时为 `%USERPROFILE%\.octop\pyc`）。编译失败不中止安装，首次启动会再编译。Windows 卸载只删除这个 `pyc` 目录，下次安装再编译一次。
+子进程设置 `PYTHONPYCACHEPREFIX=<HAPPYCLAW_HOME>/pyc`，避免把 `.pyc` 写进 macOS 应用包，或 Windows / deb / rpm 安装目录。Windows 安装器在展开 `resources\sidecar` 之后，用其中的 `runtime\python.exe` 对 `packages` 执行 `compileall`，写入同一个 `pyc` 目录（`HAPPYCLAW_HOME` 未设置时为 `%USERPROFILE%\.octop\pyc`）。编译失败不中止安装，首次启动会再编译。Windows 卸载只删除这个 `pyc` 目录，下次安装再编译一次。
 
 只有第 3 步的回退路径才做校验与版本感知：
 
 - 安装包附带 `portable-version.json`，记录与本次 Desktop 发布绑定的版本和 SHA-256 哈希。
-- 主进程在启动时比对 `<OCTOP_HOME>/portable/version.json`。
+- 主进程在启动时比对 `<HAPPYCLAW_HOME>/portable/version.json`。
 - 两个文件都使用 `version` 与 `sha256`。`version` 与本次 Desktop 发布的版本号相同。壳在解压并校验成功之后才写入本地文件；写入之前失败不会留下一个更高的版本。
 - 若版本一致且解释器二进制存在，跳过解压。
-- 若随包版本更高或文件损坏，在保留 `OCTOP_HOME` 内用户数据的前提下替换运行时目录。
+- 若随包版本更高或文件损坏，在保留 `HAPPYCLAW_HOME` 内用户数据的前提下替换运行时目录。
 - 若本地 `version` 高于随包版本，按 [§2.3](#23-手动覆盖安装旧版) 判定为手动覆盖安装了旧版：保留现有运行时，停止启动，错误提示写出检测到的本地版本。
 - 替换只发生在壳自己的发布切换之后。Web 里的「检查更新」「立即升级」和 `octop update` 不能替换这个目录。
-- 解压后赋予解释器执行权限：`chmod +x "$OCTOP_HOME/portable/runtime/bin/python3"`。
+- 解压后赋予解释器执行权限：`chmod +x "$HAPPYCLAW_HOME/portable/runtime/bin/python3"`。
 
-Windows 的 `pywin32_system32` 下的 `pywintypes*.dll` 在打 zip 时复制到 `runtime\`，由 `launch.py` 处理 `.pth`。macOS 运行时在打包前就放进应用包。安装包不签名、不公证，也不对 `~/.octop/portable` 做 `xattr -dr`。
+Windows 的 `pywin32_system32` 下的 `pywintypes*.dll` 在打 zip 时复制到 `runtime\`，由 `launch.py` 处理 `.pth`。macOS 运行时在打包前就放进应用包。安装包不签名、不公证，也不对 `~/.happyclaw/portable` 做 `xattr -dr`。
 
 ### 2.3 手动覆盖安装旧版
 
-正式安装包的运行时在安装目录里，换旧安装包会把运行时一起换掉，不做这个比较。这一节只用于安装目录里没有展开树、退回把 zip 解压到 `<OCTOP_HOME>/portable/` 的启动。
+正式安装包的运行时在安装目录里，换旧安装包会把运行时一起换掉，不做这个比较。这一节只用于安装目录里没有展开树、退回把 zip 解压到 `<HAPPYCLAW_HOME>/portable/` 的启动。
 
-那时安装器替换的是壳，`<OCTOP_HOME>/portable/` 不在安装目录里，所以用旧安装包覆盖之后，本地 `version.json` 仍是上一次成功解压的版本。壳的更新只会安装更高版本（见 [§6.1](#61-更新检测)）。启动时只要本地版本更高，就按手动覆盖安装旧版处理。比较针对已经解析好的那一个 `OCTOP_HOME`。
+那时安装器替换的是壳，`<HAPPYCLAW_HOME>/portable/` 不在安装目录里，所以用旧安装包覆盖之后，本地 `version.json` 仍是上一次成功解压的版本。壳的更新只会安装更高版本（见 [§6.1](#61-更新检测)）。启动时只要本地版本更高，就按手动覆盖安装旧版处理。比较针对已经解析好的那一个 `HAPPYCLAW_HOME`。
 
 比较规则与 [§6.1](#61-更新检测) 相同：去掉 `version` 开头的 `v` 后再比。`1.0.3` 高于 `1.0.3b1`，`1.0.3b1` 高于 `1.0.2`。随包版本缺失，或两个版本无法按这个顺序比较时，把本次安装包视为损坏：展示错误并停止启动，同时保留现有 `portable/`。这种情况不记成「本地版本更高」。
 
 | 来源 | 路径 | 含义 |
 |---|---|---|
 | 随包 | 安装目录中的 `portable-version.json` | 本次启动的 Desktop 版本 |
-| 本地 | `<OCTOP_HOME>/portable/version.json` | 本机已经成功解压过的运行时版本 |
+| 本地 | `<HAPPYCLAW_HOME>/portable/version.json` | 本机已经成功解压过的运行时版本 |
 
 启动 Python 之前按下面的顺序判定。提示里的本地版本只取本地文件的 `version` 字段：
 
@@ -118,13 +118,13 @@ Windows 的 `pywin32_system32` 下的 `pywintypes*.dll` 在打 zip 时复制到 
 第 5 种情况：
 
 - 停止在拉起 Python 之前。不申请端口，不请求 `/api/health`。
-- 保留 `<OCTOP_HOME>/portable/`，也保留数据库、工作区、密钥和 `config.json`。
+- 保留 `<HAPPYCLAW_HOME>/portable/`，也保留数据库、工作区、密钥和 `config.json`。
 - 在同一次 Early Window 里展示错误。错误正文写出检测到的本地版本，并写出本次随包版本。版本原文原样展示，去掉开头的 `v` 只用于比较。
 - 窗口里不提供继续启动或降级替换。用户安装不低于该本地版本的 Desktop 之后再打开。
 
 文案要让用户直接读到检测到的版本，例如：「检测到本机运行时版本为 1.0.3，当前安装的是 1.0.2。这是手动覆盖安装的旧版，已停止启动，并保留了现有运行时。」数字以两个文件里的 `version` 为准。
 
-主进程把这两个版本写入 `<OCTOP_HOME>/logs/desktop/desktop.log`。窗口里的错误仍然要包含检测到的本地版本。
+主进程把这两个版本写入 `<HAPPYCLAW_HOME>/logs/desktop/desktop.log`。窗口里的错误仍然要包含检测到的本地版本。
 
 ---
 
@@ -147,11 +147,11 @@ Windows 的 `pywin32_system32` 下的 `pywintypes*.dll` 在打 zip 时复制到 
 拉起 Python 进程时，主进程设置以下关键环境变量：
 
 ```ts
-const octopHome = resolveOctopHome(process.env.OCTOP_HOME, loginShellEnv.OCTOP_HOME)
+const octopHome = resolveOctopHome(process.env.HAPPYCLAW_HOME, loginShellEnv.HAPPYCLAW_HOME)
 const portableDir = installedRuntimeDir ?? path.join(octopHome, "portable")
 const env = {
   ...process.env,
-  OCTOP_HOME: octopHome,
+  HAPPYCLAW_HOME: octopHome,
   PYTHONNOUSERSITE: "1",
   PYTHONPYCACHEPREFIX: path.join(octopHome, "pyc"),
   OCTOP_GREEN_PACKAGES: path.join(portableDir, "packages"),
@@ -166,19 +166,19 @@ delete env.PYTHONPATH
 
 `resolveOctopHome` 只在取值缺失时补默认路径，已有非空值保持不变：
 
-1. 本次进程继承的 `OCTOP_HOME`（去掉首尾空白后非空）。
-2. macOS / Linux 登录 Shell 读到的 `OCTOP_HOME`。Windows 没有这一步，使用用户或系统环境里已经传入的值。
+1. 本次进程继承的 `HAPPYCLAW_HOME`（去掉首尾空白后非空）。
+2. macOS / Linux 登录 Shell 读到的 `HAPPYCLAW_HOME`。Windows 没有这一步，使用用户或系统环境里已经传入的值。
 3. 都没有时为 `path.join(os.homedir(), ".octop")`。
 
 开头的 `~` 按当前用户主目录展开。展开后的路径是数据根，使壳与 Python 的 `PathLayout.from_env()` 指向同一位置。壳不把这个值写回 `config.json`。三个平台的运行时都不放在这里；只有安装目录里没有展开树时，才把 zip 解压到这个根目录下的 `portable/`。
 
 `assignedPort` 是本次向操作系统申请到的端口。`OCTOP_BIND_HOST` 与 `OCTOP_PORT` 都不写回 `config.json`。
 
-`OCTOP_REQUIRE_SETUP_PASSWORD` 是产品决定，不是界面开关：关掉初始化向导的 CLI 密码，安装完直接进主界面。前端从 `/api/setup/status` 的 `wizard_password_required` 读到同一个事实，据此隐藏密码步骤和 Admin 步骤的密码框；Web 部署不改前端代码，只是这个值仍为 `true`。壳运行期间这个键归壳所有，`~/.octop/env` 和 `/api/envs` 都不能把登录墙改回来。
+`OCTOP_REQUIRE_SETUP_PASSWORD` 是产品决定，不是界面开关：关掉初始化向导的 CLI 密码，安装完直接进主界面。前端从 `/api/setup/status` 的 `wizard_password_required` 读到同一个事实，据此隐藏密码步骤和 Admin 步骤的密码框；Web 部署不改前端代码，只是这个值仍为 `true`。壳运行期间这个键归壳所有，`~/.happyclaw/env` 和 `/api/envs` 都不能把登录墙改回来。
 
 令牌有效期保持服务端默认值，壳不去改它 —— 无密码的账户配一个长令牌只是把死局往后推，同时放大令牌泄漏的后果。真正解决"JWT 过期后登不进去"的是设备凭据：
 
-- 壳首次使用时生成 32 字节设备密钥，用 `safeStorage`（Keychain / DPAPI / libsecret）加密后写到 `<OCTOP_HOME>/desktop-device.json`，权限 `0600`。
+- 壳首次使用时生成 32 字节设备密钥，用 `safeStorage`（Keychain / DPAPI / libsecret）加密后写到 `<HAPPYCLAW_HOME>/desktop-device.json`，权限 `0600`。
 - **没有可用钥匙串的机器（headless Linux、WSL、CI）不落盘**：密钥只留在内存里，随进程结束消失。明文落盘会跟着家目录的每一次备份/同步走，而在这种机器上"密钥就放在密文旁边"只是障眼法；代价是这类机器每次启动要重新登录一次。服务端 `desktop_device` 只有一行且是覆盖写，所以反复注册不会堆设备。
 - v1 遗留的明文文件会在启动时收敛：有钥匙串就重新加密，没有就删掉（当次启动仍沿用它的密钥）。`read()` 不把明文当凭据，只有 `migrate()` 有权收编它。
 - 渲染进程看不到这个密钥。第一次拿到认证成功的响应后，`dashboard/src/api/desktopSession.ts` 让壳把凭据绑定到当前登录用户（`POST /api/auth/device/register`，重复注册会替换旧令牌，重装或换机器即接管）。
@@ -187,7 +187,7 @@ delete env.PYTHONPATH
 
 于是桌面端跨重启、跨 JWT 过期都不需要密码；使用期间的滑动续期照旧轮换令牌。凭据被删除、或用户行被移除时回到普通登录页，那属于服务端操作（`octop user passwd`），壳自己无力恢复。
 
-已有 `OCTOP_HOME` 数据（旧桌面或本机服务端）也会落到登录页，因为设备凭据从未注册。认领方案见 [`LOCAL_ACCOUNT_CLAIM.zh.md`](LOCAL_ACCOUNT_CLAIM.zh.md)，尚未实现。
+已有 `HAPPYCLAW_HOME` 数据（旧桌面或本机服务端）也会落到登录页，因为设备凭据从未注册。认领方案见 [`LOCAL_ACCOUNT_CLAIM.zh.md`](LOCAL_ACCOUNT_CLAIM.zh.md)，尚未实现。
 
 **登录 Shell 环境**：
 
@@ -197,7 +197,7 @@ delete env.PYTHONPATH
 $SHELL -ilc "env -0"
 ```
 
-解析并合并 `OCTOP_HOME`、PATH、代理和模型提供商环境变量。进程环境里已经有非空 `OCTOP_HOME` 时，登录 Shell 里的同名变量不覆盖它。探测失败时回退到 Electron 继承的环境；此时 `OCTOP_HOME` 仍按上面的默认路径补齐。选择解压目录之前必须先得到最终的 `OCTOP_HOME`，并先完成 [§2.3](#23-手动覆盖安装旧版) 的版本比较。比较允许解压、且进程环境里已经有 `OCTOP_HOME` 时，解压可以和其余登录 Shell 变量的合并并行；否则先等这次探测结束。本地版本更高时停止启动，不再解压。
+解析并合并 `HAPPYCLAW_HOME`、PATH、代理和模型提供商环境变量。进程环境里已经有非空 `HAPPYCLAW_HOME` 时，登录 Shell 里的同名变量不覆盖它。探测失败时回退到 Electron 继承的环境；此时 `HAPPYCLAW_HOME` 仍按上面的默认路径补齐。选择解压目录之前必须先得到最终的 `HAPPYCLAW_HOME`，并先完成 [§2.3](#23-手动覆盖安装旧版) 的版本比较。比较允许解压、且进程环境里已经有 `HAPPYCLAW_HOME` 时，解压可以和其余登录 Shell 变量的合并并行；否则先等这次探测结束。本地版本更高时停止启动，不再解压。
 
 ### 3.3 就绪检测（Ready Signal）
 
@@ -276,7 +276,7 @@ Electron main 入口：执行轻量初始化并获取单实例锁
 
 - Electron 入口模块保持轻量，窗口创建前不加载不必要的重型模块。
 - 窗口位置、尺寸与背景色在创建窗口前读取。
-- 三个平台都使用安装目录里已经展开的运行时，不在启动时解压。只有安装目录里没有这棵树时，解压目录才依赖已经解析的 `OCTOP_HOME`（见 [§3.2](#32-环境变量注入与登录-shell-环境)），并在拉起 Python 之前完成 [§2.3](#23-手动覆盖安装旧版) 的版本比较。本地版本更高时，同一窗口展示错误并停止；错误包含检测到的本地版本。
+- 三个平台都使用安装目录里已经展开的运行时，不在启动时解压。只有安装目录里没有这棵树时，解压目录才依赖已经解析的 `HAPPYCLAW_HOME`（见 [§3.2](#32-环境变量注入与登录-shell-环境)），并在拉起 Python 之前完成 [§2.3](#23-手动覆盖安装旧版) 的版本比较。本地版本更高时，同一窗口展示错误并停止；错误包含检测到的本地版本。
 - 回退路径上比较允许解压时，解压可以与登录 Shell 其余环境变量的合并并行。Python 进程在比较通过后随壳启动。
 - 其他启动失败也保留同一窗口展示恢复操作，不通过多次导航制造白屏。
 
@@ -437,7 +437,7 @@ release 的 `prerelease` 进 `beta` 通道，其余进 `stable`；`draft` 跳过
 1. 锁住 API 准入。新请求返回 `503`，已接纳的请求排空。
 2. 按第 3.4 节要求 Python 进程干净退出：宽限期内退出、退出码为 0。
 3. 把退出交给安装器。安装器在用户上次选定的安装目录里替换壳、前端资源和随包运行时，不改回默认盘符。
-4. 新版本启动后直接使用安装目录里的运行时。Windows 安装器在覆盖文件后重新展开 `resources\sidecar`；macOS 的新 `.app` 和 Linux 的新 deb / rpm 里已经是展开的树。`OCTOP_HOME` 里的数据库、工作区、密钥和 `config.json` 保留。
+4. 新版本启动后直接使用安装目录里的运行时。Windows 安装器在覆盖文件后重新展开 `resources\sidecar`；macOS 的新 `.app` 和 Linux 的新 deb / rpm 里已经是展开的树。`HAPPYCLAW_HOME` 里的数据库、工作区、密钥和 `config.json` 保留。
 
 干净退出没有完成时，安装被拒绝。安装失败且 Python 进程已经停过时，壳重新拉起本次进程，并重新加载 `octop://app/`，因为新进程的端口和注入都可能变了。
 
@@ -463,8 +463,8 @@ Windows 安装包使用带目录页的 NSIS 向导，对应 electron-builder 的
 - 目标目录所在的盘必须已经就绪，并且安装进程对它有写权限。需要提权时由安装器申请，不因为用户选了非系统盘而失败。
 - 安装和卸载开始前，如果这个安装目录里的 `HappyClaw.exe` 仍在运行，安装器停止并提示「正在运行，请先在系统托盘中退出应用后重试」。不结束进程。升级时先等最多 10 秒，给壳自己退出的时间。其它目录里的同名程序不算。
 - 后续壳更新沿用这次写入的安装目录，不把程序装回默认盘。
-- 展开 `resources\sidecar` 之后，安装器把 `packages` 预编译进 `OCTOP_HOME\pyc`（未设置时为 `%USERPROFILE%\.octop\pyc`），与外壳启动时的 `PYTHONPYCACHEPREFIX` 相同。编译失败不中止安装。
-- 卸载删除选定目录中的程序文件、开始菜单快捷方式、桌面快捷方式和安装时展开的 `resources\sidecar`，并删除 `OCTOP_HOME\pyc`（未设置时为 `%USERPROFILE%\.octop\pyc`）。同目录下的数据库、工作区、密钥和 `config.json` 保留。更早版本解压在该目录下的 `portable/` 也不删除。下次安装会再编译字节码。
+- 展开 `resources\sidecar` 之后，安装器把 `packages` 预编译进 `HAPPYCLAW_HOME\pyc`（未设置时为 `%USERPROFILE%\.octop\pyc`），与外壳启动时的 `PYTHONPYCACHEPREFIX` 相同。编译失败不中止安装。
+- 卸载删除选定目录中的程序文件、开始菜单快捷方式、桌面快捷方式和安装时展开的 `resources\sidecar`，并删除 `HAPPYCLAW_HOME\pyc`（未设置时为 `%USERPROFILE%\.octop\pyc`）。同目录下的数据库、工作区、密钥和 `config.json` 保留。更早版本解压在该目录下的 `portable/` 也不删除。下次安装会再编译字节码。
 - 更换安装盘会把程序和 Python 运行时一起装到新目录，不搬家用户数据。监听端口与安装位置无关。
 
 ### 7.2 Linux deb 桌面快捷方式
@@ -608,11 +608,11 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
    - 验证终端里已有的 `octop run` 仍独立运行，桌面端不附着到它。
    - 验证 `config.json` 的 `bind_host` 与 `port` 不被本次启动改写。
    - 验证安装升级后用户数据库、工作区、密钥和 `config.json` 不被覆盖。
-   - 验证换旧安装包时，三个平台的运行时都随安装目录一起换掉。只有安装目录里没有展开树、退回解压到 `OCTOP_HOME` 时，才比较本地 `version` 与随包版本：本地更高则启动失败，错误提示包含检测到的本地版本和当前随包版本，不启动 Python，并保留已解压的 `portable/` 与用户数据。
+   - 验证换旧安装包时，三个平台的运行时都随安装目录一起换掉。只有安装目录里没有展开树、退回解压到 `HAPPYCLAW_HOME` 时，才比较本地 `version` 与随包版本：本地更高则启动失败，错误提示包含检测到的本地版本和当前随包版本，不启动 Python，并保留已解压的 `portable/` 与用户数据。
    - 验证客户端设置作为新增项出现在 Web 设置里，浏览器版不出现这些项；Web 里的应用内升级和 `octop update` 被拒绝，壳、前端和 Python 运行时保持同一发布版本。
    - 验证更新检测由主进程 `GET https://api.github.com/repos/xkx121029/HappyClaw/releases` 完成。「只跟随稳定版」默认开启，此时忽略更高的 `data.client.beta`；关闭后才在稳定版和测试版中选择更高且带有当前平台安装包的版本。已安装测试版高于当前稳定版时不降级，「最新版本」仍显示稳定通道的 tag。
-   - 验证已设置的 `OCTOP_HOME` 被用作数据根目录；未设置时才使用 `~/.octop`。macOS / Linux 上，登录 Shell 中的值在 GUI 进程没有该变量时生效，进程环境里已有的值保持不变。运行时不放在这个目录里。
-   - 验证 Windows 安装向导可以把程序装到另一个盘符，升级仍落在该目录，卸载不删除 `OCTOP_HOME`（默认 `%USERPROFILE%\.octop`）。
+   - 验证已设置的 `HAPPYCLAW_HOME` 被用作数据根目录；未设置时才使用 `~/.happyclaw`。macOS / Linux 上，登录 Shell 中的值在 GUI 进程没有该变量时生效，进程环境里已有的值保持不变。运行时不放在这个目录里。
+   - 验证 Windows 安装向导可以把程序装到另一个盘符，升级仍落在该目录，卸载不删除 `HAPPYCLAW_HOME`（默认 `%USERPROFILE%\.octop`）。
    - 验证 Windows 和 POSIX 平台均无遗留进程树。
 
 ---
@@ -653,12 +653,12 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 ## 11. 关键决策摘要
 
 1. Electron 只拥有桌面能力，HappyClaw Python 服务继续拥有业务逻辑。
-2. Python 运行时位于 asar 外，并复用现有绿色便携包契约。三个平台都在安装时展开到安装目录。数据根目录尊重已设置的 `OCTOP_HOME`；未设置时为 `~/.octop`。数据库、工作区和 `config.json` 都在这个根目录下。
+2. Python 运行时位于 asar 外，并复用现有绿色便携包契约。三个平台都在安装时展开到安装目录。数据根目录尊重已设置的 `HAPPYCLAW_HOME`；未设置时为 `~/.happyclaw`。数据库、工作区和 `config.json` 都在这个根目录下。
 3. Desktop 每次随壳启动自己的 Python 进程，退出时只回收这次启动的进程树。
 4. 本次进程监听 `127.0.0.1` 和操作系统分配的随机端口；地址通过环境变量覆盖，不写回 `config.json`。
 5. 就绪信号来自 `/api/health`，不解析日志文本。
 6. 渲染进程不知道后台凭据，不获得 Node.js 或原始 IPC 能力。
 7. 正常退出优先，强制进程树回收仅作为超时兜底。
 8. 桌面更新由壳检测，默认 `GET https://api.github.com/repos/xkx121029/HappyClaw/releases`（可用 `OCTOP_UPDATE_ENDPOINT` 换成自建目录），用 `data.client.stable` 与 `data.client.beta` 区分稳定版和测试版。用户默认只跟随稳定版，可以关闭该选项以接收测试版。壳、Dashboard 和绿色 Python 运行时同一发布版本。客户端设置加在原有 Web 设置里，不另开壳设置页；桌面进程拒绝 Web 应用内更新。
-9. Windows 安装使用带目录页的 NSIS 向导，用户可以选择安装位置和盘符。升级沿用该目录；用户数据仍在 `OCTOP_HOME`（未设置时为 `%USERPROFILE%\.octop`）。
-10. 三个平台的运行时都随安装目录替换。只有退回把 zip 解压到 `OCTOP_HOME` 时，才用随包 `portable-version.json` 与 `<OCTOP_HOME>/portable/version.json` 的 `version` 比较。本地版本更高则停止启动，错误提示写出检测到的本地版本，并保留现有运行时与用户数据。
+9. Windows 安装使用带目录页的 NSIS 向导，用户可以选择安装位置和盘符。升级沿用该目录；用户数据仍在 `HAPPYCLAW_HOME`（未设置时为 `%USERPROFILE%\.octop`）。
+10. 三个平台的运行时都随安装目录替换。只有退回把 zip 解压到 `HAPPYCLAW_HOME` 时，才用随包 `portable-version.json` 与 `<HAPPYCLAW_HOME>/portable/version.json` 的 `version` 比较。本地版本更高则停止启动，错误提示写出检测到的本地版本，并保留现有运行时与用户数据。

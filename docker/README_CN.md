@@ -64,15 +64,15 @@ bash docker/docker_build.sh
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `HOME` | `/data` | 必须为 `/data`，数据目录映射到 `~/.octop` |
+| `HOME` | `/data` | 必须为 `/data`，数据目录映射到 `~/.happyclaw` |
 | `OCTOP_PORT` | `8088` | HTTP 服务端口 |
-| `OCTOP_DATA` | `~/.octop` | 宿主机数据目录（Compose 挂载到 `/data/.octop`） |
+| `OCTOP_DATA` | `~/.happyclaw` | 宿主机数据目录（Compose 挂载到 `/data/.octop`） |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN（或其他 `OCTOP_DATABASE_*`，见 [configuration.md](../docs/configuration.md)） |
 | `OCTOP_DATABASE_DRIVER` | — | 通过环境变量覆盖时：`sqlite` \| `postgresql` |
 | `OPENAI_API_KEY` | — | OpenAI 兼容 API Key |
 | `DASHSCOPE_API_KEY` | — | 阿里云通义千问 API Key |
 
-Compose 可在 `docker/.env` 中配置上述变量。注意：`.env` 只参与 Compose 插值，变量必须出现在 `docker-compose.yml` 的 `environment:` 中才会进入容器。也可把相同键写入挂载数据目录下的 `~/.octop/env`。
+Compose 可在 `docker/.env` 中配置上述变量。注意：`.env` 只参与 Compose 插值，变量必须出现在 `docker-compose.yml` 的 `environment:` 中才会进入容器。也可把相同键写入挂载数据目录下的 `~/.happyclaw/env`。
 
 ### Node.js
 
@@ -91,7 +91,7 @@ Compose 可在 `docker/.env` 中配置上述变量。注意：`.env` 只参与 C
 
 ### 数据持久化
 
-- Compose 默认将宿主机 `~/.octop` 挂载到容器 `/data/.octop`
+- Compose 默认将宿主机 `~/.happyclaw` 挂载到容器 `/data/.octop`
 - `docker run` 示例使用命名卷 `octop-data`
 - 首次启动：初始化运行目录与数据库，自动创建本机使用者；不需要密码、向导或 `credential.txt`
 - 升级：保留数据卷、重新构建镜像即可，数据库结构在启动时迁移

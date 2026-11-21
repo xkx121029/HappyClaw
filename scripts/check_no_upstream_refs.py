@@ -47,12 +47,28 @@ RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("upstream container registry", re.compile(r"ghcr\.(?:io|nju\.edu\.cn)/tencentcloud/", re.I)),
     ("retired docs/download domain", re.compile(r"(?:docs|download)\.octop\.cloud", re.I)),
     ("retired portal domain", re.compile(r"(?<![\w.-])octop\.cloud\b", re.I)),
+    # The four runtime libraries were renamed to happyclaw-*. A stale import or
+    # distribution name fails at install time or, worse, keeps resolving the
+    # retired PyPI package, so both spellings are refused here. The boundaries
+    # keep protocol keys such as ``octop_memory_capture_exclude`` and data paths
+    # such as ``octop-browser-profiles`` out of scope.
+    (
+        "pre-rename library import",
+        re.compile(r"(?<![A-Za-z0-9_])octop_(?:harness|memory|gateway|browser)(?![A-Za-z0-9_])", re.I),
+    ),
+    (
+        "pre-rename library distribution",
+        re.compile(r"(?<![A-Za-z0-9_-])octop-(?:harness|memory|gateway|browser)(?![A-Za-z0-9_-])", re.I),
+    ),
 )
 
 # path -> (regex for the allowed line, why it stays)
 ALLOWED: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
     "CHANGELOG.md": (
-        (re.compile(r"TencentCloud|octop\.cloud", re.I), "release history: records what already shipped"),
+        (
+            re.compile(r"TencentCloud|octop\.cloud|octop-(?:harness|memory|gateway|browser)", re.I),
+            "release history: records what already shipped",
+        ),
     ),
     "tests/unit/test_fnos_docker_persist.py": (
         (re.compile(r'assert "TencentCloud" not in text'), "guard: asserts our own output carries no upstream name"),
@@ -71,6 +87,12 @@ ALLOWED: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
     "src/octop/infra/plugins/market/sources/octop.py": (
         (re.compile(r'"origin": "octop\.cloud"'),
          "plugin provenance label stored with installed envelopes; must match what is already on disk"),
+    ),
+    "scripts/fnos/vendor/storage_errors.py": (
+        (re.compile(r"Vendored from octop-harness"), "provenance note for a module copied out of the library"),
+    ),
+    "docs/memory-slim.md": (
+        (re.compile(r"feature/octop-harness-bump"), "historical branch name quoted from the source repository"),
     ),
     "src/octop/infra/agents/providers/onnx_download.py": (
         (re.compile(r"COS_ENDPOINT_DEFAULT = \"https://octop-"),
@@ -115,6 +137,8 @@ def self_test() -> int:
         "curl -fsSL https://download.octop.cloud/octop/scripts/install.sh | bash\n",
         "docker pull ghcr.io/tencentcloud/octop:latest\n",
         "portal origin defaults to https://octop.cloud\n",
+        "from octop_harness.protocols import stream\n",
+        "octop-harness[all]>=1.0.9\n",
     )
     failures = 0
     for sample in samples:

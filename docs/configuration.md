@@ -1,12 +1,12 @@
 # Configuration
 
-HappyClaw stores all of its state under `~/.octop/`. The directory is created
+HappyClaw stores all of its state under `~/.happyclaw/`. The directory is created
 on first server start (or by `octop init` / `octop run`).
 
 ## Filesystem layout
 
 ```
-~/.octop/
+~/.happyclaw/
 ├── config.json              # process-level settings (host, port, CORS, DB, TLS, …)
 ├── env                      # optional dotenv (OCTOP_DATABASE_*, API keys, …); loaded at server start
 ├── octop.db                 # SQLite — local owner, agents, providers, sessions, audit
@@ -36,8 +36,8 @@ file are left alone). Every running agent inherits those keys:
   also reads `.env` through the agent backend on each execute. HappyClaw also
   injects `OCTOP_AGENT_ID`, `OCTOP_AUTH_DIR` (under `{workspace}/.octop/auth`
   for new agents; legacy agents keep `{workspace}/.octop-auth`),
-  and `OCTOP_HOME` into shell/sandbox env.
-- **Docker sandbox** — re-reads `~/.octop/env` on execute, plus workspace `.env`
+  and `HAPPYCLAW_HOME` into shell/sandbox env.
+- **Docker sandbox** — re-reads `~/.happyclaw/env` on execute, plus workspace `.env`
   and a minimal `PATH` (not the full host environment). Admin `PATH`/`HOME`
   cannot override the container toolchain; workspace `.env` may set `PATH`.
 - **Web search tools** (Tavily, Brave, …) register at agent start from process
@@ -49,7 +49,7 @@ Per-agent secrets belong in `{workspace}/.env` or, for new agents,
 `{workspace}/.octop/.env` (also writable via the `write_env_file` tool).
 That file is excluded from published-expert snapshots.
 
-The root can be overridden with `OCTOP_HOME` (absolute path). Most
+The root can be overridden with `HAPPYCLAW_HOME` (absolute path). Most
 sub-paths are exposed as properties on `PathLayout` in
 `octop.infra.utils.paths`.
 
@@ -57,7 +57,7 @@ sub-paths are exposed as properties on `PathLayout` in
 
 Local ONNX embeddings process one chunk at a time with two inference threads.
 Indexing, retrieval, and model probes share one cached model per process and
-serialize inference. Switching the model or `OCTOP_HOME`, or deleting the cached
+serialize inference. Switching the model or `HAPPYCLAW_HOME`, or deleting the cached
 model, releases the resident session. Knowledge indexing processes one document
 at a time; large imports continue in the background.
 
@@ -174,7 +174,7 @@ Notes:
   impose their own body-size limit (for example nginx
   `client_max_body_size`). Agent workspace file upload, plugin ZIPs,
   and backup archives use separate limits and are not this setting.
-- `plugins.<id>.enabled` is the **global** plugin switch (**管理 → 插件管理**). Bundled plugins are copied into `~/.octop/plugins/` on init and
+- `plugins.<id>.enabled` is the **global** plugin switch (**管理 → 插件管理**). Bundled plugins are copied into `~/.happyclaw/plugins/` on init and
   server start with `enabled: false`. `bundled_plugins_seeded` lists ids
   already offered so uninstall does not come back on the next start.
 
@@ -185,7 +185,7 @@ Each variable, when set, takes precedence over the matching key in
 
 | Variable | Type | Default | Effect |
 |----------|------|---------|--------|
-| `OCTOP_HOME` | path | `~/.octop` | Install root (DB, secrets, workspaces, plugins) |
+| `HAPPYCLAW_HOME` | path | `~/.happyclaw` | Install root (DB, secrets, workspaces, plugins) |
 | `OCTOP_BIND_HOST` | string | `127.0.0.1` | Listen address (use `0.0.0.0` for LAN access) |
 | `OCTOP_PORT` | int | `8088` | Listen port (`0`–`65535`; `0` asks the OS for a free port) |
 | `OCTOP_LOG_LEVEL` | string | `info` | One of `debug` `info` `warning` `error` |
@@ -201,7 +201,7 @@ Each variable, when set, takes precedence over the matching key in
 | `OCTOP_ENABLE_MOBILE` | bool | from `capabilities.mobile.enabled` | Force the Remote Android capability on or off for this process |
 | `OCTOP_DATABASE_URL` | string | empty | Full DSN — overrides the `OCTOP_DATABASE_*` fields below |
 | `OCTOP_DATABASE_DRIVER` | `sqlite` \| `postgresql` | `sqlite` | Storage backend |
-| `OCTOP_DATABASE_SQLITE_PATH` | path | `octop.db` | SQLite file path (relative to `OCTOP_HOME` unless absolute) |
+| `OCTOP_DATABASE_SQLITE_PATH` | path | `octop.db` | SQLite file path (relative to `HAPPYCLAW_HOME` unless absolute) |
 | `OCTOP_DATABASE_HOST` | string | `127.0.0.1` | PostgreSQL host (when `driver=postgresql`) |
 | `OCTOP_DATABASE_PORT` | int | `5432` | PostgreSQL port |
 | `OCTOP_DATABASE_NAME` | string | `octop` | PostgreSQL database name |
@@ -225,7 +225,7 @@ configured backend at boot.
 **Docker Compose:** create `docker/.env` (it is not committed) and put `OCTOP_DATABASE_*` there *and* ensure
 they are listed under `environment:` in `docker/docker-compose.yml`
 (Compose uses `.env` for interpolation only; unset keys do not enter the
-container). Writing the same keys to the mounted `~/.octop/env` also works.
+container). Writing the same keys to the mounted `~/.happyclaw/env` also works.
 
 When `database.driver` is `postgresql`, skill-package sources and knowledge-base
 originals are stored in that same database (`public.skill_package_files` and
@@ -307,7 +307,7 @@ safe to leave in old environment files.
 
 ## Secrets
 
-`~/.octop/secrets/jwt_secret` and `octop admin rotate-jwt-secret` are kept for
+`~/.happyclaw/secrets/jwt_secret` and `octop admin rotate-jwt-secret` are kept for
 compatibility. Single-user mode does not check tokens, so the file is unused;
 it remains so older backups restore cleanly.
 

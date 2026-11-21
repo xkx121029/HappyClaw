@@ -9,7 +9,7 @@
 
 ## Context
 
-技能包正文与知识库原文/向量索引目前落在 `~/.octop/skill-packages/`、`~/.octop/knowledge/`（含本地 `index.sqlite`）。控制面虽可选 PostgreSQL，这些内容仍绑单机磁盘，无法在多实例间共享，也为后续水平扩展埋下瓶颈。
+技能包正文与知识库原文/向量索引目前落在 `~/.happyclaw/skill-packages/`、`~/.happyclaw/knowledge/`（含本地 `index.sqlite`）。控制面虽可选 PostgreSQL，这些内容仍绑单机磁盘，无法在多实例间共享，也为后续水平扩展埋下瓶颈。
 
 一期目标：**在不改变专家侧既有行为的前提下**，让 PostgreSQL 模式把技能包源与知识库存进同一套 PG；SQLite 模式保持现有本地布局。集群租约、IM 多活、composite 默认挂载等不在本期范围。
 

@@ -1,7 +1,7 @@
 # 已有本地数据时认领账户：实现方案
 
 > 对应 `DESKTOP_ARCHITECTURE.zh.md` §3.2 与 `../README.md` Accounts 中尚未覆盖的情况。
-> 设备凭据续期已经完成。本文只解决：**本机 `OCTOP_HOME` 里已经有用户，但从未注册过设备凭据，安装新版桌面后落到登录页。**
+> 设备凭据续期已经完成。本文只解决：**本机 `HAPPYCLAW_HOME` 里已经有用户，但从未注册过设备凭据，安装新版桌面后落到登录页。**
 > 本文是实现规格，代码尚未落地。
 
 ## 1. 问题
@@ -39,9 +39,9 @@
 
 `POST /api/auth/device/token` 靠钥匙串里的设备凭证。认领时这张凭证尚未注册，不能只靠 loopback：同一台机器上的其他进程都能访问 `127.0.0.1`。壳标志位是 sidecar 自己的环境变量，不是调用方的密钥。
 
-sidecar 在 `secrets.desktop_device` 不存在或已撤销时，向 `<OCTOP_HOME>/desktop-claim-nonce` 写入 32 字节随机数，权限 `0600`。已有有效设备凭据则不写这个文件。壳读取它，和设备凭证一起交给接口。渲染进程只通过 IPC 传递用户 id，看不到 nonce，也看不到设备凭证。
+sidecar 在 `secrets.desktop_device` 不存在或已撤销时，向 `<HAPPYCLAW_HOME>/desktop-claim-nonce` 写入 32 字节随机数，权限 `0600`。已有有效设备凭据则不写这个文件。壳读取它，和设备凭证一起交给接口。渲染进程只通过 IPC 传递用户 id，看不到 nonce，也看不到设备凭证。
 
-能读到 `OCTOP_HOME` 的进程本来就能读数据库和 JWT 密钥。读不到这个目录的进程，即使打到 loopback，也过不了 nonce。认领、新建成功，或本机凭据续期成功之后，删除该文件。nonce 用常量时间比较。用过的 nonce 再提交则拒绝。
+能读到 `HAPPYCLAW_HOME` 的进程本来就能读数据库和 JWT 密钥。读不到这个目录的进程，即使打到 loopback，也过不了 nonce。认领、新建成功，或本机凭据续期成功之后，删除该文件。nonce 用常量时间比较。用过的 nonce 再提交则拒绝。
 
 失败节流沿用 `auth_device.py` 里设备令牌的按来源计数。
 

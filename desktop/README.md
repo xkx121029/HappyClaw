@@ -8,7 +8,7 @@ All desktop-client code lives here. This is **not** `src/octop/infra/control/des
 | [`src/`](src/) | Electron shell — owns the Python sidecar, not the business logic |
 | [`portable/`](portable/) | Green zip packaging |
 | [`docs/DESKTOP_ARCHITECTURE.zh.md`](docs/DESKTOP_ARCHITECTURE.zh.md) | Target architecture for the Electron shell |
-| [`docs/LOCAL_ACCOUNT_CLAIM.zh.md`](docs/LOCAL_ACCOUNT_CLAIM.zh.md) | Claim an existing local account when `OCTOP_HOME` already has users (not implemented) |
+| [`docs/LOCAL_ACCOUNT_CLAIM.zh.md`](docs/LOCAL_ACCOUNT_CLAIM.zh.md) | Claim an existing local account when `HAPPYCLAW_HOME` already has users (not implemented) |
 
 The Electron shell owns the whole desktop lifecycle: spawn HappyClaw on a random
 loopback port, own tray/window chrome, refuse self-updates. The green runtime
@@ -130,12 +130,12 @@ package managers never share a `node_modules` tree.
 
 The shell has **no account, invite, user-switcher or team surface**: the only
 identity is the device credential below, and the only data root is
-`<OCTOP_HOME>`. A desktop launch goes straight to the Dashboard; the two-step
+`<HAPPYCLAW_HOME>`. A desktop launch goes straight to the Dashboard; the two-step
 guide (`renderer/onboarding.html`) explains the local data model and the system
 integration, can be skipped from its first screen, and reopens from
 Help → 首次引导 (or `window.octopDesktop.openOnboarding()`).
 
-Reaching a login page is still possible in two legacy cases: an `OCTOP_HOME`
+Reaching a login page is still possible in two legacy cases: an `HAPPYCLAW_HOME`
 with no users lands on the server's `/setup` wizard, and an existing home
 without a bound credential lands on `/login`. Both are Dashboard/backend
 decisions — the shell does not invent a password entry point. The claim flow is
@@ -153,7 +153,7 @@ The Dashboard is not desktop-specific: it reads `wizard_password_required`
 from `/api/setup/status` and hides the password step plus the Admin step's
 password fields. A web deployment keeps the default `true` and the same code
 renders them again. While the shell runs `OCTOP_REQUIRE_SETUP_PASSWORD` is
-shell-owned — the `~/.octop/env` file and `PUT /api/envs` cannot put the
+shell-owned — the `~/.happyclaw/env` file and `PUT /api/envs` cannot put the
 sign-in wall back.
 
 An unknown password would be a dead end the moment the JWT expired, so the
@@ -161,7 +161,7 @@ shell holds a **device credential** instead:
 
 - `main/session/device-credential.ts` mints a 32-byte secret on first use and
   stores it encrypted with `safeStorage` (Keychain / DPAPI / libsecret) at
-  `<OCTOP_HOME>/desktop-device.json`, mode `0600`. A host with **no usable
+  `<HAPPYCLAW_HOME>/desktop-device.json`, mode `0600`. A host with **no usable
   keychain** (headless Linux, WSL, CI) keeps the secret in memory for that launch
   and writes nothing: a plaintext file leaks through every backup or sync of the
   home directory, and a key stored beside its own ciphertext would be decoration.
@@ -190,7 +190,7 @@ The one remaining dead end is deliberate: an admin who *deletes* the credential
 from there is a server-side operation (`octop user passwd`), not something the
 shell can do on its own.
 
-A different gap is also unsolved: an `OCTOP_HOME` that already has users (an
+A different gap is also unsolved: an `HAPPYCLAW_HOME` that already has users (an
 older desktop install, or a local `octop run`) never registered a device
 credential, so the new shell lands on the login page. The claim flow for that
 case is specified in [`docs/LOCAL_ACCOUNT_CLAIM.zh.md`](docs/LOCAL_ACCOUNT_CLAIM.zh.md)
@@ -269,16 +269,16 @@ only the pinned-download-host rule is enforced.
   on a signal/forced kill. The next launch reopens that URL (skipping `/login`,
   `/setup` and `/invite`) instead of the home screen.
 - **Data folder** — Help → 打开数据目录 and the guide's "打开" button call
-  `shell.openPath(<OCTOP_HOME>)`; the path is also returned by
+  `shell.openPath(<HAPPYCLAW_HOME>)`; the path is also returned by
   `window.octopDesktop.desktopInfo()`.
 
 ## Data directory
 
 Same as the HappyClaw CLI/server default:
 
-- `OCTOP_HOME` → `~/.octop` (or the existing `OCTOP_HOME` env)
+- `HAPPYCLAW_HOME` → `~/.happyclaw` (or the existing `HAPPYCLAW_HOME` env)
 - Green runtime → Windows `<install>\resources\sidecar`, macOS and Linux `Contents/Resources/portable` (Linux deb/rpm use the same `resources/portable` path under the install prefix)
-- Shell prefs → `~/.octop/desktop-settings.json`
+- Shell prefs → `~/.happyclaw/desktop-settings.json`
 - Shell session files → Electron `userData` (`desktop-window.json`, `desktop-session.json`)
 
 The shell points `OCTOP_GREEN_PACKAGES` at the extracted `packages/` directory, so
