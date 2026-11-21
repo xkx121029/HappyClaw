@@ -203,7 +203,7 @@ def _normalize(item: Any, language: str, index_label: str) -> MarketEntry:
         tags=tuple(part for part in (group,) if part),
         extra={
             "index_url": index_label,
-            "origin": "octop.cloud",
+            "origin": "happyclaw",
             "native_id": native_id,
             "group": group or None,
             "requires_raw": list(raw_requires),

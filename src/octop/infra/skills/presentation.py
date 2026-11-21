@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from octop.infra.utils.locale import Locale
 
 # Keep in sync with happyclaw_harness.skills.catalog._summary_dict.
-_EXTENSION_NAMESPACES = ("octop", "harness", "lightclaw", "orca", "openclaw")
+_EXTENSION_NAMESPACES = ("happyclaw", "octop", "harness", "lightclaw", "orca", "openclaw")
 
 
 def _text(value: object) -> str:

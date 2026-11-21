@@ -117,7 +117,7 @@ describe("SessionList recency groups", () => {
   });
 
   it("名称排序时不渲染时间分组标题", async () => {
-    window.localStorage.setItem("octop.chat.sessionSort", "name");
+    window.localStorage.setItem("happyclaw.chat.sessionSort", "name");
     try {
       renderList();
 
@@ -125,7 +125,7 @@ describe("SessionList recency groups", () => {
       expect(screen.queryByText("置顶")).toBeNull();
       expect(screen.queryByText("更早")).toBeNull();
     } finally {
-      window.localStorage.removeItem("octop.chat.sessionSort");
+      window.localStorage.removeItem("happyclaw.chat.sessionSort");
     }
   });
 });

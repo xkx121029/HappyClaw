@@ -16,6 +16,7 @@ from langchain_core.runnables import RunnableConfig
 
 from octop.api.common.agent_workspace import resolve_agent_workspace_dir
 from octop.i18n.domains.attachment import attachment_empty_image
+from octop.infra.agents import protocol_keys
 from octop.infra.agents.threads.context_breakdown import usage_dict_from_message
 from octop.infra.gateway.process.message_keys import (
     AUTHOR_USER_ID_KEY,
@@ -1032,7 +1033,7 @@ def _serialize_history_message(
         entry["agent_id"] = speaker.strip()
     if additional_kwargs.get("team_wrapup"):
         entry["team_wrapup"] = True
-    decision = additional_kwargs.get("octop_decision")
+    decision = protocol_keys.read(additional_kwargs, "decision")
     if role == "assistant" and isinstance(decision, dict) and decision.get("kind") == "decision":
         entry["decision"] = decision
     edited = additional_kwargs.get("edited_files")

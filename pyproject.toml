@@ -113,6 +113,9 @@ dev = [
 ]
 
 [project.scripts]
+# `happyclaw` is the product command; `octop` stays as an alias so existing
+# scripts and docs keep working.
+happyclaw = "octop.cli.main:cli"
 octop = "octop.cli.main:cli"
 
 [tool.hatch.build.targets.wheel]
