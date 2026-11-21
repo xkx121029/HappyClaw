@@ -167,33 +167,30 @@ def test_init_force_refuses_when_home_is_the_runtime(
     assert (home / "octop.db").is_file()
 
 
-def test_init_interactive_password_mismatch(
-    fake_home: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from octop.cli.support import prompts as _prompts
-
-    answers = iter(["alice", "Wonderland1", "OtherPass1", "ignored"])
-
-    def _text(message: str, *, default: str = "") -> str:
-        return next(answers)
-
-    def _password(message: str) -> str:
-        return next(answers)
-
-    monkeypatch.setattr(_prompts, "text", _text)
-    monkeypatch.setattr(_prompts, "password", _password)
+def test_init_without_admin_creates_no_account(fake_home: Path) -> None:
+    """Single-user install: `octop init` bootstraps dirs + DB and asks for nothing."""
     runner = CliRunner()
-    result = runner.invoke(cli, ["init"])
-    assert result.exit_code != 0
-    assert "do not match" in result.output
+    result = runner.invoke(cli, ["init"], input="")
+    assert result.exit_code == 0, result.output
+    assert "single user: no account needed" in result.output
+    assert "Admin username:" not in result.output
 
     from octop.infra.db.pool import SqlitePool
     from octop.infra.db.repos.users import UserRepo
     from octop.infra.utils.paths import PathLayout
 
-    assert (
-        UserRepo(SqlitePool(PathLayout(fake_home / ".octop").db)).get_by_username("alice") is None
-    )
+    home = fake_home / ".octop"
+    assert (home / "octop.db").is_file()
+    assert UserRepo(SqlitePool(PathLayout(home).db)).count() == 0
+
+
+def test_init_rejects_half_a_legacy_admin_pair(fake_home: Path) -> None:
+    """The legacy admin options never prompt; a lone one is a usage error, not a question."""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["init", "--admin-username", "alice"], input="Wonderland1\n")
+    assert result.exit_code != 0
+    assert "only meaningful together" in result.output
+    assert not (fake_home / ".octop" / "octop.db").exists()
 
 
 def test_init_force_resets(fake_home: Path) -> None:
