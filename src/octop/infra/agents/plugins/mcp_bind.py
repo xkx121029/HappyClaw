@@ -4,7 +4,20 @@ from __future__ import annotations
 
 from typing import Any
 
-__all__ = ["bind_custom_mcp_tools"]
+from octop.infra.agents.plugins.plugin_tool_names import sanitize_plugin_tool_names
+
+__all__ = ["bind_custom_mcp_tools", "clamp_bound_mcp_tool_names"]
+
+
+def clamp_bound_mcp_tool_names(agent: Any) -> None:
+    """Clamp MCP tool names already bound on *agent* to the 64-char LLM limit."""
+    tools = list(getattr(agent, "_mcp_tools", []) or [])
+    if not tools:
+        return
+    before = [str(getattr(t, "name", "")) for t in tools]
+    sanitize_plugin_tool_names(tools)
+    if before != [str(getattr(t, "name", "")) for t in tools]:
+        agent.replace_mcp_tools(tools)
 
 
 def bind_custom_mcp_tools(
