@@ -1,0 +1,42 @@
+{
+  "title": "会话",
+  "subtitle": "在当前工作区与你的智能体对话",
+  "agent": {
+    "label": "智能体",
+    "empty": "还没有智能体",
+    "emptyDescription": "先用 octop agent create 创建一个智能体，然后刷新本页。",
+    "selectPlaceholder": "选择一个智能体"
+  },
+  "threads": {
+    "label": "会话列表",
+    "new": "新建会话",
+    "creating": "正在创建…",
+    "searchPlaceholder": "搜索会话",
+    "untitled": "未命名会话",
+    "empty": "还没有会话",
+    "emptyDescription": "新建一个会话，开始和这个智能体对话。",
+    "count_one": "{{count}} 个会话",
+    "count_other": "{{count}} 个会话",
+    "messages": "{{count}} 条消息"
+  },
+  "messages": {
+    "empty": "还没有对话内容",
+    "emptyDescription": "发送第一条消息即可开始。",
+    "loadError": "历史记录加载失败。",
+    "you": "你",
+    "assistant": "智能体",
+    "tool": "工具"
+  },
+  "composer": {
+    "placeholder": "给 HappyClaw 发消息…",
+    "send": "发送",
+    "hint": "Enter 发送，Shift + Enter 换行",
+    "disabled": "需要后端运行才能发送",
+    "sending": "发送中…"
+  },
+  "status": {
+    "live": "已连接",
+    "mock": "示例数据",
+    "offline": "后端未连接"
+  }
+}

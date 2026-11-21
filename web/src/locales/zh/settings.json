@@ -1,0 +1,46 @@
+{
+  "title": "设置",
+  "subtitle": "当前本地 HappyClaw 工作区的偏好设置",
+  "appearance": {
+    "title": "外观",
+    "theme": "主题",
+    "themeDescription": "默认深色；你的选择保存在本浏览器。",
+    "light": "浅色",
+    "dark": "深色",
+    "language": "语言",
+    "languageDescription": "界面语言。你的偏好会同步到服务端 locale。",
+    "zh": "简体中文",
+    "en": "English"
+  },
+  "server": {
+    "title": "服务端",
+    "timezone": "时区",
+    "timezoneDescription": "用于定时任务与服务端渲染的所有时间。",
+    "upload": "上传上限",
+    "uploadDescription": "会话输入框允许的最大文件体积。",
+    "hitl": "审批提示",
+    "hitlDescription": "智能体执行风险操作前是否暂停等待确认。",
+    "hitlOn": "已启用",
+    "hitlOff": "已关闭",
+    "unreachable": "后端没有响应，暂时读不到服务端设置。"
+  },
+  "profile": {
+    "title": "个人资料",
+    "locale": "服务端语言偏好",
+    "preferredModel": "首选模型",
+    "preferredModelDescription": "新建会话默认使用，智能体自身设置优先。",
+    "none": "未设置"
+  },
+  "about": {
+    "title": "关于",
+    "version": "前端版本",
+    "backend": "后端",
+    "connected": "可用",
+    "disconnected": "不可用",
+    "openDesign": "打开设计系统"
+  },
+  "save": {
+    "success": "偏好已保存",
+    "error": "偏好保存失败"
+  }
+}

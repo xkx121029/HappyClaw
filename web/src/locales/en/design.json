@@ -1,0 +1,41 @@
+{
+  "title": "Design system",
+  "subtitle": "Tokens and components of the new HappyClaw frontend",
+  "theme": { "light": "Light", "dark": "Dark" },
+  "sections": {
+    "color": "Color",
+    "type": "Typography",
+    "spacing": "Spacing",
+    "radius": "Radius",
+    "shadow": "Elevation",
+    "motion": "Motion",
+    "components": "Components",
+    "states": "Feedback & states",
+    "layout": "Layout"
+  },
+  "color": {
+    "primitives": "Brand ramp",
+    "semantic": "Semantic roles",
+    "surface": "Surface",
+    "surfaceDescription": "Canvas for the page, surface for cards, sunken for wells.",
+    "text": "Text",
+    "textDescription": "Four levels: default, muted, subtle, disabled.",
+    "border": "Border",
+    "borderDescription": "Default, strong and subtle separators.",
+    "accent": "Accent",
+    "accentDescription": "HappyClaw coral. Primary action, selection, focus.",
+    "status": "Status",
+    "statusDescription": "Success, warning, danger and info, each with a soft fill."
+  },
+  "type": {
+    "sans": "UI text",
+    "sansDescription": "Inter with CJK fallbacks. Body sits at 14px for dense product UI.",
+    "mono": "Monospace",
+    "monoDescription": "Model names, ids, token counts, code."
+  },
+  "spacingDescription": "4px base scale. Gaps inside a component use 2–3, between blocks 4–6, between sections 8–12.",
+  "radiusDescription": "6px controls, 10px inputs, 14px cards, 18px panels, full for pills and avatars.",
+  "shadowDescription": "Elevation is earned: xs on static cards, sm on hover and inputs, md on popovers, overlay on dialogs.",
+  "motionDescription": "120ms for hover, 180ms for enter and layout, 280ms for panels. Motion collapses to zero under prefers-reduced-motion.",
+  "layoutDescription": "244px expanded sidebar, 60px collapsed, 56px top bar, 760px reading column."
+}

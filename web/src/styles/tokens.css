@@ -1,0 +1,281 @@
+/* ==========================================================================
+   HappyClaw design tokens
+   --------------------------------------------------------------------------
+   Three layers, in this order:
+
+     1. primitives  raw ramps, never used directly by components
+     2. semantic    role names (bg / fg / border / accent / …) — the only
+                    names components may reference, and the only ones that
+                    flip between light and dark
+     3. scales      spacing, radius, elevation, motion, type
+
+   The palette leads with HappyClaw coral (#FF6B4A, sampled from the brand
+   icon) on a warm neutral ramp. Dark is the primary theme: this product runs
+   in a window next to a terminal all day.
+   ========================================================================== */
+
+:root {
+  /* ---------- 1. primitives: neutral (warm gray) ---------- */
+  --hc-neutral-0: #ffffff;
+  --hc-neutral-25: #fcfcfd;
+  --hc-neutral-50: #f7f7f6;
+  --hc-neutral-100: #efefee;
+  --hc-neutral-200: #e2e2e0;
+  --hc-neutral-300: #cbcbc8;
+  --hc-neutral-400: #a3a39f;
+  --hc-neutral-500: #7c7c78;
+  --hc-neutral-600: #5c5c58;
+  --hc-neutral-700: #43433f;
+  --hc-neutral-800: #2b2b29;
+  --hc-neutral-850: #1f1f1e;
+  --hc-neutral-900: #161616;
+  --hc-neutral-950: #0e0f10;
+  --hc-neutral-1000: #0a0b0c;
+
+  /* ---------- 1. primitives: coral (brand) ---------- */
+  --hc-coral-50: #fff3f0;
+  --hc-coral-100: #ffe2db;
+  --hc-coral-200: #ffc6b8;
+  --hc-coral-300: #ffa48d;
+  --hc-coral-400: #ff8763;
+  --hc-coral-500: #ff6b4a;
+  --hc-coral-600: #ef532f;
+  --hc-coral-700: #c73f21;
+  --hc-coral-800: #9c331c;
+  --hc-coral-900: #7a2c1b;
+
+  /* ---------- 1. primitives: status ---------- */
+  --hc-green-400: #45d18a;
+  --hc-green-500: #22b573;
+  --hc-green-600: #10895a;
+  --hc-amber-400: #ffc247;
+  --hc-amber-500: #f0a41c;
+  --hc-amber-600: #b97c0c;
+  --hc-red-400: #ff6f6f;
+  --hc-red-500: #ea4b4b;
+  --hc-red-600: #c02f2f;
+  --hc-blue-400: #5fa8ff;
+  --hc-blue-500: #3b82f6;
+  --hc-blue-600: #2563eb;
+  --hc-violet-400: #a78bfa;
+  --hc-violet-500: #8b5cf6;
+
+  /* ---------- 3. type ---------- */
+  --hc-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --hc-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono",
+    Consolas, monospace;
+
+  --hc-text-2xs: 0.6875rem; /* 11px — badges, dense meta */
+  --hc-text-xs: 0.75rem; /* 12px — captions, table meta */
+  --hc-text-sm: 0.8125rem; /* 13px — dense UI, secondary body */
+  --hc-text-base: 0.875rem; /* 14px — default UI text */
+  --hc-text-md: 1rem; /* 16px — reading text */
+  --hc-text-lg: 1.125rem; /* 18px — section titles */
+  --hc-text-xl: 1.3125rem; /* 21px — page titles */
+  --hc-text-2xl: 1.625rem; /* 26px — display */
+  --hc-text-3xl: 2rem; /* 32px */
+  --hc-text-4xl: 2.5rem; /* 40px — marketing/empty-state hero */
+
+  --hc-leading-tight: 1.2;
+  --hc-leading-snug: 1.4;
+  --hc-leading-normal: 1.55;
+  --hc-leading-relaxed: 1.7;
+
+  --hc-tracking-tight: -0.018em;
+  --hc-tracking-normal: 0;
+  --hc-tracking-wide: 0.02em;
+
+  --hc-weight-regular: 400;
+  --hc-weight-medium: 500;
+  --hc-weight-semibold: 600;
+  --hc-weight-bold: 700;
+
+  /* ---------- 3. space (4px base) ---------- */
+  --hc-space-0: 0;
+  --hc-space-px: 1px;
+  --hc-space-0-5: 2px;
+  --hc-space-1: 4px;
+  --hc-space-1-5: 6px;
+  --hc-space-2: 8px;
+  --hc-space-2-5: 10px;
+  --hc-space-3: 12px;
+  --hc-space-4: 16px;
+  --hc-space-5: 20px;
+  --hc-space-6: 24px;
+  --hc-space-8: 32px;
+  --hc-space-10: 40px;
+  --hc-space-12: 48px;
+  --hc-space-16: 64px;
+
+  /* ---------- 3. radius ---------- */
+  --hc-radius-xs: 4px;
+  --hc-radius-sm: 6px;
+  --hc-radius-md: 10px;
+  --hc-radius-lg: 14px;
+  --hc-radius-xl: 18px;
+  --hc-radius-2xl: 24px;
+  --hc-radius-full: 999px;
+
+  /* ---------- 3. motion ---------- */
+  --hc-duration-instant: 80ms;
+  --hc-duration-fast: 120ms;
+  --hc-duration-base: 180ms;
+  --hc-duration-slow: 280ms;
+  --hc-duration-slower: 420ms;
+
+  --hc-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --hc-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --hc-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --hc-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --hc-transition-colors: color var(--hc-duration-fast) var(--hc-ease-standard),
+    background-color var(--hc-duration-fast) var(--hc-ease-standard),
+    border-color var(--hc-duration-fast) var(--hc-ease-standard),
+    fill var(--hc-duration-fast) var(--hc-ease-standard);
+  --hc-transition-base: all var(--hc-duration-base) var(--hc-ease-standard);
+  --hc-transition-enter: all var(--hc-duration-base) var(--hc-ease-out);
+
+  /* ---------- 3. layout ---------- */
+  --hc-sidebar-width: 244px;
+  --hc-sidebar-width-collapsed: 60px;
+  --hc-topbar-height: 56px;
+  --hc-content-max: 1440px;
+  --hc-reading-max: 760px;
+  --hc-focus-ring-width: 2px;
+  --hc-focus-ring-offset: 2px;
+  --hc-z-sticky: 30;
+  --hc-z-overlay: 50;
+  --hc-z-popover: 60;
+  --hc-z-dialog: 70;
+  --hc-z-toast: 80;
+}
+
+/* ==========================================================================
+   2. semantic roles — light
+   ========================================================================== */
+:root,
+:root:not(.dark) {
+  color-scheme: light;
+
+  --hc-bg-canvas: var(--hc-neutral-50);
+  --hc-bg-surface: var(--hc-neutral-0);
+  --hc-bg-raised: var(--hc-neutral-0);
+  --hc-bg-sunken: var(--hc-neutral-100);
+  --hc-bg-inset: var(--hc-neutral-50);
+  --hc-bg-hover: rgb(0 0 0 / 0.04);
+  --hc-bg-active: rgb(0 0 0 / 0.07);
+  --hc-bg-selected: var(--hc-coral-50);
+  --hc-bg-inverse: var(--hc-neutral-900);
+  --hc-bg-overlay: rgb(23 23 20 / 0.42);
+  --hc-bg-glass: rgb(255 255 255 / 0.78);
+  --hc-bg-skeleton: var(--hc-neutral-100);
+
+  --hc-fg-default: var(--hc-neutral-900);
+  --hc-fg-muted: var(--hc-neutral-600);
+  --hc-fg-subtle: var(--hc-neutral-500);
+  --hc-fg-disabled: var(--hc-neutral-400);
+  --hc-fg-onaccent: #1b0c06;
+  --hc-fg-inverse: var(--hc-neutral-0);
+  --hc-fg-link: var(--hc-coral-700);
+
+  --hc-border-default: var(--hc-neutral-200);
+  --hc-border-strong: var(--hc-neutral-300);
+  --hc-border-subtle: var(--hc-neutral-100);
+  --hc-border-focus: var(--hc-coral-500);
+
+  --hc-accent-default: var(--hc-coral-500);
+  --hc-accent-hover: var(--hc-coral-600);
+  --hc-accent-active: var(--hc-coral-700);
+  --hc-accent-soft: var(--hc-coral-50);
+  --hc-accent-soft-strong: var(--hc-coral-100);
+  --hc-accent-fg: var(--hc-coral-700);
+
+  --hc-success-default: var(--hc-green-600);
+  --hc-success-soft: #e9f9f0;
+  --hc-warning-default: var(--hc-amber-600);
+  --hc-warning-soft: #fdf5e3;
+  --hc-danger-default: var(--hc-red-600);
+  --hc-danger-soft: #fdecec;
+  --hc-info-default: var(--hc-blue-600);
+  --hc-info-soft: #eaf2fe;
+
+  --hc-shadow-xs: 0 1px 2px rgb(16 16 14 / 0.06);
+  --hc-shadow-sm: 0 1px 2px rgb(16 16 14 / 0.05),
+    0 2px 6px -1px rgb(16 16 14 / 0.07);
+  --hc-shadow-md: 0 2px 4px rgb(16 16 14 / 0.05),
+    0 8px 18px -6px rgb(16 16 14 / 0.12);
+  --hc-shadow-lg: 0 4px 10px rgb(16 16 14 / 0.06),
+    0 20px 40px -12px rgb(16 16 14 / 0.18);
+  --hc-shadow-overlay: 0 8px 24px -4px rgb(16 16 14 / 0.14),
+    0 24px 64px -12px rgb(16 16 14 / 0.22);
+  --hc-shadow-glow: 0 0 0 4px rgb(255 107 74 / 0.16);
+}
+
+/* ==========================================================================
+   2. semantic roles — dark
+   ========================================================================== */
+:root.dark {
+  color-scheme: dark;
+
+  --hc-bg-canvas: var(--hc-neutral-1000);
+  --hc-bg-surface: #121417;
+  --hc-bg-raised: #171a1e;
+  --hc-bg-sunken: #0d0f11;
+  --hc-bg-inset: #101215;
+  --hc-bg-hover: rgb(255 255 255 / 0.055);
+  --hc-bg-active: rgb(255 255 255 / 0.09);
+  --hc-bg-selected: rgb(255 107 74 / 0.14);
+  --hc-bg-inverse: var(--hc-neutral-50);
+  --hc-bg-overlay: rgb(0 0 0 / 0.62);
+  --hc-bg-glass: rgb(18 20 23 / 0.78);
+  --hc-bg-skeleton: #1b1e23;
+
+  --hc-fg-default: #f2f2f0;
+  --hc-fg-muted: #a8a8a3;
+  --hc-fg-subtle: #85857f;
+  --hc-fg-disabled: #5c5c58;
+  --hc-fg-onaccent: #1b0c06;
+  --hc-fg-inverse: var(--hc-neutral-950);
+  --hc-fg-link: var(--hc-coral-400);
+
+  --hc-border-default: #24282e;
+  --hc-border-strong: #333940;
+  --hc-border-subtle: #1b1e23;
+  --hc-border-focus: var(--hc-coral-500);
+
+  --hc-accent-default: var(--hc-coral-500);
+  --hc-accent-hover: var(--hc-coral-400);
+  --hc-accent-active: var(--hc-coral-600);
+  --hc-accent-soft: rgb(255 107 74 / 0.13);
+  --hc-accent-soft-strong: rgb(255 107 74 / 0.22);
+  --hc-accent-fg: var(--hc-coral-400);
+
+  --hc-success-default: var(--hc-green-400);
+  --hc-success-soft: rgb(34 181 115 / 0.14);
+  --hc-warning-default: var(--hc-amber-400);
+  --hc-warning-soft: rgb(240 164 28 / 0.14);
+  --hc-danger-default: var(--hc-red-400);
+  --hc-danger-soft: rgb(234 75 75 / 0.14);
+  --hc-info-default: var(--hc-blue-400);
+  --hc-info-soft: rgb(59 130 246 / 0.14);
+
+  --hc-shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --hc-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.45), 0 2px 6px -1px rgb(0 0 0 / 0.4);
+  --hc-shadow-md: 0 2px 4px rgb(0 0 0 / 0.4), 0 8px 18px -6px rgb(0 0 0 / 0.55);
+  --hc-shadow-lg: 0 4px 10px rgb(0 0 0 / 0.45),
+    0 20px 40px -12px rgb(0 0 0 / 0.6);
+  --hc-shadow-overlay: 0 8px 24px -4px rgb(0 0 0 / 0.5),
+    0 24px 64px -12px rgb(0 0 0 / 0.7);
+  --hc-shadow-glow: 0 0 0 4px rgb(255 107 74 / 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --hc-duration-instant: 0ms;
+    --hc-duration-fast: 0ms;
+    --hc-duration-base: 0ms;
+    --hc-duration-slow: 0ms;
+    --hc-duration-slower: 0ms;
+  }
+}

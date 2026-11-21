@@ -1,0 +1,42 @@
+{
+  "title": "Chat",
+  "subtitle": "Talk to your agent in this workspace",
+  "agent": {
+    "label": "Agent",
+    "empty": "No agents yet",
+    "emptyDescription": "Create an agent first: octop agent create, then refresh this page.",
+    "selectPlaceholder": "Pick an agent"
+  },
+  "threads": {
+    "label": "Conversations",
+    "new": "New conversation",
+    "creating": "Starting…",
+    "searchPlaceholder": "Search conversations",
+    "untitled": "Untitled conversation",
+    "empty": "No conversations yet",
+    "emptyDescription": "Start one to begin a thread with this agent.",
+    "count_one": "{{count}} conversation",
+    "count_other": "{{count}} conversations",
+    "messages": "{{count}} messages"
+  },
+  "messages": {
+    "empty": "Nothing said yet",
+    "emptyDescription": "Send the first message to start this conversation.",
+    "loadError": "The history could not be loaded.",
+    "you": "You",
+    "assistant": "Agent",
+    "tool": "Tool"
+  },
+  "composer": {
+    "placeholder": "Message HappyClaw…",
+    "send": "Send",
+    "hint": "Enter to send, Shift + Enter for a new line",
+    "disabled": "Sending needs a running backend",
+    "sending": "Sending…"
+  },
+  "status": {
+    "live": "Connected",
+    "mock": "Sample data",
+    "offline": "Backend unreachable"
+  }
+}

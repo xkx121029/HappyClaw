@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "HappyClaw",
+    "tagline": "Self-hosted personal AI workspace"
+  },
+  "actions": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "search": "Search",
+    "create": "Create",
+    "apply": "Apply",
+    "reset": "Reset",
+    "copy": "Copy",
+    "copied": "Copied",
+    "more": "More actions"
+  },
+  "state": {
+    "loading": "Loading…",
+    "emptyTitle": "Nothing here yet",
+    "emptyDescription": "Once there is data it will show up here.",
+    "errorTitle": "Something went wrong",
+    "errorDescription": "The request failed. Try again in a moment.",
+    "offline": "Backend unreachable",
+    "offlineDescription": "The new frontend is running with sample data. Start HappyClaw with `octop run` to connect it.",
+    "mockBadge": "Sample data",
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "That route does not exist in the new shell yet."
+  },
+  "shell": {
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "openNavigation": "Open navigation",
+    "toggleTheme": "Toggle theme",
+    "switchLanguage": "Switch language",
+    "account": "Local owner",
+    "version": "Version {{version}}"
+  },
+  "nav": {
+    "groupMain": "Workspace",
+    "groupManage": "Manage",
+    "home": "Home",
+    "chat": "Chat",
+    "settings": "Settings",
+    "design": "Design system"
+  }
+}

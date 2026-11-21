@@ -1,0 +1,41 @@
+{
+  "title": "设计系统",
+  "subtitle": "新版 HappyClaw 前端的 token 与组件",
+  "theme": { "light": "浅色", "dark": "深色" },
+  "sections": {
+    "color": "颜色",
+    "type": "排版",
+    "spacing": "间距",
+    "radius": "圆角",
+    "shadow": "阴影",
+    "motion": "动效",
+    "components": "组件",
+    "states": "反馈与状态",
+    "layout": "布局"
+  },
+  "color": {
+    "primitives": "品牌色阶",
+    "semantic": "语义角色",
+    "surface": "背景",
+    "surfaceDescription": "canvas 是页面底色，surface 用于卡片，sunken 用于凹陷区域。",
+    "text": "文字",
+    "textDescription": "四级：default、muted、subtle、disabled。",
+    "border": "边框",
+    "borderDescription": "默认、强调、细微三种分隔。",
+    "accent": "强调色",
+    "accentDescription": "HappyClaw 珊瑚橙。主操作、选中态、焦点环。",
+    "status": "状态",
+    "statusDescription": "成功、警告、危险、信息，各带柔和底色。"
+  },
+  "type": {
+    "sans": "界面文字",
+    "sansDescription": "Inter 加中文字体回退，正文 14px，适合信息密集的产品界面。",
+    "mono": "等宽",
+    "monoDescription": "模型名、ID、token 数、代码。"
+  },
+  "spacingDescription": "4px 基准。组件内间距用 2–3，区块之间 4–6，大区块之间 8–12。",
+  "radiusDescription": "控件 6px，输入 10px，卡片 14px，面板 18px，胶囊与头像用全圆角。",
+  "shadowDescription": "阴影体现层级：静态卡片用 xs，悬停与输入用 sm，浮层用 md，对话框用 overlay。",
+  "motionDescription": "悬停 120ms，进入与布局 180ms，面板 280ms。prefers-reduced-motion 下动效归零。",
+  "layoutDescription": "侧栏展开 244px，折叠 60px，顶栏 56px，阅读列 760px。"
+}

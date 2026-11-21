@@ -1,0 +1,46 @@
+{
+  "title": "Settings",
+  "subtitle": "Preferences for this local HappyClaw workspace",
+  "appearance": {
+    "title": "Appearance",
+    "theme": "Theme",
+    "themeDescription": "Dark is the default; the choice is stored in this browser.",
+    "light": "Light",
+    "dark": "Dark",
+    "language": "Language",
+    "languageDescription": "UI language. The server locale stays in sync through your preferences.",
+    "zh": "简体中文",
+    "en": "English"
+  },
+  "server": {
+    "title": "Server",
+    "timezone": "Timezone",
+    "timezoneDescription": "Used for scheduling and every timestamp the server renders.",
+    "upload": "Upload limit",
+    "uploadDescription": "Largest file the chat composer accepts.",
+    "hitl": "Approval prompts",
+    "hitlDescription": "Whether the agent pauses before risky tool calls.",
+    "hitlOn": "Enabled",
+    "hitlOff": "Disabled",
+    "unreachable": "The backend did not answer, so live server settings are unavailable."
+  },
+  "profile": {
+    "title": "Profile",
+    "locale": "Stored locale preference",
+    "preferredModel": "Preferred model",
+    "preferredModelDescription": "Applies to new conversations unless the agent overrides it.",
+    "none": "Not set"
+  },
+  "about": {
+    "title": "About",
+    "version": "Frontend version",
+    "backend": "Backend",
+    "connected": "Reachable",
+    "disconnected": "Unreachable",
+    "openDesign": "Open the design system"
+  },
+  "save": {
+    "success": "Preferences saved",
+    "error": "Preferences could not be saved"
+  }
+}

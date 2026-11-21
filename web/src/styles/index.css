@@ -1,0 +1,270 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Dark mode is a class on <html>, resolved before first paint in index.html. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --------------------------------------------------------------------------
+   Token → Tailwind bridge. Every utility below is backed by a CSS variable
+   from tokens.css, so components only ever name a role, never a hex value.
+   `inline` keeps the var reference in the output instead of resolving it at
+   build time — that is what lets light/dark swap without new classes.
+   -------------------------------------------------------------------------- */
+@theme inline {
+  --color-canvas: var(--hc-bg-canvas);
+  --color-surface: var(--hc-bg-surface);
+  --color-raised: var(--hc-bg-raised);
+  --color-sunken: var(--hc-bg-sunken);
+  --color-inset: var(--hc-bg-inset);
+  --color-hover: var(--hc-bg-hover);
+  --color-active: var(--hc-bg-active);
+  --color-selected: var(--hc-bg-selected);
+  --color-inverse: var(--hc-bg-inverse);
+  --color-overlay: var(--hc-bg-overlay);
+  --color-glass: var(--hc-bg-glass);
+  --color-skeleton: var(--hc-bg-skeleton);
+
+  --color-fg: var(--hc-fg-default);
+  --color-fg-muted: var(--hc-fg-muted);
+  --color-fg-subtle: var(--hc-fg-subtle);
+  --color-fg-disabled: var(--hc-fg-disabled);
+  --color-fg-onaccent: var(--hc-fg-onaccent);
+  --color-fg-inverse: var(--hc-fg-inverse);
+  --color-fg-link: var(--hc-fg-link);
+
+  --color-line: var(--hc-border-default);
+  --color-line-strong: var(--hc-border-strong);
+  --color-line-subtle: var(--hc-border-subtle);
+  --color-line-focus: var(--hc-border-focus);
+
+  --color-accent: var(--hc-accent-default);
+  --color-accent-hover: var(--hc-accent-hover);
+  --color-accent-active: var(--hc-accent-active);
+  --color-accent-soft: var(--hc-accent-soft);
+  --color-accent-soft-strong: var(--hc-accent-soft-strong);
+  --color-accent-fg: var(--hc-accent-fg);
+
+  --color-success: var(--hc-success-default);
+  --color-success-soft: var(--hc-success-soft);
+  --color-warning: var(--hc-warning-default);
+  --color-warning-soft: var(--hc-warning-soft);
+  --color-danger: var(--hc-danger-default);
+  --color-danger-soft: var(--hc-danger-soft);
+  --color-info: var(--hc-info-default);
+  --color-info-soft: var(--hc-info-soft);
+
+  --color-coral-50: var(--hc-coral-50);
+  --color-coral-100: var(--hc-coral-100);
+  --color-coral-200: var(--hc-coral-200);
+  --color-coral-300: var(--hc-coral-300);
+  --color-coral-400: var(--hc-coral-400);
+  --color-coral-500: var(--hc-coral-500);
+  --color-coral-600: var(--hc-coral-600);
+  --color-coral-700: var(--hc-coral-700);
+  --color-coral-800: var(--hc-coral-800);
+  --color-coral-900: var(--hc-coral-900);
+
+  --font-sans: var(--hc-font-sans);
+  --font-mono: var(--hc-font-mono);
+
+  --text-2xs: var(--hc-text-2xs);
+  --text-xs: var(--hc-text-xs);
+  --text-sm: var(--hc-text-sm);
+  --text-base: var(--hc-text-base);
+  --text-md: var(--hc-text-md);
+  --text-lg: var(--hc-text-lg);
+  --text-xl: var(--hc-text-xl);
+  --text-2xl: var(--hc-text-2xl);
+  --text-3xl: var(--hc-text-3xl);
+  --text-4xl: var(--hc-text-4xl);
+
+  --radius-xs: var(--hc-radius-xs);
+  --radius-sm: var(--hc-radius-sm);
+  --radius-md: var(--hc-radius-md);
+  --radius-lg: var(--hc-radius-lg);
+  --radius-xl: var(--hc-radius-xl);
+  --radius-2xl: var(--hc-radius-2xl);
+
+  --shadow-xs: var(--hc-shadow-xs);
+  --shadow-sm: var(--hc-shadow-sm);
+  --shadow-md: var(--hc-shadow-md);
+  --shadow-lg: var(--hc-shadow-lg);
+  --shadow-overlay: var(--hc-shadow-overlay);
+
+  --ease-standard: var(--hc-ease-standard);
+  --ease-out: var(--hc-ease-out);
+  --ease-spring: var(--hc-ease-spring);
+
+  --spacing-sidebar: var(--hc-sidebar-width);
+  --spacing-sidebar-collapsed: var(--hc-sidebar-width-collapsed);
+  --spacing-topbar: var(--hc-topbar-height);
+  --spacing-reading: var(--hc-reading-max);
+}
+
+@layer base {
+  * {
+    border-color: var(--hc-border-default);
+  }
+
+  html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-autospace: normal;
+  }
+
+  body {
+    height: 100%;
+    margin: 0;
+    background-color: var(--hc-bg-canvas);
+    color: var(--hc-fg-default);
+    font-family: var(--hc-font-sans);
+    font-size: var(--hc-text-base);
+    line-height: var(--hc-leading-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    height: 100%;
+    isolation: isolate;
+  }
+
+  ::selection {
+    background-color: var(--hc-accent-soft-strong);
+    color: var(--hc-fg-default);
+  }
+
+  :focus-visible {
+    outline: var(--hc-focus-ring-width) solid var(--hc-border-focus);
+    outline-offset: var(--hc-focus-ring-offset);
+    border-radius: var(--hc-radius-xs);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--hc-border-strong) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--hc-border-strong);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: var(--hc-radius-full);
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--hc-fg-subtle);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: var(--hc-tracking-tight);
+    font-weight: var(--hc-weight-semibold);
+    text-wrap: balance;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--hc-fg-subtle);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  /* Shimmer shared by the skeleton primitives. */
+  .hc-skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--hc-bg-skeleton);
+    border-radius: var(--hc-radius-sm);
+  }
+
+  .hc-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.06),
+      transparent
+    );
+    animation: hc-shimmer 1.4s var(--hc-ease-standard) infinite;
+  }
+
+  .hc-ring {
+    box-shadow: 0 0 0 1px var(--hc-border-default);
+  }
+
+  .hc-scroll-fade {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black 12px,
+      black calc(100% - 12px),
+      transparent 100%
+    );
+  }
+}
+
+@keyframes hc-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes hc-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hc-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes hc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hc-skeleton::after {
+    animation: none;
+  }
+}
