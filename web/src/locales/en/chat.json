@@ -4,7 +4,7 @@
   "agent": {
     "label": "Agent",
     "empty": "No agents yet",
-    "emptyDescription": "Create an agent first: octop agent create, then refresh this page.",
+    "emptyDescription": "Create an agent first: happyclaw agent create, then refresh this page.",
     "selectPlaceholder": "Pick an agent"
   },
   "threads": {

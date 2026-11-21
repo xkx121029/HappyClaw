@@ -40,7 +40,7 @@
   "agents": {
     "title": "Agents",
     "empty": "No agents yet",
-    "emptyDescription": "Create one with `octop agent create`.",
+    "emptyDescription": "Create one with `happyclaw agent create`.",
     "chat": "Chat",
     "state": {
       "running": "Running",

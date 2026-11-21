@@ -28,7 +28,7 @@
     "errorTitle": "Something went wrong",
     "errorDescription": "The request failed. Try again in a moment.",
     "offline": "Backend unreachable",
-    "offlineDescription": "The new frontend is running with sample data. Start HappyClaw with `octop run` to connect it.",
+    "offlineDescription": "The new frontend is running with sample data. Start HappyClaw with `happyclaw run` to connect it.",
     "mockBadge": "Sample data",
     "notFoundTitle": "Page not found",
     "notFoundDescription": "That route does not exist in the new shell yet."

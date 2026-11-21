@@ -25,14 +25,14 @@ npm run build        # tsc -b && vite build
 npm run typecheck    # tsc -b
 npm run lint         # eslint .
 npm run check:i18n   # locale key parity
-npm run api:sync -- <path-to-live-openapi.json>   # refresh openapi/octop.openapi.json
+npm run api:sync -- <path-to-live-openapi.json>   # refresh openapi/happyclaw.openapi.json
 npm run api:gen                                    # regenerate src/lib/api/schema.gen.ts
 ```
 
 ## Talking to the backend
 
 In development the Vite server proxies `/api` to `HAPPYCLAW_API_ORIGIN`
-(default `http://127.0.0.1:8080`, where `octop run` listens), so the browser
+(default `http://127.0.0.1:8080`, where `happyclaw run` listens), so the browser
 sees a single origin and cookies/SSE/websockets behave as they will in
 production. Set the variable in `web/.env.local` to point somewhere else.
 

@@ -28,7 +28,7 @@
     "errorTitle": "出了点问题",
     "errorDescription": "请求失败，请稍后重试。",
     "offline": "后端未连接",
-    "offlineDescription": "新前端当前使用示例数据。运行 `octop run` 启动 HappyClaw 后即可连上。",
+    "offlineDescription": "新前端当前使用示例数据。运行 `happyclaw run` 启动 HappyClaw 后即可连上。",
     "mockBadge": "示例数据",
     "notFoundTitle": "页面不存在",
     "notFoundDescription": "新外壳里还没有这个路由。"

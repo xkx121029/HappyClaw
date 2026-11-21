@@ -168,6 +168,20 @@ Chat 一个模块 62,719 行，是本轮唯一需要三批的页面。按**谁�
 | 7 | 手机托管场景要把 API 源指向用户输入的 host | `env.apiBase` 已可注入，B7 前补 `mobileApiBase` 等价逻辑 |
 | 8 | 部分聊天接口没有 `response_model`（返回 `dict`），生成类型是 `Record<string, unknown>` | 在 `features/*/types.ts` 声明实际读取的字段并在 `api.ts` 收窄；建议后端补 `response_model`，这会让生成类型真正可用。**B1 又撞上同一处**：`/api/runtime/activity`、`/api/usage/summary`、`/api/setup/status` 同样是 `dict`，Home 与 Setup 的字段声明都在各自 `types.ts`/`api.ts` 里 |
 
+## 5.5 品牌字符串的现状（去 Octop 后）
+
+`web/` 里所有「前端自己的字符串」已改为 HappyClaw：本地存储键、OpenAPI 文档文件名
+（`openapi/happyclaw.openapi.json`）、用户可见文案（`happyclaw run`、`happyclaw agent create`）、
+类型与示例数据、注释。仍保留 `octop` 字样的只有三类，且都是**别人的契约**，不在前端改名范围：
+
+| 保留处 | 为什么 |
+| --- | --- |
+| `lib/api/auth.ts` 的 `X-Octop-Access-Token` | 服务端下发的响应头名，前端单侧改名会让 token 续期静默失效 |
+| `lib/legacy-routes.ts` 里的 `/octop/cron` 等 4 条 | 用户浏览器里的历史 URL，改了就 404 |
+| 迁移文档里的 `OCTOP_HOME`、`octop_token`、`window.octopDesktop` | 环境变量（保留旧名兜底）、WS 查询参数、桌面壳全局对象，均属后端/桌面壳契约 |
+
+后端返回的字段名一律未动。
+
 ## 6. 本轮之后第一件该做的事
 
 把 `dashboard/` 里那 31k 行「必须复用的纯逻辑」搬到 `web/src/features/chat/lib/`

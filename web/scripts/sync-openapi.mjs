@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Sync the backend OpenAPI document into `openapi/octop.openapi.json`.
+ * Sync the backend OpenAPI document into `openapi/happyclaw.openapi.json`.
  *
  *   npm run api:sync -- ../live-openapi.json
  *   npm run api:sync                      # boots nothing; expects a file argument
@@ -37,7 +37,7 @@ for (const [path, item] of Object.entries(spec.paths ?? {})) {
   }
 }
 
-const target = resolve(import.meta.dirname, "../openapi/octop.openapi.json");
+const target = resolve(import.meta.dirname, "../openapi/happyclaw.openapi.json");
 writeFileSync(target, `${JSON.stringify(spec, null, 1)}\n`, "utf8");
 console.log(
   `wrote ${target} — ${Object.keys(spec.paths ?? {}).length} paths, ${renamed} duplicate operationIds renamed`,

@@ -1,4 +1,4 @@
-/** Shape every HappyClaw error response carries (see `OctopError.to_envelope`). */
+/** Shape every HappyClaw error response carries: `{ error: { code, message, details } }`. */
 export interface ApiErrorEnvelope {
   error: {
     code: string;

@@ -10,7 +10,7 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "format:check": "prettier --check .",
-    "api:gen": "openapi-typescript openapi/octop.openapi.json -o src/lib/api/schema.gen.ts",
+    "api:gen": "openapi-typescript openapi/happyclaw.openapi.json -o src/lib/api/schema.gen.ts",
     "check:i18n": "node scripts/check-i18n.mjs"
   },
   "dependencies": {

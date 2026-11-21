@@ -58,7 +58,9 @@ export const legacyRedirects: Record<string, LegacyRedirect> = {
   "/admin/updates": { target: "/admin/advanced", batch: "B4" },
   "/admin/storage": { target: "/admin/backend", batch: "B2" },
 
-  // Orca / Octop-era bookmarks.
+  // Bookmarks from the pre-HappyClaw eras. The path literals are historical and
+  // stay verbatim on purpose: they are what users have in their browsers, not
+  // product naming.
   "/orca/cron": { target: "/tasks", batch: "B3" },
   "/octop/cron": { target: "/tasks", batch: "B3" },
   "/orca/channels": { target: "/personalization/channels", batch: "B3" },

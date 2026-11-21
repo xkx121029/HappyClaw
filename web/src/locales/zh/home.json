@@ -40,7 +40,7 @@
   "agents": {
     "title": "智能体",
     "empty": "还没有智能体",
-    "emptyDescription": "用 `octop agent create` 创建一个。",
+    "emptyDescription": "用 `happyclaw agent create` 创建一个。",
     "chat": "去对话",
     "state": {
       "running": "运行中",

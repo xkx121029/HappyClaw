@@ -4,7 +4,7 @@
   "agent": {
     "label": "智能体",
     "empty": "还没有智能体",
-    "emptyDescription": "先用 octop agent create 创建一个智能体，然后刷新本页。",
+    "emptyDescription": "先用 happyclaw agent create 创建一个智能体，然后刷新本页。",
     "selectPlaceholder": "选择一个智能体"
   },
   "threads": {

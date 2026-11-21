@@ -5,7 +5,11 @@
  */
 
 const AUTH_TOKEN_KEY = "auth_token";
-/** The server slides the JWT forward with this response header. */
+/**
+ * The server slides the JWT forward with this response header. The literal name
+ * is the server's wire contract, so it keeps its historical spelling until the
+ * backend renames it — changing only this side would silently stop renewal.
+ */
 export const ACCESS_TOKEN_RESPONSE_HEADER = "X-Octop-Access-Token";
 
 export function getAuthToken(): string | null {
