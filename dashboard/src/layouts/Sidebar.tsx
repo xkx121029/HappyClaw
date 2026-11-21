@@ -197,6 +197,7 @@ function NavItemButton({
           e.currentTarget.style.background = "transparent";
         }
       }}
+      onFocus={() => prefetchRoute(item.path)}
     >
       <button
         type="button"
@@ -601,6 +602,8 @@ export default function Sidebar({
         soloActive && styles.soloEntryActive,
       )}
       onClick={openSolo}
+      onMouseEnter={() => prefetchRoute("/solo")}
+      onFocus={() => prefetchRoute("/solo")}
       aria-label={t("solo.openSolo")}
       aria-current={soloActive ? "page" : undefined}
       title={t("solo.openSolo")}
@@ -628,6 +631,8 @@ export default function Sidebar({
       type="button"
       className={cx(styles.soloEntry, isRailCollapsed && styles.soloEntryCollapsed)}
       onClick={openGlobalBao}
+      onMouseEnter={() => prefetchRoute("/bao")}
+      onFocus={() => prefetchRoute("/bao")}
       aria-label={t("bao.entry.open")}
       aria-keyshortcuts="Alt+B"
       title={`${t("bao.entry.open")} (Alt+B)`}

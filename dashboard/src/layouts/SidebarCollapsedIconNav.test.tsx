@@ -1,10 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { TFunction } from "i18next";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import SidebarCollapsedIconNav from "./SidebarCollapsedIconNav";
 import styles from "./Sidebar.module.less";
 import type { NavItem } from "./sidebarNav";
+
+const prefetchRoute = vi.hoisted(() => vi.fn());
+
+vi.mock("../routes/prefetch", () => ({ prefetchRoute }));
 
 /**
  * Collapsing the rail throws the row labels away, so each icon has to carry its
@@ -37,6 +41,10 @@ function renderNav(selectedKey: string, onNavigate = vi.fn()) {
   );
   return onNavigate;
 }
+
+beforeEach(() => {
+  prefetchRoute.mockReset();
+});
 
 describe("collapsed icon nav", () => {
   it("names every icon after its row label", () => {
@@ -96,5 +104,23 @@ describe("collapsed icon nav", () => {
 
     await user.click(screen.getByRole("button", { name: "专家" }));
     expect(onNavigate).toHaveBeenCalledWith("/experts");
+  });
+
+  it("prefetches the route on hover", async () => {
+    const user = userEvent.setup();
+    renderNav("chat");
+
+    await user.hover(screen.getByRole("button", { name: "专家" }));
+
+    expect(prefetchRoute).toHaveBeenCalledWith("/experts");
+  });
+
+  it("prefetches the route when a keyboard user tabs to it", async () => {
+    const user = userEvent.setup();
+    renderNav("chat");
+
+    await user.tab();
+
+    expect(prefetchRoute).toHaveBeenCalledWith("/chat");
   });
 });

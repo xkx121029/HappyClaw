@@ -45,6 +45,7 @@ export default function SidebarCollapsedIconNav({
               }
               onClick={() => onNavigate(item.path)}
               onMouseEnter={() => prefetchRoute(item.path)}
+              onFocus={() => prefetchRoute(item.path)}
               aria-label={t(item.labelKey)}
               aria-current={active ? "page" : undefined}
             >

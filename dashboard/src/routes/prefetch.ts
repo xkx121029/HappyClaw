@@ -43,7 +43,16 @@ const ROUTE_PREFETCHERS: Record<string, () => Promise<unknown>> = {
   "/admin/security": () => import("../pages/Settings/Security"),
   "/admin/advanced": () => import("../pages/Settings/AdvancedSettings"),
   "/agent-config": () => import("../pages/Agent/Config"),
+  // First-class sidebar entries rendered outside buildNavSections (custom
+  // buttons in Sidebar.tsx) — keep them prefetchable on hover, like the rest.
+  "/solo": () => import("../pages/Solo"),
+  "/bao": () => import("../components/Bao/BaoPage"),
+  "/bridge": () => import("../pages/Settings/Bridge"),
 };
+
+export const ROUTE_PREFETCH_PATHS: readonly string[] = Object.freeze(
+  Object.keys(ROUTE_PREFETCHERS),
+);
 
 export function prefetchRoute(path: string): void {
   const load = ROUTE_PREFETCHERS[path];
