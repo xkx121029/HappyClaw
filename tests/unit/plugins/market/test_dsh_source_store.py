@@ -7,11 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.agents.plugins.manager import (
-    DSH_DEFAULT_SOURCES,
-    DSH_SOURCES_LIMIT,
-    PluginManager,
-)
+from octop.infra.agents.plugins.constants import DSH_DEFAULT_SOURCES, DSH_SOURCES_LIMIT
+from octop.infra.agents.plugins.manager import PluginManager
 from octop.infra.errors import ErrorCode, OctopError
 
 

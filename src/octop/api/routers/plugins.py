@@ -15,14 +15,14 @@ from pydantic import BaseModel, Field
 from octop.api.common.agent import assert_agent_owner as _assert_agent_owner
 from octop.api.common.upload_limit import read_upload_capped
 from octop.api.deps import current_user, get_server, require_permission
-from octop.infra.agents.plugins.manager import (
+from octop.infra.agents.plugins.constants import (
     PLUGIN_UI_API_VERSION,
     PLUGIN_UI_DATA_DOMAINS,
     PLUGIN_UI_EVENTS,
     PLUGIN_UI_HOST_SERVICES,
     PLUGIN_UI_SLOTS,
-    PluginManager,
 )
+from octop.infra.agents.plugins.manager import PluginManager
 from octop.infra.agents.plugins.plugin_tool_defaults import (
     agent_plugin_enabled,
     merge_plugins_enabled_settings,

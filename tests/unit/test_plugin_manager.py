@@ -15,6 +15,8 @@ from octop_harness.plugins import PluginRegistry
 from octop.infra.agents.plugins.manager import (
     PluginManager,
     normalize_plugin_download_url,
+)
+from octop.infra.agents.plugins.metadata import (
     parse_plugin_group,
     parse_plugin_icon,
     parse_plugin_ui_meta,

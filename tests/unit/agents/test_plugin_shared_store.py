@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from octop.infra.agents.plugins.manager import PLUGINS_ENABLED, PLUGINS_REVISION, PluginManager
+from octop.infra.agents.plugins.constants import PLUGINS_ENABLED, PLUGINS_REVISION
+from octop.infra.agents.plugins.manager import PluginManager
 from octop.infra.db.migrate import run_migrations
 from octop.infra.db.pool import SqlitePool
 from octop.infra.db.repos.control_files import ControlFileRepo

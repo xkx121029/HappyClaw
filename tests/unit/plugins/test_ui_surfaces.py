@@ -4,12 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.agents.plugins.manager import (
-    PLUGIN_UI_SLOTS,
-    PluginManager,
-    _parse_ui_surfaces,
-    parse_plugin_ui_meta,
-)
+from octop.infra.agents.plugins.constants import PLUGIN_UI_SLOTS
+from octop.infra.agents.plugins.manager import PluginManager
+from octop.infra.agents.plugins.metadata import _parse_ui_surfaces, parse_plugin_ui_meta
 from octop.infra.errors import OctopError
 
 

@@ -10,7 +10,8 @@ from typing import Any, Iterator
 
 import pytest
 
-from octop.infra.agents.plugins.manager import DSH_STATUS_SCHEMA_VERSION, PluginManager
+from octop.infra.agents.plugins.constants import DSH_STATUS_SCHEMA_VERSION
+from octop.infra.agents.plugins.manager import PluginManager
 from octop.infra.dsh.diagnostics import clear_failures, record_failure
 
 FIXTURES = Path(__file__).resolve().parents[3] / "fixtures" / "dsh_market"

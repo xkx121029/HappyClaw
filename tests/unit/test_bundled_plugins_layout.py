@@ -86,12 +86,12 @@ def test_list_market_raises_when_catalog_and_bundled_are_empty(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import octop.infra.agents.plugins.manager as plugin_manager_module
+    import octop.infra.agents.plugins.catalog as plugin_catalog_module
 
     empty = tmp_path / "empty-bundled"
     empty.mkdir()
     monkeypatch.setattr(
-        plugin_manager_module, "default_bundled_plugins_root", lambda: empty
+        plugin_catalog_module, "default_bundled_plugins_root", lambda: empty
     )
     monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "")
     clear_market_cache()
