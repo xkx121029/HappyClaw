@@ -211,8 +211,9 @@ Each variable, when set, takes precedence over the matching key in
 | `OCTOP_AGENT` | string | empty | Default `--agent` for CLI subcommands |
 | `OCTOP_SERVICE_MODE` | `systemd` \| `launchd` | auto | Override the service backend (used by `octop service`) |
 | `OCTOP_SERVICE_SCOPE` | `user` \| `system` | auto | systemd `--user` vs system unit (Linux only) |
+| `OCTOP_ONNX_COS_BASE` | origin | `https://octop-1258344699.cos.ap-guangzhou.myqcloud.com` | Base the local embedding model weights are downloaded from. Point it at a self-hosted mirror to avoid the public bucket; an explicitly empty value drops that candidate entirely, so the model comes from Hugging Face or the hf-mirror. See [local knowledge indexing](#local-knowledge-indexing-and-systemd-resource-limits) |
 | `OCTOP_PORTAL_ORIGIN` | origin | empty (remote catalog off) | Plugin and expert catalog origin. No path. Empty means no request is sent and the market shows its "temporarily unavailable" state; set it to your own catalog origin to enable it. See [private market](private-market.md) |
-| `OCTOP_MARKET_REMOTE_ORIGIN` | origin | `https://download.octop.cloud` | Origin allowed for market archive `download_url` values. Any path on that origin is accepted. The variable itself has no path. See [private market](private-market.md) |
+| `OCTOP_MARKET_REMOTE_ORIGIN` | origin | `https://github.com` | Origin allowed for market archive `download_url` values. Any path on that origin is accepted. The variable itself has no path. The default is this repository's Releases host, so a self-hosted market points it at its own origin. See [private market](private-market.md) |
 | `SKILL_MARKET_ORIGIN` | origin | `https://api.skillhub.cn` | Skill search, rankings, and per-skill zip download. No path. Empty keeps the default. See [skill market](skill-market.md) |
 | `SKILLSET_ORIGIN` | origin | `https://api.skillhub.cn` | Skillset detail and skillset package used when importing a skill package. No path. Empty keeps the default. See [skill market](skill-market.md) |
 
