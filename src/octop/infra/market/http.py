@@ -28,10 +28,29 @@ _LOCAL_NETWORK_ERRNOS = frozenset(
 
 
 def portal_base() -> str:
-    """Site origin. An empty ``OCTOP_PORTAL_ORIGIN`` disables the remote catalog."""
-    if "OCTOP_PORTAL_ORIGIN" in os.environ:
-        return os.environ.get("OCTOP_PORTAL_ORIGIN", "").strip().rstrip("/")
-    return DEFAULT_PORTAL_BASE
+    """Site origin. An empty ``OCTOP_PORTAL_ORIGIN`` disables the remote catalog.
+
+    A bare host is treated as ``https://``. Anything that cannot be read as an
+    http(s) origin disables the catalog rather than reaching ``urlopen``: a
+    relative URL would raise ``ValueError`` there, which the catalog routes do
+    not expect, so the page would answer 500 instead of "temporarily
+    unavailable". Only the origin is kept, so a pasted path does not change the
+    catalog endpoints.
+    """
+    if "OCTOP_PORTAL_ORIGIN" not in os.environ:
+        return DEFAULT_PORTAL_BASE
+    raw = os.environ.get("OCTOP_PORTAL_ORIGIN", "").strip()
+    if not raw:
+        return ""
+    if "://" not in raw:
+        raw = f"https://{raw}"
+    parsed = urlparse(raw)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return ""
+    origin = f"{parsed.scheme}://{parsed.hostname}"
+    if parsed.port is not None:
+        origin = f"{origin}:{parsed.port}"
+    return origin
 
 
 def remote_base() -> str:
@@ -125,3 +144,6 @@ def fetch_bytes(url: str, *, limit: int) -> bytes:
         ) from exc
     except TimeoutError as exc:
         raise PortalMarketError("timeout", network=True) from exc
+    except ValueError as exc:
+        # ``urlopen`` rejects a URL it cannot parse before any HTTP happens.
+        raise PortalMarketError(f"invalid url: {exc}") from exc
