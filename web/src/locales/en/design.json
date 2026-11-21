@@ -1,7 +1,10 @@
 {
   "title": "Design system",
   "subtitle": "Tokens and components of the new HappyClaw frontend",
-  "theme": { "light": "Light", "dark": "Dark" },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark"
+  },
   "sections": {
     "color": "Color",
     "type": "Typography",
@@ -14,7 +17,7 @@
     "layout": "Layout"
   },
   "color": {
-    "primitives": "Brand ramp",
+    "primitives": "Ink ramp",
     "semantic": "Semantic roles",
     "surface": "Surface",
     "surfaceDescription": "Canvas for the page, surface for cards, sunken for wells.",
@@ -23,9 +26,11 @@
     "border": "Border",
     "borderDescription": "Default, strong and subtle separators.",
     "accent": "Accent",
-    "accentDescription": "HappyClaw coral. Primary action, selection, focus.",
+    "accentDescription": "Primary action is ink, never a hue. Colour belongs to state — signal, success, warning, danger.",
     "status": "Status",
-    "statusDescription": "Success, warning, danger and info, each with a soft fill."
+    "statusDescription": "Success, warning, danger and info, each with a soft fill.",
+    "signalTitle": "Signal",
+    "signalDescription": "The only hue on the page: focus, links and online state. Everything else is ink."
   },
   "type": {
     "sans": "UI text",

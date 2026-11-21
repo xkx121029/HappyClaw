@@ -4,17 +4,24 @@ import { cn } from "@/lib/cn";
 
 import { Section, SubGrid, Swatch } from "./section";
 
-const coralRamp = [
-  ["50", "--hc-coral-50"],
-  ["100", "--hc-coral-100"],
-  ["200", "--hc-coral-200"],
-  ["300", "--hc-coral-300"],
-  ["400", "--hc-coral-400"],
-  ["500", "--hc-coral-500"],
-  ["600", "--hc-coral-600"],
-  ["700", "--hc-coral-700"],
-  ["800", "--hc-coral-800"],
-  ["900", "--hc-coral-900"],
+const inkRamp = [
+  ["0", "--hc-neutral-0"],
+  ["50", "--hc-neutral-50"],
+  ["100", "--hc-neutral-100"],
+  ["200", "--hc-neutral-200"],
+  ["300", "--hc-neutral-300"],
+  ["400", "--hc-neutral-400"],
+  ["500", "--hc-neutral-500"],
+  ["700", "--hc-neutral-700"],
+  ["900", "--hc-neutral-900"],
+  ["950", "--hc-neutral-950"],
+] as const;
+
+const signalRamp = [
+  ["signal", "--hc-signal"],
+  ["signal soft", "--hc-signal-soft"],
+  ["accent (ink)", "--hc-accent-default"],
+  ["accent hover", "--hc-accent-hover"],
 ] as const;
 
 const neutralRamp = [
@@ -79,8 +86,14 @@ export function ColorSection() {
     >
       <div className="grid gap-6">
         <SubGrid title={t("color.primitives")} columns={5}>
-          {coralRamp.map(([step, variable]) => (
-            <Swatch key={variable} name={`coral ${step}`} variable={variable} />
+          {inkRamp.map(([step, variable]) => (
+            <Swatch key={variable} name={`ink ${step}`} variable={variable} />
+          ))}
+        </SubGrid>
+
+        <SubGrid title={t("color.signalTitle")} description={t("color.signalDescription")} columns={4}>
+          {signalRamp.map(([name, variable]) => (
+            <Swatch key={variable} name={name} variable={variable} />
           ))}
         </SubGrid>
 

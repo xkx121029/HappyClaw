@@ -1,7 +1,10 @@
 {
   "title": "设计系统",
   "subtitle": "新版 HappyClaw 前端的 token 与组件",
-  "theme": { "light": "浅色", "dark": "深色" },
+  "theme": {
+    "light": "浅色",
+    "dark": "深色"
+  },
   "sections": {
     "color": "颜色",
     "type": "排版",
@@ -14,7 +17,7 @@
     "layout": "布局"
   },
   "color": {
-    "primitives": "品牌色阶",
+    "primitives": "墨色阶",
     "semantic": "语义角色",
     "surface": "背景",
     "surfaceDescription": "canvas 是页面底色，surface 用于卡片，sunken 用于凹陷区域。",
@@ -23,9 +26,11 @@
     "border": "边框",
     "borderDescription": "默认、强调、细微三种分隔。",
     "accent": "强调色",
-    "accentDescription": "HappyClaw 珊瑚橙。主操作、选中态、焦点环。",
+    "accentDescription": "主操作用墨色，不用彩色。彩色只属于状态——signal、成功、警告、危险。",
     "status": "状态",
-    "statusDescription": "成功、警告、危险、信息，各带柔和底色。"
+    "statusDescription": "成功、警告、危险、信息，各带柔和底色。",
+    "signalTitle": "Signal",
+    "signalDescription": "页面上唯一的彩色：焦点、链接、在线状态。其余全部是墨色。"
   },
   "type": {
     "sans": "界面文字",
