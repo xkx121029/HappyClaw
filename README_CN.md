@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://www.python.org/downloads/"><img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white" /></a>
-  <a href="https://github.com/TencentCloud/Octop/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green" /></a>
-  <a href="https://github.com/TencentCloud/Octop/releases"><img alt="Version" src="https://img.shields.io/badge/version-1.0.3b5-orange" /></a>
+  <a href="https://github.com/xkx121029/HappyClaw/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green" /></a>
+  <img alt="Version 1.0.3b5" src="https://img.shields.io/badge/version-1.0.3b5-orange" />
   <a href="https://github.com/astral-sh/ruff"><img alt="Code Style: Ruff" src="https://img.shields.io/badge/code%20style-ruff-000000?logo=ruff&logoColor=white" /></a>
 </p>
 
@@ -75,12 +75,14 @@ octop run
 |------|------|
 | 语言 | Python 3.12+ |
 | Web 框架 | FastAPI + uvicorn |
-| Agent 运行时 | [HappyClaw Harness](https://github.com/TencentCloud/octop-harness) |
-| IM 桥接 | [HappyClaw Gateway](https://github.com/TencentCloud/octop-gateway) |
+| Agent 运行时 | `octop-harness`（以 `[all]` 附加项安装） |
+| 记忆与检索 | `octop-memory` |
+| IM 桥接 | `octop-gateway` |
+| 浏览器宿主 | `octop-browser` + Playwright |
 | 控制面数据库 | SQLite（WAL，默认）或 PostgreSQL（可选） |
 | 前端 | React 18 + TypeScript + Vite + Ant Design |
 | 调度 | APScheduler |
-| ACP | agent-client-protocol |
+| ACP | stdio JSON-RPC：入站 `octop acp` 服务端 + 出站 `acp_runner` 工具 |
 | 构建 / 质量 | hatchling · ruff · mypy · pytest |
 
 单进程运行：Web UI、IM 与定时任务都经由进程内的 `HarnessProcessor` 处理，不依赖外部消息队列。重启后状态从控制面数据库重建。
@@ -93,7 +95,7 @@ octop run
 | 一键脚本 | Windows | `irm https://download.octop.cloud/octop/scripts/install.ps1 \| iex` |
 | 仓库内脚本 | macOS / Linux | `bash scripts/install.sh` |
 | 仓库内脚本 | Windows | `powershell -ExecutionPolicy Bypass -File scripts/install.ps1` |
-| PyPI | 全平台 | `pip install octop` |
+| PyPI | 全平台 | `pip install octop`（最新稳定版；1.0.3 beta 线用 `--pre`） |
 | Docker | 全平台 | `docker compose -f docker/docker-compose.yml up -d --build` |
 
 安装脚本会把运行环境放在 `~/.octop/venv`，并在 `~/.octop/bin/octop` 生成命令入口，不会改动系统 Python。安装完成后请打开新终端，或重新加载 shell 配置。
@@ -274,7 +276,7 @@ tests/         unit/ + integration/
 
 ## 🛠️ 开发
 
-**前置条件：** Python 3.12+、Node 18+、[uv](https://docs.astral.sh/uv/)
+**前置条件：** Python 3.12+、Node 20 与 npm 10（前端 lockfile 是 npm 10，`mise.toml` 固定了工具链）、[uv](https://docs.astral.sh/uv/)。
 
 ```bash
 # 后端
