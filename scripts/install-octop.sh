@@ -15,11 +15,13 @@ OCTOP_HOME="${OCTOP_HOME:-$HOME/.octop}"
 OCTOP_VENV="$OCTOP_HOME/venv"
 OCTOP_BIN="$OCTOP_HOME/bin"
 PYTHON_VERSION="3.12"
-OCTOP_REPO="${OCTOP_REPO:-https://github.com/TencentCloud/Octop.git}"
-_OCTOP_REPO_BASE="${OCTOP_REPO%/*}"
-HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${_OCTOP_REPO_BASE}/octop-harness.git}"
-HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${_OCTOP_REPO_BASE}/octop-gateway.git}"
-HARNESS_BROWSER_REPO="${HARNESS_BROWSER_REPO:-${_OCTOP_REPO_BASE}/octop-browser.git}"
+OCTOP_REPO="${OCTOP_REPO:-https://github.com/xkx121029/HappyClaw.git}"
+# 四个运行库在 HappyClaw 重新发布前仍托管在 TencentCloud 组织；此处只用于源码
+# 克隆，实际安装走 pyproject.toml 里的 PyPI 依赖。
+OCTOP_LIBS_BASE="${OCTOP_LIBS_BASE:-https://github.com/TencentCloud}"
+HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${OCTOP_LIBS_BASE}/octop-harness.git}"
+HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${OCTOP_LIBS_BASE}/octop-gateway.git}"
+HARNESS_BROWSER_REPO="${HARNESS_BROWSER_REPO:-${OCTOP_LIBS_BASE}/octop-browser.git}"
 
 if [ -n "${BASH_SOURCE[0]:-}" ]; then
     _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -97,8 +99,10 @@ Environment variables:
   OCTOP_HOME              Install directory (default: ~/.octop)
   OCTOP_PYPI_MIRROR       PyPI mirror URL (same as --mirror)
   OCTOP_REPO              Git URL to clone (used by --from-source with no local dir)
-  HARNESS_AGENT_REPO      octop-harness repo (derived from OCTOP_REPO by default)
-  HARNESS_GATEWAY_REPO    octop-gateway repo (derived from OCTOP_REPO by default)
+  OCTOP_LIBS_BASE         Git org hosting the four runtime libraries
+                          (default: https://github.com/TencentCloud)
+  HARNESS_AGENT_REPO      octop-harness repo (derived from OCTOP_LIBS_BASE by default)
+  HARNESS_GATEWAY_REPO    octop-gateway repo (derived from OCTOP_LIBS_BASE by default)
   HARNESS_BROWSER_REPO    octop-browser repo (used for source installs)
   PLAYWRIGHT_DOWNLOAD_HOST  Playwright download mirror (optional; auto: npmmirror -> official)
   PLAYWRIGHT_INSTALL_TIMEOUT  Per-mirror download timeout in seconds (default 600)
