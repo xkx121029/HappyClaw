@@ -54,6 +54,10 @@
 - fnOS 安装包（`fnos/docker` 与 `fnos/native`）去掉管理员账号向导：`wizard/install` 只剩安装说明与首次使用步骤，`wizard/config` 只显示数据目录与配置入口，`wizard/upgrade` 说明数据保留；`cmd/install_init` / `cmd/config_init` 不再校验账号字段，`cmd/*_callback` 不再写 `fnos-admin.env`、`fnos-boot.sh` 与 `octop-login.txt`；native 启动器首次启动只跑 `octop init --yes`；本地版的系统账户 `octop-native` 在安装/升级回调里显式 `passwd -l` 锁定（仅作包内服务身份，`sudoers.d` 的 NOPASSWD 保留）。`scripts/fnos/common.sh` 删除密码生成/校验/改密/凭据回落共 8 个函数，`octop_render_config_wizard` 收窄为只替换数据目录。两个 `manifest` 的门店文案与 `fnos/README.md` 同步改为单人自托管口径（原文仍写「用安装向导里设置的账号登录」）
 - `docker-compose.yml` / `docker-compose.cn.yml` / `docker-compose.mobile.yml` 删掉三行 legacy 管理员环境变量；容器已不读取，留着只会让人以为还有用
 - `scripts/release_download_links.py` 的 `GITHUB_REPO` 兜底由 `TencentCloud/Octop` 改为 `xkx121029/HappyClaw`，与桌面端更新源一致（Actions 内仍由 `GITHUB_REPOSITORY` 覆盖）
+- 桌面外壳的更新源改为可配置并指向本仓库发布页：目录地址与安装包下载前缀分别由 `OCTOP_UPDATE_ENDPOINT`、`OCTOP_UPDATE_DOWNLOAD_ORIGINS` 决定，默认取 `xkx121029/HappyClaw` 的 GitHub Releases；不再有硬编码的上游域名
+- 插件市场与专家市场默认关闭：`DEFAULT_PORTAL_BASE` 置空，未设置 `OCTOP_PORTAL_ORIGIN` 时两者都不发请求，页面显示「暂时不可用」；自建市场照旧按 `docs/private-market.md` 配置
+- 内置助手的产品知识库外链改指向本仓库文档，不再跳上游站点
+- `OCTOP_ONNX_COS_BASE` 显式置空时不再回落到上游存储桶：需要离线或私有时直接留空即可，模型由本地提供
 - `tests/integration/test_docker_image_boot.py` 缺镜像时的 skip 明确标注为「发布前必须补跑」并指向验证步骤
 
 ## [1.0.3b5] - 2026-11-11
