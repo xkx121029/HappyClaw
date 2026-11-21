@@ -42,6 +42,10 @@
 - `docs/user-guide.md` 新增 5.9「单人使用技巧」：会话/模型搜索入口、运行轨迹 JSONL 导出、备份恢复命令与图形入口、`mod+K` 等快捷键表
 - 发布清单 5.2 日志路径更正为 `~/.octop/logs/octop.log`（按天轮转），并说明旧路径首次启动自动迁移
 - `scripts/smoke_local.ps1` 在健康检查通过后输出首次可用耗时，便于记录冷启动表现
+- 安装脚本不再指向腾讯上游：`install.sh` / `install.ps1` / `install.bat` / `install-octop.sh` 的 `OCTOP_REPO` 默认值改为 `xkx121029/HappyClaw`；`--from-source` 克隆的主仓因此不再装成上游腾讯版本。三个运行库仓库地址改为独立的 `OCTOP_LIBS_BASE`（默认仍是 TencentCloud，随 Phase 2 重新发布一起迁移），不再从 `OCTOP_REPO` 推导
+- `octop init` 去掉交互式建号：单人版不再询问 admin 用户名/密码，直接建目录、跑迁移后退出；`--admin-username/--admin-password/--admin-display-name` 降级为 legacy 参数（只给旧部署与 fnOS 包的 `octop init --admin-*` 用），单独传一个即报用法错误而非转为提问
+- `docker/docker-entrypoint.sh` 与 Docker 文档对齐：容器首次启动只跑 `octop init --yes`，不再读取 `OCTOP_DEFAULT_PASSWORD` / `OCTOP_ADMIN_USERNAME` / `OCTOP_ADMIN_DISPLAY_NAME`，不再写 `credential.txt` 与 `octop-login.txt`；`docker/README.md`、`docker/README_CN.md` 删除「入口脚本仍读取这些变量、清理另开提交」的兼容说明
+- `pyproject.toml` 元数据改为单人自托管口径：description 不再写 multi-user，authors 由 `octop contributors` 改为 `xkx121029`（`name` / `version` 未动，发布名变更留给 Phase 2）
 
 ## [1.0.3b5] - 2026-11-11
 
