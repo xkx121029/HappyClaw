@@ -17,7 +17,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 # GitHub Actions sets this for forks too; local invocation keeps the upstream default.
-GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "TencentCloud/Octop")
+GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "xkx121029/HappyClaw")
 DOWNLOAD_BASE = f"https://github.com/{GITHUB_REPO}/releases/download"
 
 
