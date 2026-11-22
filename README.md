@@ -135,6 +135,12 @@ The container runs `octop init` on first boot, starts the server, and keeps data
 
 Other Compose files in the same directory: `docker-compose.postgres.yml` (PostgreSQL + pgvector) and `docker-compose.cn.yml` (pull the published image instead of building).
 
+> **升级到 HappyClaw 命名（1.0.3b6 之后）**：包里的一切从 `octop` 改名为 `happyclaw`。
+> 安装命令变成 `pip install happyclaw`（或照下文的 Docker / 一键脚本）；命令是 `happyclaw`，
+> 旧的 `octop` 会继续工作但打印弃用提示，**下一个小版本移除**。环境变量改用 `HAPPYCLAW_*`
+> 前缀——旧的 `OCTOP_*` 仍会被读取并给出一次弃用警告。数据目录从 `~/.octop` 迁到
+> `~/.happyclaw`，首次启动自动复制旧目录（原目录保留，可随时回滚）。
+
 ### Upgrade
 
 ```bash

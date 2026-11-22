@@ -5,6 +5,17 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [语义化版本规范](https://semver.org/spec/v2.0.0.html)。
 
 ## [Unreleased]
+## [Unreleased]
+
+### 破坏性变更：产品身份改为 HappyClaw
+
+- **Python 包与分发名 `octop` → `happyclaw`**。`import octop` 不再存在（没有兼容 shim 包），按旧包名写的 `pip install` 与依赖清单需要改名。
+- **命令 `octop` → `happyclaw`**。`octop` 仍可用，但会打印一行弃用提示，**下一个小版本移除**。docker 入口、fnOS 包与自建脚本若写死 `octop`，届时会失效，建议现在就改为 `happyclaw`。
+- **异常与类名 `Octop*` → `Happyclaw*`**（`HappyclawError`、`HappyclawConfig` 等），不保留旧名别名。
+- **环境变量前缀 `OCTOP_*` → `HAPPYCLAW_*`**。旧名在启动时被复制到新名并打一次 `DeprecationWarning`；两者都设置时新名优先。配置文件与 JSON 键同理（双读单写）。
+- **数据目录 `~/.octop` → `~/.happyclaw`**。首次启动把旧目录**复制**过去（不移动、不删除），复制失败则继续使用旧目录并在 stderr 说明原因。
+- **仍待单独排期**：`self_update` 的包名常量与版本探针仍用旧身份；数据目录内的文件名（`octop.db`、`octop-login.txt`、`logs/octop.log`）；`dashboard/` 侧标识（本轮不动前端）。
+
 
 ### 变更
 - **DSH LLM 适配器的 harness 版本闸门抬到 1.0.14**：`src/happyclaw/infra/dsh/llm/langchain_model.py` 的 `REQUIRED_HARNESS_VERSION` 由 `1.0.9` 改为 `1.0.14`。依据是 `tests/unit/infra/dsh/test_llm_parity.py` 的差分对照在 harness `1.0.14` 上 5 项全过：消息字段、工具调用序列、流式分块、累积消息、usage 明细（`cache_read` / `reasoning`）与 harness 自身解析逐字段一致。对照环境除 harness 版本外完全相同（langchain-core 1.7.7 / langchain-openai 1.3.3 / langgraph 1.2.20）。
