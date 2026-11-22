@@ -13,7 +13,11 @@ import pytest
 from tests.unit.agents.test_memory_slim import make_manager
 
 from happyclaw.config import HappyclawConfig
-from happyclaw.infra.agents.memory.sqlite_storage import _checkpoint_policy
+from happyclaw.infra.agents.memory.sqlite_storage import (
+    _BACKUP_KEEP_DAYS_ENV,
+    _BACKUP_MODE_ENV,
+    _checkpoint_policy,
+)
 from happyclaw.infra.agents.memory.storage import sqlite_store_is_shared
 
 
@@ -212,12 +216,12 @@ def test_read_only_counts_distinguish_missing_zero_and_timeout(tmp_path, monkeyp
 def test_checkpoint_backup_modes_match_harness(value, mode, warning, monkeypatch, caplog):
     # Same cases as happyclaw-harness tests/test_checkpoint_backup.py, including
     # when this test runs against an older installed Harness wheel.
-    variable = "OCTOP_CHECKPOINT_BACKUP_BEFORE_PRUNE"
+    variable = _BACKUP_MODE_ENV
     if value is None:
         monkeypatch.delenv(variable, raising=False)
     else:
         monkeypatch.setenv(variable, value)
-    monkeypatch.delenv("OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS", raising=False)
+    monkeypatch.delenv(_BACKUP_KEEP_DAYS_ENV, raising=False)
     for _ in range(2):
         policy = _checkpoint_policy(0)
         assert policy["checkpoint_backup_before_prune"] == mode
@@ -227,14 +231,14 @@ def test_checkpoint_backup_modes_match_harness(value, mode, warning, monkeypatch
 
 @pytest.mark.parametrize(("value", "expected"), [("0", 0), (" 14 ", 14), ("-1", 7), ("invalid", 7)])
 def test_checkpoint_backup_keep_days_match_harness(value, expected, monkeypatch):
-    monkeypatch.setenv("OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS", value)
+    monkeypatch.setenv(_BACKUP_KEEP_DAYS_ENV, value)
     assert _checkpoint_policy(0)["checkpoint_backup_keep_days"] == expected
 
 
 def test_checkpoint_backup_policy_agrees_with_installed_harness(monkeypatch):
     harness = pytest.importorskip("happyclaw_harness.middleware.checkpoint_backup")
-    mode_env = "OCTOP_CHECKPOINT_BACKUP_BEFORE_PRUNE"
-    days_env = "OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS"
+    mode_env = _BACKUP_MODE_ENV
+    days_env = _BACKUP_KEEP_DAYS_ENV
     for mode, days in (
         ("", ""),
         ("first", "7"),
