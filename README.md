@@ -286,7 +286,7 @@ OctopServer                        launch.py → infra/server.py
 ```
 
 ```
-src/octop/
+src/happyclaw/
   config.py    env-var config
   launch.py    OctopServer boot + uvicorn
   infra/       business core (agents, gateway, cron, db, …)
@@ -314,7 +314,7 @@ make all                   # format (BE+FE) + lint + typecheck + test
 # Frontend (separate terminal)
 make dev                   # Vite dev server on :5173 + octop run together
 make dev-frontend          # Vite dev server only
-make build-frontend        # production build → src/octop/dashboard/
+make build-frontend        # production build → src/happyclaw/dashboard/
 ```
 
 Individual targets: `make test`, `make test-fast` (skips `slow`), `make test-live`, `make lint`, `make typecheck`, `make format`, `make check-all`. Frontend only: `make lint-frontend`, `make typecheck-frontend`. pytest markers are declared in `pyproject.toml`: `live` (real LLM calls), `slow`, and `postgresql` (needs `OCTOP_TEST_DATABASE_URL`).

@@ -9,14 +9,14 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from octop.infra.agents.threads.fork import (
+from happyclaw.infra.agents.threads.fork import (
     _fork_title,
     find_assistant_fork_index,
     fork_dashboard_thread,
     write_checkpoint_messages,
 )
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.gateway.threads import ThreadRegistry
 
 
 def test_fork_title_suffix() -> None:

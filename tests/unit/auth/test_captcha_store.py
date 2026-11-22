@@ -5,13 +5,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from octop.infra.auth.captcha import snapshot_env
-from octop.infra.auth.captcha.store import SETTINGS_KEY, load_effective, public_config
-from octop.infra.auth.sso.crypto import encrypt_secret
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.secrets import SecretRepo
-from octop.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.auth.captcha import snapshot_env
+from happyclaw.infra.auth.captcha.store import SETTINGS_KEY, load_effective, public_config
+from happyclaw.infra.auth.sso.crypto import encrypt_secret
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.secrets import SecretRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
 
 
 def _repos(tmp_path: Path) -> tuple[SettingsRepo, SecretRepo]:

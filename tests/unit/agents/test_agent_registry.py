@@ -16,13 +16,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from tests.support.harness import build_harness_manager_mock
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentCreateSpec, AgentManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentCreateSpec, AgentManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.utils.paths import PathLayout
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -68,7 +68,7 @@ def _patch_harness(monkeypatch) -> MagicMock:
         return fake_hm
 
     monkeypatch.setattr(
-        "octop.infra.agents.manager.HarnessAgentManager",
+        "happyclaw.infra.agents.manager.HarnessAgentManager",
         _constructor,
     )
     return fake_hm
@@ -153,7 +153,7 @@ async def test_boot_start_timeout_marks_failed_and_continues(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A hung start must not block boot(); later agents still come up."""
-    from octop.i18n.domains.agents import AGENT_START_TIMEOUT
+    from happyclaw.i18n.domains.agents import AGENT_START_TIMEOUT
 
     services = _make_services(tmp_path)
     _patch_harness(monkeypatch)
@@ -168,7 +168,7 @@ async def test_boot_start_timeout_marks_failed_and_continues(
         return await original(row)
 
     monkeypatch.setattr(registry, "_start_agent", maybe_hang)
-    monkeypatch.setattr("octop.infra.agents.manager._AGENT_BOOT_START_TIMEOUT", 0.05)
+    monkeypatch.setattr("happyclaw.infra.agents.manager._AGENT_BOOT_START_TIMEOUT", 0.05)
 
     await asyncio.wait_for(registry.boot(), timeout=2)
 
@@ -201,7 +201,7 @@ async def test_boot_start_timeout_keeps_registered_agent_running(
         await asyncio.Event().wait()
 
     monkeypatch.setattr(registry, "_start_agent", hang_after_register)
-    monkeypatch.setattr("octop.infra.agents.manager._AGENT_BOOT_START_TIMEOUT", 0.05)
+    monkeypatch.setattr("happyclaw.infra.agents.manager._AGENT_BOOT_START_TIMEOUT", 0.05)
 
     await asyncio.wait_for(registry.boot(), timeout=2)
 
@@ -520,7 +520,7 @@ async def test_update_triggers_harness_reload(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_update_raises_for_unknown_id(tmp_path: Path) -> None:
     """update() raises OctopError when the agent_id does not exist."""
-    from octop.infra.errors import OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import OctopError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     registry = _make_registry(services)
@@ -537,7 +537,7 @@ async def test_update_raises_for_unknown_id(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_get_agent_raises_for_unknown(tmp_path: Path) -> None:
     """get_agent() raises AGENT_NOT_FOUND when no agent row exists."""
-    from octop.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     fake_hm = _make_fake_hm()
@@ -552,7 +552,7 @@ async def test_get_agent_raises_for_unknown(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_get_agent_raises_not_running_for_stopped_row(tmp_path: Path) -> None:
     """Stopped agents report AGENT_NOT_RUNNING, not AGENT_NOT_FOUND."""
-    from octop.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     fake_hm = _make_fake_hm()
@@ -571,7 +571,7 @@ async def test_get_agent_raises_not_running_for_stopped_row(tmp_path: Path) -> N
 @pytest.mark.asyncio
 async def test_get_agent_raises_failed_for_failed_row(tmp_path: Path) -> None:
     """Failed agents report AGENT_FAILED instead of not-found."""
-    from octop.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     fake_hm = _make_fake_hm()
@@ -893,7 +893,7 @@ async def test_on_provider_changed_bootstraps_factory_when_none(
     fake_provider_cfg = MagicMock()
     fake_provider_cfg.id = "test-openai"
     monkeypatch.setattr(
-        "octop.infra.agents.providers.store.ProviderStore.build_harness_configs",
+        "happyclaw.infra.agents.providers.store.ProviderStore.build_harness_configs",
         lambda self: [fake_provider_cfg],
     )
     reload_mock = AsyncMock()
@@ -923,7 +923,7 @@ async def test_on_provider_changed_reloads_agents_when_factory_bootstraps(
     fake_provider_cfg = MagicMock()
     fake_provider_cfg.id = "test-openai"
     monkeypatch.setattr(
-        "octop.infra.agents.providers.store.ProviderStore.build_harness_configs",
+        "happyclaw.infra.agents.providers.store.ProviderStore.build_harness_configs",
         lambda self: [fake_provider_cfg],
     )
     reload_mock = AsyncMock()
@@ -1001,7 +1001,7 @@ async def test_on_provider_changed_reloads_all_when_factory_ready(
     reload_mock = AsyncMock()
     monkeypatch.setattr(registry, "_reload_agents", reload_mock)
     monkeypatch.setattr(
-        "octop.infra.agents.providers.store.ProviderStore.build_harness_configs",
+        "happyclaw.infra.agents.providers.store.ProviderStore.build_harness_configs",
         lambda self: [],
     )
 
@@ -1023,7 +1023,7 @@ async def test_on_provider_changed_adds_new_provider(tmp_path: Path, monkeypatch
     fake_hm.remove_provider = MagicMock()
 
     monkeypatch.setattr(
-        "octop.infra.agents.manager.HarnessAgentConfig",
+        "happyclaw.infra.agents.manager.HarnessAgentConfig",
         MagicMock(return_value=MagicMock()),
     )
 
@@ -1040,7 +1040,7 @@ async def test_on_provider_changed_adds_new_provider(tmp_path: Path, monkeypatch
     fake_provider_cfg = MagicMock()
     fake_provider_cfg.id = "openai"
     monkeypatch.setattr(
-        "octop.infra.agents.providers.store.ProviderStore.build_harness_configs",
+        "happyclaw.infra.agents.providers.store.ProviderStore.build_harness_configs",
         lambda self: [fake_provider_cfg],
     )
 
@@ -1065,7 +1065,7 @@ async def test_on_provider_changed_removes_stale_provider(tmp_path: Path, monkey
 
     # No providers in DB → _build_provider_configs returns []
     monkeypatch.setattr(
-        "octop.infra.agents.providers.store.ProviderStore.build_harness_configs",
+        "happyclaw.infra.agents.providers.store.ProviderStore.build_harness_configs",
         lambda self: [],
     )
 
@@ -1133,7 +1133,7 @@ async def test_create_rolls_back_when_initializer_fails(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_create_with_template_writes_files(tmp_path: Path) -> None:
     """create() with template_name uploads expert files to the agent backend."""
-    from octop.infra.agents.experts.catalog import (  # noqa: PLC0415
+    from happyclaw.infra.agents.experts.catalog import (  # noqa: PLC0415
         Expert,
         ExpertCatalog,
         ExpertSummary,
@@ -1245,7 +1245,7 @@ async def test_create_with_template_no_catalog_does_not_crash(tmp_path: Path) ->
 @pytest.mark.asyncio
 async def test_create_with_unknown_template_does_not_crash(tmp_path: Path) -> None:
     """create() with a template_name not in catalog logs a warning and continues."""
-    from octop.infra.agents.experts.catalog import ExpertCatalog  # noqa: PLC0415
+    from happyclaw.infra.agents.experts.catalog import ExpertCatalog  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     fake_catalog = MagicMock(spec=ExpertCatalog)

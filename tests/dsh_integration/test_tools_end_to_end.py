@@ -15,7 +15,7 @@ from typing import Any
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from octop.infra.dsh.tools import build_dsh_plugin_tools
+from happyclaw.infra.dsh.tools import build_dsh_plugin_tools
 
 from tests.dsh_integration.fixtures.tools import fixture_tool
 from tests.unit.infra.dsh.plugin_fixtures import write_package

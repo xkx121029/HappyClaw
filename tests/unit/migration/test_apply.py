@@ -9,13 +9,13 @@ from typing import Any
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.connectors.service import ConnectorService
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import SharedServices, build_shared_services
-from octop.infra.migration.apply import MigrationReport, apply_plan
-from octop.infra.migration.plan import (
+from happyclaw.config import OctopConfig
+from happyclaw.infra.connectors.service import ConnectorService
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import SharedServices, build_shared_services
+from happyclaw.infra.migration.apply import MigrationReport, apply_plan
+from happyclaw.infra.migration.plan import (
     ChannelImport,
     FileImport,
     McpImport,
@@ -23,7 +23,7 @@ from octop.infra.migration.plan import (
     ProviderImport,
     SkillImport,
 )
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.utils.paths import PathLayout
 
 AGENT = "agent-1"
 

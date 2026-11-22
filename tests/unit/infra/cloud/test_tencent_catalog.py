@@ -6,8 +6,8 @@ import time
 
 import pytest
 
-from octop.infra.cloud import tencent
-from octop.infra.cloud.tencent import CloudCredential, list_instances, list_regions
+from happyclaw.infra.cloud import tencent
+from happyclaw.infra.cloud.tencent import CloudCredential, list_instances, list_regions
 
 
 def _credential(secret_id: str = "AKIDcatalog000000") -> CloudCredential:

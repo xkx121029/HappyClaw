@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.backend.mention_index import (
+from happyclaw.infra.backend.mention_index import (
     clear_mention_index_cache,
     collect_mention_paths,
     list_workspace_mention_paths,
@@ -151,7 +151,7 @@ async def test_collect_coalesces_concurrent_calls_and_then_uses_the_cache() -> N
 async def test_collect_refreshes_after_the_cache_ttl(monkeypatch: pytest.MonkeyPatch) -> None:
     clock = {"now": 100.0}
     monkeypatch.setattr(
-        "octop.infra.backend.mention_index.time.monotonic",
+        "happyclaw.infra.backend.mention_index.time.monotonic",
         lambda: clock["now"],
     )
     workspace = _Workspace({".": [{"path": "SOUL.md", "is_dir": False}]})

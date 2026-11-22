@@ -7,8 +7,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.infra.agents.manager import AgentCreateSpec, validate_custom_agent_id
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.agents.manager import AgentCreateSpec, validate_custom_agent_id
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 class TestValidateCustomAgentId:
@@ -46,7 +46,7 @@ def _make_manager(*, existing_agent_ids: set[str]):
     Workspace creation raises a sentinel RuntimeError so tests can assert
     exactly how far ``create()`` progressed before bailing out.
     """
-    from octop.infra.agents import manager as manager_mod
+    from happyclaw.infra.agents import manager as manager_mod
 
     def repo_get(agent_id: str):
         return object() if agent_id in existing_agent_ids else None

@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.plugins.bridge import (
     ApprovalChannelError,
     ApprovalOutcome,
     ApprovalRequest,
@@ -30,7 +30,7 @@ from octop.infra.plugins.bridge import (
     build_hitl_request,
     text_content,
 )
-from octop.infra.plugins.bridge.approval import ApprovalDecision, ToolGuardrail
+from happyclaw.infra.plugins.bridge.approval import ApprovalDecision, ToolGuardrail
 
 WRITE_PARAMETERS: dict[str, Any] = {
     "type": "object",

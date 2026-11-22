@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.users.preferences import (
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.users.preferences import (
     ModelReasoningPreference,
     get_model_reasoning_from_json,
     get_preferred_model_from_json,

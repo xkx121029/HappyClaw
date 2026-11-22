@@ -8,9 +8,9 @@ from typing import Any
 import httpx
 import pytest
 
-from octop.api.routers.internal_mcp import _service
-from octop.infra.connectors.gateway.adapters import ragflow
-from octop.infra.server import OctopServer
+from happyclaw.api.routers.internal_mcp import _service
+from happyclaw.infra.connectors.gateway.adapters import ragflow
+from happyclaw.infra.server import OctopServer
 from tests.support.auth import create_user
 
 

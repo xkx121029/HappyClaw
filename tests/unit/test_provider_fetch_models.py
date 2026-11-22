@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from octop.infra.agents.providers.probe import fetch_openai_compatible_models
+from happyclaw.infra.agents.providers.probe import fetch_openai_compatible_models
 
 
 def _mock_response(status: int, payload: Any) -> httpx.Response:
@@ -44,8 +44,8 @@ async def test_shared_plan_url_uses_selected_catalog(
         },
     ]
     with (
-        patch("octop.infra.agents.providers.probe.load_provider_presets", return_value=presets),
-        patch("octop.infra.agents.providers.probe.httpx.AsyncClient") as remote,
+        patch("happyclaw.infra.agents.providers.probe.load_provider_presets", return_value=presets),
+        patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient") as remote,
     ):
         result = await fetch_openai_compatible_models(
             base_url=f"{base_url}/",
@@ -72,7 +72,7 @@ async def test_other_provider_or_url_keeps_remote_discovery(
     client = AsyncMock()
     client.__aenter__.return_value = client
     client.get.return_value = _mock_response(200, {"data": [{"id": "remote-model"}]})
-    with patch("octop.infra.agents.providers.probe.httpx.AsyncClient", return_value=client):
+    with patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient", return_value=client):
         result = await fetch_openai_compatible_models(
             base_url=base_url, api_key="test-key", provider_name=provider_name
         )
@@ -91,7 +91,7 @@ async def test_fetch_models_parses_openai_list() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("octop.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
+    with patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
         result = await fetch_openai_compatible_models(
             base_url="https://api.example.com/v1",
             api_key="sk-test",
@@ -116,7 +116,7 @@ async def test_fetch_models_defaults_openai_base_url() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("octop.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
+    with patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
         result = await fetch_openai_compatible_models(base_url=None, api_key="sk-test")
 
     assert result["ok"] is True
@@ -132,7 +132,7 @@ async def test_fetch_models_rejects_non_openai_payload() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("octop.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
+    with patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
         result = await fetch_openai_compatible_models(
             base_url="https://api.example.com/v1",
             api_key="sk-test",
@@ -150,7 +150,7 @@ async def test_fetch_models_auth_error() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("octop.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
+    with patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
         result = await fetch_openai_compatible_models(
             base_url="https://api.example.com/v1",
             api_key="bad",
@@ -169,7 +169,7 @@ async def test_fetch_models_insufficient_balance_zh() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("octop.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
+    with patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
         result = await fetch_openai_compatible_models(
             base_url="https://api.example.com/v1",
             api_key="sk-test",
@@ -189,7 +189,7 @@ async def test_fetch_models_merges_extra_headers() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("octop.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
+    with patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
         await fetch_openai_compatible_models(
             base_url="https://api.example.com/v1/",
             api_key="sk-test",
@@ -208,7 +208,7 @@ async def test_fetch_models_connection_error() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("octop.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
+    with patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
         result = await fetch_openai_compatible_models(
             base_url="https://api.example.com/v1",
             api_key="sk-test",
@@ -228,7 +228,7 @@ async def test_fetch_models_server_error_friendly() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("octop.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
+    with patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient", return_value=mock_client):
         result = await fetch_openai_compatible_models(
             base_url="https://api.example.com/v1",
             api_key="sk-test",

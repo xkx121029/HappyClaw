@@ -15,11 +15,11 @@ from typing import Any
 import pytest
 from langgraph.errors import GraphBubbleUp
 
-from octop.infra.dsh.tools import build_dsh_plugin_tools
-from octop.infra.dsh.tools.guardrail import build_read_only_guardrail
-from octop.infra.plugins.bridge import ToolCall
-from octop.infra.plugins.bridge.hitl import HitlApprovalChannel
-from octop.infra.plugins.bridge.registry import DshToolRegistry
+from happyclaw.infra.dsh.tools import build_dsh_plugin_tools
+from happyclaw.infra.dsh.tools.guardrail import build_read_only_guardrail
+from happyclaw.infra.plugins.bridge import ToolCall
+from happyclaw.infra.plugins.bridge.hitl import HitlApprovalChannel
+from happyclaw.infra.plugins.bridge.registry import DshToolRegistry
 
 from tests.dsh_integration.fixtures.tools import fixture_tool
 from tests.unit.infra.dsh.plugin_fixtures import write_package
@@ -60,7 +60,7 @@ class _RaisingTransport:
 
 def _passing_probe(tool_name: str, arguments: Any) -> Any:
     """Test double: this file covers HITL, not sandbox inspection."""
-    from octop.infra.plugins.sandbox import SandboxCoverage, SandboxProbeResult
+    from happyclaw.infra.plugins.sandbox import SandboxCoverage, SandboxProbeResult
 
     return SandboxProbeResult(True, "test probe", SandboxCoverage.NOT_APPLICABLE)
 

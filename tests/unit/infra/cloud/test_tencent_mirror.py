@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.cloud.tencent import (
+from happyclaw.infra.cloud.tencent import (
     CloudCredential,
     CloudError,
     credential_from_tccli,
@@ -40,7 +40,7 @@ def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     # Windows Path.home() reads USERPROFILE, and a class-level patch keeps the
     # mirror off the runner's real profile even if the env lookup differs.
     monkeypatch.setattr(
-        "octop.infra.cloud.tencent.Path.home",
+        "happyclaw.infra.cloud.tencent.Path.home",
         lambda: tmp_path,
     )
     monkeypatch.delenv("OCTOP_TCCLI_PROFILE_ISOLATION", raising=False)
@@ -82,7 +82,7 @@ def test_mirror_reports_failure(home: Path, monkeypatch: pytest.MonkeyPatch) -> 
     def boom(*_args: object, **_kwargs: object) -> None:
         raise OSError("disk full")
 
-    monkeypatch.setattr("octop.infra.cloud.tencent._write_private", boom)
+    monkeypatch.setattr("happyclaw.infra.cloud.tencent._write_private", boom)
     assert mirror_to_tccli(_credential(), uid=1) == "failed"
     assert not (home / ".tccli" / "default.credential").exists()
 

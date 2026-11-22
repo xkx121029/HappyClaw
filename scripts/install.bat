@@ -254,7 +254,7 @@ exit /b 0
 
 :verify_install
 echo [octop] Verifying installation...
-"%VENV_PYTHON%" -c "from octop.infra.agents.manager import AgentManager" >nul 2>&1
+"%VENV_PYTHON%" -c "from happyclaw.infra.agents.manager import AgentManager" >nul 2>&1
 if errorlevel 1 (echo [octop] ERROR: install verification failed & exit /b 1)
 echo [octop] Install verification passed
 exit /b 0

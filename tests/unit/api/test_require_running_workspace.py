@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from octop.api.common.workspace import require_running_workspace
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.api.common.workspace import require_running_workspace
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def _server(

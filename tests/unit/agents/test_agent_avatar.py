@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from happyclaw_harness.backends.utils import BackendOperationNotSupportedError
 
-from octop.infra.agents.experts.avatar import (
+from happyclaw.infra.agents.experts.avatar import (
     MAX_AVATAR_BYTES,
     agent_avatar_api_path,
     delete_workspace_avatar,
@@ -17,7 +17,7 @@ from octop.infra.agents.experts.avatar import (
     sniff_avatar_media_type,
     write_workspace_avatar,
 )
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 8
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 8

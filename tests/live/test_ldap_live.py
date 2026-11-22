@@ -29,7 +29,7 @@ from tests.support.app import octop_client
 from tests.support.auth import bootstrap_admin
 from tests.support.secrets import optional_env, require_env
 
-from octop.infra.server import OctopServer
+from happyclaw.infra.server import OctopServer
 
 pytestmark = pytest.mark.live
 

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.api.deps import require_permission
-from octop.infra.users.identity import Role, User
+from happyclaw.api.deps import require_permission
+from happyclaw.infra.users.identity import Role, User
 
 
 def _user(is_admin: bool, permissions: list[str] | None = None) -> User:

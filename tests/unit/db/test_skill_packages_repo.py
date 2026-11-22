@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.skill_packages import SkillPackageRepo
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.skill_packages import SkillPackageRepo
 
-_MIGRATIONS = Path(__file__).resolve().parents[3] / "src/octop/infra/db/migrations"
+_MIGRATIONS = Path(__file__).resolve().parents[3] / "src/happyclaw/infra/db/migrations"
 
 
 @pytest.fixture

@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.infra.cloud.tencent import (
+from happyclaw.infra.cloud.tencent import (
     CloudCredential,
     CloudCredentialStore,
     open_cloud_credential_store,
 )
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.secrets import SecretRepo
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.secrets import SecretRepo
 
 
 def _credential(secret_id: str = "AKIDtest000000000000") -> CloudCredential:

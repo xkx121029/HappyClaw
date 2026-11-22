@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.migration import relaxed_json
+from happyclaw.infra.migration import relaxed_json
 
 
 def test_reads_plain_json() -> None:

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from octop.infra.users.permissions import (
+from happyclaw.infra.users.permissions import (
     ASSIGNABLE_PERMISSION_KEYS,
     BASELINE_PERMISSIONS,
     PERMISSIONS,

@@ -11,11 +11,11 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.gateway.process.processor import GlobalProcessor, _stream_error
-from octop.infra.gateway.slash.dispatcher import SlashDispatcher
-from octop.infra.gateway.ws import WS_CHANNEL_ID
-from octop.infra.history.projection import _wire_text
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.gateway.process.processor import GlobalProcessor, _stream_error
+from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
+from happyclaw.infra.gateway.ws import WS_CHANNEL_ID
+from happyclaw.infra.history.projection import _wire_text
 
 
 @pytest.mark.asyncio
@@ -26,7 +26,7 @@ async def test_auth_exception_is_displayed_as_failure_and_kept_out_of_checkpoint
     import httpx
     from openai import AuthenticationError
 
-    from octop.i18n.domains.stream import AUTH, stream_error_message
+    from happyclaw.i18n.domains.stream import AUTH, stream_error_message
 
     error = AuthenticationError(
         "opaque rejection",

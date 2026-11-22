@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from octop.infra.skills import skillhub_market
+from happyclaw.infra.skills import skillhub_market
 
 
 class _BytesResponse:

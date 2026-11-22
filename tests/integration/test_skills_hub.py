@@ -39,7 +39,7 @@ async def test_hub_search_returns_list(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Authenticated GET returns direct HTTP search results."""
-    from octop.infra.skills import skillhub_market
+    from happyclaw.infra.skills import skillhub_market
 
     async def fake_search(
         query: str,
@@ -67,7 +67,7 @@ async def test_hub_search_with_query(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Authenticated GET passes its query to the HTTP client."""
-    from octop.infra.skills import skillhub_market
+    from happyclaw.infra.skills import skillhub_market
 
     async def fake_search(
         query: str,
@@ -103,7 +103,7 @@ async def test_hub_rankings_returns_dict(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Authenticated GET rankings returns the direct HTTP client payload."""
-    from octop.infra.skills import skillhub_market
+    from happyclaw.infra.skills import skillhub_market
 
     async def fake_fetch_rankings(
         ranking_type: str,
@@ -155,7 +155,7 @@ async def test_hub_install_persists_market_name_and_icon(
     env: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.infra.skills import skillhub_market
+    from happyclaw.infra.skills import skillhub_market
     from tests.support.auth import create_agent, seed_openai_provider
 
     async def fake_download(
@@ -225,7 +225,7 @@ async def test_hub_install_reports_http_failure(
     env: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.infra.skills import skillhub_market
+    from happyclaw.infra.skills import skillhub_market
     from tests.support.auth import create_agent, seed_openai_provider
 
     async def failed_download(
@@ -255,7 +255,7 @@ async def test_hub_install_reports_package_validation_failure(
     env: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.infra.skills import skillhub_market
+    from happyclaw.infra.skills import skillhub_market
     from tests.support.auth import create_agent, seed_openai_provider
 
     async def invalid_download(

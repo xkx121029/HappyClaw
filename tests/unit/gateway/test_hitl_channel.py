@@ -8,14 +8,14 @@ from unittest.mock import MagicMock
 import pytest
 from happyclaw_gateway.models import MessageEvent, MessageEventType, TextContent
 
-from octop.infra.gateway.hitl.coordinator import (
+from happyclaw.infra.gateway.hitl.coordinator import (
     HitlChannelCoordinator,
     HitlSlashOutcome,
     HitlStreamContext,
 )
-from octop.infra.gateway.hitl.format import format_hitl_card, parse_action_requests
-from octop.infra.gateway.hitl.store import HitlPendingStore
-from octop.infra.gateway.process.stream_project import (
+from happyclaw.infra.gateway.hitl.format import format_hitl_card, parse_action_requests
+from happyclaw.infra.gateway.hitl.store import HitlPendingStore
+from happyclaw.infra.gateway.process.stream_project import (
     StreamProjectionState,
     project_resume_stream,
     project_stream,
@@ -35,7 +35,7 @@ def test_parse_action_requests() -> None:
 
 
 def test_parse_action_requests_unwraps_interrupt_envelope() -> None:
-    from octop.infra.gateway.hitl.format import normalize_hitl_request
+    from happyclaw.infra.gateway.hitl.format import normalize_hitl_request
 
     raw = {
         "id": "int-1",
@@ -475,11 +475,11 @@ def test_hitl_store_reuses_equivalent_pending() -> None:
 
 @pytest.mark.asyncio
 async def test_session_auto_approve_resumes_without_yielding_the_card() -> None:
-    from octop.infra.agents.security.hitl_session import (
+    from happyclaw.infra.agents.security.hitl_session import (
         HitlSessionPolicy,
         HitlSessionPolicyStore,
     )
-    from octop.infra.gateway.hitl.coordinator import iter_with_session_auto_approve
+    from happyclaw.infra.gateway.hitl.coordinator import iter_with_session_auto_approve
 
     policies = HitlSessionPolicyStore()
     policies.set("thr-a", HitlSessionPolicy(mode="allow_all"))
@@ -511,11 +511,11 @@ async def test_session_auto_approve_resumes_without_yielding_the_card() -> None:
 
 @pytest.mark.asyncio
 async def test_session_auto_approve_yields_card_when_approve_is_forbidden() -> None:
-    from octop.infra.agents.security.hitl_session import (
+    from happyclaw.infra.agents.security.hitl_session import (
         HitlSessionPolicy,
         HitlSessionPolicyStore,
     )
-    from octop.infra.gateway.hitl.coordinator import iter_with_session_auto_approve
+    from happyclaw.infra.gateway.hitl.coordinator import iter_with_session_auto_approve
 
     policies = HitlSessionPolicyStore()
     policies.set("thr-a", HitlSessionPolicy(mode="allow_all"))
@@ -551,11 +551,11 @@ async def test_session_auto_approve_yields_card_when_approve_is_forbidden() -> N
 
 @pytest.mark.asyncio
 async def test_session_auto_approve_yields_card_when_resume_fails() -> None:
-    from octop.infra.agents.security.hitl_session import (
+    from happyclaw.infra.agents.security.hitl_session import (
         HitlSessionPolicy,
         HitlSessionPolicyStore,
     )
-    from octop.infra.gateway.hitl.coordinator import iter_with_session_auto_approve
+    from happyclaw.infra.gateway.hitl.coordinator import iter_with_session_auto_approve
 
     policies = HitlSessionPolicyStore()
     policies.set("thr-a", HitlSessionPolicy(mode="allow_all"))
@@ -652,7 +652,7 @@ def test_hitl_store_resolves_team_member_pause_from_either_thread() -> None:
 
 
 def test_pending_hitl_payload() -> None:
-    from octop.infra.gateway.hitl.coordinator import pending_hitl_payload
+    from happyclaw.infra.gateway.hitl.coordinator import pending_hitl_payload
 
     store = HitlPendingStore()
     record = store.register(
@@ -767,7 +767,7 @@ def _approval_ctx() -> MagicMock:
 
 @pytest.mark.asyncio
 async def test_utterance_approves_latest_pending_only() -> None:
-    from octop.infra.gateway.hitl.phrases import ApprovalUtterance
+    from happyclaw.infra.gateway.hitl.phrases import ApprovalUtterance
 
     store = HitlPendingStore()
     coordinator = HitlChannelCoordinator(store=store)
@@ -818,7 +818,7 @@ async def test_utterance_approves_latest_pending_only() -> None:
 
 @pytest.mark.asyncio
 async def test_utterance_allow_tool_and_allow_all_stick() -> None:
-    from octop.infra.gateway.hitl.phrases import ApprovalUtterance
+    from happyclaw.infra.gateway.hitl.phrases import ApprovalUtterance
 
     store = HitlPendingStore()
     coordinator = HitlChannelCoordinator(store=store)
@@ -871,7 +871,7 @@ async def test_utterance_allow_tool_and_allow_all_stick() -> None:
 
 @pytest.mark.asyncio
 async def test_utterance_allow_all_skips_followup_tool_but_not_question() -> None:
-    from octop.infra.gateway.hitl.phrases import ApprovalUtterance
+    from happyclaw.infra.gateway.hitl.phrases import ApprovalUtterance
 
     store = HitlPendingStore()
     coordinator = HitlChannelCoordinator(store=store)
@@ -981,8 +981,8 @@ async def test_im_phrase_approves_without_slash() -> None:
 
     from happyclaw_gateway.models import ChannelSubject, InboundMessage
 
-    from octop.infra.gateway.process.processor import GlobalProcessor
-    from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
     store = HitlPendingStore()
     coordinator = HitlChannelCoordinator(store=store)
@@ -1040,8 +1040,8 @@ async def test_im_phrase_does_not_steal_question_answer() -> None:
 
     from happyclaw_gateway.models import ChannelSubject, InboundMessage
 
-    from octop.infra.gateway.process.processor import GlobalProcessor
-    from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
     store = HitlPendingStore()
     coordinator = HitlChannelCoordinator(store=store)
@@ -1102,8 +1102,8 @@ def _phrase_processor(
 ) -> tuple[object, MagicMock]:
     from types import SimpleNamespace
 
-    from octop.infra.gateway.process.processor import GlobalProcessor
-    from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
     thread_registry = MagicMock()
     thread_registry.get_bound_thread_id = MagicMock(return_value="thr1")
@@ -1137,7 +1137,7 @@ def _phrase_message(text: str) -> object:
 
 @pytest.mark.asyncio
 async def test_sticky_policy_rolls_back_when_resume_fails() -> None:
-    from octop.infra.gateway.hitl.phrases import ApprovalUtterance
+    from happyclaw.infra.gateway.hitl.phrases import ApprovalUtterance
 
     store = HitlPendingStore()
     coordinator = HitlChannelCoordinator(store=store)
@@ -1173,7 +1173,7 @@ async def test_sticky_policy_rolls_back_when_resume_fails() -> None:
 
 @pytest.mark.asyncio
 async def test_sticky_restore_keeps_a_reset_made_during_resume() -> None:
-    from octop.infra.gateway.hitl.phrases import ApprovalUtterance
+    from happyclaw.infra.gateway.hitl.phrases import ApprovalUtterance
 
     store = HitlPendingStore()
     coordinator = HitlChannelCoordinator(store=store)
@@ -1210,8 +1210,8 @@ async def test_im_approval_resume_records_turn_duration() -> None:
     import json
     from types import SimpleNamespace
 
-    from octop.infra.gateway.process.processor import GlobalProcessor
-    from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
     store = HitlPendingStore()
     coordinator = HitlChannelCoordinator(store=store)
@@ -1265,7 +1265,7 @@ async def test_im_approval_resume_records_turn_duration() -> None:
 
 @pytest.mark.asyncio
 async def test_sticky_policy_rolls_back_when_member_job_is_gone() -> None:
-    from octop.infra.gateway.hitl.phrases import ApprovalUtterance
+    from happyclaw.infra.gateway.hitl.phrases import ApprovalUtterance
 
     store = HitlPendingStore()
     coordinator = HitlChannelCoordinator(store=store)
@@ -1369,11 +1369,11 @@ async def test_reset_phrase_without_pending_clears_bypass() -> None:
 @pytest.mark.asyncio
 async def test_guard_approval_is_never_auto_approved() -> None:
     """A security (command-guard) approval must reach the human in an allow-all chat."""
-    from octop.infra.agents.security.hitl_session import (
+    from happyclaw.infra.agents.security.hitl_session import (
         HitlSessionPolicy,
         HitlSessionPolicyStore,
     )
-    from octop.infra.gateway.hitl.coordinator import iter_with_session_auto_approve
+    from happyclaw.infra.gateway.hitl.coordinator import iter_with_session_auto_approve
 
     policies = HitlSessionPolicyStore()
     policies.set("thr-a", HitlSessionPolicy(mode="allow_all"))

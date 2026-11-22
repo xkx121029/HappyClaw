@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
+from happyclaw.cli.main import cli
 
 
 @pytest.fixture
@@ -46,9 +46,9 @@ def test_init_non_interactive_creates_admin(fake_home: Path) -> None:
     cfg = json.loads((fake_home / ".happyclaw" / "config.json").read_text(encoding="utf-8"))
     assert "weather" not in (cfg.get("plugins") or {})
 
-    from octop.infra.db.pool import SqlitePool
-    from octop.infra.db.repos.users import UserRepo
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.infra.db.pool import SqlitePool
+    from happyclaw.infra.db.repos.users import UserRepo
+    from happyclaw.infra.utils.paths import PathLayout
 
     paths = PathLayout(fake_home / ".happyclaw")
     db = SqlitePool(paths.db)
@@ -132,9 +132,9 @@ def test_init_force_keeps_install_runtime(fake_home: Path) -> None:
     assert (home / "bin").is_dir()
     assert not (home / "agents" / "old").exists()
 
-    from octop.infra.db.pool import SqlitePool
-    from octop.infra.db.repos.users import UserRepo
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.infra.db.pool import SqlitePool
+    from happyclaw.infra.db.repos.users import UserRepo
+    from happyclaw.infra.utils.paths import PathLayout
 
     repo = UserRepo(SqlitePool(PathLayout(home).db))
     assert repo.get_by_username("alice") is None
@@ -147,7 +147,7 @@ def test_init_force_refuses_when_home_is_the_runtime(
     home = fake_home / ".happyclaw"
     home.mkdir()
     (home / "octop.db").write_text("db", encoding="utf-8")
-    monkeypatch.setattr("octop.infra.utils.install_reset.sys.prefix", str(home))
+    monkeypatch.setattr("happyclaw.infra.utils.install_reset.sys.prefix", str(home))
     runner = CliRunner()
     result = runner.invoke(
         cli,
@@ -175,9 +175,9 @@ def test_init_without_admin_creates_no_account(fake_home: Path) -> None:
     assert "single user: no account needed" in result.output
     assert "Admin username:" not in result.output
 
-    from octop.infra.db.pool import SqlitePool
-    from octop.infra.db.repos.users import UserRepo
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.infra.db.pool import SqlitePool
+    from happyclaw.infra.db.repos.users import UserRepo
+    from happyclaw.infra.utils.paths import PathLayout
 
     home = fake_home / ".happyclaw"
     assert (home / "octop.db").is_file()
@@ -219,9 +219,9 @@ def test_init_force_resets(fake_home: Path) -> None:
     r2 = runner.invoke(cli, args_b)
     assert r2.exit_code == 0, r2.output or str(r2.exception)
 
-    from octop.infra.db.pool import SqlitePool
-    from octop.infra.db.repos.users import UserRepo
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.infra.db.pool import SqlitePool
+    from happyclaw.infra.db.repos.users import UserRepo
+    from happyclaw.infra.utils.paths import PathLayout
 
     paths = PathLayout(fake_home / ".happyclaw")
     repo = UserRepo(SqlitePool(paths.db))
@@ -258,8 +258,8 @@ def test_init_rerun_skips_existing_admin_without_local_db(
     assert r2.exit_code == 0, r2.output or str(r2.exception)
     assert "already exists, skipping" in r2.output
 
-    from octop.infra.db.pool import SqlitePool
-    from octop.infra.db.repos.users import UserRepo
+    from happyclaw.infra.db.pool import SqlitePool
+    from happyclaw.infra.db.repos.users import UserRepo
 
     assert UserRepo(SqlitePool(external / "control.db")).count() == 1
 
@@ -281,9 +281,9 @@ def test_init_env_vars_supply_credentials(fake_home: Path, monkeypatch: pytest.M
     result = runner.invoke(cli, ["init", "--yes"])
     assert result.exit_code == 0, result.output
 
-    from octop.infra.db.pool import SqlitePool
-    from octop.infra.db.repos.users import UserRepo
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.infra.db.pool import SqlitePool
+    from happyclaw.infra.db.repos.users import UserRepo
+    from happyclaw.infra.utils.paths import PathLayout
 
     paths = PathLayout(fake_home / ".happyclaw")
     repo = UserRepo(SqlitePool(paths.db))

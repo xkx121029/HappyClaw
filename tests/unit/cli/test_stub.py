@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.cli.support.stub import EXIT_NOT_APPLICABLE, not_applicable
+from happyclaw.cli.support.stub import EXIT_NOT_APPLICABLE, not_applicable
 
 
 def test_not_applicable_exits_with_code_2(capsys: pytest.CaptureFixture[str]) -> None:

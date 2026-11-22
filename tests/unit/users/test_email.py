@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.users.email import normalize_email, parse_optional_email, validate_email_format
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.users.email import normalize_email, parse_optional_email, validate_email_format
 
 
 def test_normalize_email() -> None:

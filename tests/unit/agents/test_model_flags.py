@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from octop.infra.agents.providers.model_flags import (
+from happyclaw.infra.agents.providers.model_flags import (
     is_chat_eligible_model,
     is_embedding_model,
     is_vision_model,
 )
-from octop.infra.agents.providers.resolved import list_resolved_models
+from happyclaw.infra.agents.providers.resolved import list_resolved_models
 
 
 def test_embedding_flag_and_task() -> None:
@@ -19,7 +19,7 @@ def test_embedding_flag_and_task() -> None:
 
 
 def test_is_embedding_provider_explicit_and_legacy() -> None:
-    from octop.infra.agents.providers.model_flags import is_embedding_provider
+    from happyclaw.infra.agents.providers.model_flags import is_embedding_provider
 
     assert is_embedding_provider(extra={"purpose": "embedding"})
     assert is_embedding_provider(provider_api_key="onnx")
@@ -54,7 +54,7 @@ def test_onnx_provider_identity_marks_models_embedding() -> None:
 
 
 def test_is_onnx_local_provider() -> None:
-    from octop.infra.agents.providers.model_flags import is_onnx_local_provider
+    from happyclaw.infra.agents.providers.model_flags import is_onnx_local_provider
 
     assert is_onnx_local_provider(provider_api_key="onnx")
     assert is_onnx_local_provider(provider_name="ONNX (Local)")
@@ -67,7 +67,7 @@ def test_is_onnx_local_provider() -> None:
 
 
 def test_is_local_runtime_provider() -> None:
-    from octop.infra.agents.providers.model_flags import is_local_runtime_provider
+    from happyclaw.infra.agents.providers.model_flags import is_local_runtime_provider
 
     assert is_local_runtime_provider(provider_api_key="onnx")
     assert is_local_runtime_provider(provider_name="ONNX (Local)")
@@ -88,7 +88,7 @@ def test_is_local_runtime_provider() -> None:
 
 
 def test_is_ollama_local_provider_is_identity_only() -> None:
-    from octop.infra.agents.providers.model_flags import is_ollama_local_provider
+    from happyclaw.infra.agents.providers.model_flags import is_ollama_local_provider
 
     assert is_ollama_local_provider(provider_api_key="ollama")
     assert is_ollama_local_provider(provider_name="Ollama (Local)")
@@ -108,7 +108,7 @@ def test_is_ollama_local_provider_is_identity_only() -> None:
 
 
 def test_custom_local_url_is_not_a_protected_runtime() -> None:
-    from octop.infra.agents.providers.model_flags import is_local_runtime_provider
+    from happyclaw.infra.agents.providers.model_flags import is_local_runtime_provider
 
     for url in (
         "http://127.0.0.1:8000/v1",

@@ -17,9 +17,9 @@ import httpx
 import pytest
 from tests.support.app import ensure_control_plane_bound
 
-import octop.api.app as app_module
-from octop.api.app import build_app
-from octop.infra.server import OctopServer
+import happyclaw.api.app as app_module
+from happyclaw.api.app import build_app
+from happyclaw.infra.server import OctopServer
 
 
 @pytest.fixture

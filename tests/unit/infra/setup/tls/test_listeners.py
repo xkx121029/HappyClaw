@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from octop.config import OctopConfig, TlsConfig
-from octop.infra.setup.tls.listeners import build_listen_plan
+from happyclaw.config import OctopConfig, TlsConfig
+from happyclaw.infra.setup.tls.listeners import build_listen_plan
 
 
 def test_single_listener_without_tls():

@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.published_experts import PublishedExpertRepo
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.published_experts import PublishedExpertRepo
 
 
 @pytest.fixture
@@ -112,7 +112,7 @@ def test_published_expert_repo_get_by_source_and_update_meta(db: SqlitePool) -> 
 
 def test_legacy_text_pk_published_experts_keep_public_id(tmp_path: Path) -> None:
     pool = SqlitePool(tmp_path / "octop.db")
-    migrations = Path(__file__).resolve().parents[3] / "src/octop/infra/db/migrations"
+    migrations = Path(__file__).resolve().parents[3] / "src/happyclaw/infra/db/migrations"
     with pool.connect() as conn:
         conn.executescript((migrations / "001_initial.sql").read_text())
         conn.executescript((migrations / "005_shared_experts_sso_knowledge.sql").read_text())

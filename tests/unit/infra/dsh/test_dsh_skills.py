@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.dsh.skills import (
+from happyclaw.infra.dsh.skills import (
     DshSkillCatalog,
     DshSkillErrorCode,
     DshSkillFrontmatterError,

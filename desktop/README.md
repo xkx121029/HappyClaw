@@ -1,6 +1,6 @@
 # HappyClaw desktop (green portable + Electron shell)
 
-All desktop-client code lives here. This is **not** `src/octop/infra/control/desktop`
+All desktop-client code lives here. This is **not** `src/happyclaw/infra/control/desktop`
 (remote desktop streaming).
 
 | Path | Role |

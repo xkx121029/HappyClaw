@@ -26,7 +26,7 @@ import pytest
 # this whole file silently skip).
 pytest.importorskip("happyclaw_memory.adapters.bridge.handlers")
 
-from octop.api.common.memory_client import (
+from happyclaw.api.common.memory_client import (
     invalidate_cached_memory,
     memory_db_path_for_cfg,
     memory_namespace,

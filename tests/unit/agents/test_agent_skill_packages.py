@@ -7,13 +7,13 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager, skill_package_ids_list
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentManager, skill_package_ids_list
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.utils.paths import PathLayout
 
 
 @pytest.fixture
@@ -363,7 +363,7 @@ async def test_list_skill_summaries_relabels_mounted_package_skills(
     """Harness lists package dirs as workspace; Octop marks mounted package slugs."""
     from unittest.mock import AsyncMock, MagicMock
 
-    from octop.infra.skills.skill_package_store import SkillPackageStore
+    from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 
     agent_id = "AGENT01"
     package_id = "PACK01"

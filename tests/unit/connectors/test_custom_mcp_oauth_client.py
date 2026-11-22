@@ -7,25 +7,25 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from octop.infra.connectors.custom_mcp import (
+from happyclaw.infra.connectors.custom_mcp import (
     build_oauth_storage,
     harness_spec_for_server,
     merge_preserved_oauth,
     normalize_server_spec,
     redact_server_for_api,
 )
-from octop.infra.connectors.oauth import discovery as discovery_mod
-from octop.infra.connectors.oauth import mcp as mcp_mod
-from octop.infra.connectors.oauth import registry as registry_mod
-from octop.infra.connectors.oauth.discovery import (
+from happyclaw.infra.connectors.oauth import discovery as discovery_mod
+from happyclaw.infra.connectors.oauth import mcp as mcp_mod
+from happyclaw.infra.connectors.oauth import registry as registry_mod
+from happyclaw.infra.connectors.oauth.discovery import (
     clear_oauth_discovery_cache,
     discover_oauth_from_mcp_url,
 )
-from octop.infra.connectors.oauth.registry import (
+from happyclaw.infra.connectors.oauth.registry import (
     refresh_custom_mcp_oauth,
     start_custom_mcp_oauth,
 )
-from octop.infra.connectors.probe import _maybe_attach_oauth_discovery
+from happyclaw.infra.connectors.probe import _maybe_attach_oauth_discovery
 
 MCP_URL = "https://mcp.example.com/mcp"
 REDIRECT = "http://127.0.0.1:8088/api/connectors/oauth/callback"
@@ -385,7 +385,7 @@ async def test_probe_marks_client_required(
     async def discovered(url: str) -> dict[str, Any]:
         return NO_REGISTRATION
 
-    monkeypatch.setattr("octop.infra.connectors.probe.discover_oauth_from_mcp_url", discovered)
+    monkeypatch.setattr("happyclaw.infra.connectors.probe.discover_oauth_from_mcp_url", discovered)
 
     result = await _maybe_attach_oauth_discovery(
         {"ok": False, "error_type": "auth"},
@@ -409,7 +409,7 @@ async def test_probe_with_explicit_endpoints_needs_no_discovery(
     async def no_discovery(url: str) -> dict[str, Any]:
         raise AssertionError("explicit endpoints must not trigger discovery")
 
-    monkeypatch.setattr("octop.infra.connectors.probe.discover_oauth_from_mcp_url", no_discovery)
+    monkeypatch.setattr("happyclaw.infra.connectors.probe.discover_oauth_from_mcp_url", no_discovery)
 
     result = await _maybe_attach_oauth_discovery(
         {"ok": False, "error_type": "auth"},

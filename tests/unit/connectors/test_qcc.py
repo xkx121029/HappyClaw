@@ -7,27 +7,27 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from octop.api.routers.connectors import _credentials_preview, _merge_credentials
-from octop.config import OctopConfig
-from octop.infra.connectors.builder import (
+from happyclaw.api.routers.connectors import _credentials_preview, _merge_credentials
+from happyclaw.config import OctopConfig
+from happyclaw.infra.connectors.builder import (
     build_http_mcp_spec,
     build_mcp_server_configs_for_user,
     gateway_mcp_server_names,
     validate_create_credentials,
 )
-from octop.infra.connectors.catalog import (
+from happyclaw.infra.connectors.catalog import (
     get_catalog_entry,
     get_mcp_oauth_remote,
     is_inprocess_gateway,
     uses_internal_http_mcp,
 )
-from octop.infra.connectors.probe import probe_connector
-from octop.infra.connectors.service import ConnectorService
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.connectors import ConnectorRepo
-from octop.infra.db.repos.secrets import SecretRepo
-from octop.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.connectors.probe import probe_connector
+from happyclaw.infra.connectors.service import ConnectorService
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.connectors import ConnectorRepo
+from happyclaw.infra.db.repos.secrets import SecretRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
 
 
 @pytest.mark.asyncio
@@ -51,7 +51,7 @@ async def test_qcc_credentials_build_and_probe(monkeypatch: pytest.MonkeyPatch) 
     assert "/api/internal/mcp/qcc/qcc-test?token=local-gateway-token" in spec["url"]
     assert "test-qcc-token" not in str(spec)
     probe = AsyncMock(return_value={"ok": True, "tools": []})
-    monkeypatch.setattr("octop.infra.connectors.qcc.probe", probe)
+    monkeypatch.setattr("happyclaw.infra.connectors.qcc.probe", probe)
     result = await probe_connector(entry, creds, instance_id="qcc-test", config=OctopConfig())
     assert result["ok"] is True
     probe.assert_awaited_once_with("test-qcc-token")

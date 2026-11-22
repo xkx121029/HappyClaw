@@ -9,23 +9,23 @@ from unittest.mock import MagicMock, patch
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 
-from octop.infra.agents.middleware.thread_artifacts import (
+from happyclaw.infra.agents.middleware.thread_artifacts import (
     ThreadArtifactsMiddleware,
     peer_room_thread_id,
 )
-from octop.infra.agents.threads.artifact import (
+from happyclaw.infra.agents.threads.artifact import (
     artifact_path_allowed,
     artifacts_for_response,
     extract_artifact_paths,
     is_artifact_tool_name,
     normalize_artifact_path,
 )
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.threads import ThreadRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.utils.thread_artifact import ThreadArtifact
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.threads import ThreadRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.utils.thread_artifact import ThreadArtifact
 
 
 def _ws(tmp_path: Path) -> Path:
@@ -122,7 +122,7 @@ def test_artifacts_for_response_keeps_producer_path_without_host_join(
 
 
 def test_thread_artifacts_payload_has_legacy_and_refs(tmp_path: Path) -> None:
-    from octop.infra.agents.threads.artifact import thread_artifacts_payload
+    from happyclaw.infra.agents.threads.artifact import thread_artifacts_payload
 
     ws = _ws(tmp_path)
     payload = thread_artifacts_payload(
@@ -188,7 +188,7 @@ def test_middleware_rewrites_plan_write_onto_workspace() -> None:
         return ToolMessage(content="ok", tool_call_id="tc1")
 
     with patch(
-        "octop.infra.agents.middleware.thread_artifacts.current_thread_id",
+        "happyclaw.infra.agents.middleware.thread_artifacts.current_thread_id",
         return_value="thr_1",
     ):
         mw.wrap_tool_call(_request("write_file", {"file_path": "plans/foo.md"}), handler)
@@ -202,7 +202,7 @@ def test_middleware_records_successful_write(tmp_path: Path) -> None:
     request = _request("write_file", {"path": "docs/note.md"})
     result = ToolMessage(content="ok", tool_call_id="tc1")
     with patch(
-        "octop.infra.agents.middleware.thread_artifacts.current_thread_id",
+        "happyclaw.infra.agents.middleware.thread_artifacts.current_thread_id",
         return_value="thr_1",
     ):
         out = mw.wrap_tool_call(request, lambda _req: result)
@@ -218,7 +218,7 @@ def test_middleware_mirrors_peer_artifacts_to_room(tmp_path: Path) -> None:
     mw = ThreadArtifactsMiddleware(thread_repo=store, workspace_dir=ws, agent_id="member-a")
     request = _request("write_file", {"path": "docs/note.md"})
     with patch(
-        "octop.infra.agents.middleware.thread_artifacts.current_thread_id",
+        "happyclaw.infra.agents.middleware.thread_artifacts.current_thread_id",
         return_value="room~member-a",
     ):
         mw.wrap_tool_call(
@@ -239,7 +239,7 @@ def test_middleware_records_absolute_write_as_is(tmp_path: Path) -> None:
     abs_path = "/.octop/agents/main/skills/env-reader/SKILL.md"
     request = _request("write_file", {"path": abs_path})
     with patch(
-        "octop.infra.agents.middleware.thread_artifacts.current_thread_id",
+        "happyclaw.infra.agents.middleware.thread_artifacts.current_thread_id",
         return_value="thr_1",
     ):
         mw.wrap_tool_call(
@@ -255,7 +255,7 @@ def test_middleware_skips_error_and_command(tmp_path: Path) -> None:
     request = _request("write_file", {"path": "docs/note.md"})
     error = ToolMessage(content="fail", tool_call_id="tc1", status="error")
     with patch(
-        "octop.infra.agents.middleware.thread_artifacts.current_thread_id",
+        "happyclaw.infra.agents.middleware.thread_artifacts.current_thread_id",
         return_value="thr_1",
     ):
         mw.wrap_tool_call(request, lambda _req: error)
@@ -268,7 +268,7 @@ def test_middleware_skips_without_thread_id(tmp_path: Path) -> None:
     mw = ThreadArtifactsMiddleware(thread_repo=store, workspace_dir=_ws(tmp_path))
     request = _request("write_file", {"path": "docs/note.md"})
     with patch(
-        "octop.infra.agents.middleware.thread_artifacts.current_thread_id",
+        "happyclaw.infra.agents.middleware.thread_artifacts.current_thread_id",
         return_value="",
     ):
         mw.wrap_tool_call(

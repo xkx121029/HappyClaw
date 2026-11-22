@@ -18,11 +18,11 @@
 
 | 位置 | 现状 |
 |---|---|
-| `src/octop/api/routers/terminal.py:244` | `_sessions: dict[tuple[str, str], _PtySession]`，全局存活 PTY。**唯一现成的「在跑」集合** |
-| `src/octop/infra/gateway/process/processor.py:655 / :959` | `GlobalProcessor.__call__`（IM 频道）与 `iter_turn_chunks`（Dashboard / Bridge / cron）是两个独立的 turn 入口，**都没有在跑注册表** |
-| `src/octop/api/routers/chat/ws.py:249` | turn 是 `channel_manager.enqueue(...)` 投递的，**WS 断开不会取消 turn**；所以「WS 连着」既不是必要条件也不是充分条件 |
-| `src/octop/api/routers/health.py` | `/api/health` 的 `agents_running` 是**已加载的 agent 数**，不是在执行的任务数——不能拿来当忙碌信号 |
-| `src/octop/infra/cron/manager.py` | 有 `run_now` / `_run_user_job`，但同样没有「本次执行进行中」的可读状态 |
+| `src/happyclaw/api/routers/terminal.py:244` | `_sessions: dict[tuple[str, str], _PtySession]`，全局存活 PTY。**唯一现成的「在跑」集合** |
+| `src/happyclaw/infra/gateway/process/processor.py:655 / :959` | `GlobalProcessor.__call__`（IM 频道）与 `iter_turn_chunks`（Dashboard / Bridge / cron）是两个独立的 turn 入口，**都没有在跑注册表** |
+| `src/happyclaw/api/routers/chat/ws.py:249` | turn 是 `channel_manager.enqueue(...)` 投递的，**WS 断开不会取消 turn**；所以「WS 连着」既不是必要条件也不是充分条件 |
+| `src/happyclaw/api/routers/health.py` | `/api/health` 的 `agents_running` 是**已加载的 agent 数**，不是在执行的任务数——不能拿来当忙碌信号 |
+| `src/happyclaw/infra/cron/manager.py` | 有 `run_now` / `_run_user_job`，但同样没有「本次执行进行中」的可读状态 |
 
 所以这一条的前置条件是**后端先有一个明确的活动注册表**。用壳侧代理指标（代理里的在飞请求
 数、中继里打开的 WS 数）糊一版是不行的：空闲终端会话也算「WS 连着」，结果就是每次退出都弹
@@ -34,7 +34,7 @@
 
 ### 3.1 后端：进程内活动注册表
 
-新增 `src/octop/infra/runtime_activity.py`。纯内存、无持久化、无 IO，进程重启即清零。
+新增 `src/happyclaw/infra/runtime_activity.py`。纯内存、无持久化、无 IO，进程重启即清零。
 
 ```python
 class ActivityKind(StrEnum):
@@ -64,7 +64,7 @@ def counts() -> dict[str, int]
 
 ### 3.2 后端：只读接口
 
-新增 `src/octop/api/routers/runtime_activity.py`，挂载为 `GET /api/runtime/activity`。
+新增 `src/happyclaw/api/routers/runtime_activity.py`，挂载为 `GET /api/runtime/activity`。
 
 **路径选择**：`/api/desktop/*` 已被「远程桌面」功能占用
 （`app.py:298` 的 `_RouterMount(desktop.router, "/api", ["desktop"])`，内容是 install /
@@ -88,13 +88,13 @@ settings / status / stream / uninstall），不能借用；`/api/runtime` 目前
 - **明确不返回**：对话内容、prompt、模型名、工作区路径、任何凭据。
 - `busy = bool(items)`；`terminal` 的条目不带 `thread_id`。
 
-**鉴权**：`GET /api/runtime/activity` 加进 `src/octop/api/deps.py:41` 的
+**鉴权**：`GET /api/runtime/activity` 加进 `src/happyclaw/api/deps.py:41` 的
 `_JWT_EXEMPT_EXACT`（和 `/api/auth/device/token` 并列），理由写在注释里；路由内部调用
 `_require_desktop_loopback(request)` 做真正的把关——它要求 `desktop_shell_enabled()`
 （`OCTOP_DESKTOP_SHELL=1`，只有壳拉起的 Sidecar 才有）且对端是 loopback。
 
 > `_require_desktop_loopback` 现在是 `auth_device.py:71` 的私有函数，实施时把它提到
-> `src/octop/api/common/desktop.py`，两处共用；不要复制一份。
+> `src/happyclaw/api/common/desktop.py`，两处共用；不要复制一份。
 
 这不是「新增一个无鉴权接口」：壳自己不发 JWT，它能证明的身份就是「我是这个 Sidecar 的壳」
 +「我从本机来」，和设备凭据续期完全同一套信任边界。而且这个接口只读、只回计数。

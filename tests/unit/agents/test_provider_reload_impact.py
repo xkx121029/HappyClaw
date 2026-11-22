@@ -12,12 +12,12 @@ from unittest.mock import AsyncMock
 import pytest
 from tests.support.harness import build_harness_manager_mock
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def _make_services(tmp_path: Path):

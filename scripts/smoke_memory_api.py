@@ -14,8 +14,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from octop.api.deps import current_user, get_server
-from octop.api.routers import memory
+from happyclaw.api.deps import current_user, get_server
+from happyclaw.api.routers import memory
 
 
 class _StubPaths:
@@ -49,7 +49,7 @@ def _build_app() -> FastAPI:
     from fastapi.responses import JSONResponse
     from starlette.requests import Request
 
-    from octop.infra.errors import OctopError
+    from happyclaw.infra.errors import OctopError
 
     @app.exception_handler(OctopError)
     async def _octop_error_handler(_req: Request, exc: OctopError):
@@ -61,7 +61,7 @@ def _build_app() -> FastAPI:
 
     # Patch require_agent_row to a permissive no-op (the router calls
     # this through call_memory_rpc).
-    import octop.api.common.memory_client as memory_client
+    import happyclaw.api.common.memory_client as memory_client
 
     memory_client.require_agent_row = (  # type: ignore[assignment]
         lambda agent_id, **_: type("Row", (), {"agent_id": agent_id})()

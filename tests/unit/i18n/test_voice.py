@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import httpx
 
-from octop.i18n.domains.voice import (
+from happyclaw.i18n.domains.voice import (
     format_voice_probe_error,
     realtime_error_message,
     tencent_api_language,

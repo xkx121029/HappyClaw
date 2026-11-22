@@ -10,13 +10,13 @@ import pytest
 from happyclaw_harness.config import ModelConfig, ProviderConfig
 from happyclaw_harness.llm.factory import ChatModelFactory
 
-from octop.infra.agents.manager import AgentManager
-from octop.infra.dsh.llm.langchain_model import REQUIRED_HARNESS_VERSION
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.dsh.llm.langchain_model import REQUIRED_HARNESS_VERSION
 
 ADAPTER_MODULES = (
-    "octop.infra.dsh.llm",
-    "octop.infra.dsh.llm.factory",
-    "octop.infra.dsh.llm.langchain_model",
+    "happyclaw.infra.dsh.llm",
+    "happyclaw.infra.dsh.llm.factory",
+    "happyclaw.infra.dsh.llm.langchain_model",
 )
 
 
@@ -104,7 +104,7 @@ def test_boot_structure_mismatch_logs_error_and_keeps_the_factory(
 def test_status_query_distinguishes_installed_skipped_and_failed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.infra.dsh.llm.factory import describe_installation, install_dsh_model_factory
+    from happyclaw.infra.dsh.llm.factory import describe_installation, install_dsh_model_factory
 
     monkeypatch.delenv("OCTOP_DSH_RUNTIME", raising=False)
     monkeypatch.delenv("OCTOP_DSH_LLM", raising=False)
@@ -145,7 +145,7 @@ def test_version_warning_reaches_the_startup_log(
 ) -> None:
     _enable(monkeypatch)
     monkeypatch.setattr(
-        "octop.infra.dsh.llm.langchain_model.version", lambda _name: "9.9.9"
+        "happyclaw.infra.dsh.llm.langchain_model.version", lambda _name: "9.9.9"
     )
     agent_manager = _agent_manager_for(_FakeManager(_factory()))
 

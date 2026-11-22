@@ -20,8 +20,8 @@ import pytest
 from fastapi import WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
-from octop.api.routers import terminal
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.api.routers import terminal
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 posix_only = pytest.mark.skipif(os.name != "posix", reason="POSIX terminal required")
 

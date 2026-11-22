@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.infra.knowledge import embed
+from happyclaw.infra.knowledge import embed
 
 
 def test_remote_embedding_routes_to_provider_embeddings_endpoint(monkeypatch) -> None:

@@ -11,14 +11,14 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.connectors import qcc
-from octop.infra.connectors.service import ConnectorService
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.connectors import ConnectorRepo
-from octop.infra.db.repos.secrets import SecretRepo
-from octop.infra.db.repos.settings import SettingsRepo
+from happyclaw.config import OctopConfig
+from happyclaw.infra.connectors import qcc
+from happyclaw.infra.connectors.service import ConnectorService
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.connectors import ConnectorRepo
+from happyclaw.infra.db.repos.secrets import SecretRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
 
 
 def service(pool: SqlitePool, repo: ConnectorRepo | None = None) -> ConnectorService:
@@ -149,7 +149,7 @@ async def test_concurrent_refresh_across_service_instances(grant, monkeypatch):
         }
 
     mocked = AsyncMock(side_effect=refresh)
-    monkeypatch.setattr("octop.infra.connectors.service.refresh_oauth_credentials", mocked)
+    monkeypatch.setattr("happyclaw.infra.connectors.service.refresh_oauth_credentials", mocked)
     tasks = [
         asyncio.create_task(service(pool, repo).ensure_fresh_credentials("grant", "qcc"))
         for _ in range(10)
@@ -223,7 +223,7 @@ async def test_401_refreshes_once_and_retries(grant, monkeypatch):
         }
     )
     monkeypatch.setattr(qcc, "request_resource", request)
-    monkeypatch.setattr("octop.infra.connectors.service.refresh_oauth_credentials", refresh)
+    monkeypatch.setattr("happyclaw.infra.connectors.service.refresh_oauth_credentials", refresh)
     result = await svc.handle_qcc_request(
         "grant", {"id": 1, "method": "tools/call", "params": {"name": "risk__lookup"}}
     )
@@ -261,7 +261,7 @@ async def test_disconnect_waits_for_rotation_without_resurrecting_grant(grant, m
             "expires_at": int(time.time()) + 3600,
         }
 
-    monkeypatch.setattr("octop.infra.connectors.service.refresh_oauth_credentials", refresh)
+    monkeypatch.setattr("happyclaw.infra.connectors.service.refresh_oauth_credentials", refresh)
     revoke = AsyncMock()
     monkeypatch.setattr(qcc, "revoke", revoke)
     rotating = asyncio.create_task(svc.ensure_fresh_credentials("grant", "qcc"))
@@ -287,7 +287,7 @@ async def test_repeated_401_stops_after_one_retry(grant, monkeypatch):
     request = AsyncMock(side_effect=exc)
     refresh = AsyncMock(return_value={"access_token": "new", "expires_at": int(time.time()) + 3600})
     monkeypatch.setattr(qcc, "request_resource", request)
-    monkeypatch.setattr("octop.infra.connectors.service.refresh_oauth_credentials", refresh)
+    monkeypatch.setattr("happyclaw.infra.connectors.service.refresh_oauth_credentials", refresh)
     result = await svc.handle_qcc_request(
         "grant", {"id": 1, "method": "tools/call", "params": {"name": "risk__lookup"}}
     )
@@ -381,7 +381,7 @@ async def test_concurrent_401_requests_share_rotated_token(grant, monkeypatch):
         }
     )
     monkeypatch.setattr(qcc, "request_resource", request)
-    monkeypatch.setattr("octop.infra.connectors.service.refresh_oauth_credentials", refresh)
+    monkeypatch.setattr("happyclaw.infra.connectors.service.refresh_oauth_credentials", refresh)
     results = await asyncio.gather(
         *(
             service(pool, repo)._qcc_request("grant", resource, "tools/call", {"name": "lookup"})
@@ -408,7 +408,7 @@ async def test_other_remote_oauth_keeps_refresh_path(grant, monkeypatch):
     )
     refresh = AsyncMock(return_value={"access_token": "new", "expires_at": 9999999999})
     qcc_refresh = AsyncMock(side_effect=AssertionError("QCC branch must not run"))
-    monkeypatch.setattr("octop.infra.connectors.service.refresh_oauth_credentials", refresh)
+    monkeypatch.setattr("happyclaw.infra.connectors.service.refresh_oauth_credentials", refresh)
     monkeypatch.setattr(svc, "_fresh_qcc", qcc_refresh)
     result = await svc.ensure_fresh_credentials("notion", "notion")
     assert result["access_token"] == "new"

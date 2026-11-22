@@ -10,7 +10,7 @@ MODEL = "BAAI/bge-small-zh-v1.5"
 
 def _seed_cache(home: Path, model: str) -> None:
     """Lay down a cache that looks like a finished fastembed download."""
-    from octop.infra.agents.providers.onnx_service import model_cache_dir
+    from happyclaw.infra.agents.providers.onnx_service import model_cache_dir
 
     snap = model_cache_dir(model) / "snapshots" / "abc123"
     (snap / "onnx").mkdir(parents=True)
@@ -22,7 +22,7 @@ async def test_enable_without_weights_is_rejected(
 ) -> None:
     """Enabling a model that was never downloaded must not persist enabled=True."""
     client, _server, auth = env
-    from octop.infra.agents.providers import onnx_service
+    from happyclaw.infra.agents.providers import onnx_service
 
     monkeypatch.setattr(onnx_service, "ensure_local_embedding_deps_async", _ready)
 
@@ -42,7 +42,7 @@ async def test_enable_succeeds_once_weights_are_present(
     env: Any, tmp_octop_home: Path, monkeypatch: Any
 ) -> None:
     client, _server, auth = env
-    from octop.infra.agents.providers import onnx_service
+    from happyclaw.infra.agents.providers import onnx_service
 
     monkeypatch.setattr(onnx_service, "ensure_local_embedding_deps_async", _ready)
     monkeypatch.setattr(onnx_service, "local_embedding_deps_available", lambda: True)
@@ -65,7 +65,7 @@ async def test_activate_reports_downloaded_nested_weights(
 ) -> None:
     """Regression: nested per-tower weights used to fail activation."""
     client, _server, auth = env
-    from octop.infra.agents.providers import onnx_service
+    from happyclaw.infra.agents.providers import onnx_service
 
     monkeypatch.setattr(onnx_service, "ensure_local_embedding_deps_async", _ready)
     monkeypatch.setattr(onnx_service, "local_embedding_deps_available", lambda: True)
@@ -103,7 +103,7 @@ async def test_knowledge_onnx_test_uses_knowledge_settings_permission(
     from tests.support.auth import create_user
 
     client, _server, admin_auth = env
-    from octop.infra.agents.providers import onnx_service
+    from happyclaw.infra.agents.providers import onnx_service
 
     monkeypatch.setattr(onnx_service, "ensure_local_embedding_deps_async", _ready)
     monkeypatch.setattr(onnx_service, "local_embedding_deps_available", lambda: True)
@@ -134,7 +134,7 @@ async def test_knowledge_onnx_test_reports_missing_weights(
 ) -> None:
     """A model with no weights yields a local message, never a remote error."""
     client, _server, auth = env
-    from octop.infra.agents.providers import onnx_service
+    from happyclaw.infra.agents.providers import onnx_service
 
     monkeypatch.setattr(onnx_service, "ensure_local_embedding_deps_async", _ready)
 

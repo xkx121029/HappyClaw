@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.server import OctopServer
+from happyclaw.infra.server import OctopServer
 from tests.support.app import ensure_control_plane_bound
 
 

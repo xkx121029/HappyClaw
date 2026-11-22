@@ -16,7 +16,7 @@
 | 3 | 必须走 bridge 管道；HITL 仅在 `OCTOP_DSH_HITL` 开启时审批，关闭时高危拒绝 | 一律 `registry.build_pipeline(guardrail=ToolGuardrail(...))`；`approval=None` 时 `TOOL_APPROVAL_UNAVAILABLE` 拒绝 |
 | 4 | 插入点只在 `manager.py` 的 `merged_tools` 合并处 | `_build_harness_config` 中 `merged_tools.extend(plugin_tools)` 之后一个 `# dsh:stage-tools` 块 |
 | 5 | fixture 跑通「模型请求工具 → 执行 → 结果回对话」；名字冲突明确处理 | `tests/dsh_integration/test_tools_end_to_end.py`；冲突 → `name_conflict` 跳过并记录，绝不覆盖 |
-| 6 | 关闭时：不发现、不 import、不改 `merged_tools`，`sys.modules` 证明 | `test_tools_switch.py` 断言 `octop.infra.dsh.tools*` 不在 `sys.modules`，且工具列表与基线逐项相等 |
+| 6 | 关闭时：不发现、不 import、不改 `merged_tools`，`sys.modules` 证明 | `test_tools_switch.py` 断言 `happyclaw.infra.dsh.tools*` 不在 `sys.modules`，且工具列表与基线逐项相等 |
 
 ---
 
@@ -52,11 +52,11 @@ DSH 包的载体是 `package.json` + `cordis.patch.yml` + `index.js`（`tests/ds
 
 ## 3. 新增文件
 
-### 3.1 `src/octop/infra/dsh/tools/__init__.py`
+### 3.1 `src/happyclaw/infra/dsh/tools/__init__.py`
 
 导出：`DshToolBuild`、`DshToolSkip`、`DshToolProvider`、`build_dsh_plugin_tools`、`discover_dsh_plugins`、`DshToolCatalogStatus`（见 3.4）、原因常量。
 
-### 3.2 `src/octop/infra/dsh/tools/discovery.py`
+### 3.2 `src/happyclaw/infra/dsh/tools/discovery.py`
 
 ```python
 ORIGIN_MARKET = "market"
@@ -96,7 +96,7 @@ def discover_dsh_plugins(
 - 任一发现源抛异常 → 捕获，转成 `DshToolSkip(reason="discovery_failed", detail="类型:消息")` 并记 warning；发现结果照常返回（不因为一个源坏掉影响启动）。
 - 全部只读：不写盘、不 import 插件代码、不执行 JS。
 
-### 3.3 `src/octop/infra/dsh/tools/gate.py`
+### 3.3 `src/happyclaw/infra/dsh/tools/gate.py`
 
 ```python
 SKIP_NOT_TOOL = "not_tool_capability"
@@ -125,7 +125,7 @@ def is_tool_plugin(envelope: PluginEnvelope) -> bool
 - 不做「推断权限」：只看 `envelope.permissions`。
 - 所有跳过记录都带 `plugin_id`，冲突/定义类再带 `tool`，因此「某个插件因为什么被跳过」可按插件或按工具直接查。
 
-### 3.4 `src/octop/infra/dsh/tools/guardrail.py`
+### 3.4 `src/happyclaw/infra/dsh/tools/guardrail.py`
 
 ```python
 READ_ONLY_NOTE = "read-only DSH tool: no fs.write/exec/network declared"
@@ -147,7 +147,7 @@ def build_read_only_guardrail(
 - `approval = approval if hitl else None`。**关闭 HITL 时高危调用得到 `TOOL_APPROVAL_UNAVAILABLE` 拒绝**（`approval.py:476-484`）。
 - `baseline_risk=LOW`，`approval_threshold=MEDIUM`，`ledger` 透传。
 
-### 3.5 `src/octop/infra/dsh/tools/catalog.py`
+### 3.5 `src/happyclaw/infra/dsh/tools/catalog.py`
 
 ```python
 ToolProvider = Callable[[PluginEnvelope], Sequence[ToolDefinition]]
@@ -184,7 +184,7 @@ def build_dsh_plugin_tools(
 
 ---
 
-## 4. 改动 `src/octop/infra/agents/manager.py`
+## 4. 改动 `src/happyclaw/infra/agents/manager.py`
 
 ### 4.1 插入点（唯一）
 
@@ -195,13 +195,13 @@ def build_dsh_plugin_tools(
         ...
         merged_tools.extend(plugin_tools)
         # dsh:stage-tools — 唯一插入点。关闭时不 import、不发现、不改列表。
-        from octop.infra.dsh import switches as dsh_switches
+        from happyclaw.infra.dsh import switches as dsh_switches
         if dsh_switches.stage_enabled("tools"):
             merged_tools.extend(self._dsh_plugin_tools(row, reserved=tuple(merged_tools)))
 ```
 
 - `switches` 是 stdlib-only 模块，关闭时只多一次 dict 查找。
-- `_dsh_plugin_tools` 内部才 `from octop.infra.dsh.tools import build_dsh_plugin_tools`。
+- `_dsh_plugin_tools` 内部才 `from happyclaw.infra.dsh.tools import build_dsh_plugin_tools`。
 
 ### 4.2 新增方法
 
@@ -210,7 +210,7 @@ def build_dsh_plugin_tools(
         """登记某个 dsh:<native> 插件的工具体。S2 唯一的工具体入口。"""
 
     def _dsh_plugin_tools(self, row: AgentRow, *, reserved: Sequence[Any]) -> list[Any]:
-        from octop.infra.dsh.tools import build_dsh_plugin_tools
+        from happyclaw.infra.dsh.tools import build_dsh_plugin_tools
         build = build_dsh_plugin_tools(
             scope=str(row.id),
             market_root=os.environ.get("OCTOP_DSH_MARKET_ROOT") or None,
@@ -233,7 +233,7 @@ def build_dsh_plugin_tools(
 
 - `__init__` 初始化 `self._dsh_tool_providers: dict[str, DshToolProvider] = {}` 与 `self._dsh_tools_status: DshToolBuild | None = None`。
 - **provider 注入是可选参数**：默认空字典；未注入时不产生任何工具，行为与改动前一致（只多一次开关判定与一次空目录发现）。
-- **不在模块导入期发现**：`manager.py` 顶层不 import `octop.infra.dsh.tools`；发现只发生在 `_dsh_plugin_tools()` 内，即 `stage_enabled("tools")` 为真且 `_build_harness_config` 被调用时。
+- **不在模块导入期发现**：`manager.py` 顶层不 import `happyclaw.infra.dsh.tools`；发现只发生在 `_dsh_plugin_tools()` 内，即 `stage_enabled("tools")` 为真且 `_build_harness_config` 被调用时。
 - `_dsh_local_roots()` 为模块级小函数：读 `OCTOP_DSH_TOOL_ROOTS`，空则 `()`。不设默认目录，避免扫描用户主目录。
 
 ### 4.3 状态查询
@@ -258,9 +258,9 @@ def build_dsh_plugin_tools(
 
 1. 单测：`monkeypatch.delenv("OCTOP_DSH_RUNTIME")` + `manager._build_harness_config(_row())`，断言：
    - 返回的 `cfg.tools` 与同条件基线逐项 `name` 相等（`dsh_` 前缀数量为 0）；
-   - `"octop.infra.dsh.tools" not in sys.modules`，且 `octop.infra.dsh.tools.catalog` 同样不在；
+   - `"happyclaw.infra.dsh.tools" not in sys.modules`，且 `happyclaw.infra.dsh.tools.catalog` 同样不在；
    - `manager._dsh_tools_status is None`。
-2. 若环境此前已 import 过（同进程其它测试），测试内先 `pop` 相关模块并断言前后一致；用 `monkeypatch.setitem(sys.modules, ...)` 不适用，改为「只断言本次调用未新增」：调用前后取 `set(sys.modules)` 差集，断言不含 `octop.infra.dsh.tools` 前缀。
+2. 若环境此前已 import 过（同进程其它测试），测试内先 `pop` 相关模块并断言前后一致；用 `monkeypatch.setitem(sys.modules, ...)` 不适用，改为「只断言本次调用未新增」：调用前后取 `set(sys.modules)` 差集，断言不含 `happyclaw.infra.dsh.tools` 前缀。
 3. provider 未注入（默认）时，即便开关打开，工具列表也只多出零项；`dsh_tools_status()` 中每个被发现的插件都有 `no_tool_provider` 或 `unsafe_permission` 记录，没有静默丢弃。
 
 ---
@@ -315,7 +315,7 @@ def build_dsh_plugin_tools(
 
 ## 8. 风险与未确认
 
-1. **未确认**：生产环境市场安装根尚无落点（`MarketInstallSource` 在 `src/octop` 内无构造）。S2 因此只认 `OCTOP_DSH_MARKET_ROOT`，不猜目录；S9 接市场时统一。
+1. **未确认**：生产环境市场安装根尚无落点（`MarketInstallSource` 在 `src/happyclaw` 内无构造）。S2 因此只认 `OCTOP_DSH_MARKET_ROOT`，不猜目录；S9 接市场时统一。
 2. **未确认**：真实 DSH 插件的工具体格式。S2 用 provider 注入；不执行 JS、不解析未定义的清单字段。
 3. `CapabilityDecision` 无法表达 `not_applicable` 覆盖度，`SandboxBacking` 会记为 `unknown/backed=False`；S2 不开启 `require_sandbox_backing`，不影响执行，S4 再补真实探针。
 4. 工具名最长 64 字符，`DshToolRegistry.exposed_name` 已有哈希兜底，不另写逻辑。

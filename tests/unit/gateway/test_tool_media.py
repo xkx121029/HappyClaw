@@ -12,13 +12,13 @@ from deepagents.backends.local_shell import LocalShellBackend
 from happyclaw_harness.backends import resolve_backend
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
-from octop.infra.backend.resolver import default_agent_backend_spec
-from octop.infra.gateway.media.backend_files import (
+from happyclaw.infra.backend.resolver import default_agent_backend_spec
+from happyclaw.infra.gateway.media.backend_files import (
     ensure_workspace_media_path,
 )
-from octop.infra.gateway.media.constants import INBOUND_DIR, OUTBOUND_DIR
-from octop.infra.gateway.media.ingress import AgentBackedMediaBackend
-from octop.infra.gateway.media.tool_media import (
+from happyclaw.infra.gateway.media.constants import INBOUND_DIR, OUTBOUND_DIR
+from happyclaw.infra.gateway.media.ingress import AgentBackedMediaBackend
+from happyclaw.infra.gateway.media.tool_media import (
     attachment_frames_from_tool_result,
     enrich_media_block_preview,
     enrich_tool_result_with_backend,
@@ -401,7 +401,7 @@ async def test_enrich_send_file_rewrites_path_to_dashboard_api() -> None:
 
 
 def test_dashboard_media_url_uses_path_agent_id() -> None:
-    from octop.infra.gateway.media.backend_files import dashboard_media_url
+    from happyclaw.infra.gateway.media.backend_files import dashboard_media_url
 
     path = "file:///Users/me/.octop/agents/W4MFVJ/outbound/screenshots/harness.png"
     url = dashboard_media_url("6X3Z7C", path)
@@ -416,7 +416,7 @@ async def test_resolve_preview_keeps_host_absolute_screenshot() -> None:
     from deepagents.backends.local_shell import LocalShellBackend
     from happyclaw_harness.backends.workspace import BackendWorkspace
 
-    from octop.infra.gateway.media.backend_files import resolve_preview_payload
+    from happyclaw.infra.gateway.media.backend_files import resolve_preview_payload
 
     with tempfile.TemporaryDirectory() as ws:
         shots = Path(ws) / "outbound" / "screenshots"
@@ -439,7 +439,7 @@ async def test_resolve_preview_keeps_host_absolute_screenshot() -> None:
 
 @pytest.mark.asyncio
 async def test_enrich_plain_text_screenshot_output() -> None:
-    from octop.infra.gateway.media.tool_media import enrich_tool_output_string
+    from happyclaw.infra.gateway.media.tool_media import enrich_tool_output_string
 
     text = (
         "Screenshot saved to /Users/me/.octop/agents/A1/outbound/screenshots/harness.png "
@@ -460,14 +460,14 @@ async def test_enrich_plain_text_screenshot_output() -> None:
 
 @pytest.mark.parametrize("prefix", ["", "See ", '"', "'", "(", "\n"])
 def test_plain_text_outbound_image_at_token_boundary(prefix: str) -> None:
-    from octop.infra.gateway.media.tool_media import _plain_text_image_path
+    from happyclaw.infra.gateway.media.tool_media import _plain_text_image_path
 
     path = "/workspace/outbound/screenshots/chart.PNG"
     assert _plain_text_image_path(f"{prefix}{path})") == path
 
 
 def test_plain_text_image_scan_handles_long_web_output() -> None:
-    from octop.infra.gateway.media.tool_media import enrich_tool_output_string_sync
+    from happyclaw.infra.gateway.media.tool_media import enrich_tool_output_string_sync
 
     # A long URL/encoded token without an image used to stall the event loop.
     text = "Fetched page: https://example.com/" + "a" * 100_000
@@ -478,7 +478,7 @@ def test_plain_text_image_scan_handles_long_web_output() -> None:
 
 @pytest.mark.parametrize("kind", [{"nested": "value"}, ["custom"]])
 def test_history_tool_output_preserves_non_media_type(kind: object) -> None:
-    from octop.infra.gateway.media.tool_media import enrich_tool_output_string_sync
+    from happyclaw.infra.gateway.media.tool_media import enrich_tool_output_string_sync
 
     payload = {"type": kind, "data": "ordinary tool result"}
     output = enrich_tool_output_string_sync(json.dumps(payload), agent_id="A1")
@@ -486,7 +486,7 @@ def test_history_tool_output_preserves_non_media_type(kind: object) -> None:
 
 
 def test_is_media_push_tool_allowlist() -> None:
-    from octop.infra.gateway.media.tool_media import is_media_push_tool
+    from happyclaw.infra.gateway.media.tool_media import is_media_push_tool
 
     assert is_media_push_tool("send_file_to_user")
     assert is_media_push_tool("namespace/desktop_screenshot")
@@ -574,7 +574,7 @@ async def test_plain_text_media_invent_only_for_delivery_tools() -> None:
 
 
 def test_select_turn_tool_results_drops_history_after_a_live_call() -> None:
-    from octop.infra.gateway.media.tool_media import select_turn_tool_results
+    from happyclaw.infra.gateway.media.tool_media import select_turn_tool_results
 
     emitted: set[str] = set()
     history = {
@@ -598,7 +598,7 @@ def test_select_turn_tool_results_drops_history_after_a_live_call() -> None:
 def test_select_turn_tool_results_reads_tool_message_objects() -> None:
     from langchain_core.messages import ToolMessage
 
-    from octop.infra.gateway.media.tool_media import select_turn_tool_results
+    from happyclaw.infra.gateway.media.tool_media import select_turn_tool_results
 
     emitted: set[str] = set()
     history = {
@@ -614,7 +614,7 @@ def test_select_turn_tool_results_reads_tool_message_objects() -> None:
 
 
 def test_dedup_tool_result_messages_skips_replayed_ids() -> None:
-    from octop.infra.gateway.media.tool_media import dedup_tool_result_messages
+    from happyclaw.infra.gateway.media.tool_media import dedup_tool_result_messages
 
     emitted: set[str] = set()
     first = {
@@ -647,7 +647,7 @@ def test_dedup_tool_result_messages_skips_replayed_ids() -> None:
 @pytest.mark.asyncio
 async def test_iter_dashboard_attachment_frames_requires_live_tool_call() -> None:
     """Historical tool results are pushed only when this turn opened their id."""
-    from octop.infra.gateway.media.tool_media import iter_dashboard_attachment_frames
+    from happyclaw.infra.gateway.media.tool_media import iter_dashboard_attachment_frames
 
     with tempfile.TemporaryDirectory() as ws:
         workspace = _workspace(ws)
@@ -750,7 +750,7 @@ async def test_iter_dashboard_attachment_frames_requires_live_tool_call() -> Non
 
 
 def test_attachment_frame_dedup_key_prefers_path() -> None:
-    from octop.infra.gateway.media.tool_media import attachment_frame_dedup_key
+    from happyclaw.infra.gateway.media.tool_media import attachment_frame_dedup_key
 
     assert (
         attachment_frame_dedup_key(
@@ -767,7 +767,7 @@ async def test_block_to_content_part_reads_workspace_relative_image() -> None:
 
     from happyclaw_gateway.models import ImageContent
 
-    from octop.infra.gateway.media.tool_media import block_to_content_part
+    from happyclaw.infra.gateway.media.tool_media import block_to_content_part
 
     with tempfile.TemporaryDirectory() as ws:
         workspace = _workspace(ws)
@@ -806,7 +806,7 @@ async def test_block_to_content_part_reads_workspace_relative_image() -> None:
 async def test_block_to_content_part_drops_unsafe_paths_and_keeps_http() -> None:
     from happyclaw_gateway.models import ImageContent
 
-    from octop.infra.gateway.media.tool_media import block_to_content_part
+    from happyclaw.infra.gateway.media.tool_media import block_to_content_part
 
     with tempfile.TemporaryDirectory() as ws:
         workspace = _workspace(ws)
@@ -862,7 +862,7 @@ async def test_project_stream_sends_only_this_turn_relative_image() -> None:
     from langchain_core.messages import ToolMessage
     from happyclaw_gateway.models import ImageContent, MessageEventType
 
-    from octop.infra.gateway.process.stream_project import project_stream
+    from happyclaw.infra.gateway.process.stream_project import project_stream
 
     with tempfile.TemporaryDirectory() as ws:
         workspace = _default_virtual_workspace(ws)
@@ -916,7 +916,7 @@ async def test_project_stream_drops_media_when_tool_call_has_no_id() -> None:
     from langchain_core.messages import ToolMessage
     from happyclaw_gateway.models import ImageContent, MessageEventType
 
-    from octop.infra.gateway.process.stream_project import project_stream
+    from happyclaw.infra.gateway.process.stream_project import project_stream
 
     with tempfile.TemporaryDirectory() as ws:
         workspace = _workspace(ws)

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.connectors.gateway import cli_dirs, cli_runner
+from happyclaw.infra.connectors.gateway import cli_dirs, cli_runner
 
 
 def test_resolve_binary_missing_does_not_suggest_npm(
@@ -32,7 +32,7 @@ def test_format_cli_error_strips_cli_hints() -> None:
 
 def test_cleanup_removes_instance_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.infra.utils.paths import PathLayout
 
     layout = PathLayout.from_env()
     target = layout.ensure_connector_cli_instance_dir("feishu-cli", "inst1")

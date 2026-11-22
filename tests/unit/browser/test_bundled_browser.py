@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from octop.infra.control.browser.bundled import (
+from happyclaw.infra.control.browser.bundled import (
     browser_enabled,
     bundled_browser,
     confirm_browser_enabled,

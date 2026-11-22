@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.plugins.market import (
+from happyclaw.infra.plugins.market import (
     CapabilityExpansionError,
     MarketplaceIndex,
     verify_install,

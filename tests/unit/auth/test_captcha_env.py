@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.auth.captcha import config as captcha_config
-from octop.infra.auth.captcha import current_env, install_env, snapshot_env, validate_boot
+from happyclaw.infra.auth.captcha import config as captcha_config
+from happyclaw.infra.auth.captcha import current_env, install_env, snapshot_env, validate_boot
 
 
 @pytest.fixture(autouse=True)

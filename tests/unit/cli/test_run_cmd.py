@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
+from happyclaw.cli.main import cli
 
 
 def test_run_help_lists_finnie_aligned_flags() -> None:
@@ -36,7 +36,7 @@ def test_run_dispatches_to_uvicorn(monkeypatch: pytest.MonkeyPatch) -> None:
     def _fake(**kw: object) -> None:
         captured.update(kw)
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
     runner = CliRunner()
@@ -66,7 +66,7 @@ def test_run_reads_host_port_from_config_by_default(
     def _fake(**kw: object) -> None:
         captured.update(kw)
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -92,7 +92,7 @@ def test_run_cli_args_override_config(monkeypatch: pytest.MonkeyPatch, tmp_path:
     def _fake(**kw: object) -> None:
         captured.update(kw)
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -117,7 +117,7 @@ def test_run_rejects_unbindable_port_before_saving_config(
     def _fake(**_kw: object) -> None:
         raise AssertionError("uvicorn must not be started")
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -139,7 +139,7 @@ def test_run_accepts_zero_port_as_os_assigned(
     def _fake(**kw: object) -> None:
         captured.update(kw)
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -163,7 +163,7 @@ def test_run_writes_config_before_uvicorn_starts(
         if config_path.exists():
             written_before_uvicorn.update(json.loads(config_path.read_text(encoding="utf-8")))
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -192,7 +192,7 @@ def test_run_writes_config_even_on_uvicorn_failure(
     def _fake(**_kw: object) -> None:
         raise RuntimeError("port already in use")
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -218,7 +218,7 @@ def test_run_merges_with_existing_config(monkeypatch: pytest.MonkeyPatch, tmp_pa
     def _fake(**_kw: object) -> None:
         return None
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -254,7 +254,7 @@ def test_run_reports_corrupt_config_cleanly(
     def _fake(**kw: object) -> None:
         captured.update(kw)
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -286,7 +286,7 @@ def test_run_does_not_overwrite_corrupt_config(
     def _fake(**_kw: object) -> None:
         return None
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -310,7 +310,7 @@ def test_run_port_zero_not_overridden_by_config(
     def _fake(**kw: object) -> None:
         captured.update(kw)
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 
@@ -335,7 +335,7 @@ def test_run_reads_legacy_host_key_for_compatibility(
     def _fake(**kw: object) -> None:
         captured.update(kw)
 
-    import octop.cli.commands.run as run_cmd
+    import happyclaw.cli.commands.run as run_cmd
 
     monkeypatch.setattr(run_cmd, "_run_uvicorn", _fake)
 

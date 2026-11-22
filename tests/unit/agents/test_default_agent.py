@@ -8,16 +8,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.infra.agents.experts.catalog import ExpertCatalog
-from octop.infra.agents.experts.default_agent import (
+from happyclaw.infra.agents.experts.catalog import ExpertCatalog
+from happyclaw.infra.agents.experts.default_agent import (
     DEFAULT_EXPERT_ID,
     SETUP_DEFAULT_AGENT_ID,
     bootstrap_default_agent,
     default_home_local_backend,
     materialize_market_expert,
 )
-from octop.infra.errors import OctopError
-from octop.infra.utils.host_dirs import host_fs_tree_root
+from happyclaw.infra.errors import OctopError
+from happyclaw.infra.utils.host_dirs import host_fs_tree_root
 
 
 def _write_expert(root: Path, expert_id: str) -> None:

@@ -4,14 +4,14 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.infra.agents.experts.composer_files import (
+from happyclaw.infra.agents.experts.composer_files import (
     ComposerWorkspacePatch,
     apply_composer_workspace_patch,
     composer_copies_from_payload,
     composer_patch_from_payload,
     normalize_composer_relpath,
 )
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 @pytest.mark.parametrize(
@@ -135,7 +135,7 @@ async def test_hub_skill_failure_is_reported_not_raised(monkeypatch: pytest.Monk
         raise RuntimeError("marketplace down")
 
     monkeypatch.setattr(
-        "octop.infra.skills.skillhub_market.download_skillhub_package",
+        "happyclaw.infra.skills.skillhub_market.download_skillhub_package",
         boom,
     )
     workspace = _FakeWorkspace()

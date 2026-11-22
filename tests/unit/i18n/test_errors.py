@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.i18n import error_message
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.utils.locale import resolve_request_locale
+from happyclaw.i18n import error_message
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.utils.locale import resolve_request_locale
 
 
 def test_every_error_code_has_i18n_entry():
@@ -52,7 +52,7 @@ def test_resolve_request_locale_from_accept_language():
 def test_dashboard_api_errors_match_backend():
     repo = Path(__file__).resolve().parents[3]
     dash_en = json.loads((repo / "dashboard/src/locales/en.json").read_text(encoding="utf-8"))
-    backend_en = json.loads((repo / "src/octop/i18n/en.json").read_text(encoding="utf-8"))
+    backend_en = json.loads((repo / "src/happyclaw/i18n/en.json").read_text(encoding="utf-8"))
     dash_codes = set(dash_en["apiErrors"].keys())
     backend_codes = set(backend_en["errors"].keys())
     assert backend_codes == {c.value for c in ErrorCode}
@@ -94,7 +94,7 @@ def test_knowledge_doc_too_large_interpolates_max_mb():
 def test_localized_message_falls_back_when_key_missing(monkeypatch: pytest.MonkeyPatch):
     err = OctopError(ErrorCode.AUTH_FAILED, "custom detail")
     monkeypatch.setattr(
-        "octop.infra.errors.i18n_error_message",
+        "happyclaw.infra.errors.i18n_error_message",
         lambda *_a, **_k: (_ for _ in ()).throw(KeyError("errors.X")),
     )
     assert err.localized_message("zh") == "custom detail"

@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 
-from octop.infra.auth.captcha import get_provider, list_providers, parse_slug, register
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.auth.captcha import get_provider, list_providers, parse_slug, register
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def test_parse_slug_rejects_unknown() -> None:
@@ -81,7 +81,7 @@ class _FakeStrong:
 
 
 def test_register_makes_test_double_reachable(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.auth.captcha import providers as captcha_providers
+    from happyclaw.infra.auth.captcha import providers as captcha_providers
 
     monkeypatch.setattr(captcha_providers, "_REGISTRY", dict(captcha_providers._REGISTRY))
     register(_FakeStrong())

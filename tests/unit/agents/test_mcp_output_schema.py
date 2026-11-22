@@ -13,7 +13,7 @@ from langgraph.errors import GraphInterrupt
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolNode
 from langgraph.runtime import Runtime
 
-from octop.infra.agents.middleware import mcp_output_schema
+from happyclaw.infra.agents.middleware import mcp_output_schema
 
 _SCHEMA_ERROR = RuntimeError(
     "Invalid structured content returned by tool manage.search_file: "

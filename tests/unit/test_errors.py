@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def test_octop_error_carries_code_and_status():

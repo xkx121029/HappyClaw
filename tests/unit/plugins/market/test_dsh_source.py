@@ -7,8 +7,8 @@ from collections.abc import Callable
 
 import pytest
 
-from octop.infra.plugins.market import DshSource, IndexFormatError
-from octop.infra.plugins.runtime.contract import PluginKind
+from happyclaw.infra.plugins.market import DshSource, IndexFormatError
+from happyclaw.infra.plugins.runtime.contract import PluginKind
 
 from .conftest import dsh_git_zip, dsh_tarball
 

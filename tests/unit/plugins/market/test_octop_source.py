@@ -6,14 +6,14 @@ from dataclasses import replace
 
 import pytest
 
-from octop.infra.plugins.market import (
+from happyclaw.infra.plugins.market import (
     ChecksumMismatchError,
     IndexUnusableError,
     OctopSource,
 )
-from octop.infra.plugins.market.digest import sha256_bytes
-from octop.infra.plugins.market.errors import PayloadError
-from octop.infra.plugins.runtime.contract import (
+from happyclaw.infra.plugins.market.digest import sha256_bytes
+from happyclaw.infra.plugins.market.errors import PayloadError
+from happyclaw.infra.plugins.runtime.contract import (
     CapabilityKind,
     PluginKind,
     PluginRequirement,

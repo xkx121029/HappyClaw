@@ -90,7 +90,7 @@ def test_images_bake_desktop_without_starting_or_downloading_laya() -> None:
     """Both images install the desktop stack and leave Xvnc stopped."""
     repo = Path(__file__).resolve().parents[2]
     bake = (repo / "docker" / "bake-desktop.sh").read_text(encoding="utf-8")
-    install = (repo / "src/octop/infra/control/desktop/scripts/linux/v1.0/install.sh").read_text(
+    install = (repo / "src/happyclaw/infra/control/desktop/scripts/linux/v1.0/install.sh").read_text(
         encoding="utf-8"
     )
     assert "--no-start" in bake

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from click.testing import CliRunner
 
-from octop.cli.main import cli
+from happyclaw.cli.main import cli
 
 
 def test_version_prints_orca_version() -> None:

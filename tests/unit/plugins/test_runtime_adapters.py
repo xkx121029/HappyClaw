@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.plugins.runtime.contract import (
+from happyclaw.infra.plugins.runtime.contract import (
     ActivationContext,
     CapabilityKind,
     InvalidManifestError,
@@ -28,8 +28,8 @@ from octop.infra.plugins.runtime.contract import (
     PluginSourceKind,
     VersionConflictError,
 )
-from octop.infra.plugins.runtime.dsh_plugin import DshPluginLoader
-from octop.infra.plugins.runtime.octop_plugin import OctopPluginLoader
+from happyclaw.infra.plugins.runtime.dsh_plugin import DshPluginLoader
+from happyclaw.infra.plugins.runtime.octop_plugin import OctopPluginLoader
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _OCTOP_PLUGINS = _REPO_ROOT / "plugins"

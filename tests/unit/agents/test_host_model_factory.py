@@ -8,8 +8,8 @@ import pytest
 from happyclaw_harness.config import ModelConfig, ProviderConfig
 from happyclaw_harness.llm.factory import ChatModelFactory
 
-from octop.infra.agents.providers.host_factory import HostModelFactory
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.agents.providers.host_factory import HostModelFactory
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def _provider(provider_id: str, *model_ids: str, disabled: str = "") -> ProviderConfig:

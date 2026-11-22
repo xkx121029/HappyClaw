@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.plugins.bridge import (
     ApprovalRequest,
     CapabilityDecision,
     DshToolErrorCode,
@@ -17,7 +17,7 @@ from octop.infra.plugins.bridge import (
     RiskLevel,
     ToolPipeline,
 )
-from octop.infra.plugins.bridge.approval import ToolGuardrail
+from happyclaw.infra.plugins.bridge.approval import ToolGuardrail
 
 
 class FakeGraphPause(Exception):

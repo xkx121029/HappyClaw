@@ -5,11 +5,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.user_roles import BUILTIN_USER_ROLE_IDS, UserRoleRepo, parse_policies
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.users.permissions import BASELINE_PERMISSIONS
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.user_roles import BUILTIN_USER_ROLE_IDS, UserRoleRepo, parse_policies
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.users.permissions import BASELINE_PERMISSIONS
 
 
 def test_seeded_roles_leave_existing_users_unchanged(tmp_path: Path) -> None:
@@ -76,9 +76,9 @@ def test_role_repo_roundtrip(tmp_path: Path) -> None:
 
 
 def test_cli_and_seed_follow_preset_user_role(tmp_path: Path) -> None:
-    from octop.cli.support.offline_ops import create_user_offline
-    from octop.infra.db.repos.user_roles import seeded_user_role_assignment
-    from octop.infra.users.permissions import BASELINE_PERMISSIONS
+    from happyclaw.cli.support.offline_ops import create_user_offline
+    from happyclaw.infra.db.repos.user_roles import seeded_user_role_assignment
+    from happyclaw.infra.users.permissions import BASELINE_PERMISSIONS
 
     home = tmp_path / "home"
     created = create_user_offline(

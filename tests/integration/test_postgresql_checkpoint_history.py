@@ -21,7 +21,7 @@ async def test_postgres_checkpoint_history_uses_graph_reader(
     from langgraph.graph import END, START, MessagesState, StateGraph
     from happyclaw_memory import Memory
 
-    from octop.api.routers.chat.serialize import (
+    from happyclaw.api.routers.chat.serialize import (
         _isolated_sqlite_checkpoint_messages,
         _load_checkpoint_messages,
     )

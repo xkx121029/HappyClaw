@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
-from octop.infra.gateway.process.processor import GlobalProcessor
-from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+from happyclaw.infra.gateway.process.processor import GlobalProcessor
+from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
 
 def _processor(reasoning_parameters: dict | None) -> GlobalProcessor:
@@ -78,11 +78,11 @@ async def test_im_request_carries_reasoning_overrides() -> None:
 
     with (
         patch(
-            "octop.infra.gateway.process.processor.project_stream",
+            "happyclaw.infra.gateway.process.processor.project_stream",
             new=fake_project_stream,
         ),
         patch(
-            "octop.infra.gateway.process.processor.reasoning_request_parameters",
+            "happyclaw.infra.gateway.process.processor.reasoning_request_parameters",
             return_value=overrides,
         ),
     ):
@@ -103,7 +103,7 @@ async def test_im_request_without_reasoning_capability_has_no_overrides() -> Non
     processor = _processor(None)
 
     with patch(
-        "octop.infra.gateway.process.processor.project_stream",
+        "happyclaw.infra.gateway.process.processor.project_stream",
         new=fake_project_stream,
     ):
         events = [ev async for ev in processor(_im_message())]

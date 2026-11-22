@@ -9,10 +9,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from octop.api.deps import current_user, get_server
-from octop.api.routers import backup as backup_router
-from octop.infra.backup.service import BackupService
-from octop.infra.backup.store import BackupFileInfo
+from happyclaw.api.deps import current_user, get_server
+from happyclaw.api.routers import backup as backup_router
+from happyclaw.infra.backup.service import BackupService
+from happyclaw.infra.backup.store import BackupFileInfo
 
 
 async def _owner() -> Any:

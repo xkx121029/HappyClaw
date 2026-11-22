@@ -14,7 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from octop.cli.main import _ensure_utf8_stdio
+from happyclaw.cli.main import _ensure_utf8_stdio
 
 
 def test_ensure_utf8_stdio_reconfigures_gbk_streams() -> None:
@@ -47,7 +47,7 @@ def test_init_completes_with_gbk_stdout(tmp_path: Path) -> None:
         [
             sys.executable,
             "-m",
-            "octop.cli.main",
+            "happyclaw.cli.main",
             "init",
             "--yes",
             "--admin-username",

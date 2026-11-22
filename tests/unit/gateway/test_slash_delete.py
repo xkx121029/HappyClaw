@@ -7,11 +7,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.i18n import error_message
-from octop.infra.gateway.slash import BufferSink, SlashCommand
-from octop.infra.gateway.slash.ctx import SlashCtx
-from octop.infra.gateway.slash.handlers.session import cmd_delete
-from octop.infra.gateway.ws import WebSocketHub
+from happyclaw.i18n import error_message
+from happyclaw.infra.gateway.slash import BufferSink, SlashCommand
+from happyclaw.infra.gateway.slash.ctx import SlashCtx
+from happyclaw.infra.gateway.slash.handlers.session import cmd_delete
+from happyclaw.infra.gateway.ws import WebSocketHub
 
 
 @pytest.mark.asyncio

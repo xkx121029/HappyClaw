@@ -80,7 +80,7 @@ fi
 
 # 飞牛 FPK 部署标识 + 打包 site-packages 路径：内置在线升级安装到此目录
 # （launcher 实际加载的位置），重启服务后即加载新版，升级真正生效
-# （见 src/octop/infra/setup/self_update.py 的 _run_fpk_upgrade）。
+# （见 src/happyclaw/infra/setup/self_update.py 的 _run_fpk_upgrade）。
 export OCTOP_INSTALL_MODE="fpk-native"
 export OCTOP_FPK_SITE_PACKAGES="$SITE_PACKAGES"
 
@@ -101,7 +101,7 @@ OCTOP_BIND_HOST="${OCTOP_BIND_HOST:-0.0.0.0}"
 mkdir -p "$OCTOP_HOME"
 
 octop_cmd() {
-    "$PY" -m octop.cli.main "$@"
+    "$PY" -m happyclaw.cli.main "$@"
 }
 
 # 首次初始化（仅当数据库尚未建立）：单人版没有账号，只建目录 + 跑迁移。
@@ -119,4 +119,4 @@ if [ "$PREPARE_ONLY" = 1 ]; then
 fi
 
 echo "[octop-native] 正在启动 Octop，$OCTOP_BIND_HOST:$OCTOP_PORT ..."
-exec "$PY" -m octop.cli.main run --host "$OCTOP_BIND_HOST" --port "$OCTOP_PORT" --log-level "${OCTOP_LOG_LEVEL}"
+exec "$PY" -m happyclaw.cli.main run --host "$OCTOP_BIND_HOST" --port "$OCTOP_PORT" --log-level "${OCTOP_LOG_LEVEL}"

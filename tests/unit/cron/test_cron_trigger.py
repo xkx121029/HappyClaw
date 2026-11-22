@@ -9,8 +9,8 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
-from octop.infra.cron.trigger import build_trigger, one_shot_disposition
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.cron.trigger import build_trigger, one_shot_disposition
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def test_interval_seconds():

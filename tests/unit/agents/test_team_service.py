@@ -8,19 +8,19 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.infra.agents.teams import (
+from happyclaw.infra.agents.teams import (
     TEAM_AVATAR_URL,
     TEAM_MIN_MEMBERS,
     TeamJobTracker,
     TeamService,
     team_icon_url,
 )
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.db.services import RepoBundle
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.db.services import RepoBundle
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 class _PathWorkspace:
@@ -173,7 +173,7 @@ def test_team_icon_url_falls_back_to_cartoon() -> None:
 
 @pytest.mark.asyncio
 async def test_seed_team_template_writes_octop_manifest() -> None:
-    from octop.infra.agents.teams.service import seed_team_template
+    from happyclaw.infra.agents.teams.service import seed_team_template
 
     uploaded: dict[str, bytes] = {}
 

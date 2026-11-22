@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.auth.sso.redirect_after import sanitize_redirect_after
+from happyclaw.infra.auth.sso.redirect_after import sanitize_redirect_after
 
 
 @pytest.mark.parametrize(

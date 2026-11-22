@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.threads import (
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.threads import (
     clip_thread_title,
     repair_all_legacy_thread_titles,
     repair_legacy_thread_title,
@@ -55,7 +55,7 @@ def test_migration_003_repairs_stored_hard_cuts(tmp_path: Path) -> None:
         conn.executescript(
             (
                 Path(__file__).resolve().parents[3]
-                / "src/octop/infra/db/migrations/001_initial.sql"
+                / "src/happyclaw/infra/db/migrations/001_initial.sql"
             ).read_text()
         )
         # Partial v2 columns so full migrate can finish.

@@ -4,5 +4,5 @@ name: "Octop CodeQL"
 # (not password storage). GHAS does not reliably honor inline # codeql[...]
 # suppressions, so exclude these modules like the Fliggy adapter.
 paths-ignore:
-  - src/octop/infra/connectors/gateway/adapters/fliggy.py
-  - src/octop/infra/connectors/gateway/wecom_creds.py
+  - src/happyclaw/infra/connectors/gateway/adapters/fliggy.py
+  - src/happyclaw/infra/connectors/gateway/wecom_creds.py

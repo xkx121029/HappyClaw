@@ -12,15 +12,15 @@ import pytest
 from happyclaw_harness.teams.inbox import InboxMessage
 from happyclaw_harness.teams.processor import ReplyEvent
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.sessions import SessionRepo
-from octop.infra.db.repos.threads import ThreadRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.gateway.process.processor import GlobalProcessor
-from octop.infra.gateway.slash.dispatcher import SlashDispatcher
-from octop.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.sessions import SessionRepo
+from happyclaw.infra.db.repos.threads import ThreadRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.gateway.process.processor import GlobalProcessor
+from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
+from happyclaw.infra.gateway.threads import ThreadRegistry
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ def processor_env(tmp_path: Path) -> dict[str, object]:
     agent_manager = MagicMock()
     agent_manager.get_row.side_effect = lambda aid: AgentRepo(db).get(aid)
 
-    from octop.infra.gateway.gateway import Gateway
+    from happyclaw.infra.gateway.gateway import Gateway
 
     gw = Gateway(agent_manager=agent_manager, repos=repos)
     gw._channel_manager = MagicMock()
@@ -114,7 +114,7 @@ def test_compose_followup_team_host_asks_for_wrapup(processor_env: dict) -> None
 
 
 def test_compose_followup_truncates_long_member_result(processor_env: dict) -> None:
-    from octop.infra.agents.teams.team_manager import _FOLLOWUP_RESULT_MAX_CHARS
+    from happyclaw.infra.agents.teams.team_manager import _FOLLOWUP_RESULT_MAX_CHARS
 
     processor = processor_env["processor"]
     processor._agent_repo.create(agent_id="host", user_id=1, name="Host", kind="team")
@@ -448,7 +448,7 @@ async def test_member_stream_does_not_relay_decision_custom(processor_env: dict)
 async def test_wrapup_request_marks_decision_followup() -> None:
     from types import SimpleNamespace
 
-    from octop.infra.agents.teams.team_manager import _patch_inbox_wrapup
+    from happyclaw.infra.agents.teams.team_manager import _patch_inbox_wrapup
 
     seen: dict[str, object] = {}
 
@@ -871,7 +871,7 @@ async def test_prepare_team_dispatch_tracks_job_and_forces_sync(
 ) -> None:
     from happyclaw_harness.teams.util import PeerCall
 
-    from octop.infra.agents.teams import TeamJobTracker
+    from happyclaw.infra.agents.teams import TeamJobTracker
 
     processor = processor_env["processor"]
     parent_sk = processor_env["parent_sk"]
@@ -1263,7 +1263,7 @@ async def test_member_tokens_stay_off_the_room_until_the_host_is_idle(
     from langchain_core.messages import AIMessage
     from happyclaw_harness.request import ChatRequest
 
-    import octop.infra.agents.teams.team_manager as team_mod
+    import happyclaw.infra.agents.teams.team_manager as team_mod
 
     monkeypatch.setattr(team_mod, "_HOST_IDLE_WAIT_SEC", 0)
     processor = processor_env["processor"]
@@ -1409,7 +1409,7 @@ async def test_member_hitl_timeout_does_not_finish_the_job(
 ) -> None:
     from happyclaw_harness.request import ChatRequest
 
-    import octop.infra.agents.teams.team_manager as team_mod
+    import happyclaw.infra.agents.teams.team_manager as team_mod
 
     monkeypatch.setattr(team_mod, "_MEMBER_HITL_WAIT_SEC", 0.05)
     processor = processor_env["processor"]
@@ -1688,7 +1688,7 @@ async def test_fan_in_truncates_large_tool_results(
     from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
     from happyclaw_harness.teams.util import PeerCall
 
-    from octop.infra.agents.teams.team_manager import _HISTORY_TOOL_RESULT_MAX_CHARS
+    from happyclaw.infra.agents.teams.team_manager import _HISTORY_TOOL_RESULT_MAX_CHARS
 
     processor = processor_env["processor"]
     processor._agent_repo.create(agent_id="host", user_id=1, name="Host", kind="team")
@@ -2048,7 +2048,7 @@ async def test_fan_in_sync_non_team_skips_caller_room(processor_env: dict) -> No
 
 @pytest.mark.asyncio
 async def test_on_reply_failed_releases_job(processor_env: dict) -> None:
-    from octop.infra.agents.teams import TeamJobTracker
+    from happyclaw.infra.agents.teams import TeamJobTracker
 
     processor = processor_env["processor"]
     parent_sk = processor_env["parent_sk"]
@@ -2090,7 +2090,7 @@ async def test_on_reply_failed_releases_job(processor_env: dict) -> None:
 
 @pytest.mark.asyncio
 async def test_failed_host_wrapup_is_excluded_from_memory() -> None:
-    from octop.infra.agents.teams.team_manager import _patch_inbox_wrapup
+    from happyclaw.infra.agents.teams.team_manager import _patch_inbox_wrapup
 
     inbox = SimpleNamespace(
         _synthesize_reply=AsyncMock(return_value="fallback"),
@@ -2306,10 +2306,10 @@ def test_composer_model_precedes_sticky_and_legacy_slash_model() -> None:
 
 
 def test_stamp_stream_speaker_sets_agent_alias() -> None:
-    from octop.infra.agents.teams.team_manager import (
+    from happyclaw.infra.agents.teams.team_manager import (
         stamp_stream_speaker as _stamp_stream_speaker,
     )
-    from octop.infra.agents.teams.team_manager import (
+    from happyclaw.infra.agents.teams.team_manager import (
         stamp_team_host_chunk as _maybe_stamp_team_host,
     )
 

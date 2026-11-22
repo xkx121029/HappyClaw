@@ -89,7 +89,7 @@ powershell -File scripts/smoke_local.ps1 -Port 8091 -Keep
 
 ## 构建 PyPI wheel
 
-先构建前端（产物写入 `src/octop/dashboard/`，与 `dashboard/vite.config.ts` 的 `outDir` 一致），再打包 wheel。
+先构建前端（产物写入 `src/happyclaw/dashboard/`，与 `dashboard/vite.config.ts` 的 `outDir` 一致），再打包 wheel。
 
 ```bash
 bash scripts/wheel_build.sh

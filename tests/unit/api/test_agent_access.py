@@ -6,13 +6,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.api.common.agent import (
+from happyclaw.api.common.agent import (
     agent_is_shared,
     assert_agent_access_row,
     assert_agent_owner,
     user_owns_agent,
 )
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def test_owner_may_access() -> None:

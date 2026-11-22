@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.infra.dsh.tools.discovery import discover_dsh_plugins
-from octop.infra.dsh.tools.gate import (
+from happyclaw.infra.dsh.tools.discovery import discover_dsh_plugins
+from happyclaw.infra.dsh.tools.gate import (
     SKIP_DUPLICATE,
     SKIP_INSTALL_BROKEN,
     SKIP_MARKET_ROOT_MISSING,

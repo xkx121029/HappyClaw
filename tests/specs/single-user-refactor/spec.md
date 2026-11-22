@@ -59,7 +59,7 @@
 
 ### 2.1 本机唯一使用者（Owner）
 
-新增 `src/octop/infra/users/owner.py`：
+新增 `src/happyclaw/infra/users/owner.py`：
 
 ```python
 class OwnerIdentityService:

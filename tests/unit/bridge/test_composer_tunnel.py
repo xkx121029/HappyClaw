@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 
-from octop.infra.bridge.manager import BridgeManager
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.bridge.manager import BridgeManager
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def _mgr() -> BridgeManager:

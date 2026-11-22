@@ -115,29 +115,29 @@ dev = [
 [project.scripts]
 # `happyclaw` is the product command; `octop` stays as an alias so existing
 # scripts and docs keep working.
-happyclaw = "octop.cli.main:cli"
-octop = "octop.cli.main:cli"
+happyclaw = "happyclaw.cli.main:cli"
+octop = "happyclaw.cli.main:cli"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/octop"]
+packages = ["src/happyclaw"]
 
 [tool.hatch.build]
 include = [
-    "src/octop/**/*.py",
-    "src/octop/**/*.json",
-    "src/octop/**/*.md",
-    "src/octop/**/*.sql",
-    "src/octop/**/*.sh",
-    "src/octop/**/*.png",
-    "src/octop/dashboard/**/*",
-    "src/octop/infra/agents/experts/library/**/*",
-    "src/octop/infra/agents/plugins/bundled/**/*",
-    "src/octop/infra/agents/subagents/library/**/*",
-    "src/octop/infra/agents/subagents/divisions.json",
-    "src/octop/infra/control/desktop/scripts/**/*",
+    "src/happyclaw/**/*.py",
+    "src/happyclaw/**/*.json",
+    "src/happyclaw/**/*.md",
+    "src/happyclaw/**/*.sql",
+    "src/happyclaw/**/*.sh",
+    "src/happyclaw/**/*.png",
+    "src/happyclaw/dashboard/**/*",
+    "src/happyclaw/infra/agents/experts/library/**/*",
+    "src/happyclaw/infra/agents/plugins/bundled/**/*",
+    "src/happyclaw/infra/agents/subagents/library/**/*",
+    "src/happyclaw/infra/agents/subagents/divisions.json",
+    "src/happyclaw/infra/control/desktop/scripts/**/*",
 ]
 artifacts = [
-    "src/octop/dashboard/**/*",
+    "src/happyclaw/dashboard/**/*",
 ]
 
 [tool.ruff]
@@ -152,18 +152,18 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B011"]
-"src/octop/api/**" = ["B008"]
+"src/happyclaw/api/**" = ["B008"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
-files = ["src/octop"]
+files = ["src/happyclaw"]
 exclude = [
-    "src/octop/dashboard/",
-    "src/octop/infra/agents/experts/library/",
-    "src/octop/infra/agents/plugins/bundled/",
-    "src/octop/infra/agents/subagents/library/",
+    "src/happyclaw/dashboard/",
+    "src/happyclaw/infra/agents/experts/library/",
+    "src/happyclaw/infra/agents/plugins/bundled/",
+    "src/happyclaw/infra/agents/subagents/library/",
 ]
 
 [[tool.mypy.overrides]]
@@ -171,55 +171,55 @@ module = "tests.*"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.auth"
+module = "happyclaw.api.routers.auth"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.health"
+module = "happyclaw.api.routers.health"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.setup"
+module = "happyclaw.api.routers.setup"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.users"
+module = "happyclaw.api.routers.users"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.agents"
+module = "happyclaw.api.routers.agents"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.providers"
+module = "happyclaw.api.routers.providers"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.chat"
+module = "happyclaw.api.routers.chat"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.channels"
+module = "happyclaw.api.routers.channels"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.cron"
+module = "happyclaw.api.routers.cron"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.routers.admin"
+module = "happyclaw.api.routers.admin"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.api.app"
+module = "happyclaw.api.app"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "octop.infra.utils.posix_compat"
+module = "happyclaw.infra.utils.posix_compat"
 disable_error_code = ["attr-defined"]
 
 [[tool.mypy.overrides]]
-module = "octop.infra.utils.subprocess_io_win"
+module = "happyclaw.infra.utils.subprocess_io_win"
 disable_error_code = ["attr-defined"]
 
 [tool.pytest.ini_options]

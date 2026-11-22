@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.infra.gateway.hitl.phrases import ApprovalPhraseKind, match_approval_utterance
+from happyclaw.infra.gateway.hitl.phrases import ApprovalPhraseKind, match_approval_utterance
 
 
 def _kind(text: str) -> ApprovalPhraseKind | None:

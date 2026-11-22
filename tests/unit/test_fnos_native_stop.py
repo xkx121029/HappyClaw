@@ -114,7 +114,7 @@ def test_native_main_stop_releases_listen_port() -> None:
     helpers = COMMON_SH.read_text(encoding="utf-8")
     assert "pgrep -P" in helpers
     assert "ss -ltnp" in helpers
-    assert "pgrep -f -- 'octop.cli.main run'" in helpers
+    assert "pgrep -f -- 'happyclaw.cli.main run'" in helpers
     assert "OCTOP_INSTALL_MODE=fpk-native" in helpers
 
 
@@ -375,7 +375,7 @@ def test_native_main_start_term_cleans_unready_child(tmp_path: Path) -> None:
 def test_octop_fpk_native_run_pids_and_sweep(tmp_path: Path) -> None:
     env = {**os.environ, "OCTOP_INSTALL_MODE": "fpk-native"}
     proc = subprocess.Popen(
-        ["python3", "-c", "import time; time.sleep(120)  # octop.cli.main run"],
+        ["python3", "-c", "import time; time.sleep(120)  # happyclaw.cli.main run"],
         env=env,
     )
     try:

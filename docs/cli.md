@@ -1,8 +1,8 @@
 # CLI Reference
 
 `octop` is a single Click app installed as `octop` on `pip install octop`.
-The entry point lives in `src/octop/cli/main.py`; commands are registered in
-`src/octop/cli/registry.py` and imported lazily, so `octop --help` never
+The entry point lives in `src/happyclaw/cli/main.py`; commands are registered in
+`src/happyclaw/cli/registry.py` and imported lazily, so `octop --help` never
 imports the agent stack.
 
 Every table below is the command tree of the installed package, not a
@@ -62,7 +62,7 @@ owner directly.
 | **External** | Talks to an OS daemon or the system service manager; no HappyClaw HTTP | `models ollama-list/pull/rm` (local Ollama daemon), `service start/stop/restart/status`, `update`, `completion install` |
 
 `octop run` itself is the server. Embedded commands always boot their own
-short-lived in-process `OctopServer` (`octop.cli.support.embedded_ops` →
+short-lived in-process `OctopServer` (`happyclaw.cli.support.embedded_ops` →
 `embedded_runtime()`) — they do not attach to a running `octop run`, and they
 exit when the command finishes. Data changes made offline (channels, cron,
 providers) are written to the same control-plane database and are picked up the
@@ -642,7 +642,7 @@ $ octop version                # print the installed octop version
 }
 ```
 
-The path is exposed as `octop.cli.support.state.default_state_path()` and
+The path is exposed as `happyclaw.cli.support.state.default_state_path()` and
 follows `HAPPYCLAW_HOME`. `default_user` is a compatibility field that single-user
 mode ignores; `default_agent` is what `octop agent use` writes and what
 `--agent` falls back to. Delete the file to reset CLI defaults.

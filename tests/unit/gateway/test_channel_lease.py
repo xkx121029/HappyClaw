@@ -7,16 +7,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.db.lease import LEASE_SECONDS
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.db.services import build_shared_services
-from octop.infra.gateway.gateway import Gateway
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.db.lease import LEASE_SECONDS
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.gateway.gateway import Gateway
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def _gateway(path: Path, instance_id: str) -> Gateway:
@@ -39,7 +39,7 @@ async def test_only_one_gateway_connects_and_generation_forces_reconnect(tmp_pat
     run_migrations(db)
     user_id = UserRepo(db).create(username="alice", password_hash="h", role="admin")
     AgentRepo(db).create(agent_id="agent-1", user_id=user_id, name="bot")
-    from octop.infra.db.repos.channels import ChannelRepo
+    from happyclaw.infra.db.repos.channels import ChannelRepo
 
     ChannelRepo(db).create(
         channel_id="ch-1",

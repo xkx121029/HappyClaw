@@ -10,20 +10,20 @@ from deepagents.backends.local_shell import LocalShellBackend
 from happyclaw_gateway.models import FileContent, InboundMessage
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
-from octop.api.common.attachments import dashboard_inbound_preview_url, save_attachment
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.gateway.media.attachment_hints import (
+from happyclaw.api.common.attachments import dashboard_inbound_preview_url, save_attachment
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.gateway.media.attachment_hints import (
     hints_from_content_parts,
     sniff_image_media_type,
 )
-from octop.infra.gateway.media.inbound_store import (
+from happyclaw.infra.gateway.media.inbound_store import (
     MAX_INBOUND_BYTES,
     inbound_extension,
     validate_inbound_media_type,
     validate_inbound_size,
 )
-from octop.infra.gateway.media.ingress import AgentBackedMediaBackend
-from octop.infra.gateway.process.harness_request import build_content_from_message
+from happyclaw.infra.gateway.media.ingress import AgentBackedMediaBackend
+from happyclaw.infra.gateway.process.harness_request import build_content_from_message
 
 
 def _workspace(root: str) -> BackendWorkspace:
@@ -45,7 +45,7 @@ def test_inbound_extension_fallback_bin() -> None:
 
 
 def test_sniff_png_from_clipboard_blob() -> None:
-    from octop.api.routers.uploads import _resolve_media_type
+    from happyclaw.api.routers.uploads import _resolve_media_type
 
     png = b"\x89PNG\r\n\x1a\n" + b"fake-png-body"
     assert sniff_image_media_type(png) == "image/png"
@@ -238,7 +238,7 @@ async def test_build_content_from_file_part_uses_resolved_path() -> None:
         )
         out = await build_content_from_message(msg, media_backend=backend)
         assert isinstance(out, str)
-        from octop.infra.gateway.media.inbound_store import resolve_inbound_attachment_path
+        from happyclaw.infra.gateway.media.inbound_store import resolve_inbound_attachment_path
 
         resolved = resolve_inbound_attachment_path(workspace, "inbound/01JTEST.pdf")
         assert resolved in out
@@ -267,7 +267,7 @@ async def test_hints_from_saved_attachment_path() -> None:
             workspace=workspace,
         )
         assert len(hints) == 1
-        from octop.infra.gateway.media.inbound_store import resolve_inbound_attachment_path
+        from happyclaw.infra.gateway.media.inbound_store import resolve_inbound_attachment_path
 
         resolved = resolve_inbound_attachment_path(workspace, stored.data_path)
         assert resolved in hints[0]

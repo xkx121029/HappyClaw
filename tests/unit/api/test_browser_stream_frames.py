@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from octop.api.routers.browser import stream
+from happyclaw.api.routers.browser import stream
 
 
 @pytest.mark.asyncio

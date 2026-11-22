@@ -8,7 +8,7 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
+from happyclaw.cli.main import cli
 
 
 def test_chats_group_help_lists_all_subcommands() -> None:
@@ -27,7 +27,7 @@ def test_chats_send_help_lists_mode() -> None:
 
 
 def test_chats_list_requires_agent(monkeypatch: pytest.MonkeyPatch) -> None:
-    import octop.cli.support.ctx as ctx_mod
+    import happyclaw.cli.support.ctx as ctx_mod
 
     def _missing(_agent: str | None) -> str:
         click.echo("error: --agent is required", err=True)
@@ -46,7 +46,7 @@ def test_chats_list_uses_offline_db(monkeypatch: pytest.MonkeyPatch) -> None:
         captured.update(kwargs)
         return [{"thread_id": "t1", "title": "hi", "is_active": True}]
 
-    from octop.cli.support import db as db_mod
+    from happyclaw.cli.support import db as db_mod
 
     monkeypatch.setattr(db_mod, "list_threads_offline", fake_list_threads_offline)
     runner = CliRunner()
@@ -64,7 +64,7 @@ def test_chats_update_sends_title(monkeypatch: pytest.MonkeyPatch) -> None:
         captured["title"] = title
         return {"thread_id": thread_id, "title": title}
 
-    from octop.cli.support import offline_ops as offline_mod
+    from happyclaw.cli.support import offline_ops as offline_mod
 
     monkeypatch.setattr(offline_mod, "resolve_cron_user_id", lambda *_a, **_k: 1)
     monkeypatch.setattr(offline_mod, "update_thread_offline", fake_update_thread_offline)
@@ -77,13 +77,13 @@ def test_chats_update_sends_title(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_delete_thread_offline_unbinds_session(tmp_octop_home: Path) -> None:
-    from octop.cli.support.db import open_cli_services
-    from octop.cli.support.offline_ops import (
+    from happyclaw.cli.support.db import open_cli_services
+    from happyclaw.cli.support.offline_ops import (
         create_thread_offline,
         delete_thread_offline,
     )
-    from octop.infra.db.repos.agents import AgentRepo
-    from octop.infra.db.repos.users import UserRepo
+    from happyclaw.infra.db.repos.agents import AgentRepo
+    from happyclaw.infra.db.repos.users import UserRepo
 
     assert (
         CliRunner()

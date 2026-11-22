@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from octop.api.routers.chat.serialize import (
+from happyclaw.api.routers.chat.serialize import (
     _enrich_history_tool_media,
     _entry_matches_thread,
     _is_offload_placeholder_block,
@@ -19,7 +19,7 @@ from octop.api.routers.chat.serialize import (
     _strip_thinking,
     _ts_to_ms,
 )
-from octop.infra.utils.llm_text import llm_text_content as _llm_text_content
+from happyclaw.infra.utils.llm_text import llm_text_content as _llm_text_content
 
 
 def test_enrich_history_tool_media_prefers_entry_agent_id(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -31,7 +31,7 @@ def test_enrich_history_tool_media_prefers_entry_agent_id(monkeypatch: pytest.Mo
         return f"{output}|{agent_id}"
 
     monkeypatch.setattr(
-        "octop.infra.gateway.media.tool_media.enrich_tool_output_string_sync",
+        "happyclaw.infra.gateway.media.tool_media.enrich_tool_output_string_sync",
         fake_enrich,
     )
     out = _enrich_history_tool_media(
@@ -147,7 +147,7 @@ def test_serialize_history_message_includes_thinking_and_tools() -> None:
 
 
 def test_split_string_thinking_parses_redacted_block() -> None:
-    from octop.api.routers.chat.serialize import _split_string_thinking
+    from happyclaw.api.routers.chat.serialize import _split_string_thinking
 
     blocks = _split_string_thinking("<think>internal</think>Visible answer")
     assert blocks[0] == {"type": "thinking", "thinking": "internal"}
@@ -286,7 +286,7 @@ def test_load_projected_falls_back_to_created_at() -> None:
 
     from langchain_core.messages import message_to_dict
 
-    from octop.api.routers.chat.serialize import _load_projected_thread_messages
+    from happyclaw.api.routers.chat.serialize import _load_projected_thread_messages
 
     row = SimpleNamespace(
         seq=1,
@@ -604,7 +604,7 @@ def test_strip_image_only_text_blocks_directly() -> None:
 
 @pytest.mark.asyncio
 async def test_load_checkpoint_messages_falls_back_to_graph_state() -> None:
-    from octop.api.routers.chat.serialize import _load_checkpoint_messages
+    from happyclaw.api.routers.chat.serialize import _load_checkpoint_messages
 
     human = HumanMessage(content="fallback hello")
 

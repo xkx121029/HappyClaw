@@ -9,7 +9,7 @@ the empty set into "everything is allowed".
 
 from __future__ import annotations
 
-from octop.infra.plugins.runtime import PluginEnvelope
+from happyclaw.infra.plugins.runtime import PluginEnvelope
 
 from . import fixture_specs, runtime_probe
 from .report import CheckResult, Status

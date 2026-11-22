@@ -10,13 +10,13 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.experts.catalog import ExpertCatalog, default_library_root
-from octop.infra.agents.manager import AgentCreateSpec, AgentManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.experts.catalog import ExpertCatalog, default_library_root
+from happyclaw.infra.agents.manager import AgentCreateSpec, AgentManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.utils.paths import PathLayout
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator

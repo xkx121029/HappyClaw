@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.config import OctopConfig
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.sso import SsoRepo
-from octop.infra.db.services import SharedServices, build_shared_services
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.sso import SsoRepo
+from happyclaw.infra.db.services import SharedServices, build_shared_services
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def test_build_shared_services(tmp_path: Path):

@@ -7,21 +7,21 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.sessions import SessionRepo
-from octop.infra.db.repos.threads import ThreadRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.db.services import build_shared_services
-from octop.infra.gateway.slash import BufferSink, SlashCommand, build_default_dispatcher
-from octop.infra.gateway.slash.ctx import SlashCtx
-from octop.infra.gateway.slash.dispatcher import SlashDispatcher
-from octop.infra.gateway.slash.runner import try_handle_slash
-from octop.infra.gateway.threads import ThreadRegistry
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.sessions import SessionRepo
+from happyclaw.infra.db.repos.threads import ThreadRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.gateway.slash import BufferSink, SlashCommand, build_default_dispatcher
+from happyclaw.infra.gateway.slash.ctx import SlashCtx
+from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
+from happyclaw.infra.gateway.slash.runner import try_handle_slash
+from happyclaw.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def _agent_manager(tmp_path: Path, db: SqlitePool) -> AgentManager:

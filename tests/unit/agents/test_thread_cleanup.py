@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.agents.memory.thread_cleanup import (
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.agents.memory.thread_cleanup import (
     close_memory,
     compact_agent_store_file,
     delete_agent_memory_and_checkpoints,
@@ -18,12 +18,12 @@ from octop.infra.agents.memory.thread_cleanup import (
     gc_orphan_checkpoints,
     sqlite_freelist_bytes,
 )
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.users.manager import UserManager
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.users.manager import UserManager
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def _services(tmp_path: Path):
@@ -71,7 +71,7 @@ def _checkpoint_count(path: Path, thread_id: str) -> int:
 
 
 def test_sweep_removes_deleted_agent_dir_and_orphan_checkpoints(tmp_path: Path) -> None:
-    from octop.infra.agents.memory.thread_cleanup import sweep_deleted_residuals
+    from happyclaw.infra.agents.memory.thread_cleanup import sweep_deleted_residuals
 
     services, db = _services(tmp_path)
     paths = services.paths
@@ -114,7 +114,7 @@ def test_sweep_removes_deleted_agent_dir_and_orphan_checkpoints(tmp_path: Path) 
 
 
 def test_thread_delete_clears_sqlite_file_outside_active_workspace(tmp_path: Path) -> None:
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.infra.utils.paths import PathLayout
 
     paths = PathLayout(tmp_path / ".octop")
     paths.ensure_root()
@@ -123,7 +123,7 @@ def test_thread_delete_clears_sqlite_file_outside_active_workspace(tmp_path: Pat
     other = paths.root / "workspaces" / "Ab1" / ".octop" / "memory.sqlite"
     _seed_checkpoint(other, "thr_side")
 
-    from octop.infra.agents.memory.thread_cleanup import delete_thread_from_agent_stores
+    from happyclaw.infra.agents.memory.thread_cleanup import delete_thread_from_agent_stores
 
     delete_thread_from_agent_stores(
         agent_id="Ab1",
@@ -363,7 +363,7 @@ def test_compact_skips_when_disk_cannot_hold_a_rewrite(
         raise AssertionError("VACUUM must not run when disk is short")
 
     monkeypatch.setattr(
-        "octop.infra.agents.memory.thread_cleanup.shutil.disk_usage",
+        "happyclaw.infra.agents.memory.thread_cleanup.shutil.disk_usage",
         lambda _path: type("Usage", (), {"free": 1})(),
     )
     monkeypatch.setattr("happyclaw_memory.pipeline.lifecycle.vacuum.compact_vacuum", _refuse_vacuum)

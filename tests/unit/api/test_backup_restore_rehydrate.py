@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from octop.api.routers import backup as backup_router
-from octop.infra.backup.service import BackupService
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.api.routers import backup as backup_router
+from happyclaw.infra.backup.service import BackupService
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 @pytest.mark.asyncio
@@ -44,15 +44,15 @@ async def test_restore_backup_file_rehydrates_providers_channels_and_cron(
 
     # Mock the sync restore so no real archive work happens.
     with patch(
-        "octop.infra.backup.service.restore_system_backup",
+        "happyclaw.infra.backup.service.restore_system_backup",
         return_value=restored,
     ), patch(
-        "octop.infra.backup.service.resolve_backup_path",
+        "happyclaw.infra.backup.service.resolve_backup_path",
         return_value="/tmp/fake.tar.gz",
     ), patch(
-        "octop.infra.backup.service.raise_if_backup_busy",
+        "happyclaw.infra.backup.service.raise_if_backup_busy",
     ), patch(
-        "octop.infra.backup.service.hold_backup_lock",
+        "happyclaw.infra.backup.service.hold_backup_lock",
     ):
         result = await service.arestore_backup(
             "octop-backup.tar.gz",

@@ -14,11 +14,11 @@ dist/backend/octop/
 
 ## 打包会自动重建前端（重要）
 
-后端产物内嵌 dashboard 的静态文件（Vite 输出到 `src/octop/dashboard`）。`make package-backend` 现在会先跑 `package-dashboard`：
+后端产物内嵌 dashboard 的静态文件（Vite 输出到 `src/happyclaw/dashboard`）。`make package-backend` 现在会先跑 `package-dashboard`：
 
 1. `node_modules` 缺失或 `package-lock.json` 比它新时执行 `npm ci`，然后 `npm run build`；
-2. 前端构建**失败就中止打包**，不会沿用上一次留在 `src/octop/dashboard` 的旧产物；
-3. 构建成功后在输出目录写 `version.json`（git commit、构建时间、`index.html` 的 sha256），随包进入 `_internal/octop/dashboard/`。
+2. 前端构建**失败就中止打包**，不会沿用上一次留在 `src/happyclaw/dashboard` 的旧产物；
+3. 构建成功后在输出目录写 `version.json`（git commit、构建时间、`index.html` 的 sha256），随包进入 `_internal/happyclaw/dashboard/`。
 
 > **只改前端也必须重打后端**。桌面壳重打安装包前不要复用旧的 `dist/backend/octop`；`verify_backend.py` 会把包内 `index.html` 的哈希与本次前端构建输出对比，不一致直接判失败。
 
@@ -42,7 +42,7 @@ dist/backend/octop/
 
 - 不需要 Python、pip、venv、`.pyc`、`site-packages`
 - 不需要 VC++ 运行库：`python313.dll`、`VCRUNTIME140.dll`、`VCRUNTIME140_1.dll`、`MSVCP140.dll` 及 `api-ms-win-crt-*` 已随包
-- 不需要 npm / dashboard 构建产物：`_internal/octop/dashboard/` 已是构建好的静态文件
+- 不需要 npm / dashboard 构建产物：`_internal/happyclaw/dashboard/` 已是构建好的静态文件
 
 ### 平台限制
 

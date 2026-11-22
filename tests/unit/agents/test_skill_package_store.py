@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.skill_packages import SkillPackageRepo
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.skills.skill_package_store import SkillPackageStore
-from octop.infra.users.identity import Role, User
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.skill_packages import SkillPackageRepo
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.skills.skill_package_store import SkillPackageStore
+from happyclaw.infra.users.identity import Role, User
 
 
 @pytest.fixture

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.plugins.market import (
+from happyclaw.infra.plugins.market import (
     DependencyInUseError,
     MarketError,
     uninstall,
@@ -107,7 +107,7 @@ def test_uninstall_rolls_back_when_ledger_write_fails(tmp_path, monkeypatch):
         raise OSError("disk full")
 
     monkeypatch.setattr(
-        "octop.infra.plugins.market.pipeline._write_ledger",
+        "happyclaw.infra.plugins.market.pipeline._write_ledger",
         fail_write,
     )
 

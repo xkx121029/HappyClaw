@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.infra.agents.threads.context_breakdown import (
+from happyclaw.infra.agents.threads.context_breakdown import (
     SEGMENT_KEYS,
     compute_context_breakdown,
 )

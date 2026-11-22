@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHELL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$SHELL_DIR/../.." && pwd)"
 DEV_RUNTIME="$SHELL_DIR/.dev-runtime"
-DASHBOARD_DIR="$REPO_ROOT/src/octop/dashboard"
+DASHBOARD_DIR="$REPO_ROOT/src/happyclaw/dashboard"
 
 BUILD=1
 SANDBOX=1
@@ -69,7 +69,7 @@ if ((BUILD)); then
 
   # The window loads the Vite dev server (see OCTOP_DASHBOARD_DEV below), so a
   # production Dashboard build is not part of this launch. The static bundle
-  # under src/octop/dashboard stays for packaged and server deploys.
+  # under src/happyclaw/dashboard stays for packaged and server deploys.
 
   # Build the Electron main/preload/renderer bundles.
   echo "[dev] building electron shell…"

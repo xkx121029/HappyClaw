@@ -167,7 +167,7 @@ function Pin-McpCompat {
 
 function Test-Install {
     Write-Info "Verifying installation..."
-    & $VenvPython -c "from octop.infra.agents.manager import AgentManager" 2>$null
+    & $VenvPython -c "from happyclaw.infra.agents.manager import AgentManager" 2>$null
     if ($LASTEXITCODE -ne 0) { Stop-WithError "Install verification failed: core import error" }
     Write-Info "Install verification passed"
 }

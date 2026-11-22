@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from octop.infra.migration.openclaw import find_openclaw_home, read_openclaw
+from happyclaw.infra.migration.openclaw import find_openclaw_home, read_openclaw
 
 
 def _home(tmp_path: Path, config: str | dict[str, Any] | None = None) -> Path:

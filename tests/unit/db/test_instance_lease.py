@@ -10,13 +10,13 @@ from pathlib import Path
 import pytest
 from tests.support.postgresql import requires_postgresql
 
-from octop.infra.db.lease import LEASE_SECONDS
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.channels import ChannelRepo
-from octop.infra.db.repos.cron import CronJobRepo
-from octop.infra.db.repos.users import UserRepo
+from happyclaw.infra.db.lease import LEASE_SECONDS
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.channels import ChannelRepo
+from happyclaw.infra.db.repos.cron import CronJobRepo
+from happyclaw.infra.db.repos.users import UserRepo
 
 
 def _seed(db: SqlitePool) -> tuple[str, str]:
@@ -148,7 +148,7 @@ def _postgres_pools() -> tuple[object, object, str]:
     import psycopg
     from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
-    from octop.infra.db.pool import PostgresPool
+    from happyclaw.infra.db.pool import PostgresPool
 
     url = os.environ["OCTOP_TEST_DATABASE_URL"]
     schema = "lease_" + uuid.uuid4().hex[:12]

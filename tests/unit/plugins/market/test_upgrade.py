@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.plugins.market import (
+from happyclaw.infra.plugins.market import (
     Artifact,
     CapabilityKind,
     ConfigSchemaChangedError,
@@ -97,7 +97,7 @@ def test_upgrade_restores_previous_version_when_switch_fails(tmp_path, monkeypat
         raise OSError("disk full")
 
     monkeypatch.setattr(
-        "octop.infra.plugins.market.pipeline._write_ledger",
+        "happyclaw.infra.plugins.market.pipeline._write_ledger",
         fail_write,
     )
 

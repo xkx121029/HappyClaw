@@ -16,24 +16,24 @@ from typing import Any
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRow
-from octop.infra.db.services import build_shared_services
-from octop.infra.dsh.integration import (
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRow
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.dsh.integration import (
     DSH_SKILLS_PROMPTS_ENV,
     DSH_SKILLS_STRICT_ENV,
     DshPromptSessionStore,
     compose_system_prompt,
 )
-from octop.infra.dsh.prompts.skills_injection import (
+from happyclaw.infra.dsh.prompts.skills_injection import (
     SkillPromptEntry,
     SkillPromptSnapshot,
 )
-from octop.infra.dsh.skills import DshSkillPathError
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.dsh.skills import DshSkillPathError
+from happyclaw.infra.utils.paths import PathLayout
 
 # Captured from the pre-integration implementation. These literals are the
 # baseline: any byte change on the flag-off path fails the test.
@@ -111,7 +111,7 @@ def test_disabled_matches_previous_output_and_does_no_io(
     def _boom(*_: Any, **__: Any) -> Any:
         raise AssertionError("flag-off path must not read the skills tree")
 
-    monkeypatch.setattr("octop.infra.dsh.integration.discover_skill_root", _boom)
+    monkeypatch.setattr("happyclaw.infra.dsh.integration.discover_skill_root", _boom)
     again = manager._build_harness_config(row).system_prompt
     assert again is not None
     assert again.encode("utf-8") == PRE_CHANGE_SYSTEM_PROMPT.encode("utf-8")
@@ -174,7 +174,7 @@ def test_out_of_root_skill_is_rejected_not_silently_skipped(
     )
     row = _row(agent_id=agent_id, workspace=ws, system_prompt=PRE_CHANGE_SYSTEM_PROMPT)
 
-    with caplog.at_level(logging.WARNING, logger="octop.infra.dsh.integration"):
+    with caplog.at_level(logging.WARNING, logger="happyclaw.infra.dsh.integration"):
         cfg = manager._build_harness_config(row)
 
     assert cfg.system_prompt == PRE_CHANGE_SYSTEM_PROMPT

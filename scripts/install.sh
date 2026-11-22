@@ -600,7 +600,7 @@ fi
 _CONSOLE_AVAILABLE=0
 prepare_console() {
     local repo_dir="$1"
-    local console_dest="$repo_dir/src/octop/dashboard"
+    local console_dest="$repo_dir/src/happyclaw/dashboard"
 
     if [ -f "$console_dest/index.html" ]; then
         _CONSOLE_AVAILABLE=1
@@ -643,7 +643,7 @@ _pin_mcp_compat() {
 
 _verify_install() {
     info "Verifying the installation..."
-    if ! "$OCTOP_VENV/bin/python" -c "from octop.infra.agents.manager import AgentManager" 2>/dev/null; then
+    if ! "$OCTOP_VENV/bin/python" -c "from happyclaw.infra.agents.manager import AgentManager" 2>/dev/null; then
         die "Verification failed: core modules cannot be imported. Check dependency versions or re-run the installer."
     fi
     info "Installation verified"
@@ -1122,7 +1122,7 @@ if [ -f "$OCTOP_VENV/bin/python" ] && [ -d "$OCTOP_HOME" ]; then
   if [ ! -f "$CONFIG_PATH" ]; then
     echo "{}" > "$CONFIG_PATH"
   fi
-  "$OCTOP_VENV/bin/python" -m octop.infra.control.mobile "$CONFIG_PATH" || true
+  "$OCTOP_VENV/bin/python" -m happyclaw.infra.control.mobile "$CONFIG_PATH" || true
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────

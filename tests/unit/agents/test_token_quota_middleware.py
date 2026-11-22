@@ -7,8 +7,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from octop.infra.agents.middleware.token_quota import TokenQuotaMiddleware
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.agents.middleware.token_quota import TokenQuotaMiddleware
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def test_token_quota_middleware_rejects_exhausted_user(
@@ -19,7 +19,7 @@ def test_token_quota_middleware_rejects_exhausted_user(
     usage = Mock()
     usage.total_tokens_for_user.return_value = 10
     monkeypatch.setattr(
-        "octop.infra.agents.middleware.token_quota.get_config",
+        "happyclaw.infra.agents.middleware.token_quota.get_config",
         lambda: {"configurable": {"user": "7"}},
     )
 
@@ -40,7 +40,7 @@ def test_token_quota_middleware_allows_unlimited_user(
     policies.get.return_value = None
     usage = Mock()
     monkeypatch.setattr(
-        "octop.infra.agents.middleware.token_quota.get_config",
+        "happyclaw.infra.agents.middleware.token_quota.get_config",
         lambda: {"configurable": {"user": 8}},
     )
 
@@ -59,7 +59,7 @@ async def test_token_quota_middleware_async_hook_rejects(
     usage = Mock()
     usage.total_tokens_for_user.return_value = 1
     monkeypatch.setattr(
-        "octop.infra.agents.middleware.token_quota.get_config",
+        "happyclaw.infra.agents.middleware.token_quota.get_config",
         lambda: {"configurable": {"user": 3}},
     )
 

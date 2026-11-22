@@ -4,13 +4,13 @@
 -- syntax was reviewed. Treat it as a reviewed draft for a future cleanup.
 --
 -- NOT auto-applied. This file deliberately lives outside
--- src/octop/infra/db/migrations/, so the migration runner never picks it up.
+-- src/happyclaw/infra/db/migrations/, so the migration runner never picks it up.
 --
 -- BACKUP IS MANDATORY before running. Stop Octop first, then:
 --   pg_dump --format=custom --file=octop-20261113.dump $env:OCTOP_DATABASE_URL
 --
 -- MANDATORY CODE CHANGE, NOT OPTIONAL: running this script requires removing
--- the matching CREATE/backfill code in src/octop/infra/db/migrate.py in the
+-- the matching CREATE/backfill code in src/happyclaw/infra/db/migrate.py in the
 -- same change, otherwise the next boot recreates these tables empty and the
 -- DROP accomplishes nothing:
 --   user_invites        -> _ensure_user_invites_schema()

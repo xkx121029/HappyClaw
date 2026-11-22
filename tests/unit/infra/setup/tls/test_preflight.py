@@ -9,9 +9,9 @@ from urllib.parse import urlparse
 import httpx
 import pytest
 
-from octop.config import OctopConfig, TlsConfig
-from octop.infra.setup.tls import preflight as preflight_mod
-from octop.infra.setup.tls.preflight import (
+from happyclaw.config import OctopConfig, TlsConfig
+from happyclaw.infra.setup.tls import preflight as preflight_mod
+from happyclaw.infra.setup.tls.preflight import (
     _METADATA_PUBLIC_IP_URLS,
     _PUBLIC_IP_HTTPS_URLS,
     _fetch_public_ip,
@@ -68,9 +68,9 @@ def test_preflight_requires_domain():
 def test_preflight_bind_host_and_port(tmp_path):
     cfg = OctopConfig(bind_host="127.0.0.1", port=8088)
     with (
-        patch("octop.infra.setup.tls.preflight._port_available", return_value=True),
-        patch("octop.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
-        patch("octop.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
+        patch("happyclaw.infra.setup.tls.preflight._port_available", return_value=True),
+        patch("happyclaw.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
+        patch("happyclaw.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
     ):
         result = run_preflight("octop.example.com", cfg)
     assert not result.ok
@@ -90,9 +90,9 @@ def test_preflight_ok_when_all_match():
         tls=TlsConfig(enabled=False),
     )
     with (
-        patch("octop.infra.setup.tls.preflight._port_available", return_value=True),
-        patch("octop.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
-        patch("octop.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
+        patch("happyclaw.infra.setup.tls.preflight._port_available", return_value=True),
+        patch("happyclaw.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
+        patch("happyclaw.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
     ):
         result = run_preflight("octop.example.com", cfg)
     assert result.ok
@@ -106,9 +106,9 @@ def test_preflight_rejects_when_tls_already_enabled():
         tls=TlsConfig(enabled=True),
     )
     with (
-        patch("octop.infra.setup.tls.preflight._port_available", return_value=True),
-        patch("octop.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
-        patch("octop.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
+        patch("happyclaw.infra.setup.tls.preflight._port_available", return_value=True),
+        patch("happyclaw.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
+        patch("happyclaw.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
     ):
         result = run_preflight("octop.example.com", cfg)
     assert not result.ok
@@ -122,8 +122,8 @@ def test_preflight_renewal_mode_dual_port():
         tls=TlsConfig(enabled=True, http_port=80),
     )
     with (
-        patch("octop.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
-        patch("octop.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
+        patch("happyclaw.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
+        patch("happyclaw.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
     ):
         result = run_preflight("octop.example.com", cfg)
     assert result.renewal
@@ -138,9 +138,9 @@ def test_preflight_fails_when_public_ip_unavailable():
         tls=TlsConfig(enabled=False),
     )
     with (
-        patch("octop.infra.setup.tls.preflight._port_available", return_value=True),
-        patch("octop.infra.setup.tls.preflight._fetch_public_ip", return_value=None),
-        patch("octop.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
+        patch("happyclaw.infra.setup.tls.preflight._port_available", return_value=True),
+        patch("happyclaw.infra.setup.tls.preflight._fetch_public_ip", return_value=None),
+        patch("happyclaw.infra.setup.tls.preflight._resolve_domain_ips", return_value={_PUBLIC_IP}),
     ):
         result = run_preflight("octop.example.com", cfg, locale="zh")
     assert not result.ok
@@ -156,10 +156,10 @@ def test_preflight_dns_mismatch():
         tls=TlsConfig(enabled=False),
     )
     with (
-        patch("octop.infra.setup.tls.preflight._port_available", return_value=True),
-        patch("octop.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
+        patch("happyclaw.infra.setup.tls.preflight._port_available", return_value=True),
+        patch("happyclaw.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
         patch(
-            "octop.infra.setup.tls.preflight._resolve_domain_ips",
+            "happyclaw.infra.setup.tls.preflight._resolve_domain_ips",
             return_value={"9.9.9.9"},
         ),
     ):
@@ -219,7 +219,7 @@ def test_fetch_public_ip_falls_back_past_unreachable_endpoints() -> None:
                 "https://4.ipw.cn/",
             ),
         ),
-        patch("octop.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
+        patch("happyclaw.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
     ):
         assert _fetch_public_ip() == _PUBLIC_IP
     assert calls == [
@@ -255,7 +255,7 @@ def test_fetch_public_ip_skips_non_public_bodies() -> None:
                 "https://example.test/ok",
             ),
         ),
-        patch("octop.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
+        patch("happyclaw.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
     ):
         assert _fetch_public_ip() == _PUBLIC_IP
     assert calls == [
@@ -278,7 +278,7 @@ def test_fetch_public_ip_prefers_cloud_metadata() -> None:
             ("http://metadata.tencentyun.com/latest/meta-data/public-ipv4",),
         ),
         patch.object(preflight_mod, "_PUBLIC_IP_HTTPS_URLS", ("https://should-not-call/",)),
-        patch("octop.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
+        patch("happyclaw.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
     ):
         assert _fetch_public_ip() == _PUBLIC_IP
 
@@ -306,7 +306,7 @@ def test_fetch_public_ip_falls_through_metadata_to_https() -> None:
             "_PUBLIC_IP_HTTPS_URLS",
             ("https://4.ipw.cn/",),
         ),
-        patch("octop.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
+        patch("happyclaw.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
     ):
         assert _fetch_public_ip() == _PUBLIC_IP
     assert calls == [
@@ -335,6 +335,6 @@ def test_fetch_public_ip_returns_none_when_all_sources_fail() -> None:
                 "https://example.test/connect-error",
             ),
         ),
-        patch("octop.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
+        patch("happyclaw.infra.setup.tls.preflight.httpx.Client", _fake_client(handler)),
     ):
         assert _fetch_public_ip() is None

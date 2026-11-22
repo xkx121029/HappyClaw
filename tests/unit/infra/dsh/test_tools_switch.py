@@ -8,14 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRow
-from octop.infra.db.services import build_shared_services
-from octop.infra.dsh.tools.gate import SKIP_NO_PROVIDER
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRow
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.dsh.tools.gate import SKIP_NO_PROVIDER
+from happyclaw.infra.utils.paths import PathLayout
 
 from tests.dsh_integration.fixtures.tools import fixture_tool
 from tests.unit.infra.dsh.plugin_fixtures import write_package
@@ -57,7 +57,7 @@ def _tool_names(config: object) -> list[str]:
 
 def _forget_tools_modules(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in [
-        module for module in list(sys.modules) if module.startswith("octop.infra.dsh.tools")
+        module for module in list(sys.modules) if module.startswith("happyclaw.infra.dsh.tools")
     ]:
         monkeypatch.delitem(sys.modules, name, raising=False)
 
@@ -76,7 +76,7 @@ def test_switch_off_does_not_import_or_change_tools(
     assert manager._dsh_tools_status is None
     assert not any(name.startswith("dsh__") for name in names)
     assert not any(
-        module.startswith("octop.infra.dsh.tools") for module in sys.modules
+        module.startswith("happyclaw.infra.dsh.tools") for module in sys.modules
     )
 
 

@@ -6,7 +6,7 @@ import logging
 
 import pytest
 
-from octop.i18n.domains.stream import (
+from happyclaw.i18n.domains.stream import (
     INVALID_REQUEST,
     MODEL_CALL_FAILED,
     MODEL_RETRY_FAILURE_MARK,
@@ -242,17 +242,17 @@ def test_exception_display_message_empty_falls_back_to_type() -> None:
 
 
 def test_model_retry_on_failure_writes_server_log(caplog: logging.LogCaptureFixture) -> None:
-    from octop.infra.agents.manager import _model_retry_on_failure
+    from happyclaw.infra.agents.manager import _model_retry_on_failure
 
     err = RuntimeError(
         "Error code: 422 - {error:'Check open ai req parameter error',"
         "'error_type': 'Input Validation Error'}"
     )
-    from octop.infra.agents.security.hitl_session import hitl_thread_scope
-    from octop.infra.utils.turn_failure import turn_model_scope
+    from happyclaw.infra.agents.security.hitl_session import hitl_thread_scope
+    from happyclaw.infra.utils.turn_failure import turn_model_scope
 
     with (
-        caplog.at_level(logging.ERROR, logger="octop.infra.utils.turn_failure"),
+        caplog.at_level(logging.ERROR, logger="happyclaw.infra.utils.turn_failure"),
         hitl_thread_scope("th_mindie"),
         turn_model_scope("mindie/qwen"),
     ):

@@ -7,7 +7,7 @@ rename has to stay readable.
 
 from __future__ import annotations
 
-from octop.infra.agents import protocol_keys
+from happyclaw.infra.agents import protocol_keys
 
 
 def test_read_accepts_the_current_spelling() -> None:

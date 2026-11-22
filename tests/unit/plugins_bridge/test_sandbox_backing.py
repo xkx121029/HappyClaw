@@ -1,6 +1,6 @@
 """Tests for sandbox coverage/backing in the approval guardrail.
 
-The probe is the real ``octop.infra.plugins.sandbox`` result type, so these
+The probe is the real ``happyclaw.infra.plugins.sandbox`` result type, so these
 tests also prove the bridge's duck-typed read still matches the sandbox
 interface. Nothing under ``plugins/sandbox`` is modified.
 """
@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.plugins.bridge import (
     ApprovalOutcome,
     CapabilityDecision,
     DshToolErrorCode,
@@ -24,8 +24,8 @@ from octop.infra.plugins.bridge import (
     ToolOutputSpec,
     text_content,
 )
-from octop.infra.plugins.bridge.approval import ApprovalDecision, ToolGuardrail
-from octop.infra.plugins.sandbox.inspection import SandboxCoverage, SandboxProbeResult
+from happyclaw.infra.plugins.bridge.approval import ApprovalDecision, ToolGuardrail
+from happyclaw.infra.plugins.sandbox.inspection import SandboxCoverage, SandboxProbeResult
 
 PARAMETERS: dict[str, Any] = {
     "type": "object",

@@ -9,9 +9,9 @@ import json
 import pytest
 from fastapi import FastAPI, File, UploadFile
 
-from octop.infra.bridge.http_tunnel import execute_local_http
-from octop.infra.bridge.ids import rewrite_tunneled_json
-from octop.infra.bridge.transport import (
+from happyclaw.infra.bridge.http_tunnel import execute_local_http
+from happyclaw.infra.bridge.ids import rewrite_tunneled_json
+from happyclaw.infra.bridge.transport import (
     BODY_CHUNK_RAW_BYTES,
     FEATURE_BODY_CHUNKS,
     BridgeSession,
@@ -75,7 +75,7 @@ async def test_chunked_upload_body_is_reassembled() -> None:
     captured: dict[str, object] = {}
 
     async def on_request(payload: dict[str, object]) -> dict[str, object]:
-        from octop.infra.bridge.http_tunnel import decode_body_b64
+        from happyclaw.infra.bridge.http_tunnel import decode_body_b64
 
         captured["body"] = decode_body_b64(payload)
         captured["path"] = payload.get("path")

@@ -11,15 +11,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.cron.delivery import CronDeliveryService
-from octop.infra.cron.manager import CronManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.gateway.threads import ThreadRegistry
-from octop.infra.utils.paths import PathLayout
-from octop.infra.utils.ulid import new_ulid
+from happyclaw.config import OctopConfig
+from happyclaw.infra.cron.delivery import CronDeliveryService
+from happyclaw.infra.cron.manager import CronManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.utils.paths import PathLayout
+from happyclaw.infra.utils.ulid import new_ulid
 
 
 def _cron_session_key(agent_id: str, cron_id: str) -> str:
@@ -356,7 +356,7 @@ async def test_create_writes_audit_entry(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_create_rejects_invalid_trigger(tmp_path: Path) -> None:
     """create() raises OctopError for a malformed trigger spec."""
-    from octop.infra.errors import OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import OctopError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     mgr = _make_manager(services)
@@ -659,7 +659,7 @@ def test_mail_watch_counts_as_attached_schedule(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_update_raises_for_unknown_id(tmp_path: Path) -> None:
-    from octop.infra.errors import OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import OctopError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     mgr = _make_manager(services)
@@ -670,7 +670,7 @@ async def test_update_raises_for_unknown_id(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_update_rejects_invalid_trigger(tmp_path: Path) -> None:
-    from octop.infra.errors import OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import OctopError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     aid, uid = _make_agent(services)
@@ -737,7 +737,7 @@ async def test_delete_writes_audit_entry(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_run_now_raises_for_unknown(tmp_path: Path) -> None:
-    from octop.infra.errors import OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import OctopError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     mgr = _make_manager(services)
@@ -762,7 +762,7 @@ async def test_run_now_fires_job(tmp_path: Path) -> None:
         prompt="run",
     )
 
-    with patch("octop.infra.cron.manager.asyncio.ensure_future") as mock_ef:
+    with patch("happyclaw.infra.cron.manager.asyncio.ensure_future") as mock_ef:
         await mgr.run_now(cid)
         mock_ef.assert_called_once()
         coro = mock_ef.call_args[0][0]
@@ -825,10 +825,10 @@ async def test_schedule_replaces_existing_job(tmp_path: Path) -> None:
 async def test_mail_trigger_validates_owner_delivers_context_and_can_be_disabled(
     tmp_path, monkeypatch
 ):
-    from octop.infra.connectors.crypto import encrypt_credentials
-    from octop.infra.cron import manager as cron_manager
-    from octop.infra.cron.trigger import AgentlyMailTrigger, build_trigger
-    from octop.infra.errors import OctopError
+    from happyclaw.infra.connectors.crypto import encrypt_credentials
+    from happyclaw.infra.cron import manager as cron_manager
+    from happyclaw.infra.cron.trigger import AgentlyMailTrigger, build_trigger
+    from happyclaw.infra.errors import OctopError
 
     monkeypatch.setattr(
         cron_manager,
@@ -891,9 +891,9 @@ async def test_mail_trigger_validates_owner_delivers_context_and_can_be_disabled
 
 @pytest.mark.asyncio
 async def test_mail_trigger_rejects_unauthorized_mailbox(tmp_path, monkeypatch):
-    from octop.infra.connectors.crypto import encrypt_credentials
-    from octop.infra.cron import manager as cron_manager
-    from octop.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.connectors.crypto import encrypt_credentials
+    from happyclaw.infra.cron import manager as cron_manager
+    from happyclaw.infra.errors import ErrorCode, OctopError
 
     monkeypatch.setattr(
         cron_manager,
@@ -929,8 +929,8 @@ async def test_mail_trigger_rejects_unauthorized_mailbox(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_sync_mail_watch_does_not_restart_other_mailboxes(tmp_path, monkeypatch):
-    from octop.infra.connectors.crypto import encrypt_credentials
-    from octop.infra.cron import manager as cron_manager
+    from happyclaw.infra.connectors.crypto import encrypt_credentials
+    from happyclaw.infra.cron import manager as cron_manager
 
     monkeypatch.setattr(
         cron_manager,
@@ -985,7 +985,7 @@ async def test_sync_mail_watch_does_not_restart_other_mailboxes(tmp_path, monkey
 
 
 def test_system_job_rejects_agently_trigger(tmp_path):
-    from octop.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, OctopError
 
     mgr = _make_manager(_make_services(tmp_path))
     with pytest.raises(OctopError) as exc:
@@ -1095,7 +1095,7 @@ async def test_create_marks_expired_one_shot_missed(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_boot_schedules_one_shot_inside_grace(tmp_path: Path) -> None:
-    from octop.infra.cron.trigger import ONE_SHOT_MISFIRE_GRACE_SECONDS
+    from happyclaw.infra.cron.trigger import ONE_SHOT_MISFIRE_GRACE_SECONDS
 
     services = _make_services(tmp_path)
     aid, uid = _make_agent(services)

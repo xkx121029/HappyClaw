@@ -51,7 +51,7 @@ That file is excluded from published-expert snapshots.
 
 The root can be overridden with `HAPPYCLAW_HOME` (absolute path). Most
 sub-paths are exposed as properties on `PathLayout` in
-`octop.infra.utils.paths`.
+`happyclaw.infra.utils.paths`.
 
 ## Local knowledge indexing and systemd resource limits
 

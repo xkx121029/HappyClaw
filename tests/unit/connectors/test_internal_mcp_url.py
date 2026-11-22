@@ -7,13 +7,13 @@ import json
 
 import httpx
 
-from octop.config import OctopConfig, TlsConfig
-from octop.infra.connectors.builder import (
+from happyclaw.config import OctopConfig, TlsConfig
+from happyclaw.infra.connectors.builder import (
     _redact_mcp_configs_for_log,
     build_http_mcp_spec,
     internal_mcp_url,
 )
-from octop.infra.connectors.catalog import get_catalog_entry
+from happyclaw.infra.connectors.catalog import get_catalog_entry
 
 
 def _qcc_spec(config: OctopConfig) -> dict[str, object]:

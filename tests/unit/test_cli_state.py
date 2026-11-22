@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from octop.cli.support.state import CLIState, load, save
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.cli.support.state import CLIState, load, save
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def test_load_missing_returns_default(tmp_path: Path) -> None:
@@ -71,7 +71,7 @@ def test_save_is_atomic_so_a_torn_write_keeps_the_old_file(
     def boom(*_args: object, **_kwargs: object) -> None:
         raise OSError("disk full")
 
-    monkeypatch.setattr("octop.infra.utils.json_file.os.replace", boom)
+    monkeypatch.setattr("happyclaw.infra.utils.json_file.os.replace", boom)
     with pytest.raises(OSError, match="disk full"):
         save(p, CLIState(default_user="bob", default_agent="b1"))
     assert p.read_text(encoding="utf-8") == original

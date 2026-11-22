@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.infra.db.migrate import _ensure_bridge_connections_schema, run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos._base import now_ts
-from octop.infra.db.repos.bridge_connections import BridgeConnectionRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.utils.ulid import new_ulid
+from happyclaw.infra.db.migrate import _ensure_bridge_connections_schema, run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos._base import now_ts
+from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.utils.ulid import new_ulid
 
 
 def test_bridge_connection_crud(tmp_path: Path) -> None:

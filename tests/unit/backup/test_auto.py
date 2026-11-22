@@ -7,15 +7,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from octop.config import BackupConfig, load_config
-from octop.infra.backup.auto import (
+from happyclaw.config import BackupConfig, load_config
+from happyclaw.infra.backup.auto import (
     AUTO_BACKUP_JOB_ID,
     apply_auto_backup_schedule,
     backup_config_from_payload,
     persist_backup_config,
     to_auto_backup_filename,
 )
-from octop.infra.errors import OctopError
+from happyclaw.infra.errors import OctopError
 
 
 def test_to_auto_backup_filename() -> None:

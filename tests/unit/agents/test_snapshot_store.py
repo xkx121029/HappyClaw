@@ -7,16 +7,16 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.agents.experts.snapshot_store import (
+from happyclaw.infra.agents.experts.snapshot_store import (
     adopt_local_snapshots,
     materialize_snapshot,
     published_skill_count,
 )
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.control_files import ControlFileRepo
-from octop.infra.db.repos.settings import SettingsRepo
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.control_files import ControlFileRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.utils.paths import PathLayout
 
 posix_only = pytest.mark.skipif(os.name != "posix", reason="POSIX symlinks")
 

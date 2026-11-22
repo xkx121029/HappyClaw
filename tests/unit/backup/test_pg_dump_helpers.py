@@ -4,8 +4,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.infra.backup import pg_dump
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.backup import pg_dump
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def test_require_tool_missing(monkeypatch: pytest.MonkeyPatch) -> None:

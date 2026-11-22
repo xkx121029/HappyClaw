@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import DatabaseConfig, OctopConfig
-from octop.infra.agents.memory.backend import memory_backend_from_agent_config, open_memory_kwargs
-from octop.infra.errors import OctopError
+from happyclaw.config import DatabaseConfig, OctopConfig
+from happyclaw.infra.agents.memory.backend import memory_backend_from_agent_config, open_memory_kwargs
+from happyclaw.infra.errors import OctopError
 
 
 def test_default_memory_backend_empty_on_sqlite_control_plane() -> None:
@@ -119,7 +119,7 @@ def test_open_memory_kwargs_follows_postgresql_control_plane(tmp_path: Path) -> 
 
 
 def test_memory_db_path_prefers_existing_nested(tmp_path: Path) -> None:
-    from octop.api.common.memory_client import memory_db_path
+    from happyclaw.api.common.memory_client import memory_db_path
 
     nested = tmp_path / ".octop" / "memory.sqlite"
     nested.parent.mkdir(parents=True)
@@ -128,7 +128,7 @@ def test_memory_db_path_prefers_existing_nested(tmp_path: Path) -> None:
 
 
 def test_memory_db_path_legacy_when_only_root_exists(tmp_path: Path) -> None:
-    from octop.api.common.memory_client import memory_db_path
+    from happyclaw.api.common.memory_client import memory_db_path
 
     root = tmp_path / "memory.sqlite"
     root.write_text("", encoding="utf-8")
@@ -136,14 +136,14 @@ def test_memory_db_path_legacy_when_only_root_exists(tmp_path: Path) -> None:
 
 
 def test_memory_db_path_new_layout_signal_without_sqlite_yet(tmp_path: Path) -> None:
-    from octop.api.common.memory_client import memory_db_path
+    from happyclaw.api.common.memory_client import memory_db_path
 
     (tmp_path / ".octop" / "_builtin_skills").mkdir(parents=True)
     assert memory_db_path(tmp_path) == tmp_path / ".octop" / "memory.sqlite"
 
 
 def test_memory_db_path_empty_octop_dir_stays_legacy(tmp_path: Path) -> None:
-    from octop.api.common.memory_client import memory_db_path
+    from happyclaw.api.common.memory_client import memory_db_path
 
     (tmp_path / ".octop").mkdir()
     assert memory_db_path(tmp_path) == tmp_path / "memory.sqlite"

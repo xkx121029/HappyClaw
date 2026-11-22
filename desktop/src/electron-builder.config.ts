@@ -29,7 +29,7 @@ export default {
   appId: "com.tencent.octop",
   productName,
   // extraResources places the portable tree outside asar. The shell reads
-  // Dashboard from portable/packages/octop/dashboard, so it is not copied again.
+  // Dashboard from portable/packages/happyclaw/dashboard, so it is not copied again.
   asar: true,
   // Bare "en" also keeps en-* region packs. zh_CN does not keep zh_TW.
   // zh-Hans InfoPlist.strings are written in afterPack, after this filter.
@@ -82,7 +82,7 @@ export default {
     target: ["nsis"],
     // PyInstaller onedir backend: octop.exe must stay next to _internal, so the
     // whole directory is copied as one unit into resources/sidecar/backend.
-    // It carries the built Dashboard under _internal/octop/dashboard; the shell
+    // It carries the built Dashboard under _internal/happyclaw/dashboard; the shell
     // serves that copy, so nothing is duplicated here.
     extraResources: [{ from: "../../dist/backend/octop", to: "sidecar/backend" }],
   },

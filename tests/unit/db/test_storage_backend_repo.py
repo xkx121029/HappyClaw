@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.backends import BackendRepo
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.backends import BackendRepo
 
 
 @pytest.fixture

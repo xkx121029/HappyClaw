@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 import pytest
 
-from octop.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.gateway.threads import ThreadRegistry
 
 
 def _rpc(

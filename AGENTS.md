@@ -51,7 +51,7 @@ HappyClaw hosts four libraries. Put the change in the library that owns the beha
 | Chrome CDP, profiles, DOM, `browser_tool` | [happyclaw-browser](https://github.com/xkx121029/happyclaw-browser) |
 | Local owner, auth compatibility, threads, cron, experts, dashboard | this repo |
 
-Do not copy that behavior into `src/octop/`. Follow the library's `AGENTS.md`. When the library releases, bump its pin in `pyproject.toml`.
+Do not copy that behavior into `src/happyclaw/`. Follow the library's `AGENTS.md`. When the library releases, bump its pin in `pyproject.toml`.
 
 ## 3. Tech stack
 
@@ -74,7 +74,7 @@ Do not copy that behavior into `src/octop/`. Follow the library's `AGENTS.md`. W
 High-level tree — see [§5 Module boundaries](#5-module-boundaries) for what each folder owns and what it may import.
 
 ```
-HappyClaw (`octop/` workspace directory)     Python package root (`src/octop/`)
+HappyClaw (`octop/` workspace directory)     Python package root (`src/happyclaw/`)
   config.py
   launch.py                   composition root: OctopServer + FastAPI + uvicorn
   i18n/                       locale JSON bundles + tr() + domain helpers
@@ -95,20 +95,20 @@ tests/                        pytest (`unit/`, `integration/`)
 ### Layer overview
 
 ```
-dashboard/ ──HTTP──► api/ ──► infra/ ──► infra/utils/, octop.config
+dashboard/ ──HTTP──► api/ ──► infra/ ──► infra/utils/, happyclaw.config
 cli/ ──► launch.py ──► api/ + infra/
 ```
 
 | Layer | Role | May import | Must NOT import |
 |-------|------|------------|-----------------|
-| `octop.config` | Env-based `OctopConfig` | stdlib, pydantic | `infra/`, `api/`, `cli/`, `launch.py` |
+| `happyclaw.config` | Env-based `OctopConfig` | stdlib, pydantic | `infra/`, `api/`, `cli/`, `launch.py` |
 | `octop.i18n` | Locale JSON + `tr()` + per-namespace helpers | `infra/utils/locale`, stdlib | `api/`, `cli/`, `dashboard/` |
 | `octop.launch` | Wire `OctopServer`, `build_app`, uvicorn for `octop run` | `infra/`, `api/` | business logic; must not be imported by `infra/` |
 | `infra/utils/` | Pure helpers (paths, ulid, env files, Ollama) | stdlib, third-party | any other `infra/*` domain code |
 | `infra/db/repos/` | One repo per table — SQL only | `infra/db/_base`, `infra/utils/` | `agents/`, `gateway/`, `api/`, orchestration |
-| `infra/` (domain) | Business logic & orchestration | `infra/utils/`, `infra/db/`, `octop.config`, peer `infra/*` subpackages, `infra/errors`, `infra/metrics` | `api/`, `cli/`, `launch.py`, `dashboard/` |
-| `api/` | HTTP: routing, auth, SSE, OpenAPI | `infra/`, `octop.config`, sibling `api/*` | `cli/`, `launch.py`; no business rules that belong in `infra/` |
-| `cli/` | Terminal UX | `infra/`, `octop.config`, `launch.py`, sibling `cli/*` | `api/`; domain logic duplicated from `infra/` |
+| `infra/` (domain) | Business logic & orchestration | `infra/utils/`, `infra/db/`, `happyclaw.config`, peer `infra/*` subpackages, `infra/errors`, `infra/metrics` | `api/`, `cli/`, `launch.py`, `dashboard/` |
+| `api/` | HTTP: routing, auth, SSE, OpenAPI | `infra/`, `happyclaw.config`, sibling `api/*` | `cli/`, `launch.py`; no business rules that belong in `infra/` |
+| `cli/` | Terminal UX | `infra/`, `happyclaw.config`, `launch.py`, sibling `cli/*` | `api/`; domain logic duplicated from `infra/` |
 | `dashboard/` | React UI | `dashboard/src/api` → backend over HTTP | Python packages; no direct DB or `infra/` access |
 
 **Hard bans**
@@ -207,14 +207,14 @@ make install-hooks                      # once per clone: enable .githooks pre-c
 make all                                # format-all + lint + typecheck + test (ship bar)
 make format-all                         # backend Ruff + dashboard Prettier write
 make lint                               # ruff check + format check
-make typecheck                          # mypy --strict src/octop
+make typecheck                          # mypy --strict src/happyclaw
 make format                             # ruff auto-fix + format (backend only)
 make format-frontend                    # prettier write (dashboard only)
 uv run pytest -m "not live"            # full test suite (no LLM calls)
 uv run pytest tests/unit -x -q        # unit tests only, stop on first fail
 uv run pytest tests/integration -x -q # integration tests only
 cd dashboard && npx tsc -b             # frontend typecheck (after UI changes)
-make build-frontend                     # dashboard/ → src/octop/dashboard/
+make build-frontend                     # dashboard/ → src/happyclaw/dashboard/
 ```
 
 **Git hooks (required for local commits):** after cloning, run **`make install-hooks`** once. That sets `core.hooksPath=.githooks` so every `git commit` runs **`make all`** (which first runs **`format-all`**: backend Ruff + dashboard Prettier write, then lint / typecheck / test) and dashboard **`npm run build`**. Formatted files that were already staged are re-added so the commit includes the formatted content. Bypass only in emergencies: `SKIP_PRECOMMIT=1 git commit …` or `git commit --no-verify`. Do **not** skip hooks to land red tests — fix the suite first (CI runs on Linux **and** Windows).
@@ -273,7 +273,7 @@ name-keyed config (`providers`, `voice_providers`, `storage_backends`); append-o
 
 **Internationalization (i18n):** Supported locales are **`zh`** and **`en`** (`en` is the fallback). User-facing text produced by the **server** (slash replies, IM/channel status, API error messages, tool display names, CLI output) must come from backend bundles — not hard-coded English in `infra/` when the string is shown to end users.
 
-Backend layout (`src/octop/i18n/`):
+Backend layout (`src/happyclaw/i18n/`):
 
 ```
 i18n/
@@ -302,7 +302,7 @@ i18n/
 **Frontend split**
 
 - **Dashboard chrome** (nav, forms, buttons): `dashboard/src/locales/{en,zh}.json` via i18next.
-- **Server-owned copy** (tools, apiErrors): canonical in `src/octop/i18n/*.json`; dashboard keeps copies synced (see `tests/unit/i18n/`) and may hydrate tools from `GET /api/i18n/tools`.
+- **Server-owned copy** (tools, apiErrors): canonical in `src/happyclaw/i18n/*.json`; dashboard keeps copies synced (see `tests/unit/i18n/`) and may hydrate tools from `GET /api/i18n/tools`.
 
 **Adding strings (checklist)**
 
@@ -331,7 +331,7 @@ User-facing datetime display and cron/scheduling defaults MUST use the server ti
 
 **Connectors:** `infra/connectors/` — catalog, OAuth registry, MCP gateway; HTTP surface in `api/routers/connectors.py`.
 
-**Metrics:** `from octop.infra.metrics import METRICS` — lazy-import inside functions to avoid circular imports.
+**Metrics:** `from happyclaw.infra.metrics import METRICS` — lazy-import inside functions to avoid circular imports.
 
 **API docs:** Interactive docs live at `/api/docs` (Scalar, backed by `/api/openapi.json`). When adding or changing API routes, keep the generated docs readable for humans:
 
@@ -354,19 +354,19 @@ User-facing datetime display and cron/scheduling defaults MUST use the server ti
 
 Boundary rules are in [§5](#5-module-boundaries). Additionally:
 
-- Do not reimplement `happyclaw-harness`, `happyclaw-gateway`, `happyclaw-memory`, or `happyclaw-browser` under `src/octop/` (see [Runtime libraries](#runtime-libraries)).
+- Do not reimplement `happyclaw-harness`, `happyclaw-gateway`, `happyclaw-memory`, or `happyclaw-browser` under `src/happyclaw/` (see [Runtime libraries](#runtime-libraries)).
 - Do not import legacy top-level modules — use current paths:
-  - `octop.agents.*` → `octop.infra.agents.*`
-  - `octop.channels.*` → `octop.infra.gateway.*`
-  - `octop.db.*` → `octop.infra.db.*`
-  - `octop.users.*` → `octop.infra.users.*`
-  - `octop.utils.*` → `octop.infra.utils.*` (or `octop.infra.metrics` for metrics)
-  - `octop.errors` / `octop.server` / `octop.shared` → `octop.infra.errors` / `octop.infra.server` / `octop.infra.db.services`
+  - `octop.agents.*` → `happyclaw.infra.agents.*`
+  - `octop.channels.*` → `happyclaw.infra.gateway.*`
+  - `octop.db.*` → `happyclaw.infra.db.*`
+  - `octop.users.*` → `happyclaw.infra.users.*`
+  - `happyclaw.utils.*` → `happyclaw.infra.utils.*` (or `happyclaw.infra.metrics` for metrics)
+  - `octop.errors` / `happyclaw.server` / `octop.shared` → `happyclaw.infra.errors` / `happyclaw.infra.server` / `happyclaw.infra.db.services`
 - Do not import `api/` from `infra/` or `cli/` — use `launch.py` to wire HTTP serving.
 - Do not put domain logic in `api/routers/` or `cli/*_cmd.py` when it belongs in `infra/`.
 - Do not import `infra/db/repos/*` from routers — use `server.services.*_repo` via `infra/` services or managers.
 - Do not write bare `pytest` — always `uv run pytest`.
-- Do not edit `src/octop/dashboard/` directly — build artifact; source is `dashboard/`.
+- Do not edit `src/happyclaw/dashboard/` directly — build artifact; source is `dashboard/`.
 - Do not add blocking I/O in async functions — use `run_in_executor`.
 
 ## 9. Where to look
@@ -384,7 +384,7 @@ Boundary rules are in [§5](#5-module-boundaries). Additionally:
 | What DB tables exist? | `infra/db/migrations/` + `infra/db/repos/` |
 | What env vars are supported? | `config.py` |
 | How does the frontend call the API? | `dashboard/src/api/request.ts` |
-| Internationalization (backend) | `src/octop/i18n/`, `infra/utils/locale.py`, `api/routers/i18n.py` |
+| Internationalization (backend) | `src/happyclaw/i18n/`, `infra/utils/locale.py`, `api/routers/i18n.py` |
 | Internationalization (dashboard) | `dashboard/src/locales/`, `dashboard/src/i18n.ts`, `dashboard/src/utils/apiError.ts` |
 | Server timezone (config.json) | `default_timezone` in `config.py`; `GET /api/settings/timezone`; `dashboard/src/hooks/useServerTimezone.ts`; `dashboard/src/utils/formatMessageTime.ts` |
 | Test layout & shared helpers | `tests/support/` (`fakes`, `auth`, `http`, `scenarios`, `app`), `tests/integration/conftest.py`, `tests/unit/{db,cron,gateway,agents,api,cli}/` |
@@ -401,7 +401,7 @@ Boundary rules are in [§5](#5-module-boundaries). Additionally:
 
 1. **Clarify scope** — read relevant code/docs; confirm assumptions and ambiguities with the user (see [§1](#1-collaboration-principles)). If the behavior belongs to a runtime library, change that repo (see [Runtime libraries](#runtime-libraries)).
 2. **Hooks** — if this clone has not run `make install-hooks` yet, do it before committing (see [§6](#6-run-commands)). Pre-commit must stay green (`make all` + dashboard build).
-3. **Minimal implementation** — change only task-related files; dashboard source is in `dashboard/`, build output in `src/octop/dashboard/` (run `make build-frontend` after UI changes).
+3. **Minimal implementation** — change only task-related files; dashboard source is in `dashboard/`, build output in `src/happyclaw/dashboard/` (run `make build-frontend` after UI changes).
 4. **Verify** — backend/ship bar: `make all` (`format-all` + `lint` + `typecheck` + `test`). After `dashboard/` changes, also run `cd dashboard && npx tsc -b` (and `npm run lint` when appropriate). After API route changes, glance at `/api/docs` for readable summaries and schemas. After i18n JSON changes, run `uv run pytest tests/unit/i18n -q`. Treat Windows CI as part of the bar: follow [§7 Cross-platform tests](#7-key-patterns).
 5. **Wrap up** — remove orphan symbols introduced in this change; do not commit or push unless asked.
 

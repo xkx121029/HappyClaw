@@ -405,7 +405,7 @@ async def test_ws_emits_error_frame_on_exception(env: Any) -> None:
 async def test_ws_auth_failure_has_actionable_error_and_releases_turn(env: Any) -> None:
     from langchain_core.exceptions import ModelAuthenticationError
 
-    from octop.i18n.domains.stream import AUTH, stream_error_message
+    from happyclaw.i18n.domains.stream import AUTH, stream_error_message
 
     c, srv, _fake, alice_auth, _bob_auth, aid = env
     agent = srv.app_runtime.agent_registry.get_agent(aid)

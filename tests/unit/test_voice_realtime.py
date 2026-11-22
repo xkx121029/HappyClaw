@@ -9,9 +9,9 @@ import pytest
 import websockets.asyncio.client as ws_client
 from websockets.exceptions import ConnectionClosed
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.voice import realtime
-from octop.infra.voice.realtime import RealtimeEvent
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.voice import realtime
+from happyclaw.infra.voice.realtime import RealtimeEvent
 
 CONFIG = realtime.RealtimeConfig(app_id="1302566622", secret_id="sid", secret_key="skey")
 

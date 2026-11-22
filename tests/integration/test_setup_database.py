@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import DatabaseConfig, OctopConfig, load_config
-from octop.infra.db.factory import open_database
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import DatabaseConfig, OctopConfig, load_config
+from happyclaw.infra.db.factory import open_database
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.utils.paths import PathLayout
 from tests.support.app import octop_client
 from tests.support.auth import bootstrap_admin
 
@@ -201,8 +201,8 @@ async def test_setup_postgresql_adopts_existing_users(tmp_octop_home: Path, monk
 
     from psycopg.conninfo import conninfo_to_dict
 
-    from octop.infra.db.pool import PostgresPool
-    from octop.infra.users.password import hash_password
+    from happyclaw.infra.db.pool import PostgresPool
+    from happyclaw.infra.users.password import hash_password
 
     try:
         adopt_url = _recreate_adopt_database(url)

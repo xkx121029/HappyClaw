@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.backend.opensandbox_mkdir import install_opensandbox_fs
+from happyclaw.infra.backend.opensandbox_mkdir import install_opensandbox_fs
 
 
 class _Result:

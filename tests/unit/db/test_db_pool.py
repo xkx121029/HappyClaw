@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
 
 
 @pytest.fixture
@@ -205,10 +205,10 @@ def test_run_migrations_idempotent(db: SqlitePool):
 
 def test_legacy_cron_trigger_column_renamed_to_schedule_spec(tmp_path: Path) -> None:
     """Old cron_jobs.trigger must become schedule_spec without dropping job rows."""
-    from octop.infra.db.repos.agents import AgentRepo
-    from octop.infra.db.repos.cron import CronJobRepo
-    from octop.infra.db.repos.users import UserRepo
-    from octop.infra.utils.ulid import new_ulid
+    from happyclaw.infra.db.repos.agents import AgentRepo
+    from happyclaw.infra.db.repos.cron import CronJobRepo
+    from happyclaw.infra.db.repos.users import UserRepo
+    from happyclaw.infra.utils.ulid import new_ulid
 
     pool = SqlitePool(tmp_path / "octop.db")
     run_migrations(pool)
@@ -253,7 +253,7 @@ def test_repair_legacy_schema_ensures_columns(tmp_path: Path) -> None:
         conn.executescript(
             (
                 Path(__file__).resolve().parents[3]
-                / "src/octop/infra/db/migrations/001_initial.sql"
+                / "src/happyclaw/infra/db/migrations/001_initial.sql"
             ).read_text()
         )
         # Simulate a schema version ahead of what the columns reflect
@@ -273,7 +273,7 @@ def test_migration_002_idempotent_when_column_already_present(tmp_path: Path) ->
         conn.executescript(
             (
                 Path(__file__).resolve().parents[3]
-                / "src/octop/infra/db/migrations/001_initial.sql"
+                / "src/happyclaw/infra/db/migrations/001_initial.sql"
             ).read_text()
         )
         conn.execute("ALTER TABLE cron_jobs ADD COLUMN mcp_servers TEXT NOT NULL DEFAULT '[]'")
@@ -294,7 +294,7 @@ def test_migration_005_preserves_populated_users_and_constraints(tmp_path: Path)
     db_path = tmp_path / "octop.db"
     pool = SqlitePool(db_path)
     initial_migration = (
-        Path(__file__).resolve().parents[3] / "src/octop/infra/db/migrations/001_initial.sql"
+        Path(__file__).resolve().parents[3] / "src/happyclaw/infra/db/migrations/001_initial.sql"
     )
     with pool.connect() as conn:
         conn.executescript(initial_migration.read_text())
@@ -416,7 +416,7 @@ def test_stuck_version_6_without_permissions_column_is_repaired(tmp_path: Path) 
         conn.executescript(
             (
                 Path(__file__).resolve().parents[3]
-                / "src/octop/infra/db/migrations/001_initial.sql"
+                / "src/happyclaw/infra/db/migrations/001_initial.sql"
             ).read_text()
         )
         conn.execute("UPDATE _schema_version SET version = 6")
@@ -436,7 +436,7 @@ def test_schema_v10_without_projection_tables_is_repaired(tmp_path: Path) -> Non
         conn.executescript(
             (
                 Path(__file__).resolve().parents[3]
-                / "src/octop/infra/db/migrations/001_initial.sql"
+                / "src/happyclaw/infra/db/migrations/001_initial.sql"
             ).read_text()
         )
         conn.execute("UPDATE _schema_version SET version = 10")
@@ -469,7 +469,7 @@ def test_ahead_of_max_schema_version_clamps_to_max(tmp_path: Path) -> None:
         conn.executescript(
             (
                 Path(__file__).resolve().parents[3]
-                / "src/octop/infra/db/migrations/001_initial.sql"
+                / "src/happyclaw/infra/db/migrations/001_initial.sql"
             ).read_text()
         )
         conn.execute("UPDATE _schema_version SET version = 8")
@@ -497,7 +497,7 @@ def test_current_watermark_repairs_pre_v13_connectors_schema(tmp_path: Path) -> 
         conn.executescript(
             (
                 Path(__file__).resolve().parents[3]
-                / "src/octop/infra/db/migrations/001_initial.sql"
+                / "src/happyclaw/infra/db/migrations/001_initial.sql"
             ).read_text()
         )
         conn.execute("UPDATE _schema_version SET version = 13")
@@ -561,7 +561,7 @@ def test_pre_squash_schema_version_clamped_and_knowledge_tables_filled(
         conn.executescript(
             (
                 Path(__file__).resolve().parents[3]
-                / "src/octop/infra/db/migrations/001_initial.sql"
+                / "src/happyclaw/infra/db/migrations/001_initial.sql"
             ).read_text()
         )
         # Simulate a develop DB whose recorded version is ahead of the
@@ -609,7 +609,7 @@ def test_transaction_rolls_back_on_exception(db: SqlitePool):
 
 def test_v7_sql_files_declare_identity_rebuild() -> None:
     """The numbered v7 pair must contain the table rebuild, not only ADD COLUMN."""
-    root = Path(__file__).resolve().parents[3] / "src/octop/infra/db/migrations"
+    root = Path(__file__).resolve().parents[3] / "src/happyclaw/infra/db/migrations"
     sqlite_sql = (root / "007_resource_identity_and_profile.sql").read_text(encoding="utf-8")
     pg_sql = (root / "007_resource_identity_and_profile.pg.sql").read_text(encoding="utf-8")
     for sql in (sqlite_sql, pg_sql):
@@ -633,7 +633,7 @@ def test_v7_sqlite_sql_upgrades_legacy_text_pks(tmp_path: Path) -> None:
     """A clean v6-shaped DB can execute 007.sql without going through Python helpers."""
     db_path = tmp_path / "octop.db"
     pool = SqlitePool(db_path)
-    migrations = Path(__file__).resolve().parents[3] / "src/octop/infra/db/migrations"
+    migrations = Path(__file__).resolve().parents[3] / "src/happyclaw/infra/db/migrations"
     with pool.connect() as conn:
         conn.executescript((migrations / "001_initial.sql").read_text(encoding="utf-8"))
         conn.executescript(

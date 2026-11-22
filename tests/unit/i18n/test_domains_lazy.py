@@ -2,7 +2,7 @@
 
 ``octop.i18n.domains`` used to eagerly import every domain, including
 ``domains.stream`` whose top level imports ``langchain_core``.  That made any
-error-handling / CLI path (e.g. ``from octop.infra.errors import OctopError``)
+error-handling / CLI path (e.g. ``from happyclaw.infra.errors import OctopError``)
 drag in the whole LangChain import tree.  Exports are now PEP 562 lazy.
 
 These guards run in fresh interpreters so ``sys.modules`` reflects only what
@@ -45,7 +45,7 @@ def test_domains_package_import_is_lightweight() -> None:
     out = _run(
         """
 import sys
-import octop.i18n.domains
+import happyclaw.i18n.domains
 print("LANGCHAIN_LOADED=" + str("langchain_core" in sys.modules))
 """
     )
@@ -56,8 +56,8 @@ def test_errors_and_cli_run_import_are_lightweight() -> None:
     out = _run(
         """
 import sys
-from octop.infra.errors import OctopError
-import octop.cli.commands.run
+from happyclaw.infra.errors import OctopError
+import happyclaw.cli.commands.run
 print("LANGCHAIN_LOADED=" + str("langchain_core" in sys.modules))
 """
     )
@@ -67,7 +67,7 @@ print("LANGCHAIN_LOADED=" + str("langchain_core" in sys.modules))
 def test_lazy_exports_all_resolve() -> None:
     out = _run(
         """
-import octop.i18n.domains as d
+import happyclaw.i18n.domains as d
 missing = []
 for name in d.__all__:
     try:
@@ -90,8 +90,8 @@ def test_direct_submodule_import_still_works() -> None:
     """Direct submodule imports bypass the package __init__ aggregation."""
     out = _run(
         """
-from octop.i18n.domains.stream import classify_stream_error_message
-from octop.i18n.domains.channel import channel_tool_hint_start
+from happyclaw.i18n.domains.stream import classify_stream_error_message
+from happyclaw.i18n.domains.channel import channel_tool_hint_start
 assert callable(classify_stream_error_message)
 assert callable(channel_tool_hint_start)
 print("OK")

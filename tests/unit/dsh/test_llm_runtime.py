@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 
-from octop.infra.dsh.llm import (
+from happyclaw.infra.dsh.llm import (
     AssistantTurnBuilder,
     CancellationToken,
     FailureCode,

@@ -32,7 +32,7 @@ def _shipped_langfuse_names() -> set[str]:
 
 def _names_read_by_octop() -> set[str]:
     names: set[str] = set()
-    for path in (REPO_ROOT / "src/octop").rglob("*.py"):
+    for path in (REPO_ROOT / "src/happyclaw").rglob("*.py"):
         names.update(
             re.findall(
                 r"\b(?:getenv|environ\.get|environ\[)\(?\s*[\"']([A-Z][A-Z0-9_]{3,})[\"']",
@@ -49,7 +49,7 @@ def _sdk_env_names() -> set[str]:
 
 def test_octop_reads_no_langfuse_env_var() -> None:
     """Guard the premise: Octop's switch lives in the settings table, not env."""
-    source = (REPO_ROOT / "src/octop/infra/agents/settings/langfuse.py").read_text(encoding="utf-8")
+    source = (REPO_ROOT / "src/happyclaw/infra/agents/settings/langfuse.py").read_text(encoding="utf-8")
     assert '"observability_langfuse_enabled"' in source
     assert not re.search(r"(?:getenv|environ(?:\.get)?)\(\s*[\"']OCTOP_LANGFUSE", source)
 

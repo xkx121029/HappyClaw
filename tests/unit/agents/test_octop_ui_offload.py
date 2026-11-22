@@ -10,7 +10,7 @@ import pytest
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 
-from octop.infra.agents.middleware.octop_ui_offload import (
+from happyclaw.infra.agents.middleware.octop_ui_offload import (
     _OFFLOAD_MIN_CHARS,
     OctopUiOffloadMiddleware,
 )
@@ -175,7 +175,7 @@ def test_offload_never_breaks_tool_call() -> None:
     mw = OctopUiOffloadMiddleware()
     result = _big_message()
     with patch(
-        "octop.infra.agents.middleware.octop_ui_offload.json.loads",
+        "happyclaw.infra.agents.middleware.octop_ui_offload.json.loads",
         side_effect=RuntimeError("boom"),
     ):
         out = mw.wrap_tool_call(_request(), lambda _req: result)

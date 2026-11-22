@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from octop.infra.migration.hermes import find_hermes_home, read_hermes
+from happyclaw.infra.migration.hermes import find_hermes_home, read_hermes
 
 
 def _home(tmp_path: Path, config: str = "", env: str = "") -> Path:

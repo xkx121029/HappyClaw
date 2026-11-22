@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.users.password import (
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.users.password import (
     hash_password,
     validate_password_policy,
     verify_password,

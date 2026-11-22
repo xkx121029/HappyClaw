@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from octop.infra.market import clear_market_cache
+from happyclaw.infra.market import clear_market_cache
 
 
 @pytest.fixture(autouse=True)

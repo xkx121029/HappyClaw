@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.usage import UsageRepo
-from octop.infra.db.repos.user_policies import UserPolicyRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.users.resource_policy import (
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.usage import UsageRepo
+from happyclaw.infra.db.repos.user_policies import UserPolicyRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.users.resource_policy import (
     POLICY_MAX_AGENTS,
     POLICY_TOKEN_QUOTA,
     POLICY_WORKSPACE_ROOT_DIR,
@@ -58,7 +58,7 @@ def test_normalize_workspace_root_dir_must_be_directory(
 def test_normalize_workspace_root_dir_rejected_in_container(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.infra.users.resource_policy import effective_workspace_root_dir
+    from happyclaw.infra.users.resource_policy import effective_workspace_root_dir
 
     root = tmp_path / "jail"
     root.mkdir()

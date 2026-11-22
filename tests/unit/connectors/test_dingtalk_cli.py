@@ -3,9 +3,9 @@ from __future__ import annotations
 import pytest
 from tests.support.fakes import fake_bin_path
 
-from octop.infra.connectors.builder import validate_create_credentials
-from octop.infra.connectors.gateway.adapters import dingtalk_cli
-from octop.infra.connectors.gateway.registry import get_gateway_adapter
+from happyclaw.infra.connectors.builder import validate_create_credentials
+from happyclaw.infra.connectors.gateway.adapters import dingtalk_cli
+from happyclaw.infra.connectors.gateway.registry import get_gateway_adapter
 
 
 def test_credentials_are_an_optional_pair_with_isolation_key() -> None:

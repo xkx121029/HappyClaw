@@ -1,0 +1,85 @@
+"""Unified plugin market: octop + DSH catalogs, one install pipeline."""
+
+from happyclaw.infra.plugins.market.envelope import ENVELOPE_FILENAME
+from happyclaw.infra.plugins.market.errors import (
+    CapabilityExpansionError,
+    ChecksumMismatchError,
+    ConfigSchemaChangedError,
+    DependencyConstraintError,
+    DependencyInUseError,
+    IndexFormatError,
+    IndexUnusableError,
+    InstallConflictError,
+    MarketError,
+    MarketErrorCode,
+    PayloadError,
+    ReleaseNotFound,
+    SourceUnreachableError,
+    UnsupportedSourceError,
+)
+from happyclaw.infra.plugins.market.models import (
+    Artifact,
+    MarketEntry,
+    PluginRelease,
+    RejectedEntry,
+)
+from happyclaw.infra.plugins.market.pipeline import (
+    DependencyImpact,
+    IndexConflict,
+    InstallResult,
+    MarketplaceIndex,
+    PlanResult,
+    UninstallResult,
+    UpgradeResult,
+    install_entry,
+    plugin_dir_name,
+    uninstall,
+    verify_install,
+)
+from happyclaw.infra.plugins.market.source import InstalledPayload, Source
+from happyclaw.infra.plugins.market.sources import DshSource, OctopSource
+from happyclaw.infra.plugins.runtime.contract import (
+    CapabilityKind,
+    PluginKind,
+    PluginRequirement,
+)
+
+__all__ = [
+    "Artifact",
+    "CapabilityExpansionError",
+    "CapabilityKind",
+    "ChecksumMismatchError",
+    "ConfigSchemaChangedError",
+    "DependencyConstraintError",
+    "DependencyImpact",
+    "DependencyInUseError",
+    "DshSource",
+    "ENVELOPE_FILENAME",
+    "IndexConflict",
+    "IndexFormatError",
+    "IndexUnusableError",
+    "InstallConflictError",
+    "InstallResult",
+    "InstalledPayload",
+    "MarketEntry",
+    "MarketError",
+    "MarketErrorCode",
+    "MarketplaceIndex",
+    "OctopSource",
+    "PayloadError",
+    "PlanResult",
+    "PluginKind",
+    "PluginRelease",
+    "PluginRequirement",
+    "RejectedEntry",
+    "ReleaseNotFound",
+    "Source",
+    "SourceUnreachableError",
+    "UninstallResult",
+    "UnsupportedSourceError",
+    "UpgradeResult",
+    "install_entry",
+    "plugin_dir_name",
+    "uninstall",
+    "verify_install",
+]

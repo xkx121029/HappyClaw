@@ -2,7 +2,7 @@
 #
 # octop — 飞牛本地版「官方 CLI」包装
 #
-# 复刻 octop 运行环境后调用 `python -m octop.cli.main`，因此可使用全部官方子命令：
+# 复刻 octop 运行环境后调用 `python -m happyclaw.cli.main`，因此可使用全部官方子命令：
 #   octop --help
 #   octop version
 #   octop provider list
@@ -81,7 +81,7 @@ fi
 
 # 飞牛 FPK 部署标识 + 打包 site-packages 路径：内置在线升级安装到此目录
 # （launcher 实际加载的位置），重启服务后即加载新版，升级真正生效
-# （见 src/octop/infra/setup/self_update.py 的 _run_fpk_upgrade）。
+# （见 src/happyclaw/infra/setup/self_update.py 的 _run_fpk_upgrade）。
 export OCTOP_INSTALL_MODE="fpk-native"
 export OCTOP_FPK_SITE_PACKAGES="$SITE_PACKAGES"
 
@@ -103,7 +103,7 @@ if id octop-native >/dev/null 2>&1 && command -v sudo >/dev/null 2>&1; then
         OCTOP_DATA_DIR="$OCTOP_DATA_DIR" \
         OCTOP_INSTALL_MODE="$OCTOP_INSTALL_MODE" \
         OCTOP_FPK_SITE_PACKAGES="$OCTOP_FPK_SITE_PACKAGES" \
-        "$PY" -m octop.cli.main "$@"
+        "$PY" -m happyclaw.cli.main "$@"
 else
-    exec "$PY" -m octop.cli.main "$@"
+    exec "$PY" -m happyclaw.cli.main "$@"
 fi

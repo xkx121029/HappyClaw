@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.gateway.threads import ThreadRegistry
 from tests.support.auth import create_user, resolve_user_id
 
 

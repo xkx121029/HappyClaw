@@ -8,14 +8,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from octop.infra.gateway.process.processor import GlobalProcessor
-from octop.infra.gateway.process.thread_title import (
+from happyclaw.infra.gateway.process.processor import GlobalProcessor
+from happyclaw.infra.gateway.process.thread_title import (
     TITLE_SOURCE_MAX,
     clean_generated_title,
     clip_title_source,
     should_autotitle,
 )
-from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
 
 def test_should_autotitle_skips_slash_and_existing() -> None:
@@ -74,7 +74,7 @@ async def test_generate_thread_title_uses_model_text() -> None:
     stored: dict[str, str | None] = {"title": None}
     processor, gateway = _processor(stored)
     with patch(
-        "octop.infra.text_assist.run_text_assist",
+        "happyclaw.infra.text_assist.run_text_assist",
         new=AsyncMock(return_value="季度销售"),
     ):
         await processor._generate_thread_title("thr", "请总结上季度销售数据", user_id=3)
@@ -91,7 +91,7 @@ async def test_generate_thread_title_falls_back_to_the_question() -> None:
     stored: dict[str, str | None] = {"title": None}
     processor, _gateway = _processor(stored)
     with patch(
-        "octop.infra.text_assist.run_text_assist",
+        "happyclaw.infra.text_assist.run_text_assist",
         new=AsyncMock(side_effect=RuntimeError("down")),
     ):
         await processor._generate_thread_title("thr", "原始问题", user_id=3)
@@ -108,7 +108,7 @@ async def test_schedule_keeps_the_question_visible_before_the_model_returns() ->
         await release.wait()
         return "季度销售"
 
-    with patch("octop.infra.text_assist.run_text_assist", new=_hold):
+    with patch("happyclaw.infra.text_assist.run_text_assist", new=_hold):
         processor._schedule_auto_thread_title("thr", "Hello", user_id=1)
         assert stored["title"] == "Hello"
         release.set()

@@ -12,7 +12,7 @@ import pathlib
 
 import pytest
 
-from octop.infra.utils import paths
+from happyclaw.infra.utils import paths
 
 
 @pytest.fixture(autouse=True)
@@ -103,7 +103,7 @@ def test_legacy_home_variable_still_honoured(
 
 
 def test_env_alias_mirrors_new_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.utils import env_alias
+    from happyclaw.infra.utils import env_alias
 
     env = {"HAPPYCLAW_PORT": "8080", "HAPPYCLAW_": "ignored", "PATH": "/usr/bin"}
     aliased = env_alias.alias_legacy_env(env)
@@ -114,7 +114,7 @@ def test_env_alias_mirrors_new_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_env_alias_never_overrides_an_explicit_legacy_value() -> None:
-    from octop.infra.utils import env_alias
+    from happyclaw.infra.utils import env_alias
 
     env = {"HAPPYCLAW_PORT": "8080", "OCTOP_PORT": "9090"}
     env_alias.alias_legacy_env(env)

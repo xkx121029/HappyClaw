@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.skills import skill_packages
+from happyclaw.infra.skills import skill_packages
 
 
 def test_resolve_package_from_an_independent_market() -> None:

@@ -13,9 +13,9 @@ from pathlib import Path
 import pytest
 from tests.support.fakes import FakeHarnessAgent
 
-from octop.infra.agents.builtin_skills import sync_octop_builtin_skills
+from happyclaw.infra.agents.builtin_skills import sync_octop_builtin_skills
 
-_PACKAGE = "octop.infra.agents.builtin_skills"
+_PACKAGE = "happyclaw.infra.agents.builtin_skills"
 
 
 def _manager_script() -> Path:

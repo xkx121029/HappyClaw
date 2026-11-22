@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo, AgentRow
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.utils.ulid import new_ulid
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo, AgentRow
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.utils.ulid import new_ulid
 
 
 @pytest.fixture

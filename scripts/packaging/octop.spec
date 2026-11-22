@@ -88,7 +88,7 @@ a = Analysis(
 
 # Drop googleapiclient's offline discovery corpus: 586 files / ~98 MB used only
 # by langchain-community's Google Drive / Gmail loaders, which this server does
-# not expose as features. ``octop.infra.utils.google_discovery`` wraps
+# not expose as features. ``happyclaw.infra.utils.google_discovery`` wraps
 # ``build()`` so a missing static document falls back to the network (and raises
 # a Chinese hint when offline). Same trade-off as
 # ``desktop/portable/prune_packages.py``; ``octop selfcheck`` verifies it.

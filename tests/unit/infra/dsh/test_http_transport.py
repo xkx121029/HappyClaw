@@ -16,13 +16,13 @@ from langchain_core.messages import HumanMessage
 from happyclaw_harness.config import ModelConfig, ProviderConfig
 from happyclaw_harness.llm.factory import ChatModelFactory
 
-from octop.infra.dsh.llm.errors import FailureCode, ProviderFailure
-from octop.infra.dsh.llm.factory import DshModelFactory
-from octop.infra.dsh.llm.http_transport import (
+from happyclaw.infra.dsh.llm.errors import FailureCode, ProviderFailure
+from happyclaw.infra.dsh.llm.factory import DshModelFactory
+from happyclaw.infra.dsh.llm.http_transport import (
     build_http_transport,
     is_loopback_url,
 )
-from octop.infra.dsh.llm.langchain_model import DshChatModel
+from happyclaw.infra.dsh.llm.langchain_model import DshChatModel
 
 Handler = Callable[[asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]]
 

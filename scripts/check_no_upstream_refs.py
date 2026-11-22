@@ -95,7 +95,7 @@ ALLOWED: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
             "localStorage keys: renaming them silently discards the owner's saved view state",
         ),
     ),
-    "src/octop/infra/plugins/market/sources/octop.py": (
+    "src/happyclaw/infra/plugins/market/sources/octop.py": (
         (
             re.compile(r'"origin": "octop\.cloud"'),
             "plugin provenance label stored with installed envelopes; must match what is already on disk",
@@ -113,7 +113,7 @@ ALLOWED: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
             "historical branch name quoted from the source repository",
         ),
     ),
-    "src/octop/infra/agents/providers/onnx_download.py": (
+    "src/happyclaw/infra/agents/providers/onnx_download.py": (
         (
             re.compile(r"COS_ENDPOINT_DEFAULT = \"https://octop-"),
             "default embedding-model bucket, overridable with OCTOP_ONNX_COS_BASE; clearing it degrades "

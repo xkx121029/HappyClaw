@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
+from happyclaw.cli.main import cli
 
 
 @pytest.mark.parametrize("shell", ["bash", "zsh"])

@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 
-import octop.infra.market.http as market_http
-from octop.infra.agents.plugins.bundled import default_bundled_plugins_root
-from octop.infra.agents.plugins.manager import PluginManager
-from octop.infra.agents.plugins.seed import seed_bundled_plugins
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.market import PortalMarketError, clear_market_cache
+import happyclaw.infra.market.http as market_http
+from happyclaw.infra.agents.plugins.bundled import default_bundled_plugins_root
+from happyclaw.infra.agents.plugins.manager import PluginManager
+from happyclaw.infra.agents.plugins.seed import seed_bundled_plugins
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.market import PortalMarketError, clear_market_cache
 
 
 def _catalog_ids() -> set[str]:

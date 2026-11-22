@@ -34,8 +34,8 @@ build_octop_wheel() {
   mkdir -p "$wheel_dir"
   # Drop previous local octop wheels so we pick the fresh build.
   find "$wheel_dir" -maxdepth 1 -type f -name 'octop-*.whl' -delete 2>/dev/null || true
-  if [[ ! -f "${REPO_ROOT}/src/octop/dashboard/index.html" ]]; then
-    echo "[package] WARNING: dashboard not built (src/octop/dashboard/index.html missing)." >&2
+  if [[ ! -f "${REPO_ROOT}/src/happyclaw/dashboard/index.html" ]]; then
+    echo "[package] WARNING: dashboard not built (src/happyclaw/dashboard/index.html missing)." >&2
     echo "  Run: make build-frontend" >&2
   fi
   echo "[package] building octop wheel → ${wheel_dir}" >&2

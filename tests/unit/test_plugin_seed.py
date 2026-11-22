@@ -9,9 +9,9 @@ from pathlib import Path
 import pytest
 from happyclaw_harness.plugins import PluginRegistry
 
-from octop.infra.agents.plugins.manager import PluginManager
-from octop.infra.agents.plugins.seed import seed_bundled_plugins
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.agents.plugins.manager import PluginManager
+from happyclaw.infra.agents.plugins.seed import seed_bundled_plugins
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def _write_plugin(root: Path, plugin_id: str, *, version: str = "0.1.0") -> Path:

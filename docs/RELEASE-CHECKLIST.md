@@ -16,7 +16,7 @@
 | 1.2 | 项目版本 | `pyproject.toml` version 与 README / README_CN 徽章一致 | ✅ | ☐ |
 | 1.3 | CHANGELOG | 包含当前版本条目，且「单人化改造」已记录 | ✅ | ☐ |
 | 1.4 | 运行时依赖 | `happyclaw-harness[all]>=1.0.9`、`happyclaw-gateway>=1.0.3`、`fastapi>=0.110`、`uvicorn[standard]>=0.27` 已发布到 PyPI | ☐ | ☐ |
-| 1.5 | 前端构建 | `make build-frontend` 成功，产物写入 `src/octop/dashboard/` | ☐ | ☐ |
+| 1.5 | 前端构建 | `make build-frontend` 成功，产物写入 `src/happyclaw/dashboard/` | ☐ | ☐ |
 | 1.6 | 锁文件 | `uv.lock` 与 `pyproject.toml` 同步（`uv lock --check`） | ☐ | ☐ |
 | 1.7 | 静态检查 | `make all`（format + lint + typecheck + test）全绿 | ☐ | ☐ |
 
@@ -89,7 +89,7 @@
 
 ### 7.9 代码里仍存在、但文档已按单人化描述的部分（待后端落地后复核）
 
-> 2026-11-12 静态核对 `src/octop/api/` 与 `src/octop/cli/` 得出。2026-11-12 07:06 运行时复核：setup 已固定为无需初始化、JWT 已放宽，7.9.1–7.9.5 的对外行为与文档一致（代码保留为兼容层）；7.9.6、7.9.7 尚未实测，仍按待复核处理。
+> 2026-11-12 静态核对 `src/happyclaw/api/` 与 `src/happyclaw/cli/` 得出。2026-11-12 07:06 运行时复核：setup 已固定为无需初始化、JWT 已放宽，7.9.1–7.9.5 的对外行为与文档一致（代码保留为兼容层）；7.9.6、7.9.7 尚未实测，仍按待复核处理。
 
 | # | 代码事实 | 与文档的差异 | 状态 |
 |---|----------|--------------|------|
@@ -99,7 +99,7 @@
 | 7.9.4 | `setup.py` 挂在 `/api`，`setup_lockdown` 中间件仍安装；无初始用户时抛 `SETUP_REQUIRED` | 快速开始与帮助文档已不包含 setup 向导 | ☑ 已达成（干净 `HAPPYCLAW_HOME` 下 `setup_required:false`、本地 owner 自动创建、begin/finish 400） |
 | 7.9.5 | `middleware/jwt_auth.py` 全局校验 `/api/*`，仅放行 health、login、captcha、MFA、OIDC/OAuth、LDAP 等白名单 | 文档按「直接调用 API、无需 Authorization」描述 | ☑ 已达成（无 token 时 `/api/users`、`/api/teams` 均 200） |
 | 7.9.6 | `admin.py` / `backup.py` 挂在 `/api/admin`；`octop user` 系列 CLI 仍注册但标注 deprecated | 文档把多用户管理描述为纯兼容层 | ☐ 待后端落地后复核 |
-| 7.9.7 | `src/octop/infra/users/`（`manager.py`、`invites.py`、`password.py`、`permissions.py`、`groups.py` 等）仍存在；`api/common/sso_cookie.py`、`user_manager.count()`、`~/.happyclaw/users/` 旧目录仍在代码路径中 | 文档未描述这些兼容面 | ☐ 待后端落地后复核 |
+| 7.9.7 | `src/happyclaw/infra/users/`（`manager.py`、`invites.py`、`password.py`、`permissions.py`、`groups.py` 等）仍存在；`api/common/sso_cookie.py`、`user_manager.count()`、`~/.happyclaw/users/` 旧目录仍在代码路径中 | 文档未描述这些兼容面 | ☐ 待后端落地后复核 |
 
 > 7.8 记录（2026-11-12 07:10）：WSL 仍缺 `/bin/bash`，改用 Git Bash `GNU bash 5.2.37(1)-release` 执行 `bash -n`，以下 12 个脚本全部通过：`scripts/install.sh`、`scripts/install-octop.sh`、`scripts/build-fpk.sh`、`scripts/fnos/common.sh`、`scripts/fnos/slim-site-packages.sh`、`scripts/fnos/store_version.sh`、`scripts/wheel_build.sh`、`scripts/ci/upload_release_cos.sh`、`scripts/run-discord-local.sh`、`docker/docker_build.sh`、`docker/docker-entrypoint.sh`、`docker/bake-desktop.sh`。仅做语法校验，未在 POSIX 上执行。
 

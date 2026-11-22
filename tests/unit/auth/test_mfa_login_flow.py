@@ -9,10 +9,10 @@ import pytest
 from tests.support.app import ensure_control_plane_bound
 from tests.support.auth import TEST_PASSWORD, bootstrap_admin
 
-from octop.api.app import build_app
-from octop.infra.auth.mfa.service import MfaService
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.server import OctopServer
+from happyclaw.api.app import build_app
+from happyclaw.infra.auth.mfa.service import MfaService
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.server import OctopServer
 
 
 @pytest.fixture()

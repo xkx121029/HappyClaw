@@ -10,10 +10,10 @@ from typing import Any
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.voice import realtime
-from octop.infra.voice.manager import VoiceManager
-from octop.infra.voice.realtime import RealtimeEvent
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.voice import realtime
+from happyclaw.infra.voice.manager import VoiceManager
+from happyclaw.infra.voice.realtime import RealtimeEvent
 from tests.support.app import octop_client
 from tests.support.auth import auth_header, bootstrap_admin
 from tests.support.http import ws_connect, ws_token

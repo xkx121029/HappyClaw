@@ -12,9 +12,9 @@ from unittest.mock import MagicMock
 import pytest
 from tests.unit.agents.test_memory_slim import make_manager
 
-from octop.config import OctopConfig
-from octop.infra.agents.memory.sqlite_storage import _checkpoint_policy
-from octop.infra.agents.memory.storage import sqlite_store_is_shared
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.memory.sqlite_storage import _checkpoint_policy
+from happyclaw.infra.agents.memory.storage import sqlite_store_is_shared
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ async def test_inspect_then_maintain_preserves_history_and_never_sweeps_host(sto
         pytest.fail("current-expert maintenance must never sweep the host")
 
     monkeypatch.setattr(
-        "octop.infra.agents.memory.thread_cleanup.sweep_deleted_residuals", forbidden
+        "happyclaw.infra.agents.memory.thread_cleanup.sweep_deleted_residuals", forbidden
     )
     first = coordinator.start_current("a", 1)
     assert first["busy"] and first["job"]["phase"] == "waiting"
@@ -118,7 +118,7 @@ def test_stopped_expert_sharing_sqlite_disables_maintenance(store, monkeypatch, 
     )
     registry._repos.agent_repo.list_all.return_value.append(other)
     monkeypatch.setattr(
-        "octop.infra.agents.memory.storage.workspace_for_agent_row",
+        "happyclaw.infra.agents.memory.storage.workspace_for_agent_row",
         lambda *args, **kwargs: tmp_path,
     )
     assert sqlite_store_is_shared(registry, "a", memory)
@@ -167,7 +167,7 @@ async def test_shared_file_counts_only_selected_namespace_and_never_maintains(st
 
 
 def test_read_only_counts_distinguish_missing_zero_and_timeout(tmp_path, monkeypatch):
-    from octop.infra.agents.memory.sqlite_storage import inspect_sqlite_storage
+    from happyclaw.infra.agents.memory.sqlite_storage import inspect_sqlite_storage
 
     path = tmp_path / "minimal.sqlite"
     with sqlite3.connect(path) as conn:
@@ -185,7 +185,7 @@ def test_read_only_counts_distinguish_missing_zero_and_timeout(tmp_path, monkeyp
     assert rows["checkpoints"]["rows"] == 3
     assert rows["checkpoint_threads"]["rows"] == 2
     assert path.read_bytes() == original
-    monkeypatch.setattr("octop.infra.agents.memory.sqlite_storage.COUNT_BUDGET_SECONDS", 0)
+    monkeypatch.setattr("happyclaw.infra.agents.memory.sqlite_storage.COUNT_BUDGET_SECONDS", 0)
     snapshot = inspect_sqlite_storage(backend, shared=False)
     assert snapshot["memory_counts"][0]["status"] == "timed_out"
     assert snapshot["memory_counts"][0]["rows"] is None

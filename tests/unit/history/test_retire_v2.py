@@ -14,17 +14,17 @@ from langgraph.checkpoint.base import empty_checkpoint
 from happyclaw_memory import Memory
 from happyclaw_memory.pipeline.lifecycle.checkpoint_gc import prune_checkpoints
 
-from octop.config import OctopConfig
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.thread_messages import ThreadMessageRepo
-from octop.infra.db.repos.threads import ThreadRepo
-from octop.infra.db.repos.trajectory_events import TrajectoryEventRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.history.projection import message_inputs
-from octop.infra.history.retire_v2 import ARCHIVE_NAME, MARKER_NAME, migrate_history_v2
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.thread_messages import ThreadMessageRepo
+from happyclaw.infra.db.repos.threads import ThreadRepo
+from happyclaw.infra.db.repos.trajectory_events import TrajectoryEventRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.history.projection import message_inputs
+from happyclaw.infra.history.retire_v2 import ARCHIVE_NAME, MARKER_NAME, migrate_history_v2
+from happyclaw.infra.utils.paths import PathLayout
 
 _SCHEMA = """
 CREATE TABLE archive_meta (version INTEGER, identity TEXT);
@@ -195,8 +195,8 @@ def test_interleaved_legacy_rows_keep_order_and_only_insert_missing_bodies(store
 
 @pytest.mark.asyncio
 async def test_failed_thread_prevents_agent_boot_and_leaves_original_archive(stores, monkeypatch):
-    from octop.infra.agents.manager import AgentManager
-    from octop.infra.server import OctopServer
+    from happyclaw.infra.agents.manager import AgentManager
+    from happyclaw.infra.server import OctopServer
 
     paths, pool, _ = stores
     with closing(sqlite3.connect(paths.root / ARCHIVE_NAME)) as conn, conn:
@@ -233,8 +233,8 @@ async def test_failed_thread_prevents_agent_boot_and_leaves_original_archive(sto
 async def test_ignored_v2_settings_warn_once_and_do_not_prevent_startup(
     tmp_octop_home, monkeypatch, caplog
 ):
-    from octop.config import _warn_retired_history_config, load_config
-    from octop.infra.server import OctopServer
+    from happyclaw.config import _warn_retired_history_config, load_config
+    from happyclaw.infra.server import OctopServer
 
     _warn_retired_history_config.cache_clear()
     paths = PathLayout(tmp_octop_home)
@@ -253,8 +253,8 @@ async def test_ignored_v2_settings_warn_once_and_do_not_prevent_startup(
 def test_offline_backup_restore_installs_legacy_archive_for_next_start(stores, tmp_path):
     import tarfile
 
-    from octop.infra.backup.system_archive import create_system_backup, restore_system_backup
-    from octop.infra.errors import OctopError
+    from happyclaw.infra.backup.system_archive import create_system_backup, restore_system_backup
+    from happyclaw.infra.errors import OctopError
 
     paths, pool, registry = stores
     message = message_to_dict(HumanMessage(content="stored in the old archive", id="legacy"))

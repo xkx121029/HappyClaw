@@ -9,12 +9,12 @@ from typing import Any
 import pytest
 from fastapi import Request
 
-from octop.api.routers import update as update_router
-from octop.api.routers import update_store
-from octop.api.routers.update_store import UpgradeTaskStatus, create_task, get_task
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.setup import self_update
-from octop.infra.setup.self_update import UpgradeResult
+from happyclaw.api.routers import update as update_router
+from happyclaw.api.routers import update_store
+from happyclaw.api.routers.update_store import UpgradeTaskStatus, create_task, get_task
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.setup import self_update
+from happyclaw.infra.setup.self_update import UpgradeResult
 
 
 @pytest.fixture(autouse=True)

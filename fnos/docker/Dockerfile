@@ -25,7 +25,7 @@
 # =============================================================================
 
 # ---------------------------------------------------------------------------
-# 阶段 1 — 前端构建（React / TypeScript → src/octop/dashboard）
+# 阶段 1 — 前端构建（React / TypeScript → src/happyclaw/dashboard）
 # ---------------------------------------------------------------------------
 FROM node:20-slim AS frontend-builder
 
@@ -40,7 +40,7 @@ RUN --mount=type=cache,target=/root/.npm \
 
 COPY dashboard/ ./
 
-RUN mkdir -p ../src/octop/dashboard
+RUN mkdir -p ../src/happyclaw/dashboard
 RUN NODE_ENV=production NODE_OPTIONS="--max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE}" npx vite build
 
 # ---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ WORKDIR /app
 # 仅改源码时可复用此层缓存（用 uv pip 安装，避免 uv.lock 冻结冲突）
 COPY pyproject.toml README.md LICENSE ./
 COPY src/ ./src/
-COPY --from=frontend-builder /build/src/octop/dashboard/ ./src/octop/dashboard/
+COPY --from=frontend-builder /build/src/happyclaw/dashboard/ ./src/happyclaw/dashboard/
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY docker/bake-desktop.sh /usr/local/bin/bake-desktop.sh

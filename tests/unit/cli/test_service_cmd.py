@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
-from octop.infra.setup.service import (
+from happyclaw.cli.main import cli
+from happyclaw.infra.setup.service import (
     ServiceRuntime,
     ServiceStatus,
     launchd_domain,
@@ -44,7 +44,7 @@ def test_service_help_lists_commands() -> None:
 
 
 def test_service_start_installs_and_starts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import octop.cli.commands.service as service_cmd
+    import happyclaw.cli.commands.service as service_cmd
 
     runtime = _runtime(tmp_path)
     calls: list[str] = []
@@ -83,7 +83,7 @@ def test_service_start_applies_unit_when_rewritten(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """Rewriting the unit (e.g. LimitNOFILE) must bounce systemd so the new cap applies."""
-    import octop.cli.commands.service as service_cmd
+    import happyclaw.cli.commands.service as service_cmd
 
     runtime = _runtime(tmp_path)
     applied: list[bool] = []
@@ -118,7 +118,7 @@ def test_service_start_emits_diagnostic_hint_when_health_unreachable(
 ) -> None:
     """On health-check failure, surface a hint pointing to the service logs so
     users don't have to dig through launchd/systemd docs."""
-    import octop.cli.commands.service as service_cmd
+    import happyclaw.cli.commands.service as service_cmd
 
     runtime = _runtime(tmp_path)
     monkeypatch.setattr(service_cmd, "build_runtime", lambda **kw: runtime)
@@ -149,7 +149,7 @@ def test_service_start_emits_diagnostic_hint_when_health_unreachable(
 def test_service_status_exits_when_health_unreachable(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    import octop.cli.commands.service as service_cmd
+    import happyclaw.cli.commands.service as service_cmd
 
     runtime = _runtime(tmp_path)
     monkeypatch.setattr(service_cmd, "build_runtime", lambda **kw: runtime)
@@ -175,7 +175,7 @@ def test_service_status_exits_when_health_unreachable(
 
 def test_service_start_forwards_user_scope(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """`--scope user` must reach build_runtime so the user-domain path is used."""
-    import octop.cli.commands.service as service_cmd
+    import happyclaw.cli.commands.service as service_cmd
 
     runtime = _runtime(tmp_path, mode="launchd", scope="user")
     captured_kwargs: dict[str, object] = {}
@@ -215,7 +215,7 @@ def test_service_status_shows_plist_and_domain(
 ) -> None:
     """`status` must report plist path and launchd domain so users can see
     which scope is being inspected."""
-    import octop.cli.commands.service as service_cmd
+    import happyclaw.cli.commands.service as service_cmd
 
     runtime = _runtime(tmp_path, mode="launchd", scope="user")
     monkeypatch.setattr(service_cmd, "build_runtime", lambda **kw: runtime)

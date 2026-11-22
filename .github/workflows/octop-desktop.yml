@@ -80,13 +80,13 @@ jobs:
           cache: npm
           cache-dependency-path: dashboard/package-lock.json
 
-      - name: Build frontend → src/octop/dashboard
+      - name: Build frontend → src/happyclaw/dashboard
         run: make build-frontend
 
       - uses: actions/upload-artifact@v7
         with:
           name: dashboard-dist
-          path: src/octop/dashboard/
+          path: src/happyclaw/dashboard/
           if-no-files-found: error
           retention-days: 7
 
@@ -166,7 +166,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
-          path: src/octop/dashboard
+          path: src/happyclaw/dashboard
 
       - uses: astral-sh/setup-uv@v7
         with:
@@ -246,9 +246,9 @@ jobs:
           zip="desktop/portable/release/Octop-portable-${plat}-${OCTOP_VERSION}.zip"
           rm -rf desktop/src/resources/portable
           mkdir -p desktop/src/resources/portable
-          # The shell serves packages/octop/dashboard from this tree. There is
+          # The shell serves packages/happyclaw/dashboard from this tree. There is
           # no second copy under resources/dashboard.
-          test -f "desktop/portable/release/Octop-${plat}/packages/octop/dashboard/index.html"
+          test -f "desktop/portable/release/Octop-${plat}/packages/happyclaw/dashboard/index.html"
           # Windows keeps one zip; NSIS extracts it with tar.exe. Packing the
           # ~40k files into NSIS is slower. macOS (DMG) and Linux (deb/rpm)
           # copy the tree package.sh already assembled. No zip in those apps.
@@ -283,7 +283,7 @@ jobs:
           print(f"Bundled {path.name} with SHA-256 {manifest['sha256']}")
           PY
           if [[ "$plat" != windows-* ]]; then
-            test -f desktop/src/resources/portable/packages/octop/dashboard/index.html
+            test -f desktop/src/resources/portable/packages/happyclaw/dashboard/index.html
           fi
 
       - uses: actions/setup-node@v5

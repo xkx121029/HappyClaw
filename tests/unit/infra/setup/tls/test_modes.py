@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.config import OctopConfig, TlsConfig
-from octop.infra.setup.tls.modes import (
+from happyclaw.config import OctopConfig, TlsConfig
+from happyclaw.infra.setup.tls.modes import (
     TlsIssueMode,
     is_issue_eligible,
     is_renewal_mode,

@@ -1,7 +1,7 @@
 """Live connectivity probes for bundled token / api_key connectors.
 
 Each connector is probed with REAL credentials through the very same
-:func:`octop.infra.connectors.probe.probe_connector` the dashboard calls when a
+:func:`happyclaw.infra.connectors.probe.probe_connector` the dashboard calls when a
 user adds / verifies a connector — so a green probe means the real key reaches
 the real upstream MCP endpoint.
 
@@ -26,10 +26,10 @@ import asyncio
 import pytest
 from tests.support.secrets import require_env
 
-from octop.config import OctopConfig
-from octop.infra.connectors.builder import validate_create_credentials
-from octop.infra.connectors.catalog import get_catalog_entry
-from octop.infra.connectors.probe import probe_connector
+from happyclaw.config import OctopConfig
+from happyclaw.infra.connectors.builder import validate_create_credentials
+from happyclaw.infra.connectors.catalog import get_catalog_entry
+from happyclaw.infra.connectors.probe import probe_connector
 
 pytestmark = pytest.mark.live
 

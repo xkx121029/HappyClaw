@@ -11,8 +11,8 @@ from typing import Any
 import pytest
 from happyclaw_gateway.models import ChannelSubject, ImageContent, InboundMessage, TextContent
 
-from octop.infra.gateway.media.tool_media import enrich_media_block_preview
-from octop.infra.gateway.ws import WS_CHANNEL_ID, WebSocketChannel, WebSocketHub
+from happyclaw.infra.gateway.media.tool_media import enrich_media_block_preview
+from happyclaw.infra.gateway.ws import WS_CHANNEL_ID, WebSocketChannel, WebSocketHub
 
 
 def _token(content: str, thread_id: str) -> dict[str, Any]:
@@ -593,9 +593,9 @@ def test_enrich_media_block_preview_file_url() -> None:
 async def test_global_processor_iter_turn_chunks_registers_hitl() -> None:
     from unittest.mock import AsyncMock, MagicMock
 
-    from octop.infra.gateway.hitl.coordinator import HitlChannelCoordinator
-    from octop.infra.gateway.process.processor import GlobalProcessor
-    from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+    from happyclaw.infra.gateway.hitl.coordinator import HitlChannelCoordinator
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
     async def _stream(*_args: object, **_kwargs: object):
         yield {
@@ -652,9 +652,9 @@ async def test_iter_turn_chunks_answers_ask_on_same_dashboard_thread() -> None:
     """Plain text on the paused thread still resumes ``ask_user_question``."""
     from unittest.mock import AsyncMock, MagicMock
 
-    from octop.infra.gateway.hitl.coordinator import HitlChannelCoordinator
-    from octop.infra.gateway.process.processor import GlobalProcessor
-    from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+    from happyclaw.infra.gateway.hitl.coordinator import HitlChannelCoordinator
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
     stream_calls: list[str] = []
     resume_calls: list[str] = []
@@ -738,9 +738,9 @@ async def test_iter_turn_chunks_does_not_answer_ask_on_other_dashboard_thread() 
     """Shared dashboard session_key must not route a new chat into another thread's ask."""
     from unittest.mock import AsyncMock, MagicMock
 
-    from octop.infra.gateway.hitl.coordinator import HitlChannelCoordinator
-    from octop.infra.gateway.process.processor import GlobalProcessor
-    from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+    from happyclaw.infra.gateway.hitl.coordinator import HitlChannelCoordinator
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
     stream_calls: list[str] = []
 
@@ -819,9 +819,9 @@ async def test_iter_turn_chunks_does_not_answer_ask_on_other_dashboard_thread() 
 async def test_global_processor_iter_turn_chunks_expires_stale_hitl() -> None:
     from unittest.mock import AsyncMock, MagicMock
 
-    from octop.infra.gateway.hitl.coordinator import HitlChannelCoordinator
-    from octop.infra.gateway.process.processor import GlobalProcessor
-    from octop.infra.gateway.slash.dispatcher import SlashDispatcher
+    from happyclaw.infra.gateway.hitl.coordinator import HitlChannelCoordinator
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
     async def _stream(*_args: object, **_kwargs: object):
         yield {"type": "token", "content": "ok"}
@@ -887,14 +887,14 @@ async def test_global_processor_iter_turn_chunks_slash(tmp_path: Path) -> None:
 
     from langchain_core.messages import AIMessage, HumanMessage
 
-    from octop.infra.db.migrate import run_migrations
-    from octop.infra.db.pool import SqlitePool
-    from octop.infra.db.repos.agents import AgentRepo
-    from octop.infra.db.repos.thread_messages import ThreadMessageRepo
-    from octop.infra.db.repos.threads import ThreadRepo
-    from octop.infra.db.repos.users import UserRepo
-    from octop.infra.gateway.process.processor import GlobalProcessor
-    from octop.infra.gateway.slash.dispatcher import build_default_dispatcher
+    from happyclaw.infra.db.migrate import run_migrations
+    from happyclaw.infra.db.pool import SqlitePool
+    from happyclaw.infra.db.repos.agents import AgentRepo
+    from happyclaw.infra.db.repos.thread_messages import ThreadMessageRepo
+    from happyclaw.infra.db.repos.threads import ThreadRepo
+    from happyclaw.infra.db.repos.users import UserRepo
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.slash.dispatcher import build_default_dispatcher
 
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
@@ -1005,7 +1005,7 @@ def _steer_inbound(text: str) -> InboundMessage:
 @pytest.mark.asyncio
 async def test_ws_channel_preempts_at_tool_boundary_when_steer_pending() -> None:
     """Queued steer cancels the stream at the first model chunk after tools."""
-    from octop.infra.gateway.steer import SteerCoordinator
+    from happyclaw.infra.gateway.steer import SteerCoordinator
 
     hub = WebSocketHub()
     frames: list[dict[str, Any]] = []
@@ -1075,7 +1075,7 @@ async def test_ws_channel_preempts_at_tool_boundary_when_steer_pending() -> None
 @pytest.mark.asyncio
 async def test_ws_channel_hitl_pause_parks_steers_for_post_resume_drain() -> None:
     """hitl_required parks the queue; it drains only after the SSE resume."""
-    from octop.infra.gateway.steer import SteerCoordinator
+    from happyclaw.infra.gateway.steer import SteerCoordinator
 
     hub = WebSocketHub()
     frames: list[dict[str, Any]] = []
@@ -1130,7 +1130,7 @@ async def test_ws_channel_hitl_pause_parks_steers_for_post_resume_drain() -> Non
 @pytest.mark.asyncio
 async def test_ws_channel_pure_text_stream_is_never_preempted() -> None:
     """No tool superstep → steer waits for the natural turn end."""
-    from octop.infra.gateway.steer import SteerCoordinator
+    from happyclaw.infra.gateway.steer import SteerCoordinator
 
     hub = WebSocketHub()
     frames: list[dict[str, Any]] = []

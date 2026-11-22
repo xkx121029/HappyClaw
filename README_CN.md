@@ -286,7 +286,7 @@ OctopServer                        launch.py → infra/server.py
 ```
 
 ```
-src/octop/
+src/happyclaw/
   config.py    环境变量配置
   launch.py    OctopServer 启动 + uvicorn
   infra/       业务核心（agents、gateway、cron、db …）
@@ -314,7 +314,7 @@ make all                   # format（后端+前端）+ lint + typecheck + test
 # 前端（另开终端）
 make dev                   # 同时起 Vite :5173 与 octop run
 make dev-frontend          # 只起 Vite 开发服务器
-make build-frontend        # 生产构建 → src/octop/dashboard/
+make build-frontend        # 生产构建 → src/happyclaw/dashboard/
 ```
 
 单独执行：`make test`、`make test-fast`（跳过 `slow`）、`make test-live`、`make lint`、`make typecheck`、`make format`、`make check-all`；只跑前端用 `make lint-frontend`、`make typecheck-frontend`。pytest 标记在 `pyproject.toml` 中声明：`live`（真实 LLM 调用）、`slow`、`postgresql`（需要 `OCTOP_TEST_DATABASE_URL`）。

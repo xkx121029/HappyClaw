@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from happyclaw_harness.backends.workspace import DEFAULT_MEMORY_FILES
 
-from octop.infra.history.trajectory.turn_context import (
+from happyclaw.infra.history.trajectory.turn_context import (
     build_turn_start_chunks,
     filter_turn_skill_names,
     memory_file_order,

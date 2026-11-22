@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from octop.infra.backend.probe import _docker_probe_spec, probe_storage_backend
-from octop.infra.db.repos.backends import BackendRow
+from happyclaw.infra.backend.probe import _docker_probe_spec, probe_storage_backend
+from happyclaw.infra.db.repos.backends import BackendRow
 
 
 def _row(**kwargs: object) -> BackendRow:
@@ -164,8 +164,8 @@ def test_docker_probe_user_scope_uses_test_username(monkeypatch: pytest.MonkeyPa
 
 
 def test_opensandbox_probe_installs_and_closes(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.backend import opensandbox_deps
-    from octop.infra.backend import probe as probe_mod
+    from happyclaw.infra.backend import opensandbox_deps
+    from happyclaw.infra.backend import probe as probe_mod
 
     monkeypatch.setattr(
         opensandbox_deps, "ensure_opensandbox_deps", lambda allow_install=True: "ready"
@@ -189,7 +189,7 @@ def test_opensandbox_probe_installs_and_closes(monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_postgres_probe_delegates_to_harness(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.backend import probe as probe_mod
+    from happyclaw.infra.backend import probe as probe_mod
 
     captured: dict[str, Any] = {}
 
@@ -220,7 +220,7 @@ def test_postgres_probe_incomplete() -> None:
 
 
 def test_opensandbox_probe_reports_install_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.backend import opensandbox_deps
+    from happyclaw.infra.backend import opensandbox_deps
 
     def _boom(*, allow_install: bool = True) -> str:
         raise RuntimeError("Could not install optional Python components automatically.")

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from octop.infra.db.pool import _PgConnectionProxy, qmark_to_pyformat
+from happyclaw.infra.db.pool import _PgConnectionProxy, qmark_to_pyformat
 
 
 def test_qmark_to_pyformat_replaces_placeholders():

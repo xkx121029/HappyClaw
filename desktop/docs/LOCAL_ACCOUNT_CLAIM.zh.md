@@ -47,7 +47,7 @@ sidecar 在 `secrets.desktop_device` 不存在或已撤销时，向 `<HAPPYCLAW_
 
 ## 5. 接口
 
-三个接口都加在 `src/octop/api/routers/auth_device.py`，并列入 `src/octop/api/deps.py` 的 JWT 豁免精确路径。每个接口都要过现有的 `_require_desktop_loopback`，再校验 nonce。
+三个接口都加在 `src/happyclaw/api/routers/auth_device.py`，并列入 `src/happyclaw/api/deps.py` 的 JWT 豁免精确路径。每个接口都要过现有的 `_require_desktop_loopback`，再校验 nonce。
 
 | 方法 | 路径 | 作用 |
 |---|---|---|
@@ -105,9 +105,9 @@ nonce 放在请求头 `X-Octop-Claim-Nonce`，不放查询字符串。`claim` �
 
 | 位置 | 改动 |
 |---|---|
-| `src/octop/api/routers/auth_device.py` | 三个接口、nonce 读写与删除 |
-| `src/octop/api/deps.py` | 三条路径加入 `_JWT_EXEMPT_EXACT` |
-| `src/octop/infra/setup/` 或 `auth_device.py` 旁的小模块 | nonce 文件路径与 `0600` 写入；启动时按第 4 节决定是否创建 |
+| `src/happyclaw/api/routers/auth_device.py` | 三个接口、nonce 读写与删除 |
+| `src/happyclaw/api/deps.py` | 三条路径加入 `_JWT_EXEMPT_EXACT` |
+| `src/happyclaw/infra/setup/` 或 `auth_device.py` 旁的小模块 | nonce 文件路径与 `0600` 写入；启动时按第 4 节决定是否创建 |
 | `desktop/src/main/session/device-session.ts` | `candidates` / `claim` / `createLocal` |
 | `desktop/src/shared/ipc-contract.ts`、`preload/index.ts`、`main/index.ts` | IPC |
 | `dashboard/src/api/desktopSession.ts` | 渲染进程包装 |

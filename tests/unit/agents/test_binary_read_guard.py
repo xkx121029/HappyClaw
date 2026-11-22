@@ -8,7 +8,7 @@ import pytest
 from langchain_core.messages import HumanMessage
 from langgraph.prebuilt.tool_node import ToolCallRequest
 
-from octop.infra.agents.middleware.binary_read_guard import (
+from happyclaw.infra.agents.middleware.binary_read_guard import (
     BinaryReadGuardMiddleware,
     _workspace_path,
     read_file_block_reason,

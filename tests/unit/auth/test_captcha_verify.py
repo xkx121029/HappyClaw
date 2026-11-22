@@ -9,10 +9,10 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from octop.infra.auth.captcha import set_test_siteverify_url
-from octop.infra.auth.captcha.store import EffectiveCaptcha
-from octop.infra.auth.captcha.verify import ensure_captcha
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.auth.captcha import set_test_siteverify_url
+from happyclaw.infra.auth.captcha.store import EffectiveCaptcha
+from happyclaw.infra.auth.captcha.verify import ensure_captcha
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 def _effective(

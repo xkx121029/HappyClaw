@@ -82,7 +82,7 @@ def _print_header(repo_root: Path) -> None:
     print("DSH 整合验收脚手架（只调用运行时，不修补模块）")
     print(f"仓库: {repo_root}")
     print(f"解释器: {sys.executable} ({platform.python_version()})")
-    print(f"运行时覆盖: {override or '未设置（扫描 octop.infra.plugins.runtime）'}")
+    print(f"运行时覆盖: {override or '未设置（扫描 happyclaw.infra.plugins.runtime）'}")
     print("-" * 72)
 
 

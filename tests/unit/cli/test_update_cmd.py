@@ -7,12 +7,12 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
-from octop.infra.setup import self_update
+from happyclaw.cli.main import cli
+from happyclaw.infra.setup import self_update
 
 
 def test_update_check_only_no_install(monkeypatch: pytest.MonkeyPatch) -> None:
-    import octop.cli.commands.update as update_cmd
+    import happyclaw.cli.commands.update as update_cmd
 
     monkeypatch.setattr(
         update_cmd,
@@ -38,7 +38,7 @@ def test_update_check_only_no_install(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_update_yes_runs_upgrade(monkeypatch: pytest.MonkeyPatch) -> None:
-    import octop.cli.commands.update as update_cmd
+    import happyclaw.cli.commands.update as update_cmd
 
     monkeypatch.setattr(
         update_cmd,
@@ -70,7 +70,7 @@ def test_update_yes_runs_upgrade(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_update_already_latest(monkeypatch: pytest.MonkeyPatch) -> None:
-    import octop.cli.commands.update as update_cmd
+    import happyclaw.cli.commands.update as update_cmd
 
     monkeypatch.setattr(
         update_cmd,
@@ -151,7 +151,7 @@ def test_resolve_venv_python_prefers_octop_home(
 
 
 def test_update_check_skips_prerelease_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
-    import octop.cli.commands.update as update_cmd
+    import happyclaw.cli.commands.update as update_cmd
 
     monkeypatch.setattr(
         update_cmd,
@@ -172,7 +172,7 @@ def test_update_check_skips_prerelease_by_default(monkeypatch: pytest.MonkeyPatc
 def test_update_allow_prerelease_check_shows_prerelease(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import octop.cli.commands.update as update_cmd
+    import happyclaw.cli.commands.update as update_cmd
 
     monkeypatch.setattr(
         update_cmd,
@@ -191,7 +191,7 @@ def test_update_allow_prerelease_check_shows_prerelease(
 def test_update_allow_prerelease_installs_prerelease(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import octop.cli.commands.update as update_cmd
+    import happyclaw.cli.commands.update as update_cmd
 
     monkeypatch.setattr(
         update_cmd,
@@ -222,7 +222,7 @@ def test_update_allow_prerelease_installs_prerelease(
 
 
 def test_update_editable_install_exits_nonzero(monkeypatch: pytest.MonkeyPatch) -> None:
-    import octop.cli.commands.update as update_cmd
+    import happyclaw.cli.commands.update as update_cmd
 
     monkeypatch.setattr(
         update_cmd,

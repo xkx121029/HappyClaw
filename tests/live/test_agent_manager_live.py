@@ -1,4 +1,4 @@
-"""Live integration tests for :class:`octop.infra.agents.manager.AgentManager`.
+"""Live integration tests for :class:`happyclaw.infra.agents.manager.AgentManager`.
 
 Requires ``OPENAI_API_KEY``, ``OPENAI_BASE_URL``, and ``OPENAI_MODEL_NAME`` in
 the repo-root ``.env``. Skipped by default — run with::
@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.agents.manager import AgentCreateSpec
-from octop.infra.agents.providers import KIND_TO_PROTOCOL
-from octop.infra.errors import OctopError
+from happyclaw.infra.agents.manager import AgentCreateSpec
+from happyclaw.infra.agents.providers import KIND_TO_PROTOCOL
+from happyclaw.infra.errors import OctopError
 
 pytestmark = pytest.mark.live
 

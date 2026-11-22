@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from octop.api.app import build_app
+from happyclaw.api.app import build_app
 from tests.support.app import octop_client, write_octop_config
 from tests.support.auth import bootstrap_admin
 

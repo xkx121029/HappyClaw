@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.plugins.bridge import (
     ApprovalOutcome,
     ApprovalRequest,
     DshToolErrorCode,
@@ -22,7 +22,7 @@ from octop.infra.plugins.bridge import (
     RiskLevel,
     ToolGuardrail,
 )
-from octop.infra.plugins.sandbox import (
+from happyclaw.infra.plugins.sandbox import (
     MAX_REASON_CHARS,
     MAX_TARGET_CHARS,
     TRUNCATION_MARKER,
@@ -52,7 +52,7 @@ from octop.infra.plugins.sandbox import (
     summarize_denial_file,
     summarize_denials,
 )
-from octop.infra.plugins.sandbox.command import CommandExecutor
+from happyclaw.infra.plugins.sandbox.command import CommandExecutor
 
 
 class FakeExecutor:
@@ -521,7 +521,7 @@ def test_ledger_write_failure_keeps_denial_and_original_code(
     ledger = _BrokenLedger()
     sandbox = _sandbox(workspace, permissions={"fs.write"}, ledger=ledger)
 
-    with caplog.at_level(logging.WARNING, logger="octop.infra.plugins.sandbox.gate"):
+    with caplog.at_level(logging.WARNING, logger="happyclaw.infra.plugins.sandbox.gate"):
         with pytest.raises(SandboxDeniedError) as denied:
             sandbox.resolve_path("write_note", SandboxCapability.FS_WRITE, "../escape.txt")
 
@@ -717,7 +717,7 @@ def test_check_aggregation_is_bounded_under_high_frequency(tmp_path: Path) -> No
 async def test_absent_sandbox_default_mode_warns_and_allows(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    with caplog.at_level(logging.WARNING, logger="octop.infra.plugins.sandbox.absence"):
+    with caplog.at_level(logging.WARNING, logger="happyclaw.infra.plugins.sandbox.absence"):
         gate = resolve_sandbox_gate(None, plugin_id="octop:demo-toolkit")
 
     assert gate is not None

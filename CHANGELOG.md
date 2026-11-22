@@ -7,7 +7,7 @@
 ## [Unreleased]
 
 ### 变更
-- **DSH LLM 适配器的 harness 版本闸门抬到 1.0.14**：`src/octop/infra/dsh/llm/langchain_model.py` 的 `REQUIRED_HARNESS_VERSION` 由 `1.0.9` 改为 `1.0.14`。依据是 `tests/unit/infra/dsh/test_llm_parity.py` 的差分对照在 harness `1.0.14` 上 5 项全过：消息字段、工具调用序列、流式分块、累积消息、usage 明细（`cache_read` / `reasoning`）与 harness 自身解析逐字段一致。对照环境除 harness 版本外完全相同（langchain-core 1.7.7 / langchain-openai 1.3.3 / langgraph 1.2.20）。
+- **DSH LLM 适配器的 harness 版本闸门抬到 1.0.14**：`src/happyclaw/infra/dsh/llm/langchain_model.py` 的 `REQUIRED_HARNESS_VERSION` 由 `1.0.9` 改为 `1.0.14`。依据是 `tests/unit/infra/dsh/test_llm_parity.py` 的差分对照在 harness `1.0.14` 上 5 项全过：消息字段、工具调用序列、流式分块、累积消息、usage 明细（`cache_read` / `reasoning`）与 harness 自身解析逐字段一致。对照环境除 harness 版本外完全相同（langchain-core 1.7.7 / langchain-openai 1.3.3 / langgraph 1.2.20）。
 
 ## [1.0.3b6] - 2026-11-21
 

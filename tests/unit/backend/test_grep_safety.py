@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 from deepagents.backends.filesystem import FilesystemBackend
 
-from octop.infra.backend.grep_safety import (
+from happyclaw.infra.backend.grep_safety import (
     _MAX_LINE_BYTES,
     _command_is_ripgrep,
     _RipgrepSubprocess,

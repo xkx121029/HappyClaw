@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
-from octop.infra.proactive.picker import (
+from happyclaw.infra.proactive.picker import (
     EpisodePicker,
     PickResult,
     _emotion_weight,

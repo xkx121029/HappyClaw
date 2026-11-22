@@ -61,7 +61,7 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
 
 COPY dashboard/ ./
 
-RUN mkdir -p ../src/octop/dashboard
+RUN mkdir -p ../src/happyclaw/dashboard
 
 # 镜像构建跳过完整 tsc；生产打包由 vite/esbuild 完成（使用 lockfile 中的 vite，不用 npx）
 RUN NODE_ENV=production NODE_OPTIONS="--max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE}" npm run build:docker
@@ -147,7 +147,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
 
 COPY src/ ./src/
-COPY --from=frontend-builder /build/src/octop/dashboard/ ./src/octop/dashboard/
+COPY --from=frontend-builder /build/src/happyclaw/dashboard/ ./src/happyclaw/dashboard/
 
 COPY .env.example ./
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

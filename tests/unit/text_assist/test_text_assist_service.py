@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.text_assist import ASSIST_KINDS, run_text_assist
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.text_assist import ASSIST_KINDS, run_text_assist
 
 
 def _models(result: str = "polished") -> Any:

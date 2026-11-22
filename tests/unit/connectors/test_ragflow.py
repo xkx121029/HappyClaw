@@ -9,13 +9,13 @@ from typing import Any
 import httpx
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.connectors.builder import validate_create_credentials
-from octop.infra.connectors.catalog import catalog_entry_to_dict, get_catalog_entry
-from octop.infra.connectors.gateway.adapters import ragflow
-from octop.infra.connectors.gateway.protocol import handle_mcp_request
-from octop.infra.connectors.probe import probe_connector
-from octop.infra.errors import OctopError
+from happyclaw.config import OctopConfig
+from happyclaw.infra.connectors.builder import validate_create_credentials
+from happyclaw.infra.connectors.catalog import catalog_entry_to_dict, get_catalog_entry
+from happyclaw.infra.connectors.gateway.adapters import ragflow
+from happyclaw.infra.connectors.gateway.protocol import handle_mcp_request
+from happyclaw.infra.connectors.probe import probe_connector
+from happyclaw.infra.errors import OctopError
 
 CREDS = {"base_url": "http://127.0.0.1:9380/api/v1", "api_key": "ragflow-test-key"}
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.dsh.session import EventType, LogCorruptionError, SessionLog
+from happyclaw.infra.dsh.session import EventType, LogCorruptionError, SessionLog
 
 
 def _clock() -> str:

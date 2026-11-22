@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.users.identity import Role
-from octop.infra.users.manager import UserManager
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.users.identity import Role
+from happyclaw.infra.users.manager import UserManager
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def _insert_sso_provider(manager: UserManager, *, kind: str = "oidc") -> int:
@@ -445,7 +445,7 @@ async def test_boot_loads_existing_users(tmp_path: Path):
     run_migrations(db)
     services = build_shared_services(db=db, paths=paths, config=OctopConfig())
     # Pre-populate via repo
-    from octop.infra.users.password import hash_password
+    from happyclaw.infra.users.password import hash_password
 
     services.user_repo.create(username="legacy", password_hash=hash_password("pw"), role="user")
     manager = UserManager(services)
@@ -460,7 +460,7 @@ async def test_boot_loads_users(tmp_path: Path):
     db = SqlitePool(paths.db)
     run_migrations(db)
     services = build_shared_services(db=db, paths=paths, config=OctopConfig())
-    from octop.infra.users.password import hash_password
+    from happyclaw.infra.users.password import hash_password
 
     uid = services.user_repo.create(
         username="alice", password_hash=hash_password("pw"), role="user"

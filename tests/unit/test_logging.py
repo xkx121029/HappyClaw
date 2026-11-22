@@ -1,6 +1,6 @@
 """tests/unit/test_logging.py
 
-Covers the daily-rotation + retention logging strategy in ``octop.infra.server``:
+Covers the daily-rotation + retention logging strategy in ``happyclaw.infra.server``:
 the log path lives under ``~/.octop/logs`` and stale rotated files are purged.
 """
 
@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.server import (
+from happyclaw.infra.server import (
     DEFAULT_LOG_MAX_BYTES,
     OctopServer,
     SizeTimedRotatingFileHandler,

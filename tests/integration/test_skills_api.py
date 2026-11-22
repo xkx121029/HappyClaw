@@ -509,7 +509,7 @@ async def test_put_rejects_removed_skill(env: Any) -> None:
 
 async def test_import_skill_from_url(env: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     c, srv, auth, aid = env
-    from octop.infra.skills import skills_hub
+    from happyclaw.infra.skills import skills_hub
 
     uploads = [
         (
@@ -575,7 +575,7 @@ async def test_import_rejects_adapter_upload_outside_skill_root(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     c, _srv, auth, aid = env
-    from octop.infra.skills import skills_hub
+    from happyclaw.infra.skills import skills_hub
 
     def _fake_resolve(**_kwargs: object) -> skills_hub.BundleResolveResult:
         return skills_hub.BundleResolveResult(

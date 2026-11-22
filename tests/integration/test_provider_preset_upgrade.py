@@ -8,9 +8,9 @@ from unittest.mock import patch
 
 import pytest
 
-from octop.infra.agents.providers import store
-from octop.infra.agents.providers.presets import load_provider_presets
-from octop.infra.agents.providers.store import ProviderStore
+from happyclaw.infra.agents.providers import store
+from happyclaw.infra.agents.providers.presets import load_provider_presets
+from happyclaw.infra.agents.providers.store import ProviderStore
 from tests.support.app import octop_client
 from tests.support.auth import auth_header, bootstrap_admin, create_user
 
@@ -35,7 +35,7 @@ async def test_restart_adds_enabled_models_and_preserves_user_choices(
         "models": old_models[:2],
     }
     with patch(
-        "octop.infra.agents.providers.presets.load_provider_presets",
+        "happyclaw.infra.agents.providers.presets.load_provider_presets",
         return_value=[*bundled, old_preset],
     ):
         async with octop_client(tmp_octop_home) as (client, srv):
@@ -77,7 +77,7 @@ async def test_restart_adds_enabled_models_and_preserves_user_choices(
         ],
     }
     with patch(
-        "octop.infra.agents.providers.presets.load_provider_presets",
+        "happyclaw.infra.agents.providers.presets.load_provider_presets",
         return_value=[*bundled, upgraded],
     ):
         async with octop_client(tmp_octop_home) as (client, srv):

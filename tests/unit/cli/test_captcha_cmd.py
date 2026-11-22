@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
-from octop.cli.support.db import open_cli_services
-from octop.infra.auth.captcha.config import snapshot_env
-from octop.infra.auth.captcha.store import SETTINGS_KEY, load_effective
+from happyclaw.cli.main import cli
+from happyclaw.cli.support.db import open_cli_services
+from happyclaw.infra.auth.captcha.config import snapshot_env
+from happyclaw.infra.auth.captcha.store import SETTINGS_KEY, load_effective
 
 
 @pytest.fixture

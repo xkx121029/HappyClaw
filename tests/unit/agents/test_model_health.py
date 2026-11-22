@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from octop.infra.agents.providers.health import (
+from happyclaw.infra.agents.providers.health import (
     FailureScope,
     ModelHealthRegistry,
     classify_model_failure,

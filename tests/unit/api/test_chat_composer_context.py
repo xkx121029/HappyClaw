@@ -6,9 +6,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.api.routers.chat.turn import resolve_thread_id
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.gateway.process.message_keys import build_composer_context
+from happyclaw.api.routers.chat.turn import resolve_thread_id
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.gateway.process.message_keys import build_composer_context
 
 
 class _ThreadRegistry:

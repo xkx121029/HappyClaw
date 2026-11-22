@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from octop.infra.agents.providers.probe import build_probe_chat_model as _build_chat_model
-from octop.infra.agents.providers.probe import probe_provider_row
+from happyclaw.infra.agents.providers.probe import build_probe_chat_model as _build_chat_model
+from happyclaw.infra.agents.providers.probe import probe_provider_row
 
 
 def test_build_chat_model_includes_provider_id_and_model_name() -> None:
@@ -128,10 +128,10 @@ async def test_embedding_probe_posts_embeddings_endpoint() -> None:
     post = AsyncMock(return_value=response)
     with (
         patch(
-            "octop.infra.agents.providers.probe.httpx.AsyncClient",
+            "happyclaw.infra.agents.providers.probe.httpx.AsyncClient",
             return_value=_mock_async_client(post=post),
         ),
-        patch("octop.infra.agents.providers.probe.build_probe_chat_model") as chat,
+        patch("happyclaw.infra.agents.providers.probe.build_probe_chat_model") as chat,
     ):
         result = await probe_provider_row(_embedding_row(), model_id="text-embedding-3-small")
 
@@ -158,7 +158,7 @@ async def test_embedding_probe_honors_explicit_flag_without_saved_model() -> Non
         get_models=lambda: [{"id": "embed-1", "name": "embed-1"}],
     )
     with patch(
-        "octop.infra.agents.providers.probe.httpx.AsyncClient",
+        "happyclaw.infra.agents.providers.probe.httpx.AsyncClient",
         return_value=_mock_async_client(post=post),
     ):
         result = await probe_provider_row(row, model_id="embed-1", embedding=True)
@@ -173,7 +173,7 @@ async def test_embedding_probe_reports_http_error() -> None:
     response = httpx.Response(401, json={"error": {"message": "bad key"}}, request=request)
     post = AsyncMock(return_value=response)
     with patch(
-        "octop.infra.agents.providers.probe.httpx.AsyncClient",
+        "happyclaw.infra.agents.providers.probe.httpx.AsyncClient",
         return_value=_mock_async_client(post=post),
     ):
         result = await probe_provider_row(_embedding_row())
@@ -201,7 +201,7 @@ async def test_chat_probe_maps_insufficient_balance() -> None:
         )
     )
     with patch(
-        "octop.infra.agents.providers.probe.build_probe_chat_model",
+        "happyclaw.infra.agents.providers.probe.build_probe_chat_model",
         return_value=fake,
     ):
         result = await probe_provider_row(row, model_id="gpt-4o-mini", locale="zh")
@@ -223,7 +223,7 @@ async def test_embedding_probe_reports_empty_404_with_url() -> None:
         models=[{"id": "bge-large-zh-v1.5", "name": "bge", "embedding": True}],
     )
     with patch(
-        "octop.infra.agents.providers.probe.httpx.AsyncClient",
+        "happyclaw.infra.agents.providers.probe.httpx.AsyncClient",
         return_value=_mock_async_client(post=post),
     ):
         result = await probe_provider_row(row, model_id="bge-large-zh-v1.5")
@@ -246,10 +246,10 @@ async def test_chat_probe_skips_embeddings_endpoint() -> None:
     fake.ainvoke = AsyncMock(return_value=SimpleNamespace(content="pong"))
     with (
         patch(
-            "octop.infra.agents.providers.probe.build_probe_chat_model",
+            "happyclaw.infra.agents.providers.probe.build_probe_chat_model",
             return_value=fake,
         ),
-        patch("octop.infra.agents.providers.probe.httpx.AsyncClient") as client,
+        patch("happyclaw.infra.agents.providers.probe.httpx.AsyncClient") as client,
     ):
         result = await probe_provider_row(row, model_id="gpt-4o-mini")
 
@@ -283,7 +283,7 @@ async def test_chat_probe_reports_when_protocol_fallback_was_used() -> None:
         )
     )
     with patch(
-        "octop.infra.agents.providers.probe.build_probe_chat_model",
+        "happyclaw.infra.agents.providers.probe.build_probe_chat_model",
         return_value=fake,
     ):
         result = await probe_provider_row(row, model_id="gpt-X")
@@ -298,7 +298,7 @@ async def test_chat_probe_empty_exception_message_returns_type_name(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Bare TimeoutError() has str==''; must not blank the UI / logs (#766)."""
-    from octop.infra.agents.providers import probe as probe_mod
+    from happyclaw.infra.agents.providers import probe as probe_mod
 
     row = SimpleNamespace(
         name="Agnes AI",
@@ -312,7 +312,7 @@ async def test_chat_probe_empty_exception_message_returns_type_name(
     fake.ainvoke = AsyncMock(side_effect=TimeoutError())
     with (
         patch(
-            "octop.infra.agents.providers.probe.build_probe_chat_model",
+            "happyclaw.infra.agents.providers.probe.build_probe_chat_model",
             return_value=fake,
         ),
         caplog.at_level("INFO", logger=probe_mod.__name__),
@@ -342,7 +342,7 @@ async def test_chat_probe_empty_exception_with_cause_includes_root_type() -> Non
     fake = AsyncMock()
     fake.ainvoke = AsyncMock(side_effect=wrapped)
     with patch(
-        "octop.infra.agents.providers.probe.build_probe_chat_model",
+        "happyclaw.infra.agents.providers.probe.build_probe_chat_model",
         return_value=fake,
     ):
         result = await probe_provider_row(row, model_id="gpt-4o-mini")
@@ -355,7 +355,7 @@ async def test_chat_probe_empty_exception_with_cause_includes_root_type() -> Non
 async def test_embedding_probe_empty_exception_message_returns_type_name() -> None:
     post = AsyncMock(side_effect=OSError())
     with patch(
-        "octop.infra.agents.providers.probe.httpx.AsyncClient",
+        "happyclaw.infra.agents.providers.probe.httpx.AsyncClient",
         return_value=_mock_async_client(post=post),
     ):
         result = await probe_provider_row(_embedding_row(), locale="en")
@@ -365,7 +365,7 @@ async def test_embedding_probe_empty_exception_message_returns_type_name() -> No
 
 
 def test_friendly_probe_error_empty_string_passthrough() -> None:
-    from octop.infra.agents.providers.probe import _friendly_probe_error
+    from happyclaw.infra.agents.providers.probe import _friendly_probe_error
 
     assert _friendly_probe_error("", locale="en") == "unknown error"
     assert _friendly_probe_error(TimeoutError(), locale="zh") == "TimeoutError"

@@ -15,15 +15,15 @@ from happyclaw_gateway.models import FileContent, ImageContent, InboundMessage, 
 from happyclaw_harness.backends.workspace import BackendWorkspace
 from PIL import Image
 
-from octop.api.routers.chat.models import ChatTurnBody
-from octop.api.routers.chat.serialize import _serialize_history_message
-from octop.api.routers.chat.turn import (
+from happyclaw.api.routers.chat.models import ChatTurnBody
+from happyclaw.api.routers.chat.serialize import _serialize_history_message
+from happyclaw.api.routers.chat.turn import (
     COMPOSER_CTX_KEY,
     INBOUND_ATTACHMENTS_KEY,
     build_dashboard_inbound,
     content_parts_from_dashboard_turn,
 )
-from octop.infra.gateway.media.attachment_hints import (
+from happyclaw.infra.gateway.media.attachment_hints import (
     VISION_MAX_BYTES,
     VISION_SAFE_MAX_SIDE,
     format_attachment_path_hint,
@@ -31,16 +31,16 @@ from octop.infra.gateway.media.attachment_hints import (
     inbound_attachments_from_parts,
     materialize_image_part,
 )
-from octop.infra.gateway.media.inbound_store import (
+from happyclaw.infra.gateway.media.inbound_store import (
     resolve_inbound_attachment_path,
     write_inbound,
 )
-from octop.infra.gateway.media.ingress import AgentBackedMediaBackend
-from octop.infra.gateway.process.harness_request import build_content_from_message
-from octop.infra.gateway.process.processor import GlobalProcessor
-from octop.infra.gateway.slash.dispatcher import SlashDispatcher
-from octop.infra.gateway.threads import ThreadRegistry
-from octop.infra.gateway.ws import WS_CHANNEL_ID
+from happyclaw.infra.gateway.media.ingress import AgentBackedMediaBackend
+from happyclaw.infra.gateway.process.harness_request import build_content_from_message
+from happyclaw.infra.gateway.process.processor import GlobalProcessor
+from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
+from happyclaw.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.gateway.ws import WS_CHANNEL_ID
 
 
 def _workspace(root: str) -> BackendWorkspace:
@@ -150,7 +150,7 @@ async def test_materialize_image_part_from_workspace_path() -> None:
         assert block["workspace_path"] == stored.path
         assert block["image_url"]["url"] == f"workspace://{stored.path}"
         # Bytes are rematerialized only at model-call time.
-        from octop.infra.gateway.media.attachment_hints import expand_workspace_image_ref
+        from happyclaw.infra.gateway.media.attachment_hints import expand_workspace_image_ref
 
         expanded = await expand_workspace_image_ref(block, workspace=workspace)
         url = expanded["image_url"]["url"]
@@ -201,7 +201,7 @@ async def test_file_typed_image_path_still_materializes_via_content_parts() -> N
         img = next(b for b in content if b.get("type") == "image_url")
         assert img["image_url"]["url"].startswith("workspace://")
         assert img["workspace_path"] == stored.path
-        from octop.infra.gateway.media.attachment_hints import expand_workspace_image_ref
+        from happyclaw.infra.gateway.media.attachment_hints import expand_workspace_image_ref
 
         expanded = await expand_workspace_image_ref(img, workspace=workspace)
         assert base64.b64decode(expanded["image_url"]["url"].split(",", 1)[1]) == b"png-bytes"
@@ -225,7 +225,7 @@ async def test_oversized_undecodable_image_stays_path_ref_until_expand() -> None
         assert block is not None
         assert block["type"] == "image_url"
         assert block["workspace_path"] == stored.path
-        from octop.infra.gateway.media.attachment_hints import expand_workspace_image_ref
+        from happyclaw.infra.gateway.media.attachment_hints import expand_workspace_image_ref
 
         expanded = await expand_workspace_image_ref(block, workspace=workspace)
         assert expanded["type"] == "text"
@@ -253,7 +253,7 @@ async def test_oversized_image_is_compressed_on_expand() -> None:
         assert block["type"] == "image_url"
         assert block["image_url"]["url"].startswith("workspace://")
         assert block["workspace_path"] == stored.path
-        from octop.infra.gateway.media.attachment_hints import expand_workspace_image_ref
+        from happyclaw.infra.gateway.media.attachment_hints import expand_workspace_image_ref
 
         expanded = await expand_workspace_image_ref(block, workspace=workspace)
         url = expanded["image_url"]["url"]
@@ -292,7 +292,7 @@ async def test_small_image_is_path_ref_then_byte_identical_on_expand() -> None:
         assert block is not None
         assert block["type"] == "image_url"
         assert block["image_url"]["url"].startswith("workspace://")
-        from octop.infra.gateway.media.attachment_hints import expand_workspace_image_ref
+        from happyclaw.infra.gateway.media.attachment_hints import expand_workspace_image_ref
 
         expanded = await expand_workspace_image_ref(block, workspace=workspace)
         url = expanded["image_url"]["url"]
@@ -342,7 +342,7 @@ async def test_long_screenshot_refit_on_expand_keeps_stored_bytes() -> None:
         block = await materialize_image_part(part, media_backend=backend, workspace=workspace)
         assert block is not None
         assert block["image_url"]["url"].startswith("workspace://")
-        from octop.infra.gateway.media.attachment_hints import expand_workspace_image_ref
+        from happyclaw.infra.gateway.media.attachment_hints import expand_workspace_image_ref
 
         expanded = await expand_workspace_image_ref(block, workspace=workspace)
         fitted = base64.b64decode(expanded["image_url"]["url"].split(",", 1)[1])
@@ -370,7 +370,7 @@ def test_inbound_attachments_from_parts() -> None:
 
 
 def test_build_dashboard_inbound_uses_content_parts_not_messages_meta() -> None:
-    from octop.api.routers.chat.turn import PreparedDashboardTurn
+    from happyclaw.api.routers.chat.turn import PreparedDashboardTurn
 
     parts = [
         TextContent(text="hi"),
@@ -405,7 +405,7 @@ def test_build_dashboard_inbound_uses_content_parts_not_messages_meta() -> None:
 
 
 def test_build_dashboard_inbound_keeps_client_message_id() -> None:
-    from octop.api.routers.chat.turn import PreparedDashboardTurn, client_message_id_from_turn
+    from happyclaw.api.routers.chat.turn import PreparedDashboardTurn, client_message_id_from_turn
 
     prepared = PreparedDashboardTurn(
         thread_id="t1",
@@ -440,7 +440,7 @@ def test_build_dashboard_inbound_keeps_client_message_id() -> None:
 def test_serialize_history_exposes_inbound_attachments() -> None:
     from langchain_core.messages import HumanMessage
 
-    from octop.api.routers.chat.serialize import _serialize_history_message
+    from happyclaw.api.routers.chat.serialize import _serialize_history_message
 
     attachments = [
         {
@@ -506,8 +506,8 @@ async def test_weixin_pdf_history_is_downloadable_attachment() -> None:
         yield MagicMock()
 
     with (
-        patch("octop.infra.gateway.process.processor.media_backend_for_agent", return_value=None),
-        patch("octop.infra.gateway.process.processor.project_stream", new=fake_project_stream),
+        patch("happyclaw.infra.gateway.process.processor.media_backend_for_agent", return_value=None),
+        patch("happyclaw.infra.gateway.process.processor.project_stream", new=fake_project_stream),
     ):
         _ = [event async for event in processor(inbound)]
 
@@ -529,7 +529,7 @@ async def test_weixin_pdf_history_is_downloadable_attachment() -> None:
 
 
 def test_content_blocks_need_vision_detects_image_url() -> None:
-    from octop.infra.gateway.media.attachment_hints import content_blocks_need_vision
+    from happyclaw.infra.gateway.media.attachment_hints import content_blocks_need_vision
 
     content = [
         {"type": "text", "text": "what is this?"},

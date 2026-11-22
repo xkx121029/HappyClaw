@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.infra.bridge.manager import BridgeManager
-from octop.infra.db.repos.bridge_connections import BridgeConnectionRow
+from happyclaw.infra.bridge.manager import BridgeManager
+from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRow
 
 
 def _row(**overrides: Any) -> BridgeConnectionRow:

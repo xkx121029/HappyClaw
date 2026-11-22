@@ -143,7 +143,7 @@ strict mypy 499 files、Ruff/format 通过。这里只验证 PostgreSQL 拒绝�
 全部未提交改动。HappyClaw 原分支为 `feature/octop-harness-bump`，happyclaw-memory 原分支为 `main`。
 
 - 上述对话/维护回归加 `tests/integration/test_memory_api.py`：201 passed，覆盖预览无任务/无改写、
-  确认后执行、权限和接口终态；`uv run --no-sync mypy --strict src/octop`：499 files 通过。
+  确认后执行、权限和接口终态；`uv run --no-sync mypy --strict src/happyclaw`：499 files 通过。
 - `npm test -- src/pages/Chat/hooks/useMemoryMaintenance.test.ts src/pages/Chat/components/MemoryMaintenanceBanner.test.tsx`：
   9 passed，覆盖长耗时解释、断连重试、完成/失败恢复发送和可关闭结果；`npm run build` 通过。
 - 本轮不改库内迁移实现、不重复完整门禁；此前全量门禁限制见下。未提交、部署或执行真实库维护。

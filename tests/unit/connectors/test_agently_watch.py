@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from octop.infra.connectors.gateway import agently_watch
+from happyclaw.infra.connectors.gateway import agently_watch
 
 
 @pytest.mark.asyncio

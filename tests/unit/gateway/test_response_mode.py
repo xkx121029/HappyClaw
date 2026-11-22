@@ -15,7 +15,7 @@ from happyclaw_gateway.models import (
 )
 from happyclaw_gateway.utils import close_event_stream
 
-from octop.infra.gateway.process.response_mode import (
+from happyclaw.infra.gateway.process.response_mode import (
     collapse_to_invoke_response,
     normalize_channel_response_mode,
     processor_for_response_mode,
@@ -209,7 +209,7 @@ async def test_weixin_stream_drops_preamble_but_keeps_ask_agent() -> None:
 
 
 def test_newer_weixin_token_is_kept() -> None:
-    from octop.infra.utils.weixin_context import (
+    from happyclaw.infra.utils.weixin_context import (
         WEIXIN_CONTEXT_TOKEN_KEY,
         WEIXIN_CONTEXT_TOKEN_MS_KEY,
         merge_weixin_context_token,

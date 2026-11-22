@@ -1,7 +1,7 @@
 """Build the dashboard and stamp the output used by the backend bundle.
 
 ``make package-backend`` used to package whatever was left in
-``src/octop/dashboard`` from an older build, so a release could silently ship an
+``src/happyclaw/dashboard`` from an older build, so a release could silently ship an
 old UI. This script is now the first step of packaging:
 
 1. installs npm deps when ``node_modules`` is missing/stale (``npm ci``);
@@ -10,7 +10,7 @@ old UI. This script is now the first step of packaging:
 3. writes ``version.json`` (git commit + build time + sha256 of ``index.html``)
    into the build output so the running server can report which UI it ships.
 
-The output directory is ``src/octop/dashboard`` (``vite.config.ts`` ``outDir``),
+The output directory is ``src/happyclaw/dashboard`` (``vite.config.ts`` ``outDir``),
 which is gitignored and collected by ``octop.spec``.
 """
 

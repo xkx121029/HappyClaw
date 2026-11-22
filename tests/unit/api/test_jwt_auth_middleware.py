@@ -13,14 +13,14 @@ import httpx
 import pytest
 from tests.support.app import ensure_control_plane_bound
 
-from octop.api.app import build_app
-from octop.api.deps import (
+from happyclaw.api.app import build_app
+from happyclaw.api.deps import (
     ACCESS_TOKEN_RESPONSE_HEADER,
     is_jwt_exempt_path,
     is_jwt_exempt_request,
     maybe_sliding_renew_token,
 )
-from octop.infra.server import OctopServer
+from happyclaw.infra.server import OctopServer
 
 
 def test_every_path_is_exempt_in_single_user_mode() -> None:

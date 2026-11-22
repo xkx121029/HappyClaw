@@ -11,10 +11,10 @@ from typing import Any
 
 import httpx
 
-from octop.api.app import build_app
-from octop.config import DatabaseConfig, load_config
-from octop.infra.db.rebind import persist_database_config
-from octop.infra.server import OctopServer
+from happyclaw.api.app import build_app
+from happyclaw.config import DatabaseConfig, load_config
+from happyclaw.infra.db.rebind import persist_database_config
+from happyclaw.infra.server import OctopServer
 from tests.support.harness import patch_harness
 
 

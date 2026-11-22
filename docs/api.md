@@ -46,7 +46,7 @@ injected before the JWT middleware, which is why `GET /api/users` and
 
 Captcha and the local-owner auth routes still answer. OIDC, OAuth, LDAP,
 passkey and MFA are **retired** with the rest of the multi-account surface:
-`src/octop/api/app.py` mounts a catch-all router for those prefixes **before**
+`src/happyclaw/api/app.py` mounts a catch-all router for those prefixes **before**
 every real router, so any path under them returns `404` with
 `this endpoint was removed in single-user mode` — status, start, callback and
 config-test paths alike. Do not build against them.
@@ -305,7 +305,7 @@ reloads running agents so the image and video tools receive the new configuratio
 | `GET`    | `/personas` | user | `[{code}, ...]` (compat shim) |
 | `GET`    | `/personas/{code}` | user | rendered template (compat shim) |
 
-Persona content lives in `src/octop/infra/agents/persona/mbti_profiles.py` —
+Persona content lives in `src/happyclaw/infra/agents/persona/mbti_profiles.py` —
 see [Personas](./personas.md).
 
 ## Experts
@@ -316,7 +316,7 @@ see [Personas](./personas.md).
 | `GET`    | `/experts/{expert_id}` | user | full expert template (SOUL.md, skills, files, `task_examples`) |
 | `POST`   | `/agents/from-expert/{expert_id}` | user | body `{name, locale?, quick_prompts?, ...}` → `201`; optional `quick_prompts` overwrites workspace cards after seed |
 
-Bundled experts live in `src/octop/infra/agents/experts/library/`
+Bundled experts live in `src/happyclaw/infra/agents/experts/library/`
 (en/zh divisions); the catalog is locale-aware via
 `Accept-Language` / user preference.
 
@@ -664,7 +664,7 @@ Every non-2xx JSON response uses:
 { "error": { "code": "AGENT_NOT_FOUND", "message": "...", "details": { } } }
 ```
 
-`code` matches the `ErrorCode` enum in `octop.infra.errors`; the
+`code` matches the `ErrorCode` enum in `happyclaw.infra.errors`; the
 server-localized `message` is rendered by `OctopError.to_envelope`
 with the locale from `Accept-Language` (falling back to `en`). The
 dashboard mirrors every code under `apiErrors.*` in

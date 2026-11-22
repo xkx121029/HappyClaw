@@ -6,15 +6,15 @@ import json
 
 import pytest
 
-from octop.infra.auth.mfa.service import MfaService
-from octop.infra.auth.mfa.settings import (
+from happyclaw.infra.auth.mfa.service import MfaService
+from happyclaw.infra.auth.mfa.settings import (
     SETTINGS_KEY,
     load_view,
     passkey_block_reason,
     passwordless_login_enabled,
     save_settings,
 )
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 class _Settings:

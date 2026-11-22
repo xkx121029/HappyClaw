@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.settings import SettingsRepo
-from octop.infra.db.repos.voice_providers import VoiceProviderRepo, VoiceProviderRow
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.utils.tencent_asr_sign import DEFAULT_ENGINE
-from octop.infra.voice import adapters
-from octop.infra.voice.manager import VoiceManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.db.repos.voice_providers import VoiceProviderRepo, VoiceProviderRow
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.utils.tencent_asr_sign import DEFAULT_ENGINE
+from happyclaw.infra.voice import adapters
+from happyclaw.infra.voice.manager import VoiceManager
 
 
 @pytest.fixture

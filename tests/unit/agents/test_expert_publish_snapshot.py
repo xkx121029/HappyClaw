@@ -10,22 +10,22 @@ import pytest
 from deepagents.backends.local_shell import LocalShellBackend
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
-from octop.infra.agents.builtin_skills import OCTOP_BUILTIN_SKILLS_ROOT
-from octop.infra.agents.experts.catalog import (
+from happyclaw.infra.agents.builtin_skills import OCTOP_BUILTIN_SKILLS_ROOT
+from happyclaw.infra.agents.experts.catalog import (
     MANIFEST_FILENAME,
     WORKSPACE_MANIFEST_PATH,
     seed_expert_directory,
 )
-from octop.infra.agents.experts.publish import (
+from happyclaw.infra.agents.experts.publish import (
     PublishedExpertSnapshotMeta,
     assert_can_mutate_published,
     export_agent_workspace_to_dir,
     resolve_published_expert_slug,
 )
-from octop.infra.db.repos.published_experts import PublishedExpertRow
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.users.identity import Role, User
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.db.repos.published_experts import PublishedExpertRow
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.users.identity import Role, User
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def _workspace(root: Path) -> BackendWorkspace:
@@ -477,7 +477,7 @@ def test_published_creation_imports_when_psycopg_has_no_libpq(
     import importlib
     import sys
 
-    target = "octop.infra.agents.experts.published_creation"
+    target = "happyclaw.infra.agents.experts.published_creation"
     importlib.import_module(target)
     saved = sys.modules.pop(target)
     real_import = builtins.__import__
@@ -510,7 +510,7 @@ async def test_publish_agent_expert_maps_sqlite_integrity_error(
 ) -> None:
     from sqlite3 import IntegrityError
 
-    from octop.infra.agents.experts import published_creation as mod
+    from happyclaw.infra.agents.experts import published_creation as mod
 
     async def _noop_export(**_kwargs: object) -> list[str]:
         return []

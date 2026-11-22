@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.connectors.gateway import agently_auth
+from happyclaw.infra.connectors.gateway import agently_auth
 
 
 @pytest.fixture

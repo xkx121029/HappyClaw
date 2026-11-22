@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.agents.experts.skillhub_market import SkillHubSkillset
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.skill_packages import SkillPackageRepo
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.skills.skill_package_from_skillhub import create_package_from_skillhub
-from octop.infra.skills.skill_package_store import SkillPackageStore
-from octop.infra.skills.skillhub_market import SkillHubSkillNotFound
+from happyclaw.infra.agents.experts.skillhub_market import SkillHubSkillset
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.skill_packages import SkillPackageRepo
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.skills.skill_package_from_skillhub import create_package_from_skillhub
+from happyclaw.infra.skills.skill_package_store import SkillPackageStore
+from happyclaw.infra.skills.skillhub_market import SkillHubSkillNotFound
 
 
 @pytest.fixture

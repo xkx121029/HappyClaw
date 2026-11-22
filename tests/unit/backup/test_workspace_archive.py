@@ -13,7 +13,7 @@ from deepagents.backends.local_shell import LocalShellBackend
 from happyclaw_harness.backends import resolve_backend
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
-from octop.infra.backup.workspace_archive import export_workspace_zip, import_workspace_zip
+from happyclaw.infra.backup.workspace_archive import export_workspace_zip, import_workspace_zip
 
 
 @pytest.mark.asyncio

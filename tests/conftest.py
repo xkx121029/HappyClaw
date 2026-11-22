@@ -58,7 +58,7 @@ def _suspend_proactive_care_loops(
 ) -> None:
     if _module_path(request.node.nodeid) == _PROACTIVE_SCHEDULER_TESTS:
         return
-    from octop.infra.proactive.scheduler import ProactiveCareScheduler
+    from happyclaw.infra.proactive.scheduler import ProactiveCareScheduler
 
     monkeypatch.setattr(ProactiveCareScheduler, "ensure_scheduled", lambda self, _id: None)
 

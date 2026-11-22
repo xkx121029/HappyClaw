@@ -9,9 +9,9 @@ import httpx
 import pytest
 from tests.support.app import ensure_control_plane_bound, write_octop_config
 
-from octop.api.app import build_app
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.server import OctopServer
+from happyclaw.api.app import build_app
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.server import OctopServer
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ async def client(tmp_path: Path):
 
 
 async def test_octop_error_5xx_is_logged(client: httpx.AsyncClient) -> None:
-    with patch("octop.api.app.logger") as mock_logger:
+    with patch("happyclaw.api.app.logger") as mock_logger:
         r = await client.get("/_test/octop-500", headers={"Accept-Language": "zh"})
     assert r.status_code == 500
     assert r.json()["error"]["message"] == "服务器内部错误。"
@@ -54,7 +54,7 @@ async def test_octop_error_5xx_is_logged(client: httpx.AsyncClient) -> None:
 
 
 async def test_octop_error_4xx_is_not_logged(client: httpx.AsyncClient) -> None:
-    with patch("octop.api.app.logger") as mock_logger:
+    with patch("happyclaw.api.app.logger") as mock_logger:
         r = await client.get("/_test/octop-401")
     assert r.status_code == 401
     mock_logger.error.assert_not_called()

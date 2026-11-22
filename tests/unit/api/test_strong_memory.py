@@ -10,7 +10,7 @@ import pytest
 from deepagents.backends import FilesystemBackend
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
-from octop.api.routers.agent_files import (
+from happyclaw.api.routers.agent_files import (
     StrongMemoryBody,
     UserProfileBody,
     get_manual_memory_review,
@@ -20,7 +20,7 @@ from octop.api.routers.agent_files import (
     put_user_profile,
     review_manual_memory,
 )
-from octop.infra.errors import OctopError
+from happyclaw.infra.errors import OctopError
 
 
 def _server(ws: BackendWorkspace) -> SimpleNamespace:
@@ -120,7 +120,7 @@ async def test_review_status_reads_current_files_without_running_audit(
     ws.write_text("USER.md", "Current owner profile", force=True)
     server = _server(ws)
     rpc = MagicMock(return_value={"status": "stale"})
-    monkeypatch.setattr("octop.api.routers.agent_files.call_memory_rpc", rpc)
+    monkeypatch.setattr("happyclaw.api.routers.agent_files.call_memory_rpc", rpc)
     with pytest.raises(OctopError):
         await get_manual_memory_review(
             "a1", user=SimpleNamespace(id=2, is_admin=False), server=server
@@ -141,7 +141,7 @@ async def test_review_status_reads_current_files_without_running_audit(
 def test_candidate_approval_supplies_current_workspace_documents(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.api.common.memory_client import call_memory_rpc
+    from happyclaw.api.common.memory_client import call_memory_rpc
 
     ws = BackendWorkspace(FilesystemBackend(root_dir=str(tmp_path), virtual_mode=True), tmp_path)
     ws.write_text("USER.md", "Updated profile", force=True)
@@ -152,7 +152,7 @@ def test_candidate_approval_supplies_current_workspace_documents(
     )
     bridge = SimpleNamespace(handle=MagicMock(return_value={"result": {"promoted": 0}}))
     monkeypatch.setattr(
-        "octop.api.common.memory_client._open_memory_for_agent", lambda *_: (memory, bridge)
+        "happyclaw.api.common.memory_client._open_memory_for_agent", lambda *_: (memory, bridge)
     )
     call_memory_rpc(
         agent_id="a1",

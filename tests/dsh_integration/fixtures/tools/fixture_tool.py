@@ -10,7 +10,7 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.plugins.bridge import (
     ToolDefinition,
     ToolExecutionContext,
     ToolOutputSpec,

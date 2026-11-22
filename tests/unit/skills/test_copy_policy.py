@@ -7,11 +7,11 @@ from types import SimpleNamespace
 import pytest
 from tests.unit.skills.test_skill_transfer import _MemWorkspace
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.skills.skill_package_store import (
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.skills.skill_package_store import (
     normalize_copy_policy,
 )
-from octop.infra.skills.skill_transfer import (
+from happyclaw.infra.skills.skill_transfer import (
     _stamp_locked_manifest,
     copy_package_skills_to_workspace,
 )
@@ -38,7 +38,7 @@ def _row(
 
 
 def _store() -> SimpleNamespace:
-    from octop.infra.skills.skill_package_store import SkillPackageStore
+    from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 
     return SkillPackageStore(repo=SimpleNamespace(), root=None)  # type: ignore[arg-type]
 
@@ -127,7 +127,7 @@ async def _run_guard(
     user: SimpleNamespace,
     origin_created_by: str = "7",
 ) -> OctopError | None:
-    from octop.api.routers.skills import _guard_package_only_skill_write
+    from happyclaw.api.routers.skills import _guard_package_only_skill_write
 
     files = {"skills/alpha/SKILL.md": manifest} if manifest is not None else {}
     workspace = _MemWorkspace(files)

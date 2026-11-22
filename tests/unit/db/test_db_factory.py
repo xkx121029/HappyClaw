@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import load_config
-from octop.infra.db.factory import open_database, should_defer_control_plane_db
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import load_config
+from happyclaw.infra.db.factory import open_database, should_defer_control_plane_db
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def test_legacy_config_without_database_uses_paths_db(tmp_path: Path):
@@ -74,8 +74,8 @@ def test_should_not_defer_postgresql(tmp_path: Path):
 
 
 def test_sqlite_probe_does_not_create_missing_file(tmp_path: Path):
-    from octop.config import DatabaseConfig
-    from octop.infra.db.probe import probe_database
+    from happyclaw.config import DatabaseConfig
+    from happyclaw.infra.db.probe import probe_database
 
     root = tmp_path / ".octop"
     root.mkdir()
@@ -117,8 +117,8 @@ def test_env_sqlite_path_without_database_section(tmp_path: Path, monkeypatch: p
 
 def test_postgresql_returns_postgres_pool(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     # Unit test without live server: monkeypatch PostgresPool.__init__ to no-op pool.
-    from octop.infra.db import factory as factory_mod
-    from octop.infra.db.pool import PostgresPool
+    from happyclaw.infra.db import factory as factory_mod
+    from happyclaw.infra.db.pool import PostgresPool
 
     created: dict[str, str] = {}
 

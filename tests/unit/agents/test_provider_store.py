@@ -1,4 +1,4 @@
-"""Unit tests for :mod:`octop.infra.agents.providers.store`."""
+"""Unit tests for :mod:`happyclaw.infra.agents.providers.store`."""
 
 from __future__ import annotations
 
@@ -8,10 +8,10 @@ from typing import Any
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.agents.providers import KIND_TO_PROTOCOL, ProviderStore
-from octop.infra.agents.providers.store import (
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.agents.providers import KIND_TO_PROTOCOL, ProviderStore
+from happyclaw.infra.agents.providers.store import (
     merge_provider_purpose_extra,
     merge_stream_usage_extra,
     resolve_provider_purpose,
@@ -19,11 +19,11 @@ from octop.infra.agents.providers.store import (
     stamp_embedding_models,
     sync_provider_preset_models,
 )
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRow
-from octop.infra.db.services import build_shared_services
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRow
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.utils.paths import PathLayout
 
 
 @pytest.fixture
@@ -76,7 +76,7 @@ def test_sync_preset_models_enables_additions_and_preserves_saved_settings(
         "reasoning_config": {"supported": True, "adapter": "thinking", "toggle": True},
     }
     monkeypatch.setattr(
-        "octop.infra.agents.providers.presets.load_provider_presets",
+        "happyclaw.infra.agents.providers.presets.load_provider_presets",
         lambda: [
             {
                 "id": "example-preset",
@@ -152,7 +152,7 @@ def test_sync_preset_models_leaves_other_providers_and_local_runtimes_alone(
         },
     ]
     monkeypatch.setattr(
-        "octop.infra.agents.providers.presets.load_provider_presets", lambda: presets
+        "happyclaw.infra.agents.providers.presets.load_provider_presets", lambda: presets
     )
     repo = store._provider_repo
     pid = repo.create(name=name, base_url=url, kind=kind, api_key="test-key", extra_json=extra)
@@ -174,7 +174,7 @@ def test_sync_preset_models_separates_packages_sharing_a_url(
         for plan in ("a", "b")
     ]
     monkeypatch.setattr(
-        "octop.infra.agents.providers.presets.load_provider_presets", lambda: presets
+        "happyclaw.infra.agents.providers.presets.load_provider_presets", lambda: presets
     )
     repo = store._provider_repo
     ids = [
@@ -191,7 +191,7 @@ def test_sync_embedding_preset_models_stays_in_embedding_lane(
 ) -> None:
     model = {"id": "new-embedding", "embedding": True, "task": "embedding"}
     monkeypatch.setattr(
-        "octop.infra.agents.providers.presets.load_provider_presets",
+        "happyclaw.infra.agents.providers.presets.load_provider_presets",
         lambda: [
             {
                 "id": "embedding-preset",
@@ -437,7 +437,7 @@ def test_resolve_default_model_returns_none_when_stale(store: ProviderStore) -> 
 
 
 def test_enabled_model_refs_excludes_disabled() -> None:
-    from octop.infra.agents.providers.store import enabled_model_refs
+    from happyclaw.infra.agents.providers.store import enabled_model_refs
 
     refs = enabled_model_refs(
         "hai",
@@ -451,7 +451,7 @@ def test_enabled_model_refs_excludes_disabled() -> None:
 
 
 def test_clear_stale_pins_for_provider(tmp_path: Path) -> None:
-    from octop.infra.agents.providers.store import clear_stale_pins_for_provider
+    from happyclaw.infra.agents.providers.store import clear_stale_pins_for_provider
 
     paths = PathLayout(tmp_path / ".octop")
     paths.ensure_root()

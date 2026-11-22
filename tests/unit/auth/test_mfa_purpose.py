@@ -9,15 +9,15 @@ import pytest
 from tests.support.app import ensure_control_plane_bound
 from tests.support.auth import bootstrap_admin
 
-from octop.api.app import build_app
-from octop.api.deps import resolve_user_from_token
-from octop.infra.auth.tokens import (
+from happyclaw.api.app import build_app
+from happyclaw.api.deps import resolve_user_from_token
+from happyclaw.infra.auth.tokens import (
     PURPOSE_ACCESS,
     PURPOSE_MFA,
     PURPOSE_REAUTH,
     sign_token,
 )
-from octop.infra.server import OctopServer
+from happyclaw.infra.server import OctopServer
 
 
 @pytest.fixture()

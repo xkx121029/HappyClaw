@@ -10,8 +10,8 @@ from tencentcloud.common.exception.tencent_cloud_sdk_exception import (
     TencentCloudSDKException,
 )
 
-from octop.infra.cloud import tencent
-from octop.infra.cloud.tencent import CloudCredential, query_cluster_trend
+from happyclaw.infra.cloud import tencent
+from happyclaw.infra.cloud.tencent import CloudCredential, query_cluster_trend
 
 
 def _credential() -> CloudCredential:

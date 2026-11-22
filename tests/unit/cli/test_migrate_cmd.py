@@ -12,13 +12,13 @@ from typing import Any
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
-from octop.cli.support import acting, embedded_ops
-from octop.config import OctopConfig
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import SharedServices, build_shared_services
-from octop.infra.utils.paths import PathLayout
+from happyclaw.cli.main import cli
+from happyclaw.cli.support import acting, embedded_ops
+from happyclaw.config import OctopConfig
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import SharedServices, build_shared_services
+from happyclaw.infra.utils.paths import PathLayout
 
 AGENT = "agent-1"
 
@@ -60,7 +60,7 @@ def runtime(
 
     monkeypatch.setattr(embedded_ops, "embedded_runtime", fake_runtime)
     monkeypatch.setattr(acting, "resolve_cli_acting_user_id", lambda *args, **kwargs: uid)
-    monkeypatch.setattr("octop.cli.support.db.resolve_cli_locale", lambda: "en")
+    monkeypatch.setattr("happyclaw.cli.support.db.resolve_cli_locale", lambda: "en")
     try:
         yield services, workspace
     finally:

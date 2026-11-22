@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.infra.knowledge.index import KnowledgeIndex
+from happyclaw.infra.knowledge.index import KnowledgeIndex
 
 
 def test_index_replaces_document_chunks_and_returns_cosine_top_k(tmp_path, monkeypatch) -> None:

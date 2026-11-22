@@ -6,17 +6,17 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.backend.adapter import row_to_backend_spec, storage_backend_kind_agent_resolvable
-from octop.infra.backend.resolver import (
+from happyclaw.infra.backend.adapter import row_to_backend_spec, storage_backend_kind_agent_resolvable
+from happyclaw.infra.backend.resolver import (
     backend_spec_supports_execution,
     collect_named_storage_backend_refs,
     find_agents_using_storage_backend,
     resolve_agent_backend_spec,
     rewrite_named_storage_backend_refs,
 )
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.backends import BackendRepo, BackendRow
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.backends import BackendRepo, BackendRow
 
 
 @pytest.fixture
@@ -182,7 +182,7 @@ def test_row_to_backend_spec_tos_requires_endpoint() -> None:
 
 
 def test_row_to_backend_spec_opensandbox() -> None:
-    from octop.infra.backend.adapter import storage_spec_previewable
+    from happyclaw.infra.backend.adapter import storage_spec_previewable
 
     row = BackendRow(
         id=1,
@@ -238,7 +238,7 @@ def test_row_to_backend_spec_docker() -> None:
 
 
 def test_enrich_docker_backend_spec_defaults() -> None:
-    from octop.infra.backend.docker_spec import (
+    from happyclaw.infra.backend.docker_spec import (
         docker_spec_previewable,
         enrich_docker_backend_spec,
     )
@@ -274,7 +274,7 @@ def test_enrich_docker_backend_spec_defaults() -> None:
 
 
 def test_inject_docker_global_environment_sets_file() -> None:
-    from octop.infra.backend.docker_spec import inject_docker_global_environment
+    from happyclaw.infra.backend.docker_spec import inject_docker_global_environment
 
     spec = inject_docker_global_environment(
         {"type": "docker", "environment": {"FOO": "from-spec"}},

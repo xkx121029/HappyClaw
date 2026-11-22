@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.agent_mcp.service import AgentMcpGatewayService
+from happyclaw.infra.agent_mcp.service import AgentMcpGatewayService
 
 
 @pytest.mark.parametrize(

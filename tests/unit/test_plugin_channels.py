@@ -36,7 +36,7 @@ def _channel_fixture_ready() -> bool:
 
 @pytest.fixture(autouse=True)
 def reset_bridge(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.gateway import plugin_channels as bridge
 
     monkeypatch.setattr(bridge, "_APPLIED", {})
     monkeypatch.setattr(bridge, "_CLASSES", {})
@@ -82,7 +82,7 @@ class _FakeChannel:
 
 
 def test_apply_plugin_channels_registers_kind() -> None:
-    from octop.infra.gateway.plugin_channels import apply_plugin_channels
+    from happyclaw.infra.gateway.plugin_channels import apply_plugin_channels
 
     gateway = _RecordingGateway()
     applied = apply_plugin_channels(
@@ -105,7 +105,7 @@ def test_apply_plugin_channels_registers_kind() -> None:
 
 
 def test_apply_is_idempotent_and_first_wins() -> None:
-    from octop.infra.gateway.plugin_channels import apply_plugin_channels
+    from happyclaw.infra.gateway.plugin_channels import apply_plugin_channels
 
     class Second:
         pass
@@ -125,7 +125,7 @@ def test_apply_is_idempotent_and_first_wins() -> None:
 
 
 def test_apply_never_shadows_builtin() -> None:
-    from octop.infra.gateway.plugin_channels import apply_plugin_channels
+    from happyclaw.infra.gateway.plugin_channels import apply_plugin_channels
 
     gateway = _RecordingGateway(fail_on={"telegram"})
     applied = apply_plugin_channels(
@@ -140,7 +140,7 @@ def test_apply_never_shadows_builtin() -> None:
 
 
 def test_apply_skips_failing_plugin_but_keeps_others() -> None:
-    from octop.infra.gateway.plugin_channels import apply_plugin_channels
+    from happyclaw.infra.gateway.plugin_channels import apply_plugin_channels
 
     class Broken:
         pass
@@ -160,8 +160,8 @@ def test_apply_skips_failing_plugin_but_keeps_others() -> None:
 
 
 def test_plugin_channel_kinds_summary(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.gateway import plugin_channels
-    from octop.infra.gateway.plugin_channels import plugin_channel_kinds
+    from happyclaw.infra.gateway import plugin_channels
+    from happyclaw.infra.gateway.plugin_channels import plugin_channel_kinds
 
     infos = plugin_channels._summarize(
         [_StubReg("p1", "zeta", _FakeChannel, label="Zeta"), _StubReg("p3", "alpha", _FakeChannel)]
@@ -182,7 +182,7 @@ def test_plugin_channel_kinds_summary(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_api_kind_validator_accepts_plugin_kind(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.api.routers import channels as channels_router
+    from happyclaw.api.routers import channels as channels_router
 
     # Patch the harness PluginRegistry used inside the validator so the test
     # works against released harness builds (which lack ChannelRegistration).
@@ -191,7 +191,7 @@ def test_api_kind_validator_accepts_plugin_kind(
             return [_StubReg("p1", "acme", _FakeChannel)]
 
     monkeypatch.setattr("happyclaw_harness.plugins.registry.PluginRegistry", _PatchedRegistry)
-    from octop.infra.gateway import plugin_channels
+    from happyclaw.infra.gateway import plugin_channels
 
     info = plugin_channels._summarize(_PatchedRegistry().all_channels())[0]
     monkeypatch.setattr(plugin_channels, "_APPLIED", {"acme": info})
@@ -204,7 +204,7 @@ def test_api_kind_validator_accepts_plugin_kind(
 def test_api_kind_validator_tolerates_old_harness(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.api.routers import channels as channels_router
+    from happyclaw.api.routers import channels as channels_router
 
     class _OldRegistry:  # released harness: no all_channels()
         pass
@@ -224,7 +224,7 @@ def test_end_to_end_with_real_fixture_plugin() -> None:
     from happyclaw_harness.plugins import registry as harness_registry
     from happyclaw_harness.plugins.loader import load_plugin_dir
 
-    from octop.infra.gateway.plugin_channels import apply_plugin_channels
+    from happyclaw.infra.gateway.plugin_channels import apply_plugin_channels
 
     harness_registry.PluginRegistry.reset()
     try:
@@ -246,14 +246,14 @@ def test_end_to_end_with_real_fixture_plugin() -> None:
         from happyclaw_gateway.channels import unregister_channel_kind
 
         unregister_channel_kind("acme", plugin_id="acme-channel")
-        from octop.infra.gateway import plugin_channels
+        from happyclaw.infra.gateway import plugin_channels
 
         plugin_channels._APPLIED.clear()
         harness_registry.PluginRegistry.reset()
 
 
 def test_reconcile_removes_disabled_and_failed_kinds(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.gateway import plugin_channels as bridge
 
     monkeypatch.setattr(bridge, "_APPLIED", {})
     removed: list[tuple[str, str]] = []
@@ -271,7 +271,7 @@ def test_reconcile_removes_disabled_and_failed_kinds(monkeypatch: pytest.MonkeyP
 
 
 def test_reconcile_updates_same_kind_implementation(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.gateway import plugin_channels as bridge
 
     monkeypatch.setattr(bridge, "_APPLIED", {})
     gateway = _RecordingGateway()
@@ -297,7 +297,7 @@ async def test_reload_stops_plugin_instances_before_replacing_factories() -> Non
     from types import SimpleNamespace
     from unittest.mock import AsyncMock
 
-    from octop.infra.gateway.gateway import Gateway
+    from happyclaw.infra.gateway.gateway import Gateway
 
     rows = [
         SimpleNamespace(kind="acme", channel_id="plugin-row"),
@@ -324,7 +324,7 @@ async def test_reload_stops_plugin_instances_before_replacing_factories() -> Non
 def test_no_change_leaves_factories_registered() -> None:
     from unittest.mock import Mock
 
-    from octop.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.gateway import plugin_channels as bridge
 
     reg = _StubRegistry(_StubReg("owner", "acme", _FakeChannel))
     register, unregister = Mock(), Mock()
@@ -336,7 +336,7 @@ def test_no_change_leaves_factories_registered() -> None:
 
 
 def test_registration_failure_exposed_as_status() -> None:
-    from octop.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.gateway import plugin_channels as bridge
 
     bridge.apply_plugin_channels(
         registry=_StubRegistry(_StubReg("broken", "acme", _FakeChannel)),
@@ -353,9 +353,9 @@ async def test_registration_failure_reaches_mutation_caller(
 ) -> None:
     from types import SimpleNamespace
 
-    from octop.infra.errors import OctopError
-    from octop.infra.gateway import plugin_channels as bridge
-    from octop.infra.server import OctopServer
+    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.server import OctopServer
 
     monkeypatch.setattr(bridge, "_CURRENT_ERRORS", {"broken": "not BaseChannel"})
     fake = SimpleNamespace(app_runtime=None, _apply_plugin_channels=lambda: None)
@@ -368,7 +368,7 @@ async def test_unrelated_plugin_change_does_not_restart_channels() -> None:
     from types import SimpleNamespace
     from unittest.mock import AsyncMock, Mock
 
-    from octop.infra.gateway.gateway import Gateway
+    from happyclaw.infra.gateway.gateway import Gateway
 
     fake = SimpleNamespace(
         _repos=SimpleNamespace(
@@ -390,7 +390,7 @@ async def test_unrelated_plugin_change_does_not_restart_channels() -> None:
 def test_old_gateway_capability_failure_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
     from happyclaw_gateway import channels
 
-    from octop.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.gateway import plugin_channels as bridge
 
     monkeypatch.delattr(channels, "register_channel_kind", raising=False)
     monkeypatch.delattr(channels, "unregister_channel_kind", raising=False)
@@ -404,7 +404,7 @@ def test_old_gateway_capability_failure_is_reported(monkeypatch: pytest.MonkeyPa
 def test_failed_class_is_observed_without_repeated_registration() -> None:
     from unittest.mock import Mock
 
-    from octop.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.gateway import plugin_channels as bridge
 
     registry = _StubRegistry(_StubReg("bad", "broken", _FakeChannel))
     register = Mock(side_effect=ValueError("invalid class"))
@@ -419,7 +419,7 @@ def test_failed_class_is_observed_without_repeated_registration() -> None:
 def test_unregister_failure_does_not_skip_sibling_kind() -> None:
     from unittest.mock import Mock
 
-    from octop.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.gateway import plugin_channels as bridge
 
     first = _StubRegistry(
         _StubReg("owner", "alpha", _FakeChannel), _StubReg("owner", "beta", _FakeChannel)
@@ -447,8 +447,8 @@ async def test_existing_failed_registration_does_not_fail_unrelated_refresh(
     from types import SimpleNamespace
     from unittest.mock import Mock
 
-    from octop.infra.gateway import plugin_channels as bridge
-    from octop.infra.server import OctopServer
+    from happyclaw.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.server import OctopServer
 
     registry = _StubRegistry(_StubReg("bad", "broken", _FakeChannel))
     register = Mock(side_effect=ValueError("invalid class"))
@@ -471,9 +471,9 @@ async def test_removed_kind_retries_unregister_without_blocking_unrelated_refres
 ) -> None:
     from types import SimpleNamespace
 
-    from octop.infra.errors import OctopError
-    from octop.infra.gateway import plugin_channels as bridge
-    from octop.infra.server import OctopServer
+    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.server import OctopServer
 
     gateway = _RecordingGateway()
     registry = _StubRegistry(_StubReg("owner", "acme", _FakeChannel))
@@ -526,7 +526,7 @@ async def test_removed_kind_retries_unregister_without_blocking_unrelated_refres
 
 
 def test_removing_failed_registration_clears_kind_errors() -> None:
-    from octop.infra.gateway import plugin_channels as bridge
+    from happyclaw.infra.gateway import plugin_channels as bridge
 
     gateway = _RecordingGateway(fail_on={"acme"})
     registry = _StubRegistry(_StubReg("owner", "acme", _FakeChannel))

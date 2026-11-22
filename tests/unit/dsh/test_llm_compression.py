@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
 
-from octop.infra.dsh.llm import (
+from happyclaw.infra.dsh.llm import (
     AssistantTurnBuilder,
     FailureCode,
     FinishChunk,
@@ -20,8 +20,8 @@ from octop.infra.dsh.llm import (
     StreamChunk,
     TextDelta,
 )
-from octop.infra.dsh.llm.compression import messages_from_surface
-from octop.infra.dsh.session import (
+from happyclaw.infra.dsh.llm.compression import messages_from_surface
+from happyclaw.infra.dsh.session import (
     CompactionConfig,
     EventType,
     SessionLog,

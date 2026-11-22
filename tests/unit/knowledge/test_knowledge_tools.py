@@ -9,9 +9,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from langgraph.config import var_child_runnable_config
 
-from octop.config import DatabaseConfig, OctopConfig
-from octop.infra.knowledge.plane import postgres_database
-from octop.infra.knowledge.tools import KnowledgeToolServices, build_knowledge_tools
+from happyclaw.config import DatabaseConfig, OctopConfig
+from happyclaw.infra.knowledge.plane import postgres_database
+from happyclaw.infra.knowledge.tools import KnowledgeToolServices, build_knowledge_tools
 
 
 @contextmanager
@@ -88,7 +88,7 @@ async def test_search_knowledge_returns_retrieved_context() -> None:
             knowledge_base_ids=["kb-1"],
             locale="zh",
         ),
-        patch("octop.infra.knowledge.tools.retrieve_context", retrieved),
+        patch("happyclaw.infra.knowledge.tools.retrieve_context", retrieved),
     ):
         out = await tool.ainvoke({"query": "refund rules", "k": 3})
 
@@ -114,7 +114,7 @@ async def test_search_knowledge_empty_hits_message() -> None:
     with (
         _configurable(user="1", knowledge_base_ids=["kb-1"]),
         patch(
-            "octop.infra.knowledge.tools.retrieve_context",
+            "happyclaw.infra.knowledge.tools.retrieve_context",
             AsyncMock(return_value=""),
         ),
     ):

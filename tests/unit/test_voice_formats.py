@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.voice.adapters import _mimo_audio_mime, _voice_format
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.voice.adapters import _mimo_audio_mime, _voice_format
 
 
 @pytest.mark.parametrize(

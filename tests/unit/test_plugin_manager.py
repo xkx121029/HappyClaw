@@ -12,14 +12,14 @@ from typing import Any
 import pytest
 from happyclaw_harness.plugins import PluginRegistry
 
-from octop.infra.agents.plugins.manager import (
+from happyclaw.infra.agents.plugins.manager import (
     PluginManager,
     normalize_plugin_download_url,
     parse_plugin_group,
     parse_plugin_icon,
     parse_plugin_ui_meta,
 )
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "plugins" / "echo-tool"
 
@@ -117,7 +117,7 @@ def test_install_url_rejects_non_zip(tmp_path: Path, monkeypatch: pytest.MonkeyP
             return b"<!DOCTYPE html><html>blob page</html>"
 
     monkeypatch.setattr(
-        "octop.infra.agents.plugins.manager.urllib.request.urlopen",
+        "happyclaw.infra.agents.plugins.manager.urllib.request.urlopen",
         lambda *args, **kwargs: FakeResponse(),
     )
     with pytest.raises(OctopError) as excinfo:
@@ -154,7 +154,7 @@ def test_install_url_accepts_valid_zip(tmp_path: Path, monkeypatch: pytest.Monke
             return chunk
 
     monkeypatch.setattr(
-        "octop.infra.agents.plugins.manager.urllib.request.urlopen",
+        "happyclaw.infra.agents.plugins.manager.urllib.request.urlopen",
         lambda *args, **kwargs: FakeResponse(),
     )
     loaded = mgr.install_url("https://example.com/echo-tool.zip", force=True)
@@ -183,7 +183,7 @@ def test_install_archive_rejects_too_many_entries(
     with zipfile.ZipFile(archive, "w") as zf:
         zf.writestr("plugin.yaml", "id: echo-tool\nversion: 1.0.0\nname: Echo\nkind: tool\n")
         zf.writestr("extra.txt", "x")
-    monkeypatch.setattr("octop.infra.agents.plugins.manager._MAX_PLUGIN_ZIP_ENTRIES", 1)
+    monkeypatch.setattr("happyclaw.infra.agents.plugins.manager._MAX_PLUGIN_ZIP_ENTRIES", 1)
     with pytest.raises(OctopError, match="too many entries"):
         mgr.install_archive(archive)
 
@@ -218,9 +218,9 @@ def test_install_url_rejects_download_over_limit(
         def read(self, _size: int) -> bytes:
             return b"x" * 8
 
-    monkeypatch.setattr("octop.infra.agents.plugins.manager._MAX_PLUGIN_ARCHIVE_BYTES", 4)
+    monkeypatch.setattr("happyclaw.infra.agents.plugins.manager._MAX_PLUGIN_ARCHIVE_BYTES", 4)
     monkeypatch.setattr(
-        "octop.infra.agents.plugins.manager.urllib.request.urlopen",
+        "happyclaw.infra.agents.plugins.manager.urllib.request.urlopen",
         lambda *args, **kwargs: FakeResponse(),
     )
     with pytest.raises(OctopError, match="download exceeds"):

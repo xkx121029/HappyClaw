@@ -10,9 +10,9 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from octop.api.app import build_app
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.server import OctopServer
+from happyclaw.api.app import build_app
+from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.server import OctopServer
 from tests.support.app import octop_client
 from tests.support.auth import (
     auth_header,

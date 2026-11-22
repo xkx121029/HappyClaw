@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.plugins.market import (
+from happyclaw.infra.plugins.market import (
     ChecksumMismatchError,
     DshSource,
     InstallConflictError,
@@ -18,8 +18,8 @@ from octop.infra.plugins.market import (
     plugin_dir_name,
     verify_install,
 )
-from octop.infra.plugins.market.errors import MarketError
-from octop.infra.plugins.runtime.contract import PluginKind
+from happyclaw.infra.plugins.market.errors import MarketError
+from happyclaw.infra.plugins.runtime.contract import PluginKind
 
 from .conftest import dsh_tarball, octop_package
 

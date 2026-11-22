@@ -212,7 +212,7 @@
 
 | 用途 | 命名 |
 |------|------|
-| 包 | `octop.infra.bridge` |
+| 包 | `happyclaw.infra.bridge` |
 | HTTP 管理 API | `/api/bridge/...` |
 | CLI | `octop bridge`（与 Dashboard 对端管理同一套 `BridgeManager`） |
 | 远程 agent id | `bridge:{connection_id}:{remote_agent_id}` |

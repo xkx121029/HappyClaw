@@ -15,9 +15,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.plugins.market.pipeline import MarketplaceIndex, uninstall
-from octop.infra.plugins.market.sources.octop import OctopSource
-from octop.infra.plugins.profile import (
+from happyclaw.infra.plugins.market.pipeline import MarketplaceIndex, uninstall
+from happyclaw.infra.plugins.market.sources.octop import OctopSource
+from happyclaw.infra.plugins.profile import (
     LoadMode,
     MarketInstallSource,
     PluginStatus,
@@ -26,7 +26,7 @@ from octop.infra.plugins.profile import (
     ProfileRuntime,
     ProfileStore,
 )
-from octop.infra.plugins.runtime.contract import (
+from happyclaw.infra.plugins.runtime.contract import (
     ActivationContext,
     InvalidManifestError,
     MissingDependencyError,
@@ -39,7 +39,7 @@ from octop.infra.plugins.runtime.contract import (
     PluginRequirement,
     VersionConflictError,
 )
-from octop.infra.plugins.runtime.octop_plugin import OctopPluginLoader
+from happyclaw.infra.plugins.runtime.octop_plugin import OctopPluginLoader
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _PROFILE_FIXTURES = _REPO_ROOT / "tests" / "fixtures" / "plugins" / "profile"

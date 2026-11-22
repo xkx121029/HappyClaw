@@ -2,7 +2,7 @@
 
 Each agent has an optional MBTI persona (`persona_mbti` column on the
 `agents` row). The persona profile is rendered into the agent's
-`SOUL.md` (via `octop.infra.agents.persona.render_persona_template` /
+`SOUL.md` (via `happyclaw.infra.agents.persona.render_persona_template` /
 `PersonaLoader`) at boot. If the user also sets a `system_prompt` on the
 agent row, it is **appended** to the persona — the persona file is the
 backbone, the user prompt is the trim.
@@ -16,12 +16,12 @@ Persona content is now data, not files:
 
 | Resource | Location |
 |----------|----------|
-| 16 `MBTIProfile` records | [`src/octop/infra/agents/persona/mbti_profiles.py`](../src/octop/infra/agents/persona/mbti_profiles.py) |
-| Public API (`get_profile`, `get_all_profiles`, `MBTIProfile`, …) | same module (also re-exported from `octop.infra.agents.persona`) |
-| SOUL.md / persona rendering | [`src/octop/infra/agents/persona/loader.py`](../src/octop/infra/agents/persona/loader.py) |
+| 16 `MBTIProfile` records | [`src/happyclaw/infra/agents/persona/mbti_profiles.py`](../src/octop/infra/agents/persona/mbti_profiles.py) |
+| Public API (`get_profile`, `get_all_profiles`, `MBTIProfile`, …) | same module (also re-exported from `happyclaw.infra.agents.persona`) |
+| SOUL.md / persona rendering | [`src/happyclaw/infra/agents/persona/loader.py`](../src/octop/infra/agents/persona/loader.py) |
 | Persisted agent field | `agents.persona_mbti` (string, e.g. `"INTJ"`) |
 
-The legacy `src/octop/infra/agents/personas/*.md` directory is gone —
+The legacy `src/happyclaw/infra/agents/personas/*.md` directory is gone —
 persona content is now structured dataclasses with explicit
 `summary_zh` / `summary_en` / `behavior_*` fields, so it can be
 localized without shipping 16 separate Markdown files.

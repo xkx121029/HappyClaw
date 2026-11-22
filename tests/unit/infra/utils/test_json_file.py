@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.utils.json_file import (
+from happyclaw.infra.utils.json_file import (
     JsonFileCorruptError,
     read_json_object,
     write_json_atomic,
@@ -75,7 +75,7 @@ def test_failed_replace_leaves_original_intact_and_cleans_temp(
     def boom(*_args: object, **_kwargs: object) -> None:
         raise OSError("disk full")
 
-    monkeypatch.setattr("octop.infra.utils.json_file.os.replace", boom)
+    monkeypatch.setattr("happyclaw.infra.utils.json_file.os.replace", boom)
     with pytest.raises(OSError, match="disk full"):
         write_json_atomic(path, {"port": 1})
     assert path.read_text(encoding="utf-8") == original

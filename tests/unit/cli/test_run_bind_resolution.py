@@ -9,8 +9,8 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.commands.run import _save_configfile_overrides, resolve_bind, run
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.cli.commands.run import _save_configfile_overrides, resolve_bind, run
+from happyclaw.infra.errors import ErrorCode, OctopError
 
 
 @pytest.fixture
@@ -142,7 +142,7 @@ def test_run_cli_on_corrupt_config_refuses_and_preserves_file(octop_home: Path) 
     corrupt = _corrupt(cfg.read_text(encoding="utf-8"))
     cfg.write_text(corrupt, encoding="utf-8")
 
-    with patch("octop.cli.commands.run._run_uvicorn") as mocked:
+    with patch("happyclaw.cli.commands.run._run_uvicorn") as mocked:
         result = CliRunner().invoke(run, ["--port", "8088"])
 
     assert result.exit_code != 0

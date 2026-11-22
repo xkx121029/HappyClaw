@@ -7,13 +7,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.gateway.gateway import Gateway
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import OctopConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.gateway.gateway import Gateway
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def _make_gateway(tmp_path: Path) -> Gateway:
@@ -150,8 +150,8 @@ async def test_reload_channels_from_db_unregisters_old_and_registers_enabled(
     tmp_path: Path,
 ) -> None:
     """Hot restore path: drop live IM channels, keep builtins, register DB rows."""
-    from octop.infra.gateway.cli import CLI_CHANNEL_ID
-    from octop.infra.gateway.ws import WS_CHANNEL_ID
+    from happyclaw.infra.gateway.cli import CLI_CHANNEL_ID
+    from happyclaw.infra.gateway.ws import WS_CHANNEL_ID
 
     gw = _make_gateway(tmp_path)
     remove_channel = AsyncMock()

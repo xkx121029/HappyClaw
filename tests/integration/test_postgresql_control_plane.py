@@ -50,9 +50,9 @@ def _pg_payload_from_url(url: str) -> dict[str, object]:
 @requires_postgresql
 @pytest.mark.postgresql
 def test_pg_migrate_and_user_roundtrip() -> None:
-    from octop.infra.db.migrate import run_migrations
-    from octop.infra.db.pool import PostgresPool
-    from octop.infra.db.repos.users import UserRepo
+    from happyclaw.infra.db.migrate import run_migrations
+    from happyclaw.infra.db.pool import PostgresPool
+    from happyclaw.infra.db.repos.users import UserRepo
 
     pool = PostgresPool(_conninfo())
     try:
@@ -72,17 +72,17 @@ def test_pg_migrate_and_user_roundtrip() -> None:
 @pytest.mark.postgresql
 def test_pg_control_plane_repo_smoke() -> None:
     """Exercise the main control-plane repos on a live PG schema."""
-    from octop.infra.db.migrate import run_migrations
-    from octop.infra.db.pool import PostgresPool
-    from octop.infra.db.repos.agents import AgentRepo
-    from octop.infra.db.repos.channels import ChannelRepo
-    from octop.infra.db.repos.cron import CronJobRepo
-    from octop.infra.db.repos.providers import ProviderRepo
-    from octop.infra.db.repos.sessions import SessionRepo
-    from octop.infra.db.repos.threads import ThreadRepo
-    from octop.infra.db.repos.users import UserRepo
-    from octop.infra.gateway.threads import ThreadRegistry
-    from octop.infra.utils.ulid import new_ulid
+    from happyclaw.infra.db.migrate import run_migrations
+    from happyclaw.infra.db.pool import PostgresPool
+    from happyclaw.infra.db.repos.agents import AgentRepo
+    from happyclaw.infra.db.repos.channels import ChannelRepo
+    from happyclaw.infra.db.repos.cron import CronJobRepo
+    from happyclaw.infra.db.repos.providers import ProviderRepo
+    from happyclaw.infra.db.repos.sessions import SessionRepo
+    from happyclaw.infra.db.repos.threads import ThreadRepo
+    from happyclaw.infra.db.repos.users import UserRepo
+    from happyclaw.infra.gateway.threads import ThreadRegistry
+    from happyclaw.infra.utils.ulid import new_ulid
 
     pool = PostgresPool(_conninfo())
     try:
@@ -151,9 +151,9 @@ def test_pg_control_plane_repo_smoke() -> None:
 @requires_postgresql
 @pytest.mark.postgresql
 def test_pg_probe_ok() -> None:
-    from octop.config import DatabaseConfig
-    from octop.infra.db.probe import probe_database
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.config import DatabaseConfig
+    from happyclaw.infra.db.probe import probe_database
+    from happyclaw.infra.utils.paths import PathLayout
 
     payload = _pg_payload_from_url(_conninfo())
     cfg = DatabaseConfig(
@@ -174,12 +174,12 @@ def test_pg_backup_roundtrip(tmp_path: Path) -> None:
     if not shutil.which("pg_dump") or not shutil.which("pg_restore"):
         pytest.skip("pg_dump/pg_restore not on PATH")
 
-    from octop.config import DatabaseConfig
-    from octop.infra.backup.system_archive import create_system_backup, restore_system_backup
-    from octop.infra.db.migrate import run_migrations
-    from octop.infra.db.pool import PostgresPool
-    from octop.infra.db.repos.users import UserRepo
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.config import DatabaseConfig
+    from happyclaw.infra.backup.system_archive import create_system_backup, restore_system_backup
+    from happyclaw.infra.db.migrate import run_migrations
+    from happyclaw.infra.db.pool import PostgresPool
+    from happyclaw.infra.db.repos.users import UserRepo
+    from happyclaw.infra.utils.paths import PathLayout
 
     conninfo = _conninfo()
     payload = _pg_payload_from_url(conninfo)
@@ -238,8 +238,8 @@ def test_pg_backup_roundtrip(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_setup_database_postgresql_bind(tmp_octop_home: Path) -> None:
     """Wizard: probe + bind live PostgreSQL, then create admin."""
-    from octop.infra.db.pool import PostgresPool
-    from octop.infra.setup.password_file import read_password
+    from happyclaw.infra.db.pool import PostgresPool
+    from happyclaw.infra.setup.password_file import read_password
     from tests.support.app import octop_client
 
     pool = PostgresPool(_conninfo())
@@ -287,10 +287,10 @@ async def test_setup_database_postgresql_bind(tmp_octop_home: Path) -> None:
 @pytest.mark.postgresql
 def test_pg_knowledge_base_max_documents_schema_and_crud() -> None:
     """Ensure PostgreSQL fresh migration includes max_documents on knowledge_bases and CRUD works."""
-    from octop.infra.db.migrate import run_migrations
-    from octop.infra.db.pool import PostgresPool
-    from octop.infra.db.repos.knowledge import KnowledgeRepo
-    from octop.infra.db.repos.users import UserRepo
+    from happyclaw.infra.db.migrate import run_migrations
+    from happyclaw.infra.db.pool import PostgresPool
+    from happyclaw.infra.db.repos.knowledge import KnowledgeRepo
+    from happyclaw.infra.db.repos.users import UserRepo
 
     pool = PostgresPool(_conninfo())
     try:

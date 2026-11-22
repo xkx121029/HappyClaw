@@ -43,7 +43,7 @@ async def bootstrap_admin(
     """
     server = _server_from_client(client)
     if server is not None and getattr(server, "services", None) is not None:
-        from octop.infra.agents.experts.default_agent import (
+        from happyclaw.infra.agents.experts.default_agent import (
             SETUP_DEFAULT_AGENT_ID,
             try_bootstrap_default_agent,
         )

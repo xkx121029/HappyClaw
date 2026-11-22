@@ -9,17 +9,17 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.repos.thread_messages import ThreadMessageInput
-from octop.infra.dsh.session import verify
-from octop.infra.dsh.session import shadow as shadow_mod
-from octop.infra.dsh.session.log import SessionLog
-from octop.infra.dsh.session.shadow import (
+from happyclaw.infra.db.repos.thread_messages import ThreadMessageInput
+from happyclaw.infra.dsh.session import verify
+from happyclaw.infra.dsh.session import shadow as shadow_mod
+from happyclaw.infra.dsh.session.log import SessionLog
+from happyclaw.infra.dsh.session.shadow import (
     append_shadow_turn,
     shadow_enabled,
     thread_shadow_dir,
     write_shadow_turn,
 )
-from octop.infra.gateway.process.processor import GlobalProcessor
+from happyclaw.infra.gateway.process.processor import GlobalProcessor
 
 
 def _message(role: str, content: str, *, message_id: str | None = None) -> str:
@@ -133,7 +133,7 @@ def test_write_shadow_turn_swallows_failures(
         raise OSError("disk full")
 
     monkeypatch.setattr(shadow_mod, "append_shadow_turn", _boom)
-    with caplog.at_level(logging.WARNING, logger="octop.infra.dsh.session.shadow"):
+    with caplog.at_level(logging.WARNING, logger="happyclaw.infra.dsh.session.shadow"):
         write_shadow_turn("thr_test", [_input("human", "hi")])
     assert any("DSH shadow log write failed" in record.message for record in caplog.records)
 

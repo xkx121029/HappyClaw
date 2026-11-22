@@ -7,12 +7,12 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.threads import ThreadRepo
-from octop.infra.utils.paths import PathLayout
-from octop.infra.utils.ulid import new_ulid
+from happyclaw.cli.main import cli
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.threads import ThreadRepo
+from happyclaw.infra.utils.paths import PathLayout
+from happyclaw.infra.utils.ulid import new_ulid
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def test_list_agents_offline(fake_home: Path) -> None:
     AgentRepo(db).create(agent_id="ag1", user_id=1, name="Bot")
     db.close()
 
-    from octop.cli.support.db import list_agents_offline
+    from happyclaw.cli.support.db import list_agents_offline
 
     rows = list_agents_offline(as_user="alice")
     assert len(rows) == 1
@@ -61,7 +61,7 @@ def test_list_threads_offline(fake_home: Path) -> None:
     )
     db.close()
 
-    from octop.cli.support.db import list_threads_offline
+    from happyclaw.cli.support.db import list_threads_offline
 
     rows = list_threads_offline(agent_id="ag1", as_user="alice", limit=10)
     assert len(rows) == 1
@@ -84,7 +84,7 @@ def test_agent_list_offline_flag(fake_home: Path) -> None:
 
 @pytest.fixture
 def english_cli(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("octop.cli.support.db.resolve_cli_locale", lambda: "en")
+    monkeypatch.setattr("happyclaw.cli.support.db.resolve_cli_locale", lambda: "en")
     monkeypatch.setenv("COLUMNS", "200")
 
 
