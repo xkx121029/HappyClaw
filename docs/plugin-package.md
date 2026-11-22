@@ -164,6 +164,6 @@ zip -r weather-0.1.0.zip weather
 本地安装目录或 ZIP：
 
 ```bash
-octop plugin install ./weather
-octop plugin install ./weather-0.1.0.zip
+happyclaw plugin install ./weather
+happyclaw plugin install ./weather-0.1.0.zip
 ```

@@ -72,7 +72,7 @@
 守卫：`tests/unit/test_httpx_lazy_patch.py`（独立子进程断言 octop 导入不加载
 httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相关单测 20 passed。
 
-**收益边界（诚实说明）**：`octop run` 主流程本来就要 import httpx 发 LLM 请求，
+**收益边界（诚实说明）**：`happyclaw run` 主流程本来就要 import httpx 发 LLM 请求，
 这部分延迟只是从「进程启动」移到「首次请求前」，总时长不变；真正省下的是
 不发网络的路径——CLI 元命令（`--help`/`--version`）、pytest 收集、插件扫描、
 以及任何只 import octop 做配置/检查的场景。

@@ -19,7 +19,7 @@
 
 ## 首次启动是什么体验
 
-1. 安装或解压后启动（桌面端双击图标，或命令行 `octop run`）。
+1. 安装或解压后启动（桌面端双击图标，或命令行 `happyclaw run`）。
 2. 没有登录页，也没有设置向导；浏览器打开 `http://localhost:8088` 直接进入聊天。
 3. 服务端在首次启动时自动建库、绑定本地 SQLite，并创建本机使用者 `local-owner`。`/api/setup/status` 会返回 `setup_required: false`。如果 `~/.happyclaw` 不存在（新机器、换路径或目录被清理），启动时会自行创建配置、数据库、日志与备份目录，不需要手工建目录。
 4. 桌面端首次打开会有一个两步引导：
@@ -44,12 +44,12 @@
 - 升级前建议留一份可搬走的备份：
 
 ```bash
-octop backup create --include-chats -o D:\backup\before-1.0.3b5.tar.gz
+happyclaw backup create --include-chats -o D:\backup\before-1.0.3b5.tar.gz
 ```
 
 ## 这一版新增/变化的东西
 
-- **备份默认带会话**：自动备份和托盘菜单里的「立即备份」默认包含聊天历史（`backup.include_chats: true`）。命令行 `octop backup create` 仍是精简备份，需要 `--include-chats` 才打包会话。
+- **备份默认带会话**：自动备份和托盘菜单里的「立即备份」默认包含聊天历史（`backup.include_chats: true`）。命令行 `happyclaw backup create` 仍是精简备份，需要 `--include-chats` 才打包会话。
 - **退出守卫**：有对话或任务正在跑时，从菜单退出会先提示，确认后才结束；关窗口默认只是收进托盘，不会打断正在生成的内容。
 - **托盘菜单**：打开窗口、立即备份、退出。备份完成后可直接打开备份文件夹。
 - **快捷键**：
@@ -67,7 +67,7 @@ octop backup create --include-chats -o D:\backup\before-1.0.3b5.tar.gz
 ## 升级建议步骤
 
 1. 停掉正在运行的服务（桌面端从托盘退出）。
-2. 执行上面的 `octop backup create --include-chats`。
+2. 执行上面的 `happyclaw backup create --include-chats`。
 3. 安装/替换 1.0.3b5，重新启动。
 4. 打开 `http://localhost:8088/api/health`，确认返回 `{"ok": true, ...}`。
 5. 检查常用专家、最近会话、模型与通道是否正常；有问题按 [单机迁移与恢复](migration-and-restore.md) 回退。

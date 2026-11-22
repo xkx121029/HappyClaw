@@ -1,7 +1,7 @@
 # Configuration
 
 HappyClaw stores all of its state under `~/.happyclaw/`. The directory is created
-on first server start (or by `octop init` / `octop run`).
+on first server start (or by `happyclaw init` / `happyclaw run`).
 
 ## Filesystem layout
 
@@ -11,13 +11,13 @@ on first server start (or by `octop init` / `octop run`).
 ├── env                      # optional dotenv (HAPPYCLAW_DATABASE_*, API keys, …); loaded at server start
 ├── octop.db                 # SQLite — local owner, agents, providers, sessions, audit
 ├── cli_state.json           # CLI defaults (base URL, pinned agent)
-├── repl_history             # readline-style history for `octop chats repl`
+├── repl_history             # readline-style history for `happyclaw chats repl`
 ├── secrets/
 │   └── jwt_secret           # legacy file; kept for compatibility, not used for auth
 ├── agents/<agent_id>/       # per-agent workspace (LangGraph state, attachments, …)
 ├── plugins/                 # installed third-party plugins
-├── ssl/                     # self-signed certs when `octop run --ssl` is used without --cert/--key
-├── logs/                    # rotating log files (when `octop service start` writes a logfile)
+├── ssl/                     # self-signed certs when `happyclaw run --ssl` is used without --cert/--key
+├── logs/                    # rotating log files (when `happyclaw service start` writes a logfile)
 └── octop.log                # default foreground log path
 ```
 
@@ -61,7 +61,7 @@ serialize inference. Switching the model or `HAPPYCLAW_HOME`, or deleting the ca
 model, releases the resident session. Knowledge indexing processes one document
 at a time; large imports continue in the background.
 
-On Linux, `octop service start` and `octop service restart` install/update two
+On Linux, `happyclaw service start` and `happyclaw service restart` install/update two
 drop-ins next to the existing service unit — `octop.service.d/10-nofile.conf`
 (`LimitNOFILE`) and `octop.service.d/15-resource-limits.conf` (the memory
 limits below). The main unit, custom `ExecStart`, service user, and other
@@ -209,7 +209,7 @@ Each variable, when set, takes precedence over the matching key in
 | `HAPPYCLAW_DATABASE_PASSWORD` | string | empty | PostgreSQL password (overrides file; prefer env in production) |
 | `HAPPYCLAW_USER` | string | empty | Compatibility flag; ignored in single-user mode |
 | `HAPPYCLAW_AGENT` | string | empty | Default `--agent` for CLI subcommands |
-| `HAPPYCLAW_SERVICE_MODE` | `systemd` \| `launchd` | auto | Override the service backend (used by `octop service`) |
+| `HAPPYCLAW_SERVICE_MODE` | `systemd` \| `launchd` | auto | Override the service backend (used by `happyclaw service`) |
 | `HAPPYCLAW_SERVICE_SCOPE` | `user` \| `system` | auto | systemd `--user` vs system unit (Linux only) |
 | `HAPPYCLAW_ONNX_COS_BASE` | origin | `https://octop-1258344699.cos.ap-guangzhou.myqcloud.com` | Base the local embedding model weights are downloaded from. The default is a public bucket, which stays the shipping default on purpose: the official Hugging Face host is unreachable from mainland China, so pointing a fresh install there would fail its first run. Set this to a self-hosted mirror to avoid the public bucket, or to an explicitly empty value to drop that candidate entirely and let the model come from Hugging Face or the hf-mirror (reachable, slower). Serving the weights ourselves is future work. See [local knowledge indexing](#local-knowledge-indexing-and-systemd-resource-limits) |
 | `HAPPYCLAW_PORTAL_ORIGIN` | origin | empty (remote catalog off) | Plugin and expert catalog origin. No path. Empty means no request is sent and the market shows its "temporarily unavailable" state; set it to your own catalog origin to enable it. See [private market](private-market.md) |
@@ -283,7 +283,7 @@ automatic expiration. Expiration leaves the marker in place.
 
 ## First boot
 
-HappyClaw is a single-user local tool. On the first `octop run` it creates the
+HappyClaw is a single-user local tool. On the first `happyclaw run` it creates the
 data directory, opens (or migrates) the control-plane database, and resolves a
 local owner row named `local`. No wizard, password, or account creation is
 involved; the dashboard opens directly on the chat page.
@@ -300,7 +300,7 @@ Database selection still happens at boot: SQLite is the default, and
 PostgreSQL is chosen with `HAPPYCLAW_DATABASE_URL` or the `database` block in
 `config.json`. Pointing at an existing database migrates it in place.
 
-For unattended installs, `octop init --yes` prepares the directory and runs
+For unattended installs, `happyclaw init --yes` prepares the directory and runs
 migrations. `HAPPYCLAW_ADMIN_USERNAME` / `HAPPYCLAW_ADMIN_PASSWORD` and
 `HAPPYCLAW_REQUIRE_SETUP_PASSWORD` are legacy variables: accepted, ignored, and
 safe to leave in old environment files.

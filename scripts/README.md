@@ -59,11 +59,11 @@ Windows PowerShell 等价参数：`-Version`、`-FromSource`、`-SourceDir`、`-
 安装完成后：
 
 ```bash
-octop init    # 初始化运行目录与数据库（可跳过，首次 run 会自动完成）
-octop run     # 启动服务 → http://127.0.0.1:8088
+happyclaw init    # 初始化运行目录与数据库（可跳过，首次 run 会自动完成）
+happyclaw run     # 启动服务 → http://127.0.0.1:8088
 ```
 
-本机使用者在首次 `octop run` 时自动创建，无需账号或密码。
+本机使用者在首次 `happyclaw run` 时自动创建，无需账号或密码。
 
 ---
 
@@ -83,7 +83,7 @@ powershell -File scripts/smoke_local.ps1              # 临时数据目录 + 随
 powershell -File scripts/smoke_local.ps1 -Port 8091 -Keep
 ```
 
-脚本用 `HAPPYCLAW_HOME` 指向临时目录启动 `octop run`，轮询 `/api/health`，输出响应与数据目录清单后停止进程；不会触碰 `~/.happyclaw` 的真实数据。`-Keep` 保留临时目录便于排查。
+脚本用 `HAPPYCLAW_HOME` 指向临时目录启动 `happyclaw run`，轮询 `/api/health`，输出响应与数据目录清单后停止进程；不会触碰 `~/.happyclaw` 的真实数据。`-Keep` 保留临时目录便于排查。
 
 ---
 

@@ -88,7 +88,7 @@ Four surfaces share the same agent runtime:
 | Surface | Wire | Session key (default) | Notes |
 |---------|------|-----------------------|-------|
 | Web UI | WebSocket `/api/agents/{aid}/chat/ws` | `<aid>:dashboard:local:dm` | Dashboard turn endpoint |
-| CLI | Embedded `HappyclawServer` (REPL) or WebSocket | `<aid>:cli:local:dm` | `octop chats send` / `chats repl` |
+| CLI | Embedded `HappyclawServer` (REPL) or WebSocket | `<aid>:cli:local:dm` | `happyclaw chats send` / `chats repl` |
 | IM channel | gateway `ChannelManager` | `<aid>:<channel_kind>:<platform_session>:<dm\|group>` | See `infra/gateway/process/message_keys.py` |
 | Cron job | APScheduler trigger → `Gateway.push_text_from_session` | row's `session_key` (defaults to `dashboard_key` of the owner) | `task_type=text\|agent` chooses direct-push vs run-AI-then-push |
 

@@ -5,15 +5,15 @@
 升级本次 HappyClaw 和 happyclaw-memory 0.9.11 或更新版本，重启 HappyClaw 一次加载控制入口。之后每次整理无需停服：
 
 ```bash
-octop memory list             # 只看可整理的智能体名称和 ID，不触发维护
-octop memory slim             # 使用已设定的默认智能体；没有默认时按编号选择
-octop memory slim --agent ID  # 已知 ID 时直接指定
-octop memory slim --all       # 顺序整理列表中所有符合条件的智能体
+happyclaw memory list             # 只看可整理的智能体名称和 ID，不触发维护
+happyclaw memory slim             # 使用已设定的默认智能体；没有默认时按编号选择
+happyclaw memory slim --agent ID  # 已知 ID 时直接指定
+happyclaw memory slim --all       # 顺序整理列表中所有符合条件的智能体
 ```
 
 不需要记住 agent 名称或 ID；没有默认智能体时会列出运行中、使用兼容 SQLite 记忆库的智能体，
 输入编号即可。重名时可用同时显示的 ID 区分，Ctrl+C 可退出选择，不会触发整理。
-已用 `octop agent use` 选择默认智能体时会沿用该选择，执行前打印目标 ID。
+已用 `happyclaw agent use` 选择默认智能体时会沿用该选择，执行前打印目标 ID。
 本地源码也可从 happyclaw-memory 目录执行：
 
 ```bash
@@ -28,7 +28,7 @@ octop memory slim --all       # 顺序整理列表中所有符合条件的智能
 终端显示 `[1/3] 名称 [ID]` 及该智能体的阶段、耗时和扫描数；每个完成并恢复后才开始下一个。
 每个库分别备份、分别显示前后大小。遇到失败或连接中断立即停止批次，报告已完成数和未执行数，
 不自动重试。关闭终端后当前已启动的作业仍由宿主完成，后续尚未提交的项目不会继续执行。
-`octop --json memory slim --all` 的进度带 `agent_id`、`index`、`total_agents`，批次终态为
+`happyclaw --json memory slim --all` 的进度带 `agent_id`、`index`、`total_agents`，批次终态为
 `batch_done` 或 `batch_failed`。`memory list` 可用于提前查看范围，它本身不执行瘦身。
 
 上述终端命令直接触发维护，不是预览。它连接运行中的同一个 HAPPYCLAW_HOME 实例，不会启动第二份 HappyClaw；
@@ -45,8 +45,8 @@ octop memory slim --all       # 顺序整理列表中所有符合条件的智能
 成功或失败后释放 gate，发送按钮恢复。其他独立数据库的智能体仍可使用。
 
 备份位于原文件旁，名字为 `memory.sqlite.before-slim.<随机ID>.bak`，不会自动删除或覆盖。
-命令结束显示主文件大小变化及备份路径；`octop --json memory slim --agent main` 输出逐行 JSON 进度。
-JSON 进度包含 `elapsed_seconds`。`octop --json memory list` 返回可选列表；JSON 模式无默认智能体且
+命令结束显示主文件大小变化及备份路径；`happyclaw --json memory slim --agent main` 输出逐行 JSON 进度。
+JSON 进度包含 `elapsed_seconds`。`happyclaw --json memory list` 返回可选列表；JSON 模式无默认智能体且
 未指定 `--agent` 时输出列表后以非零状态退出，不自动选择或等待交互。
 关闭终端不会取消已经开始的数据库作业。若服务连接中断，先看页面/日志状态再重试，
 不要恢复旧备份覆盖期间新增的数据。

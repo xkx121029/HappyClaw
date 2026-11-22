@@ -239,7 +239,7 @@ mkdir -p "$RUNTIME/home"
 
 HOME="$RUNTIME/home" \
 HAPPYCLAW_HOME="$RUNTIME/home/.octop" \
-uv run octop run --host 127.0.0.1 --port 8799
+uv run happyclaw run --host 127.0.0.1 --port 8799
 ```
 
 首次启动会打印一次性的设置向导密码，同时写入 `$RUNTIME/home/octop-login.txt`：

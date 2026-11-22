@@ -16,9 +16,9 @@ Persona content is now data, not files:
 
 | Resource | Location |
 |----------|----------|
-| 16 `MBTIProfile` records | [`src/happyclaw/infra/agents/persona/mbti_profiles.py`](../src/octop/infra/agents/persona/mbti_profiles.py) |
+| 16 `MBTIProfile` records | [`src/happyclaw/infra/agents/persona/mbti_profiles.py`](../src/happyclaw/infra/agents/persona/mbti_profiles.py) |
 | Public API (`get_profile`, `get_all_profiles`, `MBTIProfile`, …) | same module (also re-exported from `happyclaw.infra.agents.persona`) |
-| SOUL.md / persona rendering | [`src/happyclaw/infra/agents/persona/loader.py`](../src/octop/infra/agents/persona/loader.py) |
+| SOUL.md / persona rendering | [`src/happyclaw/infra/agents/persona/loader.py`](../src/happyclaw/infra/agents/persona/loader.py) |
 | Persisted agent field | `agents.persona_mbti` (string, e.g. `"INTJ"`) |
 
 The legacy `src/happyclaw/infra/agents/personas/*.md` directory is gone —
@@ -111,7 +111,7 @@ curl -X PUT http://127.0.0.1:8088/api/agents/architect/mbti \
   -d '{ "code": "INTJ" }'
 ```
 
-The CLI exposes the same path via `octop agent create --persona-mbti INTJ`.
+The CLI exposes the same path via `happyclaw agent create --persona-mbti INTJ`.
 
 ## Customising
 

@@ -6,7 +6,7 @@
     步骤：
       1. 找一个空闲端口；
       2. 把 HAPPYCLAW_HOME 指到临时目录（不触碰真实 ~/.octop）；
-      3. 启动 `octop run`；
+      3. 启动 `happyclaw run`；
       4. 轮询 http://127.0.0.1:<port>/api/health；
       5. 输出响应、数据目录清单与日志末尾；
       6. 停止进程并清理临时目录（-Keep 可保留）。
@@ -56,7 +56,7 @@ function Resolve-Octop {
     $cmd = Get-Command octop -ErrorAction SilentlyContinue
     if ($cmd) { return @{ File = $cmd.Source; Args = @() } }
 
-    $venvExe = Join-Path $RepoRoot ".venv\Scripts\octop.exe"
+    $venvExe = Join-Path $RepoRoot ".venv\Scripts\happyclaw.exe"
     if (Test-Path $venvExe) { return @{ File = $venvExe; Args = @() } }
 
     $venvPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"

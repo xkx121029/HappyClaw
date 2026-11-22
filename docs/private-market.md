@@ -32,7 +32,7 @@ HappyClaw 进程  GET 该条目的 download_url
 
 ## 让 HappyClaw 指向自建市场
 
-在 **跑 `octop run` 的那台机器** 上设置环境变量，然后重启进程。可以写进 `~/.happyclaw/env`（服务启动时会载入），也可以写进 systemd 的 `Environment=`。
+在 **跑 `happyclaw run` 的那台机器** 上设置环境变量，然后重启进程。可以写进 `~/.happyclaw/env`（服务启动时会载入），也可以写进 systemd 的 `Environment=`。
 
 ```bash
 HAPPYCLAW_PORTAL_ORIGIN=http://market.internal:9000

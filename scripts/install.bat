@@ -68,7 +68,7 @@ echo [octop] Python environment ready (%PY_VERSION%)
 
 set "EXTRAS_SUFFIX=[browser]"
 if defined ARG_EXTRAS set "EXTRAS_SUFFIX=[browser,%ARG_EXTRAS%]"
-set "VENV_OCTOP=%HAPPYCLAW_VENV%\Scripts\octop.exe"
+set "VENV_OCTOP=%HAPPYCLAW_VENV%\Scripts\happyclaw.exe"
 
 if "%ARG_FROM_SOURCE%"=="1" goto :install_from_source
 goto :install_from_pypi
@@ -146,7 +146,7 @@ if not exist "%HAPPYCLAW_BIN%" mkdir "%HAPPYCLAW_BIN%"
 echo @echo off > "%HAPPYCLAW_BIN%\octop.cmd"
 echo set "HAPPYCLAW_HOME=%%HAPPYCLAW_HOME%%" >> "%HAPPYCLAW_BIN%\octop.cmd"
 echo if "%%HAPPYCLAW_HOME%%"=="" set "HAPPYCLAW_HOME=%%USERPROFILE%%\.octop" >> "%HAPPYCLAW_BIN%\octop.cmd"
-echo "%%HAPPYCLAW_HOME%%\venv\Scripts\octop.exe" %%* >> "%HAPPYCLAW_BIN%\octop.cmd"
+echo "%%HAPPYCLAW_HOME%%\venv\Scripts\happyclaw.exe" %%* >> "%HAPPYCLAW_BIN%\octop.cmd"
 
 set "HAPPYCLAW_BIN_FOR_PS=%HAPPYCLAW_BIN%"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$bin=$env:HAPPYCLAW_BIN_FOR_PS; $cur=[Environment]::GetEnvironmentVariable('Path','User'); if(-not $cur){$cur=''}; $parts=$cur.Split(';')|?{$_}; $ok=$false; foreach($p in $parts){if($p.TrimEnd('\') -ieq $bin.TrimEnd('\')){$ok=$true}}; if(-not $ok){$new=if($cur){$cur.TrimEnd(';')+';'+$bin}else{$bin}; [Environment]::SetEnvironmentVariable('Path',$new,'User'); Write-Host '[octop] Added to User PATH'} else {Write-Host '[octop] Already in User PATH'}"
@@ -163,9 +163,9 @@ echo   set PATH=%HAPPYCLAW_BIN%;%%PATH%%
 echo Or open a new terminal ^(saved to User PATH^).
 echo.
 echo Then run:
-echo   octop init
-echo   octop run
-echo   octop service start
+echo   happyclaw init
+echo   happyclaw run
+echo   happyclaw service start
 echo   http://127.0.0.1:8088
 exit /b 0
 

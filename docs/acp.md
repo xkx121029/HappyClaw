@@ -4,7 +4,7 @@ HappyClaw integrates [ACP](https://agentclientprotocol.com/) in two directions:
 
 | Direction | ACP server | ACP client | Typical use |
 |-----------|------------|------------|-------------|
-| **Inbound** | HappyClaw (`octop acp`) | Zed, OpenCode, … | External IDE drives your HappyClaw agent |
+| **Inbound** | HappyClaw (`happyclaw acp`) | Zed, OpenCode, … | External IDE drives your HappyClaw agent |
 | **Outbound** | OpenCode, CodeBuddy, … | HappyClaw (`acp_runner` tool) | HappyClaw agent delegates coding tasks |
 
 Both use **stdio** JSON-RPC today. HappyClaw does not expose an HTTP ACP endpoint.
@@ -36,7 +36,7 @@ Legacy per-agent `config_json.acp.runners` is migrated to the user-global store 
 | `cursor_cli` | `agent` | `acp` |
 | `pi` | `npx` | `-y`, `pi-acp` |
 
-Install the CLI on the host where `octop run` executes, ensure it is on `PATH` (or set an absolute `command` in the runner drawer). Built-in runners cannot be deleted; custom runners can be added from **Add runner**.
+Install the CLI on the host where `happyclaw run` executes, ensure it is on `PATH` (or set an absolute `command` in the runner drawer). Built-in runners cannot be deleted; custom runners can be added from **Add runner**.
 
 ### Enable delegation in chat
 
@@ -72,7 +72,7 @@ After changing global runners, HappyClaw reloads your agents automatically. Chan
 Let external clients (e.g. Zed) use a HappyClaw agent as their coding agent:
 
 ```bash
-octop acp --agent main
+happyclaw acp --agent main
 ```
 
 | Option | Description |
@@ -80,14 +80,14 @@ octop acp --agent main
 | `--agent ID` | Agent to expose (default: CLI `default_agent` or first agent) |
 | `--debug` | Log to stderr |
 
-This starts a **standalone** `HappyclawServer` (reads `~/.happyclaw`), boots the agent, and speaks ACP on stdin/stdout. It does **not** require `octop run` to be running; it is a separate process.
+This starts a **standalone** `HappyclawServer` (reads `~/.happyclaw`), boots the agent, and speaks ACP on stdin/stdout. It does **not** require `happyclaw run` to be running; it is a separate process.
 
 Pin the default agent for convenience:
 
 ```bash
-octop agent use main
+happyclaw agent use main
 # or pass it per invocation:
-octop --agent main acp
+happyclaw --agent main acp
 ```
 
 ### Zed example
@@ -165,7 +165,7 @@ Runner shape:
 ## Prerequisites
 
 - **happyclaw-harness `[acp]` extra** — pulls in `agent-client-protocol` (included in the HappyClaw wheel dependency on happyclaw-harness).
-- **Outbound:** install external CLIs (`opencode`, `codebuddy`, …) on the machine running `octop run`.
+- **Outbound:** install external CLIs (`opencode`, `codebuddy`, …) on the machine running `happyclaw run`.
 - **Inbound:** agent must start successfully (provider + model configured).
 
 ---
@@ -175,9 +175,9 @@ Runner shape:
 | Symptom | Likely cause |
 |---------|----------------|
 | Runner missing on some agents | Upgrade to user-global runners; open `/acp` once or `GET /api/acp` to trigger migration |
-| `acp_runner` lists runner but start fails with “Unknown runner” | Restart `octop run` after adding a custom runner (ACP service cache is process-wide) |
+| `acp_runner` lists runner but start fails with “Unknown runner” | Restart `happyclaw run` after adding a custom runner (ACP service cache is process-wide) |
 | External runner returns no text | Check CLI auth/quota (e.g. `codebuddy auth status`) |
-| `octop acp` fails immediately | Agent not running or invalid `--agent`; create/start agent in dashboard first |
+| `happyclaw acp` fails immediately | Agent not running or invalid `--agent`; create/start agent in dashboard first |
 | Command not found | Use absolute path in runner `command` if `PATH` for the server process differs from your shell |
 | Kimi Code fails to start | Install [kimi-code](https://github.com/MoonshotAI/kimi-code) and run `kimi` login on the host |
 | Cursor CLI fails to start | Install Cursor CLI; run `agent login` or set `CURSOR_API_KEY` |
@@ -188,6 +188,6 @@ Runner shape:
 ## Related
 
 - Dashboard: `/acp`
-- CLI: `octop acp --help`
+- CLI: `happyclaw acp --help`
 - OpenAPI: `/api/docs`
 - Harness implementation: `happyclaw-harness` → `happyclaw_harness.acp` (server + `acp_runner` tool)

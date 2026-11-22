@@ -36,7 +36,7 @@ HappyClaw 进程  GET {SKILL_MARKET_ORIGIN}/api/v1/download?slug=…
 
 ## 让 HappyClaw 指向自建市场
 
-在 **跑 `octop run` 的那台机器** 上设置环境变量，然后重启进程。可以写进 `~/.happyclaw/env`（服务启动时会载入），也可以写进 systemd 的 `Environment=`。
+在 **跑 `happyclaw run` 的那台机器** 上设置环境变量，然后重启进程。可以写进 `~/.happyclaw/env`（服务启动时会载入），也可以写进 systemd 的 `Environment=`。
 
 ```bash
 SKILL_MARKET_ORIGIN=http://market.internal:9000
@@ -241,7 +241,7 @@ HappyClaw 进程  GET {SKILLSET_ORIGIN}/api/v1/skillsets/{slug}/download
 HappyClaw 进程  GET {SKILL_MARKET_ORIGIN}/api/v1/download?slug=…   （集内每个技能）
 ```
 
-在跑 `octop run` 的机器上设置后重启。写法和 `SKILL_MARKET_ORIGIN` 相同：只留协议、主机和端口；裸主机按 `https://` 补协议；路径和查询会被丢掉。未设置或空字符串时用 `https://api.skillhub.cn`。协议不是 `http`/`https`，或没有主机名，则这次导入失败，不会改回公网。
+在跑 `happyclaw run` 的机器上设置后重启。写法和 `SKILL_MARKET_ORIGIN` 相同：只留协议、主机和端口；裸主机按 `https://` 补协议；路径和查询会被丢掉。未设置或空字符串时用 `https://api.skillhub.cn`。协议不是 `http`/`https`，或没有主机名，则这次导入失败，不会改回公网。
 
 ```bash
 SKILLSET_ORIGIN=http://market.internal:9000
@@ -266,8 +266,8 @@ SKILLSET_ORIGIN=http://market.internal:9000
 
 | 现象 | 原因 |
 |---|---|
-| 技能市场仍是公网内容 | `SKILL_MARKET_ORIGIN` 没进 `octop run` 的环境，或改完没有重启。在 HappyClaw 机器上 `curl` 搜索地址，确认 10 秒内返回带 `results` 的 JSON。 |
+| 技能市场仍是公网内容 | `SKILL_MARKET_ORIGIN` 没进 `happyclaw run` 的环境，或改完没有重启。在 HappyClaw 机器上 `curl` 搜索地址，确认 10 秒内返回带 `results` 的 JSON。 |
 | 市场直接报错 | 源站协议或主机名无效，或榜单 / 搜索没有在时限内返回合法 JSON。 |
 | 卡片在，安装失败 | `GET /api/v1/download?slug=` 不是 ZIP，包内没有 `SKILL.md`，或超过体积限制。404 表示这个 slug 没有包。 |
 | 图标空白 | `iconUrl` 仍指向公网，或浏览器打不开该地址。 |
-| 技能包导入仍去公网要技能集 | `SKILLSET_ORIGIN` 没进 `octop run` 的环境，或改完没有重启。导入读的是 `{SKILLSET_ORIGIN}/api/v1/skillsets/{slug}`，不是 `SKILL_MARKET_ORIGIN`。 |
+| 技能包导入仍去公网要技能集 | `SKILLSET_ORIGIN` 没进 `happyclaw run` 的环境，或改完没有重启。导入读的是 `{SKILLSET_ORIGIN}/api/v1/skillsets/{slug}`，不是 `SKILL_MARKET_ORIGIN`。 |

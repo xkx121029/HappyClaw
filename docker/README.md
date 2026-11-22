@@ -29,7 +29,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 Open `http://localhost:8088`. Single-user mode needs no administrator password and no setup wizard: the first boot initializes the database and binds the local owner automatically, and the dashboard opens straight into the workspace.
 
-> **Upgrading from an older image:** the container no longer reads `HAPPYCLAW_DEFAULT_PASSWORD`, `HAPPYCLAW_ADMIN_USERNAME`, or `HAPPYCLAW_ADMIN_DISPLAY_NAME`, and creates no account. First boot runs `octop init --yes` (runtime directory + migrations only) and the server binds the local owner on start, so an existing data volume keeps every user row and you open the dashboard as that owner. `credential.txt` and `octop-login.txt` are no longer written; leftovers from an older image are harmless.
+> **Upgrading from an older image:** the container no longer reads `HAPPYCLAW_DEFAULT_PASSWORD`, `HAPPYCLAW_ADMIN_USERNAME`, or `HAPPYCLAW_ADMIN_DISPLAY_NAME`, and creates no account. First boot runs `happyclaw init --yes` (runtime directory + migrations only) and the server binds the local owner on start, so an existing data volume keeps every user row and you open the dashboard as that owner. `credential.txt` and `octop-login.txt` are no longer written; leftovers from an older image are harmless.
 
 Compose sets the open-file limit to 65535 for multi-agent workloads. Server startup also raises the soft limit up to 65535 within the inherited hard limit and logs the effective limits. Recreate existing containers to apply changed Compose limits; a restart alone does not change their hard limit.
 
@@ -98,7 +98,7 @@ image to receive these dependencies; restarting an older image is insufficient.
 - `docker run` example uses named volume `octop-data`
 - First boot: initializes the runtime directory and database, then creates the local owner; no password, wizard, or `credential.txt`
 - Upgrade: keep the data volume and rebuild the image; schema migrations run at startup
-- Backup: `docker exec -it octop octop backup create --include-chats`, then `docker cp` the archive out
+- Backup: `docker exec -it octop happyclaw backup create --include-chats`, then `docker cp` the archive out
 
 ### Health check
 
@@ -112,7 +112,7 @@ curl http://localhost:8088/api/health
 
 ```bash
 docker logs -f octop
-docker exec -it octop octop --version
+docker exec -it octop happyclaw --version
 docker compose -f docker/docker-compose.yml down
 docker compose -f docker/docker-compose.yml up -d --build
 ```

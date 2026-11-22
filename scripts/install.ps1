@@ -215,7 +215,7 @@ function Prepare-Console {
     }
 }
 
-$VenvOctop = Join-Path $HappyclawVenv "Scripts\octop.exe"
+$VenvOctop = Join-Path $HappyclawVenv "Scripts\happyclaw.exe"
 
 if ($FromSource) {
     if ($SourceDir) {
@@ -313,7 +313,7 @@ $wrapperPs1 = Join-Path $HappyclawBin "octop.ps1"
 @'
 $ErrorActionPreference = "Stop"
 $HappyclawHome = if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } else { Join-Path $HOME ".octop" }
-$RealBin = Join-Path $HappyclawHome "venv\Scripts\octop.exe"
+$RealBin = Join-Path $HappyclawHome "venv\Scripts\happyclaw.exe"
 if (-not (Test-Path $RealBin)) {
     Write-Error "HappyClaw environment not found at $HappyclawHome\venv"
     exit 1
@@ -326,7 +326,7 @@ $cmdWrapper = Join-Path $HappyclawBin "octop.cmd"
 @echo off
 set "HAPPYCLAW_HOME=%HAPPYCLAW_HOME%"
 if "%HAPPYCLAW_HOME%"=="" set "HAPPYCLAW_HOME=%USERPROFILE%\.octop"
-set "REAL_BIN=%HAPPYCLAW_HOME%\venv\Scripts\octop.exe"
+set "REAL_BIN=%HAPPYCLAW_HOME%\venv\Scripts\happyclaw.exe"
 if not exist "%REAL_BIN%" (
     echo Error: HappyClaw environment not found at %HAPPYCLAW_HOME%\venv >&2
     exit /b 1
@@ -376,9 +376,9 @@ if ($pathSavedForNewSessions) {
 }
 Write-Host ""
 Write-Host "Then run:"
-Write-Host "  octop init" -ForegroundColor White
-Write-Host "  octop run" -ForegroundColor White
-Write-Host "  octop service start" -ForegroundColor White
+Write-Host "  happyclaw init" -ForegroundColor White
+Write-Host "  happyclaw run" -ForegroundColor White
+Write-Host "  happyclaw service start" -ForegroundColor White
 Write-Host "  http://127.0.0.1:8088" -ForegroundColor White
 
 } @args

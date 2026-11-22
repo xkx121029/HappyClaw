@@ -91,7 +91,7 @@ a = Analysis(
 # not expose as features. ``happyclaw.infra.utils.google_discovery`` wraps
 # ``build()`` so a missing static document falls back to the network (and raises
 # a Chinese hint when offline). Same trade-off as
-# ``desktop/portable/prune_packages.py``; ``octop selfcheck`` verifies it.
+# ``desktop/portable/prune_packages.py``; ``happyclaw selfcheck`` verifies it.
 _DROPPED_DATA_PREFIXES = ("googleapiclient/discovery_cache/documents/",)
 a.datas = [
     entry

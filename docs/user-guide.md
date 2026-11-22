@@ -20,7 +20,7 @@
 
 ## 一、简介
 
-**HappyClaw** 是一个装在自己电脑上的单人 AI 工作台。一个服务进程（`octop run`）同时提供 Web 控制台、IM 通道和定时任务；命令行 `octop` 是另一个进程，读写同一个 `~/.happyclaw` 数据库。所有数据都保存在本机。
+**HappyClaw** 是一个装在自己电脑上的单人 AI 工作台。一个服务进程（`happyclaw run`）同时提供 Web 控制台、IM 通道和定时任务；命令行 `octop` 是另一个进程，读写同一个 `~/.happyclaw` 数据库。所有数据都保存在本机。
 
 ![图 1.1 — HappyClaw 品牌图](assets/overview.png)
 
@@ -68,8 +68,8 @@ curl -fsSL "${HAPPYCLAW_INSTALL_BASE:-https://raw.githubusercontent.com/xkx12102
 ### 2.3 验证安装
 
 ```bash
-octop --version
-octop run --help
+happyclaw --version
+happyclaw run --help
 ```
 
 若提示找不到 `octop` 命令，重开一个终端，或检查 `~/.happyclaw/bin` 是否在 PATH 里。
@@ -90,7 +90,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 ### 3.1 启动服务
 
 ```bash
-octop run       # 前台启动 API + Web 控制台
+happyclaw run       # 前台启动 API + Web 控制台
 ```
 
 首次启动会自动创建运行目录、SQLite 数据库和本机使用者，无需手动初始化，也不会要求输入密码。
@@ -98,7 +98,7 @@ octop run       # 前台启动 API + Web 控制台
 若希望服务在后台常驻：
 
 ```bash
-octop service start   # Linux(systemd) / macOS(launchd)
+happyclaw service start   # Linux(systemd) / macOS(launchd)
 ```
 
 启动后打开 **http://127.0.0.1:8088**，直接进入工作台。
@@ -106,7 +106,7 @@ octop service start   # Linux(systemd) / macOS(launchd)
 ### 3.2 自定义监听地址与端口
 
 ```bash
-octop run --host 0.0.0.0 --port 8090
+happyclaw run --host 0.0.0.0 --port 8090
 ```
 
 等价的环境变量是 `HAPPYCLAW_BIND_HOST` 与 `HAPPYCLAW_PORT`。默认只监听 `127.0.0.1`；改成 `0.0.0.0` 会把控制台暴露给局域网，请自行确认网络环境。
@@ -169,10 +169,10 @@ HappyClaw 通过**供应商（Provider）**接入大模型。每个专家可使�
 ### 4.5 通过 CLI 配置
 
 ```bash
-octop models presets       # 列出内置供应商模板
-octop models config        # 交互式从模板建供应商并设为当前模型
-octop provider list        # 列出已配置供应商
-octop provider test <id>   # 用一次单 token 请求探测供应商
+happyclaw models presets       # 列出内置供应商模板
+happyclaw models config        # 交互式从模板建供应商并设为当前模型
+happyclaw provider list        # 列出已配置供应商
+happyclaw provider test <id>   # 用一次单 token 请求探测供应商
 ```
 
 CLI 只能新增、删除、探测供应商，没有 `provider edit`：改已有的供应商用控制台 **管理 → 模型配置**。
@@ -235,7 +235,7 @@ CLI 只能新增、删除、探测供应商，没有 `provider edit`：改已有
 1. **入站** —— 让外部工具（Zed、OpenCode 等）使用你的 HappyClaw 专家：
 
    ```bash
-   octop acp --agent main
+   happyclaw acp --agent main
    ```
 
 2. **出站** —— 在对话中把编码任务委派给外部 Agent（内置 7 个 Runner：OpenCode、CodeBuddy、Claude Code、Codex、Kimi Code、Cursor CLI、pi）：
@@ -258,7 +258,7 @@ CLI 只能新增、删除、探测供应商，没有 `provider edit`：改已有
   - **插件管理**（`/admin/plugins`）、**安全防护**（`/admin/security`）— 工具审批、Shell 命令护栏（`~/.happyclaw/security/tool_guard/`）、PII 与凭据策略。
   - **应用设置**（`/admin/advanced`）— 环境变量、可观测、**备份与恢复**、HTTPS、应用更新五个标签页。
 
-监听地址与端口没有面板开关：它们来自 `octop run --host/--port`、`HAPPYCLAW_BIND_HOST`/`HAPPYCLAW_PORT` 或 `config.json`；时区是 `config.json` 的 `default_timezone`。详见 [docs/configuration.md](configuration.md)。
+监听地址与端口没有面板开关：它们来自 `happyclaw run --host/--port`、`HAPPYCLAW_BIND_HOST`/`HAPPYCLAW_PORT` 或 `config.json`；时区是 `config.json` 的 `default_timezone`。详见 [docs/configuration.md](configuration.md)。
 
 ![图 5.5 — 设置页面](assets/use-06-settings.png)
 
@@ -287,12 +287,12 @@ CLI 只能新增、删除、探测供应商，没有 `provider edit`：改已有
 命令行最直接：
 
 ```bash
-octop backup create --include-chats -o D:\backup\happyclaw-full.tar.gz   # 全量留档
-octop backup restore D:\backup\happyclaw-full.tar.gz --yes               # 停服务后恢复
-octop backup auto status                                                 # 看自动备份是否开启
+happyclaw backup create --include-chats -o D:\backup\happyclaw-full.tar.gz   # 全量留档
+happyclaw backup restore D:\backup\happyclaw-full.tar.gz --yes               # 停服务后恢复
+happyclaw backup auto status                                                 # 看自动备份是否开启
 ```
 
-图形界面在 **管理 → 应用设置 → 备份与恢复**：可以创建备份、上传归档导入、从列表恢复，也能看到自动备份计划和保留份数。恢复会替换数据库，操作前先 `Ctrl+C` 停掉 `octop run`；细节与失败回退见 [单机迁移与恢复](migration-and-restore.md)。
+图形界面在 **管理 → 应用设置 → 备份与恢复**：可以创建备份、上传归档导入、从列表恢复，也能看到自动备份计划和保留份数。恢复会替换数据库，操作前先 `Ctrl+C` 停掉 `happyclaw run`；细节与失败回退见 [单机迁移与恢复](migration-and-restore.md)。
 
 **快捷键（mod = macOS 的 ⌘，其他平台 Ctrl）**
 
@@ -312,7 +312,7 @@ octop backup auto status                                                 # 看�
 
 **三条省事习惯**
 
-1. 自动备份默认关闭，建议在设置里打开，再每隔一段时间手动 `octop backup create --include-chats` 留一份可搬走的全量包。
+1. 自动备份默认关闭，建议在设置里打开，再每隔一段时间手动 `happyclaw backup create --include-chats` 留一份可搬走的全量包。
 2. 长期项目单独建专家，会话按项目分开，搜索和备份时都更容易定位。
 3. 常用操作记住 `mod + K` 一个入口就够，不用背全部快捷键。
 
@@ -334,9 +334,9 @@ octop backup auto status                                                 # 看�
 ├── skill-packages/          # 全局技能包（SQLite 后端下的文件）
 ├── knowledge/               # 知识库原始文件（SQLite 后端下的文件）
 ├── security/tool_guard/     # Shell 命令允许 / 拒绝规则
-├── ssl/                     # octop run --ssl 自签证书
+├── ssl/                     # happyclaw run --ssl 自签证书
 ├── logs/                    # 运行日志
-├── backups/                 # octop backup create 的归档
+├── backups/                 # happyclaw backup create 的归档
 ├── venv/                    # 安装脚本创建的 Python 环境
 └── bin/octop                # 命令入口
 ```
@@ -346,26 +346,26 @@ octop backup auto status                                                 # 看�
 ### 6.2 备份
 
 ```bash
-octop backup create                                # 生成归档（数据库 + 工作区 + 配置）
-octop backup create --include-chats                # 连聊天历史一起打包
-octop backup create -o ~/backup/happyclaw.tar.gz   # 指定输出位置
-octop backup auto status                           # 查看自动备份配置
-octop backup auto run                              # 立即执行一次自动备份
+happyclaw backup create                                # 生成归档（数据库 + 工作区 + 配置）
+happyclaw backup create --include-chats                # 连聊天历史一起打包
+happyclaw backup create -o ~/backup/happyclaw.tar.gz   # 指定输出位置
+happyclaw backup auto status                           # 查看自动备份配置
+happyclaw backup auto run                              # 立即执行一次自动备份
 ```
 
 默认输出到 `~/.happyclaw/backups/`，文件名形如 `octop-backup-20261111T120000Z.tar.gz`（UTC）。归档包含数据库、`config.json`、`env`、专家工作区、技能包、插件与知识库；`secrets/`、`security/`、`ssl/`、`logs/` 不进归档，需要时手工复制。默认不含聊天历史，完整迁移加 `--include-chats`。
 
-自动备份默认**关闭**（`backup.auto_enabled: false`），开启后在 `octop run` 进程内按 `backup.schedule` 执行，默认每天 04:00，默认保留 7 份。自动归档以 `octop-auto-backup-` 开头，保留策略不会删除手动备份。用 `octop backup auto status` 查看当前值。
+自动备份默认**关闭**（`backup.auto_enabled: false`），开启后在 `happyclaw run` 进程内按 `backup.schedule` 执行，默认每天 04:00，默认保留 7 份。自动归档以 `octop-auto-backup-` 开头，保留策略不会删除手动备份。用 `happyclaw backup auto status` 查看当前值。
 
 ### 6.3 恢复
 
 ```bash
-octop backup create -o ~/backup/before-restore.tar.gz   # 恢复前先留一份现场
-octop backup restore <归档文件>                          # 会先要求确认
-octop backup restore <归档文件> --yes                    # 跳过确认
+happyclaw backup create -o ~/backup/before-restore.tar.gz   # 恢复前先留一份现场
+happyclaw backup restore <归档文件>                          # 会先要求确认
+happyclaw backup restore <归档文件> --yes                    # 跳过确认
 ```
 
-恢复前必须停止正在运行的服务（前台 Ctrl+C，或 `octop service stop`）。恢复会替换数据库；归档里没有聊天历史时，当前聊天记录会先保存再写回。SQLite 与 PostgreSQL 的备份不能跨引擎互恢；归档 schema 版本高于当前程序时会被拒绝，需要先升级 HappyClaw。PostgreSQL 的备份与恢复还要求 `pg_dump` / `pg_restore` 在 PATH 中。
+恢复前必须停止正在运行的服务（前台 Ctrl+C，或 `happyclaw service stop`）。恢复会替换数据库；归档里没有聊天历史时，当前聊天记录会先保存再写回。SQLite 与 PostgreSQL 的备份不能跨引擎互恢；归档 schema 版本高于当前程序时会被拒绝，需要先升级 HappyClaw。PostgreSQL 的备份与恢复还要求 `pg_dump` / `pg_restore` 在 PATH 中。
 
 逐步命令与失败回退见 [单机迁移与恢复](migration-and-restore.md)。
 
@@ -373,10 +373,10 @@ octop backup restore <归档文件> --yes                    # 跳过确认
 
 完整步骤（含换目录、PostgreSQL、失败回退）见 [单机迁移与恢复](migration-and-restore.md)。最短路径：
 
-1. 旧机器 `octop backup create --include-chats -o D:\backup\happyclaw-full.tar.gz`。
+1. 旧机器 `happyclaw backup create --include-chats -o D:\backup\happyclaw-full.tar.gz`。
 2. 把归档文件拷贝到新机器。
-3. 新机器安装 HappyClaw，停止服务，执行 `octop backup restore D:\backup\happyclaw-full.tar.gz --yes`。
-4. 启动 `octop run`，检查专家、通道与模型配置是否完整。
+3. 新机器安装 HappyClaw，停止服务，执行 `happyclaw backup restore D:\backup\happyclaw-full.tar.gz --yes`。
+4. 启动 `happyclaw run`，检查专家、通道与模型配置是否完整。
 
 ---
 
@@ -392,13 +392,13 @@ octop backup restore <归档文件> --yes                    # 跳过确认
 
 ```bash
 # 前台运行时按 Ctrl+C
-octop service stop      # 已注册为系统服务时
+happyclaw service stop      # 已注册为系统服务时
 ```
 
 ### 7.3 卸载
 
-1. 先备份需要保留的数据：`octop backup create`。
-2. 停止服务并删除系统服务注册：`octop service stop`。
+1. 先备份需要保留的数据：`happyclaw backup create`。
+2. 停止服务并删除系统服务注册：`happyclaw service stop`。
 3. 删除安装与数据目录：
    - Windows：删除 `%USERPROFILE%\.octop`
    - macOS / Linux：`rm -rf ~/.happyclaw`
@@ -411,9 +411,9 @@ octop service stop      # 已注册为系统服务时
 ## 八、常见问题
 
 **Q：访问 http://127.0.0.1:8088 打不开？**
-- 确认 `octop run` 仍在运行且终端无报错。
+- 确认 `happyclaw run` 仍在运行且终端无报错。
 - 若改过端口，请访问对应地址。
-- 已注册系统服务时，用 `octop service status` 查看状态。
+- 已注册系统服务时，用 `happyclaw service status` 查看状态。
 
 **Q：需要登录吗？忘记密码怎么办？**
 - 不需要登录，也没有密码。启动后直接以本机使用者身份进入控制台。
@@ -422,7 +422,7 @@ octop service stop      # 已注册为系统服务时
 - 检查 API Key、Base URL、网络连通性与账户配额。
 
 **Q：如何修改监听地址让局域网访问？**
-- `octop run --host 0.0.0.0 --port 8088`，或设置 `HAPPYCLAW_BIND_HOST=0.0.0.0`、`HAPPYCLAW_PORT=8088`。
+- `happyclaw run --host 0.0.0.0 --port 8088`，或设置 `HAPPYCLAW_BIND_HOST=0.0.0.0`、`HAPPYCLAW_PORT=8088`。
 
 **Q：局域网访问不了插件市场和专家市场？**
 - HappyClaw 不内置任何远程目录：没设 `HAPPYCLAW_PORTAL_ORIGIN` 时这两页不会发出请求，只显示「暂时不可用」。内网自建（或指向你自己的公网目录）见 [内网自建市场](private-market.md)。
@@ -431,13 +431,13 @@ octop service stop      # 已注册为系统服务时
 - 技能页默认请求 `https://api.skillhub.cn`。按同一接口自建并设置 `SKILL_MARKET_ORIGIN`，见 [技能市场](skill-market.md)。
 
 **Q：如何升级？**
-- `octop update`；升级前先 `octop backup create`。数据库结构会在下次启动时自动迁移。
+- `happyclaw update`；升级前先 `happyclaw backup create`。数据库结构会在下次启动时自动迁移。
 
 **Q：数据目录丢了，或者要换一台机器怎么办？**
 - 数据目录就是 `~/.happyclaw/`（Windows 下是 `C:\Users\你的用户名\.octop\`），配置、会话数据库、专家工作区、密钥和备份都放在这里。
 - 如果这个目录被删除或清空，下次启动不会报错，程序会自动建出一套全新的空目录。看起来能正常打开，但原来的会话、专家和配置都不在了。
 - 空目录里没有历史数据可以恢复。想找回内容，只能依靠之前做过的备份：`~/.happyclaw/backups/` 里的归档，或你另存到其他磁盘的备份包。
-- 正确做法是先停掉服务，不要在残缺目录里继续操作；确认最近一次备份的位置，再按 [单机迁移与恢复](migration-and-restore.md) 恢复。换机器时，整目录拷贝或先执行 `octop backup create --include-chats`，到新机器再恢复。
+- 正确做法是先停掉服务，不要在残缺目录里继续操作；确认最近一次备份的位置，再按 [单机迁移与恢复](migration-and-restore.md) 恢复。换机器时，整目录拷贝或先执行 `happyclaw backup create --include-chats`，到新机器再恢复。
 - 之后建议打开自动备份，并把重要备份另存到别的磁盘。
 
 **Q：数据会传到云端吗？**

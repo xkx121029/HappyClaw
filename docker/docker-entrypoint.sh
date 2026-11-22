@@ -7,14 +7,14 @@
 #   HAPPYCLAW_PORT                — 服务端口（默认: 8088）
 #
 # 单人版说明：HappyClaw 没有账号步骤。首次启动只建目录、跑迁移，随后的
-# `octop run` 自动绑定本机使用者；入口脚本不创建管理员，也不写任何凭据文件。
+# `happyclaw run` 自动绑定本机使用者；入口脚本不创建管理员，也不写任何凭据文件。
 #
 # 初始化标记（issue #1866）：PostgreSQL 等外部数据库不会在数据卷生成
-# octop.db，仅凭 DB_FILE 判断会在每次重启重复执行 octop init。octop init
+# octop.db，仅凭 DB_FILE 判断会在每次重启重复执行 happyclaw init。happyclaw init
 # 成功后写入 /data/.octop/.initialized，重启命中该标记即跳过引导直接启动。
 #
 # 旧部署的 HAPPYCLAW_DEFAULT_PASSWORD / HAPPYCLAW_ADMIN_USERNAME / HAPPYCLAW_ADMIN_DISPLAY_NAME
-# 在此不再读取；它们由 fnOS 包等旧安装流程直接传给 `octop init`（见
+# 在此不再读取；它们由 fnOS 包等旧安装流程直接传给 `happyclaw init`（见
 # scripts/fnos/common.sh），容器本身不需要。
 # =============================================================================
 set -euo pipefail
@@ -70,17 +70,17 @@ octop_entrypoint_main() {
     if [ ! -f "$DB_FILE" ] && [ ! -f "$INIT_MARKER" ]; then
         echo "[entrypoint] 首次启动，正在初始化 HappyClaw..."
         mkdir -p "$HAPPYCLAW_HOME"
-        if ! octop init --yes; then
+        if ! happyclaw init --yes; then
             echo "[entrypoint] 初始化失败。若数据目录已有文件但没有 octop.db（或使用外部数据库后端），请检查卷挂载与数据库连接。" >&2
             exit 1
         fi
         touch "$INIT_MARKER"
-        echo "[entrypoint] 已写入初始化标记 ${INIT_MARKER}，重启将跳过 octop init。"
+        echo "[entrypoint] 已写入初始化标记 ${INIT_MARKER}，重启将跳过 happyclaw init。"
     fi
 
     if [ $# -eq 0 ]; then
         echo "[entrypoint] 正在启动 HappyClaw，端口 $PORT..."
-        exec octop run --host 0.0.0.0 --port "$PORT"
+        exec happyclaw run --host 0.0.0.0 --port "$PORT"
     fi
 
     if [ "$1" = "octop" ]; then

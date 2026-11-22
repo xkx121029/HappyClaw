@@ -29,7 +29,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 访问 `http://localhost:8088`。单人模式不需要预置管理员密码，也不需要走设置向导：首次启动会初始化数据库并自动绑定本机使用者，打开页面直接进入工作台。
 
-> **从旧镜像升级：** 容器不再读取 `HAPPYCLAW_DEFAULT_PASSWORD`、`HAPPYCLAW_ADMIN_USERNAME`、`HAPPYCLAW_ADMIN_DISPLAY_NAME`，首次启动也不创建账号：只执行 `octop init --yes`（建目录 + 跑迁移），账号由服务启动时自动绑定的本机使用者承担。旧数据卷里的用户行全部保留，打开控制台就是该使用者。`credential.txt` 与 `octop-login.txt` 不再生成，旧镜像留下的这两个文件无害，可以删掉。
+> **从旧镜像升级：** 容器不再读取 `HAPPYCLAW_DEFAULT_PASSWORD`、`HAPPYCLAW_ADMIN_USERNAME`、`HAPPYCLAW_ADMIN_DISPLAY_NAME`，首次启动也不创建账号：只执行 `happyclaw init --yes`（建目录 + 跑迁移），账号由服务启动时自动绑定的本机使用者承担。旧数据卷里的用户行全部保留，打开控制台就是该使用者。`credential.txt` 与 `octop-login.txt` 不再生成，旧镜像留下的这两个文件无害，可以删掉。
 
 Compose 将多 agent 服务的文件描述符限制设为 65535。服务启动时也会在继承的 hard limit 内将 soft limit 提升至最多 65535，并记录实际限额。已有容器需重新创建才能应用 Compose 限额变化；仅重启不会改变容器的 hard limit。
 
@@ -95,7 +95,7 @@ Compose 可在 `docker/.env` 中配置上述变量。注意：`.env` 只参与 C
 - `docker run` 示例使用命名卷 `octop-data`
 - 首次启动：初始化运行目录与数据库，自动创建本机使用者；不需要密码、向导或 `credential.txt`
 - 升级：保留数据卷、重新构建镜像即可，数据库结构在启动时迁移
-- 备份：`docker exec -it octop octop backup create --include-chats`，归档保存在容器内，需 `docker cp` 取出
+- 备份：`docker exec -it octop happyclaw backup create --include-chats`，归档保存在容器内，需 `docker cp` 取出
 
 ### 健康检查
 
@@ -109,7 +109,7 @@ curl http://localhost:8088/api/health
 
 ```bash
 docker logs -f octop
-docker exec -it octop octop --version
+docker exec -it octop happyclaw --version
 docker compose -f docker/docker-compose.yml down
 docker compose -f docker/docker-compose.yml up -d --build
 ```
