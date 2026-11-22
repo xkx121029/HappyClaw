@@ -1,3 +1,4 @@
+from happyclaw.infra.utils.env_alias import env_get, env_has
 #!/usr/bin/env python3
 """
 tccli OAuth 登录辅助工具
@@ -93,7 +94,7 @@ def resolve_profile(explicit=None):
     """
     if explicit:
         return explicit
-    env = os.environ.get("HAPPYCLAW_TCCLI_PROFILE", "").strip()
+    env = env_get("TCCLI_PROFILE", "").strip()
     if env:
         return env
     try:

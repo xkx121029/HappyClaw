@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import errno
 import json
 import os
@@ -45,7 +47,7 @@ def portal_base() -> str:
     """
     if "HAPPYCLAW_PORTAL_ORIGIN" not in os.environ:
         return DEFAULT_PORTAL_BASE
-    raw = os.environ.get("HAPPYCLAW_PORTAL_ORIGIN", "").strip()
+    raw = env_get("PORTAL_ORIGIN", "").strip()
     if not raw:
         return ""
     if "://" not in raw:
@@ -66,7 +68,7 @@ def remote_base() -> str:
     treated as ``https://``. An empty or unusable value keeps the default.
     Only the origin is kept, so a pasted path does not change object keys.
     """
-    raw = os.environ.get("HAPPYCLAW_MARKET_REMOTE_ORIGIN", "").strip()
+    raw = env_get("MARKET_REMOTE_ORIGIN", "").strip()
     if not raw:
         return DEFAULT_REMOTE_BASE
     if "://" not in raw:

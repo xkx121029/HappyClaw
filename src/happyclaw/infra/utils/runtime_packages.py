@@ -8,6 +8,8 @@ hand-rolling ``pip`` / ``uv pip`` commands.
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import asyncio
 import importlib
 import importlib.util
@@ -41,7 +43,7 @@ class PackageInstallSpec:
 
 def find_uv_binary() -> str | None:
     """Resolve ``uv`` from env, PATH, or common install locations."""
-    override = os.environ.get("HAPPYCLAW_UV_BIN", "").strip()
+    override = env_get("UV_BIN", "").strip()
     if override:
         path = Path(override)
         if path.is_file():

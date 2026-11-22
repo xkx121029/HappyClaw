@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import argparse
 import json
 import os
@@ -80,7 +82,7 @@ def _default_workspace() -> Path:
 
 def _skills_dir(workspace: Path) -> Path:
     """Return the writable skills directory (legacy root or ``.octop/skills``)."""
-    env_dir = os.environ.get("HAPPYCLAW_SKILLS_DIR", "").strip()
+    env_dir = env_get("SKILLS_DIR", "").strip()
     if env_dir:
         path = _workspace(env_dir)
         path.mkdir(parents=True, exist_ok=True)

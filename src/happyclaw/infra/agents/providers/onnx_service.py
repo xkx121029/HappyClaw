@@ -6,6 +6,8 @@ models under ``~/.octop/embedding_models`` for the Models admin local tab.
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import asyncio
 import json
 import logging
@@ -53,7 +55,7 @@ _LOCAL_PROBE_TEXT = "octop onnx probe"
 
 def runtime_pip_allowed() -> bool:
     """Runtime pip is off by default; set HAPPYCLAW_ALLOW_RUNTIME_PIP=1 to enable."""
-    return os.environ.get("HAPPYCLAW_ALLOW_RUNTIME_PIP", "").strip().lower() in {
+    return env_get("ALLOW_RUNTIME_PIP", "").strip().lower() in {
         "1",
         "true",
         "yes",

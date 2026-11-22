@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import asyncio
 import json
 import logging
@@ -168,7 +170,7 @@ def _dsh_local_roots() -> tuple[str, ...]:
     No default roots: scanning the home directory on every config build would be
     a surprise, and the market install root already covers installed plugins.
     """
-    raw = os.environ.get("HAPPYCLAW_DSH_TOOL_ROOTS", "")
+    raw = env_get("DSH_TOOL_ROOTS", "")
     return tuple(part.strip() for part in raw.split(",") if part.strip())
 
 def skills_disabled_set(cfg: dict[str, Any]) -> set[str]:
@@ -805,7 +807,7 @@ class AgentManager:
         if self._dsh_tools_status is None:
             # Mirrors the runtime rule without importing the sandbox package
             # while the stage is off: unknown values are treated as strict.
-            raw = (os.environ.get("HAPPYCLAW_DSH_SANDBOX_ABSENCE") or "allow").strip().lower()
+            raw = (env_get("DSH_SANDBOX_ABSENCE") or "allow").strip().lower()
             mode = raw if raw in {"allow", "strict"} else "strict"
             return {
                 "enabled": dsh_stage_enabled("tools"),
@@ -850,7 +852,7 @@ class AgentManager:
             approval = HitlApprovalChannel()
         build = build_dsh_plugin_tools(
             scope=str(row.agent_id),
-            market_root=os.environ.get("HAPPYCLAW_DSH_MARKET_ROOT") or None,
+            market_root=env_get("DSH_MARKET_ROOT") or None,
             local_roots=_dsh_local_roots(),
             providers=self._dsh_tool_providers,
             hitl=hitl,
@@ -860,7 +862,7 @@ class AgentManager:
             # path cannot be resolved the probe falls back to the absence gate,
             # whose mode (allow / strict) is visible through dsh_tools_status().
             sandbox_root=self._dsh_sandbox_root(row),
-            sandbox_absence=os.environ.get("HAPPYCLAW_DSH_SANDBOX_ABSENCE") or None,
+            sandbox_absence=env_get("DSH_SANDBOX_ABSENCE") or None,
         )
         self._dsh_tools_status = build
         for skip in build.skipped:

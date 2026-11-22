@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import asyncio
 import importlib.util
 import json
@@ -146,7 +148,7 @@ async def _iter_subprocess_lines(stream: asyncio.StreamReader) -> AsyncIterator[
 
 
 def octop_home() -> Path:
-    return Path(os.environ.get("HAPPYCLAW_HOME", Path.home() / ".octop"))
+    return Path(env_get("HOME", Path.home() / ".octop"))
 
 
 def desktop_state_dir() -> Path:
@@ -276,7 +278,7 @@ def read_geometry() -> str:
                 value = line.split("=", 1)[1].strip().strip('"').strip("'")
                 if _GEOMETRY_RE.match(value):
                     return value
-    return os.environ.get("HAPPYCLAW_DESKTOP_GEOMETRY", _DEFAULT_GEOMETRY)
+    return env_get("DESKTOP_GEOMETRY", _DEFAULT_GEOMETRY)
 
 
 def _write_geometry_env(geometry: str) -> None:

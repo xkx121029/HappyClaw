@@ -14,6 +14,8 @@ completion — so it works regardless of how/where Octop is deployed.
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import base64
 import contextlib
 import json
@@ -43,7 +45,7 @@ TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000
 CODEX_ATTRIBUTION_ORIGINATOR = "openclaw"
 _OPENCLAW_UPSTREAM_VERSION = "2026.6.9"
 CODEX_ATTRIBUTION_VERSION = (
-    os.environ.get("HAPPYCLAW_CODEX_ATTRIBUTION_VERSION", "").strip() or _OPENCLAW_UPSTREAM_VERSION
+    env_get("CODEX_ATTRIBUTION_VERSION", "").strip() or _OPENCLAW_UPSTREAM_VERSION
 )
 CODEX_BASE_URL = "https://chatgpt.com/backend-api/codex"
 

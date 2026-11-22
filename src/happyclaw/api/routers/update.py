@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import asyncio
 import logging
 import os
@@ -390,7 +392,7 @@ async def upgrade_progress(
 def _is_desktop_process() -> bool:
     if green_packages_dir() is not None:
         return True
-    raw = (os.environ.get("HAPPYCLAW_DESKTOP") or "").strip().lower()
+    raw = (env_get("DESKTOP") or "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
 
 

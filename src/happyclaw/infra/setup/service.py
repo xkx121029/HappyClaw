@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import logging
 import os
 import platform
@@ -88,7 +90,7 @@ class ServiceStatus:
 
 def detect_service_mode() -> ServiceMode | None:
     """Return the service mode for the current process (from HAPPYCLAW_SERVICE_MODE)."""
-    raw = os.environ.get("HAPPYCLAW_SERVICE_MODE", "").strip().lower()
+    raw = env_get("SERVICE_MODE", "").strip().lower()
     if raw in {"systemd", "launchd"}:
         return raw  # type: ignore[return-value]
     return None
@@ -228,7 +230,7 @@ def resolve_service_home(*, run_as_user: str | None = None) -> Path:
     would otherwise point at ``/root/.octop`` while ``User=`` names the
     invoking user — use that user's passwd home instead.
     """
-    raw = os.environ.get("HAPPYCLAW_HOME", "").strip()
+    raw = env_get("HOME", "").strip()
     if raw:
         return Path(raw).expanduser()
     user = run_as_user or resolve_run_as_user()

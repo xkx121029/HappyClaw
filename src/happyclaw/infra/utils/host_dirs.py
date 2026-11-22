@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import contextlib
 import os
 import shutil
@@ -121,7 +123,7 @@ def running_in_container() -> bool:
 
     Override with ``HAPPYCLAW_IN_CONTAINER=1|0`` (also ``true``/``false``).
     """
-    forced = os.environ.get("HAPPYCLAW_IN_CONTAINER", "").strip().lower()
+    forced = env_get("IN_CONTAINER", "").strip().lower()
     if forced in {"1", "true", "yes", "on"}:
         return True
     if forced in {"0", "false", "no", "off"}:

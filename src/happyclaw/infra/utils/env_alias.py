@@ -57,3 +57,21 @@ def alias_legacy_env(environ: MutableMapping[str, str] | None = None) -> list[st
         aliased.append(current)
         _warn(name, current)
     return aliased
+
+
+def env_get(suffix: str, default: str | None = None) -> str | None:
+    """Read ``HAPPYCLAW_<suffix>``, falling back to the pre-rename ``OCTOP_<suffix>``."""
+    current = CURRENT_PREFIX + suffix
+    value = os.environ.get(current)
+    if value is not None:
+        return value
+    legacy = LEGACY_PREFIX + suffix
+    value = os.environ.get(legacy)
+    if value is not None:
+        _warn(legacy, current)
+    return value if value is not None else default
+
+
+def env_has(suffix: str) -> bool:
+    """True when either spelling of the variable is set."""
+    return CURRENT_PREFIX + suffix in os.environ or LEGACY_PREFIX + suffix in os.environ

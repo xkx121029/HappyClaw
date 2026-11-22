@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import importlib
 import os
 import sys
@@ -16,7 +18,7 @@ from happyclaw.cli.registry import COMMANDS
 def _warn_if_invoked_as_octop() -> None:
     """Tell the caller once when the pre-rename ``octop`` command is used."""
     invoked = Path(sys.argv[0] if sys.argv else "").stem
-    if invoked == "octop" and not os.environ.get("HAPPYCLAW_SILENCE_RENAME_NOTICE"):
+    if invoked == "octop" and not env_get("SILENCE_RENAME_NOTICE"):
         click.echo(
             "`octop` is deprecated and will be removed in the next release; use `happyclaw`.",
             err=True,
