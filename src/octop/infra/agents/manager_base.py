@@ -36,6 +36,16 @@ class AgentManagerBase:
     _pool_last_used: dict[str, float]
     _session_workspace_mw: dict[str, Any]
 
+    # Invocation tracking + store reclaim state.
+    _active_invocations: dict[str, int]
+    _invocation_waiters: dict[str, int]
+    _history_backfills: dict[str, asyncio.Event]
+    _reclaim_pending: set[str]
+    _reclaim_holds: dict[str, asyncio.Event]
+    _reclaim_task: asyncio.Task[None] | None
+    _reclaim_sweep_task: asyncio.Task[None] | None
+    _reclaim_wake: asyncio.Event | None
+
     # -- base implementation (AgentManager)
 
     def resolve_workspace_dir(self, agent_id: str, *, persist_if_missing: bool = True) -> Path:
@@ -64,6 +74,18 @@ class AgentManagerBase:
         *,
         connector_user_id: int | None = None,
     ) -> int | None:
+        raise NotImplementedError
+
+    def _dsh(self) -> Any:
+        raise NotImplementedError
+
+    def get_agent(self, agent_id: str) -> HarnessAgent:
+        raise NotImplementedError
+
+    def _agent_config_dict(self, row: AgentRow) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def is_agent_active(self, agent_id: str) -> bool:
         raise NotImplementedError
 
 
