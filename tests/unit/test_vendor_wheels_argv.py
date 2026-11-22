@@ -22,6 +22,8 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "desktop" / "portable" / "vendor-wheels.sh"
+
+
 def _bash_works(path: str) -> bool:
     # System32\bash.exe is the WSL launcher: it sits on PATH even when WSL has
     # no usable distro (missing VHDX, no install), so probe before trusting it.
