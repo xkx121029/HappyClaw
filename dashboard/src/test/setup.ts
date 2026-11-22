@@ -118,6 +118,34 @@ if (typeof window !== "undefined") {
     ).IntersectionObserver = _IntersectionObserver;
   }
 
+  // MutationObserver
+  // jsdom implements MutationObserver on ``window``, but vitest's jsdom
+  // environment does not reliably expose it as a bare global, and jsdom's
+  // implementation omits the spec's ``unobserve`` method. Either gap crashes
+  // components that do ``new MutationObserver(...)`` (ChatInput, MessageList,
+  // Mascot, CodeEditor, …) or call ``observer.unobserve()``. Install a
+  // deterministic no-op stub — matching ResizeObserver / IntersectionObserver
+  // above — unless the environment already provides a complete implementation.
+  const ExistingMO = (globalThis as { MutationObserver?: unknown })
+    .MutationObserver;
+  const moHasUnobserve =
+    typeof ExistingMO === "function" &&
+    typeof (ExistingMO as { prototype?: { unobserve?: unknown } }).prototype
+      ?.unobserve === "function";
+  if (!moHasUnobserve) {
+    class _MutationObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    }
+    (
+      globalThis as unknown as { MutationObserver: typeof _MutationObserver }
+    ).MutationObserver = _MutationObserver;
+  }
+
   // DOMMatrix — pdfjs-dist evaluates matrix math on import, and jsdom has no
   // DOMMatrix, which surfaces as ``ReferenceError: DOMMatrix is not defined``
   // for every suite that transitively imports react-pdf. A stub with the
