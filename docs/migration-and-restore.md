@@ -169,7 +169,7 @@ Get-FileHash D:\backup\happyclaw-full.tar.gz -Algorithm SHA256
 **第 2 步：新机装同版本或更新版本**
 
 ```powershell
-irm https://download.octop.cloud/octop/scripts/install.ps1 | iex
+if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 重开一个 PowerShell：

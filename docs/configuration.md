@@ -22,8 +22,8 @@ on first server start (or by `octop init` / `octop run`).
 ```
 
 `env` is dotenv format, applied before `config.json` is loaded
-(`OctopServer.start` → `apply_env_file`). Dashboard **Advanced → Environment
-variables** writes this file. Saving **replaces** the file and drops removed
+(`OctopServer.start` → `apply_env_file`). The dashboard path is **管理 → 应用设置 →
+环境变量**, which writes this file. Saving **replaces** the file and drops removed
 keys from the process environment (host/systemd keys that were never in the
 file are left alone). Every running agent inherits those keys:
 
@@ -61,9 +61,11 @@ serialize inference. Switching the model or `OCTOP_HOME`, or deleting the cached
 model, releases the resident session. Knowledge indexing processes one document
 at a time; large imports continue in the background.
 
-On Linux, `octop service start` and `octop service restart` install/update
-`octop.service.d/15-resource-limits.conf` alongside the existing service unit.
-The main unit, custom `ExecStart`, service user, and other drop-ins are preserved.
+On Linux, `octop service start` and `octop service restart` install/update two
+drop-ins next to the existing service unit — `octop.service.d/10-nofile.conf`
+(`LimitNOFILE`) and `octop.service.d/15-resource-limits.conf` (the memory
+limits below). The main unit, custom `ExecStart`, service user, and other
+drop-ins are preserved.
 Defaults are `MemoryHigh=60%` and `MemoryMax=75%` of physical RAM,
 `MemorySwapMax=512M`, `OOMPolicy=kill`, a 30-second restart delay, and at most three
 starts within ten minutes. These limits cover the whole service and its children;
@@ -98,20 +100,21 @@ on each start. Schema (`OctopConfig` in `octop/config.py`):
   "bind_host": "127.0.0.1",
   "port": 8088,
   "log_level": "info",
+  "access_token_ttl_seconds": 86400,
+  "login_max_attempts": 5,
+  "login_lockout_seconds": 900,
   "cors_origins": [],
   "default_timezone": "Asia/Shanghai",
   "enable_dashboard": true,
   "enable_api_docs": false,
-  "max_upload_mb": 100,
+  "require_setup_password": true,
   "database": {
     "driver": "sqlite",
     "sqlite_path": "octop.db",
     "host": "127.0.0.1",
     "port": 5432,
     "database": "octop",
-    "user": "octop",
-    "password": null,
-    "url": null
+    "user": "octop"
   },
   "tls": {
     "enabled": false,
@@ -123,9 +126,29 @@ on each start. Schema (`OctopConfig` in `octop/config.py`):
     "expires_at": "",
     "acme_staging": false,
     "http_port": 80
-  }
+  },
+  "backup": {
+    "auto_enabled": false,
+    "schedule": "cron:0 4 * * *",
+    "retention_count": 7,
+    "include_config": true,
+    "include_workspaces": true,
+    "include_skill_packages": true,
+    "include_plugins": true,
+    "include_knowledge": true,
+    "include_chats": true
+  },
+  "capabilities": {
+    "mobile": { "enabled": false, "backend": "none", "probed_at": "", "reason": "" }
+  },
+  "max_upload_mb": 100,
+  "browser_idle_timeout_minutes": 30
 }
 ```
+
+`database.password` and `database.url` are omitted from the generated file:
+credentials belong in `OCTOP_DATABASE_PASSWORD` / `OCTOP_DATABASE_URL` (or the
+wizard writes `password` back when it configures PostgreSQL from the UI).
 
 Notes:
 
@@ -151,8 +174,7 @@ Notes:
   impose their own body-size limit (for example nginx
   `client_max_body_size`). Agent workspace file upload, plugin ZIPs,
   and backup archives use separate limits and are not this setting.
-- `plugins.<id>.enabled` is the **global** plugin switch (Dashboard Admin →
-  Plugins). Bundled plugins are copied into `~/.octop/plugins/` on init and
+- `plugins.<id>.enabled` is the **global** plugin switch (**管理 → 插件管理**). Bundled plugins are copied into `~/.octop/plugins/` on init and
   server start with `enabled: false`. `bundled_plugins_seeded` lists ids
   already offered so uninstall does not come back on the next start.
 
@@ -175,6 +197,8 @@ Each variable, when set, takes precedence over the matching key in
 | `OCTOP_ENABLE_DASHBOARD` | bool | `true` | Serve the built React SPA at `/` |
 | `OCTOP_ENABLE_API_DOCS` | bool | `false` | Expose Scalar API docs at `/api/docs` |
 | `OCTOP_MAX_UPLOAD_MB` | int | `100` | Max upload size in MiB for chat attachments, IM inbound, and knowledge documents (1–1024) |
+| `OCTOP_BROWSER_IDLE_TIMEOUT_MINUTES` | int | `30` | Idle minutes before a browser session (`octop-browser`) is reclaimed |
+| `OCTOP_ENABLE_MOBILE` | bool | from `capabilities.mobile.enabled` | Force the Remote Android capability on or off for this process |
 | `OCTOP_DATABASE_URL` | string | empty | Full DSN — overrides the `OCTOP_DATABASE_*` fields below |
 | `OCTOP_DATABASE_DRIVER` | `sqlite` \| `postgresql` | `sqlite` | Storage backend |
 | `OCTOP_DATABASE_SQLITE_PATH` | path | `octop.db` | SQLite file path (relative to `OCTOP_HOME` unless absolute) |
@@ -187,8 +211,9 @@ Each variable, when set, takes precedence over the matching key in
 | `OCTOP_AGENT` | string | empty | Default `--agent` for CLI subcommands |
 | `OCTOP_SERVICE_MODE` | `systemd` \| `launchd` | auto | Override the service backend (used by `octop service`) |
 | `OCTOP_SERVICE_SCOPE` | `user` \| `system` | auto | systemd `--user` vs system unit (Linux only) |
-| `OCTOP_PORTAL_ORIGIN` | origin | `https://octop.cloud` | Plugin and expert catalog origin. No path. Empty disables the remote catalog. See [private market](private-market.md) |
-| `OCTOP_MARKET_REMOTE_ORIGIN` | origin | `https://download.octop.cloud` | Origin allowed for market archive `download_url` values. Any path on that origin is accepted. The variable itself has no path. See [private market](private-market.md) |
+| `OCTOP_ONNX_COS_BASE` | origin | `https://octop-1258344699.cos.ap-guangzhou.myqcloud.com` | Base the local embedding model weights are downloaded from. Point it at a self-hosted mirror to avoid the public bucket; an explicitly empty value drops that candidate entirely, so the model comes from Hugging Face or the hf-mirror. See [local knowledge indexing](#local-knowledge-indexing-and-systemd-resource-limits) |
+| `OCTOP_PORTAL_ORIGIN` | origin | empty (remote catalog off) | Plugin and expert catalog origin. No path. Empty means no request is sent and the market shows its "temporarily unavailable" state; set it to your own catalog origin to enable it. See [private market](private-market.md) |
+| `OCTOP_MARKET_REMOTE_ORIGIN` | origin | `https://github.com` | Origin allowed for market archive `download_url` values. Any path on that origin is accepted. The variable itself has no path. The default is this repository's Releases host, so a self-hosted market points it at its own origin. See [private market](private-market.md) |
 | `SKILL_MARKET_ORIGIN` | origin | `https://api.skillhub.cn` | Skill search, rankings, and per-skill zip download. No path. Empty keeps the default. See [skill market](skill-market.md) |
 | `SKILLSET_ORIGIN` | origin | `https://api.skillhub.cn` | Skillset detail and skillset package used when importing a skill package. No path. Empty keeps the default. See [skill market](skill-market.md) |
 
@@ -197,7 +222,7 @@ remains in effect. `database_env_configured()` returns `True` when any
 `OCTOP_DATABASE_*` is set, which lets `OctopServer.start()` pick the
 configured backend at boot.
 
-**Docker Compose:** put `OCTOP_DATABASE_*` in `docker/.env` *and* ensure
+**Docker Compose:** create `docker/.env` (it is not committed) and put `OCTOP_DATABASE_*` there *and* ensure
 they are listed under `environment:` in `docker/docker-compose.yml`
 (Compose uses `.env` for interpolation only; unset keys do not enter the
 container). Writing the same keys to the mounted `~/.octop/env` also works.

@@ -25,7 +25,9 @@ def test_split_tag_accepts_with_or_without_v() -> None:
 def test_render_download_section_matches_github_asset_names() -> None:
     mod = _load()
     body = mod.render_download_section("0.9.31")
-    base = "https://github.com/TencentCloud/Octop/releases/download/v0.9.31"
+    # A local run must point at our own releases; CI overrides the repo through
+    # GITHUB_REPOSITORY, so the fallback is what this test pins.
+    base = "https://github.com/xkx121029/HappyClaw/releases/download/v0.9.31"
     assert f"{base}/Octop-desktop-windows-amd64-0.9.31.exe" in body
     assert f"{base}/Octop-desktop-windows-arm64-0.9.31.exe" in body
     assert f"{base}/Octop-portable-windows-amd64-0.9.31.zip" in body

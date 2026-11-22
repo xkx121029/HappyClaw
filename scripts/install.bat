@@ -3,12 +3,15 @@ setlocal EnableDelayedExpansion
 
 REM HappyClaw Installer for Windows (cmd.exe)
 REM Usage: install.bat [-Version X.Y.Z] [-FromSource] [-SourceDir DIR] [-Extras browser] [-Help]
+REM Set OCTOP_INSTALL_BASE to a mirror serving the same scripts/ tree when GitHub is unreachable:
+REM   if not defined OCTOP_INSTALL_BASE set OCTOP_INSTALL_BASE=https://raw.githubusercontent.com/xkx121029/HappyClaw/main
+REM   curl -fsSL "%OCTOP_INSTALL_BASE%/scripts/install.bat" -o install.bat
 
 if defined OCTOP_HOME (set "OCTOP_HOME=%OCTOP_HOME%") else (set "OCTOP_HOME=%USERPROFILE%\.octop")
 set "OCTOP_VENV=%OCTOP_HOME%\venv"
 set "OCTOP_BIN=%OCTOP_HOME%\bin"
 set "PYTHON_VERSION=3.12"
-if defined OCTOP_REPO (set "OCTOP_REPO=%OCTOP_REPO%") else (set "OCTOP_REPO=https://github.com/TencentCloud/Octop.git")
+if defined OCTOP_REPO (set "OCTOP_REPO=%OCTOP_REPO%") else (set "OCTOP_REPO=https://github.com/xkx121029/HappyClaw.git")
 
 set "ARG_VERSION="
 set "ARG_FROM_SOURCE=0"

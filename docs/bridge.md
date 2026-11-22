@@ -58,7 +58,7 @@
 | `infra/bridge/http_tunnel.py` | 通用 `method/path/query/headers/body` ↔ 响应；分片、超时、取消 |
 | `infra/bridge/router.py` | 本机侧：目标为 `bridge:*`（或显式 connection 上下文）时改走隧道 |
 | `infra/bridge/chat_bridge.py` | 远程对话：本机 chat WS ↔ 桥上对端 turn 流 |
-| `api/routers/bridge.py` | 连接管理 HTTP（探测/添加/列表/删除/连接/改名）；Dashboard 入口在 **设置 → 远程桥接**（`/bridge`，知识库下方） |
+| `api/routers/bridge.py` | 连接管理 HTTP（探测/添加/列表/删除/连接/改名）；Dashboard 入口在 **设置 → 云端协同**（`/bridge`，知识库下方） |
 | `cli/commands/bridge.py` | 同一套管理面的 CLI：`octop bridge`（list/get/probe/create/patch/delete/connect/disconnect/agents） |
 
 ### 探测（probe，不落库）

@@ -15,7 +15,7 @@ This directory contains the Docker build and deployment assets for HappyClaw.
 | `docker-compose.cn.yml` | Same stack, pulls `ghcr.nju.edu.cn/tencentcloud/octop:latest` (no local build) |
 | `docker-compose.postgres.yml` | PostgreSQL (+ pgvector) for dual-backend dev/tests |
 | `postgres/init-vector.sql` | Instance-level `CREATE EXTENSION vector` (initdb.d; **not** HappyClaw migrations) |
-| `docker-entrypoint.sh` | Container entrypoint: first-run init + start server |
+| `docker-entrypoint.sh` | Container entrypoint: first-run bootstrap (dirs + DB, no account) + start server |
 
 ### Quick start
 
@@ -29,7 +29,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 Open `http://localhost:8088`. Single-user mode needs no administrator password and no setup wizard: the first boot initializes the database and binds the local owner automatically, and the dashboard opens straight into the workspace.
 
-> **Compatibility:** `OCTOP_DEFAULT_PASSWORD`, `OCTOP_ADMIN_USERNAME`, and `OCTOP_ADMIN_DISPLAY_NAME` are still read by the entrypoint for older deployments. They no longer drive account creation in single-user mode. Cleaning them out of the entrypoint will be a separate commit after the backend single-user wiring lands, so the current image boot path keeps working.
+> **Upgrading from an older image:** the container no longer reads `OCTOP_DEFAULT_PASSWORD`, `OCTOP_ADMIN_USERNAME`, or `OCTOP_ADMIN_DISPLAY_NAME`, and creates no account. First boot runs `octop init --yes` (runtime directory + migrations only) and the server binds the local owner on start, so an existing data volume keeps every user row and you open the dashboard as that owner. `credential.txt` and `octop-login.txt` are no longer written; leftovers from an older image are harmless.
 
 Compose sets the open-file limit to 65535 for multi-agent workloads. Server startup also raises the soft limit up to 65535 within the inherited hard limit and logs the effective limits. Recreate existing containers to apply changed Compose limits; a restart alone does not change their hard limit.
 
@@ -67,8 +67,6 @@ bash docker/docker_build.sh
 | `HOME` | `/data` | Must be `/data` so `~/.octop` maps to the data volume |
 | `OCTOP_PORT` | `8088` | HTTP listen port |
 | `OCTOP_DATA` | `~/.octop` | Host data directory (mounted at `/data/.octop`) |
-| `OCTOP_DEFAULT_PASSWORD` | _(unset)_ | **Legacy**: first-run admin password for older deployments; ignored by single-user account logic |
-| `OCTOP_ADMIN_USERNAME` | `admin` | **Legacy**: initial admin username; ignored in single-user mode |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN (or other `OCTOP_DATABASE_*`; see [configuration.md](../docs/configuration.md)) |
 | `OCTOP_DATABASE_DRIVER` | — | `sqlite` \| `postgresql` when overriding defaults via env |
 | `OPENAI_API_KEY` | — | OpenAI-compatible API key |

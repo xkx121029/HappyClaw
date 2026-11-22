@@ -2,7 +2,9 @@
 # HappyClaw installer (macOS / Linux)
 # Usage: bash scripts/install.sh                 # install from PyPI (default)
 #    or: bash scripts/install.sh --from-source   # install from a local checkout
-#    or: curl -fsSL <url>/install.sh | bash      # remote install
+#    or: curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash   # remote install
+# The one-liner defaults to this repository's main branch; export OCTOP_INSTALL_BASE
+# with a mirror that serves the same scripts/ tree when GitHub is unreachable.
 #
 # Installs HappyClaw into ~/.octop and uses uv to manage the Python environment.
 # Python does not need to be installed first; uv handles that.
@@ -15,11 +17,15 @@ OCTOP_HOME="${OCTOP_HOME:-$HOME/.octop}"
 OCTOP_VENV="$OCTOP_HOME/venv"
 OCTOP_BIN="$OCTOP_HOME/bin"
 PYTHON_VERSION="3.12"
-OCTOP_REPO="${OCTOP_REPO:-https://github.com/TencentCloud/Octop.git}"
-_OCTOP_REPO_BASE="${OCTOP_REPO%/*}"
-HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${_OCTOP_REPO_BASE}/octop-harness.git}"
-HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${_OCTOP_REPO_BASE}/octop-gateway.git}"
-HARNESS_BROWSER_REPO="${HARNESS_BROWSER_REPO:-${_OCTOP_REPO_BASE}/octop-browser.git}"
+OCTOP_REPO="${OCTOP_REPO:-https://github.com/xkx121029/HappyClaw.git}"
+# The four runtime libraries live in the TencentCloud org until Phase 2 publishes
+# them under xkx121029 (xkx121029/octop-harness does not exist yet). They are also
+# pinned through PyPI in pyproject.toml; the clones below serve source checkouts.
+# Phase 2: point OCTOP_LIBS_BASE at https://github.com/xkx121029 once those repos exist.
+OCTOP_LIBS_BASE="${OCTOP_LIBS_BASE:-https://github.com/TencentCloud}"
+HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${OCTOP_LIBS_BASE}/octop-harness.git}"
+HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${OCTOP_LIBS_BASE}/octop-gateway.git}"
+HARNESS_BROWSER_REPO="${HARNESS_BROWSER_REPO:-${OCTOP_LIBS_BASE}/octop-browser.git}"
 
 if [ -n "${BASH_SOURCE[0]:-}" ]; then
     _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -97,8 +103,10 @@ Environment variables:
   OCTOP_HOME              Install directory (default: ~/.octop)
   OCTOP_PYPI_MIRROR       PyPI mirror URL (same as --mirror)
   OCTOP_REPO              Git URL to clone (used by --from-source with no local dir)
-  HARNESS_AGENT_REPO      octop-harness repo (derived from OCTOP_REPO by default)
-  HARNESS_GATEWAY_REPO    octop-gateway repo (derived from OCTOP_REPO by default)
+  OCTOP_LIBS_BASE         Git org/user hosting the four runtime libraries
+                          (default: https://github.com/TencentCloud)
+  HARNESS_AGENT_REPO      octop-harness repo (derived from OCTOP_LIBS_BASE by default)
+  HARNESS_GATEWAY_REPO    octop-gateway repo (derived from OCTOP_LIBS_BASE by default)
   HARNESS_BROWSER_REPO    octop-browser repo (used for source installs)
   PLAYWRIGHT_DOWNLOAD_HOST  Playwright download mirror (optional; auto: npmmirror -> official)
   PLAYWRIGHT_INSTALL_TIMEOUT  Per-mirror download timeout in seconds (default 600)

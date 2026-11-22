@@ -75,6 +75,11 @@ import {
   type DownloadManifest,
   type SelectedRelease,
 } from "./update/update-coordinator";
+import {
+  manifestFromGitHubReleases,
+  resolveUpdateSource,
+  updateRequestHeaders,
+} from "./update/update-source";
 import { downloadToFile } from "./update/download";
 import { installUpdate, type InstallOutcome, type InstallerKind } from "./update/installer";
 import {
@@ -126,7 +131,6 @@ import {
   windowBackground,
 } from "./windows/chrome";
 
-const UPDATE_ENDPOINT = "https://octop.cloud/api/downloads";
 // Packaged renderer origin. Local dev replaces this with the Vite origin before
 // the relay starts, and the relay accepts upgrades only from that origin (§5.2).
 const WINDOW_ORIGIN = "octop://app";
@@ -347,12 +351,18 @@ function registerProtocol(staticRootDir: string): void {
 
 async function fetchUpdateManifest(): Promise<{ manifest: DownloadManifest; stableOnly: boolean }> {
   const settings = settingsStore.load();
-  const res = await net.fetch(UPDATE_ENDPOINT, { cache: "no-store" });
+  const source = resolveUpdateSource();
+  const res = await net.fetch(source.manifestUrl, {
+    cache: "no-store",
+    headers: updateRequestHeaders(source),
+  });
   if (!res.ok) throw new Error(`downloads endpoint returned ${res.status}`);
-  return {
-    manifest: manifestFromDownloadsResponse(await res.json()),
-    stableOnly: settings.stableOnly,
-  };
+  const body = await res.json();
+  const manifest =
+    source.manifestFormat === "github"
+      ? manifestFromGitHubReleases(body)
+      : manifestFromDownloadsResponse(body);
+  return { manifest, stableOnly: settings.stableOnly };
 }
 
 async function resolveSelectedRelease(): Promise<SelectedRelease | null> {
@@ -445,8 +455,9 @@ async function runShellUpdate(
         });
         return dest;
       },
-      // §6.1 assets carry no digest; the URL is already pinned to https on
-      // download.octop.cloud by isValidAssetUrl() before it reaches this point.
+      // §6.1 assets carry no digest; the URL is already pinned to https on an
+      // allow-listed download origin by isValidAssetUrl() before it reaches
+      // this point.
       verify: async () => true,
       stopSidecar: async () => {
         // §6.3 step 1 — refuse new API admissions, then ask Python to exit.

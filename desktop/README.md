@@ -221,8 +221,8 @@ install failures stay on the shell's system dialog; download progress stays on
 the taskbar or Dock.
 
 1. `main/update/update-coordinator.ts` selects the release from the manifest
-   (stable/beta preference, never a downgrade, `https` + `download.octop.cloud`
-   only).
+   (stable/beta preference, never a downgrade, `https` from the configured
+   download origins only).
 2. `main/update/download.ts` streams the installer into `$TMPDIR/octop-update`
    and reports progress to the taskbar/Dock.
 3. API admission closes (the `octop://app/api/*` proxy answers `503`), then

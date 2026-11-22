@@ -11,8 +11,11 @@ import {
   type InstallHooks,
 } from "./installer";
 
+// A prefix the shell trusts by default (§6.1).
+const RELEASE_ORIGIN = "https://github.com/xkx121029/HappyClaw/releases/download";
+
 function asset(name: string, ext: string): DownloadAsset {
-  return { name, ext, url: "https://download.octop.cloud/x" };
+  return { name, ext, url: `${RELEASE_ORIGIN}/x` };
 }
 
 test("installerKindFor maps manifest extensions", () => {
@@ -54,7 +57,7 @@ test("planInstall keeps the shell-selected url and kind", () => {
   });
   assert.deepEqual(plan, {
     kind: "dmg",
-    url: "https://download.octop.cloud/x",
+    url: `${RELEASE_ORIGIN}/x`,
     filename: "Octop-1.0.3-arm64.dmg",
   });
 });
@@ -116,7 +119,7 @@ test("download failure aborts before Python is touched", async () => {
   assert.deepEqual(calls, []);
 });
 
-test("an asset url outside the download host is refused", async () => {
+test("an asset url outside the download origins is refused", async () => {
   const { calls, hooks: h } = hooks();
   const outcome = await installUpdate(
     { ...selected, asset: { ...selected.asset, url: "https://evil.example/Octop.dmg" } },

@@ -1,4 +1,10 @@
-"""`octop init` — bootstrap a fresh Octop install (DB + first admin)."""
+"""`octop init` — bootstrap a fresh HappyClaw install (dirs + DB migrations).
+
+HappyClaw is a single-user tool: the install has no account step, and the local
+owner is bound on first start. The ``--admin-*`` options only exist for legacy
+deployments that still provision a named admin row (for example the fnOS
+package); they never prompt, and they are ignored by the single-user path.
+"""
 
 from __future__ import annotations
 
@@ -10,19 +16,20 @@ import click
     "--admin-username",
     envvar="OCTOP_ADMIN_USERNAME",
     default=None,
-    help="First admin username (or set OCTOP_ADMIN_USERNAME).",
+    help="Legacy: also create a named admin row (or set OCTOP_ADMIN_USERNAME). "
+    "Single-user installs need no account and pass neither admin option.",
 )
 @click.option(
     "--admin-password",
     envvar="OCTOP_ADMIN_PASSWORD",
     default=None,
-    help="First admin password (or set OCTOP_ADMIN_PASSWORD).",
+    help="Legacy: password for --admin-username (or set OCTOP_ADMIN_PASSWORD).",
 )
 @click.option(
     "--admin-display-name",
     envvar="OCTOP_ADMIN_DISPLAY_NAME",
     default=None,
-    help="Optional display name for the admin user.",
+    help="Legacy: optional display name for the admin row.",
 )
 @click.option(
     "--force",
@@ -38,7 +45,7 @@ import click
     "non_interactive",
     is_flag=True,
     default=False,
-    help="Skip all interactive prompts.",
+    help="Skip the --force confirmation prompt.",
 )
 def init(
     admin_username: str | None,
@@ -47,7 +54,7 @@ def init(
     force: bool,
     non_interactive: bool,
 ) -> None:
-    """Bootstrap an Octop server (~/.octop dir, DB migrations, first admin)."""
+    """Bootstrap a HappyClaw install (~/.octop dir, DB migrations)."""
     from octop.config import load_config
     from octop.infra.agents.plugins.manager import PluginManager
     from octop.infra.db.factory import open_database
@@ -91,6 +98,20 @@ def init(
                 names = ", ".join(path.name for path in kept)
                 click.echo(f"kept install runtime: {names}")
 
+    if (admin_username is None) != (admin_password is None):
+        click.echo(
+            "error: --admin-username and --admin-password are only meaningful together "
+            "(a single-user install creates no account and needs neither)",
+            err=True,
+        )
+        raise SystemExit(1)
+    if admin_password is not None:
+        try:
+            validate_password_policy(admin_password)
+        except OctopError as exc:
+            click.echo(f"error: {exc.message}", err=True)
+            raise SystemExit(1) from None
+
     paths.ensure_root()
     PluginManager(plugins_dir=paths.plugins_dir, config_path=paths.config).seed_bundled()
     apply_env_file(env_file_path(paths.root))
@@ -99,49 +120,26 @@ def init(
     try:
         run_migrations(db)
 
-        username = admin_username
-        password = admin_password
-        display_name = admin_display_name
-
-        if not non_interactive:
-            from octop.cli.support import prompts as _prompts
-
-            if not username:
-                username = _prompts.text("Admin username:")
-            if not password:
-                password = _prompts.password("Admin password:")
-                confirm_password = _prompts.password("Confirm admin password:")
-                if password != confirm_password:
-                    click.echo("error: passwords do not match", err=True)
-                    raise SystemExit(1)
-            if display_name is None:
-                display_name = _prompts.text("Display name (optional):", default="") or None
-
-        if not username:
-            click.echo("error: admin username is required", err=True)
-            raise SystemExit(1)
-        try:
-            validate_password_policy(password or "")
-        except OctopError as exc:
-            click.echo(f"error: {exc.message}", err=True)
-            raise SystemExit(1) from None
-
-        user_repo = UserRepo(db)
-        if user_repo.get_by_username(username) is not None:
-            # 幂等引导（issue #1866）：外部数据库（PostgreSQL）不会在 ~/.octop
-            # 生成 octop.db，容器重启后 entrypoint 会重跑 init；此时跳过创建，
-            # 避免管理员 INSERT 撞 UNIQUE(username) 直接崩溃。
-            click.echo(f"  admin user '{username}' already exists, skipping.")
-        else:
-            user_repo.create(
-                username=username,
-                password_hash=hash_password(password or ""),
-                role="admin",
-                display_name=display_name,
-            )
+        if admin_username is not None:
+            user_repo = UserRepo(db)
+            if user_repo.get_by_username(admin_username) is not None:
+                # 幂等引导（issue #1866）：外部数据库（PostgreSQL）不会在 ~/.octop
+                # 生成 octop.db，容器重启后 entrypoint 会重跑 init；此时跳过创建，
+                # 避免管理员 INSERT 撞 UNIQUE(username) 直接崩溃。
+                click.echo(f"  admin user '{admin_username}' already exists, skipping.")
+            else:
+                user_repo.create(
+                    username=admin_username,
+                    password_hash=hash_password(admin_password or ""),
+                    role="admin",
+                    display_name=admin_display_name,
+                )
     finally:
         db.close()
 
     click.echo(f"\u2705 HappyClaw bootstrapped at {home}")
-    click.echo(f"   admin user: {username}")
+    if admin_username is not None:
+        click.echo(f"   legacy admin user: {admin_username}")
+    else:
+        click.echo("   single user: no account needed (the local owner is bound on first start)")
     click.echo("   next: `octop run` (optional: `octop agent use <id>` to pin default agent)")

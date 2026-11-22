@@ -14,13 +14,10 @@ services:
     pull_policy: missing
     ports:
       - "8088:8088"
-    # 官方镜像 entrypoint 读不到飞牛向导密码（.env 不在 @appcenter）。
-    # 改用 data-share 上的引导脚本：每次启动用向导密码 init 或 passwd。
-    entrypoint: ["bash", "/usr/local/bin/fnos-boot.sh"]
+    # 单人版没有账号：直接用官方镜像 entrypoint（首次启动只建库并跑迁移，
+    # 服务启动时自动绑定本机使用者），不再挂载旧版账号引导脚本与凭据文件。
     volumes:
       - "${TRIM_DATA_SHARE_PATHS}/.octop:/data/.octop"
-      - "${TRIM_DATA_SHARE_PATHS}/fnos-boot.sh:/usr/local/bin/fnos-boot.sh:ro"
-      - "${TRIM_DATA_SHARE_PATHS}/fnos-admin.env:/data/fnos-admin.env:ro"
     environment:
       - HOME=/data
       - OCTOP_HOME=/data/.octop

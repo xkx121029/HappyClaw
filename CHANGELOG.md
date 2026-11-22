@@ -4,7 +4,16 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [语义化版本规范](https://semver.org/spec/v2.0.0.html)。
 
-## [Unreleased]
+## [1.0.3b6] - 2026-11-21
+
+### 本轮
+
+四条并行改动合成一个发布，用户可感知的变化集中在四块：
+
+- **安装与首次启动不再要账号**：`octop init` 不再建号、不再提问；Docker 容器首次启动只建库跑迁移，不再写 `credential.txt` / `octop-login.txt`；fnOS 两个安装包的向导不再收集管理员账号，本地版系统账户 `octop-native` 显式锁定（仅作包内服务身份）。
+- **README 与 docs 按代码现状重写对齐**：README 与 README_CN 22 处、`docs/` 12 个文件 54 处会误导使用的偏差全部改掉（命令树、参数、默认值、面板路径、环境变量）。
+- **桌面更新源与市场不再指向上游**：更新目录与安装包下载前缀改为可配置、默认取本仓库 Releases；插件市场与专家市场默认关闭，未配置源站时不发任何请求；助手知识库外链改指本仓库文档。
+- **安装包与安装脚本的自有身份**：一键命令改从本仓库 GitHub `main` 取脚本（可用 `OCTOP_INSTALL_BASE` 指向镜像）；fnOS 包的上架身份改为 `xkx121029`。
 
 ### 变更
 - **单人化改造（文档与交付）**：产品定位收敛为「本机单人使用」，不再有注册、登录、账号、角色、邀请与多租户部署语义
@@ -27,6 +36,11 @@
 - 备份文档区分手动与自动：`octop backup create` 默认不含会话，需 `--include-chats`；自动备份与托盘「立即备份」默认包含（`backup.include_chats: true`）
 - 安装脚本说明补充：Windows 无 `-Mirror`，需通过 `UV_DEFAULT_INDEX` 指定镜像
 
+### 发布说明（本轮面向升级用户）
+
+- **旧 Docker 部署升级后不再创建账号**：`OCTOP_DEFAULT_PASSWORD` 等变量不再被容器读取，首次启动只建库并跑迁移，打开控制台即是本机使用者。已有数据卷里的用户行、会话、配置全部保留，迁移 026 会把既有 admin 认成 owner；`credential.txt` / `octop-login.txt` 不再生成，旧文件可删。
+- **fnOS 安装/设置向导不再要账号**：装好直接进工作台；旧版写下的 `octop-login.txt` 与 `fnos-admin.env` 可以删掉。
+
 ### 修复
 - 文档中的健康检查示例改为实际返回结构（`{"ok": true, ...}`）
 - 发布清单新增 3.7「空目录自建」阻断项：安装/升级不得依赖 `~/.octop` 已存在，首次启动必须能在空目录创建全部结构
@@ -42,6 +56,22 @@
 - `docs/user-guide.md` 新增 5.9「单人使用技巧」：会话/模型搜索入口、运行轨迹 JSONL 导出、备份恢复命令与图形入口、`mod+K` 等快捷键表
 - 发布清单 5.2 日志路径更正为 `~/.octop/logs/octop.log`（按天轮转），并说明旧路径首次启动自动迁移
 - `scripts/smoke_local.ps1` 在健康检查通过后输出首次可用耗时，便于记录冷启动表现
+- 安装脚本不再指向腾讯上游：`install.sh` / `install.ps1` / `install.bat` / `install-octop.sh` 的 `OCTOP_REPO` 默认值改为 `xkx121029/HappyClaw`；`--from-source` 克隆的主仓因此不再装成上游腾讯版本。三个运行库仓库地址改为独立的 `OCTOP_LIBS_BASE`（默认仍是 TencentCloud，随 Phase 2 重新发布一起迁移），不再从 `OCTOP_REPO` 推导
+- `octop init` 去掉交互式建号：单人版不再询问 admin 用户名/密码，直接建目录、跑迁移后退出；`--admin-username/--admin-password/--admin-display-name` 降级为 legacy 参数（只给旧部署与 fnOS 包的 `octop init --admin-*` 用），单独传一个即报用法错误而非转为提问
+- `docker/docker-entrypoint.sh` 与 Docker 文档对齐：容器首次启动只跑 `octop init --yes`，不再读取 `OCTOP_DEFAULT_PASSWORD` / `OCTOP_ADMIN_USERNAME` / `OCTOP_ADMIN_DISPLAY_NAME`，不再写 `credential.txt` 与 `octop-login.txt`；`docker/README.md`、`docker/README_CN.md` 删除「入口脚本仍读取这些变量、清理另开提交」的兼容说明
+- `pyproject.toml` 元数据改为单人自托管口径：description 不再写 multi-user，authors 由 `octop contributors` 改为 `xkx121029`（`name` / `version` 未动，发布名变更留给 Phase 2）
+- fnOS 安装包（`fnos/docker` 与 `fnos/native`）去掉管理员账号向导：`wizard/install` 只剩安装说明与首次使用步骤，`wizard/config` 只显示数据目录与配置入口，`wizard/upgrade` 说明数据保留；`cmd/install_init` / `cmd/config_init` 不再校验账号字段，`cmd/*_callback` 不再写 `fnos-admin.env`、`fnos-boot.sh` 与 `octop-login.txt`；native 启动器首次启动只跑 `octop init --yes`；本地版的系统账户 `octop-native` 在安装/升级回调里显式 `passwd -l` 锁定（仅作包内服务身份，`sudoers.d` 的 NOPASSWD 保留）。`scripts/fnos/common.sh` 删除密码生成/校验/改密/凭据回落共 8 个函数，`octop_render_config_wizard` 收窄为只替换数据目录。两个 `manifest` 的门店文案与 `fnos/README.md` 同步改为单人自托管口径（原文仍写「用安装向导里设置的账号登录」）
+- `docker-compose.yml` / `docker-compose.cn.yml` / `docker-compose.mobile.yml` 删掉三行 legacy 管理员环境变量；容器已不读取，留着只会让人以为还有用
+- `scripts/release_download_links.py` 的 `GITHUB_REPO` 兜底由 `TencentCloud/Octop` 改为 `xkx121029/HappyClaw`，与桌面端更新源一致（Actions 内仍由 `GITHUB_REPOSITORY` 覆盖）
+- 桌面外壳的更新源改为可配置并指向本仓库发布页：目录地址与安装包下载前缀分别由 `OCTOP_UPDATE_ENDPOINT`、`OCTOP_UPDATE_DOWNLOAD_ORIGINS` 决定，默认取 `xkx121029/HappyClaw` 的 GitHub Releases；不再有硬编码的上游域名
+- 插件市场与专家市场默认关闭：`DEFAULT_PORTAL_BASE` 置空，未设置 `OCTOP_PORTAL_ORIGIN` 时两者都不发请求，页面显示「暂时不可用」；自建市场照旧按 `docs/private-market.md` 配置
+- 内置助手的产品知识库外链改指向本仓库文档，不再跳上游站点
+- `OCTOP_ONNX_COS_BASE` 显式置空时不再回落到上游存储桶：需要离线或私有时直接留空即可，模型由本地提供
+- 安装一键脚本改为从本仓库 GitHub `main` 取脚本（`raw.githubusercontent.com/xkx121029/HappyClaw`），不再指上游 CDN；网络访问 GitHub 受限时用 `OCTOP_INSTALL_BASE` 指向提供同样 `scripts/` 目录的镜像，四个安装脚本的头部注释都写明了这个用法。README、quickstart、user-guide、迁移手册与旧版 HTML 指南同步
+- 市场安装包默认源由 `download.octop.cloud` 改为本仓库 Releases（`DEFAULT_REMOTE_BASE = https://github.com`），自建市场仍用 `OCTOP_MARKET_REMOTE_ORIGIN` 指定自己的源站
+- fnOS 两个安装包的 `manifest` 里 `maintainer` / `maintainer_url` 改为 `xkx121029` 与本仓库，门店文案与上架身份一致
+- `docs/configuration.md` 的环境变量表补上 `OCTOP_ONNX_COS_BASE`：此前这个开关没有任何文档
+- `tests/integration/test_docker_image_boot.py` 缺镜像时的 skip 明确标注为「发布前必须补跑」并指向验证步骤
 
 ## [1.0.3b5] - 2026-11-11
 

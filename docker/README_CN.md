@@ -15,7 +15,7 @@
 | `docker-compose.cn.yml` | 同一套服务，拉取 `ghcr.nju.edu.cn/tencentcloud/octop:latest`（不本地构建） |
 | `docker-compose.postgres.yml` | 仅 PostgreSQL（+ pgvector）开发/测试库；扩展在 `postgres/init-vector.sql` |
 | `postgres/init-vector.sql` | 实例级 `CREATE EXTENSION vector`（initdb.d；**不**进 HappyClaw 迁移） |
-| `docker-entrypoint.sh` | 容器入口：首次初始化数据库并启动服务 |
+| `docker-entrypoint.sh` | 容器入口：首次仅初始化目录与数据库（不建账号），然后启动服务 |
 
 ### 快速开始
 
@@ -29,7 +29,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 访问 `http://localhost:8088`。单人模式不需要预置管理员密码，也不需要走设置向导：首次启动会初始化数据库并自动绑定本机使用者，打开页面直接进入工作台。
 
-> **兼容说明**：`OCTOP_DEFAULT_PASSWORD`、`OCTOP_ADMIN_USERNAME`、`OCTOP_ADMIN_DISPLAY_NAME` 仍被入口脚本读取，仅用于兼容旧部署。单人版启动后这些账号不会被使用；如需复用旧数据卷，保留原值即可。入口脚本的清理将在后端单人化接线完成后单独提交，避免与当前镜像启动流程冲突。
+> **从旧镜像升级：** 容器不再读取 `OCTOP_DEFAULT_PASSWORD`、`OCTOP_ADMIN_USERNAME`、`OCTOP_ADMIN_DISPLAY_NAME`，首次启动也不创建账号：只执行 `octop init --yes`（建目录 + 跑迁移），账号由服务启动时自动绑定的本机使用者承担。旧数据卷里的用户行全部保留，打开控制台就是该使用者。`credential.txt` 与 `octop-login.txt` 不再生成，旧镜像留下的这两个文件无害，可以删掉。
 
 Compose 将多 agent 服务的文件描述符限制设为 65535。服务启动时也会在继承的 hard limit 内将 soft limit 提升至最多 65535，并记录实际限额。已有容器需重新创建才能应用 Compose 限额变化；仅重启不会改变容器的 hard limit。
 
@@ -67,8 +67,6 @@ bash docker/docker_build.sh
 | `HOME` | `/data` | 必须为 `/data`，数据目录映射到 `~/.octop` |
 | `OCTOP_PORT` | `8088` | HTTP 服务端口 |
 | `OCTOP_DATA` | `~/.octop` | 宿主机数据目录（Compose 挂载到 `/data/.octop`） |
-| `OCTOP_DEFAULT_PASSWORD` | _(未设置)_ | **Legacy**：旧版首次管理员密码，单人版不读取账号逻辑，保留仅为兼容 |
-| `OCTOP_ADMIN_USERNAME` | `admin` | **Legacy**：旧版管理员用户名，单人版忽略 |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN（或其他 `OCTOP_DATABASE_*`，见 [configuration.md](../docs/configuration.md)） |
 | `OCTOP_DATABASE_DRIVER` | — | 通过环境变量覆盖时：`sqlite` \| `postgresql` |
 | `OPENAI_API_KEY` | — | OpenAI 兼容 API Key |

@@ -79,8 +79,12 @@ def _hf_repo_id(model_name: str) -> str:
 
 
 def cos_base_url() -> str:
-    """Public COS origin; override with ``OCTOP_ONNX_COS_BASE`` for a private bucket."""
-    return os.environ.get(_COS_BASE_ENV, COS_ENDPOINT_DEFAULT).rstrip("/")
+    """Public COS origin; override with ``OCTOP_ONNX_COS_BASE`` for a private bucket.
+
+    An empty value drops the COS candidate entirely, leaving the Hugging Face
+    and hf-mirror endpoints as the source of truth.
+    """
+    return os.environ.get(_COS_BASE_ENV, COS_ENDPOINT_DEFAULT).strip().rstrip("/")
 
 
 def cos_object_key(model_name: str, rel_path: str = "") -> str:
@@ -101,32 +105,44 @@ def cos_local_model_dir(dest_root: Path, model_name: str) -> Path:
 
 
 def build_download_candidates(model_name: str) -> list[DownloadCandidate]:
-    """Build COS + official HF + hf-mirror candidates."""
+    """Build COS + official HF + hf-mirror candidates.
+
+    COS is the project's own mirror of the upstream bucket; when
+    ``OCTOP_ONNX_COS_BASE`` is empty it is left out, so the model comes from
+    Hugging Face or hf-mirror alone.
+    """
     hf_repo = _hf_repo_id(model_name)
     probe_file = "config.json"
-    return [
-        DownloadCandidate(
-            kind="cos",
-            probe_url=cos_file_url(model_name, probe_file),
-            hf_endpoint="",
-            hf_repo=hf_repo,
-            model_name=model_name,
-        ),
-        DownloadCandidate(
-            kind="hf",
-            probe_url=f"{HF_ENDPOINT_OFFICIAL}/{hf_repo}/resolve/main/{probe_file}",
-            hf_endpoint=HF_ENDPOINT_OFFICIAL,
-            hf_repo=hf_repo,
-            model_name=model_name,
-        ),
-        DownloadCandidate(
-            kind="hf-mirror",
-            probe_url=f"{HF_ENDPOINT_MIRROR}/{hf_repo}/resolve/main/{probe_file}",
-            hf_endpoint=HF_ENDPOINT_MIRROR,
-            hf_repo=hf_repo,
-            model_name=model_name,
-        ),
-    ]
+    candidates: list[DownloadCandidate] = []
+    if cos_base_url():
+        candidates.append(
+            DownloadCandidate(
+                kind="cos",
+                probe_url=cos_file_url(model_name, probe_file),
+                hf_endpoint="",
+                hf_repo=hf_repo,
+                model_name=model_name,
+            )
+        )
+    candidates.extend(
+        [
+            DownloadCandidate(
+                kind="hf",
+                probe_url=f"{HF_ENDPOINT_OFFICIAL}/{hf_repo}/resolve/main/{probe_file}",
+                hf_endpoint=HF_ENDPOINT_OFFICIAL,
+                hf_repo=hf_repo,
+                model_name=model_name,
+            ),
+            DownloadCandidate(
+                kind="hf-mirror",
+                probe_url=f"{HF_ENDPOINT_MIRROR}/{hf_repo}/resolve/main/{probe_file}",
+                hf_endpoint=HF_ENDPOINT_MIRROR,
+                hf_repo=hf_repo,
+                model_name=model_name,
+            ),
+        ]
+    )
+    return candidates
 
 
 def probe_source(url: str, timeout_s: float = _PROBE_TIMEOUT_S) -> float:

@@ -400,3 +400,16 @@ def test_export_model_tree_writes_manifest(monkeypatch, tmp_path: Path) -> None:
     assert manifest["model_id"] == "BAAI/bge-small-zh-v1.5"
     assert manifest["hf_repo"] == "Qdrant/bge-small-zh-v1.5"
     assert set(manifest["files"]) == {"config.json", "model.onnx"}
+
+
+def test_empty_cos_base_leaves_the_huggingface_sources(monkeypatch) -> None:
+    from octop.infra.agents.providers import onnx_catalog as catalog
+
+    monkeypatch.setattr(catalog, "_fastembed_meta_map", lambda: {})
+    monkeypatch.setenv("OCTOP_ONNX_COS_BASE", "")
+    kinds = [cand.kind for cand in build_download_candidates("BAAI/bge-small-zh-v1.5")]
+    assert kinds == ["hf", "hf-mirror"]
+    assert all(
+        COS_ENDPOINT_DEFAULT not in cand.probe_url
+        for cand in build_download_candidates("BAAI/bge-small-zh-v1.5")
+    )

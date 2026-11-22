@@ -2,13 +2,13 @@
 #
 # Octop 本地版 — 安装后回调
 #
-# 安装向导只收集用户自己设的管理员账号（用户名 / 密码确认，显示名与邮箱可选）。
-# 凭据写入 PKGVAR/.env 与 octop-login.txt，供首次启动 octop init 使用。
+# 单人自托管没有账号：安装向导不收集用户名/密码，这里只准备 PKGVAR/.env
+# （端口/日志/数据路径）、平台权限（octop-native 免密码 sudo）、官方 CLI
+# 入口，并做一次预初始化。账号由首次启动的服务自动绑定，不再写凭据文件。
 #
 set -euo pipefail
 
 # 共享函数库（find_python312 / fix_ownership_and_perms / free_octop_ports /
-# octop_generate_password / octop_validate_password / octop_write_login_file /
 # octop_render_config_wizard 等）
 # 打包时由 scripts/build-fpk.sh 注入；仓库内运行无此文件时跳过（函数缺失时再报错）。
 _OCTOP_COMMON="$(dirname "$0")/common.sh"
@@ -23,7 +23,7 @@ APPDEST="${TRIM_APPDEST:-/var/apps/octop-native}"
 mkdir -p "$PKGVAR"
 ENV_FILE="$PKGVAR/.env"
 
-# 数据落在 FnOS 的 data-share 共享目录，升级时保留（凭据回落保存也在这里）。
+# 数据落在 FnOS 的 data-share 共享目录，升级时保留。
 if [ -n "${TRIM_DATA_SHARE_PATHS:-}" ]; then
     DATA_DIR="${TRIM_DATA_SHARE_PATHS%%:*}"
 else
@@ -43,46 +43,22 @@ if type octop_assert_native_arch >/dev/null 2>&1; then
     fi
 fi
 
-# ---------------------------------------------------------------------------
-# 解析向导字段（wizard/install 的 field 名即环境变量名）
-# ---------------------------------------------------------------------------
-ADMIN_USER="$(octop_sanitize_value "${wizard_admin_username:-}")"
-ADMIN_DISPLAY="$(octop_sanitize_value "${wizard_admin_display_name:-}")"
-ADMIN_EMAIL="$(octop_sanitize_value "${wizard_admin_email:-}")"
-WIZARD_PASSWORD="$(octop_sanitize_value "${wizard_admin_password:-}")"
-WIZARD_CONFIRM="$(octop_sanitize_value "${wizard_admin_password_confirm:-}")"
-
-if ! ADMIN_PASS_REASON="$(octop_validate_install_fields "$ADMIN_USER" "$WIZARD_PASSWORD" "$WIZARD_CONFIRM" "$ADMIN_EMAIL" "$ADMIN_DISPLAY" 2>&1)"; then
-    fail_install "$ADMIN_PASS_REASON"
-fi
-ADMIN_PASS="$WIZARD_PASSWORD"
-
 {
     echo "OCTOP_PORT=8089"
     echo "OCTOP_BIND_HOST=0.0.0.0"
     echo "OCTOP_LOG_LEVEL=info"
-    echo "OCTOP_ADMIN_USERNAME=${ADMIN_USER}"
-    echo "OCTOP_DEFAULT_PASSWORD=${ADMIN_PASS}"
-    echo "OCTOP_ADMIN_DISPLAY_NAME=${ADMIN_DISPLAY}"
-    echo "OCTOP_ADMIN_EMAIL=${ADMIN_EMAIL}"
 } > "$ENV_FILE"
 
 chmod 600 "$ENV_FILE"
 echo "[octop-native] 已写入配置: $ENV_FILE" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 管理员凭据应急备份（octop-login.txt）+ 渲染「设置」窗口用户名。
-# 忘记密码时从数据目录的 octop-login.txt 找回；设置窗口不再明文展示密码。
+# 渲染「设置」窗口（只显示数据目录与配置入口，没有密码表单）
 # ---------------------------------------------------------------------------
-octop_write_login_file "$DATA_DIR" "$ADMIN_USER" "$ADMIN_PASS" 8089
-if [ -f "${DATA_DIR}/.octop/octop.db" ]; then
-    octop_mark_fnos_passwd_pending "$DATA_DIR"
-fi
-
 WIZARD_TEMPLATE="$APPDEST/wizard/config.template"
 WIZARD_DIR="$(dirname "$APPDEST")/wizard"
 [ -f "$WIZARD_TEMPLATE" ] || WIZARD_TEMPLATE="${APPDEST}/../wizard/config"
-octop_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$ADMIN_USER" "$ADMIN_PASS" "$DATA_DIR"
+octop_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
 
 # ---------------------------------------------------------------------------
 # 修正属主/权限：.env 与 appdata 改回 octop-native，避免服务以 octop-native 启动
@@ -100,28 +76,14 @@ fi
 echo "[octop-native] 已检测到 Python 3.12: $PY" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
 
 # ---------------------------------------------------------------------------
-# 让 Octop 本地版“开箱即用”：
-#   1) 给 octop-native 系统账户设置已知密码（= 管理员密码），
-#      便于工作台终端等场景使用。
-#   2) 授予 octop-native 免密码 sudo（NOPASSWD）。
-#      Octop 的远程桌面/浏览器等组件在运行时会以 octop-native 身份执行
-#      `sudo -n ...`（例如 desktop/setup.py 的 install/start/resize/uninstall），
-#      若 sudo 需要密码就会失败报 “a password is required”。
-#      这里在安装回调（root 权限）阶段一次性配好，之后用户在界面里安装
-#      远程桌面 / 在工作台终端里执行 sudo 都不再需要输入密码。
+# 授予 octop-native 免密码 sudo（NOPASSWD）。
+# Octop 的远程桌面/浏览器等组件在运行时会以 octop-native 身份执行
+# `sudo -n ...`（例如 desktop/setup.py 的 install/start/resize/uninstall），
+# 若 sudo 需要密码就会失败报 “a password is required”。
+# 这里在安装回调（root 权限）阶段一次性配好，之后用户在界面里安装
+# 远程桌面 / 在工作台终端里执行 sudo 都不再需要输入密码。
 # ---------------------------------------------------------------------------
 OCTOP_USER="octop-native"
-
-# 设置 octop-native 登录密码为向导管理员密码（若账户不存在则跳过）
-if id "$OCTOP_USER" >/dev/null 2>&1; then
-    echo "${OCTOP_USER}:${ADMIN_PASS}" | chpasswd 2>/dev/null || true
-    echo "[octop-native] 已为 ${OCTOP_USER} 设置登录密码（与管理员密码一致）" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
-fi
-
-# 写入免密码 sudo 规则并做语法校验。
-# 这是本地版“远程桌面/浏览器/工作台终端”能正常工作的关键，必须成功；
-# 因此这里不使用 || true 静默失败，若写入或校验失败则让安装回调直接返回非零，
-# 避免飞牛显示“安装成功”但实际功能不可用（之前 printf+||true 导致文件被清空）。
 SUDOERS_FILE="/etc/sudoers.d/octop-native"
 cat > "$SUDOERS_FILE" <<'EOF'
 # 允许 octop-native 免密码执行任意命令（Octop 远程桌面/浏览器/工作台终端需要）
@@ -141,11 +103,23 @@ fi
 echo "[octop-native] 已配置 ${OCTOP_USER} 免密码 sudo" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
 
 # ---------------------------------------------------------------------------
+# 锁定系统账户 octop-native：它只是包内服务身份，不提供登录。
+# 显式锁定，而不是设随机密码——随机密码看起来像能登录，实际没人记得，
+# 还会诱使后来的人把它抄进某个文件。免密码 sudo 走 NOPASSWD，不受影响。
+# ---------------------------------------------------------------------------
+if id "$OCTOP_USER" >/dev/null 2>&1; then
+    if passwd -l "$OCTOP_USER" >/dev/null 2>&1; then
+        echo "[octop-native] 已锁定系统账户 ${OCTOP_USER}（仅作包内服务身份，不能登录）" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
+    else
+        echo "[octop-native] 警告：无法锁定系统账户 ${OCTOP_USER}，请手动执行 passwd -l ${OCTOP_USER}" >&2 || true
+    fi
+fi
+
+# ---------------------------------------------------------------------------
 # 将官方 octop CLI 暴露到 PATH，让用户安装后像官方一样直接用 `octop` 命令
 # （例如 `octop --help` / `octop provider list` / `octop agent list` /
-#   `octop user list` / `octop user passwd` / `octop skills ...` /
-#   `octop backup ...`）。真正的服务由飞牛应用中心托管（cmd/main 拉起
-#   bin/octop），本 CLI 仅作命令行入口。
+#   `octop skills ...` / `octop backup ...`）。真正的服务由飞牛应用中心托管
+# （cmd/main 拉起 bin/octop），本 CLI 仅作命令行入口。
 # 并做一次冒烟验证：CLI 能真实执行并输出版本号才算注册成功。
 # ---------------------------------------------------------------------------
 LAUNCHER="$APPDEST/bin/octop"
@@ -165,7 +139,7 @@ if [ -f "$CLI_SRC" ]; then
     fi
 fi
 
-# 安装阶段先做账号初始化，避免应用中心 start 在 30 秒内超时、只显示「启动失败」。
+# 安装阶段先做环境初始化，避免应用中心 start 在 30 秒内超时、只显示「启动失败」。
 if [ -f "$LAUNCHER" ]; then
     echo "[octop-native] 安装后预初始化 ..." >> "$PKGVAR/info.log"
     prepare_rc=0

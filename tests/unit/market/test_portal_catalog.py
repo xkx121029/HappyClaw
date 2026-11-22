@@ -52,7 +52,7 @@ def test_portal_catalog_lists_plugins_and_experts(monkeypatch: pytest.MonkeyPatc
         "name": {"zh": "天气", "en": "Weather"},
         "description": {"zh": "天气", "en": "Weather"},
         "download_url": (
-            "https://download.octop.cloud/octop/market/plugins/weather/0.1.0/weather-0.1.0.zip"
+            "https://github.com/xkx121029/HappyClaw/releases/download/v0.9.31/plugins/weather/0.1.0/weather-0.1.0.zip"
         ),
     }
     expert = {
@@ -63,7 +63,7 @@ def test_portal_catalog_lists_plugins_and_experts(monkeypatch: pytest.MonkeyPatc
         "description": {"zh": "描述", "en": "Description"},
         "scene": "tech",
         "download_url": (
-            "https://download.octop.cloud/octop/market/experts/ops-engineer/1.0.0/"
+            "https://github.com/xkx121029/HappyClaw/releases/download/v0.9.31/experts/ops-engineer/1.0.0/"
             "ops-engineer-1.0.0.zip"
         ),
     }
@@ -121,7 +121,7 @@ def test_install_portal_expert_extracts_library(
         {"manifest.json": json.dumps({"id": "ops-engineer", "label": {"zh": "运维", "en": "Ops"}})}
     )
     archive_url = (
-        "https://download.octop.cloud/octop/market/experts/ops-engineer/1.0.0/"
+        "https://github.com/xkx121029/HappyClaw/releases/download/v0.9.31/experts/ops-engineer/1.0.0/"
         "ops-engineer-1.0.0.zip"
     )
 
@@ -136,7 +136,7 @@ def test_install_portal_expert_extracts_library(
                         "slug": "ops-engineer",
                         "label": {"zh": "运维", "en": "Ops"},
                         "icon_url": (
-                            "https://download.octop.cloud/octop/market/experts/"
+                            "https://github.com/xkx121029/HappyClaw/releases/download/v0.9.31/experts/"
                             "ops-engineer/1.0.0/avatar.svg"
                         ),
                         "download_url": archive_url,
@@ -183,7 +183,7 @@ def test_market_remote_origin_overrides_object_origin(monkeypatch: pytest.Monkey
     assert market_http.remote_base() == "https://files.example.com"
     archive = "https://files.example.com/octop/market/plugins/weather/0.1.0/weather-0.1.0.zip"
     assert market_http.is_market_archive_url(archive)
-    public = archive.replace("files.example.com", "download.octop.cloud")
+    public = archive.replace("files.example.com", "evil.example.com")
     assert not market_http.is_market_archive_url(public)
 
 
@@ -249,3 +249,44 @@ def test_empty_portal_url_does_not_fetch(monkeypatch: pytest.MonkeyPatch) -> Non
     with pytest.raises(PortalMarketError, match="portal url is empty"):
         list_market_plugins()
     assert calls == []
+
+
+def test_portal_origin_keeps_only_the_origin(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "https://market.internal:9000/market/api/")
+    assert market_http.portal_base() == "https://market.internal:9000"
+    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "market.internal")
+    assert market_http.portal_base() == "https://market.internal"
+
+
+def test_unreadable_portal_origin_disables_the_catalog(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A value ``urlopen`` would reject must not become a request: the page shows
+    # "temporarily unavailable", it does not answer 500.
+    for raw in ("", "   ", "ftp://market.internal", "https://"):
+        monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", raw)
+        assert market_http.portal_base() == ""
+        with pytest.raises(PortalMarketError, match="portal url is empty"):
+            list_market_plugins()
+
+
+def test_unset_portal_origin_leaves_the_remote_catalog_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OCTOP_PORTAL_ORIGIN", raising=False)
+    assert market_http.DEFAULT_PORTAL_BASE == ""
+    assert market_http.portal_base() == ""
+    with pytest.raises(PortalMarketError, match="portal url is empty"):
+        list_market_plugins()
+
+
+def test_a_configured_portal_origin_turns_the_catalog_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "http://market.internal:9000")
+    assert market_http.portal_base() == "http://market.internal:9000"
+
+
+def test_unparsable_url_is_a_catalog_failure_not_a_crash(monkeypatch: pytest.MonkeyPatch) -> None:
+    def boom(*_args: Any, **_kwargs: Any) -> Any:
+        raise ValueError("unknown url type: 'market.internal:9000/api/market/plugins'")
+
+    monkeypatch.setattr(market_http, "urlopen", boom)
+    with pytest.raises(PortalMarketError, match="invalid url"):
+        market_http.fetch_bytes("market.internal:9000/api/market/plugins", limit=64)

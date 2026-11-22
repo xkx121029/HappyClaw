@@ -1,6 +1,6 @@
 # 内网自建插件市场与专家市场
 
-访问不了 `octop.cloud` 和 `download.octop.cloud` 时，可以在局域网里按本文的 HTTP 接口自建市场。HappyClaw 只认这两份目录和目录里给出的安装包地址，不需要部署完整的 octop.cloud。
+HappyClaw 不内置任何远程目录：没设置 `OCTOP_PORTAL_ORIGIN` 时插件市场和专家市场不会发出请求，页面显示「暂时不可用」。可以在局域网里按本文的 HTTP 接口自建市场，再把源站写进环境变量。HappyClaw 只认这两份目录和目录里给出的安装包地址，不需要部署完整的 octop.cloud。
 
 技能市场（控制台「技能」里的 SkillHub）是另一套上游，默认 `https://api.skillhub.cn`，用 `SKILL_MARKET_ORIGIN` 指定。协议见 [技能市场](skill-market.md)。
 
@@ -41,8 +41,8 @@ OCTOP_MARKET_REMOTE_ORIGIN=http://market.internal:9000
 
 | 变量 | 含义 |
 |---|---|
-| `OCTOP_PORTAL_ORIGIN` | 目录源站，只写协议、主机和端口，**不要带路径**。未设置时默认 `https://octop.cloud`。设成空字符串则关闭远程目录。 |
-| `OCTOP_MARKET_REMOTE_ORIGIN` | 安装包源站，同样只保留源站。未设置或无法解析时默认 `https://download.octop.cloud`。 |
+| `OCTOP_PORTAL_ORIGIN` | 目录源站，只写协议、主机和端口，**不要带路径**。未设置即为空：HappyClaw 不连任何远程目录，市场显示「暂时不可用」。要启用目录（自建或公网）就显式写上源站。 |
+| `OCTOP_MARKET_REMOTE_ORIGIN` | 安装包源站，同样只保留源站。未设置或无法解析时默认 `https://github.com`，即本仓库的 Releases；自建市场要按自己的源站显式设置。 |
 
 目录和安装包可以放同一台机器，所以上面两个变量可以相同。`download_url` 的协议、主机必须与 `OCTOP_MARKET_REMOTE_ORIGIN` 一致；环境变量里写了端口时，URL 的端口也要相同，没写端口就用该协议的默认端口。路径和查询参数不限制，自建市场可以按自己的接口给出地址。下面只是静态文件的一种放法：
 

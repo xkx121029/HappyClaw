@@ -6,6 +6,7 @@
  */
 
 import { compareVersions, isNewer, parseVersion } from "../supervisor/version";
+import { resolveUpdateSource } from "./update-source";
 
 export interface DownloadAsset {
   name: string;
@@ -58,16 +59,26 @@ export interface SelectedRelease {
   releasesUrl: string;
 }
 
-const ALLOWED_DOWNLOAD_HOST = "download.octop.cloud";
-
-/** Only ``https`` assets from the fixed download host are accepted. */
-export function isValidAssetUrl(url: string): boolean {
+/**
+ * Only ``https`` assets under one of the configured download prefixes are
+ * accepted. The prefixes come from ``resolveUpdateSource`` so the shell and a
+ * self-hosted deployment agree on where installers may live; an empty list
+ * refuses everything, which is the safe reading of a broken allow-list.
+ */
+export function isValidAssetUrl(
+  url: string,
+  origins: readonly string[] = resolveUpdateSource().downloadOrigins,
+): boolean {
+  if (origins.length === 0) return false;
+  let parsed: URL;
   try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" && parsed.hostname === ALLOWED_DOWNLOAD_HOST;
+    parsed = new URL(url);
   } catch {
     return false;
   }
+  if (parsed.protocol !== "https:") return false;
+  const href = parsed.toString();
+  return origins.some((origin) => href.startsWith(origin));
 }
 
 /**

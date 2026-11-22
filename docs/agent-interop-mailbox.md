@@ -288,8 +288,8 @@ inbox worker：
 | `manager.py` | `stream`/`call` 还原直连；新增 `team_processor`、`team_enabled`、`team_tools`、`call_peer`/`submit_peer`；`apply_mentions` 用 `call_peer` |
 | `builtin/tools/peer_agent.py` | **移动** → `teams/tools.py`（`build_team_tools`） |
 | `teams/inbox.py`、`teams/processor.py`、`teams/tools.py`、`teams/util.py` | **新增** |
-| `tests/test_mailbox.py` | 替换为 `tests/test_inbox.py` |
-| `tests/test_peer_agent.py` | 调整为 `teams` 导入 |
+| harness 侧 `test_mailbox.py` | 替换为 `test_inbox.py` |
+| harness 侧 `test_peer_agent.py` | 调整为 `teams` 导入 |
 
 ### octop
 
