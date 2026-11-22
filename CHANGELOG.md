@@ -5,7 +5,6 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [语义化版本规范](https://semver.org/spec/v2.0.0.html)。
 
 ## [Unreleased]
-## [Unreleased]
 
 ### 破坏性变更：产品身份改为 HappyClaw
 
