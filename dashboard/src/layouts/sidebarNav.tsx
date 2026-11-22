@@ -86,6 +86,7 @@ export const SIDEBAR_NAV_KEYS = [
   "admin-storage",
   "admin-plugins",
   "admin-security",
+  "appearance",
   "admin-advanced",
 ] as const;
 
@@ -149,6 +150,7 @@ export const SIDEBAR_GROUPED_NAV_KEYS = [
   "admin-storage",
   "admin-plugins",
   "admin-security",
+  "appearance",
   "admin-advanced",
   "agent-config",
 ] as const;

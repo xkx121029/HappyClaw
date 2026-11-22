@@ -348,6 +348,13 @@ export const DEFAULT_ROUTE_SPECS: RouteSpec[] = [
     stage: "admin-plugins",
   },
   {
+    path: "/admin/appearance",
+    module: "settings",
+    depth: 1,
+    kind: "detail",
+    stage: "admin-advanced",
+  },
+  {
     path: "/admin/advanced",
     module: "settings",
     depth: 1,
