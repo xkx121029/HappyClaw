@@ -35,7 +35,10 @@ export default defineConfig(({ mode }) => {
     process.env.VITE_BASE_PATH ?? env.VITE_BASE_PATH,
   );
   // Allow overriding the backend port via VITE_API_PORT env variable (default: 8088)
-  const apiPort = process.env.VITE_API_PORT ?? env.VITE_API_PORT ?? "8088";
+  // Dev-only: the dashboard proxies /api to a locally running backend so it can
+  // be developed against real data. Override the port with VITE_API_PORT.
+  // Default 8097 (was 8088); this only affects the dev server, never `build`.
+  const apiPort = process.env.VITE_API_PORT ?? env.VITE_API_PORT ?? "8097";
 
   const isProd = mode === "production";
   const analyze = env.ANALYZE === "true";

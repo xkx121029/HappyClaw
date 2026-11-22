@@ -49,7 +49,14 @@ function readConst(file, name) {
     const match = withoutComment.match(/^\s*["']?([\w-]+)["']?\s*:\s*(.+?),?\s*$/);
     if (!match) continue;
     const [, key, rawValue] = match;
-    const value = rawValue.replace(/,\s*$/, "").trim();
+    // Strip a trailing comment and comma from the value itself. Doing it on the
+    // captured value (not only on the line) keeps CRLF files and inline notes
+    // out of the generated CSS — a value like `16, // section titles` is not a
+    // valid CSS length and made `var(--fn-text-lg)` fall back at runtime.
+    const value = rawValue
+      .replace(/\/\/.*$/, "")
+      .replace(/,\s*$/, "")
+      .trim();
     if (value.startsWith("{")) continue;
     out[key] = value.replace(/^["']|["']$/g, "");
   }
