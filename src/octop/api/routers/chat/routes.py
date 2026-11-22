@@ -12,6 +12,11 @@ from fastapi.responses import StreamingResponse
 from octop.api.common.agent import assert_agent_access
 from octop.api.deps import current_user, get_server
 from octop.api.routers.chat.models import HitlResumeBody, PolishBody
+from octop.api.routers.chat.responses import (
+    ChatPolishOut,
+    ChatWelcomeOut,
+    HitlPendingListOut,
+)
 from octop.api.routers.chat.sse import format_sse
 from octop.i18n.domains.stream import format_stream_error
 from octop.infra.agents.experts.catalog import (
@@ -43,7 +48,11 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/agents/{agent_id}/chat/welcome", summary="Chat welcome quick cards")
+@router.get(
+    "/agents/{agent_id}/chat/welcome",
+    summary="Chat welcome quick cards",
+    response_model=ChatWelcomeOut,
+)
 async def get_chat_welcome(
     agent_id: str,
     user: Any = Depends(current_user),
@@ -264,6 +273,7 @@ def _dashboard_hitl_stream_context(
 @router.get(
     "/agents/{agent_id}/chat/hitl/pending",
     summary="List pending HITL pauses",
+    response_model=HitlPendingListOut,
 )
 async def list_pending_hitl(
     agent_id: str,
@@ -313,7 +323,22 @@ async def list_pending_hitl(
     return {"ok": True, "items": items}
 
 
-@router.post("/agents/{agent_id}/chat/hitl/resume", summary="Resume HITL approval (SSE)")
+@router.post(
+    "/agents/{agent_id}/chat/hitl/resume",
+    summary="Resume HITL approval (SSE)",
+    responses={
+        200: {
+            "description": (
+                "Server-sent events. Each frame is `event: chunk` followed by one "
+                "JSON `ChatStreamChunk` payload (`data: {...}`), ending with "
+                "`{\"type\": \"done\"}` or an error chunk."
+            ),
+            "content": {
+                "text/event-stream": {"schema": {"$ref": "#/components/schemas/ChatStreamChunk"}}
+            },
+        }
+    },
+)
 async def resume_hitl(
     agent_id: str,
     body: HitlResumeBody,
@@ -402,6 +427,7 @@ async def resume_hitl(
     "/agents/{agent_id}/chat/polish",
     summary="Polish prompt (compat)",
     deprecated=True,
+    response_model=ChatPolishOut,
 )
 async def polish_prompt(
     agent_id: str,

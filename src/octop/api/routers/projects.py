@@ -34,6 +34,21 @@ class RenameProjectBody(BaseModel):
     name: str = Field(min_length=1, max_length=200)
 
 
+class ProjectThreadSummaryOut(BaseModel):
+    """One conversation bound to a project (flat, unlike the agent thread list)."""
+
+    thread_id: str
+    agent_id: str
+    title: str
+    channel_type: str
+    last_active: int
+    created_at: int
+    pinned: bool
+    project_id: str | None = None
+    workspace_kind: str | None = None
+    workspace_dir: str | None = None
+
+
 def _clean_name(raw: str) -> str:
     name = " ".join(raw.split())
     if not name:
@@ -152,7 +167,11 @@ async def delete_project(
     return {"ok": True, "threads_unbound": threads_unbound}
 
 
-@router.get("/projects/{project_id}/threads", summary="List threads in a project")
+@router.get(
+    "/projects/{project_id}/threads",
+    summary="List threads in a project",
+    response_model=list[ProjectThreadSummaryOut],
+)
 async def list_project_threads(
     project_id: str,
     request: Request,
