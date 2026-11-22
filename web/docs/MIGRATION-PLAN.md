@@ -114,7 +114,7 @@ SQLite 与本地所有者在启动时自动绑定创建——用一个全新的 
 | --- | --- | --- | --- | --- |
 | **B0**（本轮，已完成） | 外壳 + 设计系统 + token + i18n + 路由 + API 客户端 + Chat/设置样板页 | 新写 ~4.2k | — | `npm ci && npm run build && npx tsc -b && npm run lint` 全绿；`/chat`、`/settings`、`/design` 渲染；对 `/api/agents`、`/api/agents/{id}/threads`、`/api/agents/{id}/threads/{tid}/history`、`/api/settings/*`、`/api/preferences` 发起真实请求 |
 | **B1**（已完成，本轮） | Home、38 条旧路由重定向（含 `/m/*`）、`/setup` 首次运行诊断页 | 实做 2.1k | B0 | `/home` 用真实数据渲染（agents/threads/activity/usage/HITL 全 200）；旧路由落地且保留 `?search`/`#hash`；未迁移目标回落到 `/home` 而不是 404；`/setup` 能读到实例状态并跑通数据库探测 |
-| **B1-余** | TokenUsage 图表、AgentConfig | ~2k | B1 | `/api/usage/summary` 的 `buckets` 出图；`/agent-config` 保存生效 |
+| **B1-余**（已完成） | TokenUsage 图表、AgentConfig | ~2k | B1 | `/api/usage/summary` 的 `buckets` 出图；`/agent-config` 保存生效 |
 | **B2** | 内容 CRUD：KnowledgeBases、SkillPackages、Connectors、Plugins、Storage | ~16k | B0 | 每类各完成一次「新建→列表→删除」；`/api/knowledge-bases`、`/api/skill-packages`、`/api/connectors` 200；上传预览可用 |
 | **B3** | 智能体域：Experts（含 SubagentManager）、CronJobs、Personalization 四个 tab（Skills/Tools/Memory/Channels）、ACP、Bao | ~29k | B2 | 智能体 create/start/stop 往返；cron 新建 + run-now 产出一次运行；Memory tab 能列并改一条记忆 |
 | **B4** | 设置/管理：Models（含 Voice/Search/媒体/Embedding 面板）、AdvancedSettings（含 Environments/Observability/Backup/TLS/PhoneAccess）、Security、`/bridge` 并入 | ~18k | B2 | 供应商「测试连接」成功；`POST /api/update/check` 200；主题/语言切换免刷新持久化 |

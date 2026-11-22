@@ -15,7 +15,7 @@ import { useUiStore } from "@/stores/ui";
 
 import { getUsageReport, type UsageBucket, type UsageWindow } from "./api";
 
-const WINDOWS: UsageWindow[] = ["last_7d", "last_30d", "last_90d"];
+const WINDOWS: UsageWindow[] = ["last_7d", "last_30d", "all"];
 
 export function TokenUsagePage() {
   const { t } = useTranslation("usage");

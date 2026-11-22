@@ -24,7 +24,7 @@ export interface UsageReport {
   buckets: UsageBucket[];
 }
 
-export type UsageWindow = "last_7d" | "last_30d" | "last_90d";
+export type UsageWindow = "last_7d" | "last_30d" | "all";
 
 function num(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;

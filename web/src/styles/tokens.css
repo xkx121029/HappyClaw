@@ -9,9 +9,11 @@
                     flip between light and dark
      3. scales      spacing, radius, elevation, motion, type
 
-   The palette leads with HappyClaw coral (#FF6B4A, sampled from the brand
-   icon) on a warm neutral ramp. Dark is the primary theme: this product runs
-   in a window next to a terminal all day.
+   The default skin is direction A ("instrument"): ink on a warm neutral ramp,
+   with colour reserved for state. `skin-a.css` is imported right after this
+   file and overrides the semantic roles; the values below are the fallback the
+   direction scopes expect to find underneath. Dark is the primary theme: this
+   product runs in a window next to a terminal all day.
    ========================================================================== */
 
 :root {
@@ -32,7 +34,9 @@
   --hc-neutral-950: #0e0f10;
   --hc-neutral-1000: #0a0b0c;
 
-  /* ---------- 1. primitives: coral (brand) ---------- */
+  /* ---------- 1. primitives: coral (legacy brand ramp) ----------
+     Not used by the default skin. Kept because the /directions comparison and
+     any future brand experiment reference these steps by name. */
   --hc-coral-50: #fff3f0;
   --hc-coral-100: #ffe2db;
   --hc-coral-200: #ffc6b8;

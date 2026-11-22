@@ -5,7 +5,7 @@
   "windows": {
     "last_7d": "近 7 天",
     "last_30d": "近 30 天",
-    "last_90d": "近 90 天"
+    "all": "全部时间"
   },
   "totals": {
     "tokens": "总 token",
