@@ -23,6 +23,7 @@ import {
   MessagesSquare,
   Smartphone,
   Info,
+  Palette,
 } from "lucide-react";
 
 export const EXPANDED_WIDTH = 220;
@@ -312,6 +313,12 @@ export function buildNavSections(): NavSection[] {
       path: "/admin/security",
       icon: <Shield size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.security",
+    },
+    {
+      key: "appearance",
+      path: "/admin/appearance",
+      icon: <Palette size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.appearance",
     },
     {
       key: "admin-advanced",

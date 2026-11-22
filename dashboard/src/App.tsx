@@ -30,6 +30,8 @@ import { LayoutModeProvider } from "./context/LayoutModeContext";
 import { VoiceOutputProvider } from "./context/VoiceOutputContext";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { antdThemeConfig } from "./styles/tokens/antd";
+import { antdOverrides } from "./styles/appearance/derive";
+import { useAppearance } from "./styles/appearance/useAppearance";
 import "./styles/theme-vars.css";
 import "./styles/layout.css";
 import "./styles/form-override.css";
@@ -72,6 +74,7 @@ function ThemedApp() {
   // One type/space/radius/motion scale for every antd surface. Values come
   // from the shared token tables so the CSS custom properties and antd can
   // never drift apart again.
+  const appearance = useAppearance();
   const themeConfig = antdThemeConfig({
     isDark,
     isMobile,
@@ -86,9 +89,18 @@ function ThemedApp() {
     },
   });
 
+  // Appearance overrides ride on top of the shared tokens: radius, density,
+  // font size and font family, all derived from one settings object.
+  const appearanceOverrides = antdOverrides(appearance);
+  const mergedTheme: typeof themeConfig = {
+    ...themeConfig,
+    token: { ...themeConfig.token, ...appearanceOverrides.token },
+    components: { ...themeConfig.components, ...appearanceOverrides.components },
+  };
+
   return (
     <ConfigProvider
-      theme={themeConfig}
+      theme={mergedTheme}
       prefixCls="octop"
       locale={antdLocale}
       getPopupContainer={popupLayer}

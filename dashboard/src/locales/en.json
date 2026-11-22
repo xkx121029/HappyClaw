@@ -1151,7 +1151,8 @@
     "mobileTabs": "Primary navigation",
     "openNav": "Open navigation",
     "mine": "Mine",
-    "passkeys": "Passkeys"
+    "passkeys": "Passkeys",
+    "appearance": "Appearance"
   },
   "skillPackages": {
     "title": "Skill Packages",
@@ -8835,5 +8836,106 @@
     },
     "continueSession": "Continue last chat",
     "startChat": "Start a chat"
+  },
+  "appearance": {
+    "livePreview": "Live preview",
+    "resetAll": "Reset appearance",
+    "storageHint": "Appearance lives in this browser (localStorage) and applies without a reload. The server has no appearance endpoint yet, so it does not sync across devices.",
+    "packs": {
+      "title": "Theme packs",
+      "hint": "A pack is a set of values; you can still fine-tune afterwards",
+      "default": "Default",
+      "defaultDesc": "Exactly what the app looks like today",
+      "instrument": "Instrument",
+      "instrumentDesc": "Dark, achromatic, square and compact; colour only for state",
+      "warmPaper": "Warm paper",
+      "warmPaperDesc": "Cream surface, serif body, generous leading",
+      "highContrast": "High contrast",
+      "highContrastDesc": "Pure black and white with heavier outlines"
+    },
+    "brand": {
+      "title": "Brand colour",
+      "hint": "AntD primary plus its derived hover and tints",
+      "rose": "Rose",
+      "tech": "Tech blue",
+      "indigo": "Indigo",
+      "teal": "Teal",
+      "violet": "Violet",
+      "emerald": "Emerald",
+      "amber": "Amber",
+      "custom": "Custom",
+      "customHint": "Pick any hex",
+      "lowContrast": "Body contrast is {{ratio}}:1, below 4.5:1",
+      "lowContrastHint": "It still saves — readability is your call. Consider a lighter or darker shade."
+    },
+    "radius": {
+      "title": "Corner radius",
+      "hint": "Buttons, inputs, cards, dialogs, bubbles and sidebar items",
+      "default": "Unchanged"
+    },
+    "density": {
+      "title": "Density",
+      "hint": "Control heights and row height, not just type",
+      "compact": "Compact",
+      "standard": "Standard",
+      "comfortable": "Comfortable"
+    },
+    "fontSize": {
+      "title": "Text size",
+      "hint": "Scales the whole ramp: body, sidebar, labels, tables",
+      "xs": "XS",
+      "small": "Small",
+      "standard": "Standard",
+      "large": "Large",
+      "xl": "XL"
+    },
+    "fontFamily": {
+      "title": "Font family",
+      "hint": "System / serif / monospace",
+      "system": "System",
+      "serif": "Serif",
+      "mono": "Mono"
+    },
+    "customCss": {
+      "title": "Custom CSS (advanced)",
+      "hint": "Appended to the stylesheet and applied immediately. @import, remote url() and script are refused.",
+      "apply": "Apply CSS",
+      "clear": "Clear",
+      "errors": {
+        "import": "@import is not allowed",
+        "remoteUrl": "Remote url() references are not allowed",
+        "script": "Script tags are not allowed",
+        "unbalanced": "Unbalanced braces"
+      }
+    },
+    "transfer": {
+      "title": "Import / export"
+    },
+    "export": {
+      "copy": "Copy theme JSON",
+      "copied": "Copied",
+      "copyFailed": "Copy failed, select the text manually",
+      "hint": "Back it up or share it",
+      "markerHint": "Exports carry the {{marker}} marker; only those import"
+    },
+    "import": {
+      "placeholder": "Paste exported theme JSON",
+      "apply": "Import",
+      "done": "Imported and applied",
+      "invalid": "That is not a valid theme file"
+    },
+    "preview": {
+      "label": "Appearance preview",
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "placeholder": "Input",
+      "one": "One",
+      "two": "Two",
+      "tag": "Tag",
+      "tagNeutral": "Neutral",
+      "caption": "Secondary caption",
+      "userBubble": "User message bubble",
+      "agentBubble": "Assistant reply bubble"
+    }
   }
 }
