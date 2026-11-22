@@ -67,6 +67,7 @@ export function useMemoryMaintenance(
   const bridgeAgent = Boolean(agentId?.startsWith("bridge:"));
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
     setStatus(null);
     setConnectionLost(false);
     // Bridge shadows have no local harness status / memory maintenance.

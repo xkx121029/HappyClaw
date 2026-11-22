@@ -151,7 +151,7 @@ export function requestUpload<T = unknown>(
       };
     }
     xhr.onload = () => {
-      let parsed: unknown = null;
+      let parsed: unknown;
       try {
         parsed = xhr.responseText ? JSON.parse(xhr.responseText) : null;
       } catch {

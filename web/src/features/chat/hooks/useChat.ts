@@ -912,6 +912,7 @@ export function useChat(
     "initial",
   );
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
     setHistoryError(false);
   }, [stableSessionId]);
 
@@ -960,6 +961,7 @@ export function useChat(
     ++generation.current;
     loadMoreInFlightRef.current = null;
     refreshInFlightRef.current = null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
     setHistoryLoading(false);
     setHistoryRefreshing(false);
     return () => {

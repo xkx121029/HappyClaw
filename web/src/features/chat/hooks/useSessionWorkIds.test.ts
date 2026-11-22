@@ -5,7 +5,7 @@ import type { StreamEvent } from "../store/chatStore";
 
 let listener: ((event: StreamEvent) => void) | null = null;
 
-vi.mock("./chatStore", () => ({
+vi.mock("../store/chatStore", () => ({
   onStreamEvent: (fn: (event: StreamEvent) => void) => {
     listener = fn;
     return () => {

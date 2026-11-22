@@ -9,6 +9,10 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
   plugins: [react()],
+  // Test files use the automatic JSX runtime (fragments, like `<>…</>`), which
+  // is what `tsconfig.app.json`'s `jsx: react-jsx` promises but esbuild does
+  // not infer on its own.
+  esbuild: { jsx: "automatic" },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

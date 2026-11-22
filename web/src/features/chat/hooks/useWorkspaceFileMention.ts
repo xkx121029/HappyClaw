@@ -45,6 +45,7 @@ export function useWorkspaceFileMention(
 
   useEffect(() => {
     if (!mentionMenuOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
       setLoading(false);
       setError(null);
       return;
@@ -99,6 +100,7 @@ export function useWorkspaceFileMention(
 
   useEffect(() => {
     if (!supplement || !agentId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
       setGlobEntries([]);
       setGlobLoading(false);
       return;
@@ -135,6 +137,7 @@ export function useWorkspaceFileMention(
 
   useEffect(() => {
     if (!mentionMenuOpen || agentId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
     setError(shouldSearchWorkspaceMentions(mentionQuery) ? "need_agent" : null);
   }, [mentionMenuOpen, agentId, mentionQuery]);
 

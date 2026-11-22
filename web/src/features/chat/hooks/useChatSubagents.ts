@@ -12,6 +12,7 @@ export function useChatSubagents(
 
   useEffect(() => {
     if (!agentId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
       setSubagents([]);
       return;
     }

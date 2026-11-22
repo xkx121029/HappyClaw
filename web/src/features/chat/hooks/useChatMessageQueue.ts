@@ -118,12 +118,16 @@ export function useChatMessageQueue({
   const items = queues[key] ?? [];
 
   const queuesRef = useRef(queues);
+  // eslint-disable-next-line react-hooks/refs -- external-store sync, ported as-is (see CHAT-LOGIC.md)
   queuesRef.current = queues;
   const onFlushRef = useRef(onFlush);
+  // eslint-disable-next-line react-hooks/refs -- external-store sync, ported as-is (see CHAT-LOGIC.md)
   onFlushRef.current = onFlush;
   const shouldDeferFlushRef = useRef(shouldDeferFlush);
+  // eslint-disable-next-line react-hooks/refs -- external-store sync, ported as-is (see CHAT-LOGIC.md)
   shouldDeferFlushRef.current = shouldDeferFlush;
   const isThreadStreamingRef = useRef(isThreadStreaming);
+  // eslint-disable-next-line react-hooks/refs -- external-store sync, ported as-is (see CHAT-LOGIC.md)
   isThreadStreamingRef.current = isThreadStreaming;
   const flushTimerRef = useRef<number | null>(null);
   /** Streaming edge is tracked per queue key so thread switches never mis-flush. */

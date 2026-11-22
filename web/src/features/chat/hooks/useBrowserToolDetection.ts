@@ -12,6 +12,7 @@ export function useBrowserToolDetection(
 
   useEffect(() => {
     const used = messages.some((m) => isBrowserToolName(m.toolData?.name));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
     if (used) setHasBrowserTool(true);
   }, [messages]);
 

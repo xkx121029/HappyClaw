@@ -20,6 +20,7 @@ export function useHiddenSharedExperts() {
   const [hiddenIds, setHiddenIds] = useState(() => readHiddenExpertIds(userId));
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
     setHiddenIds(readHiddenExpertIds(userId));
   }, [userId]);
 

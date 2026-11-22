@@ -15,6 +15,7 @@ export function useHistoryMigration(
 
   useEffect(() => {
     if (!agentId || !enabled || bridgeAgent) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
       setStatus(null);
       setStartFailed(false);
       return;

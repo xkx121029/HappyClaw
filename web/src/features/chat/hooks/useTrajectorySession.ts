@@ -110,6 +110,7 @@ export function useTrajectorySession({
 
   useEffect(() => {
     sessionGenRef.current += 1;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
     setEvents([]);
     setMetrics(null);
     setError(false);
@@ -164,6 +165,7 @@ export function useTrajectorySession({
       bindSource(source);
     };
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
     setLoading(true);
     setError(false);
     void trajectoryApi

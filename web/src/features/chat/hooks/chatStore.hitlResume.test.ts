@@ -15,6 +15,7 @@ import {
 // `wsChat.ts` builds the socket URL through `getWsUrl`, so the mock has to
 // expose it too — otherwise `new WebSocket` throws and no socket is recorded.
 vi.mock("../lib/http", () => ({
+  getAuthToken: () => null,
   getApiUrl: (path: string) => `/api${path}`,
   getWsUrl: (path: string, params?: URLSearchParams) =>
     `ws://localhost/api${path}${params?.toString() ? `?${params}` : ""}`,

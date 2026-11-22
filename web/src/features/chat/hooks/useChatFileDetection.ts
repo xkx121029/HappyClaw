@@ -146,6 +146,7 @@ export function useChatFileDetection(
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external-store sync, ported as-is (see CHAT-LOGIC.md)
     setFilePaths(collect(messages));
   }, [messages, collect]);
 

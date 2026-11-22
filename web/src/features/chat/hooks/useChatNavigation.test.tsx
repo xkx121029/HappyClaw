@@ -30,7 +30,7 @@ const sessionListenerRef: {
 } = { current: null };
 const invalidateHistoryMock = vi.fn();
 
-vi.mock("./chatStore", () => ({
+vi.mock("../store/chatStore", () => ({
   getSnapshot: () => ({ messages: [], isStreaming: false }),
   onStreamEvent: () => () => undefined,
   onSessionEvent: (listener: (event: StoreSessionEvent) => void) => {
