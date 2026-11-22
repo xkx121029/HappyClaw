@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from happyclaw.api.common.agent import assert_agent_owner as _assert_agent_owner
 from happyclaw.api.deps import current_user, get_server, require_admin
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ def _registry(server: Any) -> Any:
 
 def _validate_runner(name: str, runner: ACPRunnerBody) -> None:
     if runner.tool_parse_mode not in _ALLOWED_PARSE_MODES:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"runner {name!r}: tool_parse_mode must be one of {sorted(_ALLOWED_PARSE_MODES)}",
         )
@@ -78,7 +78,7 @@ def _runners_payload(body: ACPRunnersBody) -> dict[str, dict[str, Any]]:
     for name, runner in body.runners.items():
         key = name.strip()
         if not key:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "runner name cannot be empty")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "runner name cannot be empty")
         _validate_runner(key, runner)
         runners[key] = runner.model_dump()
     return runners
@@ -140,7 +140,7 @@ def _agent_row(server: Any, agent_id: str, user: Any) -> Any:
     registry = _registry(server)
     row = registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     return row
 
@@ -178,7 +178,7 @@ async def get_global_acp_runner(
     registry = _registry(server)
     runner = registry.acp_settings.load_runners(user.id).get(runner_name)
     if runner is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"ACP runner {runner_name!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"ACP runner {runner_name!r} not found")
     return dict(runner)
 
 
@@ -191,7 +191,7 @@ async def put_global_acp_runner(
 ) -> dict[str, Any]:
     key = runner_name.strip()
     if not key:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "runner name cannot be empty")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "runner name cannot be empty")
     _validate_runner(key, body)
     registry = _registry(server)
     runners = registry.acp_settings.load_runners(user.id)
@@ -208,11 +208,11 @@ async def delete_global_acp_runner(
     server: Any = Depends(get_server),
 ) -> None:
     if runner_name in _BUILTIN_RUNNERS:
-        raise OctopError(ErrorCode.FORBIDDEN, f"built-in runner {runner_name!r} cannot be deleted")
+        raise HappyclawError(ErrorCode.FORBIDDEN, f"built-in runner {runner_name!r} cannot be deleted")
     registry = _registry(server)
     runners = registry.acp_settings.load_runners(user.id)
     if runner_name not in runners:
-        raise OctopError(ErrorCode.NOT_FOUND, f"ACP runner {runner_name!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"ACP runner {runner_name!r} not found")
     del runners[runner_name]
     registry.acp_settings.save_runners(user.id, runners)
     _schedule_reload_user_agents(server, user.id)

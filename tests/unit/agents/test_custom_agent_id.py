@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from happyclaw.infra.agents.manager import AgentCreateSpec, validate_custom_agent_id
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 class TestValidateCustomAgentId:
@@ -29,13 +29,13 @@ class TestValidateCustomAgentId:
             "中文",  # non-ascii
             "",
         ):
-            with pytest.raises(OctopError) as exc:
+            with pytest.raises(HappyclawError) as exc:
                 validate_custom_agent_id(bad)
             assert exc.value.code == ErrorCode.AGENT_ID_INVALID
 
     def test_rejects_reserved_words(self) -> None:
         for reserved in ("api", "API", "Admin", "agents", "EXPERTS"):
-            with pytest.raises(OctopError) as exc:
+            with pytest.raises(HappyclawError) as exc:
                 validate_custom_agent_id(reserved)
             assert exc.value.code == ErrorCode.AGENT_ID_INVALID
 
@@ -73,7 +73,7 @@ class TestCreateWithCustomAgentId:
     async def test_duplicate_custom_id_rejected_before_workspace(self) -> None:
         mgr, sentinel = _make_manager(existing_agent_ids={"taken-id"})
         spec = AgentCreateSpec(name="New", agent_id="taken-id", user_id=1)
-        with pytest.raises(OctopError) as exc:
+        with pytest.raises(HappyclawError) as exc:
             await mgr.create(spec)
         assert exc.value.code == ErrorCode.AGENT_ID_TAKEN
 
@@ -81,7 +81,7 @@ class TestCreateWithCustomAgentId:
     async def test_invalid_custom_id_rejected_before_repo_lookup(self) -> None:
         mgr, _sentinel = _make_manager(existing_agent_ids=set())
         spec = AgentCreateSpec(name="New", agent_id="bad id!", user_id=1)
-        with pytest.raises(OctopError) as exc:
+        with pytest.raises(HappyclawError) as exc:
             await mgr.create(spec)
         assert exc.value.code == ErrorCode.AGENT_ID_INVALID
 

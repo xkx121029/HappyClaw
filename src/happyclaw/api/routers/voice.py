@@ -30,7 +30,7 @@ from happyclaw.api.deps import (
     resolve_user_from_token,
 )
 from happyclaw.i18n.domains.voice import realtime_error_message
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.locale import Locale, normalize_locale, resolve_request_locale
 from happyclaw.infra.voice import realtime
 from happyclaw.infra.voice.manager import VoiceManager
@@ -154,7 +154,7 @@ async def transcribe_audio(
 ) -> dict[str, Any]:
     data = await audio.read()
     if not data:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "audio file is empty")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "audio file is empty")
     mime = audio.content_type or "audio/webm"
     result = await _voice_manager(server).transcribe(
         data,
@@ -203,7 +203,7 @@ async def _ws_error(
     message = (
         realtime_error_message(tencent_code, locale)
         if tencent_code is not None
-        else OctopError(code, "").localized_message(locale)
+        else HappyclawError(code, "").localized_message(locale)
     )
     await _ws_send_json(
         websocket,
@@ -269,7 +269,7 @@ async def stream_transcription(
     # Single-user mode: token optional; the resolver returns the local owner.
     try:
         resolve_user_from_token(server, token or "")
-    except OctopError as exc:
+    except HappyclawError as exc:
         await websocket.close(code=4001, reason=f"auth failed: {exc.code.value}")
         return
 
@@ -287,7 +287,7 @@ async def stream_transcription(
     try:
         try:
             await session.connect()
-        except OctopError as exc:
+        except HappyclawError as exc:
             tencent_code = exc.details.get("tencent_code")
             await _ws_error(
                 websocket,
@@ -346,7 +346,7 @@ async def admin_create_voice_provider(
 ) -> dict[str, Any]:
     repo = server.services.voice_provider_repo
     if repo.get_by_name(body.name):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PROVIDER_NAME_TAKEN, f"voice provider {body.name!r} already exists"
         )
     pid = repo.create(
@@ -373,7 +373,7 @@ async def admin_patch_voice_provider(
     repo = server.services.voice_provider_repo
     row = repo.get(provider_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "voice provider not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "voice provider not found")
     repo.update(
         provider_id,
         kind=body.kind,
@@ -398,10 +398,10 @@ async def admin_delete_voice_provider(
     repo = server.services.voice_provider_repo
     row = repo.get(provider_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "voice provider not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "voice provider not found")
     active = _voice_manager(server).get_active()
     if row.name in {active["stt"], active["tts"]}:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PROVIDER_REFERENCED,
             f"voice provider {row.name!r} is currently active",
         )

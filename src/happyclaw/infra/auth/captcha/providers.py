@@ -10,7 +10,7 @@ Four layers (execution lives in ``happyclaw.infra.auth.captcha.verify``):
    ``success == true`` verdict, shared by turnstile/hcaptcha/recaptcha-v2;
    those vendors differ only by ``siteverify_url``.
 3. Execution — ``verify.ensure_captcha``: the only layer with outbound I/O
-   (timeout, error -> ``OctopError`` mapping, ``set_test_siteverify_url``
+   (timeout, error -> ``HappyclawError`` mapping, ``set_test_siteverify_url``
    test seam). Providers stay pure.
 4. Registry — ``register`` / ``get_provider`` / ``list_providers`` /
    ``parse_slug`` with aliases and the ``listed`` flag: unlisted providers
@@ -41,7 +41,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.tencent_sign import tc3_headers
 
 logger = logging.getLogger(__name__)
@@ -89,8 +89,8 @@ class CaptchaProvider(Protocol):
     def interpret(self, body: dict[str, Any], *, min_score: float) -> None: ...
 
 
-def _failed() -> OctopError:
-    return OctopError(
+def _failed() -> HappyclawError:
+    return HappyclawError(
         ErrorCode.CAPTCHA_FAILED,
         "Captcha verification failed. Try again.",
     )

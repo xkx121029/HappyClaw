@@ -14,7 +14,7 @@ from happyclaw.infra.agents.workspace.dir import (
     agent_facing_workspace_root,
     join_agent_facing,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.media.constants import INBOUND_DIR
 
 if TYPE_CHECKING:
@@ -351,7 +351,7 @@ def validate_inbound_size(data: bytes, *, max_bytes: int | None = None) -> None:
     limit = MAX_INBOUND_BYTES if max_bytes is None else max_bytes
     if len(data) > limit:
         max_mb = max(1, limit // (1024 * 1024))
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.ATTACHMENT_TOO_LARGE,
             f"file too large (max {max_mb}MB)",
             details={"max_mb": max_mb},
@@ -382,7 +382,7 @@ def validate_inbound_media_type(media_type: str, filename: str = "") -> str:
     if canonical == _OCTET_STREAM:
         return canonical
     reason = f"unsupported media type {normalized_type!r}"
-    raise OctopError(ErrorCode.ATTACHMENT_UNSUPPORTED_TYPE, reason, details={"reason": reason})
+    raise HappyclawError(ErrorCode.ATTACHMENT_UNSUPPORTED_TYPE, reason, details={"reason": reason})
 
 
 def sanitize_inbound_filename(filename: str) -> str:
@@ -422,7 +422,7 @@ async def _unique_inbound_path(workspace: BackendWorkspace, stored_name: str) ->
         alt = f"{INBOUND_DIR}/{stem}-{index}{suffix}"
         if not await workspace.aexists(alt):
             return alt
-    raise OctopError(ErrorCode.INTERNAL_ERROR, f"cannot allocate unique path for {stored_name!r}")
+    raise HappyclawError(ErrorCode.INTERNAL_ERROR, f"cannot allocate unique path for {stored_name!r}")
 
 
 async def write_inbound(
@@ -455,7 +455,7 @@ async def read_inbound_bytes(workspace: BackendWorkspace, path: str) -> bytes:
     rel = inbound_rel_path(path)
     data = await workspace.adownload_bytes(rel)
     if data is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"inbound file {rel!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"inbound file {rel!r} not found")
     return data
 
 

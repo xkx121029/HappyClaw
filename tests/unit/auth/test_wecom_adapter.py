@@ -8,7 +8,7 @@ import httpx
 import jwt
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.auth.sso.crypto import encrypt_secret
 from happyclaw.infra.auth.sso.providers.wecom import WeComAdapter
 from happyclaw.infra.auth.sso.service import SsoService
@@ -25,7 +25,7 @@ def service(tmp_path):
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     return SsoService(services, UserManager(services))
 
 

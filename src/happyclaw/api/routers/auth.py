@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, File, Response, UploadFile
 from pydantic import BaseModel, Field
 
 from happyclaw.api.deps import current_user, get_server
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.locale import normalize_locale
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ async def me(
 @router.post("/change-password", status_code=400, summary="Change password")
 async def change_password(body: ChangePasswordBody) -> Response:  # noqa: ARG001
     """Passwords are not part of the single-user model."""
-    raise OctopError(
+    raise HappyclawError(
         ErrorCode.SINGLE_USER_UNSUPPORTED,
         "single-user mode has no password",
     )

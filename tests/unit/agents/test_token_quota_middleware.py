@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 
 from happyclaw.infra.agents.middleware.token_quota import TokenQuotaMiddleware
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def test_token_quota_middleware_rejects_exhausted_user(
@@ -24,7 +24,7 @@ def test_token_quota_middleware_rejects_exhausted_user(
     )
 
     middleware = TokenQuotaMiddleware(policy_repo=policies, usage_repo=usage)
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         middleware.before_agent({}, None)
 
     assert exc.value.code is ErrorCode.TOKEN_QUOTA_EXCEEDED
@@ -64,7 +64,7 @@ async def test_token_quota_middleware_async_hook_rejects(
     )
 
     middleware = TokenQuotaMiddleware(policy_repo=policies, usage_repo=usage)
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await middleware.abefore_agent({}, None)
 
     assert exc.value.code is ErrorCode.TOKEN_QUOTA_EXCEEDED

@@ -1,8 +1,8 @@
 """Guard: importing the i18n domains package must not pull in LangChain.
 
-``octop.i18n.domains`` used to eagerly import every domain, including
+``happyclaw.i18n.domains`` used to eagerly import every domain, including
 ``domains.stream`` whose top level imports ``langchain_core``.  That made any
-error-handling / CLI path (e.g. ``from happyclaw.infra.errors import OctopError``)
+error-handling / CLI path (e.g. ``from happyclaw.infra.errors import HappyclawError``)
 drag in the whole LangChain import tree.  Exports are now PEP 562 lazy.
 
 These guards run in fresh interpreters so ``sys.modules`` reflects only what
@@ -56,7 +56,7 @@ def test_errors_and_cli_run_import_are_lightweight() -> None:
     out = _run(
         """
 import sys
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 import happyclaw.cli.commands.run
 print("LANGCHAIN_LOADED=" + str("langchain_core" in sys.modules))
 """

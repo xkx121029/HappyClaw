@@ -10,7 +10,7 @@ import pytest
 from starlette.datastructures import Headers, UploadFile
 from starlette.requests import Request
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def _request() -> Request:
@@ -77,7 +77,7 @@ async def test_enabling_without_model_maps_prerequisite_error(
 
     monkeypatch.setattr(knowledge_bases, "set_feature_enabled", fail)
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.put_feature(
             knowledge_bases.FeatureBody(enabled=True),
             request=_request(),
@@ -161,7 +161,7 @@ async def test_create_base_maps_disabled_feature_error(monkeypatch: pytest.Monke
 
     monkeypatch.setattr(knowledge_bases, "assert_knowledge_usable", fail)
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.create_base(
             knowledge_bases.CreateBaseBody(name="Docs"),
             request=_request(),
@@ -326,7 +326,7 @@ async def test_download_document_file_missing_maps_not_found(
     user = SimpleNamespace(id=1, is_admin=False)
     monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _server: service)
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.download_document_file(
             "kb-1",
             "doc-1",
@@ -642,8 +642,8 @@ async def test_move_document_passes_the_target_and_returns_the_row(
     [
         (LookupError("knowledge folder not found"), ErrorCode.KNOWLEDGE_NOT_FOUND),
         (PermissionError("write access required"), ErrorCode.KNOWLEDGE_FORBIDDEN),
-        (OctopError(ErrorCode.KNOWLEDGE_MOVE_INVALID, "x"), ErrorCode.KNOWLEDGE_MOVE_INVALID),
-        (OctopError(ErrorCode.KNOWLEDGE_MOVE_NAME_TAKEN, "x"), ErrorCode.KNOWLEDGE_MOVE_NAME_TAKEN),
+        (HappyclawError(ErrorCode.KNOWLEDGE_MOVE_INVALID, "x"), ErrorCode.KNOWLEDGE_MOVE_INVALID),
+        (HappyclawError(ErrorCode.KNOWLEDGE_MOVE_NAME_TAKEN, "x"), ErrorCode.KNOWLEDGE_MOVE_NAME_TAKEN),
     ],
 )
 async def test_move_document_maps_errors(
@@ -656,7 +656,7 @@ async def test_move_document_maps_errors(
 
     monkeypatch.setattr(knowledge_bases, "_knowledge_service", fail)
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.move_document(
             kb_id="kb-1",
             doc_id="doc-1",
@@ -680,7 +680,7 @@ async def test_rename_document_maps_not_found(
 
     monkeypatch.setattr(knowledge_bases, "_knowledge_service", fail)
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.rename_document(
             kb_id="kb-1",
             doc_id="doc-1",
@@ -704,7 +704,7 @@ async def test_rename_document_maps_name_taken(
 
     monkeypatch.setattr(knowledge_bases, "_knowledge_service", fail)
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.rename_document(
             kb_id="kb-1",
             doc_id="doc-1",
@@ -728,7 +728,7 @@ async def test_rename_document_maps_invalid_name(
 
     monkeypatch.setattr(knowledge_bases, "_knowledge_service", fail)
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.rename_document(
             kb_id="kb-1",
             doc_id="doc-1",

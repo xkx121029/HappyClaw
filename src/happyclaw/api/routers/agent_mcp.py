@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from happyclaw.api.deps import current_user, get_server
 from happyclaw.infra.agent_mcp.protocol import handle_agent_mcp_request
 from happyclaw.infra.agent_mcp.service import AgentMcpGatewayService
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 router = APIRouter()
 
@@ -23,7 +23,7 @@ MCP_PROTOCOL_HEADER = "mcp-protocol-version"
 
 def _service(server: Any) -> AgentMcpGatewayService:
     if server.app_runtime is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "server runtime is not ready")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "server runtime is not ready")
     return AgentMcpGatewayService(
         agent_manager=server.app_runtime.agent_registry,
         gateway=server.app_runtime.gateway,
@@ -40,9 +40,9 @@ async def agent_mcp_post(
     try:
         body = await request.json()
     except (json.JSONDecodeError, ValueError) as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid JSON body") from exc
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid JSON body") from exc
     if not isinstance(body, dict):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "expected JSON object")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "expected JSON object")
 
     method = str(body.get("method") or "")
     if method == "notifications/initialized":

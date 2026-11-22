@@ -381,10 +381,10 @@ async def test_apply_workspace_quick_prompts_refuses_invalid_json() -> None:
         WORKSPACE_MANIFEST_PATH,
         apply_workspace_quick_prompts,
     )
-    from happyclaw.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     workspace = _MemWorkspace({WORKSPACE_MANIFEST_PATH: "{not-json"})
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await apply_workspace_quick_prompts(workspace, [])
     assert exc.value.code is ErrorCode.SLASH_BAD_ARGS
 

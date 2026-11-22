@@ -19,8 +19,8 @@ from happyclaw.infra.agents.settings.tool_catalog import (
     normalize_tools_disabled,
 )
 from happyclaw.infra.agents.teams import HOST_TOOLS_ALLOWED, is_team_agent
-from happyclaw.infra.errors import ErrorCode, OctopError
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.server import HappyclawServer
 from happyclaw.infra.utils.locale import resolve_request_locale
 
 router = APIRouter(prefix="/agents", tags=["agents"])
@@ -64,10 +64,10 @@ class ToolSettingPatchBody(BaseModel):
     plugin_id: str | None = None
 
 
-def _plugin_manager(server: OctopServer) -> Any:
+def _plugin_manager(server: HappyclawServer) -> Any:
     mgr = server.plugin_manager
     if mgr is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "plugin manager not initialized")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "plugin manager not initialized")
     return mgr
 
 
@@ -103,7 +103,7 @@ def _plugin_tool_label(
 
 
 def _list_plugin_tool_items(
-    server: OctopServer,
+    server: HappyclawServer,
     agent_cfg: dict[str, Any],
     *,
     locale: str,
@@ -163,13 +163,13 @@ def _list_plugin_tool_items(
 async def get_tool_settings(
     agent_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: Any = Depends(require_permission("tools")),
 ) -> ToolSettingsResponse:
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
 
     locale = resolve_request_locale(request)
@@ -218,13 +218,13 @@ async def put_tool_settings(
     agent_id: str,
     body: ToolSettingsPutBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: Any = Depends(require_permission("tools")),
 ) -> ToolSettingsResponse:
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
 
     if is_team_agent(row):
@@ -254,13 +254,13 @@ async def patch_tool_setting(
     tool_name: str,
     body: ToolSettingPatchBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: Any = Depends(require_permission("tools")),
 ) -> ToolSettingsResponse:
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
 
     name = tool_name.strip()

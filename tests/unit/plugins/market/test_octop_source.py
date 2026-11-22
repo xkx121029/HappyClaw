@@ -9,7 +9,7 @@ import pytest
 from happyclaw.infra.plugins.market import (
     ChecksumMismatchError,
     IndexUnusableError,
-    OctopSource,
+    HappyclawSource,
 )
 from happyclaw.infra.plugins.market.digest import sha256_bytes
 from happyclaw.infra.plugins.market.errors import PayloadError
@@ -23,7 +23,7 @@ from .conftest import make_zip, octop_package
 
 
 def test_fetch_index_normalizes_portal_rows(portal_items):
-    source = OctopSource(loader=lambda: portal_items)
+    source = HappyclawSource(loader=lambda: portal_items)
     entries = source.fetch_index()
 
     assert [entry.plugin_id for entry in entries] == ["octop:weather", "octop:demo-skill"]
@@ -42,7 +42,7 @@ def test_fetch_index_normalizes_portal_rows(portal_items):
 
 
 def test_fetch_index_honours_language(portal_items):
-    source = OctopSource(loader=lambda: portal_items, language="en")
+    source = HappyclawSource(loader=lambda: portal_items, language="en")
     assert source.fetch_index()[0].name == "Weather"
 
 
@@ -57,7 +57,7 @@ def _item(*requires: str) -> dict:
 
 
 def test_requires_accepts_prefixed_ids_with_optional_constraints():
-    source = OctopSource(
+    source = HappyclawSource(
         loader=lambda: [_item("octop:mkt-auth", "octop:mkt-data>=1.0.0", "dsh:weather<3")]
     )
 
@@ -71,7 +71,7 @@ def test_requires_accepts_prefixed_ids_with_optional_constraints():
 
 
 def test_one_bad_row_does_not_hide_the_rest(portal_items):
-    source = OctopSource(loader=lambda: portal_items)
+    source = HappyclawSource(loader=lambda: portal_items)
 
     entries = source.fetch_index()
 
@@ -90,7 +90,7 @@ def test_all_rows_rejected_fails_with_readable_diagnostics():
     bad_constraint = _item("octop:mkt-base>>>1")
 
     with pytest.raises(IndexUnusableError) as excinfo:
-        OctopSource(loader=lambda: [bare_name, bad_constraint]).fetch_index()
+        HappyclawSource(loader=lambda: [bare_name, bad_constraint]).fetch_index()
 
     error = excinfo.value
     assert error.code.value == "PLUGIN_INDEX_UNUSABLE"
@@ -103,7 +103,7 @@ def test_all_rows_rejected_fails_with_readable_diagnostics():
 
 
 def test_broken_index_structure_fails_with_a_reason():
-    source = OctopSource(loader=lambda: {"items": []})  # type: ignore[arg-type,return-value]
+    source = HappyclawSource(loader=lambda: {"items": []})  # type: ignore[arg-type,return-value]
 
     with pytest.raises(IndexUnusableError) as excinfo:
         source.fetch_index()
@@ -113,7 +113,7 @@ def test_broken_index_structure_fails_with_a_reason():
 
 def test_diagnostics_lists_rejected_rows_with_fix_suggestions(portal_items):
     bare_name = _item("httpx>=0.27")
-    source = OctopSource(loader=lambda: [*portal_items, bare_name])
+    source = HappyclawSource(loader=lambda: [*portal_items, bare_name])
     source.fetch_index()
 
     report = source.diagnostics()
@@ -127,7 +127,7 @@ def test_diagnostics_lists_rejected_rows_with_fix_suggestions(portal_items):
 
 def test_install_extracts_package_and_verifies(tmp_path, portal_items):
     data = octop_package()
-    source = OctopSource(loader=lambda: portal_items, transport=lambda url: data)
+    source = HappyclawSource(loader=lambda: portal_items, transport=lambda url: data)
     entry = source.fetch_index()[0]
     release = entry.release()
     release = replace(release, artifact=replace(release.artifact, sha256=sha256_bytes(data)))
@@ -145,7 +145,7 @@ def test_install_extracts_package_and_verifies(tmp_path, portal_items):
 
 def test_install_rejects_checksum_mismatch(tmp_path, portal_items):
     data = octop_package()
-    source = OctopSource(loader=lambda: portal_items, transport=lambda url: data)
+    source = HappyclawSource(loader=lambda: portal_items, transport=lambda url: data)
     entry = source.fetch_index()[0]
     release = replace(entry.release(), artifact=replace(entry.release().artifact, sha256="0" * 64))
 
@@ -162,7 +162,7 @@ def test_install_rejects_manifest_identity_mismatch(tmp_path, portal_items):
             "main.py": "print('x')\n",
         }
     )
-    source = OctopSource(loader=lambda: portal_items, transport=lambda url: data)
+    source = HappyclawSource(loader=lambda: portal_items, transport=lambda url: data)
     entry = source.fetch_index()[0]
 
     with pytest.raises(PayloadError):

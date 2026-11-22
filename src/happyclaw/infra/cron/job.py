@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from happyclaw.infra.cron.delivery import CronDeliveryCommand
 from happyclaw.infra.cron.task_type import normalize_cron_task_type
 from happyclaw.infra.db.repos.audit import ACTOR_SYSTEM
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 if TYPE_CHECKING:
     from happyclaw.infra.cron.delivery import CronDeliveryService
@@ -170,7 +170,7 @@ class CronJob:
     def _lost(self, *, raise_on_error: bool) -> None:
         logger.warning("cron job %s lost its run lease before recording the result", self._cron_id)
         if raise_on_error:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CRON_ALREADY_RUNNING,
                 f"cron job {self._cron_id!r} lost its run lease",
             )

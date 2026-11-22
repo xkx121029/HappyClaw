@@ -25,7 +25,7 @@ from happyclaw.api.deps import current_user, get_server
 from happyclaw.infra.backend.mention_index import collect_mention_paths
 from happyclaw.infra.backend.tree_listing import dedupe_tree_rows
 from happyclaw.infra.backup.workspace_archive import export_workspace_zip, import_workspace_zip
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.media.backend_files import (
     backend_workspace_path,
     is_allowed_host_download_abs_path,
@@ -43,7 +43,7 @@ def _assert_workspace_mutable(path: str) -> str:
     """Mutating ops always treat paths as workspace-relative (``from_workspace=true``)."""
     rel = _workspace_io_path(path, from_workspace=True)
     if rel == ".":
-        raise OctopError(ErrorCode.FORBIDDEN, "cannot modify workspace root")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "cannot modify workspace root")
     posix = rel.replace("\\", "/").strip("/")
     if (
         posix == _PROTECTED_PREFIX
@@ -51,29 +51,29 @@ def _assert_workspace_mutable(path: str) -> str:
         or posix == f".octop/{_PROTECTED_PREFIX}"
         or posix.startswith(f".octop/{_PROTECTED_PREFIX}/")
     ):
-        raise OctopError(ErrorCode.FORBIDDEN, f"cannot modify {_PROTECTED_PREFIX!r} paths")
+        raise HappyclawError(ErrorCode.FORBIDDEN, f"cannot modify {_PROTECTED_PREFIX!r} paths")
     return rel
 
 
-def _map_workspace_fs_error(exc: Exception, *, operation: str, path: str) -> OctopError:
+def _map_workspace_fs_error(exc: Exception, *, operation: str, path: str) -> HappyclawError:
     if isinstance(exc, BackendOperationNotSupportedError):
-        return OctopError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc))
+        return HappyclawError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc))
     if isinstance(exc, FileNotFoundError):
-        return OctopError(ErrorCode.NOT_FOUND, f"cannot {operation} {path!r}: not found")
+        return HappyclawError(ErrorCode.NOT_FOUND, f"cannot {operation} {path!r}: not found")
     if isinstance(exc, FileExistsError):
-        return OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc))
+        return HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc))
     if isinstance(exc, PermissionError):
-        return OctopError(ErrorCode.FORBIDDEN, str(exc))
+        return HappyclawError(ErrorCode.FORBIDDEN, str(exc))
     if isinstance(exc, ValueError):
-        return OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc))
-    return OctopError(ErrorCode.INTERNAL_ERROR, f"cannot {operation} {path!r}: {exc}")
+        return HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc))
+    return HappyclawError(ErrorCode.INTERNAL_ERROR, f"cannot {operation} {path!r}: {exc}")
 
 
 def _ensure_editable_doc(path: str) -> DocConverter:
     """Return the registered converter for *path* or reject with a 400."""
     converter = get_doc_converter(path)
     if converter is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"unsupported editable document {path!r}",
         )
@@ -101,7 +101,7 @@ def _workspace_io_path(path: str, *, from_workspace: bool = False) -> str:
     if raw.startswith("file://"):
         resolved = backend_workspace_path(raw)
         if resolved is None:
-            raise OctopError(ErrorCode.NOT_FOUND, f"cannot resolve {path!r}")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot resolve {path!r}")
         return resolved
     if from_workspace:
         return workspace_api_path(raw)
@@ -135,7 +135,7 @@ async def list_tree(
     io_path = _workspace_io_path(path, from_workspace=from_workspace)
     result = await ws.als(io_path)
     if result is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot list {path!r}")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot list {path!r}")
     entries = getattr(result, "entries", None) or []
     rows = [file_info_to_dict(f) for f in entries]
     if not is_host_absolute_path(io_path):
@@ -175,7 +175,7 @@ async def read_file(
     ws = await require_agent_workspace(agent_id, user=user, as_user=as_user, server=server)
     content = await ws.aread_text(_workspace_io_path(path, from_workspace=from_workspace))
     if content is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot read {path!r}")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot read {path!r}")
     return {"path": path, "content": coerce_read_content(content)}
 
 
@@ -202,7 +202,7 @@ async def write_file(
         try:
             data = converter.from_markdown(body.content)
         except Exception as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 f"cannot build document for {path!r}: {exc}",
             ) from exc
@@ -211,7 +211,7 @@ async def write_file(
     try:
         await ws.aupload_bytes(_workspace_io_path(path, from_workspace=from_workspace), data)
     except Exception as exc:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot write {path!r}: {exc}") from exc
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot write {path!r}: {exc}") from exc
     return {"path": path, "size": len(data)}
 
 
@@ -332,7 +332,7 @@ async def upload_file(
             data,
         )
     except Exception as exc:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot upload to {target!r}: {exc}") from exc
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot upload to {target!r}: {exc}") from exc
     return {"path": target, "size": len(data)}
 
 
@@ -358,14 +358,14 @@ async def download_file(
         io_path,
         workspace=ws.workspace_dir,
     ):
-        raise OctopError(ErrorCode.FORBIDDEN, f"cannot download {path!r}: path not allowed")
+        raise HappyclawError(ErrorCode.FORBIDDEN, f"cannot download {path!r}: path not allowed")
 
     try:
         file_blob = await ws.adownload_bytes(io_path)
     except PermissionError as exc:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot download {path!r}") from exc
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot download {path!r}") from exc
     if file_blob is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot download {path!r}") from None
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot download {path!r}") from None
 
     fname = io_path.rsplit("/", 1)[-1] or "download.bin"
     return StreamingResponse(
@@ -391,13 +391,13 @@ async def read_doc(
     try:
         blob = await ws.adownload_bytes(io_path)
     except PermissionError as exc:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot read {path!r}") from exc
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot read {path!r}") from exc
     if blob is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot read {path!r}")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot read {path!r}")
     try:
         content = converter.to_markdown(blob)
     except Exception as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"cannot parse {path!r}: {exc}") from exc
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"cannot parse {path!r}: {exc}") from exc
     return {"path": path, "content": content}
 
 
@@ -422,7 +422,7 @@ async def write_doc(
     try:
         data = converter.from_markdown(body.content)
     except Exception as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"cannot build document for {path!r}: {exc}",
         ) from exc
@@ -456,7 +456,7 @@ async def preview_media(
         mime_hint=mime_type or "",
     )
     if payload is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "preview not available for this source")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "preview not available for this source")
     data, mime = payload
 
     # The source bytes are user-controlled (uploads, tool outputs). Serving them
@@ -516,7 +516,7 @@ async def glob_files(
     if pattern in ("**/*.md", "*.md") and root == ".":
         ls_result = await ws.als(".")
         if ls_result is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "glob failed")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "glob failed")
         entries = getattr(ls_result, "entries", None) or []
         matches = []
         for f in entries:
@@ -529,7 +529,7 @@ async def glob_files(
         return matches
     glob_result = await ws.aglob(pattern, root)
     if glob_result is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "glob failed")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "glob failed")
     matches = getattr(glob_result, "matches", None) or []
     return [file_info_to_dict(item) for item in matches]
 
@@ -549,7 +549,7 @@ async def grep_files(
     )
     result = await ws.agrep(pattern, _workspace_io_path(path, from_workspace=from_workspace))
     if result is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "grep failed")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "grep failed")
     matches = getattr(result, "matches", None) or []
     return [dict(m) for m in matches]
 
@@ -596,9 +596,9 @@ async def import_workspace_archive(
     """Import a zip archive into the workspace (merge or replace)."""
     raw = await file.read()
     if len(raw) > _MAX_WORKSPACE_ARCHIVE_BYTES:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "workspace archive too large (max 200MB)")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "workspace archive too large (max 200MB)")
     if not raw:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "empty archive")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "empty archive")
 
     ws = await require_running_workspace(
         agent_id, user=user, as_user=as_user, server=server, owner_only=True

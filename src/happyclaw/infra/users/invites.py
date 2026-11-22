@@ -14,7 +14,7 @@ from typing import Any
 from happyclaw.infra.db.repos._base import now_ts
 from happyclaw.infra.db.repos.invites import InviteRepo, InviteRow, invite_status_payload
 from happyclaw.infra.db.services import SharedServices
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import Role, User
 from happyclaw.infra.users.password import hash_password, validate_password_policy
 from happyclaw.infra.utils.locale import normalize_locale
@@ -44,7 +44,7 @@ class InviteRateLimiter:
             while bucket and bucket[0] < cutoff:
                 bucket.popleft()
             if len(bucket) >= RATE_LIMIT_BURST:
-                raise OctopError(ErrorCode.INVITE_RATE_LIMITED, "too many invite attempts")
+                raise HappyclawError(ErrorCode.INVITE_RATE_LIMITED, "too many invite attempts")
             bucket.append(self.now())
 
 
@@ -84,7 +84,7 @@ class InviteService:
     ) -> InviteRow:
         days = int(expires_in_days)
         if days < MIN_EXPIRES_DAYS or days > MAX_EXPIRES_DAYS:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN,
                 f"expires_in_days must be between {MIN_EXPIRES_DAYS} and {MAX_EXPIRES_DAYS}",
                 status=400,
@@ -111,7 +111,7 @@ class InviteService:
                     target=code,
                 )
                 return row
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "failed to allocate invite code")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "failed to allocate invite code")
 
     def list_all(self) -> list[dict[str, object]]:
         return [invite_status_payload(row) for row in self._repo.list_all()]
@@ -119,9 +119,9 @@ class InviteService:
     def revoke(self, invite_id: int, *, actor_username: str) -> dict[str, object]:
         before = self._repo.get(invite_id)
         if before is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "invite not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "invite not found")
         if before.status() != "pending":
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.INVITE_INVALID,
                 f"invite cannot be revoked (status={before.status()})",
                 status=409,
@@ -138,17 +138,17 @@ class InviteService:
     def validate(self, code: str) -> dict[str, object]:
         cleaned = (code or "").strip()
         if not cleaned:
-            raise OctopError(ErrorCode.INVITE_INVALID, "invite code required", status=400)
+            raise HappyclawError(ErrorCode.INVITE_INVALID, "invite code required", status=400)
         row = self._repo.get_by_code(cleaned)
         if row is None:
-            raise OctopError(ErrorCode.INVITE_INVALID, "invite not found")
+            raise HappyclawError(ErrorCode.INVITE_INVALID, "invite not found")
         status = row.status()
         if status == "used":
-            raise OctopError(ErrorCode.INVITE_USED, "invite already used")
+            raise HappyclawError(ErrorCode.INVITE_USED, "invite already used")
         if status == "expired":
-            raise OctopError(ErrorCode.INVITE_EXPIRED, "invite expired")
+            raise HappyclawError(ErrorCode.INVITE_EXPIRED, "invite expired")
         if status == "revoked":
-            raise OctopError(ErrorCode.INVITE_REVOKED, "invite revoked")
+            raise HappyclawError(ErrorCode.INVITE_REVOKED, "invite revoked")
         _role_defaults_for_invite(self._services.db, row)
         return {"ok": True, "expires_at": row.expires_at}
 
@@ -168,9 +168,9 @@ class InviteService:
         cleaned_code = (code or "").strip()
         cleaned_username = (username or "").strip()
         if not cleaned_code:
-            raise OctopError(ErrorCode.INVITE_INVALID, "invite code required", status=400)
+            raise HappyclawError(ErrorCode.INVITE_INVALID, "invite code required", status=400)
         if not cleaned_username:
-            raise OctopError(ErrorCode.USERNAME_TAKEN, "username must not be empty", status=400)
+            raise HappyclawError(ErrorCode.USERNAME_TAKEN, "username must not be empty", status=400)
         validate_password_policy(password)
         loc = normalize_locale(locale)
         name = display_name.strip() if isinstance(display_name, str) else None
@@ -195,26 +195,26 @@ class InviteService:
                 role_name=role_name,
             )
         except LookupError as exc:
-            raise OctopError(ErrorCode.INVITE_INVALID, "invite not found") from exc
+            raise HappyclawError(ErrorCode.INVITE_INVALID, "invite not found") from exc
         except ValueError as exc:
             reason = str(exc)
             if reason == "username_taken":
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.USERNAME_TAKEN,
                     f"username {cleaned_username!r} already exists",
                 ) from exc
             if reason == "email_taken":
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.EMAIL_TAKEN,
                     f"email {normalized_email!r} already exists",
                 ) from exc
             if reason == "used":
-                raise OctopError(ErrorCode.INVITE_USED, "invite already used") from exc
+                raise HappyclawError(ErrorCode.INVITE_USED, "invite already used") from exc
             if reason == "expired":
-                raise OctopError(ErrorCode.INVITE_EXPIRED, "invite expired") from exc
+                raise HappyclawError(ErrorCode.INVITE_EXPIRED, "invite expired") from exc
             if reason == "revoked":
-                raise OctopError(ErrorCode.INVITE_REVOKED, "invite revoked") from exc
-            raise OctopError(ErrorCode.INVITE_INVALID, "invite not usable") from exc
+                raise HappyclawError(ErrorCode.INVITE_REVOKED, "invite revoked") from exc
+            raise HappyclawError(ErrorCode.INVITE_INVALID, "invite not usable") from exc
 
         user = User(
             id=user_id,
@@ -259,7 +259,7 @@ def _role_defaults_for_invite(
     else:
         return Role.USER, [], [], None
     if role is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INVITE_ROLE_MISSING,
             "invite role no longer exists",
             status=409,

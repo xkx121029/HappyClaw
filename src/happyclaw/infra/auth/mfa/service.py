@@ -21,7 +21,7 @@ from happyclaw.infra.auth.tokens import (
 )
 from happyclaw.infra.db.repos.auth_challenges import KIND_MFA, KIND_WEBAUTHN_ASSERT
 from happyclaw.infra.db.services import SharedServices
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import User
 
 MfaMethod = Literal["totp", "webauthn", "recovery"]
@@ -88,7 +88,7 @@ class MfaService:
     def mint_access_token(self, user: User) -> tuple[str, int]:
         secret = self._s.secret_repo.get("jwt")
         if secret is None:
-            raise OctopError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
         ttl = int(self._s.config.access_token_ttl_seconds)
         token = sign_token(
             secret,
@@ -106,7 +106,7 @@ class MfaService:
         self._raise_if_mfa_locked(user.id)
         secret = self._s.secret_repo.get("jwt")
         if secret is None:
-            raise OctopError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
         version = self._mfa_version(user.id)
         token = sign_token(
             secret,
@@ -138,17 +138,17 @@ class MfaService:
     def _decode_mfa_token(self, mfa_token: str) -> dict[str, Any]:
         secret = self._s.secret_repo.get("jwt")
         if secret is None:
-            raise OctopError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
         try:
             payload = decode_token(secret, mfa_token)
         except Exception as exc:  # noqa: BLE001
-            raise OctopError(ErrorCode.MFA_INVALID, "invalid MFA token") from exc
+            raise HappyclawError(ErrorCode.MFA_INVALID, "invalid MFA token") from exc
         try:
             purpose = token_purpose(payload)
         except Exception as exc:  # noqa: BLE001
-            raise OctopError(ErrorCode.MFA_INVALID, "invalid MFA token") from exc
+            raise HappyclawError(ErrorCode.MFA_INVALID, "invalid MFA token") from exc
         if purpose != PURPOSE_MFA:
-            raise OctopError(ErrorCode.MFA_INVALID, "invalid MFA token")
+            raise HappyclawError(ErrorCode.MFA_INVALID, "invalid MFA token")
         return payload
 
     def _require_live_mfa_challenge(self, payload: dict[str, Any]) -> tuple[int, str, Any]:
@@ -160,7 +160,7 @@ class MfaService:
         if claim_version != current:
             if jti:
                 self._s.auth_challenge_repo.burn_jti(jti)
-            raise OctopError(ErrorCode.MFA_INVALID, "MFA challenge stale")
+            raise HappyclawError(ErrorCode.MFA_INVALID, "MFA challenge stale")
         row = self._s.auth_challenge_repo.get_by_jti(jti) if jti else None
         if (
             row is None
@@ -169,7 +169,7 @@ class MfaService:
             or row.consumed_at is not None
             or row.expires_at < int(time.time())
         ):
-            raise OctopError(ErrorCode.MFA_INVALID, "invalid MFA challenge")
+            raise HappyclawError(ErrorCode.MFA_INVALID, "invalid MFA challenge")
         return user_id, jti, row
 
     def _fail_mfa(self, user_id: int, challenge_id: int, *, actor: str) -> None:
@@ -183,12 +183,12 @@ class MfaService:
         if retry_after > 0 or (updated is not None and updated.consumed_at is not None):
             if retry_after <= 0:
                 retry_after = MFA_LOCKOUT_SECONDS
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.MFA_LOCKED,
                 "too many MFA attempts",
                 details={"retry_after_seconds": retry_after},
             )
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid MFA code")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid MFA code")
 
     def verify_mfa(
         self,
@@ -204,7 +204,7 @@ class MfaService:
         user_id, jti, challenge = self._require_live_mfa_challenge(payload)
         user = user_manager.get_by_id(user_id)
         if user is None:
-            raise OctopError(ErrorCode.USER_DISABLED, "user not active")
+            raise HappyclawError(ErrorCode.USER_DISABLED, "user not active")
         ok = False
         if method == "totp":
             ok = totp_mod.verify_for_user(
@@ -221,7 +221,7 @@ class MfaService:
                 )
         elif method == "webauthn":
             if credential is None or not origin:
-                raise OctopError(ErrorCode.MFA_INVALID, "passkey assertion required")
+                raise HappyclawError(ErrorCode.MFA_INVALID, "passkey assertion required")
             try:
                 verified_uid, _cred = webauthn_mod.verify_assertion(
                     settings_repo=self._s.settings_repo,
@@ -233,16 +233,16 @@ class MfaService:
                     expected_kinds=(KIND_WEBAUTHN_ASSERT,),
                 )
                 ok = verified_uid == user_id
-            except OctopError:
+            except HappyclawError:
                 self._fail_mfa(user_id, challenge.id, actor=user.username)
                 raise
         else:
-            raise OctopError(ErrorCode.MFA_INVALID, "unknown MFA method")
+            raise HappyclawError(ErrorCode.MFA_INVALID, "unknown MFA method")
         if not ok:
             self._fail_mfa(user_id, challenge.id, actor=user.username)
         consumed = self._s.auth_challenge_repo.try_consume_jti(jti)
         if consumed is None:
-            raise OctopError(ErrorCode.MFA_INVALID, "invalid MFA challenge")
+            raise HappyclawError(ErrorCode.MFA_INVALID, "invalid MFA challenge")
         self._s.user_repo.clear_mfa_throttle(user_id)
         token, ttl = self.mint_access_token(user)
         return {
@@ -274,7 +274,7 @@ class MfaService:
 
     def _require_passwordless_login(self) -> None:
         if not passwordless_login_enabled(self._s.settings_repo):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.WEBAUTHN_LOGIN_DISABLED,
                 "passwordless passkey login is disabled",
             )
@@ -309,9 +309,9 @@ class MfaService:
         )
         row = self._s.user_repo.get(user_id)
         if row is None or row.disabled:
-            raise OctopError(ErrorCode.USER_DISABLED, "user not active")
+            raise HappyclawError(ErrorCode.USER_DISABLED, "user not active")
         if row.password_hash is None:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PASSWORD_NOT_SET,
                 "passwordless passkey requires a local password account",
             )
@@ -319,14 +319,14 @@ class MfaService:
         if int(row.login_locked_until or 0) > int(time.time()):
             retry = int(row.login_locked_until) - int(time.time())
             minutes = max(1, (retry + 59) // 60)
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.LOGIN_LOCKED,
                 "account temporarily locked",
                 details={"retry_after_seconds": retry, "minutes": minutes},
             )
         user = user_manager.get_by_id(user_id)
         if user is None:
-            raise OctopError(ErrorCode.USER_DISABLED, "user not active")
+            raise HappyclawError(ErrorCode.USER_DISABLED, "user not active")
         self._s.audit_repo.write(
             actor=user.username, action="auth.passkey_login", target=str(user_id)
         )
@@ -362,7 +362,7 @@ class MfaService:
         jti = self._require_reauth(user.id, reauth_token)
         ok = totp_mod.confirm_enroll(self._s.user_totp_repo, self._s.secret_repo, user.id, code)
         if not ok:
-            raise OctopError(ErrorCode.MFA_INVALID, "invalid TOTP code")
+            raise HappyclawError(ErrorCode.MFA_INVALID, "invalid TOTP code")
         reauth_mod.burn_reauth_grant(self._s.auth_challenge_repo, jti)
         codes: list[str] | None = None
         if self._s.user_recovery_code_repo.count_unused(user.id) == 0:
@@ -453,7 +453,7 @@ class MfaService:
         jti = self._require_reauth(user.id, reauth_token)
         # Last passkey may be removed (turns off MFA when no other factor remains).
         if not self._s.user_webauthn_repo.delete(user.id, credential_id):
-            raise OctopError(ErrorCode.NOT_FOUND, "passkey not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "passkey not found")
         reauth_mod.burn_reauth_grant(self._s.auth_challenge_repo, jti)
         if not self.has_verified_factor(user.id):
             self._s.user_recovery_code_repo.delete_all_for_user(user.id)
@@ -470,7 +470,7 @@ class MfaService:
     def recovery_regenerate(self, user: User, *, reauth_token: str) -> dict[str, Any]:
         jti = self._require_reauth(user.id, reauth_token)
         if not self.has_verified_factor(user.id):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.MFA_INVALID,
                 "recovery codes require a verified MFA factor",
             )
@@ -510,7 +510,7 @@ class MfaService:
     def _raise_if_mfa_locked(self, user_id: int) -> None:
         retry = self._s.user_repo.mfa_retry_after(user_id)
         if retry > 0:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.MFA_LOCKED,
                 "too many MFA attempts",
                 details={"retry_after_seconds": retry},

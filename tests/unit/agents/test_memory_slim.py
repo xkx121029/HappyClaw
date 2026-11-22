@@ -207,7 +207,7 @@ def test_cli_prints_localized_progress_without_booting_another_host(tmp_path, mo
 @pytest.mark.parametrize("phase", ["backing_up", "deduplicating", "compacting"])
 def test_memory_dashboard_rejects_busy_before_opening_database(phase, monkeypatch):
     from happyclaw.api.common import memory_client
-    from happyclaw.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     monkeypatch.setattr(memory_client, "require_agent_owner_row", lambda *args, **kwargs: None)
     opened = []
@@ -232,7 +232,7 @@ def test_memory_dashboard_rejects_busy_before_opening_database(phase, monkeypatc
         "as_user": None,
         "server": host,
     }
-    with pytest.raises(OctopError) as error:
+    with pytest.raises(HappyclawError) as error:
         memory_client.call_memory_rpc(**kwargs)
     assert error.value.code == ErrorCode.AGENT_BUSY
     assert not opened
@@ -357,7 +357,7 @@ def test_empty_discovery_exits_without_a_prompt(tmp_path, monkeypatch):
 
 
 def test_live_discovery_filters_unavailable_agents_without_opening_memory(tmp_path):
-    from happyclaw.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     coordinator, registry, memory, _, _ = make_manager(tmp_path)
     compatible = registry.get_agent("a")
@@ -367,7 +367,7 @@ def test_live_discovery_filters_unavailable_agents_without_opening_memory(tmp_pa
 
     def get_agent(agent_id):
         if agent_id == "stopped":
-            raise OctopError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
+            raise HappyclawError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
         return compatible if agent_id == "a" else SimpleNamespace()
 
     registry.get_agent = get_agent
@@ -693,7 +693,7 @@ def test_status_api_preserves_manual_terminal_result(phase):
 def test_preview_reports_specific_ineligibility_without_starting(tmp_path, monkeypatch, reason):
     from happyclaw_memory.application import checkpoint_maintenance
 
-    from happyclaw.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     coordinator, registry, memory, _, _ = make_manager(tmp_path)
     chat_registry(registry)
@@ -716,7 +716,7 @@ def test_preview_reports_specific_ineligibility_without_starting(tmp_path, monke
         elif reason == "stopped":
 
             def stopped(_):
-                raise OctopError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
+                raise HappyclawError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
 
             registry.get_agent = stopped
             expected = "尚未启动"

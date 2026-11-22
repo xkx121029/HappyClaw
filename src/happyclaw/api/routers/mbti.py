@@ -21,7 +21,7 @@ from happyclaw.infra.agents.persona.mbti_profiles import (
     get_all_profiles,
     get_profile,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ def _resolve_agent_row(server: Any, user: Any, agent_id: str) -> Any:
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id} not found")
     assert_agent_owner(row, user)
     return row
 

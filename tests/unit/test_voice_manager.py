@@ -11,7 +11,7 @@ from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.settings import SettingsRepo
 from happyclaw.infra.db.repos.voice_providers import VoiceProviderRepo, VoiceProviderRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.tencent_asr_sign import DEFAULT_ENGINE
 from happyclaw.infra.voice import adapters
 from happyclaw.infra.voice.manager import VoiceManager
@@ -65,21 +65,21 @@ def test_set_active_edge_tts_only(voice_mgr: VoiceManager) -> None:
 
 
 def test_edge_cannot_be_stt(voice_mgr: VoiceManager) -> None:
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         voice_mgr.set_active(stt="edge")
     assert exc.value.code == ErrorCode.VOICE_CAPABILITY_MISMATCH
 
 
 @pytest.mark.asyncio
 async def test_transcribe_browser_raises_browser_only(voice_mgr: VoiceManager) -> None:
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await voice_mgr.transcribe(b"audio", mime="audio/webm")
     assert exc.value.code == ErrorCode.VOICE_BROWSER_ONLY
 
 
 @pytest.mark.asyncio
 async def test_synthesize_browser_raises_browser_only(voice_mgr: VoiceManager) -> None:
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         chunks = [c async for c in voice_mgr.synthesize("hello")]
         assert not chunks
     assert exc.value.code == ErrorCode.VOICE_BROWSER_ONLY

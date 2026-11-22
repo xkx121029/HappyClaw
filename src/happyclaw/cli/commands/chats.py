@@ -136,13 +136,13 @@ def get_chat(thread_id: str, agent_id: str | None, as_user: str | None, limit: i
     """Show message history for a thread."""
     from happyclaw.cli.support.embedded_ops import fetch_thread_history
     from happyclaw.cli.support.offline_ops import resolve_cron_user_id
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     aid = require_agent(agent_id)
     try:
         resolve_cron_user_id(aid, as_user)
         data = fetch_thread_history(aid, thread_id, limit=limit)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(_json.dumps(data, indent=2, default=str))
 
@@ -153,13 +153,13 @@ def get_chat(thread_id: str, agent_id: str | None, as_user: str | None, limit: i
 def create_chat(agent_id: str | None, as_user: str | None) -> None:
     """Start a new thread (/new equivalent)."""
     from happyclaw.cli.support.offline_ops import create_thread_offline, resolve_cron_user_id
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     aid = require_agent(agent_id)
     try:
         uid = resolve_cron_user_id(aid, as_user)
         data = create_thread_offline(agent_id=aid, user_id=uid)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(_json.dumps(data, indent=2))
 
@@ -182,12 +182,12 @@ def update_chat(
         raise click.ClickException("pass --title and/or --pinned/--unpinned")
     aid = require_agent(agent_id)
     from happyclaw.cli.support.offline_ops import resolve_cron_user_id, update_thread_offline
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     try:
         resolve_cron_user_id(aid, as_user)
         data = update_thread_offline(aid, thread_id, title=title, pinned=pinned)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(_json.dumps(data, indent=2))
 
@@ -200,7 +200,7 @@ def update_chat(
 def delete_chat(thread_id: str, agent_id: str | None, as_user: str | None, yes: bool) -> None:
     """Delete a thread."""
     from happyclaw.cli.support.offline_ops import delete_thread_offline, resolve_cron_user_id
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     if not yes:
         click.confirm(f"Really delete thread {thread_id}?", abort=True)
@@ -208,7 +208,7 @@ def delete_chat(thread_id: str, agent_id: str | None, as_user: str | None, yes: 
     try:
         resolve_cron_user_id(aid, as_user)
         delete_thread_offline(aid, thread_id)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo("deleted")
 
@@ -224,12 +224,12 @@ def gc_orphans(agent_id: str | None, yes: bool) -> None:
     """
     from happyclaw.cli.support.db import open_cli_services
     from happyclaw.infra.agents.memory.thread_cleanup import gc_orphan_checkpoints
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     try:
         with open_cli_services(None) as svc:
             orphans = gc_orphan_checkpoints(svc, agent_id=agent_id, apply=yes)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     payload = [
         {"agent_id": item.agent_id, "thread_id": item.thread_id, "bytes": item.nbytes}

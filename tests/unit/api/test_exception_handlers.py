@@ -1,4 +1,4 @@
-"""Exception handlers log server-side OctopError details."""
+"""Exception handlers log server-side HappyclawError details."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ import pytest
 from tests.support.app import ensure_control_plane_bound, write_octop_config
 
 from happyclaw.api.app import build_app
-from happyclaw.infra.errors import ErrorCode, OctopError
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.server import HappyclawServer
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ async def client(tmp_path: Path):
     # Disable dashboard so SPA ``/{full_path:path}`` is not mounted; otherwise
     # routes registered after build_app never match (first-match-wins).
     write_octop_config(tmp_path, enable_dashboard=False)
-    srv = OctopServer(home=tmp_path)
+    srv = HappyclawServer(home=tmp_path)
     await srv.start()
     await ensure_control_plane_bound(srv)
     app = build_app(srv)
@@ -27,11 +27,11 @@ async def client(tmp_path: Path):
     # Outside /api so JWT middleware does not intercept.
     @app.get("/_test/octop-500")
     async def _boom() -> None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
 
     @app.get("/_test/octop-401")
     async def _auth() -> None:
-        raise OctopError(ErrorCode.AUTH_FAILED, "missing credentials")
+        raise HappyclawError(ErrorCode.AUTH_FAILED, "missing credentials")
 
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://testserver"

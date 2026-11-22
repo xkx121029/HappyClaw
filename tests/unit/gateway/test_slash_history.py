@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentManager
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
@@ -32,7 +32,7 @@ def test_format_unix_datetime_uses_server_timezone() -> None:
 
 
 def _agent_manager(tmp_path: Path, db: SqlitePool) -> AgentManager:
-    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
     manager = AgentManager(repos=services.repos, paths=services.paths, config=services.config)
     manager._harness_manager = MagicMock()
     return manager

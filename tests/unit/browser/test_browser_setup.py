@@ -174,10 +174,10 @@ def test_temp_scope_token_uses_username_when_getuid_missing(
     # Real Windows has no os.getuid — setattr(raising=True) would raise.
     if hasattr(browser_setup.os, "getuid"):
         monkeypatch.setattr(browser_setup.os, "getuid", object())
-    monkeypatch.setenv("USERNAME", "OctopUser")
+    monkeypatch.setenv("USERNAME", "HappyclawUser")
     monkeypatch.delenv("USER", raising=False)
 
-    assert _temp_scope_token() == "OctopUser"
+    assert _temp_scope_token() == "HappyclawUser"
     assert _temp_scope_token(uid=3) == "3"
 
 

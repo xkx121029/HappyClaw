@@ -14,7 +14,7 @@ from happyclaw.infra.auth.captcha.providers import get_provider, list_providers,
 from happyclaw.infra.auth.sso.crypto import decrypt_secret, encrypt_secret
 from happyclaw.infra.db.repos.secrets import SecretRepo
 from happyclaw.infra.db.repos.settings import SettingsRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 SETTINGS_KEY = "captcha.settings"
 logger = logging.getLogger(__name__)
@@ -304,22 +304,22 @@ def save_settings(
         try:
             blob["active"] = parse_slug(raw_active) if raw_active else "slider"
         except ValueError as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
 
     incoming = patch.get("providers")
     if incoming is not None:
         if not isinstance(incoming, dict):
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "providers must be an object")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "providers must be an object")
         for raw_slug, pair in incoming.items():
             try:
                 slug = parse_slug(str(raw_slug))
             except ValueError as exc:
-                raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+                raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
             if pair is None:
                 providers.pop(slug, None)
                 continue
             if not isinstance(pair, dict):
-                raise OctopError(ErrorCode.SLASH_BAD_ARGS, "provider pair must be an object")
+                raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "provider pair must be an object")
             existing = providers.get(slug)
             row = dict(existing) if isinstance(existing, dict) else {}
             if "site_key" in pair and pair["site_key"] is not None:
@@ -341,13 +341,13 @@ def save_settings(
     try:
         active = parse_slug(raw_active) if raw_active else "slider"
     except ValueError as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
     blob["active"] = active
     provider = get_provider(active)
     if provider is not None and provider.requires_token:
         stored = _pair_from_blob(blob, secret_repo, active)
         if stored is None and not (env.provider == active and env.pair_complete):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 "strong captcha provider needs a complete site key and secret",
             )

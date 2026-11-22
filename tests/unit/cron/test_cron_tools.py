@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from langgraph.config import var_child_runnable_config
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.cron.delivery import CronDeliveryService
 from happyclaw.infra.cron.manager import CronManager
 from happyclaw.infra.cron.tools import build_cronjob_tools
@@ -34,7 +34,7 @@ def _configurable(**kwargs: object):
 def _make_services(tmp_path: Path):
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
 
 
 def _make_manager(services) -> CronManager:

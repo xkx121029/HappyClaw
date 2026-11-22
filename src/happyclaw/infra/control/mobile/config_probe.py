@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from happyclaw.config import OctopConfig, load_config
+from happyclaw.config import HappyclawConfig, load_config
 from happyclaw.infra.control.mobile.probe import MobileProbeResult, probe_host_capability
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def persist_mobile_probe(
     return probe
 
 
-def ensure_mobile_capabilities_probed(config_path: Path) -> OctopConfig:
+def ensure_mobile_capabilities_probed(config_path: Path) -> HappyclawConfig:
     """Probe once when ``capabilities.mobile.probed_at`` is missing, then reload config."""
     cfg = load_config(config_path)
     if cfg.capabilities.mobile.probed_at:

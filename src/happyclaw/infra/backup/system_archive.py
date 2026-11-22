@@ -43,7 +43,7 @@ from happyclaw.infra.db.migrate import _current_version, _max_discovered_version
 from happyclaw.infra.db.pool import DatabasePool, SqlitePool
 from happyclaw.infra.db.repos.agents import AgentRepo
 from happyclaw.infra.db.repos.secrets import SecretRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.env_file import env_file_path
 from happyclaw.infra.utils.paths import PathLayout
 
@@ -217,9 +217,9 @@ def create_system_backup(
         database_driver = "sqlite"
         database_dump_format = "sqlite_file"
         if not isinstance(pool, SqlitePool):
-            raise OctopError(ErrorCode.INTERNAL_ERROR, "sqlite backup requires SqlitePool")
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, "sqlite backup requires SqlitePool")
         if not pool.path.is_file():
-            raise OctopError(ErrorCode.NOT_FOUND, f"database not found: {pool.path}")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"database not found: {pool.path}")
 
     env_path = env_file_path(paths.root)
     manifest = _build_manifest(
@@ -338,13 +338,13 @@ def create_system_backup(
 def _extract_manifest_from_dir(extracted: Path) -> BackupManifest:
     manifest_path = extracted / _MANIFEST_NAME
     if not manifest_path.is_file():
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "backup archive missing manifest.json")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "backup archive missing manifest.json")
     try:
         manifest = BackupManifest.load_text(manifest_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, ValueError, TypeError, OSError) as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid manifest: {exc}") from exc
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid manifest: {exc}") from exc
     if manifest.manifest_version != MANIFEST_VERSION:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"unsupported manifest version {manifest.manifest_version}",
         )
@@ -360,7 +360,7 @@ def _extract_archive(source: Path | bytes, dest_dir: Path) -> None:
             tf.extractall(dest_dir, filter=tarfile.data_filter)
         return
     if not Path(source).is_file():
-        raise OctopError(ErrorCode.NOT_FOUND, f"backup not found: {source}")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"backup not found: {source}")
     with tarfile.open(source, mode="r:*") as tf:
         tf.extractall(dest_dir, filter=tarfile.data_filter)
 
@@ -444,16 +444,16 @@ def restore_system_backup(
         archive_history = extracted / "history" / ARCHIVE_NAME
         archive_marker = extracted / "history" / MARKER_NAME
         if has_history_v2(paths):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 "Migrate the existing history v2 archive before restoring a backup",
             )
         if archive_marker.is_file() and not archive_history.is_file():
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS, "Backup is missing its required history v2 archive"
             )
         if archive_history.is_file() and not allow_legacy_history:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 "Stop HappyClaw and use the backup restore CLI for a history v2 archive",
             )
@@ -464,7 +464,7 @@ def restore_system_backup(
 
         archive_driver = manifest.database_driver or "sqlite"
         if archive_driver != pool.dialect:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BACKUP_DRIVER_MISMATCH,
                 f"backup database_driver={archive_driver!r} does not match "
                 f"runtime dialect={pool.dialect!r}; cross-engine restore is refused",
@@ -478,7 +478,7 @@ def restore_system_backup(
                 "archive_schema_version": manifest.schema_version,
                 "runtime_schema_version": runtime_schema_version,
             }
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BACKUP_SCHEMA_INCOMPATIBLE,
                 f"backup schema version {manifest.schema_version} is newer than "
                 f"the maximum supported version {runtime_schema_version}",
@@ -487,7 +487,7 @@ def restore_system_backup(
 
         db_path = extracted / manifest.db_file
         if not db_path.is_file():
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "backup archive missing database file")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "backup archive missing database file")
 
         saved_chats = (
             capture_chat_tables(pool, Path(tmp) / "preserved-chats.sqlite")
@@ -510,7 +510,7 @@ def restore_system_backup(
             if effective_owner is not None and saved_users:
                 saved_ids = {int(str(row[0])) for row in saved_users}
                 if int(effective_owner) not in saved_ids:
-                    raise OctopError(
+                    raise HappyclawError(
                         ErrorCode.SLASH_BAD_ARGS,
                         f"owner_user_id={effective_owner} is not among current users",
                         status=400,
@@ -523,7 +523,7 @@ def restore_system_backup(
             if isinstance(pool, SqlitePool):
                 restore_sqlite_into_pool(db_path, pool)
             else:
-                raise OctopError(ErrorCode.INTERNAL_ERROR, "sqlite restore requires SqlitePool")
+                raise HappyclawError(ErrorCode.INTERNAL_ERROR, "sqlite restore requires SqlitePool")
 
         # Upgrade the restored database before any current-version repository or
         # preservation helper queries it. This keeps old backups usable after
@@ -535,7 +535,7 @@ def restore_system_backup(
                 "archive_schema_version": manifest.schema_version,
                 "runtime_schema_version": runtime_schema_version,
             }
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BACKUP_SCHEMA_INCOMPATIBLE,
                 f"failed to upgrade backup schema version {manifest.schema_version} "
                 f"to {runtime_schema_version}: {exc}",

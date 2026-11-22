@@ -26,7 +26,7 @@ import asyncio
 import pytest
 from tests.support.secrets import require_env
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.connectors.builder import validate_create_credentials
 from happyclaw.infra.connectors.catalog import get_catalog_entry
 from happyclaw.infra.connectors.probe import probe_connector
@@ -79,7 +79,7 @@ def test_connector_probe_with_real_credentials(kind: str) -> None:
     except ValueError as exc:
         pytest.fail(f"{kind} credential format invalid: {exc}")
 
-    config = OctopConfig()
+    config = HappyclawConfig()
     result = asyncio.run(probe_connector(entry, payload, instance_id=f"live-{kind}", config=config))
     if result.get("ok"):
         return

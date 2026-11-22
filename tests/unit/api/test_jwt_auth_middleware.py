@@ -20,7 +20,7 @@ from happyclaw.api.deps import (
     is_jwt_exempt_request,
     maybe_sliding_renew_token,
 )
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 
 
 def test_every_path_is_exempt_in_single_user_mode() -> None:
@@ -44,7 +44,7 @@ def test_is_jwt_exempt_request_always_true() -> None:
 
 @pytest.fixture
 async def client(tmp_path: Path):
-    srv = OctopServer(home=tmp_path)
+    srv = HappyclawServer(home=tmp_path)
     await srv.start()
     await ensure_control_plane_bound(srv)
     app = build_app(srv)
@@ -126,7 +126,7 @@ async def test_api_docs_can_be_opened_without_token(tmp_path: Path) -> None:
     from tests.support.app import write_octop_config
 
     write_octop_config(tmp_path, enable_api_docs=True)
-    srv = OctopServer(home=tmp_path)
+    srv = HappyclawServer(home=tmp_path)
     await srv.start()
     await ensure_control_plane_bound(srv)
     app = build_app(srv)

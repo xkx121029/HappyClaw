@@ -24,7 +24,7 @@ from happyclaw.api.common.content_disposition import content_disposition
 from happyclaw.api.common.memory_client import memory_db_path_for_cfg, memory_namespace
 from happyclaw.api.deps import current_user, get_server, require_permission
 from happyclaw.infra.agents.memory.backend import open_memory_kwargs
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ def _refuse_postgres_portable(server: Any, agent_id: str) -> None:
         workspace_dir=workspace,
     )
     if backend == "postgres":
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             "portable memory pack/adopt only supports sqlite memory backends; "
             "this agent's memory lives in shared PostgreSQL tables (isolated by "
@@ -107,12 +107,12 @@ async def list_portable_sources(
         sources = list_sources()
         return JSONResponse(content={"sources": [s.to_dict() for s in sources]})
     except ImportError:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR, "happyclaw-memory 未安装，无法使用记忆迁移功能"
         ) from None
     except Exception as exc:
         logger.exception("list_portable_sources failed")
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -182,12 +182,12 @@ async def pack_agent_memory(
         )
 
     except ImportError:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "happyclaw-memory 未安装") from None
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "happyclaw-memory 未安装") from None
     except ValueError as exc:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
     except Exception as exc:
         logger.exception("pack_agent_memory failed for agent_id=%s", agent_id)
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -237,12 +237,12 @@ async def adopt_agent_memory(
         return JSONResponse(content=summary.to_dict())
 
     except ImportError:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "happyclaw-memory 未安装") from None
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "happyclaw-memory 未安装") from None
     except ValueError as exc:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
     except Exception as exc:
         logger.exception("adopt_agent_memory failed for agent_id=%s", agent_id)
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -294,10 +294,10 @@ async def doctor_agent_memory(
         return JSONResponse(content=report.to_dict())
 
     except ImportError:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "happyclaw-memory 未安装") from None
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "happyclaw-memory 未安装") from None
     except Exception as exc:
         logger.exception("doctor_agent_memory failed for agent_id=%s", agent_id)
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
 
 
 __all__ = ["router"]

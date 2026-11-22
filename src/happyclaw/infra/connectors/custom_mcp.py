@@ -7,7 +7,7 @@ from typing import Any, Literal
 from urllib.parse import urlparse
 
 from happyclaw.i18n.domains.errors import error_message
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.ssrf_guard import (
     UnsafeOutboundUrl,
     is_private_or_local_host,
@@ -127,21 +127,21 @@ def validate_mcp_http_url(url: str) -> str:
     """
     text = url.strip()
     if not text:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_MCP_URL_INVALID,
             "url is required",
             details={"reason": "url is required"},
         )
     parsed = urlparse(text)
     if parsed.scheme not in ("http", "https"):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_MCP_URL_INVALID,
             "url must be http or https",
             details={"reason": "url must be http or https"},
         )
     host = (parsed.hostname or "").lower().rstrip(".")
     if not host:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_MCP_URL_INVALID,
             "url missing hostname",
             details={"reason": "url missing hostname"},
@@ -154,7 +154,7 @@ def validate_mcp_http_url(url: str) -> str:
     # Public remote MCP: HTTPS only + existing SSRF guards.
     if parsed.scheme != "https":
         details = {"host": host}
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_MCP_HTTPS_REQUIRED,
             error_message(ErrorCode.CONNECTOR_MCP_HTTPS_REQUIRED.value, "en", **details),
             details=details,
@@ -162,7 +162,7 @@ def validate_mcp_http_url(url: str) -> str:
     try:
         validate_https_url(text, field="url")
     except UnsafeOutboundUrl as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_MCP_URL_INVALID,
             str(exc),
             details={"reason": str(exc)},

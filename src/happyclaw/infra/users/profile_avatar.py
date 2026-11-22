@@ -13,7 +13,7 @@ from fastapi import Response
 from happyclaw.infra.agents.experts.avatar import sniff_avatar_media_type
 from happyclaw.infra.db.repos.profile_avatars import ProfileAvatarRepo
 from happyclaw.infra.db.repos.settings import SettingsRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 
 KIND_USER = "user"
@@ -36,14 +36,14 @@ def clean_avatar_icon(raw: str | None) -> str | None:
     if not value:
         return None
     if not _ICON.fullmatch(value):
-        raise OctopError(ErrorCode.AVATAR_INVALID, "avatar icon is invalid", status=400)
+        raise HappyclawError(ErrorCode.AVATAR_INVALID, "avatar icon is invalid", status=400)
     return value
 
 
 def _stem(key: str) -> str:
     stem = key.strip()
     if not _STEM.fullmatch(stem):
-        raise OctopError(ErrorCode.AVATAR_INVALID, "avatar id is invalid", status=400)
+        raise HappyclawError(ErrorCode.AVATAR_INVALID, "avatar id is invalid", status=400)
     return stem
 
 
@@ -76,7 +76,7 @@ class AvatarNamespace:
     def response(self, key: str) -> Response:
         found = self.read(key)
         if found is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "avatar not uploaded")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "avatar not uploaded")
         data, media_type = found
         return Response(
             content=data,
@@ -129,7 +129,7 @@ def adopt_local_avatars(repo: ProfileAvatarRepo, settings: SettingsRepo, paths: 
             try:
                 payload = path.read_bytes()
                 media_type = sniff_avatar_media_type(payload)
-            except (OSError, OctopError):
+            except (OSError, HappyclawError):
                 continue
             repo.put(kind, owner_id, payload, media_type)
     settings.set(_LOCAL_ADOPTED, "1")

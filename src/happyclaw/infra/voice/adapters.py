@@ -21,7 +21,7 @@ from happyclaw.i18n.domains.voice import (
     voice_not_configured,
 )
 from happyclaw.infra.db.repos.voice_providers import VoiceProviderRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.ssrf_guard import validate_https_url_resolved
 from happyclaw.infra.utils.tencent_sign import tc3_headers
 
@@ -70,7 +70,7 @@ def _voice_format(mime: str) -> str:
         return "speex"
     if "pcm" in lowered:
         return "pcm"
-    raise OctopError(
+    raise HappyclawError(
         ErrorCode.VOICE_KIND_UNSUPPORTED,
         f"unsupported audio format {mime!r}",
         details={"mime": mime},
@@ -326,7 +326,7 @@ def _mimo_audio_mime(mime: str) -> str:
         return "audio/wav"
     if "mp3" in lowered or "mpeg" in lowered:
         return "audio/mpeg"
-    raise OctopError(
+    raise HappyclawError(
         ErrorCode.VOICE_KIND_UNSUPPORTED,
         f"unsupported audio format {mime!r}",
         details={"mime": mime},

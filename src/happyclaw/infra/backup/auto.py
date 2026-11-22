@@ -12,7 +12,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from happyclaw.config import BackupConfig, OctopConfig, load_config
+from happyclaw.config import BackupConfig, HappyclawConfig, load_config
 from happyclaw.infra.backup.store import (
     BackupFileInfo,
     is_auto_backup_filename,
@@ -22,13 +22,13 @@ from happyclaw.infra.backup.store import (
 from happyclaw.infra.backup.system_archive import create_system_backup
 from happyclaw.infra.cron.trigger import build_trigger
 from happyclaw.infra.db.repos.audit import ACTOR_SYSTEM
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 if TYPE_CHECKING:
     from happyclaw.config import DatabaseConfig
     from happyclaw.infra.cron.manager import CronManager
     from happyclaw.infra.db.pool import DatabasePool
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
     from happyclaw.infra.utils.paths import PathLayout
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ async def hold_backup_lock(operation: BackupOperation) -> AsyncIterator[None]:
 
 def raise_if_backup_busy() -> None:
     if _lock.locked():
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.BACKUP_IN_PROGRESS,
             "a backup or restore is already in progress",
         )
@@ -85,7 +85,7 @@ def to_auto_backup_filename(suggested: str) -> str:
         return name
     if name.startswith(_MANUAL_FILENAME_PREFIX):
         return _AUTO_FILENAME_PREFIX + name.removeprefix(_MANUAL_FILENAME_PREFIX)
-    raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"unexpected backup filename: {name!r}")
+    raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"unexpected backup filename: {name!r}")
 
 
 def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
@@ -95,12 +95,12 @@ def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
     tmp.replace(path)
 
 
-def persist_backup_config(config_path: Path, backup: BackupConfig) -> OctopConfig:
+def persist_backup_config(config_path: Path, backup: BackupConfig) -> HappyclawConfig:
     """Merge ``backup`` into ``config.json`` and return the reloaded config."""
     if config_path.exists():
         raw = json.loads(config_path.read_text(encoding="utf-8"))
         if not isinstance(raw, dict):
-            raise OctopError(ErrorCode.INTERNAL_ERROR, "config.json must be a JSON object")
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, "config.json must be a JSON object")
     else:
         raw = {}
 
@@ -125,14 +125,14 @@ def backup_config_from_payload(payload: dict[str, Any]) -> BackupConfig:
     schedule = str(payload.get("schedule", defaults.schedule)).strip() or defaults.schedule
     try:
         build_trigger(schedule)
-    except OctopError as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid backup schedule: {schedule}") from exc
+    except HappyclawError as exc:
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid backup schedule: {schedule}") from exc
     try:
         retention = int(payload.get("retention_count", defaults.retention_count))
     except (TypeError, ValueError) as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "retention_count must be an integer") from exc
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "retention_count must be an integer") from exc
     if retention < 1:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "retention_count must be >= 1")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "retention_count must be >= 1")
     return BackupConfig(
         auto_enabled=bool(payload.get("auto_enabled", defaults.auto_enabled)),
         schedule=schedule,
@@ -184,7 +184,7 @@ def create_and_store_auto_backup(
     return entry, deleted
 
 
-async def run_auto_backup(server: OctopServer) -> BackupFileInfo | None:
+async def run_auto_backup(server: HappyclawServer) -> BackupFileInfo | None:
     """Run one automatic backup cycle. Returns ``None`` when skipped (busy/disabled)."""
     if _lock.locked():
         logger.info("auto backup skipped: another backup is already running")
@@ -248,7 +248,7 @@ async def run_auto_backup(server: OctopServer) -> BackupFileInfo | None:
         return entry
 
 
-def apply_auto_backup_schedule(cron_manager: CronManager, *, server: OctopServer) -> None:
+def apply_auto_backup_schedule(cron_manager: CronManager, *, server: HappyclawServer) -> None:
     """Register or remove the auto-backup system job from current config."""
     cron_manager.unschedule_system_job(AUTO_BACKUP_JOB_ID)
     config = load_config(server.paths.config)
@@ -259,7 +259,7 @@ def apply_auto_backup_schedule(cron_manager: CronManager, *, server: OctopServer
     schedule = config.backup.schedule
     try:
         build_trigger(schedule)
-    except OctopError:
+    except HappyclawError:
         logger.warning("auto backup schedule %r is invalid; not scheduling", schedule)
         return
 
@@ -274,12 +274,12 @@ def apply_auto_backup_schedule(cron_manager: CronManager, *, server: OctopServer
     logger.info("auto backup job scheduled (%s)", schedule)
 
 
-def install_auto_backup_job(cron_manager: CronManager, *, server: OctopServer) -> None:
+def install_auto_backup_job(cron_manager: CronManager, *, server: HappyclawServer) -> None:
     """Boot-time hook: schedule auto backup when enabled in config."""
     apply_auto_backup_schedule(cron_manager, server=server)
 
 
-def update_server_backup_config(server: OctopServer, backup: BackupConfig) -> OctopConfig:
+def update_server_backup_config(server: HappyclawServer, backup: BackupConfig) -> HappyclawConfig:
     """Persist backup settings, refresh in-memory config, and reschedule the job."""
     new_config = persist_backup_config(server.paths.config, backup)
     server.config = new_config

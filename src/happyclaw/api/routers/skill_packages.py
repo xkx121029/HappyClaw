@@ -19,8 +19,8 @@ from happyclaw.infra.agents.experts.skillhub_market import (
     SkillHubMarketErrorKind,
 )
 from happyclaw.infra.db.repos.skill_packages import SkillPackageRow
-from happyclaw.infra.errors import ErrorCode, OctopError
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.server import HappyclawServer
 from happyclaw.infra.skills.install import valid_skillhub_icon_url
 from happyclaw.infra.skills.skill_archive import build_skills_zip
 from happyclaw.infra.skills.skill_package_from_skillhub import create_package_from_skillhub
@@ -129,13 +129,13 @@ def _files_from_package_skill_body(
             try:
                 decoded.append((part.path, base64.b64decode(part.content_base64, validate=True)))
             except Exception as exc:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.SLASH_BAD_ARGS,
                     f"invalid base64 content for {part.path!r}",
                 ) from exc
         return decoded
     if not content:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "content or files is required")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "content or files is required")
     return [("SKILL.md", content.encode("utf-8"))]
 
 
@@ -157,9 +157,9 @@ class HubInstallPackageSkillBody(BaseModel):
     overwrite: bool = False
 
 
-def _store(server: OctopServer) -> SkillPackageStore:
+def _store(server: HappyclawServer) -> SkillPackageStore:
     if server.services is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "skill package store not initialized")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "skill package store not initialized")
     return SkillPackageStore(
         repo=server.services.skill_package_repo,
         root=server.paths.skill_packages_dir,
@@ -175,11 +175,11 @@ def _package_or_404(
 ) -> SkillPackageRow:
     row = store.repo.get(package_id)
     if row is None:
-        raise OctopError.localized(ErrorCode.SKILL_PACKAGE_NOT_FOUND, locale)
+        raise HappyclawError.localized(ErrorCode.SKILL_PACKAGE_NOT_FOUND, locale)
     return row
 
 
-def _package_avatars(server: OctopServer) -> Any:
+def _package_avatars(server: HappyclawServer) -> Any:
     assert server.services is not None
     return server.services.avatars("skill_package")
 
@@ -195,7 +195,7 @@ def _is_package_avatar_url(value: str, package_id: str | None = None) -> bool:
     return path.startswith("/api/skill-packages/") and path.endswith("/avatar")
 
 
-def _display_package_icon_url(server: OctopServer, row: SkillPackageRow) -> str:
+def _display_package_icon_url(server: HappyclawServer, row: SkillPackageRow) -> str:
     from happyclaw.infra.users.profile_avatar import profile_avatar_url  # noqa: PLC0415
 
     text = str(row.icon_url or "").strip()
@@ -205,7 +205,7 @@ def _display_package_icon_url(server: OctopServer, row: SkillPackageRow) -> str:
     return text
 
 
-def _row_public_dict(server: OctopServer, row: SkillPackageRow) -> dict[str, Any]:
+def _row_public_dict(server: HappyclawServer, row: SkillPackageRow) -> dict[str, Any]:
     payload = asdict(row)
     payload.pop("pk", None)
     payload["icon_url"] = _display_package_icon_url(server, row)
@@ -217,7 +217,7 @@ def _package_payload(
     row: SkillPackageRow,
     *,
     locale: Locale | None = None,
-    server: OctopServer | None = None,
+    server: HappyclawServer | None = None,
 ) -> dict[str, Any]:
     if server is None:
         payload = asdict(row)
@@ -230,7 +230,7 @@ def _package_payload(
     }
 
 
-def _package_access(server: OctopServer) -> GroupAccess:
+def _package_access(server: HappyclawServer) -> GroupAccess:
     assert server.services is not None
     return GroupAccess(server.services.repos)
 
@@ -239,7 +239,7 @@ def _package_owner(user: User, row: SkillPackageRow) -> bool:
     return str(user.id) == str(row.created_by)
 
 
-def _creator_fields(server: OctopServer, created_by: str) -> dict[str, str | None]:
+def _creator_fields(server: HappyclawServer, created_by: str) -> dict[str, str | None]:
     raw = str(created_by or "").strip()
     if not raw.isdigit():
         return {"creator_username": None, "creator_display_name": None}
@@ -255,7 +255,7 @@ def _creator_fields(server: OctopServer, created_by: str) -> dict[str, str | Non
 
 
 def _package_payload_with_creator(
-    server: OctopServer,
+    server: HappyclawServer,
     store: SkillPackageStore,
     row: SkillPackageRow,
     *,
@@ -270,20 +270,20 @@ def _package_payload_with_creator(
 def _required(value: str, field: str) -> str:
     value = value.strip()
     if not value:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"{field} is required")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"{field} is required")
     return value
 
 
 def _icon_url(value: str, *, package_id: str | None = None) -> str:
     value = value.strip()
     if len(value) > 2048:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "icon_url is too long")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "icon_url is too long")
     if (
         value
         and not valid_skillhub_icon_url(value)
         and not _is_package_avatar_url(value, package_id)
     ):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             "icon_url must be an HTTP(S) URL or package avatar path",
         )
@@ -297,7 +297,7 @@ def _visible_packages(store: SkillPackageStore, user: User) -> list[SkillPackage
 
 
 def _assert_group_visible(
-    server: OctopServer,
+    server: HappyclawServer,
     user: User,
     row: SkillPackageRow,
     *,
@@ -312,14 +312,14 @@ def _assert_group_visible(
         is_owner=_package_owner(user, row),
     ):
         return
-    raise OctopError.localized(ErrorCode.SKILL_PACKAGE_NOT_FOUND, locale)
+    raise HappyclawError.localized(ErrorCode.SKILL_PACKAGE_NOT_FOUND, locale)
 
 
 def _package_visible_or_404(
     store: SkillPackageStore,
     package_id: str,
     user: User,
-    server: OctopServer,
+    server: HappyclawServer,
     *,
     locale: str,
 ) -> SkillPackageRow:
@@ -329,15 +329,15 @@ def _package_visible_or_404(
     return row
 
 
-def _map_skillhub_error(exc: BaseException) -> OctopError:
+def _map_skillhub_error(exc: BaseException) -> HappyclawError:
     kind = getattr(exc, "kind", SkillHubMarketErrorKind.UPSTREAM_FAILED)
     if kind in (
         SkillHubMarketErrorKind.NOT_FOUND,
         SkillHubMarketErrorKind.INVALID_SLUG,
     ):
-        return OctopError(ErrorCode.NOT_FOUND, "skillhub skillset not found")
+        return HappyclawError(ErrorCode.NOT_FOUND, "skillhub skillset not found")
     if kind == SkillHubMarketErrorKind.SSL_ERROR:
-        return OctopError(
+        return HappyclawError(
             ErrorCode.SKILLHUB_SSL_FAILED,
             "skillhub ssl error",
             details={"reason": "ssl_error", "kind": kind.value},
@@ -346,7 +346,7 @@ def _map_skillhub_error(exc: BaseException) -> OctopError:
         kind,
         _SAFE_SKILLHUB_REASONS[SkillHubMarketErrorKind.UPSTREAM_FAILED],
     )
-    return OctopError(
+    return HappyclawError(
         ErrorCode.EXPERT_MARKET_FAILED,
         f"skillhub market failed: {reason}",
         details={"reason": reason, "kind": kind.value},
@@ -366,13 +366,13 @@ def _package_skill_or_404(
     ):
         if skill["slug"] == slug:
             return skill
-    raise OctopError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
+    raise HappyclawError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
 
 
 @router.get("", summary="List global skill packages")
 async def list_skill_packages(
     writable_only: bool = False,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> list[dict[str, Any]]:
     store = _store(server)
@@ -446,7 +446,7 @@ async def package_hub_rankings(
 @router.post("", summary="Create a global skill package")
 async def create_skill_package(
     body: CreateSkillPackageBody,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     store = _store(server)
@@ -495,7 +495,7 @@ async def create_skill_package(
 )
 async def create_from_skillhub(
     body: FromSkillHubBody,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     store = _store(server)
@@ -523,7 +523,7 @@ async def create_from_skillhub(
 async def get_skill_package(
     package_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     store = _store(server)
@@ -550,7 +550,7 @@ async def update_skill_package(
     package_id: str,
     body: UpdateSkillPackageBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     store = _store(server)
@@ -616,7 +616,7 @@ async def update_skill_package(
 async def delete_skill_package(
     package_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> None:
     store = _store(server)
@@ -640,7 +640,7 @@ async def upload_skill_package_avatar(
     package_id: str,
     request: Request,
     file: UploadFile = File(...),  # noqa: B008
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, str]:
     from happyclaw.infra.users.profile_avatar import (  # noqa: PLC0415
@@ -667,7 +667,7 @@ async def upload_skill_package_avatar(
 async def get_skill_package_avatar(
     package_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> Response:
     from happyclaw.infra.users.profile_avatar import avatar_response  # noqa: PLC0415
@@ -686,7 +686,7 @@ async def get_skill_package_avatar(
 async def delete_skill_package_avatar(
     package_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> None:
     from happyclaw.infra.users.profile_avatar import delete_profile_avatar  # noqa: PLC0415
@@ -703,7 +703,7 @@ async def delete_skill_package_avatar(
 async def list_package_skills(
     package_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> list[dict[str, Any]]:
     store = _store(server)
@@ -717,7 +717,7 @@ async def get_package_skill(
     package_id: str,
     slug: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     store = _store(server)
@@ -738,7 +738,7 @@ async def list_package_skill_tree(
     slug: str,
     request: Request,
     path: str = Query(default="", description="Path relative to the skill root"),
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> list[dict[str, Any]]:
     store = _store(server)
@@ -757,7 +757,7 @@ async def read_package_skill_file(
     slug: str,
     path: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     store = _store(server)
@@ -779,7 +779,7 @@ async def download_package_skill_file(
     slug: str,
     path: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> Response:
     store = _store(server)
@@ -822,7 +822,7 @@ def _read_package_skill_files(
 async def export_skill_package(
     package_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: User = Depends(require_permission("skill_packages")),
 ) -> Response:
     store = _store(server)
@@ -834,7 +834,7 @@ async def export_skill_package(
         packed = await asyncio.to_thread(_read_package_skill_files, store, package_id)
         payload = await asyncio.to_thread(build_skills_zip, packed)
     except SkillPackageError as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
     filename = f"{(row.name or package_id).strip() or package_id}.zip"
     return Response(
         content=payload,
@@ -848,7 +848,7 @@ async def create_package_skill(
     package_id: str,
     body: CreatePackageSkillBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     store = _store(server)
@@ -856,7 +856,7 @@ async def create_package_skill(
     store.assert_can_mutate(row, user)
     slug = _required(body.name, "name")
     if _package_skill_exists(store, package_id, slug) and not body.overwrite:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_ALREADY_EXISTS,
             resolve_request_locale(request),
             name=slug,
@@ -877,7 +877,7 @@ async def update_package_skill(
     slug: str,
     body: UpdatePackageSkillBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     """Update a package skill.
@@ -899,7 +899,7 @@ async def update_package_skill(
         )
     else:
         if not body.content:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "content or files is required")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "content or files is required")
         store.write_skill_manifest(package_id, slug, body.content)
     if server.app_runtime is not None:
         await server.app_runtime.agent_registry.refresh_agents_for_package(package_id)
@@ -915,7 +915,7 @@ async def delete_package_skill(
     package_id: str,
     slug: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> None:
     store = _store(server)
@@ -931,7 +931,7 @@ def _package_has_skill(store: SkillPackageStore, package_id: str, slug: str) -> 
     return store.has_skill(package_id, slug)
 
 
-async def _refresh_package(server: OctopServer, package_id: str) -> None:
+async def _refresh_package(server: HappyclawServer, package_id: str) -> None:
     if server.app_runtime is not None:
         await server.app_runtime.agent_registry.refresh_agents_for_package(package_id)
 
@@ -944,7 +944,7 @@ class _PackageInstallTarget:
         *,
         store: SkillPackageStore,
         package_id: str,
-        server: OctopServer,
+        server: HappyclawServer,
     ) -> None:
         self._store = store
         self._package_id = package_id
@@ -970,7 +970,7 @@ async def import_package_skill(
     package_id: str,
     body: ImportPackageSkillBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     import asyncio  # noqa: PLC0415
@@ -991,9 +991,9 @@ async def import_package_skill(
 
     bundle_url = body.bundle_url.strip()
     if not bundle_url:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "bundle_url is required")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "bundle_url is required")
     if not is_supported_skill_url(bundle_url):
-        raise OctopError.localized(ErrorCode.SKILL_IMPORT_UNSUPPORTED_URL, locale)
+        raise HappyclawError.localized(ErrorCode.SKILL_IMPORT_UNSUPPORTED_URL, locale)
 
     target = _PackageInstallTarget(store=store, package_id=package_id, server=server)
     try:
@@ -1008,31 +1008,31 @@ async def import_package_skill(
             overwrite=body.overwrite,
         )
     except SkillAlreadyExistsError as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_ALREADY_EXISTS,
             locale,
             name=exc.slug,
         ) from exc
     except SkillPackageError as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_IMPORT_FAILED,
             locale,
             reason=str(exc),
         ) from exc
     except ValueError as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_IMPORT_FAILED,
             locale,
             reason=str(exc),
         ) from exc
     except RuntimeError as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_IMPORT_FAILED,
             locale,
             reason=str(exc),
         ) from exc
     except (HTTPError, URLError, TimeoutError, OSError) as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_IMPORT_FAILED,
             locale,
             reason=str(exc),
@@ -1050,7 +1050,7 @@ async def hub_install_package_skill(
     package_id: str,
     body: HubInstallPackageSkillBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("skill_packages")),
 ) -> dict[str, Any]:
     from fastapi import HTTPException  # noqa: PLC0415
@@ -1133,7 +1133,7 @@ async def hub_install_package_skill(
             overwrite=body.overwrite,
         )
     except SkillAlreadyExistsError as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_ALREADY_EXISTS,
             locale,
             name=exc.slug,

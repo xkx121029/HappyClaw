@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.connectors.service import ConnectorService
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
@@ -52,7 +52,7 @@ class FakeWorkspace:
 def services(tmp_path: Path) -> Iterator[SharedServices]:
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    built = build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    built = build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
     try:
         yield built
     finally:

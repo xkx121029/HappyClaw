@@ -17,12 +17,12 @@ from happyclaw.infra.auth.tokens import (
     PURPOSE_REAUTH,
     sign_token,
 )
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 
 
 @pytest.fixture()
 async def srv(tmp_path: Path):
-    server = OctopServer(home=tmp_path)
+    server = HappyclawServer(home=tmp_path)
     await server.start()
     await ensure_control_plane_bound(server)
     app = build_app(server)

@@ -17,7 +17,7 @@ from happyclaw.infra.agents.teams import (
     is_team_agent,
     team_icon_url,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 router = APIRouter()
 
@@ -65,7 +65,7 @@ def _require_owned_team(server: Any, user: Any, team_id: str) -> Any:
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(team_id)
     if row is None or not is_team_agent(row):
-        raise OctopError(ErrorCode.TEAM_NOT_FOUND, f"team {team_id!r} not found")
+        raise HappyclawError(ErrorCode.TEAM_NOT_FOUND, f"team {team_id!r} not found")
     assert_agent_owner(row, user)
     return row
 
@@ -189,7 +189,7 @@ async def patch_team(
         await server.app_runtime.agent_registry.reload(team_id)
     row = server.app_runtime.agent_registry.get_row(team_id)
     if row is None:
-        raise OctopError(ErrorCode.TEAM_NOT_FOUND, f"team {team_id!r} not found")
+        raise HappyclawError(ErrorCode.TEAM_NOT_FOUND, f"team {team_id!r} not found")
     return cast(dict[str, Any], teams.team_payload(row))
 
 

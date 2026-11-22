@@ -69,7 +69,7 @@ from happyclaw.infra.connectors.probe import (
 )
 from happyclaw.infra.connectors.service import ConnectorNameTakenError, ConnectorService
 from happyclaw.infra.db.repos.connectors import ConnectorRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.groups import (
     CONNECTOR_FEATURE_KEY,
     RESOURCE_CONNECTOR,
@@ -213,18 +213,18 @@ def _resolve_custom_mcp_oauth_target(
     saved = svc.get_custom_servers(user_id)
     raw = saved.get(server_name)
     if not isinstance(raw, dict):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_NOT_FOUND,
             f"custom MCP server {server_name!r} not found; save configuration before OAuth",
         )
     if str(raw.get("transport") or "") not in ("streamable_http", "http"):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_KIND_UNSUPPORTED,
             "OAuth is only supported for streamable HTTP custom MCP servers",
         )
     mcp_url = str(raw.get("url") or "").strip()
     if not mcp_url:
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "server url is required")
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "server url is required")
     return mcp_url, oauth_client_from_spec(raw)
 
 
@@ -240,12 +240,12 @@ async def _begin_oauth_flow(
     if target_type == "catalog":
         kind = str(target.get("kind") or "").strip()
         if not oauth_ready_for_kind(kind, server.services.settings_repo):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
                 f"OAuth for {kind} is not available",
             )
     elif target_type != "custom_mcp":
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "unsupported oauth target")
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "unsupported oauth target")
 
     state = secrets.token_urlsafe(24)
     state_id = new_ulid()
@@ -253,7 +253,7 @@ async def _begin_oauth_flow(
     redirect_uri = f"{base}/api/connectors/oauth/callback"
     if oauth_target_requires_https(target) and _is_public_http_uri(redirect_uri):
         label = str(target.get("kind") or target.get("server_name") or "MCP")
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_OAUTH_HTTPS_REQUIRED,
             f"{label} OAuth callbacks require HTTPS for non-loopback addresses",
         )
@@ -263,7 +263,7 @@ async def _begin_oauth_flow(
     if target_type == "custom_mcp":
         server_name = str(target.get("server_name") or "").strip()
         if not server_name:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
                 "custom_mcp target requires server_name",
             )
@@ -281,10 +281,10 @@ async def _begin_oauth_flow(
             oauth_client=oauth_client,
         )
     except ValueError as exc:
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
     except Exception as exc:
         logger.exception("oauth start failed for target %s", target)
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
 
     server.services.repos.connector_repo.create_oauth_state(
         state_id=state_id,
@@ -556,11 +556,11 @@ def _can_manage_connector(inst: Any, user: Any) -> bool:
 
 def _assert_can_manage_connector(inst: Any, user: Any) -> None:
     if not _can_manage_connector(inst, user):
-        raise OctopError(ErrorCode.FORBIDDEN, "not your connector instance")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "not your connector instance")
 
 
 def _raise_name_taken(name: str) -> None:
-    raise OctopError(
+    raise HappyclawError(
         ErrorCode.CONNECTOR_NAME_TAKEN,
         f"connector name {name!r} is already in use",
     )
@@ -677,7 +677,7 @@ async def put_custom_mcp(
     except ConnectorNameTakenError as exc:
         _raise_name_taken(str(exc))
     except ValueError as exc:
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
     server.services.audit_repo.write(
         actor=user.username,
         action="connector.custom_mcp.save",
@@ -715,11 +715,11 @@ async def patch_custom_mcp_server(
             shared=body.shared,
         )
     except KeyError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_NOT_FOUND, f"custom MCP server {server_name!r} not found"
         ) from exc
     except ValueError as exc:
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
     _schedule_connector_reload(server, user.id, all_users=body.shared is not None)
     return {"servers": redact_servers_for_api(servers)}
 
@@ -739,12 +739,12 @@ async def test_custom_mcp(
         saved = svc.get_custom_servers(user.id)
         raw = saved.get(body.name)
         if not isinstance(raw, dict):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_NOT_FOUND, f"custom MCP server {body.name!r} not found"
             )
         spec = dict(raw)
     else:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
             "provide name or server spec to probe",
         )
@@ -770,7 +770,7 @@ async def get_instance(
     repo = server.services.repos.connector_repo
     inst = repo.get(instance_id)
     if inst is None:
-        raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
     _assert_can_manage_connector(inst, user)
 
     data = _instance_to_dict(inst, access=GroupAccess(server.services.repos))
@@ -804,28 +804,28 @@ async def create_instance(
 ) -> dict[str, Any]:
     """Connect a third-party account as a new named instance."""
     if is_custom_mcp_kind(body.kind):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_KIND_UNSUPPORTED,
             "use PUT /connectors/custom-mcp for custom MCP servers",
         )
     entry = get_catalog_entry(body.kind)
     if entry is None:
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {body.kind!r}")
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {body.kind!r}")
     if entry.phase != "available":
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"{body.kind} not available")
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"{body.kind} not available")
 
     repo = server.services.repos.connector_repo
     svc = _connector_service(server)
     display_name = body.display_name.strip()
     if not display_name:
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "display_name is required")
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "display_name is required")
     description = (
         body.description.strip()
         if body.description is not None
         else entry.description.resolve(resolve_request_locale(request))
     )
     if not description:
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "description is required")
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "description is required")
     if repo.name_exists(user.id, display_name) or _custom_name_exists(svc, user.id, display_name):
         _raise_name_taken(display_name)
     cred_input = dict(body.credentials)
@@ -835,7 +835,7 @@ async def create_instance(
             body.kind, cred_input, server.services.settings_repo
         )
     except ValueError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
             str(exc),
             details={"reason": str(exc)},
@@ -894,7 +894,7 @@ async def patch_instance(
         custom_user_id, synthetic_name = custom_target
         svc = _connector_service(server)
         if body.status is None and body.default_open is None and body.shared is None:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
                 "status or default_open is required",
             )
@@ -902,7 +902,7 @@ async def patch_instance(
             if body.status is not None:
                 status = body.status.strip()
                 if status not in ("active", "disabled"):
-                    raise OctopError(
+                    raise HappyclawError(
                         ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
                         "status must be active or disabled",
                     )
@@ -916,24 +916,24 @@ async def patch_instance(
             if body.shared is not None:
                 svc.patch_custom_server(custom_user_id, synthetic_name, shared=body.shared)
         except KeyError as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found"
             ) from exc
         except ValueError as exc:
-            raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
+            raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
         _schedule_connector_reload(server, custom_user_id, all_users=True)
         for item in svc.list_instances_for_api(custom_user_id):
             if item["instance_id"] in {instance_id, f"custom:{synthetic_name}"}:
                 return item
-        raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
 
     repo = server.services.repos.connector_repo
     inst = repo.get(instance_id)
     if inst is None:
-        raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
     _assert_can_manage_connector(inst, user)
     if is_custom_mcp_kind(inst.kind):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_KIND_UNSUPPORTED,
             "use PATCH /connectors/custom-mcp/servers/{name} for custom MCP servers",
         )
@@ -946,14 +946,14 @@ async def patch_instance(
         and body.shared is None
         and body.visibility is None
     ):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
             "status or default_open is required",
         )
     if body.display_name is not None:
         display_name = body.display_name.strip()
         if not display_name:
-            raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "display_name is required")
+            raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "display_name is required")
         svc = _connector_service(server)
         if repo.name_exists(
             inst.user_id, display_name, exclude_instance_id=instance_id
@@ -976,7 +976,7 @@ async def patch_instance(
         try:
             prepared = await _prepare_credentials(inst.kind, merged, server.services.settings_repo)
         except ValueError as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
                 str(exc),
                 details={"reason": str(exc)},
@@ -985,7 +985,7 @@ async def patch_instance(
     if body.status is not None:
         status = body.status.strip()
         if status not in ("active", "disabled"):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "status must be active or disabled"
             )
         repo.update_status(instance_id, status)
@@ -999,7 +999,7 @@ async def patch_instance(
         if body.description is not None:
             description = body.description.strip()
             if not description:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
                     "description is required",
                 )
@@ -1037,12 +1037,12 @@ async def delete_instance(
         svc = _connector_service(server)
         servers = dict(svc.get_custom_servers(custom_user_id))
         if synthetic_name not in servers:
-            raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+            raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
         del servers[synthetic_name]
         try:
             svc.put_custom_servers(custom_user_id, servers)
         except ValueError as exc:
-            raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
+            raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
         server.services.audit_repo.write(
             actor=user.username,
             action="connector.custom_mcp.delete_server",
@@ -1055,7 +1055,7 @@ async def delete_instance(
     repo = server.services.repos.connector_repo
     inst = repo.get(instance_id)
     if inst is None:
-        raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
     _assert_can_manage_connector(inst, user)
     user_id = inst.user_id
     cli_creds: dict[str, Any] | None = None
@@ -1075,7 +1075,7 @@ async def delete_instance(
             instance_id, inst.user_id, "disconnect", locale=resolve_request_locale(request)
         )
         if result["status"] == "error":
-            raise OctopError.localized(
+            raise HappyclawError.localized(
                 ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
                 locale=resolve_request_locale(request),
                 details={"reason": result["error"]},
@@ -1084,7 +1084,7 @@ async def delete_instance(
         try:
             await _connector_service(server).disconnect_qcc(instance_id)
         except ValueError as exc:
-            raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
+            raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
     elif inst.kind not in ("agently-cli", "dingtalk-cli"):
         repo.delete(instance_id)
         GroupAccess(server.services.repos).clear(RESOURCE_CONNECTOR, instance_id)
@@ -1118,23 +1118,23 @@ async def test_instance(
         saved = svc.get_custom_servers(custom_user_id)
         raw = saved.get(synthetic_name)
         if not isinstance(raw, dict):
-            raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+            raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
         return await probe_custom_mcp_server(dict(raw))
 
     repo = server.services.repos.connector_repo
     inst = repo.get(instance_id)
     if inst is None:
-        raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
     _assert_can_manage_connector(inst, user)
 
     entry = get_catalog_entry(inst.kind)
     if entry is None:
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, inst.kind)
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, inst.kind)
 
     svc = _connector_service(server)
     creds = await svc.ensure_fresh_credentials(instance_id, inst.kind)
     if not creds:
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "missing credentials")
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "missing credentials")
     if inst.kind in {"agently-cli", "ragflow"}:
         creds["_locale"] = resolve_request_locale(request)
 
@@ -1161,9 +1161,9 @@ async def test_credentials(
     del user
     entry = get_catalog_entry(body.kind)
     if entry is None:
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {body.kind!r}")
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {body.kind!r}")
     if entry.phase != "available":
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"{body.kind} not available")
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"{body.kind} not available")
     try:
         cred_payload = await prepare_probe_credentials(
             body.kind,
@@ -1171,7 +1171,7 @@ async def test_credentials(
             full_prepare=lambda k, c: _prepare_credentials(k, c, server.services.settings_repo),
         )
     except ValueError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
             str(exc),
             details={"reason": str(exc)},
@@ -1201,14 +1201,14 @@ async def connector_cli_status(
     """Report whether the host binary is on PATH (no side effects)."""
     del user
     if get_cli_install_spec(kind) is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_KIND_UNSUPPORTED,
             f"kind {kind!r} does not support CLI install",
         )
     try:
         return await asyncio.to_thread(cli_install_status, kind)
     except ValueError as exc:
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, str(exc)) from exc
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, str(exc)) from exc
 
 
 @router.post(
@@ -1225,7 +1225,7 @@ async def connector_install_cli(
     and documentation URLs so the UI can guide manual install.
     """
     if get_cli_install_spec(kind) is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_KIND_UNSUPPORTED,
             f"kind {kind!r} does not support CLI install",
         )
@@ -1252,7 +1252,7 @@ async def feishu_cli_user_auth_start(
             domains=body.domains,
         )
     except ValueError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
             str(exc),
             details={"reason": str(exc)},
@@ -1279,7 +1279,7 @@ async def feishu_cli_user_auth_complete(
             cli_config_key=body.cli_config_key or "",
         )
     except ValueError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
             str(exc),
             details={"reason": str(exc)},
@@ -1394,7 +1394,7 @@ async def feishu_cli_user_auth_start_instance(
     try:
         return await svc.start_feishu_user_auth_for_instance(instance_id, user.id)
     except ValueError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
             str(exc),
             details={"reason": str(exc)},
@@ -1420,7 +1420,7 @@ async def feishu_cli_user_auth_complete_instance(
             cli_config_key=body.cli_config_key,
         )
     except ValueError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
             str(exc),
             details={"reason": str(exc)},
@@ -1439,9 +1439,9 @@ async def refresh_instance(
     repo = server.services.repos.connector_repo
     inst = repo.get(instance_id)
     if inst is None:
-        raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
     if inst.user_id != user.id:
-        raise OctopError(ErrorCode.FORBIDDEN, "not your connector instance")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "not your connector instance")
     svc = _connector_service(server)
     creds = await svc.ensure_fresh_credentials(instance_id, inst.kind)
     return {"ok": True, "expires_at": creds.get("expires_at")}
@@ -1457,7 +1457,7 @@ async def auth_info(
     """Return auth flow metadata (OAuth URLs, required fields) for a connector kind."""
     del user
     if get_catalog_entry(kind) is None:
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {kind!r}")
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {kind!r}")
     info = auth_info_for_kind(
         kind, server.services.settings_repo, locale=resolve_request_locale(request)
     )
@@ -1473,7 +1473,7 @@ async def auth_authorize_url(
     """Build the provider authorization URL for manual or embedded OAuth."""
     del user
     if get_catalog_entry(kind) is None:
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {kind!r}")
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {kind!r}")
     info = auth_info_for_kind(kind, server.services.settings_repo)
     return {"authorize_url": info.get("authorize_url")}
 
@@ -1489,9 +1489,9 @@ async def auth_exchange_code(
     del user
     entry = get_catalog_entry(kind)
     if entry is None:
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {kind!r}")
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"unknown kind {kind!r}")
     if entry.auth_kind != "auth_code":
-        raise OctopError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"{kind} does not use auth code")
+        raise HappyclawError(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, f"{kind} does not use auth code")
     try:
         extra: dict[str, Any] = {}
         if body.bkn:
@@ -1505,7 +1505,7 @@ async def auth_exchange_code(
             extra=extra or None,
         )
     except ValueError as exc:
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, str(exc)) from exc
     return {"credentials": tokens}
 
 
@@ -1518,7 +1518,7 @@ async def oauth_start_unified(
 ) -> dict[str, Any]:
     """Begin browser OAuth for a catalog connector or custom MCP server."""
     if not body.target or not isinstance(body.target, dict):
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "oauth target is required")
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "oauth target is required")
     return await _begin_oauth_flow(
         request=request,
         user=user,
@@ -1680,13 +1680,13 @@ async def oauth_pending(
     key = f"connector.oauth.pending.{state_id}"
     raw = server.services.settings_repo.get(key)
     if not raw:
-        raise OctopError(ErrorCode.NOT_FOUND, "pending oauth not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "pending oauth not found")
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "corrupt pending oauth") from exc
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "corrupt pending oauth") from exc
     if int(data.get("user_id") or 0) != user.id:
-        raise OctopError(ErrorCode.FORBIDDEN, "not your oauth session")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "not your oauth session")
     server.services.settings_repo.delete(key)
     return {
         "kind": data.get("kind"),

@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.connectors import qcc
 from happyclaw.infra.connectors.service import ConnectorService
 from happyclaw.infra.db.migrate import run_migrations
@@ -24,7 +24,7 @@ def service(pool: SqlitePool, repo: ConnectorRepo | None = None) -> ConnectorSer
         repo=repo or ConnectorRepo(pool),
         secret_repo=SecretRepo(pool),
         settings_repo=SettingsRepo(pool),
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
 
 

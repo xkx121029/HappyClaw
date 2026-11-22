@@ -27,7 +27,7 @@ from happyclaw.infra.backup.service import (
 from happyclaw.infra.backup.store import normalize_backup_filename
 from happyclaw.infra.config_service import LocalConfigService
 from happyclaw.infra.db.repos.audit import ACTOR_ADMIN
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +180,7 @@ async def run_auto_backup_now(
     raise_if_backup_busy()
     entry = await run_auto_backup(server)
     if entry is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.BACKUP_IN_PROGRESS,
             "auto backup skipped (busy or runtime not ready)",
         )

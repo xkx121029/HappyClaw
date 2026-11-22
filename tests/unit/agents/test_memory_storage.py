@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 import pytest
 from tests.unit.agents.test_memory_slim import make_manager
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.memory.sqlite_storage import _checkpoint_policy
 from happyclaw.infra.agents.memory.storage import sqlite_store_is_shared
 
@@ -24,7 +24,7 @@ def store(tmp_path):
     registry.get_row = lambda aid: row if aid == "a" else None
     registry._repos = SimpleNamespace(agent_repo=MagicMock())
     registry._repos.agent_repo.list_all.return_value = [row]
-    registry._config = OctopConfig()
+    registry._config = HappyclawConfig()
     registry._paths = SimpleNamespace()
     yield coordinator, registry, memory, cfg, cp
     memory._checkpointer.conn.close()

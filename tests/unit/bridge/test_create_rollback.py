@@ -9,7 +9,7 @@ import pytest
 
 from happyclaw.infra.bridge.manager import BridgeManager
 from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def _row(**overrides: Any) -> BridgeConnectionRow:
@@ -70,11 +70,11 @@ async def test_create_connection_rolls_back_when_connect_fails(
         lambda _s, _p: b"enc",
     )
     mgr.connect = AsyncMock(  # type: ignore[method-assign]
-        side_effect=OctopError(ErrorCode.BRIDGE_PEER_UNREACHABLE, "ws failed")
+        side_effect=HappyclawError(ErrorCode.BRIDGE_PEER_UNREACHABLE, "ws failed")
     )
     mgr.disconnect = AsyncMock()  # type: ignore[method-assign]
 
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr.create_connection(
             owner_user_id=1,
             peer_base_url="https://peer.example",
@@ -105,7 +105,7 @@ async def test_create_connection_rejects_taken_display_name(
         "happyclaw.infra.bridge.manager.normalize_peer_base_url",
         lambda url: url.rstrip("/"),
     )
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr.create_connection(
             owner_user_id=1,
             peer_base_url="https://peer.example",
@@ -137,7 +137,7 @@ async def test_create_connection_rejects_duplicate_peer_account(
         "happyclaw.infra.bridge.manager.normalize_peer_base_url",
         lambda url: url.rstrip("/"),
     )
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr.create_connection(
             owner_user_id=1,
             peer_base_url="https://peer.example/",
@@ -176,7 +176,7 @@ async def test_create_connection_rejects_at_user_limit(
         "happyclaw.infra.bridge.manager.normalize_peer_base_url",
         lambda url: url.rstrip("/"),
     )
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr.create_connection(
             owner_user_id=1,
             peer_base_url="https://fresh.example",
@@ -201,7 +201,7 @@ async def test_create_connection_rejects_self_url() -> None:
         user_repo=MagicMock(),
         advertise_base_url="http://127.0.0.1:8787",
     )
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr.create_connection(
             owner_user_id=1,
             peer_base_url="http://localhost:8787",

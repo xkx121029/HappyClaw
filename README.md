@@ -94,7 +94,7 @@ Open **http://127.0.0.1:8088**. The first boot creates the local owner and the d
 | ACP | stdio JSON-RPC — inbound server (`octop acp`) and outbound `acp_runner` tool |
 | Build / quality | hatchling · ruff · mypy · pytest |
 
-The web UI, the IM channels, and the scheduled jobs all run inside one `OctopServer` process — no external queue or broker. State lives in the control-plane database and is rebuilt on restart.
+The web UI, the IM channels, and the scheduled jobs all run inside one `HappyclawServer` process — no external queue or broker. State lives in the control-plane database and is rebuilt on restart.
 
 ## 📦 Install
 
@@ -275,7 +275,7 @@ Interactive API docs are off by default; set `"enable_api_docs": true` in `~/.ha
 ## 🏗️ Architecture & Layout
 
 ```
-OctopServer                        launch.py → infra/server.py
+HappyclawServer                        launch.py → infra/server.py
  ├─ DatabasePool                    SQLite (WAL) or PostgreSQL
  ├─ SharedServices                  DI root — repositories and config
  ├─ ExpertCatalog                   scans the expert library at boot
@@ -288,7 +288,7 @@ OctopServer                        launch.py → infra/server.py
 ```
 src/happyclaw/
   config.py    env-var config
-  launch.py    OctopServer boot + uvicorn
+  launch.py    HappyclawServer boot + uvicorn
   infra/       business core (agents, gateway, cron, db, …)
   api/         HTTP layer — FastAPI routers and SSE
   cli/         CLI layer — Click commands

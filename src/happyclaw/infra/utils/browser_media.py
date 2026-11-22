@@ -142,12 +142,12 @@ def configure_browser_idle_timeout(timeout_minutes: int) -> None:
 
 
 def harness_settings_for_screenshots_dir(screenshots_dir: Path) -> Any | None:
-    """Build :class:`OctopSettings` when happyclaw-browser is installed."""
+    """Build :class:`HappyclawSettings` when happyclaw-browser is installed."""
     try:
-        from happyclaw_browser.settings import OctopSettings
+        from happyclaw_browser.settings import HappyclawSettings
     except ImportError:
         return None
-    return OctopSettings(screenshots_dir=screenshots_dir.resolve())
+    return HappyclawSettings(screenshots_dir=screenshots_dir.resolve())
 
 
 def legacy_harness_screenshots_dir() -> Path:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 # Practical address shape (not full RFC 5322).
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -19,9 +19,9 @@ def normalize_email(raw: str | None) -> str | None:
 
 
 def validate_email_format(email: str) -> None:
-    """Raise ``OctopError(EMAIL_INVALID)`` when *email* is not a plausible address."""
+    """Raise ``HappyclawError(EMAIL_INVALID)`` when *email* is not a plausible address."""
     if not _EMAIL_RE.match(email):
-        raise OctopError(ErrorCode.EMAIL_INVALID, "invalid email address", status=400)
+        raise HappyclawError(ErrorCode.EMAIL_INVALID, "invalid email address", status=400)
 
 
 def parse_optional_email(raw: str | None, *, required_valid: bool = True) -> str | None:

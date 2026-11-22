@@ -8,7 +8,7 @@ import secrets
 from typing import Any
 from urllib.parse import quote, urlsplit, urlunsplit
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.i18n import tr
 from happyclaw.infra.connectors.catalog import (
     ConnectorCatalogEntry,
@@ -94,7 +94,7 @@ def mcp_server_name(kind: str, instance_id: str) -> str:
     return f"{kind}__{instance_id}"
 
 
-def _internal_mcp_uses_https(config: OctopConfig) -> bool:
+def _internal_mcp_uses_https(config: HappyclawConfig) -> bool:
     """True when the API listener is HTTPS (not the ACME/redirect companion)."""
     return bool(config.tls.enabled and config.tls.cert_file and config.tls.key_file)
 
@@ -112,7 +112,7 @@ def _internal_mcp_https_client_factory(
 
 def internal_mcp_url(
     *,
-    config: OctopConfig,
+    config: HappyclawConfig,
     gateway_kind: str,
     instance_id: str,
     internal_token: str,
@@ -132,7 +132,7 @@ def build_http_mcp_spec(
     entry: ConnectorCatalogEntry,
     instance_id: str,
     creds: dict[str, Any],
-    config: OctopConfig,
+    config: HappyclawConfig,
 ) -> dict[str, Any]:
     if entry.mcp_mode == "remote":
         return _build_remote_spec(entry, creds)
@@ -271,7 +271,7 @@ def _build_gateway_spec(
     entry: ConnectorCatalogEntry,
     instance_id: str,
     creds: dict[str, Any],
-    config: OctopConfig,
+    config: HappyclawConfig,
 ) -> dict[str, Any]:
     internal_token = str(creds.get("internal_token") or "")
     if not internal_token:
@@ -622,7 +622,7 @@ def build_mcp_server_configs_for_user(
     user_id: int,
     agent_id: str,
     agent_user_id: int | None,
-    config: OctopConfig,
+    config: HappyclawConfig,
     log: bool = True,
 ) -> dict[str, Any]:
     """Build harness ``mcp_server_configs`` from a user's active connector instances."""

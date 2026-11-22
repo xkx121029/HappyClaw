@@ -12,7 +12,7 @@ from happyclaw.infra.agents.experts.catalog import (
     apply_workspace_quick_prompts,
     build_create_spec_from_expert,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.history.trajectory.settings import apply_enable_trajectory
 from happyclaw.infra.market import PortalMarketError, install_portal_expert
 from happyclaw.infra.market.errors import local_network_error
@@ -72,7 +72,7 @@ async def create_agent_from_skillhub_skillset(
     """Install a remote market expert package and create an agent from it."""
     catalog = server.expert_catalog
     if catalog is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             "expert catalog is not available",
             status=503,
@@ -90,14 +90,14 @@ async def create_agent_from_skillhub_skillset(
         network_error = local_network_error(exc)
         if network_error is not None:
             raise network_error from exc
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.EXPERT_MARKET_FAILED,
             "expert market package failed",
             details={"reason": "package_invalid"},
         ) from exc
 
     if portal_install is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "expert not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "expert not found")
     expert_id = portal_install.expert_id
     market_slug = portal_install.slug
     source = "portal"
@@ -106,7 +106,7 @@ async def create_agent_from_skillhub_skillset(
     catalog.refresh()
     expert = catalog.get(expert_id)
     if expert is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.EXPERT_MARKET_FAILED,
             "expert market package failed",
             details={"reason": "package_invalid"},

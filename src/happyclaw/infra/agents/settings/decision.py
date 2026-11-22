@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from happyclaw.infra.crypto.fernet import PURPOSE_SETTINGS, open_secret_bytes, seal_secret_bytes
 from happyclaw.infra.db.repos.secrets import SecretRepo
 from happyclaw.infra.db.repos.settings import SettingsRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 _SETTINGS_KEY = "decision_model"
 _SECRET_KEY = "decision_api_key"
@@ -120,16 +120,16 @@ class DecisionSettingsStore:
         previous = self.load()
         provider = provider.strip().lower()
         if provider not in _PROVIDERS:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "unknown decision provider")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "unknown decision provider")
         if enabled and not (skills or tools or team):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 "enable at least one of skills, tools, or team",
             )
         if not 0 < float(threshold) < 1:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "threshold must be between 0 and 1")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "threshold must be between 0 and 1")
         if int(tool_min_count) < 1:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "tool_min_count must be at least 1")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "tool_min_count must be at least 1")
         self._migrate_legacy_key(previous.legacy_key_owner)
         current = {
             item.provider: {"endpoint": item.endpoint, "model": item.model}
@@ -150,7 +150,7 @@ class DecisionSettingsStore:
         for item in updates:
             name = str(item.get("provider") or "").strip().lower()
             if name not in _PROVIDERS:
-                raise OctopError(ErrorCode.SLASH_BAD_ARGS, "unknown decision provider")
+                raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "unknown decision provider")
             next_endpoint = str(item.get("endpoint") or "").strip()
             next_model = str(item.get("model") or "").strip()
             _validate_service(
@@ -212,7 +212,7 @@ class DecisionSettingsStore:
         view = self.load()
         target = (endpoint if endpoint is not None else view.endpoint).strip()
         if not target.startswith(("http://", "https://")):
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "decision endpoint is required")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "decision endpoint is required")
         from happyclaw_harness.decision.client import HttpDecisionClient
 
         saved_key = ""
@@ -301,16 +301,16 @@ def _service_map(data: dict[str, object], provider: str) -> dict[str, dict[str, 
 
 def _validate_service(provider: str, endpoint: str, model: str, *, required: bool) -> None:
     if endpoint and not endpoint.startswith(("http://", "https://")):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "endpoint must start with http:// or https://")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "endpoint must start with http:// or https://")
     if not required:
         return
     if not endpoint.startswith(("http://", "https://")):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             "endpoint is required when the decision model is enabled",
         )
     if provider in {"jev", "microsoft"} and not model.strip():
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             "model is required for this decision provider",
         )

@@ -13,7 +13,7 @@ from starlette.websockets import WebSocketState
 
 from happyclaw.api.deps import resolve_user_from_token
 from happyclaw.api.routers.chat.sse import json_chunk_default
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ async def dashboard_notifications_ws(
     # Single-user mode: token optional; the resolver returns the local owner.
     try:
         user = resolve_user_from_token(server, token or "")
-    except OctopError as exc:
+    except HappyclawError as exc:
         await websocket.close(code=4001, reason=f"auth: {exc.code.value}")
         return
 

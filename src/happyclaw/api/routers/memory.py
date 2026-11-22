@@ -45,7 +45,7 @@ from happyclaw.api.common.agent import assert_agent_owner, require_agent_owner_r
 from happyclaw.api.common.memory_client import call_memory_rpc
 from happyclaw.api.deps import current_user, get_server, require_permission
 from happyclaw.infra.agents.manager import memory_extract_supported_options
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -924,7 +924,7 @@ async def put_extract_config(
     registry = server.app_runtime.agent_registry
     row = registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     assert_agent_owner(row, user)
 
     merged = _read_extract_config(row)

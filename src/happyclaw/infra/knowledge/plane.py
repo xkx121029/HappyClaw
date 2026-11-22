@@ -12,7 +12,7 @@ from happyclaw.infra.knowledge.pg_index import PgVectorKnowledgeIndex
 def postgres_database(source: Any) -> DatabaseConfig | None:
     """Return the PostgreSQL config when *source* is a PG control plane.
 
-    *source* may be an ``OctopConfig``, a services object, or a server.
+    *source* may be an ``HappyclawConfig``, a services object, or a server.
     SQLite (and missing config) returns ``None`` so callers keep local files.
     """
     config = getattr(source, "config", None)

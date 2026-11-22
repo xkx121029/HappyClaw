@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from happyclaw.i18n import error_message
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.locale import resolve_request_locale
 
 
@@ -24,13 +24,13 @@ def test_error_message_zh():
 
 
 def test_octop_error_localized_factory():
-    err = OctopError.localized(ErrorCode.FORBIDDEN, "zh")
+    err = HappyclawError.localized(ErrorCode.FORBIDDEN, "zh")
     assert err.code is ErrorCode.FORBIDDEN
     assert err.message == "没有权限。"
 
 
 def test_octop_error_to_envelope_with_locale():
-    err = OctopError(ErrorCode.AGENT_NAME_TAKEN, "agent name 'x' already in use")
+    err = HappyclawError(ErrorCode.AGENT_NAME_TAKEN, "agent name 'x' already in use")
     envelope = err.to_envelope(locale="zh")
     assert envelope["error"]["code"] == "AGENT_NAME_TAKEN"
     assert envelope["error"]["message"] == "该名称已被使用，请换一个名称。"
@@ -92,7 +92,7 @@ def test_knowledge_doc_too_large_interpolates_max_mb():
 
 
 def test_localized_message_falls_back_when_key_missing(monkeypatch: pytest.MonkeyPatch):
-    err = OctopError(ErrorCode.AUTH_FAILED, "custom detail")
+    err = HappyclawError(ErrorCode.AUTH_FAILED, "custom detail")
     monkeypatch.setattr(
         "happyclaw.infra.errors.i18n_error_message",
         lambda *_a, **_k: (_ for _ in ()).throw(KeyError("errors.X")),

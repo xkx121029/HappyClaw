@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.i18n import tr
 from happyclaw.infra.control.mobile.adb import adb_connect, find_adb, list_devices
 from happyclaw.infra.control.mobile.docker_install import (
@@ -72,11 +72,11 @@ class MobileStatus:
     container_running: bool
 
 
-def mobile_capabilities_enabled(config: OctopConfig) -> bool:
+def mobile_capabilities_enabled(config: HappyclawConfig) -> bool:
     return bool(config.capabilities.mobile.enabled)
 
 
-def mobile_status(config: OctopConfig, *, locale: str = "en") -> MobileStatus:
+def mobile_status(config: HappyclawConfig, *, locale: str = "en") -> MobileStatus:
     cap = config.capabilities.mobile
     system = platform.system().lower()
     adb_path = find_adb() or ""

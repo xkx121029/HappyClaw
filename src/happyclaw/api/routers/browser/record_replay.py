@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from happyclaw.api.deps import current_user
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.browser_media import user_browser_profile
 
 router = APIRouter()
@@ -48,7 +48,7 @@ async def ensure_record_daemon() -> dict[str, Any]:
     try:
         from happyclaw_browser.record.daemon import ensure_daemon
     except ImportError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             "happyclaw-browser record/replay is not installed",
             status=503,
@@ -60,7 +60,7 @@ async def send_record_request(request: dict[str, Any]) -> dict[str, Any]:
     try:
         from happyclaw_browser.record.daemon import send_request
     except ImportError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             "happyclaw-browser record/replay is not installed",
             status=503,
@@ -77,7 +77,7 @@ async def run_replay_recording(
     try:
         from happyclaw_browser.record.replay import ReplayRunner
     except ImportError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             "happyclaw-browser record/replay is not installed",
             status=503,
@@ -103,7 +103,7 @@ def _require_owned_recording(recording_id: str, profile: str) -> Any:
     try:
         from happyclaw_browser.record.store import RecordingStore
     except ImportError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             "happyclaw-browser record/replay is not installed",
             status=503,
@@ -111,11 +111,11 @@ def _require_owned_recording(recording_id: str, profile: str) -> Any:
     try:
         manifest = RecordingStore().read_manifest(recording_id)
     except FileNotFoundError as exc:
-        raise OctopError(ErrorCode.NOT_FOUND, "recording not found") from exc
+        raise HappyclawError(ErrorCode.NOT_FOUND, "recording not found") from exc
     except Exception as exc:
-        raise OctopError(ErrorCode.NOT_FOUND, "recording not found") from exc
+        raise HappyclawError(ErrorCode.NOT_FOUND, "recording not found") from exc
     if str(getattr(manifest, "profile", "") or "") != profile:
-        raise OctopError(ErrorCode.NOT_FOUND, "recording not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "recording not found")
     return manifest
 
 
@@ -131,7 +131,7 @@ def _active_for_profile(data: dict[str, Any], profile: str) -> Any:
 def _raise_if_not_ok(data: dict[str, Any], *, status: int = 500) -> None:
     if data.get("ok", True):
         return
-    raise OctopError(
+    raise HappyclawError(
         ErrorCode.INTERNAL_ERROR,
         str(data.get("error") or "record/replay operation failed"),
         status=status,
@@ -186,7 +186,7 @@ async def record_stop(
         except Exception:
             status = {}
         if _active_for_profile(status if isinstance(status, dict) else {}, profile) is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "recording not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "recording not found")
     data = await send_record_request(
         {
             "command": "stop",
@@ -220,7 +220,7 @@ async def record_stop_and_generate_skill(
         except Exception:
             status = {}
         if _active_for_profile(status if isinstance(status, dict) else {}, profile) is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "recording not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "recording not found")
 
     # 1) Stop the recording
     data = await send_record_request(

@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from happyclaw.infra.backup.manifest import BackupManifest
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 
 _BACKUP_SUFFIXES = (".tar.gz", ".tgz")
@@ -75,9 +75,9 @@ def normalize_backup_filename(name: str) -> str:
     """Return a safe basename for a backup archive under ``backups_dir``."""
     base = Path(name).name.strip()
     if not base or base != name.strip() or "/" in base or "\\" in base:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid backup filename: {name!r}")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid backup filename: {name!r}")
     if not any(base.endswith(suffix) for suffix in _BACKUP_SUFFIXES):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "backup file must end with .tar.gz or .tgz")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "backup file must end with .tar.gz or .tgz")
     return base
 
 
@@ -99,7 +99,7 @@ def backup_file_info(path: Path) -> BackupFileInfo:
     """Build ``BackupFileInfo`` from an existing archive path."""
     path = Path(path)
     if not path.is_file():
-        raise OctopError(ErrorCode.NOT_FOUND, f"backup not found: {path.name}")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"backup not found: {path.name}")
     stat = path.stat()
     modified = _iso_utc_from_timestamp(stat.st_mtime)
     created = resolve_backup_created_at(path.name, path, mtime=stat.st_mtime)
@@ -216,7 +216,7 @@ def resolve_backup_path(paths: PathLayout, filename: str) -> Path:
     safe = normalize_backup_filename(filename)
     path = paths.backup_file(safe)
     if not path.is_file():
-        raise OctopError(ErrorCode.NOT_FOUND, f"backup not found: {safe}")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"backup not found: {safe}")
     return path
 
 
@@ -253,7 +253,7 @@ def prune_auto_backups(paths: PathLayout, *, keep: int) -> list[str]:
     for info in to_delete:
         try:
             delete_backup_file(paths, info.name)
-        except OctopError:
+        except HappyclawError:
             continue
         deleted.append(info.name)
     return deleted

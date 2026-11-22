@@ -20,7 +20,7 @@ from happyclaw.api.common.content_disposition import content_disposition
 from happyclaw.api.deps import current_user, get_server
 from happyclaw.api.routers.chat.history import _require_thread
 from happyclaw.api.routers.chat.sse import format_sse
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.history.trajectory.live import TrajectoryLiveBus
 from happyclaw.infra.history.trajectory.service import TrajectoryService
 from happyclaw.infra.history.trajectory.settings import TRAJECTORY_SSE_REPLAY_MAX
@@ -93,7 +93,7 @@ def _trajectory_service(server: Any) -> TrajectoryService:
     runtime = getattr(server, "app_runtime", None)
     service = getattr(runtime, "trajectory_service", None) if runtime is not None else None
     if not isinstance(service, TrajectoryService):
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "trajectory service unavailable")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "trajectory service unavailable")
     return service
 
 
@@ -300,7 +300,7 @@ async def get_trajectory_event(
     _require_thread(server, agent_id, thread_id, user, as_user)
     event = _trajectory_service(server).get_event(event_id)
     if event is None or event.thread_id != thread_id or event.agent_id != agent_id:
-        raise OctopError(ErrorCode.NOT_FOUND, f"event {event_id!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"event {event_id!r} not found")
     return TrajectoryEventOut.model_validate(asdict(event))
 
 

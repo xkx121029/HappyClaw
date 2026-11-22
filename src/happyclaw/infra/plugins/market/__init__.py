@@ -37,7 +37,7 @@ from happyclaw.infra.plugins.market.pipeline import (
     verify_install,
 )
 from happyclaw.infra.plugins.market.source import InstalledPayload, Source
-from happyclaw.infra.plugins.market.sources import DshSource, OctopSource
+from happyclaw.infra.plugins.market.sources import DshSource, HappyclawSource
 from happyclaw.infra.plugins.runtime.contract import (
     CapabilityKind,
     PluginKind,
@@ -65,7 +65,7 @@ __all__ = [
     "MarketError",
     "MarketErrorCode",
     "MarketplaceIndex",
-    "OctopSource",
+    "HappyclawSource",
     "PayloadError",
     "PlanResult",
     "PluginKind",

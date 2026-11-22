@@ -35,7 +35,7 @@ from happyclaw.infra.agents.providers.onnx_service import (
     save_config,
     status_payload,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.knowledge.files import document_path
 from happyclaw.infra.knowledge.gate import (
     assert_knowledge_usable,
@@ -55,7 +55,7 @@ from happyclaw.infra.knowledge.service import (
     MAX_DOCUMENT_BYTES,
     KnowledgeService,
 )
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 from happyclaw.infra.users.groups import RESOURCE_KNOWLEDGE_BASE, GroupAccess
 from happyclaw.infra.users.identity import User
 from happyclaw.infra.utils.locale import resolve_request_locale
@@ -64,7 +64,7 @@ router = APIRouter(prefix="/knowledge-bases")
 logger = logging.getLogger(__name__)
 
 
-def _kb_avatars(server: OctopServer) -> Any:
+def _kb_avatars(server: HappyclawServer) -> Any:
     assert server.services is not None
     return server.services.avatars("knowledge_base")
 
@@ -160,9 +160,9 @@ class MoveDocumentBody(BaseModel):
     )
 
 
-def _knowledge_service(server: OctopServer) -> KnowledgeService:
+def _knowledge_service(server: HappyclawServer) -> KnowledgeService:
     if server.services is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "knowledge services are not initialized")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "knowledge services are not initialized")
     return KnowledgeService(server.services)
 
 
@@ -170,7 +170,7 @@ def _row_payload(
     row: Any,
     *,
     has_original: bool | None = None,
-    server: OctopServer | None = None,
+    server: HappyclawServer | None = None,
 ) -> dict[str, Any]:
     payload = asdict(row)
     payload["document_id"] = row.id
@@ -189,7 +189,7 @@ def _row_payload(
     return payload
 
 
-def _owner_fields(server: OctopServer, owner_user_id: int) -> dict[str, str | None]:
+def _owner_fields(server: HappyclawServer, owner_user_id: int) -> dict[str, str | None]:
     if server.services is None:
         return {"owner_username": None, "owner_display_name": None}
     user_repo = getattr(server.services, "user_repo", None)
@@ -204,7 +204,7 @@ def _owner_fields(server: OctopServer, owner_user_id: int) -> dict[str, str | No
     }
 
 
-def _group_access(server: OctopServer) -> GroupAccess | None:
+def _group_access(server: HappyclawServer) -> GroupAccess | None:
     services = server.services
     repos = getattr(services, "repos", None) if services is not None else None
     if repos is None:
@@ -216,7 +216,7 @@ def _kb_avatar_api_path(kb_id: str) -> str:
     return f"/api/knowledge-bases/{kb_id}/avatar"
 
 
-def _display_kb_icon_url(server: OctopServer, row: Any) -> str:
+def _display_kb_icon_url(server: HappyclawServer, row: Any) -> str:
     from happyclaw.infra.users.profile_avatar import profile_avatar_url  # noqa: PLC0415
 
     text = str(getattr(row, "icon_url", "") or "").strip()
@@ -226,7 +226,7 @@ def _display_kb_icon_url(server: OctopServer, row: Any) -> str:
     return text
 
 
-def _base_payload(server: OctopServer, row: Any) -> dict[str, Any]:
+def _base_payload(server: HappyclawServer, row: Any) -> dict[str, Any]:
     payload = asdict(row)
     payload["knowledge_base_id"] = row.id
     payload["icon_url"] = _display_kb_icon_url(server, row)
@@ -246,7 +246,7 @@ def _is_admin(user: User) -> bool:
     return bool(user.is_admin)
 
 
-def _max_upload_mb(server: OctopServer) -> int:
+def _max_upload_mb(server: HappyclawServer) -> int:
     config = getattr(getattr(server, "services", None), "config", None)
     value = getattr(config, "max_upload_mb", None)
     if isinstance(value, int) and value > 0:
@@ -254,7 +254,7 @@ def _max_upload_mb(server: OctopServer) -> int:
     return DEFAULT_MAX_UPLOAD_MB
 
 
-def _max_upload_bytes(server: OctopServer) -> int:
+def _max_upload_bytes(server: HappyclawServer) -> int:
     config = getattr(getattr(server, "services", None), "config", None)
     value = getattr(config, "max_upload_bytes", None)
     if isinstance(value, int) and value > 0:
@@ -263,24 +263,24 @@ def _max_upload_bytes(server: OctopServer) -> int:
 
 
 def _map_knowledge_error(
-    exc: Exception, *, locale: str, server: OctopServer | None = None
-) -> OctopError:
-    if isinstance(exc, OctopError):
+    exc: Exception, *, locale: str, server: HappyclawServer | None = None
+) -> HappyclawError:
+    if isinstance(exc, HappyclawError):
         return exc
     if isinstance(exc, (LookupError, FileNotFoundError)):
-        return OctopError.localized(ErrorCode.KNOWLEDGE_NOT_FOUND, locale)
+        return HappyclawError.localized(ErrorCode.KNOWLEDGE_NOT_FOUND, locale)
     if isinstance(exc, PermissionError):
-        return OctopError.localized(ErrorCode.KNOWLEDGE_FORBIDDEN, locale)
+        return HappyclawError.localized(ErrorCode.KNOWLEDGE_FORBIDDEN, locale)
     text = str(exc).lower()
     if isinstance(exc, RuntimeError):
         if "disabled" in text:
-            return OctopError.localized(ErrorCode.KNOWLEDGE_FEATURE_DISABLED, locale)
+            return HappyclawError.localized(ErrorCode.KNOWLEDGE_FEATURE_DISABLED, locale)
         # Packages installed into a directory the running interpreter did not have on
         # sys.path at startup (pip's user site) are importable only after a restart.
         # Report that instead of the generic prerequisite error, which told the user
         # nothing they could act on and sent them into a retry loop.
         if "restart the server" in text:
-            return OctopError.localized(ErrorCode.KNOWLEDGE_PREREQUISITES_RESTART_REQUIRED, locale)
+            return HappyclawError.localized(ErrorCode.KNOWLEDGE_PREREQUISITES_RESTART_REQUIRED, locale)
         if any(
             kw in text
             for kw in (
@@ -292,31 +292,31 @@ def _map_knowledge_error(
                 "provider",
             )
         ):
-            return OctopError.localized(ErrorCode.KNOWLEDGE_PREREQUISITES_FAILED, locale)
+            return HappyclawError.localized(ErrorCode.KNOWLEDGE_PREREQUISITES_FAILED, locale)
     if "at most 100" in text:
-        return OctopError.localized(ErrorCode.KNOWLEDGE_DOC_LIMIT, locale)
+        return HappyclawError.localized(ErrorCode.KNOWLEDGE_DOC_LIMIT, locale)
     if "document size exceeds" in text:
         max_mb = _max_upload_mb(server) if server is not None else DEFAULT_MAX_UPLOAD_MB
-        return OctopError.localized(
+        return HappyclawError.localized(
             ErrorCode.KNOWLEDGE_DOC_TOO_LARGE,
             locale,
             details={"max_mb": max_mb},
             max_mb=max_mb,
         )
     if "at most" in text and "knowledge bases" in text:
-        return OctopError.localized(ErrorCode.KNOWLEDGE_BASE_LIMIT, locale)
+        return HappyclawError.localized(ErrorCode.KNOWLEDGE_BASE_LIMIT, locale)
     if "unsupported knowledge document content type" in text:
-        return OctopError.localized(ErrorCode.KNOWLEDGE_UNSUPPORTED_TYPE, locale)
+        return HappyclawError.localized(ErrorCode.KNOWLEDGE_UNSUPPORTED_TYPE, locale)
     if "knowledge ocr" in text:
-        return OctopError.localized(ErrorCode.KNOWLEDGE_PREREQUISITES_FAILED, locale)
+        return HappyclawError.localized(ErrorCode.KNOWLEDGE_PREREQUISITES_FAILED, locale)
     if "unique constraint" in text or "duplicate key" in text or "already exists" in text:
-        return OctopError.localized(ErrorCode.KNOWLEDGE_NAME_TAKEN, locale)
+        return HappyclawError.localized(ErrorCode.KNOWLEDGE_NAME_TAKEN, locale)
     if "invalid knowledge document name" in text:
-        return OctopError.localized(ErrorCode.KNOWLEDGE_NAME_INVALID, locale)
+        return HappyclawError.localized(ErrorCode.KNOWLEDGE_NAME_INVALID, locale)
     if "prerequisite" in text or "embedding model" in text or "embedding_model" in text:
-        return OctopError.localized(ErrorCode.KNOWLEDGE_PREREQUISITES_FAILED, locale)
+        return HappyclawError.localized(ErrorCode.KNOWLEDGE_PREREQUISITES_FAILED, locale)
     logger.exception("unhandled error in knowledge base router: %s", exc)
-    return OctopError.localized(
+    return HappyclawError.localized(
         ErrorCode.INTERNAL_ERROR,
         locale,
         details={"cause": str(exc)},
@@ -341,7 +341,7 @@ def _onnx_options_for_knowledge(*, include_all: bool = False) -> list[dict[str, 
     ]
 
 
-def _enable_onnx_service(server: OctopServer, model: str) -> None:
+def _enable_onnx_service(server: HappyclawServer, model: str) -> None:
     """Turn on the local ONNX service for a downloaded catalog model."""
     assert server.services is not None
     verified = assert_catalog_model(model)
@@ -353,7 +353,7 @@ def _enable_onnx_service(server: OctopServer, model: str) -> None:
     )
 
 
-def _require_usable(server: OctopServer, request: Request) -> None:
+def _require_usable(server: HappyclawServer, request: Request) -> None:
     assert server.services is not None
     try:
         assert_knowledge_usable(server.services.settings_repo.get, server.services.provider_repo)
@@ -363,7 +363,7 @@ def _require_usable(server: OctopServer, request: Request) -> None:
         ) from exc
 
 
-def _capability_payload(server: OctopServer) -> dict[str, Any]:
+def _capability_payload(server: HappyclawServer) -> dict[str, Any]:
     assert server.services is not None
     payload = get_capability(server.services.settings_repo.get, server.services.provider_repo)
     payload["ocr"] = get_ocr_capability(
@@ -379,7 +379,7 @@ def _capability_payload(server: OctopServer) -> dict[str, Any]:
 
 @router.get("/capability", summary="Get knowledge-base feature capability")
 async def capability(
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: User = Depends(current_user),
 ) -> dict[str, Any]:
     return _capability_payload(server)
@@ -391,7 +391,7 @@ async def embedding_options(
         False,
         description="Include the full local ONNX catalog instead of the three recommended models",
     ),
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _admin: User = Depends(require_permission("knowledge_settings")),
 ) -> dict[str, Any]:
     assert server.services is not None
@@ -423,7 +423,7 @@ async def embedding_options(
 
 @router.get("/ocr-options", summary="List knowledge OCR backend options")
 async def ocr_options(
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _admin: User = Depends(require_permission("knowledge_settings")),
 ) -> dict[str, Any]:
     assert server.services is not None
@@ -456,7 +456,7 @@ async def ocr_options(
 async def put_feature(
     body: FeatureBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _admin: User = Depends(require_permission("knowledge_settings")),
 ) -> dict[str, Any]:
     assert server.services is not None
@@ -558,7 +558,7 @@ async def onnx_download_status(
 async def activate_onnx_service(
     body: OnnxDownloadBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _: User = Depends(require_permission("knowledge_settings")),
 ) -> dict[str, Any]:
     try:
@@ -587,7 +587,7 @@ async def test_onnx_model(
 
 @router.get("", summary="List visible knowledge bases")
 async def list_bases(
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(current_user),
 ) -> list[dict[str, Any]]:
     return [
@@ -602,7 +602,7 @@ async def list_bases(
 async def create_base(
     body: CreateBaseBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     locale = resolve_request_locale(request)
@@ -641,7 +641,7 @@ async def create_base(
 
 @router.get("/default-open", summary="List current user's default-open knowledge-base IDs")
 async def default_open_bases(
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(current_user),
 ) -> dict[str, list[str]]:
     bases = _knowledge_service(server).list_visible_bases(
@@ -660,7 +660,7 @@ async def default_open_bases(
 async def get_base(
     kb_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(current_user),
 ) -> dict[str, Any]:
     try:
@@ -681,7 +681,7 @@ async def update_base(
     kb_id: str,
     body: UpdateBaseBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     try:
@@ -725,7 +725,7 @@ async def update_base(
 async def delete_base(
     kb_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> None:
     try:
@@ -746,7 +746,7 @@ async def upload_kb_avatar(
     kb_id: str,
     request: Request,
     file: UploadFile = File(...),  # noqa: B008
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, str]:
     from happyclaw.infra.users.profile_avatar import (  # noqa: PLC0415
@@ -789,7 +789,7 @@ async def upload_kb_avatar(
 async def get_kb_avatar(
     kb_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(current_user),
 ) -> Any:
     from happyclaw.infra.users.profile_avatar import avatar_response  # noqa: PLC0415
@@ -813,7 +813,7 @@ async def get_kb_avatar(
 async def delete_kb_avatar(
     kb_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> None:
     from happyclaw.infra.users.profile_avatar import delete_profile_avatar  # noqa: PLC0415
@@ -843,7 +843,7 @@ async def list_documents(
         default=None,
         description="When set, only immediate children of this relative folder path.",
     ),
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(current_user),
 ) -> list[dict[str, Any]]:
     try:
@@ -868,7 +868,7 @@ async def create_folder(
     kb_id: str,
     body: CreateFolderBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     try:
@@ -891,7 +891,7 @@ async def create_text_document(
     kb_id: str,
     body: CreateTextDocumentBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     locale = resolve_request_locale(request)
@@ -927,7 +927,7 @@ async def upload_document(
         default=None,
         description="Optional relative path including filename (for nested folders).",
     ),
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     locale = resolve_request_locale(request)
@@ -962,7 +962,7 @@ async def list_document_chunks(
     kb_id: str,
     doc_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(current_user),
 ) -> dict[str, Any]:
     try:
@@ -983,7 +983,7 @@ async def preview_document(
     kb_id: str,
     doc_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(current_user),
 ) -> dict[str, Any]:
     try:
@@ -1010,7 +1010,7 @@ async def download_document_file(
         pattern="^(attachment|inline)$",
         description="Content-Disposition type: attachment (download) or inline (preview).",
     ),
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(current_user),
 ) -> FileResponse:
     try:
@@ -1036,7 +1036,7 @@ async def get_text_document(
     kb_id: str,
     doc_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     try:
@@ -1058,7 +1058,7 @@ async def update_text_document(
     doc_id: str,
     body: UpdateTextDocumentBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     locale = resolve_request_locale(request)
@@ -1087,7 +1087,7 @@ async def rename_document(
     doc_id: str,
     body: RenameDocumentBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     try:
@@ -1114,7 +1114,7 @@ async def move_document(
     doc_id: str,
     body: MoveDocumentBody,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     """Move within one knowledge base. A folder takes its contents along; nothing is reindexed."""
@@ -1142,7 +1142,7 @@ async def delete_document(
     kb_id: str,
     doc_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> None:
     try:
@@ -1163,7 +1163,7 @@ async def reindex_document(
     kb_id: str,
     doc_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, Any]:
     try:
@@ -1184,7 +1184,7 @@ async def reindex_document(
 async def reindex_base(
     kb_id: str,
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: User = Depends(require_permission("knowledge_bases")),
 ) -> dict[str, int]:
     try:

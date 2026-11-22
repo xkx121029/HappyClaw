@@ -28,11 +28,11 @@ _PNG = (
 
 
 def _services(tmp_path: Path):
-    from happyclaw.config import OctopConfig
+    from happyclaw.config import HappyclawConfig
 
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
 
 
 def test_avatar_roundtrip_uses_database(tmp_path: Path) -> None:

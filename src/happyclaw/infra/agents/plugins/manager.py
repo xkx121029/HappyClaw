@@ -29,7 +29,7 @@ from happyclaw_harness.plugins import (
 from happyclaw.infra.agents.plugins.legacy_imports import ensure_legacy_harness_agent_alias
 from happyclaw.infra.db.repos.control_files import ControlFileRepo
 from happyclaw.infra.db.repos.settings import SettingsRepo
-from happyclaw.infra.errors import ErrorCode, OctopError, corrupt_config_error
+from happyclaw.infra.errors import ErrorCode, HappyclawError, corrupt_config_error
 from happyclaw.infra.market import (
     PortalMarketError,
     get_market_plugin,
@@ -149,7 +149,7 @@ def _write_global_plugin_enabled(config_path: Path, plugin_id: str, enabled: boo
 def _assert_http_url(url: str) -> None:
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PLUGIN_INVALID_ARCHIVE,
             "plugin URL must be an http(s) address to a ZIP archive",
         )
@@ -159,14 +159,14 @@ def _assert_zip_magic(archive: Path) -> None:
     with archive.open("rb") as source:
         head = source.read(4)
     if len(head) < 2 or head[:2] != b"PK":
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PLUGIN_INVALID_ARCHIVE,
             "file is not a valid ZIP archive",
         )
 
 
-def _archive_error(message: str) -> OctopError:
-    return OctopError(ErrorCode.PLUGIN_INVALID_ARCHIVE, message)
+def _archive_error(message: str) -> HappyclawError:
+    return HappyclawError(ErrorCode.PLUGIN_INVALID_ARCHIVE, message)
 
 
 def _validate_plugin_zip(zf: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
@@ -211,23 +211,23 @@ def _download_plugin_archive(url: str, archive: Path) -> None:
                     if total > _MAX_PLUGIN_ARCHIVE_BYTES:
                         raise _archive_error("plugin ZIP download exceeds the configured limit")
                     target.write(chunk)
-    except OctopError:
+    except HappyclawError:
         raise
     except urllib.error.HTTPError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PLUGIN_INSTALL_FAILED,
             f"download failed with HTTP {exc.code}",
             details={"reason": f"HTTP {exc.code}"},
         ) from exc
     except urllib.error.URLError as exc:
         reason = getattr(exc, "reason", None) or str(exc)
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PLUGIN_INSTALL_FAILED,
             f"download failed: {reason}",
             details={"reason": str(reason)},
         ) from exc
     except OSError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PLUGIN_INSTALL_FAILED, f"download failed: {exc}", details={"reason": str(exc)}
         ) from exc
 
@@ -567,7 +567,7 @@ class PluginManager:
             network_error = local_network_error(exc)
             if network_error is not None:
                 raise network_error from exc
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_MARKET_FAILED,
                 "plugin market failed: upstream request failed",
                 details={"reason": "upstream request failed"},
@@ -627,25 +627,25 @@ class PluginManager:
             network_error = local_network_error(exc)
             if network_error is not None:
                 raise network_error from exc
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_MARKET_FAILED,
                 "plugin market failed: upstream request failed",
                 details={"reason": "upstream request failed"},
             ) from exc
         if remote is None:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.NOT_FOUND,
                 f"marketplace plugin {plugin_id!r} not found",
             )
         catalog_version = str(remote.get("version") or "")
         if requested and catalog_version != requested:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.NOT_FOUND,
                 f"marketplace plugin {plugin_id!r} version {requested!r} not found",
             )
         url = remote.get("download_url")
         if not isinstance(url, str) or not is_market_archive_url(url):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_INSTALL_FAILED,
                 f"marketplace plugin {plugin_id!r} has no archive",
             )
@@ -675,14 +675,14 @@ class PluginManager:
         """Resolve a marketplace catalog asset (icons only)."""
         plugin_dir = self.market_plugin_dir(plugin_id)
         if plugin_dir is None:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.NOT_FOUND,
                 f"marketplace plugin {plugin_id!r} not found",
             )
         cleaned = rel_path.strip().lstrip("/").replace("\\", "/")
         suffix = Path(cleaned).suffix.lower()
         if suffix not in _MARKET_ASSET_SUFFIXES:
-            raise OctopError(ErrorCode.NOT_FOUND, "invalid marketplace asset path")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "invalid marketplace asset path")
         return self._resolve_plugin_asset(plugin_dir, cleaned)
 
     def load_installed(self, *, install_deps: bool = True) -> list[LoadedPlugin]:
@@ -830,11 +830,11 @@ class PluginManager:
         """Toggle global plugin enablement in ``config.json`` and load/unload registry."""
         plugin_dir = self.plugin_dir(plugin_id)
         if plugin_dir is None:
-            raise OctopError(ErrorCode.NOT_FOUND, f"plugin {plugin_id!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"plugin {plugin_id!r} not found")
         try:
             PluginManifest.load(plugin_dir / "plugin.yaml")
         except Exception as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_INVALID_ARCHIVE,
                 f"invalid plugin manifest: {exc}",
             ) from exc
@@ -845,7 +845,7 @@ class PluginManager:
                 try:
                     _load_plugin_dir(plugin_dir, install_deps=False)
                 except Exception as exc:
-                    raise OctopError(
+                    raise HappyclawError(
                         ErrorCode.PLUGIN_INSTALL_FAILED,
                         f"failed to load plugin: {exc}",
                         details={"reason": str(exc)},
@@ -891,7 +891,7 @@ class PluginManager:
         """
         plugin_dir = self.plugin_dir(plugin_id)
         if plugin_dir is None:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.NOT_FOUND,
                 f"plugin {plugin_id!r} not found",
             )
@@ -901,7 +901,7 @@ class PluginManager:
     def _resolve_plugin_asset(plugin_dir: Path, rel_path: str) -> Path:
         cleaned = rel_path.strip().lstrip("/").replace("\\", "/")
         if not cleaned or any(part == ".." for part in cleaned.split("/")):
-            raise OctopError(ErrorCode.NOT_FOUND, "invalid plugin UI path")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "invalid plugin UI path")
         candidates = [
             plugin_dir / "ui" / cleaned,
             plugin_dir / cleaned,
@@ -913,10 +913,10 @@ class PluginManager:
             try:
                 resolved.relative_to(plugin_dir.resolve())
             except ValueError as exc:
-                raise OctopError(ErrorCode.NOT_FOUND, "invalid plugin UI path") from exc
+                raise HappyclawError(ErrorCode.NOT_FOUND, "invalid plugin UI path") from exc
             if resolved.is_file():
                 return resolved
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.NOT_FOUND,
             f"plugin UI file not found: {cleaned}",
         )
@@ -932,31 +932,31 @@ class PluginManager:
         self._ensure_plugin_cache()
         source = source.resolve()
         if not source.is_dir():
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_INVALID_ARCHIVE,
                 f"plugin directory not found: {source}",
             )
         try:
             manifest = PluginManifest.load(source / "plugin.yaml")
         except Exception as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_INVALID_ARCHIVE,
                 f"invalid plugin manifest: {exc}",
             ) from exc
         if expect_id is not None and manifest.id != expect_id:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_INVALID_ARCHIVE,
                 f"plugin id {manifest.id!r} does not match {expect_id!r}",
             )
         if expect_version is not None and manifest.version != expect_version:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_INVALID_ARCHIVE,
                 f"plugin version {manifest.version!r} does not match {expect_version!r}",
             )
         dest = self._plugins_dir / manifest.id
         if dest.exists():
             if not force:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.PLUGIN_ALREADY_EXISTS,
                     f"plugin already installed: {manifest.id}",
                     details={"id": manifest.id},
@@ -968,7 +968,7 @@ class PluginManager:
         try:
             return _load_plugin_dir(dest, install_deps=True)
         except Exception as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_INSTALL_FAILED,
                 f"failed to load plugin: {exc}",
                 details={"reason": str(exc)},
@@ -1022,10 +1022,10 @@ class PluginManager:
                                 if total_written > _MAX_PLUGIN_UNCOMPRESSED_BYTES:
                                     raise _archive_error("plugin ZIP expands beyond 64 MiB")
                                 destination.write(chunk)
-            except OctopError:
+            except HappyclawError:
                 raise
             except zipfile.BadZipFile as exc:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.PLUGIN_INVALID_ARCHIVE,
                     "file is not a valid ZIP archive",
                 ) from exc
@@ -1035,7 +1035,7 @@ class PluginManager:
             if not candidates and (extract_to / "plugin.yaml").is_file():
                 candidates = [extract_to]
             if len(candidates) != 1:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.PLUGIN_INVALID_ARCHIVE,
                     "zip must contain exactly one plugin directory with plugin.yaml",
                 )
@@ -1066,10 +1066,10 @@ class PluginManager:
                     expect_id=expect_id,
                     expect_version=expect_version,
                 )
-            except OctopError as exc:
+            except HappyclawError as exc:
                 if exc.code is not ErrorCode.PLUGIN_INVALID_ARCHIVE:
                     raise
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.PLUGIN_INVALID_ARCHIVE,
                     f"{exc.message} (GitHub /blob/ pages return HTML — use a raw .zip URL)",
                     details=exc.details,

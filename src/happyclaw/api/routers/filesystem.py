@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 
 from happyclaw.api.deps import current_user, get_server
 from happyclaw.infra.agents.workspace.dir import default_workspace_parent_dir
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import User
 from happyclaw.infra.users.resource_policy import (
     POLICY_WORKSPACE_ROOT_DIR,
@@ -153,7 +153,7 @@ async def list_host_dirs(
         )
         resolved = assert_safe_host_path(path, restrict_to_home=False, restrict_to_root=allowed)
     except ValueError as exc:
-        raise OctopError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc)) from exc
+        raise HappyclawError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc)) from exc
     return {"path": host_path_text(resolved), "entries": entries}
 
 
@@ -235,7 +235,7 @@ async def mkdir_host_dir(
             restrict_to_root=allowed,
         )
     except ValueError as exc:
-        raise OctopError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc)) from exc
+        raise HappyclawError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc)) from exc
 
 
 @router.post("/rename")
@@ -255,4 +255,4 @@ async def rename_host_directory(
             restrict_to_root=allowed,
         )
     except ValueError as exc:
-        raise OctopError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc)) from exc
+        raise HappyclawError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc)) from exc

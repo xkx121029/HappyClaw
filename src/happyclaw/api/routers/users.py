@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from happyclaw.api.deps import current_user, get_server, require_permission
 from happyclaw.infra.auth.ldap.config import LDAP_KIND
 from happyclaw.infra.auth.mfa import MfaService
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import Role, User
 from happyclaw.infra.users.permissions import (
     PERMISSIONS,
@@ -34,7 +34,7 @@ _SINGLE_USER_WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 def _single_user_read_only(request: Request) -> None:
     """Single-user mode keeps account endpoints readable but not writable."""
     if request.method in _SINGLE_USER_WRITE_METHODS:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SINGLE_USER_UNSUPPORTED,
             "single-user mode does not support account management",
         )
@@ -189,7 +189,7 @@ def _require_admin_to_grant_admin(actor: Any, role_id: str) -> None:
     if role_id != Role.ADMIN:
         return
     if not bool(getattr(actor, "is_admin", False)):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.FORBIDDEN,
             "only an administrator can assign the administrator account",
         )
@@ -204,10 +204,10 @@ def _resolve_role_template(
 
     cleaned = (role_id or "").strip()
     if not cleaned:
-        raise OctopError(ErrorCode.FORBIDDEN, "role is required", status=400)
+        raise HappyclawError(ErrorCode.FORBIDDEN, "role is required", status=400)
     role = UserRoleRepo(server.services.db).get(cleaned)
     if role is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "role not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "role not found")
     if role.is_admin:
         return role.user_role_id, role.user_role_name, [], []
     permissions = [key for key in role.permissions if key in PERMISSIONS]
@@ -243,7 +243,7 @@ def _clean_role_name(raw: str | None) -> str | None:
     if not name:
         return None
     if len(name) > 64:
-        raise OctopError(ErrorCode.FORBIDDEN, "role name must be 1-64 characters", status=400)
+        raise HappyclawError(ErrorCode.FORBIDDEN, "role name must be 1-64 characters", status=400)
     return name
 
 
@@ -265,7 +265,7 @@ def _assert_can_assign(actor: User, permissions: list[str]) -> None:
     held = set(expand_permission_grants(list(actor.permissions or [])))
     missing = sorted(set(expand_permission_grants(permissions)) - held)
     if missing:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.FORBIDDEN,
             "cannot grant permissions you do not hold",
             details={"missing": missing},
@@ -296,7 +296,7 @@ def _assert_not_last_user_manager(
         if _can_manage_users(u) and int(u.id) != target_user_id
     ]
     if not managers:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.FORBIDDEN,
             "cannot remove own user management permission",
         )
@@ -390,7 +390,7 @@ async def create_user(
     if body.directory:
         provider = server.services.sso_repo.get_by_kind(LDAP_KIND)
         if provider is None:
-            raise OctopError(ErrorCode.LDAP_NOT_CONFIGURED, "LDAP is not configured")
+            raise HappyclawError(ErrorCode.LDAP_NOT_CONFIGURED, "LDAP is not configured")
         directory_provider_id = int(provider.id)
         password = None
     user = await server.user_manager.create(
@@ -475,7 +475,7 @@ async def _batch_apply_one(
                 code=ErrorCode.SLASH_BAD_ARGS.value,
                 error=f"unknown action: {action}",
             )
-    except OctopError as exc:
+    except HappyclawError as exc:
         return _batch_fail(
             user_id,
             code=exc.code.value,
@@ -542,7 +542,7 @@ async def get_user(
 ) -> dict[str, Any]:
     row = server.user_manager.get_row(user_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
     return _row_to_dict(
         row,
         server.services.user_policy_repo.list_for_user(row.id),
@@ -560,7 +560,7 @@ async def patch_user(
 ) -> dict[str, Any]:
     row = server.user_manager.get_row(user_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
     if body.permissions is not None:
         _assert_can_assign(actor, body.permissions)
         # An administrator account keeps full access. The form stores that as
@@ -580,7 +580,7 @@ async def patch_user(
             server, body.role
         )
         if user_id == actor.id and role_id != Role.ADMIN:
-            raise OctopError(ErrorCode.FORBIDDEN, "cannot demote yourself")
+            raise HappyclawError(ErrorCode.FORBIDDEN, "cannot demote yourself")
         _require_admin_to_grant_admin(actor, role_id)
         await server.user_manager.set_role(row.username, role_id)
         if "role_name" not in body.model_fields_set:
@@ -633,7 +633,7 @@ async def unlock_user_login(
     """Clear failed-login counter and temporary lock for a user."""
     row = server.user_manager.get_row(user_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
     await server.user_manager.unlock_login(row.username)
 
 
@@ -646,7 +646,7 @@ async def admin_reset_mfa(
     """Clear TOTP, passkeys, and recovery codes for ``user_id``; bump their mfa_version."""
     row = server.user_manager.get_row(user_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
     MfaService(server.services).admin_reset(target_user_id=user_id, actor=actor.username)
     return Response(status_code=204)
 
@@ -660,7 +660,7 @@ async def reset_password(
 ) -> None:
     row = server.user_manager.get_row(user_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
     await server.user_manager.reset_password(row.username, body.new_password)
 
 
@@ -671,10 +671,10 @@ async def delete_user(
     server: Any = Depends(get_server),
 ) -> None:
     if user_id == actor.id:
-        raise OctopError(ErrorCode.FORBIDDEN, "cannot delete yourself")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "cannot delete yourself")
     row = server.user_manager.get_row(user_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
     registry = getattr(getattr(server, "app_runtime", None), "agent_registry", None)
     await server.user_manager.remove(row.username, agent_manager=registry)
 
@@ -687,7 +687,7 @@ async def upload_user_avatar(
     server: Any = Depends(get_server),
 ) -> dict[str, str | None]:
     if server.user_manager.get_row(user_id) is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
     from happyclaw.infra.users.profile_avatar import write_profile_avatar
 
     write_profile_avatar(
@@ -708,7 +708,7 @@ async def get_user_avatar(
     from happyclaw.infra.users.profile_avatar import avatar_response
 
     if server.user_manager.get_row(user_id) is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
     return avatar_response(server.services.avatars("user"), str(user_id))
 
 
@@ -719,7 +719,7 @@ async def delete_user_avatar(
     server: Any = Depends(get_server),
 ) -> None:
     if server.user_manager.get_row(user_id) is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
     from happyclaw.infra.users.profile_avatar import delete_profile_avatar
 
     delete_profile_avatar(server.services.avatars("user"), str(user_id))

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def resolve_user_id_by_username(services: Any, username: str) -> int:
     row = services.user_repo.get_by_username(username)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"user not found: {username}")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"user not found: {username}")
     return int(row.id)
 
 
@@ -32,11 +32,11 @@ def resolve_acting_user_id(
     if agent_id is not None:
         row = services.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         if row.user_id is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} has no owner")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} has no owner")
         return int(row.user_id)
-    raise OctopError(
+    raise HappyclawError(
         ErrorCode.NOT_FOUND,
         "user required (--user, CLI default_user, or agent with an owner)",
     )

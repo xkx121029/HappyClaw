@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from langgraph.config import var_child_runnable_config
 
-from happyclaw.config import DatabaseConfig, OctopConfig
+from happyclaw.config import DatabaseConfig, HappyclawConfig
 from happyclaw.infra.knowledge.plane import postgres_database
 from happyclaw.infra.knowledge.tools import KnowledgeToolServices, build_knowledge_tools
 
@@ -33,7 +33,7 @@ def _tool_by_name(tools: list, name: str):
 def test_tool_services_follow_control_plane_driver() -> None:
     """Search must see a driver swap; indexing already reads services.config."""
     manager = SimpleNamespace(
-        _config=OctopConfig(database=DatabaseConfig(driver="sqlite")),
+        _config=HappyclawConfig(database=DatabaseConfig(driver="sqlite")),
         _repos=SimpleNamespace(
             knowledge_repo=object(),
             settings_repo=object(),
@@ -43,7 +43,7 @@ def test_tool_services_follow_control_plane_driver() -> None:
     services = KnowledgeToolServices(manager)
     assert postgres_database(services) is None
 
-    manager._config = OctopConfig(
+    manager._config = HappyclawConfig(
         database=DatabaseConfig(
             driver="postgresql",
             host="db.example",

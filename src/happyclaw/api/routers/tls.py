@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from happyclaw.api.deps import get_server, require_permission
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.setup.tls.manager import get_tls_manager
 from happyclaw.infra.setup.tls.modes import is_issue_eligible, validate_issue_domain
 from happyclaw.infra.setup.tls.preflight import PreflightResult
@@ -90,12 +90,12 @@ async def tls_issue(
     mgr = get_tls_manager()
 
     if not is_issue_eligible(cfg):
-        raise OctopError.localized(ErrorCode.TLS_NOT_ELIGIBLE, locale)
+        raise HappyclawError.localized(ErrorCode.TLS_NOT_ELIGIBLE, locale)
 
     try:
         validate_issue_domain(body.domain, cfg)
     except ValueError:
-        raise OctopError.localized(ErrorCode.TLS_DOMAIN_MISMATCH, locale) from None
+        raise HappyclawError.localized(ErrorCode.TLS_DOMAIN_MISMATCH, locale) from None
 
     try:
         result = await mgr.start_issue(
@@ -107,6 +107,6 @@ async def tls_issue(
         )
     except RuntimeError as exc:
         if "already in progress" in str(exc):
-            raise OctopError.localized(ErrorCode.TLS_ISSUE_IN_PROGRESS, locale) from exc
+            raise HappyclawError.localized(ErrorCode.TLS_ISSUE_IN_PROGRESS, locale) from exc
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return _preflight_response(result)

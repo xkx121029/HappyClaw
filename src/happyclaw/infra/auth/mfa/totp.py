@@ -10,7 +10,7 @@ from cryptography.fernet import InvalidToken
 from happyclaw.infra.crypto.fernet import PURPOSE_MFA, decrypt_bytes, encrypt_bytes
 from happyclaw.infra.db.repos.secrets import SecretRepo
 from happyclaw.infra.db.repos.user_totp import UserTotpRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 PENDING_TTL_SECONDS = 600
 TOTP_VALID_WINDOW = 1  # ±1 timestep
@@ -29,7 +29,7 @@ def open_secret(secret_repo: SecretRepo, blob: bytes) -> str:
     try:
         return decrypt_bytes(secret_repo, PURPOSE_MFA, blob).decode("utf-8")
     except (InvalidToken, ValueError, UnicodeDecodeError) as exc:
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid MFA secret") from exc
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid MFA secret") from exc
 
 
 def otpauth_uri(*, secret: str, username: str, issuer: str = "Octop") -> str:

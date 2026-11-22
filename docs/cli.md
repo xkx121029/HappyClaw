@@ -57,12 +57,12 @@ owner directly.
 | Layer | When | Examples |
 |-------|------|----------|
 | **Offline** (local DB / files only) | Read/write `~/.happyclaw` with no server boot | `init`, `backup create/restore`, `plugin`, `agent list/use`, `chats list/get/create/update/delete`, `cron list/create/delete`, `admin overview/audit`, `models presets/list/active/config`, `provider list/create/delete`, `skills enable/disable`, `bridge list/get`, `cloud import-tccli`, `captcha reset`, `config`, `clean` |
-| **Embedded** (in-process `OctopServer`) | Needs the harness / gateway runtime for one command | `chats send/repl`, `cron run-now`, `agent create/from-expert/start/stop/reload`, `provider test`, `channel test/config/feishu-setup/bind`, `migrate openclaw/hermes`, `acp` |
+| **Embedded** (in-process `HappyclawServer`) | Needs the harness / gateway runtime for one command | `chats send/repl`, `cron run-now`, `agent create/from-expert/start/stop/reload`, `provider test`, `channel test/config/feishu-setup/bind`, `migrate openclaw/hermes`, `acp` |
 | **Embedded (bridge)** | In-process `BridgeManager` only; the CLI cannot hold the Bridge WebSocket after exit | `bridge probe/create/patch/delete/connect/disconnect/agents` |
 | **External** | Talks to an OS daemon or the system service manager; no HappyClaw HTTP | `models ollama-list/pull/rm` (local Ollama daemon), `service start/stop/restart/status`, `update`, `completion install` |
 
 `octop run` itself is the server. Embedded commands always boot their own
-short-lived in-process `OctopServer` (`happyclaw.cli.support.embedded_ops` →
+short-lived in-process `HappyclawServer` (`happyclaw.cli.support.embedded_ops` →
 `embedded_runtime()`) — they do not attach to a running `octop run`, and they
 exit when the command finishes. Data changes made offline (channels, cron,
 providers) are written to the same control-plane database and are picked up the
@@ -176,7 +176,7 @@ supported. The subcommands (`create`, `delete`, `disable`, `list`, `passwd`,
 ## `octop agent`
 
 Lifecycle and templates. `create`, `from-expert`, `start`, `stop` and `reload`
-boot an embedded `OctopServer`; `list`, `use` and `delete` work offline.
+boot an embedded `HappyclawServer`; `list`, `use` and `delete` work offline.
 
 ```
 Usage: octop agent [OPTIONS] COMMAND [ARGS]...
@@ -574,7 +574,7 @@ providers and channels.
 ## `octop acp`
 
 Expose an HappyClaw agent as a stdio JSON-RPC ACP server. Boots a
-standalone `OctopServer` (reads `~/.happyclaw`); does **not** require
+standalone `HappyclawServer` (reads `~/.happyclaw`); does **not** require
 `octop run` to be running.
 
 ```

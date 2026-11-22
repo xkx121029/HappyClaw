@@ -201,7 +201,7 @@ strict mypy 498 files、Ruff/format、wrapper `--online --all --help` 通过。�
 ## 2026-09-20 提交前验证与依赖收敛
 
 - 维护对象由 `AgentManager.memory_slim` 持有，shutdown 等待维护完成后关闭 Agent；
-  Gateway、SlashCtx、OctopServer 不再增加专用传递字段。CLI 控制入口按请求获取当前 runtime，
+  Gateway、SlashCtx、HappyclawServer 不再增加专用传递字段。CLI 控制入口按请求获取当前 runtime，
   支持首次配置完成后加载 AgentManager。
 - `/memory` 在 catalog 声明 `persist_checkpoint=False`；processor 统一读取保存策略，
   普通命令及别名继续写入 checkpoint 和已就绪的聊天展示记录。

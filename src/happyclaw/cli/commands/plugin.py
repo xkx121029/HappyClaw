@@ -8,7 +8,7 @@ from pathlib import Path
 import click
 
 from happyclaw.infra.agents.plugins.manager import PluginManager
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 
 
@@ -56,7 +56,7 @@ def install_plugin(source: str, force: bool) -> None:
             loaded = mgr.install_url(source, force=force)
         else:
             raise click.ClickException(f"not a directory or URL: {source}")
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(f"Installed plugin {loaded.manifest.id} v{loaded.manifest.version}")
     click.echo(

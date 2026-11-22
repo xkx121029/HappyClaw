@@ -33,8 +33,8 @@ from happyclaw.infra.dsh.prompts.errors import (
 
 __all__ = [
     "CONTEXT_ZONES",
-    "OctopPromptPlan",
-    "OctopPromptSection",
+    "HappyclawPromptPlan",
+    "HappyclawPromptSection",
     "PromptSection",
     "SECTION_ORDERS",
     "SKILLS_SECTION_ORDER",
@@ -186,7 +186,7 @@ class SectionRegistry:
 
 
 @dataclass(frozen=True, slots=True)
-class OctopPromptSection:
+class HappyclawPromptSection:
     """A section assigned to one Octop prompt zone."""
 
     zone: str
@@ -202,18 +202,18 @@ class OctopPromptSection:
 
 
 @dataclass(frozen=True, slots=True)
-class OctopPromptPlan:
+class HappyclawPromptPlan:
     """Sections grouped by Octop zone in a stable, reproducible order."""
 
-    sections: tuple[OctopPromptSection, ...]
+    sections: tuple[HappyclawPromptSection, ...]
 
-    def zone(self, zone: str) -> tuple[OctopPromptSection, ...]:
+    def zone(self, zone: str) -> tuple[HappyclawPromptSection, ...]:
         return tuple(section for section in self.sections if section.zone == zone)
 
-    def system_sections(self) -> tuple[OctopPromptSection, ...]:
+    def system_sections(self) -> tuple[HappyclawPromptSection, ...]:
         return tuple(section for section in self.sections if section.zone in SYSTEM_ZONES)
 
-    def context_sections(self) -> tuple[OctopPromptSection, ...]:
+    def context_sections(self) -> tuple[HappyclawPromptSection, ...]:
         return tuple(section for section in self.sections if section.zone in CONTEXT_ZONES)
 
     def render_system(self, variables: Mapping[str, str | None] | None = None) -> str:
@@ -223,7 +223,7 @@ class OctopPromptPlan:
         return _render(self.sections, variables or {})
 
 
-def plan_octop_prompt(sections: Iterable[PromptSection]) -> OctopPromptPlan:
+def plan_octop_prompt(sections: Iterable[PromptSection]) -> HappyclawPromptPlan:
     """Map assembled DSH sections onto Octop zones.
 
     Unknown section names are classified by DSH's order bands, so a newly added
@@ -231,7 +231,7 @@ def plan_octop_prompt(sections: Iterable[PromptSection]) -> OctopPromptPlan:
     configuration error.
     """
 
-    planned: list[OctopPromptSection] = []
+    planned: list[HappyclawPromptSection] = []
     for section in sections:
         zone = section.zone or _zone_for(section)
         zone_order = ZONE_ORDERS.get(zone)
@@ -241,7 +241,7 @@ def plan_octop_prompt(sections: Iterable[PromptSection]) -> OctopPromptPlan:
                 details={"name": section.name, "zone": zone},
             )
         planned.append(
-            OctopPromptSection(
+            HappyclawPromptSection(
                 zone=zone,
                 zone_order=zone_order,
                 name=section.name,
@@ -251,8 +251,8 @@ def plan_octop_prompt(sections: Iterable[PromptSection]) -> OctopPromptPlan:
                 complete=section.complete,
             )
         )
-    planned.sort(key=OctopPromptSection.sort_key)
-    return OctopPromptPlan(tuple(planned))
+    planned.sort(key=HappyclawPromptSection.sort_key)
+    return HappyclawPromptPlan(tuple(planned))
 
 
 def render_prompt(
@@ -321,7 +321,7 @@ def interpolate_text(
 
 
 def _render(
-    sections: Iterable[PromptSection | OctopPromptSection],
+    sections: Iterable[PromptSection | HappyclawPromptSection],
     variables: Mapping[str, str | None],
 ) -> str:
     ordered = sorted(sections, key=_render_sort_key)
@@ -345,8 +345,8 @@ def _render(
     return "\n\n".join(rendered)
 
 
-def _render_sort_key(section: PromptSection | OctopPromptSection) -> tuple[float, float, str]:
-    if isinstance(section, OctopPromptSection):
+def _render_sort_key(section: PromptSection | HappyclawPromptSection) -> tuple[float, float, str]:
+    if isinstance(section, HappyclawPromptSection):
         return (float(section.zone_order), float(section.dsh_order), section.name)
     return (0.0, float(section.order), section.name)
 

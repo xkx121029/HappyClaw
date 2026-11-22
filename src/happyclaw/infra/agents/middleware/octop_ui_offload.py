@@ -32,7 +32,7 @@ _OFFLOAD_MIN_CHARS = 4000
 _FILE_URL_GUARD = "file://"
 
 
-class OctopUiOffloadMiddleware(AgentMiddleware[Any, Any]):
+class HappyclawUiOffloadMiddleware(AgentMiddleware[Any, Any]):
     """Move oversized ``octop_ui`` ``data`` payloads to ``ToolMessage.artifact``."""
 
     def wrap_tool_call(
@@ -85,4 +85,4 @@ class OctopUiOffloadMiddleware(AgentMiddleware[Any, Any]):
         result.artifact = data
 
 
-__all__ = ["OctopUiOffloadMiddleware"]
+__all__ = ["HappyclawUiOffloadMiddleware"]

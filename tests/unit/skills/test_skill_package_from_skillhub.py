@@ -10,7 +10,7 @@ from happyclaw.infra.agents.experts.skillhub_market import SkillHubSkillset
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.skill_packages import SkillPackageRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.skills.skill_package_from_skillhub import create_package_from_skillhub
 from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 from happyclaw.infra.skills.skillhub_market import SkillHubSkillNotFound
@@ -40,7 +40,7 @@ def _item(*, skill_slugs: tuple[str, ...] = ("alpha",)) -> SkillHubSkillset:
 def test_duplicate_name_raises_package_name_taken(store: SkillPackageStore) -> None:
     store.create(name="Demo package", description="", created_by="1")
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         create_package_from_skillhub(
             store,
             slug="demo-skillset",
@@ -60,7 +60,7 @@ def test_create_maps_integrity_error_when_name_races(
     store.create(name="Demo package", description="", created_by="1")
     monkeypatch.setattr(store.repo, "get_by_name", lambda _name: None)
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         create_package_from_skillhub(
             store,
             slug="demo-skillset",

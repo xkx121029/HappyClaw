@@ -50,7 +50,7 @@ from happyclaw.infra.agents.manager import (
 from happyclaw.infra.agents.manager import (
     skills_disabled_set as _disabled_set,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.skills.presentation import apply_skill_presentation
 from happyclaw.infra.skills.skill_archive import build_skill_zip, build_skills_zip
 from happyclaw.infra.skills.skill_package_store import SkillPackageStore, normalize_copy_policy
@@ -197,7 +197,7 @@ async def _guard_package_only_skill_write(
                     and str(getattr(user, "id", "")) == origin_row.created_by
                 )
                 if not allowed:
-                    raise OctopError(
+                    raise HappyclawError(
                         ErrorCode.SKILL_PACKAGE_LOCKED,
                         f"skill {slug!r} was copied from a locked skill package",
                     )
@@ -207,7 +207,7 @@ async def _guard_package_only_skill_write(
     store = _skill_package_store(server)
     for package_id in skill_package_ids_list(config):
         if any(skill["slug"] == slug for skill in store.list_skill_summaries(package_id)):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN,
                 f"skill {slug!r} is supplied by a mounted package",
             )
@@ -339,7 +339,7 @@ async def replace_skill_package_mounts(
     for package_id in package_ids:
         package_row = store.repo.get(package_id)
         if package_row is None:
-            raise OctopError.localized(ErrorCode.SKILL_PACKAGE_NOT_FOUND, locale)
+            raise HappyclawError.localized(ErrorCode.SKILL_PACKAGE_NOT_FOUND, locale)
         store.assert_can_view(package_row, user)
     await server.app_runtime.agent_registry.persist_skill_package_ids(agent_id, package_ids)
     return {"package_ids": package_ids}
@@ -361,12 +361,12 @@ def _assert_skill_package_group(server: Any, user: Any, row: Any, locale: str) -
         is_owner=str(user.id) == str(row.created_by),
     ):
         return
-    raise OctopError.localized(ErrorCode.SKILL_PACKAGE_NOT_FOUND, locale)
+    raise HappyclawError.localized(ErrorCode.SKILL_PACKAGE_NOT_FOUND, locale)
 
 
 def _skill_package_store(server: Any) -> SkillPackageStore:
     if server.services is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "skill package store not initialized")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "skill package store not initialized")
     config = getattr(server.services, "config", None)
     database = getattr(config, "database", None) if config is not None else None
     return SkillPackageStore(
@@ -376,16 +376,16 @@ def _skill_package_store(server: Any) -> SkillPackageStore:
     )
 
 
-def _skill_transfer_error(exc: SkillPackageError, *, locale: Locale) -> OctopError:
+def _skill_transfer_error(exc: SkillPackageError, *, locale: Locale) -> HappyclawError:
     if isinstance(exc, SkillTransferConflict):
-        return OctopError.localized(
+        return HappyclawError.localized(
             ErrorCode.SKILL_ALREADY_EXISTS,
             locale,
             name=exc.slug,
         )
     if isinstance(exc, SkillTransferNotFound):
-        return OctopError(ErrorCode.NOT_FOUND, str(exc))
-    return OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc))
+        return HappyclawError(ErrorCode.NOT_FOUND, str(exc))
+    return HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc))
 
 
 @router.post(
@@ -405,7 +405,7 @@ async def copy_skill_package_to_workspace(
     store = _skill_package_store(server)
     package_row = store.repo.get(package_id)
     if package_row is None:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_PACKAGE_NOT_FOUND,
             resolve_request_locale(request),
         )
@@ -465,7 +465,7 @@ async def push_workspace_skill_to_package(
     store = _skill_package_store(server)
     row = store.repo.get(body.package_id)
     if row is None:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_PACKAGE_NOT_FOUND,
             resolve_request_locale(request),
         )
@@ -508,7 +508,7 @@ async def get_skill(
     )
     resolved = await _resolve_skill(ctx.workspace, name)
     if resolved is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"skill {name!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"skill {name!r} not found")
     manifest_path, kind, _body = resolved
     manifest = await _aread_text(ctx.workspace, manifest_path)
     assert manifest is not None
@@ -659,13 +659,13 @@ def _files_from_skill_body(
             try:
                 decoded.append((part.path, base64.b64decode(part.content_base64, validate=True)))
             except Exception as exc:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.SLASH_BAD_ARGS,
                     f"invalid base64 content for {part.path!r}",
                 ) from exc
         return decoded
     if not content:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "content or files is required")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "content or files is required")
     return [("SKILL.md", content.encode("utf-8"))]
 
 
@@ -686,9 +686,9 @@ async def create_skill(
             source="manual",
         )
     except SkillPackageTooLarge as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
     except SkillPackageError:
-        raise OctopError(ErrorCode.NOT_FOUND, "invalid skill name") from None
+        raise HappyclawError(ErrorCode.NOT_FOUND, "invalid skill name") from None
     await _guard_package_only_skill_write(ctx.workspace, ctx.config, server, name, user)
     # Conflict check must use SKILL.md — ZIP payloads often list siblings first,
     # and soft-delete only marks the manifest (leaving sibling files behind).
@@ -696,7 +696,7 @@ async def create_skill(
     if existing is not None:
         meta, _ = parse_frontmatter(existing)
         if not meta.get("removed") and not body.overwrite:
-            raise OctopError(ErrorCode.SKILL_ALREADY_EXISTS, f"skill {name!r} already exists")
+            raise HappyclawError(ErrorCode.SKILL_ALREADY_EXISTS, f"skill {name!r} already exists")
     with contextlib.suppress(Exception):
         await ctx.workspace.adelete(f"skills/{name}")
     await _write_skill_files(ctx.workspace, f"skills/{name}", package.files)
@@ -739,17 +739,17 @@ async def update_skill(
             source="manual",
         )
     except SkillPackageTooLarge as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
     except SkillPackageError:
-        raise OctopError(ErrorCode.NOT_FOUND, "invalid skill name") from None
+        raise HappyclawError(ErrorCode.NOT_FOUND, "invalid skill name") from None
 
     await _guard_package_only_skill_write(ctx.workspace, ctx.config, server, slug, user)
     existing = await _aread_text(ctx.workspace, f"skills/{slug}/SKILL.md")
     if existing is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
     meta_existing, _ = parse_frontmatter(existing)
     if meta_existing.get("removed"):
-        raise OctopError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
 
     # ``content``-only updates (the dashboard editor edits SKILL.md) must keep
     # the skill's sibling files and directories (README.md, references/, ...)
@@ -827,7 +827,7 @@ async def copy_skill_from_agent(
     assert server.app_runtime is not None
     source = server.app_runtime.agent_registry.workspace_for_agent(body.source_agent_id)
     if source is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "source workspace not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "source workspace not found")
     locale = resolve_request_locale(request)
     try:
         slug = validate_skill_slug(body.slug)
@@ -870,9 +870,9 @@ async def import_skill_from_url(
     locale = resolve_request_locale(request)
     bundle_url = body.bundle_url.strip()
     if not bundle_url:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "bundle_url is required")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "bundle_url is required")
     if not is_supported_skill_url(bundle_url):
-        raise OctopError.localized(ErrorCode.SKILL_IMPORT_UNSUPPORTED_URL, locale)
+        raise HappyclawError.localized(ErrorCode.SKILL_IMPORT_UNSUPPORTED_URL, locale)
 
     ctx = await _ctx(agent_id, user=user, as_user=as_user, server=server)
     target = _AgentWorkspaceInstallTarget(
@@ -896,31 +896,31 @@ async def import_skill_from_url(
             enable=body.enable,
         )
     except SkillAlreadyExistsError as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_ALREADY_EXISTS,
             locale,
             name=exc.slug,
         ) from exc
     except SkillPackageError as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_IMPORT_FAILED,
             locale,
             reason=str(exc),
         ) from exc
     except ValueError as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_IMPORT_FAILED,
             locale,
             reason=str(exc),
         ) from exc
     except RuntimeError as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_IMPORT_FAILED,
             locale,
             reason=str(exc),
         ) from exc
     except (HTTPError, URLError, TimeoutError, OSError) as exc:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.SKILL_IMPORT_FAILED,
             locale,
             reason=str(exc),
@@ -952,21 +952,21 @@ async def delete_skill(
     try:
         slug = validate_skill_slug(name)
     except SkillPackageError:
-        raise OctopError(ErrorCode.NOT_FOUND, "invalid skill name") from None
+        raise HappyclawError(ErrorCode.NOT_FOUND, "invalid skill name") from None
     await _guard_package_only_skill_write(ctx.workspace, ctx.config, server, slug, user)
     resolved = await _resolve_skill(ctx.workspace, slug)
     if resolved is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
     manifest_path, kind, _body = resolved
     if kind == "builtin":
-        raise OctopError(ErrorCode.NOT_FOUND, f"builtin skill {name!r} cannot be deleted")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"builtin skill {name!r} cannot be deleted")
     target = manifest_path
     existing = await _aread_text(ctx.workspace, target)
     if existing is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"skill {name!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"skill {name!r} not found")
     err = await _aoverwrite_text(ctx.workspace, target, "---\nremoved: true\n---\n")
     if err:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot remove {target!r}: {err}")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot remove {target!r}: {err}")
 
 
 # --- enable / disable -------------------------------------------------------

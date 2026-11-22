@@ -9,7 +9,7 @@ import pytest
 
 from happyclaw.infra.bridge.manager import BridgeManager
 from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def _row(**overrides: Any) -> BridgeConnectionRow:
@@ -136,7 +136,7 @@ async def test_update_endpoint_rejects_duplicate_peer(
         "happyclaw.infra.bridge.manager.normalize_peer_base_url",
         lambda raw: raw.strip().rstrip("/"),
     )
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr.update_connection_meta(
             "cid1",
             owner_user_id=1,
@@ -164,7 +164,7 @@ async def test_update_password_required_when_no_stored_secret() -> None:
     row = _row(credential_blob=None)
     mgr.get_owned = MagicMock(return_value=row)  # type: ignore[method-assign]
     mgr._repo.find_by_display_name = MagicMock(return_value=None)
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr.update_connection_meta(
             "cid1",
             owner_user_id=1,
@@ -200,7 +200,7 @@ async def test_inbound_update_display_only() -> None:
 async def test_inbound_connect_rejected() -> None:
     mgr = _mgr()
     mgr.get_owned = MagicMock(return_value=_row(credential_blob=None))  # type: ignore[method-assign]
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr.connect("cid1", owner_user_id=1)
     assert ei.value.code == ErrorCode.BRIDGE_INBOUND_PASSIVE
 
@@ -209,7 +209,7 @@ async def test_inbound_connect_rejected() -> None:
 async def test_inbound_auto_reconnect_rejected() -> None:
     mgr = _mgr()
     mgr.get_owned = MagicMock(return_value=_row(credential_blob=None))  # type: ignore[method-assign]
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr.set_auto_reconnect("cid1", owner_user_id=1, enabled=True)
     assert ei.value.code == ErrorCode.BRIDGE_INBOUND_PASSIVE
 

@@ -11,7 +11,7 @@ from typing import Any
 
 import httpx
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.i18n.domains.tls import preflight_message
 from happyclaw.infra.setup.tls.listeners import TLS_HTTP_PORT, TLS_HTTPS_PORT
 from happyclaw.infra.setup.tls.modes import is_renewal_mode, normalize_domain
@@ -123,7 +123,7 @@ def _fetch_public_ip(timeout: float = 4.0) -> str | None:
     return _fetch_public_ip_from_urls(_PUBLIC_IP_HTTPS_URLS, timeout=timeout)
 
 
-def run_preflight(domain: str, config: OctopConfig, *, locale: str = "en") -> PreflightResult:
+def run_preflight(domain: str, config: HappyclawConfig, *, locale: str = "en") -> PreflightResult:
     """Verify bind host, ports, and DNS before ACME issuance or renewal."""
     loc = normalize_locale(locale)
     domain = normalize_domain(domain)

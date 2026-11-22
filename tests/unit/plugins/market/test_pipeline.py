@@ -14,7 +14,7 @@ from happyclaw.infra.plugins.market import (
     DshSource,
     InstallConflictError,
     MarketplaceIndex,
-    OctopSource,
+    HappyclawSource,
     plugin_dir_name,
     verify_install,
 )
@@ -85,7 +85,7 @@ def build_index(
 
     sources: list = []
     if octop_items is not None:
-        sources.append(OctopSource(loader=lambda: octop_items, transport=transport))
+        sources.append(HappyclawSource(loader=lambda: octop_items, transport=transport))
     if dsh_versions:
         index_path = tmp_path / "dsh-index.json"
         index_path.write_text(json.dumps(dsh_document(*dsh_versions)), encoding="utf-8")
@@ -103,7 +103,7 @@ def test_one_unusable_catalog_does_not_hide_the_other(tmp_path):
     index_path = tmp_path / "dsh-index.json"
     index_path.write_text(json.dumps(dsh_document("1.0.0")), encoding="utf-8")
     index = MarketplaceIndex(
-        [OctopSource(loader=lambda: [broken_row]), DshSource(index_path)]
+        [HappyclawSource(loader=lambda: [broken_row]), DshSource(index_path)]
     )
 
     entries = index.fetch()

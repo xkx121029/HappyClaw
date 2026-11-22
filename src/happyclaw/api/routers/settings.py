@@ -12,12 +12,12 @@ from pydantic import BaseModel, Field
 from happyclaw.api.common.content_disposition import content_disposition
 from happyclaw.api.common.upload_limit import read_upload_capped
 from happyclaw.api.deps import current_user, get_server, require_permission
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.security import tool_execution_may_pause
 from happyclaw.infra.auth.captcha import current_env, load_view, save_settings
 from happyclaw.infra.auth.mfa.settings import load_view as load_webauthn_view
 from happyclaw.infra.auth.mfa.settings import save_settings as save_webauthn_settings
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import User
 from happyclaw.infra.utils.download_links import DownloadLinkStore
 from happyclaw.infra.utils.user_downloads import (
@@ -73,7 +73,7 @@ async def get_upload_settings(
 ) -> UploadSettingsResponse:
     """Return the process upload size limit used for chat attachments and knowledge documents."""
     _ = user
-    cfg: OctopConfig = server.services.config
+    cfg: HappyclawConfig = server.services.config
     return UploadSettingsResponse(
         max_upload_mb=cfg.max_upload_mb,
         max_upload_bytes=cfg.max_upload_bytes,
@@ -120,7 +120,7 @@ async def save_local_download(
     """Write an already-fetched blob to ~/Downloads. Desktop WebViews cannot use <a download>."""
     _ = user
     if not is_local_dashboard_request(request):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.LOCAL_DOWNLOAD_UNAVAILABLE,
             "local download is only available on this computer",
         )
@@ -177,7 +177,7 @@ async def open_download_link(
     """Serve a file created by ``POST /downloads/link``. The token is the only credential."""
     link = await asyncio.to_thread(_download_links.get, token)
     if link is None or server.user_manager.get_by_id(link.owner_id) is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "download link expired or not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "download link expired or not found")
     return FileResponse(
         link.path,
         media_type="application/octet-stream",
@@ -208,7 +208,7 @@ async def get_capabilities(
 ) -> CapabilitiesResponse:
     """Return install-time host capabilities (always available when authenticated)."""
     _ = user
-    cfg: OctopConfig = server.services.config
+    cfg: HappyclawConfig = server.services.config
     cap = cfg.capabilities.mobile
     return CapabilitiesResponse(
         mobile=MobileCapabilitiesResponse(enabled=cap.enabled, backend=cap.backend)

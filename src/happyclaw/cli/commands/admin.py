@@ -9,7 +9,7 @@ import sys
 import click
 
 from happyclaw.cli.support.errors import fail_octop
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 @click.group()
@@ -85,7 +85,7 @@ def create_admin_provider(name: str, kind: str, config_json: str) -> None:
             api_key=cfg.get("api_key"),
             models=cfg.get("models"),
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo(_json.dumps(row, indent=2))
 
@@ -97,7 +97,7 @@ def delete_admin_provider(provider_id: str) -> None:
 
     try:
         delete_provider_offline(int(provider_id))
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo("deleted")
 

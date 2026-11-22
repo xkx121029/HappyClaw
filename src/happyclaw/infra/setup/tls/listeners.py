@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 
 TLS_HTTPS_PORT = 443
 TLS_HTTP_PORT = 80
@@ -31,7 +31,7 @@ class ListenPlan:
 
 
 def build_listen_plan(
-    config: OctopConfig,
+    config: HappyclawConfig,
     *,
     bind_host: str,
     bind_port: int,

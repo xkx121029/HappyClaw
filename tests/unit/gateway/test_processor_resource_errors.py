@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.process.processor import GlobalProcessor, _stream_error
 from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 from happyclaw.infra.gateway.ws import WS_CHANNEL_ID
@@ -60,7 +60,7 @@ async def test_auth_exception_is_displayed_as_failure_and_kept_out_of_checkpoint
 
 
 def test_stream_error_preserves_resource_error_code() -> None:
-    error = OctopError(
+    error = HappyclawError(
         ErrorCode.TOKEN_QUOTA_EXCEEDED,
         "token quota exceeded",
         details={"used": 12, "quota": 10},

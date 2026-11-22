@@ -26,7 +26,7 @@ from happyclaw.infra.auth.sso.redirect_after import sanitize_redirect_after
 from happyclaw.infra.db.repos.secrets import SecretRepo
 from happyclaw.infra.db.repos.sso import SsoProviderRow
 from happyclaw.infra.db.services import SharedServices
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import User
 from happyclaw.infra.users.manager import UserManager
 
@@ -317,7 +317,7 @@ class SsoService:
                 user = await self._user_manager.resolve_or_create_sso_user(
                     provider_id=provider.id, subject=subject, claims=claims
                 )
-        except OctopError as exc:
+        except HappyclawError as exc:
             if exc.code is ErrorCode.USER_DISABLED:
                 return self._error_redirect(frontend, "disabled")
             if exc.code is ErrorCode.SSO_IDENTITY_TAKEN:

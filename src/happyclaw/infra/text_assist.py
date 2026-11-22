@@ -7,7 +7,7 @@ import logging
 from typing import Any, Literal, get_args
 
 from happyclaw.i18n import tr
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.llm_text import strip_thinking
 from happyclaw.infra.utils.locale import Locale, normalize_locale
 
@@ -46,7 +46,7 @@ def require_host_models(server: Any) -> Any:
     registry = getattr(runtime, "agent_registry", None)
     models = getattr(registry, "host_models", None)
     if models is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "runtime unavailable")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "runtime unavailable")
     return models
 
 
@@ -99,7 +99,7 @@ async def run_text_assist(
     ``ChatModelFactory.get_for`` selects the model.
     """
     if kind not in ASSIST_KINDS:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"unknown assist kind: {kind}")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"unknown assist kind: {kind}")
 
     draft = (text or "").strip()
     name = _context_name(context)
@@ -107,12 +107,12 @@ async def run_text_assist(
 
     if kind in _TEXT_KINDS:
         if not draft:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "text is required")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "text is required")
     elif kind in _FORM_KINDS:
         if not name:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "context.name is required")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "context.name is required")
     else:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"unknown assist kind: {kind}")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"unknown assist kind: {kind}")
 
     access = models.get(default_model)
     system, user = _prompt_pair(kind=kind, text=draft, name=name, locale=loc)
@@ -123,14 +123,14 @@ async def run_text_assist(
             timeout=_TIMEOUT_SECONDS,
         )
     except TimeoutError:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "text assist timed out") from None
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "text assist timed out") from None
     except Exception:
         logger.exception("text assist failed kind=%s model=%s", kind, model_ref)
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "text assist failed") from None
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "text assist failed") from None
 
     polished = strip_thinking(result or "").strip()
     if not polished:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "model returned empty text assist result")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "model returned empty text assist result")
     return polished
 
 

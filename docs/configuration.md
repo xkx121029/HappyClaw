@@ -22,7 +22,7 @@ on first server start (or by `octop init` / `octop run`).
 ```
 
 `env` is dotenv format, applied before `config.json` is loaded
-(`OctopServer.start` → `apply_env_file`). The dashboard path is **管理 → 应用设置 →
+(`HappyclawServer.start` → `apply_env_file`). The dashboard path is **管理 → 应用设置 →
 环境变量**, which writes this file. Saving **replaces** the file and drops removed
 keys from the process environment (host/systemd keys that were never in the
 file are left alone). Every running agent inherits those keys:
@@ -93,7 +93,7 @@ deployments retain their own process/container resource policies.
 ## `config.json`
 
 Generated with defaults on first run; merged with environment overrides
-on each start. Schema (`OctopConfig` in `octop/config.py`):
+on each start. Schema (`HappyclawConfig` in `octop/config.py`):
 
 ```json
 {
@@ -219,7 +219,7 @@ Each variable, when set, takes precedence over the matching key in
 
 Invalid integer values are logged and ignored — the on-disk default
 remains in effect. `database_env_configured()` returns `True` when any
-`OCTOP_DATABASE_*` is set, which lets `OctopServer.start()` pick the
+`OCTOP_DATABASE_*` is set, which lets `HappyclawServer.start()` pick the
 configured backend at boot.
 
 **Docker Compose:** create `docker/.env` (it is not committed) and put `OCTOP_DATABASE_*` there *and* ensure

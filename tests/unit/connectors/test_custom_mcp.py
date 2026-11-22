@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.connectors.builder import build_mcp_server_configs_for_user, mcp_server_name
 from happyclaw.infra.connectors.custom_mcp import (
     CUSTOM_MCP_KIND,
@@ -38,7 +38,7 @@ def svc(db: SqlitePool) -> ConnectorService:
         repo=ConnectorRepo(db),
         secret_repo=SecretRepo(db),
         settings_repo=SettingsRepo(db),
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
 
 
@@ -260,9 +260,9 @@ def test_shared_custom_name_collision_keeps_viewer_server_distinct(
 
 
 def test_rejects_public_http_and_allows_lan():
-    from happyclaw.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
-    with pytest.raises(OctopError) as http_exc:
+    with pytest.raises(HappyclawError) as http_exc:
         normalize_server_spec(
             "bad",
             {"transport": "streamable_http", "url": "http://example.com/mcp"},
@@ -303,9 +303,9 @@ def test_allows_loopback_http_and_https():
 
 def test_mcp_url_invalid_error_code():
     from happyclaw.infra.connectors.custom_mcp import validate_mcp_http_url
-    from happyclaw.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         validate_mcp_http_url("ftp://example.com/mcp")
     assert exc.value.code is ErrorCode.CONNECTOR_MCP_URL_INVALID
     assert exc.value.details.get("reason") == "url must be http or https"
@@ -459,7 +459,7 @@ def test_build_mcp_configs_merges_enabled_custom(svc: ConnectorService, db: Sqli
         user_id=uid,
         agent_id="agent-1",
         agent_user_id=uid,
-        config=OctopConfig(),
+        config=HappyclawConfig(),
         log=False,
     )
     assert set(configs) == {"a"}

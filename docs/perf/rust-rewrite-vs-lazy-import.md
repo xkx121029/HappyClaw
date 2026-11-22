@@ -97,7 +97,7 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 | 导入路径 | 改动前 | 改动后 | 收益 |
 | --- | --- | --- | --- |
 | `import octop.i18n.domains` | 1.250s | 0.785s | **-465ms** |
-| `from happyclaw.infra.errors import OctopError` | 1.219s | 0.817s | **-401ms** |
+| `from happyclaw.infra.errors import HappyclawError` | 1.219s | 0.817s | **-401ms** |
 | `import happyclaw.cli.commands.run` | 1.479s | 1.013s | **-466ms** |
 
 所有上述路径改造后不再加载 `langchain_core`。守卫

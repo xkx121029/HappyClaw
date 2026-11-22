@@ -13,7 +13,7 @@ from happyclaw.infra.agents.experts.skillhub_market import (
     skill_slugs_for_skillset,
 )
 from happyclaw.infra.db.repos.skill_packages import SkillPackageRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.skills.install import valid_skillhub_icon_url
 from happyclaw.infra.skills.skill_package_store import (
     SkillPackageStore,
@@ -61,7 +61,7 @@ def create_package_from_skillhub(
     package_icon_url = (icon_url if icon_url is not None else item.icon_url).strip()
 
     if package_icon_url and not valid_skillhub_icon_url(package_icon_url):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid SkillHub icon URL")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid SkillHub icon URL")
     if store.repo.get_by_name(package_name) is not None:
         raise_skill_package_name_taken(package_name)
 

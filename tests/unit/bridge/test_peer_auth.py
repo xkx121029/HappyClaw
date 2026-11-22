@@ -21,7 +21,7 @@ from happyclaw.infra.bridge.peer_auth import (
     peer_identity_key,
     peer_ws_url,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def test_normalize_accepts_https_host() -> None:
@@ -29,13 +29,13 @@ def test_normalize_accepts_https_host() -> None:
 
 
 def test_normalize_rejects_metadata_ip() -> None:
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         normalize_peer_base_url("http://169.254.169.254/latest/meta-data")
     assert ei.value.code == ErrorCode.BRIDGE_PEER_UNREACHABLE
 
 
 def test_normalize_rejects_non_http() -> None:
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         normalize_peer_base_url("ftp://peer.example")
     assert ei.value.code == ErrorCode.BRIDGE_PEER_UNREACHABLE
 

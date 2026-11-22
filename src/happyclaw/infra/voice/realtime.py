@@ -16,7 +16,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.tencent_asr_sign import DEFAULT_ENGINE, build_asr_v2_url
 
 logger = logging.getLogger(__name__)
@@ -145,7 +145,7 @@ class TencentRealtimeSession:
             raw = await asyncio.wait_for(self._ws.recv(), timeout=HANDSHAKE_TIMEOUT_SECONDS)
         except (WebSocketException, OSError, TimeoutError) as exc:
             await self.close()
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.VOICE_REALTIME_UNAVAILABLE,
                 f"realtime ASR connect failed: {exc}",
             ) from exc
@@ -153,14 +153,14 @@ class TencentRealtimeSession:
         control = _parse_control(raw)
         if control is None:
             await self.close()
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.VOICE_REALTIME_UNAVAILABLE,
                 "realtime ASR sent an unexpected handshake frame",
             )
         code, message = control
         if code != 0:
             await self.close()
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.VOICE_REALTIME_UNAVAILABLE,
                 f"realtime ASR handshake failed: {message or code}",
                 details={"tencent_code": code},

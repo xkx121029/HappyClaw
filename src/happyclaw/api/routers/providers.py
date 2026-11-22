@@ -45,7 +45,7 @@ from happyclaw.infra.agents.providers.store import (
     resolve_provider_stream_usage,
     stamp_embedding_models,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.groups import RESOURCE_MODEL, GroupAccess, model_resource_key
 from happyclaw.infra.utils.locale import resolve_request_locale
 from happyclaw.infra.utils.ulid import new_ulid
@@ -422,7 +422,7 @@ async def admin_create_provider(
     extra_json = merge_stream_usage_extra(body.extra_json, body.stream_usage)
     extra_json = merge_provider_purpose_extra(extra_json, body.purpose)
     if server.services.provider_repo.get_by_name(body.name) is not None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PROVIDER_NAME_TAKEN,
             f"provider {body.name!r} already exists",
         )
@@ -449,7 +449,7 @@ async def admin_patch_provider(
 ) -> dict[str, Any]:
     row = server.services.provider_repo.get(provider_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "provider not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "provider not found")
     if body.models is not None:
         body.models = _sync_model_visibility(server, row.name, body.models)
     server.services.provider_repo.update(
@@ -478,19 +478,19 @@ async def admin_delete_provider(
 ) -> None:
     row = server.services.provider_repo.get(provider_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "provider not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "provider not found")
     if is_local_runtime_provider(
         row.name,
         provider_api_key=row.api_key,
         provider_base_url=row.base_url,
     ):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PROVIDER_LOCAL_PROTECTED,
             "local runtime providers cannot be deleted",
         )
     refs = server.app_runtime.agent_registry.find_agents_using_provider(row.name)
     if refs:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PROVIDER_REFERENCED,
             f"provider {row.name!r} is referenced by {len(refs)} agent(s)",
             details={"agents": refs},
@@ -622,7 +622,7 @@ async def codex_oauth_start(
         details: dict[str, Any] = {"reason": exc.reason}
         if exc.upstream_status is not None:
             details["upstream_status"] = exc.upstream_status
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CODEX_OAUTH_START_FAILED,
             "codex device OAuth start failed",
             details=details,
@@ -661,10 +661,10 @@ async def codex_oauth_pending(
     try:
         payload = json.loads(raw)
     except json.JSONDecodeError:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "corrupt oauth pending") from None
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "corrupt oauth pending") from None
     flow_user = payload.get("user_id")
     if flow_user is not None and flow_user != user.id:
-        raise OctopError(ErrorCode.FORBIDDEN, "not your oauth session")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "not your oauth session")
     return cast(dict[str, Any], payload)
 
 
@@ -696,7 +696,7 @@ async def admin_test_provider(
     """Probe a provider: chat ping, or ``POST /embeddings`` for embedding models."""
     row = server.services.provider_repo.get(provider_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "provider not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "provider not found")
     row = await _maybe_refresh_codex_row(server, row)
     model_id = body.model_id if body else None
     api_mode = body.api_mode if body else None

@@ -22,9 +22,9 @@ Sub-packages (see ``AGENTS.md`` §5 for ownership boundaries):
     voice       — STT / TTS
 
 Top-level modules:
-    errors   — OctopError / ErrorCode
+    errors   — HappyclawError / ErrorCode
     metrics  — in-process counters
-    server   — OctopServer process orchestrator
+    server   — HappyclawServer process orchestrator
 """
 
 from __future__ import annotations

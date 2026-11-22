@@ -1,4 +1,4 @@
-"""OctopServer — process-level orchestrator."""
+"""HappyclawServer — process-level orchestrator."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from happyclaw.config import OctopConfig, load_config
+from happyclaw.config import HappyclawConfig, load_config
 from happyclaw.infra.setup.wizard_tokens import WizardTokenStore
 from happyclaw.infra.utils.paths import PathLayout
 from happyclaw.infra.utils.process_resources import ensure_nofile_limit
@@ -214,7 +214,7 @@ def _parse_log_max_bytes() -> int:
         return DEFAULT_LOG_MAX_BYTES
 
 
-class _OctopLogFormatter(logging.Formatter):
+class _HappyclawLogFormatter(logging.Formatter):
     """Process log line, with the active harness agent id when one is in scope."""
 
     def format(self, record: logging.LogRecord) -> str:
@@ -249,7 +249,7 @@ def _build_log_handler(
     # Rotated files are ``octop.YYYY-MM-DD.log`` (date before the extension).
     handler.suffix = "%Y-%m-%d"
     handler.namer = _dated_log_namer
-    handler.setFormatter(_OctopLogFormatter("%(asctime)s %(levelname)-5s %(name)s — %(message)s"))
+    handler.setFormatter(_HappyclawLogFormatter("%(asctime)s %(levelname)-5s %(name)s — %(message)s"))
     return handler
 
 
@@ -290,7 +290,7 @@ class AppRuntime:
     trajectory_service: TrajectoryService | None = None
     bridge_manager: Any | None = None
 
-    def replace_services(self, services: SharedServices, config: OctopConfig) -> None:
+    def replace_services(self, services: SharedServices, config: HappyclawConfig) -> None:
         """Retarget all runtime singletons onto a new SharedServices / config.
 
         Used when the setup wizard hot-swaps the control-plane DB while empty.
@@ -321,7 +321,7 @@ class _LazyCatalogProxy:
 
     __slots__ = ("_server", "_attr")
 
-    def __init__(self, server: OctopServer, attr: str) -> None:
+    def __init__(self, server: HappyclawServer, attr: str) -> None:
         self._server = server
         self._attr = attr
 
@@ -329,11 +329,11 @@ class _LazyCatalogProxy:
         return getattr(getattr(self._server, self._attr), item)
 
 
-class OctopServer:
+class HappyclawServer:
     def __init__(self, home: Path | None = None) -> None:
         self._home = home or PathLayout.from_env().root
         self.paths = PathLayout(self._home)
-        self.config: OctopConfig | None = None
+        self.config: HappyclawConfig | None = None
         self.services: SharedServices | None = None
         self.app_runtime: AppRuntime | None = None
         self._expert_catalog: ExpertCatalog | None = None
@@ -387,9 +387,9 @@ class OctopServer:
     def owner_identity(self) -> Any:
         """The single local user for this installation."""
         if self.services is None:
-            from happyclaw.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
+            from happyclaw.infra.errors import ErrorCode, HappyclawError  # noqa: PLC0415
 
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SINGLE_USER_INIT_FAILED,
                 "control-plane database is not available",
                 status=503,
@@ -610,7 +610,7 @@ class OctopServer:
         ensure_cli_path()
         self._load_plugins()
 
-    async def _deferred_runtime_warmup(self, config: OctopConfig) -> None:
+    async def _deferred_runtime_warmup(self, config: HappyclawConfig) -> None:
         """Filesystem walks and config tweaks that do not gate first paint.
 
         Runs as a fire-and-forget ``asyncio.create_task`` from ``_boot_runtime``
@@ -762,7 +762,7 @@ class OctopServer:
             config.database.driver,
         )
 
-    async def _boot_runtime(self, config: OctopConfig) -> None:
+    async def _boot_runtime(self, config: HappyclawConfig) -> None:
         assert self.services is not None
         assert self.plugin_manager is not None
 
@@ -1005,7 +1005,7 @@ class OctopServer:
         """Reconcile only changed kinds and report registration failures to callers."""
         from happyclaw_harness.plugins.registry import PluginRegistry  # noqa: PLC0415
 
-        from happyclaw.infra.errors import ErrorCode, OctopError
+        from happyclaw.infra.errors import ErrorCode, HappyclawError
         from happyclaw.infra.gateway.plugin_channels import (
             changed_plugin_channel_kinds,
             current_registration_errors,
@@ -1020,7 +1020,7 @@ class OctopServer:
             self._apply_plugin_channels()
         errors = current_registration_errors()
         if errors:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PLUGIN_INSTALL_FAILED,
                 "plugin channel registration failed",
                 details={"registration_errors": errors},

@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from happyclaw.api.routers.chat.turn import resolve_thread_id
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.process.message_keys import build_composer_context
 
 
@@ -27,7 +27,7 @@ class _ThreadRegistry:
 async def test_resolve_thread_id_rejects_another_users_thread() -> None:
     registry = _ThreadRegistry(SimpleNamespace(agent_id="shared-agent", user_id=1))
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         await resolve_thread_id(
             agent_id="shared-agent",
             user_id=2,

@@ -1,7 +1,7 @@
 """Safe read/write helpers for the small JSON config files under ``OCTOP_HOME``.
 
 Leaf module (AGENTS.md §5): stdlib only, no ``infra`` imports. Callers translate
-:class:`JsonFileCorruptError` into ``OctopError`` via
+:class:`JsonFileCorruptError` into ``HappyclawError`` via
 ``happyclaw.infra.errors.corrupt_config_error``.
 
 Both helpers exist because of issue #730: four call sites used to treat an

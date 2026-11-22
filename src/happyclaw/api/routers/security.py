@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from happyclaw.api.deps import current_user, get_server, require_any_permission, require_permission
 from happyclaw.i18n.domains.tools import hitl_tool_catalog
 from happyclaw.infra.db.repos.audit import ACTOR_ADMIN
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import User
 from happyclaw.infra.users.permissions import user_has_permission
 
@@ -75,14 +75,14 @@ async def put_security_policy(
     server: Any = Depends(get_server),
 ) -> SecurityPolicyResponse:
     if not any(user_has_permission(user, key) for key in _POLICY_FIELD_PERMISSION.values()):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.FORBIDDEN,
             "permission required",
             details={"permission": "security_hitl"},
         )
     for field, key in _POLICY_FIELD_PERMISSION.items():
         if getattr(body, field) is not None and not user_has_permission(user, key):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN,
                 "permission required",
                 details={"permission": key},

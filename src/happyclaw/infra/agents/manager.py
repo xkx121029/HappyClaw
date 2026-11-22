@@ -84,7 +84,7 @@ from happyclaw.infra.dsh.integration import (
 )
 from happyclaw.infra.dsh.prompts.skills_injection import SkillPromptSnapshot
 from happyclaw.infra.dsh.switches import stage_enabled as dsh_stage_enabled
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.skills.presentation import apply_skill_presentation, localize_skill_summary
 from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 from happyclaw.infra.skills.workspace_catalog import (
@@ -96,7 +96,7 @@ from happyclaw.infra.utils.turn_failure import turn_model_scope
 from happyclaw.infra.utils.ulid import new_short_id
 
 if TYPE_CHECKING:
-    from happyclaw.config import OctopConfig
+    from happyclaw.config import HappyclawConfig
     from happyclaw.infra.agents.experts.catalog import ExpertCatalog
     from happyclaw.infra.agents.plugins.manager import PluginManager
     from happyclaw.infra.cron.manager import CronManager
@@ -406,16 +406,16 @@ _CUSTOM_AGENT_ID_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{1,62}[a-zA-Z0-9]$")
 
 
 def validate_custom_agent_id(agent_id: str) -> str:
-    """Validate a user-supplied agent id; raise ``OctopError`` when invalid."""
+    """Validate a user-supplied agent id; raise ``HappyclawError`` when invalid."""
     if not _CUSTOM_AGENT_ID_RE.fullmatch(agent_id):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.AGENT_ID_INVALID,
             "agent id must be 3-64 chars of letters/digits/underscore/hyphen, "
             "starting and ending with a letter or digit",
         )
     lowered = agent_id.lower()
     if lowered in _RESERVED_AGENT_IDS:
-        raise OctopError(ErrorCode.AGENT_ID_INVALID, f"agent id {agent_id!r} is reserved")
+        raise HappyclawError(ErrorCode.AGENT_ID_INVALID, f"agent id {agent_id!r} is reserved")
     return agent_id
 
 
@@ -538,15 +538,15 @@ class AgentManager:
         *,
         repos: RepoBundle,
         paths: PathLayout,
-        config: OctopConfig | None = None,
+        config: HappyclawConfig | None = None,
         expert_catalog: ExpertCatalog | None = None,
         plugin_manager: PluginManager | None = None,
     ) -> None:
         self._repos = repos
         self._paths = paths
-        from happyclaw.config import OctopConfig as _OctopConfig  # noqa: PLC0415
+        from happyclaw.config import HappyclawConfig  # noqa: PLC0415
 
-        self._config = config or _OctopConfig()
+        self._config = config or HappyclawConfig()
         self._expert_catalog = expert_catalog
         self._plugin_manager = plugin_manager
         self._cron_manager: CronManager | None = None
@@ -639,7 +639,7 @@ class AgentManager:
         # Sanitized plugin tool name → original label (per agent, rebuilt on reload).
         self._plugin_tool_labels: dict[str, dict[str, str]] = {}
 
-    def replace_persistence(self, repos: RepoBundle, config: OctopConfig) -> None:
+    def replace_persistence(self, repos: RepoBundle, config: HappyclawConfig) -> None:
         """Retarget repos/config and rebuild settings stores after control-plane rebind."""
         self._repos = repos
         self._config = config
@@ -989,7 +989,7 @@ class AgentManager:
         return self._harness_manager
 
     @property
-    def octop_config(self) -> OctopConfig:
+    def octop_config(self) -> HappyclawConfig:
         return self._config
 
     # ------------------------------------------------------------------
@@ -1009,7 +1009,7 @@ class AgentManager:
             if spec.agent_id:
                 validate_custom_agent_id(spec.agent_id)
                 if self._repos.agent_repo.get(spec.agent_id) is not None:
-                    raise OctopError(
+                    raise HappyclawError(
                         ErrorCode.AGENT_ID_TAKEN,
                         f"agent_id {spec.agent_id!r} already exists",
                     )
@@ -1073,7 +1073,7 @@ class AgentManager:
             config.pop("system_files_path", None)
             config["system_files_path"] = DEFAULT_SYSTEM_FILES_PATH
             if spec.is_shared and spec.kind == "team":
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.TEAM_NOT_SHAREABLE,
                     "teams cannot be shared",
                 )
@@ -1277,7 +1277,7 @@ class AgentManager:
             if raw_config is None:
                 current_row = self._repos.agent_repo.get(agent_id)
                 if current_row is None:
-                    raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+                    raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
                 raw_config = current_row.config_json
             try:
                 parsed_config = json.loads(raw_config or "{}")
@@ -1340,7 +1340,7 @@ class AgentManager:
         if isinstance(new_name, str):
             row = self._repos.agent_repo.get(agent_id)
             if row is None:
-                raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+                raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
             if new_name != row.name:
                 self._assert_agent_name_available(
                     row.user_id,
@@ -1350,7 +1350,7 @@ class AgentManager:
         self._repos.agent_repo.update_config(agent_id, **kwargs)
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         self._schedule_reload(agent_id)
         return row
 
@@ -1358,26 +1358,26 @@ class AgentManager:
         """Persist whether other users may access this agent."""
         existing = self._repos.agent_repo.get(agent_id)
         if existing is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         from happyclaw.infra.agents.teams import is_team_agent
 
         if shared and is_team_agent(existing):
-            raise OctopError(ErrorCode.TEAM_NOT_SHAREABLE, "teams cannot be shared")
+            raise HappyclawError(ErrorCode.TEAM_NOT_SHAREABLE, "teams cannot be shared")
         self._repos.agent_repo.set_shared(agent_id, shared)
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         return row
 
     def set_icon_url(self, agent_id: str, icon_url: str | None) -> AgentRow:
         """Persist display avatar URL without reloading the harness agent."""
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         self._repos.agent_repo.update_config(agent_id, icon_url=icon_url)
         updated = self._repos.agent_repo.get(agent_id)
         if updated is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         return updated
 
     async def delete(self, agent_id: str) -> None:
@@ -1389,7 +1389,7 @@ class AgentManager:
         """
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         self._teams.assert_can_delete_agent(agent_id)
         from happyclaw.infra.agents.memory.thread_cleanup import (  # noqa: PLC0415
             agent_config_from_row,
@@ -1449,7 +1449,7 @@ class AgentManager:
         async with self._lock:
             row = self._repos.agent_repo.get(agent_id)
             if row is None:
-                raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+                raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
             await self._start_agent(row, init_workspace=False)
 
     def _lifecycle_lock_for(self, agent_id: str) -> asyncio.Lock:
@@ -1484,7 +1484,7 @@ class AgentManager:
         async with self._lock:
             row = self._repos.agent_repo.get(agent_id)
             if row is None:
-                raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+                raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
             async with self._lifecycle_lock_for(agent_id):
                 await asyncio.to_thread(self._quiesce_happyclaw_memory, agent_id)
                 await self._harness_manager.aremove_agent(agent_id)  # type: ignore[union-attr]
@@ -1649,7 +1649,7 @@ class AgentManager:
         """Review current files, including for stopped agents, without changing session snapshots."""
         async with self._lifecycle_lock_for(agent_id):
             if self.memory_slim.busy and self.memory_slim.status(agent_id) is not None:
-                raise OctopError.localized(ErrorCode.AGENT_BUSY)
+                raise HappyclawError.localized(ErrorCode.AGENT_BUSY)
             workspace = await asyncio.to_thread(self.workspace_for_agent, agent_id)
             if workspace is None:
                 raise self._unavailable_error(agent_id)
@@ -1667,7 +1667,7 @@ class AgentManager:
                 try:
                     try:
                         service = self.get_agent(agent_id)._memory_runtime.service
-                    except OctopError:
+                    except HappyclawError:
                         row = self.get_row(agent_id)
                         if row is None:
                             raise self._unavailable_error(agent_id) from None
@@ -1813,13 +1813,13 @@ class AgentManager:
             return True
         try:
             agent = self.get_agent(agent_id)
-        except OctopError:
+        except HappyclawError:
             return False
         if self._bootstrap_known.get(agent_id) is True:
             return True
         try:
             known = agent.is_bootstrapped()
-        except OctopError:
+        except HappyclawError:
             return False
         except Exception:
             logger.warning(
@@ -1869,22 +1869,22 @@ class AgentManager:
         except KeyError:
             raise self._unavailable_error(agent_id) from None
 
-    def _unavailable_error(self, agent_id: str) -> OctopError:
+    def _unavailable_error(self, agent_id: str) -> HappyclawError:
         """Map a missing live harness handle to the right public error code."""
         row = self.get_row(agent_id)
         if row is None:
-            return OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            return HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         state = (row.last_state or "").strip().lower()
         if state in ("failed", "error"):
-            return OctopError(ErrorCode.AGENT_FAILED, f"agent {agent_id!r} failed to start")
+            return HappyclawError(ErrorCode.AGENT_FAILED, f"agent {agent_id!r} failed to start")
         if state in ("created", "starting") and not self._has_usable_model(row):
             # First run with no provider: an actionable "add a model" hint beats
             # the generic "expert is not enabled" copy.
-            return OctopError(
+            return HappyclawError(
                 ErrorCode.AGENT_NO_MODEL,
                 f"agent {agent_id!r} has no model configured",
             )
-        return OctopError(ErrorCode.AGENT_NOT_RUNNING, f"agent {agent_id!r} not running")
+        return HappyclawError(ErrorCode.AGENT_NOT_RUNNING, f"agent {agent_id!r} not running")
 
     def ensure_dispatchable(self, agent_id: str) -> None:
         """Fail before the harness registry raises ``KeyError``.
@@ -1933,7 +1933,7 @@ class AgentManager:
         harness = None
         try:
             harness = self.get_agent(agent_id)
-        except OctopError as exc:
+        except HappyclawError as exc:
             if exc.code == ErrorCode.AGENT_NOT_FOUND or row is None:
                 raise
             harness = None
@@ -1943,13 +1943,13 @@ class AgentManager:
             if adelete is not None:
                 try:
                     await adelete(thread_id)
-                except OctopError:
+                except HappyclawError:
                     raise
                 except Exception as exc:
                     live_error = exc
         if row is None:
             if live_error is not None:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.CHECKPOINT_DELETE_FAILED,
                     f"could not delete conversation data for thread {thread_id!r}",
                 ) from live_error
@@ -1958,9 +1958,9 @@ class AgentManager:
             await asyncio.to_thread(
                 self._delete_thread_from_store, agent_id, thread_id, row, reclaim
             )
-        except OctopError:
+        except HappyclawError:
             if live_error is not None:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.CHECKPOINT_DELETE_FAILED,
                     f"could not delete conversation data for thread {thread_id!r}",
                 ) from live_error
@@ -3118,7 +3118,7 @@ class AgentManager:
         norm = code.upper()
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
 
         from happyclaw.infra.agents.persona import PersonaLoader  # noqa: PLC0415
 
@@ -3140,7 +3140,7 @@ class AgentManager:
         )
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         self._schedule_reload(agent_id)
         return row
 
@@ -3157,7 +3157,7 @@ class AgentManager:
         )
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         self._schedule_reload(agent_id)
         return row
 
@@ -3301,7 +3301,7 @@ class AgentManager:
         """
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         normalized_ids = self.validate_skill_package_ids(package_ids)
         if row.user_id is not None:
             self._assert_skill_packages_visible(row.user_id, normalized_ids)
@@ -3310,7 +3310,7 @@ class AgentManager:
             self._backend_spec_for_row(row),
             workspace_dir=workspace_dir,
         ):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SKILL_PACKAGE_BACKEND_UNSUPPORTED,
                 "skill packages currently support only local_shell/filesystem backends "
                 "with host root '/' or the agent workspace root",
@@ -3327,7 +3327,7 @@ class AgentManager:
         """Hot-update ``skills_dir`` on the running harness agent (no rebuild)."""
         try:
             agent = self.get_agent(agent_id)
-        except OctopError:
+        except HappyclawError:
             return
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
@@ -3360,7 +3360,7 @@ class AgentManager:
         normalized_ids = skill_package_ids_list({"skill_package_ids": package_ids})
         for package_id in normalized_ids:
             if self._repos.skill_package_repo.get(package_id) is None:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.SKILL_PACKAGE_NOT_FOUND,
                     f"skill package {package_id!r} not found",
                 )
@@ -3445,7 +3445,7 @@ class AgentManager:
             if package is None:
                 continue
             if not self._skill_package_shared_with(user_id, package):
-                raise OctopError(ErrorCode.SKILL_PACKAGE_NOT_FOUND, "skill package not found")
+                raise HappyclawError(ErrorCode.SKILL_PACKAGE_NOT_FOUND, "skill package not found")
             access.assert_allowed(
                 user_id=user_id,
                 is_admin=is_admin,
@@ -3458,7 +3458,7 @@ class AgentManager:
         """Persist composer knowledge-base defaults without reloading harness."""
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         normalized = (
             self.validate_knowledge_base_ids(row.user_id, knowledge_base_ids)
             if row.user_id is not None
@@ -3475,7 +3475,7 @@ class AgentManager:
 
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         if is_team_agent(row):
             self._repos.agent_repo.update_config(agent_id, mcp_servers=dump_id_list([]))
             return
@@ -3497,7 +3497,7 @@ class AgentManager:
         visible = {base.id for base in self._repos.knowledge_repo.list_visible(user_id)}
         unknown = [kb_id for kb_id in normalized if kb_id not in visible]
         if unknown:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.KNOWLEDGE_NOT_FOUND,
                 f"knowledge base(s) not found: {', '.join(unknown)}",
             )
@@ -3511,7 +3511,7 @@ class AgentManager:
         try:
             return list(self._connector_svc.validate_mcp_servers_for_user(user_id, normalized))
         except ValueError as exc:
-            raise OctopError(ErrorCode.CONNECTOR_NOT_BOUND, str(exc)) from exc
+            raise HappyclawError(ErrorCode.CONNECTOR_NOT_BOUND, str(exc)) from exc
 
     def assert_backend_supports_skill_packages(
         self,
@@ -3533,7 +3533,7 @@ class AgentManager:
             workspace_dir=resolved_workspace,
         ):
             return
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SKILL_PACKAGE_BACKEND_UNSUPPORTED,
             "skill packages currently support only local_shell/filesystem backends "
             "with host root '/' or the agent workspace root",
@@ -3736,7 +3736,7 @@ class AgentManager:
         """
         try:
             agent = self.get_agent(agent_id)
-        except OctopError:
+        except HappyclawError:
             return
         setter = getattr(agent, "set_tools_disabled", None)
         if callable(setter):
@@ -3750,7 +3750,7 @@ class AgentManager:
             return
         try:
             agent = self.get_agent(agent_id)
-        except OctopError:
+        except HappyclawError:
             return
         configs = getattr(agent.config, "mcp_server_configs", None)
         mcp_tools = getattr(agent, "_mcp_tools", None)
@@ -3798,7 +3798,7 @@ class AgentManager:
             return
         for row in self._repos.agent_repo.list_by_user(user_id):
             if row.name == name and row.agent_id != exclude_agent_id:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.AGENT_NAME_TAKEN,
                     f"agent name {name!r} already in use",
                 )
@@ -4048,7 +4048,7 @@ class AgentManager:
                 try:
                     backend_spec = clamp_backend_to_workspace_root(backend_spec, allowed)
                 except ValueError as exc:
-                    raise OctopError(ErrorCode.WORKSPACE_ROOT_RESTRICTED, str(exc)) from exc
+                    raise HappyclawError(ErrorCode.WORKSPACE_ROOT_RESTRICTED, str(exc)) from exc
         if backend_spec is None:
             return default_agent_backend_spec(workspace_dir)
         resolved = resolve_agent_backend_spec(
@@ -4584,7 +4584,7 @@ class AgentManager:
             McpOutputSchemaMiddleware,
             harness_handles_mcp_tool_errors,
         )
-        from happyclaw.infra.agents.middleware.octop_ui_offload import OctopUiOffloadMiddleware
+        from happyclaw.infra.agents.middleware.octop_ui_offload import HappyclawUiOffloadMiddleware
         from happyclaw.infra.agents.middleware.reasoning import ReasoningRequestMiddleware
         from happyclaw.infra.agents.middleware.thread_artifacts import ThreadArtifactsMiddleware
         from happyclaw.infra.agents.middleware.token_quota import TokenQuotaMiddleware
@@ -4597,7 +4597,7 @@ class AgentManager:
         # BinaryReadGuard stays Octop-specific (inbound/attachment product policy).
         # ThreadArtifacts writes workspace paths onto threads after successful tools.
         # WorkspaceImageMaterialize expands path-only vision refs at model-call time.
-        # OctopUiOffload stays innermost so every outer middleware observes the
+        # HappyclawUiOffload stays innermost so every outer middleware observes the
         # slimmed content consistently; it only touches octop_ui plugin envelopes,
         # disjoint from the file-tool results ThreadArtifacts cares about.
         agent_middleware: list[Any] = [
@@ -4617,7 +4617,7 @@ class AgentManager:
                 workspace_dir=harness_workspace,
                 agent_id=row.agent_id,
             ),
-            OctopUiOffloadMiddleware(),
+            HappyclawUiOffloadMiddleware(),
         ]
         if dsh_skills_prompts_enabled():
             # Only mounts when the opt-in flag is on, so the flag-off middleware

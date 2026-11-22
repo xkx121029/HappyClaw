@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import httpx
 import pytest
 
-from happyclaw.config import OctopConfig, TlsConfig
+from happyclaw.config import HappyclawConfig, TlsConfig
 from happyclaw.infra.setup.tls import preflight as preflight_mod
 from happyclaw.infra.setup.tls.preflight import (
     _METADATA_PUBLIC_IP_URLS,
@@ -60,13 +60,13 @@ class _ErrorResponse:
 
 
 def test_preflight_requires_domain():
-    result = run_preflight("", OctopConfig())
+    result = run_preflight("", HappyclawConfig())
     assert not result.ok
     assert any(c.id == "domain" and not c.ok for c in result.checks)
 
 
 def test_preflight_bind_host_and_port(tmp_path):
-    cfg = OctopConfig(bind_host="127.0.0.1", port=8088)
+    cfg = HappyclawConfig(bind_host="127.0.0.1", port=8088)
     with (
         patch("happyclaw.infra.setup.tls.preflight._port_available", return_value=True),
         patch("happyclaw.infra.setup.tls.preflight._fetch_public_ip", return_value=_PUBLIC_IP),
@@ -84,7 +84,7 @@ def test_preflight_bind_host_and_port(tmp_path):
 
 
 def test_preflight_ok_when_all_match():
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         bind_host="0.0.0.0",
         port=80,
         tls=TlsConfig(enabled=False),
@@ -100,7 +100,7 @@ def test_preflight_ok_when_all_match():
 
 
 def test_preflight_rejects_when_tls_already_enabled():
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         bind_host="0.0.0.0",
         port=8088,
         tls=TlsConfig(enabled=True),
@@ -116,7 +116,7 @@ def test_preflight_rejects_when_tls_already_enabled():
 
 
 def test_preflight_renewal_mode_dual_port():
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         bind_host="0.0.0.0",
         port=443,
         tls=TlsConfig(enabled=True, http_port=80),
@@ -132,7 +132,7 @@ def test_preflight_renewal_mode_dual_port():
 
 
 def test_preflight_fails_when_public_ip_unavailable():
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         bind_host="0.0.0.0",
         port=80,
         tls=TlsConfig(enabled=False),
@@ -150,7 +150,7 @@ def test_preflight_fails_when_public_ip_unavailable():
 
 
 def test_preflight_dns_mismatch():
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         bind_host="0.0.0.0",
         port=80,
         tls=TlsConfig(enabled=False),

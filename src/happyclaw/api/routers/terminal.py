@@ -68,7 +68,7 @@ from starlette.websockets import WebSocketState
 from happyclaw.api.common.agent import assert_agent_owner
 from happyclaw.api.common.agent_workspace import resolve_agent_workspace_dir
 from happyclaw.api.deps import get_server, require_permission, resolve_user_from_token
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.permissions import user_has_permission
 from happyclaw.infra.utils import posix_compat
 
@@ -452,7 +452,7 @@ async def terminal_context(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, "no agents for user")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, "no agents for user")
     assert_agent_owner(row, user)
     # AI-facing path: persisted config value (e.g. ``/.octop/workspaces/<id>``).
     # PTY spawn still uses the host-mapped path via resolve_agent_workspace_dir.
@@ -516,7 +516,7 @@ async def terminal_ws(
     # --- auth (token optional in single-user mode) ----------------------
     try:
         user = resolve_user_from_token(server, token or "")
-    except OctopError as exc:
+    except HappyclawError as exc:
         await websocket.close(code=4001, reason=f"auth: {exc.code.value}")
         return
     if not user_has_permission(user, "terminal"):
@@ -547,7 +547,7 @@ async def terminal_ws(
         return
     try:
         assert_agent_owner(agent_row, user)
-    except OctopError:
+    except HappyclawError:
         await websocket.close(code=4003, reason="agent not owned by user")
         return
     workspace_dir = str(resolve_agent_workspace_dir(server, agent_id))

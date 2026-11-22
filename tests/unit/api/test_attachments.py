@@ -11,7 +11,7 @@ from happyclaw_gateway.models import FileContent, InboundMessage
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
 from happyclaw.api.common.attachments import dashboard_inbound_preview_url, save_attachment
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.media.attachment_hints import (
     hints_from_content_parts,
     sniff_image_media_type,
@@ -154,7 +154,7 @@ def test_dashboard_preview_url_uses_media_preview_for_av() -> None:
 
 
 def test_unknown_mime_without_known_extension_is_rejected() -> None:
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         validate_inbound_media_type("application/x-zip-compressed", "bundle")
     assert exc_info.value.code is ErrorCode.ATTACHMENT_UNSUPPORTED_TYPE
     # ``details.reason`` survives i18n localization; the raw message does not.
@@ -169,7 +169,7 @@ def test_allowed_mime_is_kept_even_if_extension_differs() -> None:
 
 def test_inbound_over_size_limit_is_rejected() -> None:
     limit = 1024
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         validate_inbound_size(b"x" * (limit + 1), max_bytes=limit)
     assert exc_info.value.code is ErrorCode.ATTACHMENT_TOO_LARGE
     assert exc_info.value.status == 413

@@ -15,7 +15,7 @@ from happyclaw.infra.agents.threads.fork import (
     fork_dashboard_thread,
     write_checkpoint_messages,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.threads import ThreadRegistry
 
 
@@ -85,7 +85,7 @@ def test_find_assistant_fork_index_by_content_fallback() -> None:
 
 def test_find_assistant_fork_index_missing_raises() -> None:
     messages = [HumanMessage(content="only user", id="h1")]
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         find_assistant_fork_index(messages, message_id="a1")
     assert exc.value.code is ErrorCode.NOT_FOUND
 

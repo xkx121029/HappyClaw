@@ -10,7 +10,7 @@ import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# Modules whose tests boot OctopServer, real harness, browser tooling, or bwrap.
+# Modules whose tests boot HappyclawServer, real harness, browser tooling, or bwrap.
 # Tagged ``slow`` so ``make test-fast`` can skip them during local iteration.
 _SLOW_TEST_MODULES = frozenset(
     {
@@ -46,7 +46,7 @@ def repo_root() -> Path:
 
 # Creating an agent now starts a multi-hour asyncio.sleep (proactive care
 # defaults to on). pytest-asyncio waits for leftover tasks before fixture
-# teardown, so any test that boots OctopServer without going through
+# teardown, so any test that boots HappyclawServer without going through
 # ``octop_client`` would hang the suite. Scheduler unit tests opt out.
 _PROACTIVE_SCHEDULER_TESTS = "tests/unit/proactive/test_scheduler.py"
 

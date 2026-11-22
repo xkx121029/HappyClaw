@@ -94,7 +94,7 @@ octop run
 | ACP | stdio JSON-RPC：入站 `octop acp` 服务端 + 出站 `acp_runner` 工具 |
 | 构建 / 质量 | hatchling · ruff · mypy · pytest |
 
-Web UI、IM 通道与定时任务都在同一个 `OctopServer` 进程里，不依赖外部消息队列或中间件。状态存在控制面数据库，重启后重建。
+Web UI、IM 通道与定时任务都在同一个 `HappyclawServer` 进程里，不依赖外部消息队列或中间件。状态存在控制面数据库，重启后重建。
 
 ## 📦 安装
 
@@ -275,7 +275,7 @@ octop backup auto run            # 立即执行一次自动备份
 ## 🏗️ 架构与项目结构
 
 ```
-OctopServer                        launch.py → infra/server.py
+HappyclawServer                        launch.py → infra/server.py
  ├─ DatabasePool                    SQLite (WAL) 或 PostgreSQL
  ├─ SharedServices                 依赖注入根 — 所有 repo 与配置
  ├─ ExpertCatalog                  启动时扫描专家库
@@ -288,7 +288,7 @@ OctopServer                        launch.py → infra/server.py
 ```
 src/happyclaw/
   config.py    环境变量配置
-  launch.py    OctopServer 启动 + uvicorn
+  launch.py    HappyclawServer 启动 + uvicorn
   infra/       业务核心（agents、gateway、cron、db …）
   api/         HTTP 层 — FastAPI 路由与 SSE
   cli/         CLI 层 — Click 命令

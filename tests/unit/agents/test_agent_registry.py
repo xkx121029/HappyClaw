@@ -16,12 +16,12 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from tests.support.harness import build_harness_manager_mock
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentCreateSpec, AgentManager
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.services import build_shared_services
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 
 # ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ from happyclaw.infra.utils.paths import PathLayout
 def _make_services(tmp_path: Path):
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
     services.provider_repo.create(
         name="test-openai",
         kind="openai",
@@ -387,7 +387,7 @@ async def test_create_duplicate_name_rejected(tmp_path: Path) -> None:
     user_id = services.repos.user_repo.create(username="alice", password_hash="h", role="admin")
 
     await registry.create(AgentCreateSpec(name="dup-bot", user_id=user_id))
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         await registry.create(AgentCreateSpec(name="dup-bot", user_id=user_id))
     assert exc_info.value.code is ErrorCode.AGENT_NAME_TAKEN
 
@@ -400,7 +400,7 @@ async def test_update_duplicate_name_rejected(tmp_path: Path) -> None:
 
     await registry.create(AgentCreateSpec(name="alpha", user_id=user_id))
     beta = await registry.create(AgentCreateSpec(name="beta", user_id=user_id))
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         await registry.update(beta.agent_id, name="alpha")
     assert exc_info.value.code is ErrorCode.AGENT_NAME_TAKEN
 
@@ -519,13 +519,13 @@ async def test_update_triggers_harness_reload(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_update_raises_for_unknown_id(tmp_path: Path) -> None:
-    """update() raises OctopError when the agent_id does not exist."""
-    from happyclaw.infra.errors import OctopError  # noqa: PLC0415
+    """update() raises HappyclawError when the agent_id does not exist."""
+    from happyclaw.infra.errors import HappyclawError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     registry = _make_registry(services)
 
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         await registry.update("nonexistent-ulid", name="x")
 
 
@@ -537,14 +537,14 @@ async def test_update_raises_for_unknown_id(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_get_agent_raises_for_unknown(tmp_path: Path) -> None:
     """get_agent() raises AGENT_NOT_FOUND when no agent row exists."""
-    from happyclaw.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import ErrorCode, HappyclawError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     fake_hm = _make_fake_hm()
     fake_hm.get_agent.side_effect = KeyError("missing")
     registry = _make_registry(services, fake_hm=fake_hm)
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         registry.get_agent("no-such-id")
     assert exc_info.value.code is ErrorCode.AGENT_NOT_FOUND
 
@@ -552,7 +552,7 @@ async def test_get_agent_raises_for_unknown(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_get_agent_raises_not_running_for_stopped_row(tmp_path: Path) -> None:
     """Stopped agents report AGENT_NOT_RUNNING, not AGENT_NOT_FOUND."""
-    from happyclaw.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import ErrorCode, HappyclawError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     fake_hm = _make_fake_hm()
@@ -563,7 +563,7 @@ async def test_get_agent_raises_not_running_for_stopped_row(tmp_path: Path) -> N
     row = await registry.create(AgentCreateSpec(name="paused"))
     await registry.stop(row.agent_id)
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         registry.get_agent(row.agent_id)
     assert exc_info.value.code is ErrorCode.AGENT_NOT_RUNNING
 
@@ -571,7 +571,7 @@ async def test_get_agent_raises_not_running_for_stopped_row(tmp_path: Path) -> N
 @pytest.mark.asyncio
 async def test_get_agent_raises_failed_for_failed_row(tmp_path: Path) -> None:
     """Failed agents report AGENT_FAILED instead of not-found."""
-    from happyclaw.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
+    from happyclaw.infra.errors import ErrorCode, HappyclawError  # noqa: PLC0415
 
     services = _make_services(tmp_path)
     fake_hm = _make_fake_hm()
@@ -582,7 +582,7 @@ async def test_get_agent_raises_failed_for_failed_row(tmp_path: Path) -> None:
     row = await registry.create(AgentCreateSpec(name="broken"))
     services.repos.agent_repo.set_state(row.agent_id, "failed", error="boom")
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         registry.get_agent(row.agent_id)
     assert exc_info.value.code is ErrorCode.AGENT_FAILED
 
@@ -866,7 +866,7 @@ async def test_on_provider_changed_noop_when_factory_is_none_and_no_providers(
     """on_provider_changed() is silent when factory is None and DB has no providers."""
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
     fake_hm = _make_fake_hm()
     fake_hm._shared_factory = None
     fake_hm.shared_factory = None

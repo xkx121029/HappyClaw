@@ -16,7 +16,7 @@ from happyclaw.infra.agents.experts.default_agent import (
     default_home_local_backend,
     materialize_market_expert,
 )
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.utils.host_dirs import host_fs_tree_root
 
 
@@ -149,7 +149,7 @@ async def test_bootstrap_rejects_unknown_template(catalog: ExpertCatalog) -> Non
     registry = MagicMock()
     registry.get_row.return_value = None
     registry.list_agents.return_value = []
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await bootstrap_default_agent(registry, catalog, user_id=4, expert_id="missing-template")
     assert exc.value.code.value == "EXPERT_TEMPLATE_NOT_FOUND"
 
@@ -176,5 +176,5 @@ async def test_bootstrap_requires_catalog() -> None:
     registry = MagicMock()
     registry.get_row.return_value = None
     registry.list_agents.return_value = []
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         await bootstrap_default_agent(registry, None, user_id=1, locale="zh")

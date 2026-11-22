@@ -19,7 +19,7 @@ from happyclaw.api.deps import (
     require_permission,
     single_user_read_only,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.groups import empty_group_access, group_access_by_group
 from happyclaw.infra.users.identity import User
 from happyclaw.infra.users.permissions import user_has_permission
@@ -77,7 +77,7 @@ class SharingAudienceResponse(BaseModel):
 def _clean_name(raw: str) -> str:
     name = raw.strip()
     if not name:
-        raise OctopError(ErrorCode.FORBIDDEN, "user group name is required", status=400)
+        raise HappyclawError(ErrorCode.FORBIDDEN, "user group name is required", status=400)
     return name
 
 
@@ -96,7 +96,7 @@ def _clean_user_group_id(raw: str | None) -> str | None:
     if not group_id:
         return None
     if not _CUSTOM_GROUP_ID_RE.fullmatch(group_id):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.USER_GROUP_ID_INVALID,
             "group id must be 3-64 chars of letters/digits/underscore/hyphen, "
             "starting and ending with a letter or digit",
@@ -128,7 +128,7 @@ def _unique_kind(exc: BaseException) -> str | None:
 async def catalog_reader(user: User = Depends(current_user)) -> User:
     if user.is_admin or any(user_has_permission(user, key) for key in _CATALOG_KEYS):
         return user
-    raise OctopError(ErrorCode.FORBIDDEN, "user group catalog requires a management permission")
+    raise HappyclawError(ErrorCode.FORBIDDEN, "user group catalog requires a management permission")
 
 
 def _avatar_url(server: Any, user_group_id: str) -> str | None:
@@ -163,7 +163,7 @@ def _public(
 def _require_group(server: Any, user_group_id: str) -> Any:
     row = server.services.repos.user_group_repo.get(user_group_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "user group not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user group not found")
     return row
 
 
@@ -204,7 +204,7 @@ async def create_user_group(
 ) -> dict[str, Any]:
     group_id = _clean_user_group_id(body.user_group_id)
     if group_id and server.services.repos.user_group_repo.get(group_id) is not None:
-        raise OctopError(ErrorCode.USER_GROUP_ID_TAKEN, "user group id already exists")
+        raise HappyclawError(ErrorCode.USER_GROUP_ID_TAKEN, "user group id already exists")
     try:
         row = server.services.repos.user_group_repo.create(
             name=_clean_name(body.name),
@@ -216,9 +216,9 @@ async def create_user_group(
     except Exception as exc:
         kind = _unique_kind(exc)
         if kind == "id":
-            raise OctopError(ErrorCode.USER_GROUP_ID_TAKEN, "user group id already exists") from exc
+            raise HappyclawError(ErrorCode.USER_GROUP_ID_TAKEN, "user group id already exists") from exc
         if kind == "name":
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN, "user group name is already in use", status=409
             ) from exc
         raise
@@ -248,7 +248,7 @@ async def update_user_group(
         )
     except Exception as exc:
         if _unique_kind(exc) == "name":
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN, "user group name is already in use", status=409
             ) from exc
         raise
@@ -264,7 +264,7 @@ async def delete_user_group(
     _: User = Depends(require_permission("user_groups")),
 ) -> None:
     if not server.services.repos.user_group_repo.delete(user_group_id):
-        raise OctopError(ErrorCode.NOT_FOUND, "user group not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "user group not found")
     delete_profile_avatar(server.services.avatars("group"), user_group_id)
 
 
@@ -294,7 +294,7 @@ async def replace_members(
         if user_id in seen:
             continue
         if server.services.user_repo.get(user_id) is None:
-            raise OctopError(ErrorCode.NOT_FOUND, f"user {user_id} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"user {user_id} not found")
         seen.add(user_id)
         user_ids.append(user_id)
     server.services.repos.user_group_member_repo.replace(user_group_id, user_ids)

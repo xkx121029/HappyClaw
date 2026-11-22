@@ -6,7 +6,7 @@ import click
 
 from happyclaw.cli.support.errors import fail_octop
 from happyclaw.config import env_bind_overrides
-from happyclaw.infra.errors import OctopError, corrupt_config_error
+from happyclaw.infra.errors import HappyclawError, corrupt_config_error
 from happyclaw.infra.utils.json_file import (
     JsonFileCorruptError,
     read_json_object,
@@ -180,7 +180,7 @@ def run(
         host, port = resolve_bind(host, port)
         if cli_host is not None or cli_port is not None:
             _save_configfile_overrides(cli_host, cli_port)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     certfile, keyfile = _maybe_generate_self_signed(ssl, ssl_certfile, ssl_keyfile)
     _run_uvicorn(

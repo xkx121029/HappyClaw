@@ -28,12 +28,12 @@ def list_skills(agent_id: str | None) -> None:
     from rich.table import Table
 
     from happyclaw.cli.support.skills import list_skills_offline
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     aid = require_agent(agent_id)
     try:
         rows = list_skills_offline(aid)
-    except OctopError as exc:
+    except HappyclawError as exc:
         click.echo(f"error: {exc.message}", err=True)
         raise SystemExit(1) from exc
     if json_output_enabled():
@@ -57,12 +57,12 @@ def list_skills(agent_id: str | None) -> None:
 def enable_skill(name: str, agent_id: str | None) -> None:
     """Enable a skill."""
     from happyclaw.cli.support.skills import set_skill_enabled
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     aid = require_agent(agent_id)
     try:
         set_skill_enabled(aid, name, enabled=True)
-    except OctopError as exc:
+    except HappyclawError as exc:
         click.echo(f"error: {exc.message}", err=True)
         raise SystemExit(1) from exc
     click.echo(f"enabled: {name}")
@@ -74,12 +74,12 @@ def enable_skill(name: str, agent_id: str | None) -> None:
 def disable_skill(name: str, agent_id: str | None) -> None:
     """Disable a skill."""
     from happyclaw.cli.support.skills import set_skill_enabled
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     aid = require_agent(agent_id)
     try:
         set_skill_enabled(aid, name, enabled=False)
-    except OctopError as exc:
+    except HappyclawError as exc:
         click.echo(f"error: {exc.message}", err=True)
         raise SystemExit(1) from exc
     click.echo(f"disabled: {name}")
@@ -91,12 +91,12 @@ def config_skills(agent_id: str | None) -> None:
     """Interactively toggle which skills are enabled."""
     from happyclaw.cli.support import prompts as _prompts
     from happyclaw.cli.support.skills import list_skills_offline, set_skill_enabled
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     aid = require_agent(agent_id)
     try:
         all_skills = list_skills_offline(aid)
-    except OctopError as exc:
+    except HappyclawError as exc:
         click.echo(f"error: {exc.message}", err=True)
         raise SystemExit(1) from exc
     if not all_skills:
@@ -131,7 +131,7 @@ def config_skills(agent_id: str | None) -> None:
             continue
         try:
             set_skill_enabled(aid, n, enabled=want)
-        except OctopError as exc:
+        except HappyclawError as exc:
             click.echo(f"failed to {'enable' if want else 'disable'} {n}: {exc.message}", err=True)
         else:
             click.echo(f"  {'enable' if want else 'disable'}d {n}")

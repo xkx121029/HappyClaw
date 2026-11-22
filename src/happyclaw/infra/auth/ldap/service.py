@@ -25,7 +25,7 @@ from happyclaw.infra.auth.sso.crypto import decrypt_secret, encrypt_secret
 from happyclaw.infra.db.repos.sso import SsoProviderRow
 from happyclaw.infra.db.repos.user_roles import ADMIN_USER_ROLE_ID, role_assignment_for
 from happyclaw.infra.db.services import SharedServices
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.email import normalize_email
 from happyclaw.infra.users.identity import Role, User
 from happyclaw.infra.users.manager import UserManager, allocate_username
@@ -153,7 +153,7 @@ class LdapAuthService:
         try:
             return LdapClient(config, self._bind_password(row)).authenticate(username, password)
         except LdapUnavailable as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.LDAP_UNAVAILABLE,
                 f"LDAP directory unavailable: {exc}",
             ) from exc
@@ -162,31 +162,31 @@ class LdapAuthService:
         """Return the Octop user for a verified directory identity, provisioning if allowed."""
         row = self._row()
         if row is None:
-            raise OctopError(ErrorCode.LDAP_UNAVAILABLE, "LDAP is not configured")
+            raise HappyclawError(ErrorCode.LDAP_UNAVAILABLE, "LDAP is not configured")
         config = config_from_row(row)
         self._assert_group_allowed(config, identity)
         async with self._lock:
             existing = self._services.user_repo.get_by_sso(row.id, identity.subject)
             if existing is not None:
                 if existing.disabled:
-                    raise OctopError(ErrorCode.USER_DISABLED, "user is disabled")
+                    raise HappyclawError(ErrorCode.USER_DISABLED, "user is disabled")
                 return self._finish_login(existing, identity)
             reserved = self._reservations(row.id, identity, login_name)
             if len(reserved) > 1:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.LDAP_USER_NOT_PROVISIONED,
                     "this directory account has no HappyClaw account yet",
                 )
             if len(reserved) == 1:
                 account = reserved[0]
                 if account.disabled:
-                    raise OctopError(ErrorCode.USER_DISABLED, "user is disabled")
+                    raise HappyclawError(ErrorCode.USER_DISABLED, "user is disabled")
                 self._services.user_repo.upsert_sso_identity(
                     account.id, provider_id=row.id, subject=identity.subject
                 )
                 return self._finish_login(account, identity)
             if not config.auto_provision:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.LDAP_USER_NOT_PROVISIONED,
                     "this directory account has no HappyClaw account yet",
                 )
@@ -226,7 +226,7 @@ class LdapAuthService:
             return
         if identity.is_member_of(config.allowed_groups):
             return
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.LDAP_GROUP_NOT_ALLOWED,
             "this directory account is not in an allowed group",
         )

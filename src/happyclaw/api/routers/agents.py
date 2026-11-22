@@ -36,7 +36,7 @@ from happyclaw.infra.agents.settings.runtime_limits import (
     AGENT_RUNTIME_CONFIG_KEYS,
     agent_runtime_values,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.groups import RESOURCE_EXPERT, GroupAccess
 from happyclaw.infra.users.permissions import user_has_permission
 
@@ -111,7 +111,7 @@ def _memory_maintenance_status(server: Any, agent_id: str) -> dict[str, Any] | N
             return current
     try:
         agent = server.app_runtime.agent_registry.get_agent(agent_id)
-    except OctopError:
+    except HappyclawError:
         return None
     except Exception:
         logger.debug("memory_maintenance status unavailable for %s", agent_id, exc_info=True)
@@ -277,7 +277,7 @@ async def list_agents(
     Holders of the ``users`` permission (and admins) may pass ``scope=all``.
     """
     if scope == "all" and not user_has_permission(user, "users"):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.FORBIDDEN,
             "permission required",
             details={"permission": "users"},
@@ -417,7 +417,7 @@ async def mark_agent_read(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     assert_agent_access_row(row, user, repos=server.services.repos)
     server.services.session_repo.clear_unread_for_agent(agent_id, user.id)
 
@@ -432,7 +432,7 @@ async def get_agent(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     assert_agent_access_row(row, user, repos=server.services.repos)
     return _row_dict(
         row,
@@ -457,7 +457,7 @@ async def patch_agent(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     if body.config is not None and isinstance(body.config, dict):
         assert_user_backend_root_dirs(
@@ -532,7 +532,7 @@ async def delete_agent(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     await server.app_runtime.agent_registry.delete(agent_id)
 
@@ -571,7 +571,7 @@ async def get_agent_avatar(
     workspace = await require_agent_workspace(agent_id, user=user, server=server, owner_only=False)
     found = await read_workspace_avatar(workspace)
     if found is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "avatar not uploaded")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "avatar not uploaded")
     data, media_type = found
     return Response(
         content=data,
@@ -604,7 +604,7 @@ async def start_agent(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     await server.app_runtime.agent_registry.start(agent_id)
 
@@ -619,7 +619,7 @@ async def stop_agent(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     await server.app_runtime.agent_registry.stop(agent_id)
 
@@ -634,7 +634,7 @@ async def reload_agent(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     await server.app_runtime.agent_registry.reload(agent_id)
 
@@ -649,7 +649,7 @@ async def agent_status(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     channels = server.app_runtime.gateway.list_channels(agent_id)
     cron_jobs = server.app_runtime.cron_manager.list_by_agent(agent_id)

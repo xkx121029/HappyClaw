@@ -22,7 +22,7 @@ from happyclaw.infra.db.repos._base import UNSET
 from happyclaw.infra.db.repos.audit import ACTOR_ADMIN
 from happyclaw.infra.db.repos.users import UserRepo
 from happyclaw.infra.db.services import SharedServices
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.email import normalize_email, parse_optional_email
 from happyclaw.infra.users.identity import Role, User
 from happyclaw.infra.users.password import hash_password, validate_password_policy, verify_password
@@ -134,7 +134,7 @@ class UserManager:
         directory_provider_id: int | None = None,
     ) -> User:
         if not username:
-            raise OctopError(ErrorCode.USERNAME_TAKEN, "username must not be empty")
+            raise HappyclawError(ErrorCode.USERNAME_TAKEN, "username must not be empty")
         loc = normalize_locale(locale)
         if directory_provider_id is not None:
             # A directory reservation has no local secret. The directory bind is
@@ -143,19 +143,19 @@ class UserManager:
             sso_provider_id: int | None = directory_provider_id
         else:
             if not password:
-                raise OctopError(ErrorCode.PASSWORD_TOO_WEAK, "password is required")
+                raise HappyclawError(ErrorCode.PASSWORD_TOO_WEAK, "password is required")
             validate_password_policy(password)
             password_hash = hash_password(password)
             sso_provider_id = None
         try:
             keys = validate_permission_keys(permissions or [])
         except ValueError as exc:
-            raise OctopError(ErrorCode.FORBIDDEN, str(exc), status=400) from exc
+            raise HappyclawError(ErrorCode.FORBIDDEN, str(exc), status=400) from exc
         normalized_email = parse_optional_email(email)
         role_id = str(role)
         async with self._lock:
             if self._services.user_repo.get_by_username(username) is not None:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.USERNAME_TAKEN,
                     f"username {username!r} already exists",
                 )
@@ -163,7 +163,7 @@ class UserManager:
                 normalized_email is not None
                 and self._services.user_repo.get_by_email(normalized_email) is not None
             ):
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.EMAIL_TAKEN,
                     f"email {normalized_email!r} already exists",
                 )
@@ -181,7 +181,7 @@ class UserManager:
                 )
             except Exception as exc:
                 if _is_unique_violation(exc) and normalized_email is not None:
-                    raise OctopError(
+                    raise HappyclawError(
                         ErrorCode.EMAIL_TAKEN,
                         f"email {normalized_email!r} already exists",
                     ) from exc
@@ -319,7 +319,7 @@ class UserManager:
 
             assert row is not None  # The retry loop either returns, raises, or finds this identity.
             if row.disabled:
-                raise OctopError(ErrorCode.USER_DISABLED, "user is disabled")
+                raise HappyclawError(ErrorCode.USER_DISABLED, "user is disabled")
             if email is not None:
                 email_owner = self._services.user_repo.get_by_email(email)
                 if email_owner is not None and email_owner.id != row.id:
@@ -353,12 +353,12 @@ class UserManager:
         async with self._lock:
             row = self._services.user_repo.get(user_id)
             if row is None:
-                raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+                raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
             if row.disabled:
-                raise OctopError(ErrorCode.USER_DISABLED, "user is disabled")
+                raise HappyclawError(ErrorCode.USER_DISABLED, "user is disabled")
             owner = self._services.user_repo.get_by_sso(provider_id, subject)
             if owner is not None and owner.id != row.id:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.SSO_IDENTITY_TAKEN,
                     "this identity is already linked to another user",
                 )
@@ -373,7 +373,7 @@ class UserManager:
                 )
             except Exception as exc:
                 if _is_unique_violation(exc):
-                    raise OctopError(
+                    raise HappyclawError(
                         ErrorCode.SSO_IDENTITY_TAKEN,
                         "this identity is already linked to another user",
                     ) from exc
@@ -402,17 +402,17 @@ class UserManager:
         async with self._lock:
             row = self._services.user_repo.get(user_id)
             if row is None:
-                raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+                raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
             provider = self._services.sso_repo.get_by_kind(kind)
             if provider is None:
-                raise OctopError(ErrorCode.NOT_FOUND, f"SSO provider {kind!r} not configured")
+                raise HappyclawError(ErrorCode.NOT_FOUND, f"SSO provider {kind!r} not configured")
             identities = self._services.user_repo.list_sso_identities(row.id)
             linked = next((item for item in identities if item.provider_id == provider.id), None)
             if linked is None:
                 return self._cached_or_row_user(row)
             remaining = [item for item in identities if item.provider_id != provider.id]
             if row.password_hash is None and not remaining:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.SSO_UNBIND_REQUIRES_PASSWORD,
                     "set a password before unlinking single sign-on",
                 )
@@ -456,7 +456,7 @@ class UserManager:
         if locked_until > now:
             retry_after = locked_until - now
             minutes = max(1, (retry_after + 59) // 60)
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.LOGIN_LOCKED,
                 "account temporarily locked",
                 details={"retry_after_seconds": retry_after, "minutes": minutes},
@@ -482,7 +482,7 @@ class UserManager:
         if locked_until > now:
             retry_after = locked_until - now
             minutes = max(1, (retry_after + 59) // 60)
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.LOGIN_LOCKED,
                 "account temporarily locked",
                 details={"retry_after_seconds": retry_after, "minutes": minutes},
@@ -499,7 +499,7 @@ class UserManager:
             )
             if retry_after > 0:
                 minutes = max(1, (retry_after + 59) // 60)
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.LOGIN_LOCKED,
                     "account temporarily locked",
                     details={"retry_after_seconds": retry_after, "minutes": minutes},
@@ -523,16 +523,16 @@ class UserManager:
     async def change_password(self, username: str, old: str, new: str) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.AUTH_FAILED, "current password incorrect")
+            raise HappyclawError(ErrorCode.AUTH_FAILED, "current password incorrect")
         if not row.password_hash:
             # Accounts provisioned from a directory (or SSO) never hold a local
             # password, so "current password incorrect" would be misleading.
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PASSWORD_NOT_SET,
                 "this account has no local password to change",
             )
         if not verify_password(old, row.password_hash):
-            raise OctopError(ErrorCode.AUTH_FAILED, "current password incorrect")
+            raise HappyclawError(ErrorCode.AUTH_FAILED, "current password incorrect")
         validate_password_policy(new, old_password=old)
         self._services.user_repo.set_password_hash(row.id, hash_password(new))
         self._services.user_repo.clear_login_lockout(row.id)
@@ -544,7 +544,7 @@ class UserManager:
         """Admin-driven reset (no old-password check)."""
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         validate_password_policy(new)
         self._services.user_repo.set_password_hash(row.id, hash_password(new))
         self._services.user_repo.clear_login_lockout(row.id)
@@ -555,11 +555,11 @@ class UserManager:
     async def set_permissions(self, username: str, permissions: builtins.list[str]) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         try:
             keys = validate_permission_keys(permissions)
         except ValueError as exc:
-            raise OctopError(ErrorCode.FORBIDDEN, str(exc), status=400) from exc
+            raise HappyclawError(ErrorCode.FORBIDDEN, str(exc), status=400) from exc
         self._services.user_repo.set_permissions(row.id, keys)
         async with self._lock:
             current = self._users.get(username)
@@ -591,7 +591,7 @@ class UserManager:
 
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         updates: dict[str, str | None] = {}
         root_arg: Any = UNSET
         quota_arg: Any = UNSET
@@ -642,7 +642,7 @@ class UserManager:
     async def set_role(self, username: str, role: Role | str) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         role_id = str(role)
         self._services.user_repo.set_role(row.id, role_id)
         async with self._lock:
@@ -659,7 +659,7 @@ class UserManager:
     async def set_display_name(self, username: str, display_name: str | None) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         self._services.user_repo.set_display_name(row.id, display_name)
         async with self._lock:
             current = self._users.get(username)
@@ -669,12 +669,12 @@ class UserManager:
     async def set_email(self, username: str, email: str | None) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         normalized = parse_optional_email(email)
         if normalized is not None:
             owner = self._services.user_repo.get_by_email(normalized)
             if owner is not None and owner.id != row.id:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.EMAIL_TAKEN,
                     f"email {normalized!r} already exists",
                 )
@@ -682,7 +682,7 @@ class UserManager:
             self._services.user_repo.set_email(row.id, normalized)
         except Exception as exc:
             if _is_unique_violation(exc) and normalized is not None:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.EMAIL_TAKEN,
                     f"email {normalized!r} already exists",
                 ) from exc
@@ -696,7 +696,7 @@ class UserManager:
     async def set_locale(self, username: str, locale: str) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         loc = normalize_locale(locale)
         self._services.user_repo.set_locale(row.id, loc)
         async with self._lock:
@@ -717,7 +717,7 @@ class UserManager:
     ) -> builtins.list[RemoteBrowserBookmark]:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         bookmarks = validate_remote_browser_bookmarks(items)
         merged = merge_preferences_json(row.preferences_json, bookmarks)
         self._services.user_repo.set_preferences_json(row.id, merged)
@@ -732,7 +732,7 @@ class UserManager:
     ) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         merged = merge_model_preferences_json(
             row.preferences_json,
             preferred_model=preferred_model,
@@ -743,7 +743,7 @@ class UserManager:
     async def disable(self, username: str) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         async with self._lock:
             self._users.pop(username, None)
         self._services.user_repo.set_disabled(row.id, True)
@@ -752,7 +752,7 @@ class UserManager:
     async def enable(self, username: str) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         self._services.user_repo.set_disabled(row.id, False)
         user = User(
             id=row.id,
@@ -769,7 +769,7 @@ class UserManager:
     async def unlock_login(self, username: str) -> None:
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         self._services.user_repo.clear_login_lockout(row.id)
         self._services.audit_repo.write(
             actor=ACTOR_ADMIN, action="user.unlock_login", target=username
@@ -787,7 +787,7 @@ class UserManager:
         """
         row = self._services.user_repo.get_by_username(username)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         owned = self._services.agent_repo.list_by_user(row.id)
         owned_ids = {agent.agent_id for agent in owned}
         if agent_manager is not None:
@@ -887,7 +887,7 @@ class UserManager:
                 shutil.rmtree(path)
             except OSError as exc:
                 logger.exception("rmtree failed for %s", path)
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.CHECKPOINT_DELETE_FAILED,
                     f"could not remove {path}",
                 ) from exc

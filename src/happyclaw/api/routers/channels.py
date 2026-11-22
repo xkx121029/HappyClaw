@@ -21,7 +21,7 @@ from pydantic import AfterValidator, BaseModel, ValidationError
 
 from happyclaw.api.common.agent import require_agent_owner_row
 from happyclaw.api.deps import current_user, get_server, require_permission
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.bot_creators.feishu_runner import extract_feishu_credentials
 from happyclaw.infra.gateway.channels import dingtalk_registration, qr_bind
 from happyclaw.infra.gateway.gateway import ChannelKind
@@ -206,7 +206,7 @@ async def get_channel(
     _require_agent_access(agent_id, user=user, as_user=as_user, server=server)
     row = server.app_runtime.gateway.get_channel(channel_id)
     if row is None or row.agent_id != agent_id:
-        raise OctopError(ErrorCode.NOT_FOUND, "channel not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "channel not found")
     return _row_to_detail(
         row, gateway=server.app_runtime.gateway, locale=resolve_request_locale(request)
     )
@@ -225,7 +225,7 @@ async def patch_channel(
     _require_agent_access(agent_id, user=user, as_user=as_user, server=server)
     existing = server.app_runtime.gateway.get_channel(channel_id)
     if existing is None or existing.agent_id != agent_id:
-        raise OctopError(ErrorCode.NOT_FOUND, "channel not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "channel not found")
     row = await server.app_runtime.gateway.update_channel(
         channel_id,
         kind=str(body.kind) if body.kind is not None else None,
@@ -249,7 +249,7 @@ async def delete_channel(
     _require_agent_access(agent_id, user=user, as_user=as_user, server=server)
     existing = server.app_runtime.gateway.get_channel(channel_id)
     if existing is None or existing.agent_id != agent_id:
-        raise OctopError(ErrorCode.NOT_FOUND, "channel not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "channel not found")
     await server.app_runtime.gateway.delete_channel(channel_id)
 
 
@@ -266,7 +266,7 @@ async def test_channel(
     _require_agent_access(agent_id, user=user, as_user=as_user, server=server)
     existing = server.app_runtime.gateway.get_channel(channel_id)
     if existing is None or existing.agent_id != agent_id:
-        raise OctopError(ErrorCode.NOT_FOUND, "channel not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "channel not found")
     return cast(
         dict[str, Any],
         await server.app_runtime.gateway.probe_channel(

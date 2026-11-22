@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from happyclaw.infra.db.repos.settings import SettingsRepo
 from happyclaw.infra.db.repos.voice_providers import VoiceProviderRepo, VoiceProviderRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.voice import adapters, realtime
 from happyclaw.infra.voice.presets import is_builtin_preset
 
@@ -57,7 +57,7 @@ class VoiceManager:
     def _validate_provider_name(self, name: str, *, capability: str) -> None:
         if is_builtin_preset(name):
             if name == "edge" and capability == "stt":
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.VOICE_CAPABILITY_MISMATCH, "Edge TTS does not support STT"
                 )
             if name == "browser":
@@ -65,14 +65,14 @@ class VoiceManager:
             return
         row = self._repo.get_by_name(name)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, f"voice provider {name!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"voice provider {name!r} not found")
         if not row.enabled:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.VOICE_PROVIDER_DISABLED, f"voice provider {name!r} is disabled"
             )
         cap = row.capability
         if cap != "both" and cap != capability:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.VOICE_CAPABILITY_MISMATCH,
                 f"provider {name!r} does not support {capability.upper()}",
             )
@@ -82,9 +82,9 @@ class VoiceManager:
             return ResolvedVoiceProvider(name=name, kind=name, row=self._repo.get_by_name(name))
         row = self._repo.get_by_name(name)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, f"voice provider {name!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"voice provider {name!r} not found")
         if not row.enabled:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.VOICE_PROVIDER_DISABLED, f"voice provider {name!r} is disabled"
             )
         return ResolvedVoiceProvider(name=row.name, kind=row.kind, row=row)
@@ -104,7 +104,7 @@ class VoiceManager:
         """
         try:
             resolved = self.resolve(self.get_active()["stt"])
-        except OctopError:
+        except HappyclawError:
             return None
         if resolved.kind != "tencent" or resolved.row is None:
             return None
@@ -136,7 +136,7 @@ class VoiceManager:
         resolved = self.resolve(name)
         kind = resolved.kind
         if kind == "browser":
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.VOICE_BROWSER_ONLY,
                 "STT is handled by the browser Web Speech API",
                 details={"provider": name},
@@ -144,17 +144,17 @@ class VoiceManager:
         row = resolved.row
         if kind == "openai":
             if row is None:
-                raise OctopError(ErrorCode.NOT_FOUND, "OpenAI voice provider is not configured")
+                raise HappyclawError(ErrorCode.NOT_FOUND, "OpenAI voice provider is not configured")
             return await adapters.transcribe_openai(row, audio, mime=mime, language=language)
         if kind == "tencent":
             if row is None:
-                raise OctopError(ErrorCode.NOT_FOUND, "Tencent voice provider is not configured")
+                raise HappyclawError(ErrorCode.NOT_FOUND, "Tencent voice provider is not configured")
             return await adapters.transcribe_tencent(row, audio, mime=mime, language=language)
         if kind == "mimo":
             if row is None:
-                raise OctopError(ErrorCode.NOT_FOUND, "Mimo voice provider is not configured")
+                raise HappyclawError(ErrorCode.NOT_FOUND, "Mimo voice provider is not configured")
             return await adapters.transcribe_mimo(row, audio, mime=mime, language=language)
-        raise OctopError(ErrorCode.VOICE_KIND_UNSUPPORTED, f"unsupported STT kind {kind!r}")
+        raise HappyclawError(ErrorCode.VOICE_KIND_UNSUPPORTED, f"unsupported STT kind {kind!r}")
 
     async def synthesize(
         self,
@@ -168,7 +168,7 @@ class VoiceManager:
         resolved = self.resolve(name)
         kind = resolved.kind
         if kind == "browser":
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.VOICE_BROWSER_ONLY,
                 "TTS is handled by the browser speechSynthesis API",
                 details={"provider": name},
@@ -195,7 +195,7 @@ class VoiceManager:
             return
         if kind == "openai":
             if row is None:
-                raise OctopError(ErrorCode.NOT_FOUND, "OpenAI voice provider is not configured")
+                raise HappyclawError(ErrorCode.NOT_FOUND, "OpenAI voice provider is not configured")
             async for chunk in adapters.synthesize_openai(
                 row, text, voice_id=voice_id, speed=speed
             ):
@@ -203,7 +203,7 @@ class VoiceManager:
             return
         if kind == "tencent":
             if row is None:
-                raise OctopError(ErrorCode.NOT_FOUND, "Tencent voice provider is not configured")
+                raise HappyclawError(ErrorCode.NOT_FOUND, "Tencent voice provider is not configured")
             async for chunk in adapters.synthesize_tencent(
                 row, text, voice_id=voice_id, speed=speed
             ):
@@ -211,18 +211,18 @@ class VoiceManager:
             return
         if kind == "mimo":
             if row is None:
-                raise OctopError(ErrorCode.NOT_FOUND, "Mimo voice provider is not configured")
+                raise HappyclawError(ErrorCode.NOT_FOUND, "Mimo voice provider is not configured")
             async for chunk in adapters.synthesize_mimo(row, text, voice_id=voice_id, speed=speed):
                 yield chunk
             return
-        raise OctopError(ErrorCode.VOICE_KIND_UNSUPPORTED, f"unsupported TTS kind {kind!r}")
+        raise HappyclawError(ErrorCode.VOICE_KIND_UNSUPPORTED, f"unsupported TTS kind {kind!r}")
 
     async def test_provider(
         self, provider_id: int, *, mode: str, locale: str = "en"
     ) -> dict[str, Any]:
         row = self._repo.get(provider_id)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "voice provider not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "voice provider not found")
         if mode == "stt":
             return await adapters.test_stt(row, row.kind, locale=locale)
         return await adapters.test_tts(row, row.kind, locale=locale)

@@ -15,7 +15,7 @@ from tests.unit.cron.test_cron_manager import (
 )
 
 from happyclaw.infra.db.lease import LEASE_SECONDS
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 @pytest.mark.asyncio
@@ -35,7 +35,7 @@ async def test_run_now_skips_when_another_instance_holds_the_lease(tmp_path: Pat
     held = services.repos.cron_repo.claim_run(cid, owner="other", lease_seconds=LEASE_SECONDS)
     assert held is not None
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await mgr.run_now(cid, wait=True)
 
     assert exc.value.code is ErrorCode.CRON_ALREADY_RUNNING
@@ -77,7 +77,7 @@ async def test_overlapping_run_now_delivers_once(
 
     running = asyncio.create_task(first.run_now(cid, wait=True))
     await started.wait()
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await second.run_now(cid, wait=True)
     assert exc.value.code is ErrorCode.CRON_ALREADY_RUNNING
     release.set()
@@ -115,7 +115,7 @@ async def test_lost_lease_does_not_record_status(
     monkeypatch.setattr("happyclaw.infra.cron.manager.RENEW_SECONDS", 0.01)
     monkeypatch.setattr(services.repos.cron_repo, "renew_run_lease", lambda *_a, **_k: False)
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await mgr.run_now(cid, wait=True)
 
     assert exc.value.code is ErrorCode.CRON_ALREADY_RUNNING

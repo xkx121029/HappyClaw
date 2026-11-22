@@ -88,7 +88,7 @@ def config_models() -> None:
         load_provider_presets_offline,
         set_active_model_offline,
     )
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     presets = load_provider_presets_offline()
     if not presets:
@@ -154,7 +154,7 @@ def config_models() -> None:
             api_key=body.get("api_key"),
             models=body.get("models"),
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(
         click.style(
@@ -184,7 +184,7 @@ def config_models() -> None:
     provider_name = str(created.get("name", ""))
     try:
         set_active_model_offline(provider_name, model_id)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(f"✓ Active model: {provider_name} / {model_id}")
 

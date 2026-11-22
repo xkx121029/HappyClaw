@@ -5,15 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.workspace.dir import host_system_dir
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def memory_backend_from_agent_config(
     cfg: dict[str, Any],
     *,
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Return HarnessAgentConfig kwargs for memory storage (may be empty).
@@ -39,7 +39,7 @@ def memory_backend_from_agent_config(
             }
         return {}
     if not isinstance(backend, dict):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "memory.backend must be an object")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "memory.backend must be an object")
 
     btype = str(backend.get("type") or "sqlite").strip().lower()
     if btype == "sqlite":
@@ -55,21 +55,21 @@ def memory_backend_from_agent_config(
         dsn = backend.get("dsn")
         if backend.get("use_control_plane_dsn") or not dsn:
             if not octop_config.database.is_postgresql:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.SLASH_BAD_ARGS,
                     "memory.backend use_control_plane_dsn requires postgresql control plane",
                 )
             dsn = octop_config.database.postgresql_conninfo()
         return {"memory_backend": {"type": "postgres", "dsn": str(dsn)}}
 
-    raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"unsupported memory.backend.type: {btype!r}")
+    raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"unsupported memory.backend.type: {btype!r}")
 
 
 def open_memory_kwargs(
     *,
     agent_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
 ) -> tuple[str, str, dict[str, Any] | None]:
     """Return ``(namespace, backend_type, backend_config)`` for ``Memory(...)``."""

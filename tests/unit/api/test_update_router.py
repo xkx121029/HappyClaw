@@ -12,7 +12,7 @@ from fastapi import Request
 from happyclaw.api.routers import update as update_router
 from happyclaw.api.routers import update_store
 from happyclaw.api.routers.update_store import UpgradeTaskStatus, create_task, get_task
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.setup import self_update
 from happyclaw.infra.setup.self_update import UpgradeResult
 
@@ -123,7 +123,7 @@ async def test_restart_endpoint_rejects_when_service_not_installed(
     from fastapi import BackgroundTasks
 
     bg = BackgroundTasks()
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         await update_router.restart_service_endpoint(bg, _=None)
 
     assert exc_info.value.code == ErrorCode.INTERNAL_ERROR
@@ -590,7 +590,7 @@ async def test_trigger_upgrade_rejects_non_newer_target_without_starting_task(
         pytest.fail("rejected target must not create an upgrade task")
 
     monkeypatch.setattr(update_router, "create_task", unexpected_task)
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         await update_router.trigger_upgrade(
             request=Request({"type": "http", "headers": []}),
             body=update_router.UpgradeBody(version=requested),

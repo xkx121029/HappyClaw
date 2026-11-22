@@ -17,11 +17,11 @@ from typing import TYPE_CHECKING, Any, cast
 from fastapi import Depends, Header, Query, Request
 
 from happyclaw.infra.auth.tokens import sign_token
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.permissions import PERMISSIONS
 
 if TYPE_CHECKING:
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
     from happyclaw.infra.users.identity import User
 else:
     from happyclaw.infra.users.identity import User
@@ -41,26 +41,26 @@ def is_jwt_exempt_request(request: Request) -> bool:  # noqa: ARG001
     return True
 
 
-def get_server(request: Request) -> OctopServer:
-    server: OctopServer = request.app.state.octop_server
+def get_server(request: Request) -> HappyclawServer:
+    server: HappyclawServer = request.app.state.octop_server
     if not getattr(server, "_started", False):
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "server not started")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "server not started")
     return server
 
 
-def require_database(server: OctopServer) -> None:
+def require_database(server: HappyclawServer) -> None:
     """Raise when the control-plane DB is not bound (should not happen anymore)."""
     if not server.database_bound:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SINGLE_USER_INIT_FAILED,
             "control-plane database is not available",
             status=503,
         )
 
 
-def _owner(server: OctopServer) -> User:
+def _owner(server: HappyclawServer) -> User:
     if server.services is None or not server.database_bound:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SINGLE_USER_INIT_FAILED,
             "control-plane database is not available",
             status=503,
@@ -84,19 +84,19 @@ def extract_raw_token(
     return None
 
 
-def resolve_user_from_token(server: OctopServer, token: str | None = None) -> User:  # noqa: ARG001
+def resolve_user_from_token(server: HappyclawServer, token: str | None = None) -> User:  # noqa: ARG001
     """Deprecated: always returns the local owner."""
     return _owner(server)
 
 
 def maybe_sliding_renew_token(
-    server: OctopServer, token: str | None = None, user: User | None = None
+    server: HappyclawServer, token: str | None = None, user: User | None = None
 ) -> str | None:  # noqa: ARG001
     """Deprecated: single-user mode never issues tokens."""
     return None
 
 
-def authenticate_request(request: Request, server: OctopServer) -> User:  # noqa: ARG001
+def authenticate_request(request: Request, server: HappyclawServer) -> User:  # noqa: ARG001
     """Deprecated: every local request is the owner."""
     return _owner(server)
 
@@ -107,7 +107,7 @@ _SINGLE_USER_WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 def single_user_read_only(request: Request) -> None:
     """Router-level guard: account/SSO management is read-only in single-user mode."""
     if request.method in _SINGLE_USER_WRITE_METHODS:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SINGLE_USER_UNSUPPORTED,
             "single-user mode does not support account management",
         )
@@ -118,7 +118,7 @@ def single_user_read_only(request: Request) -> None:
 # ---------------------------------------------------------------------------
 async def current_user(
     request: Request,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     authorization: str | None = Header(None),
     access_token: str | None = Query(None),
 ) -> User:
@@ -131,7 +131,7 @@ async def current_user(
     return user
 
 
-def _deprecated_owner_dependency(server: OctopServer = Depends(get_server)) -> User:
+def _deprecated_owner_dependency(server: HappyclawServer = Depends(get_server)) -> User:
     return _owner(server)
 
 

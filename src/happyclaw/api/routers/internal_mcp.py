@@ -15,7 +15,7 @@ from mcp.shared.version import SUPPORTED_PROTOCOL_VERSIONS
 from happyclaw.api.deps import get_server
 from happyclaw.infra.connectors.gateway.protocol import handle_mcp_request
 from happyclaw.infra.connectors.service import ConnectorService
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -57,19 +57,19 @@ async def internal_mcp_post(
 ) -> Response:
     inst = server.services.repos.connector_repo.get(instance_id)
     if inst is None or inst.kind != kind or inst.status != "active":
-        raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, "instance not found")
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, "instance not found")
 
     svc = _service(server)
     creds = svc.verify_internal_token(instance_id, token)
     if creds is None:
-        raise OctopError(ErrorCode.AUTH_FAILED, "invalid internal token")
+        raise HappyclawError(ErrorCode.AUTH_FAILED, "invalid internal token")
 
     try:
         body = await request.json()
     except json.JSONDecodeError as exc:
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "invalid JSON body") from exc
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "invalid JSON body") from exc
     if not isinstance(body, dict):
-        raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "expected JSON object")
+        raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "expected JSON object")
 
     method = str(body.get("method") or "")
     if method == "notifications/initialized":
@@ -107,12 +107,12 @@ async def internal_mcp_get(
     """Streamable HTTP clients open a long-lived GET SSE channel after initialize."""
     inst = server.services.repos.connector_repo.get(instance_id)
     if inst is None or inst.kind != kind:
-        raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, "instance not found")
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, "instance not found")
 
     svc = _service(server)
     creds = svc.verify_internal_token(instance_id, token)
     if creds is None:
-        raise OctopError(ErrorCode.AUTH_FAILED, "invalid internal token")
+        raise HappyclawError(ErrorCode.AUTH_FAILED, "invalid internal token")
 
     if not request.headers.get(MCP_SESSION_HEADER):
         return JSONResponse(
@@ -143,8 +143,8 @@ async def internal_mcp_delete(
     """Streamable HTTP clients may DELETE to end a session."""
     inst = server.services.repos.connector_repo.get(instance_id)
     if inst is None or inst.kind != kind:
-        raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, "instance not found")
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, "instance not found")
     svc = _service(server)
     if svc.verify_internal_token(instance_id, token) is None:
-        raise OctopError(ErrorCode.AUTH_FAILED, "invalid internal token")
+        raise HappyclawError(ErrorCode.AUTH_FAILED, "invalid internal token")
     return Response(status_code=204)

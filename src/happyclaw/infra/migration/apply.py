@@ -17,7 +17,7 @@ from typing import Any
 from happyclaw.infra.connectors.custom_mcp import normalize_server_spec
 from happyclaw.infra.connectors.service import ConnectorService
 from happyclaw.infra.db.services import SharedServices
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.migration.plan import MigrationPlan, Note, SkillImport
 from happyclaw.infra.skills.skill_packages import SkillPackageError, validate_skill_slug
 from happyclaw.infra.utils.ulid import new_ulid
@@ -225,7 +225,7 @@ def _apply_mcp(
             continue
         try:
             normalize_server_spec(server.name, server.spec)
-        except OctopError as exc:
+        except HappyclawError as exc:
             report.add("mcp", server.name, "failed", "invalid", exc.message)
             continue
         except ValueError as exc:

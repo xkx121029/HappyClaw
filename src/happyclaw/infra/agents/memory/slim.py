@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from happyclaw.i18n import tr
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 if TYPE_CHECKING:
     from happyclaw.infra.agents.manager import AgentManager
@@ -249,7 +249,7 @@ class MemorySlimCoordinator:
 
         try:
             agent = self._agent_manager.get_agent(agent_id)
-        except OctopError as exc:
+        except HappyclawError as exc:
             raise ValueError(tr("memory_slim.agent_not_running", locale)) from exc
         memory = getattr(getattr(agent, "_memory_runtime", None), "memory", None)
         if memory is None:
@@ -271,7 +271,7 @@ class MemorySlimCoordinator:
         """``sqlite`` or ``postgres`` when the live agent has a memory store."""
         try:
             agent = self._agent_manager.get_agent(agent_id)
-        except OctopError as exc:
+        except HappyclawError as exc:
             raise ValueError(tr("memory_slim.agent_not_running", locale)) from exc
         memory = getattr(getattr(agent, "_memory_runtime", None), "memory", None)
         if memory is None:

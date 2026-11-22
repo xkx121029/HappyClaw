@@ -9,7 +9,7 @@ from happyclaw_harness.slash import SlashCommand, SlashSink
 from happyclaw.i18n import error_message
 from happyclaw.i18n.domains.slash import tr
 from happyclaw.infra.db.repos.threads import clip_thread_title
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.gateway.slash.ctx import (
     SlashCtx,
     chat_type,
@@ -145,7 +145,7 @@ async def cmd_delete(d: SlashDispatcher, cmd: SlashCommand, ctx: SlashCtx, sink:
         return
     try:
         await ctx.agent_manager.delete_thread_checkpoint(ctx.agent_id, target.thread_id)
-    except OctopError:
+    except HappyclawError:
         await sink.text(tr("delete.failed", lang))
         return
     ctx.thread_registry.delete_thread(target.thread_id)

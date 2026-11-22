@@ -19,7 +19,7 @@ from happyclaw.infra.bridge.ids import (
     restore_peer_path_ids,
     rewrite_tunneled_json,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +171,7 @@ def _local_bridge_shadow_response(
                     "can_start": False,
                 }
             )
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.BRIDGE_REMOTE_UNSUPPORTED,
             "This action is not available through the remote bridge. Manage it on the peer HappyClaw.",
         )
@@ -254,7 +254,7 @@ def install(app: Any, server: Any) -> None:
                 if target.agent_rest
                 else None
             )
-        except OctopError as exc:
+        except HappyclawError as exc:
             from happyclaw.infra.utils.locale import resolve_request_locale
 
             locale = resolve_request_locale(request)
@@ -277,7 +277,7 @@ def install(app: Any, server: Any) -> None:
                 headers=headers,
                 body=body or None,
             )
-        except OctopError as exc:
+        except HappyclawError as exc:
             from happyclaw.infra.utils.locale import resolve_request_locale
 
             locale = resolve_request_locale(request)

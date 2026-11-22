@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
 from happyclaw.api.deps import get_server
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +52,9 @@ class DatabaseSetupBody(BaseModel):
         return out
 
 
-def _single_user(message: str = "单人模式无需初始化账号") -> OctopError:
+def _single_user(message: str = "单人模式无需初始化账号") -> HappyclawError:
     """Uniform Chinese refusal for wizard-only write endpoints."""
-    err = OctopError(ErrorCode.SINGLE_USER_UNSUPPORTED, message)
+    err = HappyclawError(ErrorCode.SINGLE_USER_UNSUPPORTED, message)
     err.message = message
     return err
 
@@ -104,7 +104,7 @@ async def test_database(
     try:
         db_cfg = database_config_from_payload(body.as_payload())
     except ValueError as exc:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
     user_count = probe_database(db_cfg, server.paths)
     return {"ok": True, "driver": db_cfg.driver, "user_count": user_count}
 

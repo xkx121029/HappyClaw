@@ -11,7 +11,7 @@ from fastapi import APIRouter, Body, Depends
 
 from happyclaw.api.deps import get_server, require_permission
 from happyclaw.infra.desktop import shell_owned_env_key
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.env_file import (
     apply_env_file_replace,
     env_file_path,
@@ -99,11 +99,11 @@ async def batch_save_envs(
     for key, value in body.items():
         k = key.strip()
         if not k:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "env key cannot be empty")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "env key cannot be empty")
         if not _KEY_RE.match(k):
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid env key: {k!r}")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid env key: {k!r}")
         if shell_owned_env_key(k):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS, f"env key is shell-owned and read-only: {k!r}"
             )
         cleaned[k] = str(value)
@@ -128,9 +128,9 @@ async def delete_env(
 ) -> list[dict[str, str]]:
     k = key.strip()
     if not _KEY_RE.match(k):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid env key: {k!r}")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid env key: {k!r}")
     if shell_owned_env_key(k):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"env key is shell-owned and read-only: {k!r}")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"env key is shell-owned and read-only: {k!r}")
     path = env_file_path(server.paths.root)
     previous = load_env_file(path)
     values = dict(previous)

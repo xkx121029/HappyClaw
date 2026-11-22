@@ -20,7 +20,7 @@ from happyclaw.api.routers.agent_files import (
     put_user_profile,
     review_manual_memory,
 )
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 def _server(ws: BackendWorkspace) -> SimpleNamespace:
@@ -93,7 +93,7 @@ async def test_shared_agent_does_not_allow_non_owner_to_edit_strong_memory(
         if filename == "MEMORY.md"
         else (put_user_profile, UserProfileBody)
     )
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         await put_file("a1", body_type(content="forbidden"), user=other_user, server=server)
     assert not ws.exists(filename)
     server.app_runtime.agent_registry.save_manual_memory_document.assert_not_awaited()
@@ -103,7 +103,7 @@ async def test_shared_agent_does_not_allow_non_owner_to_edit_strong_memory(
 async def test_review_is_owner_only_and_reports_candidates(tmp_path: Path) -> None:
     ws = BackendWorkspace(FilesystemBackend(root_dir=str(tmp_path), virtual_mode=True), tmp_path)
     server = _server(ws)
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         await review_manual_memory("a1", user=SimpleNamespace(id=2, is_admin=False), server=server)
     server.app_runtime.agent_registry.review_manual_memory_documents.assert_not_awaited()
     result = await review_manual_memory(
@@ -121,7 +121,7 @@ async def test_review_status_reads_current_files_without_running_audit(
     server = _server(ws)
     rpc = MagicMock(return_value={"status": "stale"})
     monkeypatch.setattr("happyclaw.api.routers.agent_files.call_memory_rpc", rpc)
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         await get_manual_memory_review(
             "a1", user=SimpleNamespace(id=2, is_admin=False), server=server
         )

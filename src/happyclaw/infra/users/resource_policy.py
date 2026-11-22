@@ -6,7 +6,7 @@ import os
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.host_dirs import (
     assert_backend_root_dirs_allowed,
     assert_safe_host_path,
@@ -119,7 +119,7 @@ def normalize_workspace_root_dir(raw: str | None) -> str | None:
     if raw is None or not str(raw).strip():
         return None
     if running_in_container():
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.WORKSPACE_ROOT_CONTAINER_UNSUPPORTED,
             "workspace root policy is unavailable in container deployments",
         )
@@ -131,12 +131,12 @@ def normalize_workspace_root_dir(raw: str | None) -> str | None:
     base = f"{drive}{os.sep}" if drive else os.sep
     if resolved.startswith(base):
         if not os.path.isdir(resolved):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.WORKSPACE_ROOT_RESTRICTED,
                 "workspace root must be a directory",
             )
         return host_path_text(path)
-    raise OctopError(
+    raise HappyclawError(
         ErrorCode.WORKSPACE_ROOT_RESTRICTED,
         "path not allowed",
     )
@@ -147,7 +147,7 @@ def normalize_token_quota(raw: int | None) -> int | None:
         return None
     quota = int(raw)
     if quota < 0:
-        raise OctopError(ErrorCode.FORBIDDEN, "token quota must be >= 0", status=400)
+        raise HappyclawError(ErrorCode.FORBIDDEN, "token quota must be >= 0", status=400)
     return quota
 
 
@@ -156,7 +156,7 @@ def normalize_max_agents(raw: int | None) -> int | None:
         return None
     limit = int(raw)
     if limit < 0:
-        raise OctopError(ErrorCode.FORBIDDEN, "max agents must be >= 0", status=400)
+        raise HappyclawError(ErrorCode.FORBIDDEN, "max agents must be >= 0", status=400)
     return limit
 
 
@@ -207,7 +207,7 @@ def raise_if_workspace_dir_outside_user_root(
         host = resolve_workspace_host_path(raw, dict(config))
         assert_safe_host_path(os.fspath(host), restrict_to_root=allowed)
     except ValueError as exc:
-        raise OctopError(ErrorCode.WORKSPACE_ROOT_RESTRICTED, str(exc)) from exc
+        raise HappyclawError(ErrorCode.WORKSPACE_ROOT_RESTRICTED, str(exc)) from exc
 
 
 def raise_if_backend_outside_user_root(
@@ -224,7 +224,7 @@ def raise_if_backend_outside_user_root(
         code = (
             ErrorCode.WORKSPACE_ROOT_RESTRICTED if allowed else ErrorCode.WORKSPACE_OP_UNSUPPORTED
         )
-        raise OctopError(code, str(exc)) from exc
+        raise HappyclawError(code, str(exc)) from exc
 
 
 def persisted_workspace_within_root(config: Mapping[str, Any], allowed_root: str | None) -> bool:
@@ -325,7 +325,7 @@ def apply_workspace_root_to_config(
     try:
         config["backend"] = clamp_backend_to_workspace_root(backend, allowed)
     except ValueError as exc:
-        raise OctopError(ErrorCode.WORKSPACE_ROOT_RESTRICTED, str(exc)) from exc
+        raise HappyclawError(ErrorCode.WORKSPACE_ROOT_RESTRICTED, str(exc)) from exc
 
 
 def assert_token_quota_available(policy_repo: Any, usage_repo: Any, user_id: int) -> None:
@@ -335,7 +335,7 @@ def assert_token_quota_available(policy_repo: Any, usage_repo: Any, user_id: int
         return
     used = int(usage_repo.total_tokens_for_user(user_id))
     if used >= quota:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.TOKEN_QUOTA_EXCEEDED,
             "token quota exceeded",
             details={"used": used, "quota": quota},
@@ -349,7 +349,7 @@ def assert_agent_quota_available(policy_repo: Any, agent_repo: Any, user_id: int
         return
     owned = int(agent_repo.count_by_user(user_id, kind="expert"))
     if owned >= limit:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.AGENT_QUOTA_EXCEEDED,
             "agent quota exceeded",
             details={"used": owned, "quota": limit},

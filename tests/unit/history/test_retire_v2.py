@@ -14,7 +14,7 @@ from langgraph.checkpoint.base import empty_checkpoint
 from happyclaw_memory import Memory
 from happyclaw_memory.pipeline.lifecycle.checkpoint_gc import prune_checkpoints
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.agents import AgentRepo
@@ -61,7 +61,7 @@ def stores(tmp_octop_home: Path):
             last_active=0,
         )
     registry = SimpleNamespace(
-        get_row=agents.get, get_config=lambda _: cfg, octop_config=OctopConfig()
+        get_row=agents.get, get_config=lambda _: cfg, octop_config=HappyclawConfig()
     )
     with closing(sqlite3.connect(paths.root / ARCHIVE_NAME)) as conn, conn:
         conn.executescript(_SCHEMA)
@@ -196,7 +196,7 @@ def test_interleaved_legacy_rows_keep_order_and_only_insert_missing_bodies(store
 @pytest.mark.asyncio
 async def test_failed_thread_prevents_agent_boot_and_leaves_original_archive(stores, monkeypatch):
     from happyclaw.infra.agents.manager import AgentManager
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
 
     paths, pool, _ = stores
     with closing(sqlite3.connect(paths.root / ARCHIVE_NAME)) as conn, conn:
@@ -220,7 +220,7 @@ async def test_failed_thread_prevents_agent_boot_and_leaves_original_archive(sto
         raise AssertionError("agent maintenance must not start before all threads migrate")
 
     monkeypatch.setattr(AgentManager, "boot", must_not_boot)
-    server = OctopServer(home=paths.root)
+    server = HappyclawServer(home=paths.root)
     with pytest.raises(ValueError, match="thread b: checkpoint anchor lost is unavailable"):
         await server.start(serve_background=False)
     assert (archive.read_bytes(), marker.read_bytes()) == original
@@ -234,13 +234,13 @@ async def test_ignored_v2_settings_warn_once_and_do_not_prevent_startup(
     tmp_octop_home, monkeypatch, caplog
 ):
     from happyclaw.config import _warn_retired_history_config, load_config
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
 
     _warn_retired_history_config.cache_clear()
     paths = PathLayout(tmp_octop_home)
     paths.config.write_text('{"history_v2_enabled": {"invalid": true}}', encoding="utf-8")
     monkeypatch.setenv("OCTOP_HISTORY_V2_ENABLED", "invalid")
-    server = OctopServer(home=paths.root)
+    server = HappyclawServer(home=paths.root)
     try:
         await server.start(serve_background=False)
         assert not hasattr(load_config(paths.config), "history_v2_enabled")
@@ -254,7 +254,7 @@ def test_offline_backup_restore_installs_legacy_archive_for_next_start(stores, t
     import tarfile
 
     from happyclaw.infra.backup.system_archive import create_system_backup, restore_system_backup
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     paths, pool, registry = stores
     message = message_to_dict(HumanMessage(content="stored in the old archive", id="legacy"))
@@ -263,7 +263,7 @@ def test_offline_backup_restore_installs_legacy_archive_for_next_start(stores, t
         _document(conn, "a", 1, "message", 1, ["value", message])
 
     modern = tmp_path / "modern.tar.gz"
-    db_config = OctopConfig().database
+    db_config = HappyclawConfig().database
     create_system_backup(
         paths=paths, agent_rows=[], pool=pool, db_config=db_config, dest=modern, include_chats=True
     )
@@ -281,7 +281,7 @@ def test_offline_backup_restore_installs_legacy_archive_for_next_start(stores, t
     target = SqlitePool(destination.db)
     try:
         run_migrations(target)
-        with pytest.raises(OctopError, match="Stop HappyClaw"):
+        with pytest.raises(HappyclawError, match="Stop HappyClaw"):
             restore_system_backup(
                 legacy,
                 paths=destination,

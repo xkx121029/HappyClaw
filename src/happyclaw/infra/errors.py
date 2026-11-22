@@ -343,7 +343,7 @@ _DEFAULT_STATUS: dict[ErrorCode, int] = {
 
 
 @dataclass
-class OctopError(Exception):
+class HappyclawError(Exception):
     code: ErrorCode
     message: str
     status: int = 0
@@ -371,7 +371,7 @@ class OctopError(Exception):
         status: int = 0,
         details: dict[str, Any] | None = None,
         **kwargs: object,
-    ) -> OctopError:
+    ) -> HappyclawError:
         msg = (
             message
             if message is not None
@@ -390,14 +390,14 @@ class OctopError(Exception):
         }
 
 
-def corrupt_config_error(path: object, detail: str) -> OctopError:
-    """``OctopError`` for a config file that exists but cannot be parsed.
+def corrupt_config_error(path: object, detail: str) -> HappyclawError:
+    """``HappyclawError`` for a config file that exists but cannot be parsed.
 
     Raised instead of writing back a merged-into-empty dict, which would destroy
     every unrelated setting (issue #730). Carries the path and the parser
     position only — never file contents, which hold database credentials.
     """
-    return OctopError(
+    return HappyclawError(
         ErrorCode.CONFIG_FILE_CORRUPT,
         f"{path} is not valid JSON ({detail}); fix it and retry — no settings were changed",
         details={"path": str(path), "detail": detail},

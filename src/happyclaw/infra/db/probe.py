@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from happyclaw.config import DatabaseConfig, OctopConfig
+from happyclaw.config import DatabaseConfig, HappyclawConfig
 from happyclaw.infra.db.factory import open_database, resolve_sqlite_db_path
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 
 
@@ -17,13 +17,13 @@ def control_plane_user_count(db_config: DatabaseConfig, paths: PathLayout) -> in
     table has not been created. Does not run migrations and does not create a
     SQLite file.
     """
-    cfg = OctopConfig(database=db_config, database_in_file=True)
+    cfg = HappyclawConfig(database=db_config, database_in_file=True)
     if db_config.is_sqlite and not resolve_sqlite_db_path(cfg, paths).exists():
         return 0
     try:
         pool = open_database(cfg, paths)
     except Exception as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"database connection failed: {exc}",
         ) from exc
@@ -31,7 +31,7 @@ def control_plane_user_count(db_config: DatabaseConfig, paths: PathLayout) -> in
         with pool.connect() as conn:
             return _count_users(conn, db_config.driver)
     except Exception as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"database probe failed: {exc}",
         ) from exc
@@ -47,14 +47,14 @@ def probe_database(db_config: DatabaseConfig, paths: PathLayout) -> int:
     the parent directory is creatable — avoids creating an empty ``.db`` as a
     side effect of "test connection" — and returns 0.
     """
-    cfg = OctopConfig(database=db_config, database_in_file=True)
+    cfg = HappyclawConfig(database=db_config, database_in_file=True)
 
     if db_config.is_sqlite:
         path = resolve_sqlite_db_path(cfg, paths)
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 f"database path not writable: {exc}",
             ) from exc
@@ -64,7 +64,7 @@ def probe_database(db_config: DatabaseConfig, paths: PathLayout) -> int:
     try:
         pool = open_database(cfg, paths)
     except Exception as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"database connection failed: {exc}",
         ) from exc
@@ -73,7 +73,7 @@ def probe_database(db_config: DatabaseConfig, paths: PathLayout) -> int:
             conn.execute("SELECT 1")
             return _count_users(conn, db_config.driver)
     except Exception as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"database probe failed: {exc}",
         ) from exc

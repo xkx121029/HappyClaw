@@ -6,7 +6,7 @@ from typing import Any
 
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.cli.cli_channel import CLI_CHANNEL_ID, CLI_CONNECTION_META
 from happyclaw.infra.gateway.threads import ThreadRegistry
 
@@ -26,7 +26,7 @@ async def prepare_cli_turn(
     if thread_id:
         row = thread_registry.get_thread(thread_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
         await thread_registry.rebind(session_key=sk, thread_id=thread_id, agent_id=agent_id)
         return thread_id, sk
     bound = thread_registry.get_bound_thread_id(sk)

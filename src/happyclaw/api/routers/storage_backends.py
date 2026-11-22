@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from happyclaw.api.common.content_disposition import content_disposition
 from happyclaw.api.deps import current_user, get_server, require_permission
 from happyclaw.infra.backend.adapter import row_to_backend_spec, storage_spec_previewable
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.groups import (
     RESOURCE_STORAGE_BACKEND,
     STORAGE_FEATURE_KEY,
@@ -29,7 +29,7 @@ def _ensure_opensandbox_sdk(kind: str) -> None:
     try:
         ensure_opensandbox_deps(allow_install=True)
     except RuntimeError as exc:
-        raise OctopError(ErrorCode.STORAGE_BACKEND_DEPS_FAILED, str(exc)) from exc
+        raise HappyclawError(ErrorCode.STORAGE_BACKEND_DEPS_FAILED, str(exc)) from exc
 
 
 class StorageBackendCreateBody(BaseModel):
@@ -135,7 +135,7 @@ async def create_storage_backend(
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
     if server.services.storage_backend_repo.get_by_name(body.name) is not None:
-        raise OctopError(ErrorCode.STORAGE_BACKEND_NAME_TAKEN, f"name {body.name!r} already exists")
+        raise HappyclawError(ErrorCode.STORAGE_BACKEND_NAME_TAKEN, f"name {body.name!r} already exists")
     _ensure_opensandbox_sdk((body.kind or "").lower())
     bid = server.services.storage_backend_repo.create(
         name=body.name,
@@ -167,7 +167,7 @@ async def patch_storage_backend(
 ) -> dict[str, Any]:
     row = server.services.storage_backend_repo.get(backend_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "storage backend not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "storage backend not found")
     next_kind = (body.kind or row.kind or "").lower()
     if body.enabled is True:
         _ensure_opensandbox_sdk(next_kind)
@@ -178,7 +178,7 @@ async def patch_storage_backend(
         if candidate and candidate != row.name:
             taken = server.services.storage_backend_repo.get_by_name(candidate)
             if taken is not None and taken.id != backend_id:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.STORAGE_BACKEND_NAME_TAKEN,
                     f"name {candidate!r} already exists",
                 )
@@ -247,11 +247,11 @@ async def delete_storage_backend(
 ) -> None:
     row = server.services.storage_backend_repo.get(backend_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "storage backend not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "storage backend not found")
     assert server.app_runtime is not None
     refs = server.app_runtime.agent_registry.find_agents_using_storage_backend(row.name)
     if refs:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.STORAGE_BACKEND_REFERENCED,
             f"storage backend {row.name!r} is referenced by {len(refs)} agent(s)",
             details={"agents": refs},
@@ -276,7 +276,7 @@ async def probe_storage_backend_config(
     if body.backend_id is not None:
         base = server.services.storage_backend_repo.get(body.backend_id)
         if base is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "storage backend not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "storage backend not found")
     row = row_for_probe(
         kind=body.kind,
         endpoint=body.endpoint,
@@ -290,7 +290,7 @@ async def probe_storage_backend_config(
     return probe_storage_backend(row)
 
 
-def _storage_browse_octop_error(exc: BaseException) -> OctopError:
+def _storage_browse_octop_error(exc: BaseException) -> HappyclawError:
     from happyclaw_harness.backends.storage_errors import classify_storage_error
 
     from happyclaw.infra.backend.browse import StorageBrowseError
@@ -302,7 +302,7 @@ def _storage_browse_octop_error(exc: BaseException) -> OctopError:
     details: dict[str, Any] = {"reason": classified.message}
     if classified.message_key:
         details["message_key"] = classified.message_key
-    return OctopError(
+    return HappyclawError(
         ErrorCode.STORAGE_BROWSE_FAILED,
         classified.message,
         details=details,
@@ -319,7 +319,7 @@ async def list_storage_backend_tree(
     """Single-level directory listing for a configured storage backend."""
     row = server.services.storage_backend_repo.get(backend_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "storage backend not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "storage backend not found")
     from happyclaw.infra.backend.browse import (
         StorageBrowseError,
     )
@@ -343,13 +343,13 @@ async def read_storage_backend_file(
     """Read a UTF-8 text file for the storage browse preview pane."""
     row = server.services.storage_backend_repo.get(backend_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "storage backend not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "storage backend not found")
     from happyclaw.infra.backend.browse import StorageBrowseError, read_storage_backend_text
 
     try:
         content = await read_storage_backend_text(row, path)
     except FileNotFoundError as exc:
-        raise OctopError(ErrorCode.NOT_FOUND, str(exc)) from exc
+        raise HappyclawError(ErrorCode.NOT_FOUND, str(exc)) from exc
     except (StorageBrowseError, ValueError) as exc:
         raise _storage_browse_octop_error(exc) from exc
     return {"path": path, "content": content}
@@ -366,7 +366,7 @@ async def download_storage_backend_file(
     """Return file bytes for media / document preview and download."""
     row = server.services.storage_backend_repo.get(backend_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "storage backend not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "storage backend not found")
     from happyclaw.infra.backend.browse import (
         StorageBrowseError,
     )
@@ -377,7 +377,7 @@ async def download_storage_backend_file(
     try:
         data = await _download_file(row, path, preview=preview)
     except FileNotFoundError as exc:
-        raise OctopError(ErrorCode.NOT_FOUND, str(exc)) from exc
+        raise HappyclawError(ErrorCode.NOT_FOUND, str(exc)) from exc
     except (StorageBrowseError, ValueError) as exc:
         raise _storage_browse_octop_error(exc) from exc
     fname = path.replace("\\", "/").rsplit("/", 1)[-1] or "download.bin"
@@ -397,7 +397,7 @@ async def close_storage_backend_browse(
     """Release the cached browse backend (Docker container + temp dir)."""
     row = server.services.storage_backend_repo.get(backend_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "storage backend not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "storage backend not found")
     from happyclaw.infra.backend.browse import release_browse_session
 
     await release_browse_session(backend_id)
@@ -412,7 +412,7 @@ async def test_storage_backend(
     """Best-effort connectivity / configuration probe for one backend."""
     row = server.services.storage_backend_repo.get(backend_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "storage backend not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "storage backend not found")
     from happyclaw.infra.backend.probe import probe_storage_backend
 
     return probe_storage_backend(row)

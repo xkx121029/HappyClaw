@@ -292,9 +292,9 @@ class BridgeSession:
         except Exception as exc:
             if self.closed:
                 return
-            from happyclaw.infra.errors import OctopError
+            from happyclaw.infra.errors import HappyclawError
 
-            if isinstance(exc, OctopError):
+            if isinstance(exc, HappyclawError):
                 await self.send_json(
                     {
                         "type": "tunnel.error",

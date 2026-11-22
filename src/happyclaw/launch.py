@@ -1,4 +1,4 @@
-"""Composition root — wire OctopServer, FastAPI, and uvicorn for ``octop run``."""
+"""Composition root — wire HappyclawServer, FastAPI, and uvicorn for ``octop run``."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from contextlib import suppress
 from typing import Any
 
 from happyclaw.infra.desktop import desktop_shell_enabled
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 from happyclaw.infra.utils.accept_errors import coalesce_accept_errors
 
 logger = logging.getLogger(__name__)
@@ -159,7 +159,7 @@ async def run_foreground(
     from happyclaw.infra.setup.tls.listeners import build_listen_plan
     from happyclaw.infra.setup.tls.store import resolve_tls_paths
 
-    srv = OctopServer()
+    srv = HappyclawServer()
     await srv.start(boot_runtime=False)
     from happyclaw.infra.utils import startup_timing as _timing
 

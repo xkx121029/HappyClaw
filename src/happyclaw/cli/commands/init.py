@@ -60,7 +60,7 @@ def init(
     from happyclaw.infra.db.factory import open_database
     from happyclaw.infra.db.migrate import run_migrations
     from happyclaw.infra.db.repos.users import UserRepo
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
     from happyclaw.infra.users.password import hash_password, validate_password_policy
     from happyclaw.infra.utils.env_file import apply_env_file, env_file_path
     from happyclaw.infra.utils.install_reset import InstallResetError, wipe_octop_state
@@ -108,7 +108,7 @@ def init(
     if admin_password is not None:
         try:
             validate_password_policy(admin_password)
-        except OctopError as exc:
+        except HappyclawError as exc:
             click.echo(f"error: {exc.message}", err=True)
             raise SystemExit(1) from None
 

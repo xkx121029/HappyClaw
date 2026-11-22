@@ -8,12 +8,12 @@ from tests.support.app import ensure_control_plane_bound
 from tests.support.auth import bearer, bootstrap_admin, login
 
 from happyclaw.api.app import build_app
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 
 
 @pytest.fixture
 async def client(tmp_path: Path):
-    srv = OctopServer(home=tmp_path)
+    srv = HappyclawServer(home=tmp_path)
     await srv.start()
     await ensure_control_plane_bound(srv)
     app = build_app(srv)
@@ -51,7 +51,7 @@ async def test_save_local_download_rejects_public_host(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr("happyclaw.infra.utils.user_downloads.reveal_download", lambda _path: None)
-    srv = OctopServer(home=tmp_path)
+    srv = HappyclawServer(home=tmp_path)
     await srv.start()
     await ensure_control_plane_bound(srv)
     app = build_app(srv)

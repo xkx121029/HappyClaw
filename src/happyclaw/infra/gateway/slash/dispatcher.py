@@ -11,7 +11,7 @@ from happyclaw_harness.slash import (
     build_runtime_dispatcher,
 )
 
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.gateway.slash.catalog import SlashCommandSpec, list_specs, spec_for
 from happyclaw.infra.gateway.slash.ctx import SlashCtx
 from happyclaw.infra.gateway.slash.runtime_bridge import build_runtime_ctx
@@ -40,7 +40,7 @@ class SlashDispatcher:
             return False
         try:
             await handler(self, cmd, ctx, sink)
-        except OctopError as exc:
+        except HappyclawError as exc:
             await sink.text(f"error: {exc.message}")
         await sink.complete()
         return True

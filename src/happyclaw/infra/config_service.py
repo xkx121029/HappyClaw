@@ -12,7 +12,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from happyclaw.config import OctopConfig, load_config
+from happyclaw.config import HappyclawConfig, load_config
 
 if TYPE_CHECKING:
     from happyclaw.config import BackupConfig
@@ -21,20 +21,20 @@ if TYPE_CHECKING:
 class LocalConfigService:
     """Read and update the local ``config.json``."""
 
-    def __init__(self, config_path: Path, *, preloaded: OctopConfig | None = None) -> None:
+    def __init__(self, config_path: Path, *, preloaded: HappyclawConfig | None = None) -> None:
         self._path = config_path
-        self._cached: OctopConfig | None = preloaded
+        self._cached: HappyclawConfig | None = preloaded
 
     @property
     def path(self) -> Path:
         return self._path
 
-    def load(self) -> OctopConfig:
+    def load(self) -> HappyclawConfig:
         if self._cached is None:
             self._cached = load_config(self._path)
         return self._cached
 
-    def reload(self) -> OctopConfig:
+    def reload(self) -> HappyclawConfig:
         self._cached = load_config(self._path)
         return self._cached
 
@@ -42,10 +42,10 @@ class LocalConfigService:
     def backup(self) -> "BackupConfig":
         return self.load().backup
 
-    def update_backup(self, backup: "BackupConfig") -> OctopConfig:
+    def update_backup(self, backup: "BackupConfig") -> HappyclawConfig:
         """Replace the backup section in ``config.json`` and reload.
 
-        The file is rewritten via ``OctopConfig``'s own serialization so the
+        The file is rewritten via ``HappyclawConfig``'s own serialization so the
         rest of the document stays intact.
         """
         config = self.load()

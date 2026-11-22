@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 _DEFAULT_CHUNK = 1024 * 1024
 
@@ -13,9 +13,9 @@ class AsyncByteReader(Protocol):
     async def read(self, size: int = -1) -> bytes: ...
 
 
-def _too_large(max_bytes: int, code: ErrorCode) -> OctopError:
+def _too_large(max_bytes: int, code: ErrorCode) -> HappyclawError:
     max_mb = max(1, max_bytes // (1024 * 1024))
-    return OctopError(
+    return HappyclawError(
         code,
         f"file too large (max {max_mb}MB)",
         details={"max_mb": max_mb},

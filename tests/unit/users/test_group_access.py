@@ -9,7 +9,7 @@ import pytest
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.services import RepoBundle
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.groups import (
     RESOURCE_MODEL,
     RESOURCE_SKILL_PACKAGE,
@@ -129,10 +129,10 @@ def test_grants_narrow_and_owner_admin_bypass(repos: RepoBundle) -> None:
 
 def test_groups_visibility_requires_a_real_group(repos: RepoBundle) -> None:
     access = GroupAccess(repos)
-    with pytest.raises(OctopError) as empty:
+    with pytest.raises(HappyclawError) as empty:
         access.set_visibility(RESOURCE_SKILL_PACKAGE, "pkg", "groups", [])
     assert empty.value.code == ErrorCode.FORBIDDEN
-    with pytest.raises(OctopError) as missing:
+    with pytest.raises(HappyclawError) as missing:
         access.set_visibility(RESOURCE_SKILL_PACKAGE, "pkg", "groups", ["missing"])
     assert missing.value.code == ErrorCode.NOT_FOUND
 
@@ -424,7 +424,7 @@ def test_private_shared_flag_reports_owner(repos: RepoBundle) -> None:
 
 def test_validate_visibility_rejects_empty_groups(repos: RepoBundle) -> None:
     access = GroupAccess(repos)
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         access.validate_visibility("groups", [])
     assert exc.value.code == ErrorCode.FORBIDDEN
 

@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langgraph.config import var_child_runnable_config
 
-from happyclaw.config import CapabilitiesConfig, MobileCapabilities, OctopConfig
+from happyclaw.config import CapabilitiesConfig, MobileCapabilities, HappyclawConfig
 from happyclaw.infra.control.mobile.tools import build_mobile_tools
 
 _PNG_BYTES = b"\x89PNG\r\n\x1a\nfake-png-payload"
@@ -25,8 +25,8 @@ def _configurable(**kwargs: object):
         var_child_runnable_config.reset(token)
 
 
-def _enabled_config() -> OctopConfig:
-    return OctopConfig(
+def _enabled_config() -> HappyclawConfig:
+    return HappyclawConfig(
         capabilities=CapabilitiesConfig(
             mobile=MobileCapabilities(
                 enabled=True,
@@ -45,7 +45,7 @@ def _tool_by_name(tools: list, name: str):
 
 
 def test_build_mobile_tools_empty_when_disabled() -> None:
-    cfg = OctopConfig()
+    cfg = HappyclawConfig()
     tools = build_mobile_tools(cfg, user_repo=MagicMock())
     assert tools == []
 

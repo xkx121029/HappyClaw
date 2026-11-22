@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentManager
 from happyclaw.infra.agents.memory.thread_cleanup import (
     close_memory,
@@ -21,7 +21,7 @@ from happyclaw.infra.agents.memory.thread_cleanup import (
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.services import build_shared_services
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.manager import UserManager
 from happyclaw.infra.utils.paths import PathLayout
 
@@ -31,7 +31,7 @@ def _services(tmp_path: Path):
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    return build_shared_services(db=db, paths=paths, config=OctopConfig()), db
+    return build_shared_services(db=db, paths=paths, config=HappyclawConfig()), db
 
 
 def _seed_checkpoint(path: Path, thread_id: str, payload: bytes = b"checkpoint-body") -> None:
@@ -129,7 +129,7 @@ def test_thread_delete_clears_sqlite_file_outside_active_workspace(tmp_path: Pat
         agent_id="Ab1",
         thread_id="thr_side",
         cfg={"workspace_dir": str(active)},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
         workspace_dir=active,
         paths=paths,
     )
@@ -158,7 +158,7 @@ def test_delete_agent_drops_its_namespace_and_checkpoints(tmp_path: Path) -> Non
         agent_id="Ab1",
         thread_ids={"thr_gone"},
         cfg={"memory": {"backend": {"type": "sqlite", "db_path": str(db_path)}}},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
         workspace_dir=workspace,
     )
 
@@ -181,7 +181,7 @@ def test_delete_stored_thread_removes_rows_when_agent_is_stopped(tmp_path: Path)
         agent_id="ag1",
         thread_id="thr_gone",
         cfg={},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
         workspace_dir=workspace,
     )
 
@@ -193,7 +193,7 @@ def test_delete_stored_thread_missing_file_is_success(tmp_path: Path) -> None:
         agent_id="ag1",
         thread_id="thr_new",
         cfg={},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
         workspace_dir=tmp_path / "missing",
     )
 
@@ -209,12 +209,12 @@ def test_delete_stored_thread_failure_raises(
 
     monkeypatch.setattr("happyclaw_memory.core.Memory.delete_thread", _boom)
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         delete_stored_thread(
             agent_id="ag1",
             thread_id="thr_keep",
             cfg={},
-            octop_config=OctopConfig(),
+            octop_config=HappyclawConfig(),
             workspace_dir=workspace,
         )
     assert exc.value.code == ErrorCode.CHECKPOINT_DELETE_FAILED
@@ -238,7 +238,7 @@ def test_delete_only_skips_incremental_vacuum(
         agent_id="ag1",
         thread_id="thr_only",
         cfg={},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
         workspace_dir=workspace,
         reclaim=False,
     )
@@ -261,7 +261,7 @@ def test_reclaim_failure_still_deletes_rows(
         agent_id="ag1",
         thread_id="thr_vac",
         cfg={},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
         workspace_dir=workspace,
     )
     assert _checkpoint_count(db_path, "thr_vac") == 0
@@ -355,7 +355,7 @@ def test_compact_skips_when_disk_cannot_hold_a_rewrite(
         agent_id="ag1",
         thread_id="thr_big",
         cfg={},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
         workspace_dir=workspace,
     )
 
@@ -371,7 +371,7 @@ def test_compact_skips_when_disk_cannot_hold_a_rewrite(
         compact_agent_store_file(
             agent_id="ag1",
             cfg={},
-            octop_config=OctopConfig(),
+            octop_config=HappyclawConfig(),
             workspace_dir=workspace,
         )
         is False
@@ -387,14 +387,14 @@ def test_compact_rebuilds_sqlite_after_delete(tmp_path: Path) -> None:
         agent_id="ag1",
         thread_id="thr_big",
         cfg={},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
         workspace_dir=workspace,
     )
     assert (
         compact_agent_store_file(
             agent_id="ag1",
             cfg={},
-            octop_config=OctopConfig(),
+            octop_config=HappyclawConfig(),
             workspace_dir=workspace,
         )
         is True

@@ -20,7 +20,7 @@ from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.agents import AgentRepo
 from happyclaw.infra.db.repos.users import UserRepo
 from happyclaw.infra.db.services import RepoBundle
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 class _PathWorkspace:
@@ -75,7 +75,7 @@ def test_validate_members_requires_two(team_env: dict[str, object]) -> None:
     teams = team_env["teams"]
     user = team_env["user"]
     assert isinstance(teams, TeamService)
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         teams.validate_member_ids(user, ["a"])
     assert exc.value.code is ErrorCode.TEAM_MEMBERS_TOO_FEW
     assert TEAM_MIN_MEMBERS == 2
@@ -86,11 +86,11 @@ def test_validate_members_rejects_unusable(team_env: dict[str, object]) -> None:
     teams = team_env["teams"]
     user = team_env["user"]
     assert isinstance(teams, TeamService)
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         teams.validate_member_ids(user, ["a", "other-team", "b", "missing"])
     assert exc.value.code is ErrorCode.TEAM_MEMBER_INVALID
     assert exc.value.details == {"member_agent_ids": ["other-team", "missing"]}
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         teams.validate_member_ids(user, ["a"])
     assert exc.value.code is ErrorCode.TEAM_MEMBERS_TOO_FEW
     assert teams.validate_member_ids(user, ["a", "b"]) == ["a", "b"]
@@ -103,10 +103,10 @@ def test_roster_lock_blocks_remove_and_delete(team_env: dict[str, object]) -> No
     assert isinstance(jobs, TeamJobTracker)
     teams.replace_members("host", ["a", "b"])
     jobs.begin("host", "a")
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         teams.assert_roster_writable("host", ["b", "c"])
     assert exc.value.code is ErrorCode.TEAM_MEMBER_BUSY
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         teams.assert_can_delete_agent("a")
     assert exc.value.code is ErrorCode.TEAM_MEMBER_BUSY
     jobs.end("host", "a")

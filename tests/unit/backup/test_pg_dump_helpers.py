@@ -5,12 +5,12 @@ from types import SimpleNamespace
 import pytest
 
 from happyclaw.infra.backup import pg_dump
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def test_require_tool_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(pg_dump.shutil, "which", lambda _name: None)
-    with pytest.raises(OctopError, match="pg_dump not found") as raised:
+    with pytest.raises(HappyclawError, match="pg_dump not found") as raised:
         pg_dump._require_tool("pg_dump")
     assert raised.value.code is ErrorCode.BACKUP_CLIENT_MISSING
     assert raised.value.details["tool"] == "pg_dump"

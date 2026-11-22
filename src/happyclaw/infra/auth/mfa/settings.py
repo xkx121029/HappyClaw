@@ -9,7 +9,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from happyclaw.infra.db.repos.settings import SettingsRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ def _is_ip_literal(host: str) -> bool:
 
 def _reject_ip_rp_id(rp_id: str) -> None:
     if _is_ip_literal(rp_id):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.WEBAUTHN_INVALID_DOMAIN,
             "WebAuthn RP ID cannot be an IP address; use localhost or a DNS hostname",
         )
@@ -54,7 +54,7 @@ def load_webauthn_config(settings_repo: SettingsRepo) -> tuple[str, list[str]]:
     """Return ``(rp_id, origins)``. Raises ``WEBAUTHN_CONFIG_INVALID`` when unset."""
     blob = _read_blob(settings_repo)
     if blob is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.WEBAUTHN_CONFIG_INVALID,
             "webauthn is not configured",
         )
@@ -66,7 +66,7 @@ def load_webauthn_config(settings_repo: SettingsRepo) -> tuple[str, list[str]]:
     elif isinstance(origins_raw, str) and origins_raw.strip():
         origins = [p.strip() for p in origins_raw.split(",") if p.strip()]
     if not rp_id or not origins:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.WEBAUTHN_CONFIG_INVALID,
             "webauthn rp_id and origins are required",
         )
@@ -136,7 +136,7 @@ def _loopback_rp(origin: str) -> tuple[str, list[str]] | None:
     if parsed.scheme not in ("http", "https"):
         return None
     if _is_ip_literal(host):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.WEBAUTHN_INVALID_DOMAIN,
             "WebAuthn cannot use an IP address; open the app via http://localhost",
         )
@@ -169,7 +169,7 @@ def passkey_block_reason(settings_repo: SettingsRepo, origin: str) -> str | None
         return "ip"
     try:
         _rp_id, origins = load_webauthn_config(settings_repo)
-    except OctopError as exc:
+    except HappyclawError as exc:
         if exc.code == ErrorCode.WEBAUTHN_INVALID_DOMAIN:
             return "ip"
         if exc.code != ErrorCode.WEBAUTHN_CONFIG_INVALID:
@@ -185,14 +185,14 @@ def passkey_block_reason(settings_repo: SettingsRepo, origin: str) -> str | None
 def assert_origin_allowed(settings_repo: SettingsRepo, origin: str) -> tuple[str, list[str]]:
     try:
         rp_id, origins = load_webauthn_config(settings_repo)
-    except OctopError as exc:
+    except HappyclawError as exc:
         if exc.code == ErrorCode.WEBAUTHN_CONFIG_INVALID:
             fallback = _loopback_rp(origin)
             if fallback is not None:
                 return fallback
         raise
     if origin not in origins:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.WEBAUTHN_CONFIG_INVALID,
             "request origin is not in the webauthn allow-list",
         )

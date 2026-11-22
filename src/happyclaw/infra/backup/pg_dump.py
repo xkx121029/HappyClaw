@@ -7,13 +7,13 @@ import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def _require_tool(name: str) -> str:
     path = shutil.which(name)
     if not path:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.BACKUP_CLIENT_MISSING,
             f"{name} not found on PATH; required for PostgreSQL backup/restore",
             details={"tool": name},
@@ -39,7 +39,7 @@ def dump_postgres(
         check=False,
     )
     if proc.returncode != 0:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             f"pg_dump failed: {proc.stderr.strip() or proc.stdout.strip()}",
         )
@@ -63,7 +63,7 @@ def restore_postgres(conninfo: str, dump_file: Path) -> None:
     )
     # pg_restore may return 1 with warnings; treat only >=2 as hard fail.
     if proc.returncode >= 2:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             f"pg_restore failed: {proc.stderr.strip() or proc.stdout.strip()}",
         )

@@ -18,13 +18,13 @@ from typing import TYPE_CHECKING, Any
 from happyclaw.i18n import tr
 
 if TYPE_CHECKING:
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
 
 ENDPOINT = "memory-slim-control.json"
 
 
 class MemorySlimControl:
-    def __init__(self, server: OctopServer) -> None:
+    def __init__(self, server: HappyclawServer) -> None:
         self.root = server.paths.root
         self.server = server
         self.token = secrets.token_hex(32)

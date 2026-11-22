@@ -11,7 +11,7 @@ import click
 from happyclaw.cli.support.acting import resolve_cli_acting_user_id
 from happyclaw.cli.support.ctx import json_output_enabled
 from happyclaw.cli.support.errors import fail_octop
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 @click.group()
@@ -22,7 +22,7 @@ def bridge() -> None:
 def _resolve_owner(as_user: str | None) -> int:
     try:
         return resolve_cli_acting_user_id(None, as_user)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
 
 
@@ -131,7 +131,7 @@ def get_connection(connection_id: str, as_user: str | None) -> None:
     uid = _resolve_owner(as_user)
     try:
         row = get_bridge_connection(connection_id, uid)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     _echo_json(row)
 
@@ -183,7 +183,7 @@ def probe(
                 peer_username=peer_username or "",
                 password=_prompt_password(password),
             )
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     if json_output_enabled():
         _echo_json(result)
@@ -245,7 +245,7 @@ def create(
             icon_name=icon_name,
             connect=connect,
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     _echo_json(row)
     _echo_handshake_note(connect=connect)
@@ -319,7 +319,7 @@ def patch_connection(
             password=password,
             auto_reconnect=auto_reconnect,
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     _echo_json(row)
 
@@ -337,7 +337,7 @@ def delete_connection(connection_id: str, yes: bool, as_user: str | None) -> Non
         click.confirm(f"Delete bridge connection {connection_id}?", abort=True)
     try:
         delete_bridge_connection(connection_id, uid)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo("deleted")
 
@@ -352,7 +352,7 @@ def connect_connection(connection_id: str, as_user: str | None) -> None:
     uid = _resolve_owner(as_user)
     try:
         row = connect_bridge_connection(connection_id, uid)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     _echo_json(row)
     _echo_handshake_note(connect=True)
@@ -368,7 +368,7 @@ def disconnect_connection(connection_id: str, as_user: str | None) -> None:
     uid = _resolve_owner(as_user)
     try:
         row = disconnect_bridge_connection(connection_id, uid)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     _echo_json(row)
 
@@ -386,7 +386,7 @@ def list_agents(connection_id: str, as_user: str | None) -> None:
     uid = _resolve_owner(as_user)
     try:
         agents = list_bridge_remote_agents(connection_id, uid)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     if json_output_enabled():
         _echo_json(agents)

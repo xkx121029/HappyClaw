@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, model_validator
 
 from happyclaw.api.deps import current_user, get_server
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.preferences import (
     MAX_REMOTE_BROWSER_BOOKMARKS,
     PREFERENCES_KEY_TIMEZONE,
@@ -172,7 +172,7 @@ async def patch_preferences(
                 preferred is not None
                 and not server.app_runtime.agent_registry.providers.is_model_ref_usable(preferred)
             ):
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.SLASH_BAD_ARGS,
                     "preferred_model must reference an enabled model",
                 )
@@ -183,7 +183,7 @@ async def patch_preferences(
                     preferred,
                 )
             ):
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.RESOURCE_NOT_ALLOWED,
                     "resource is not visible to this user",
                 )
@@ -205,11 +205,11 @@ async def patch_preferences(
         if raw_timezone is not None:
             trimmed = raw_timezone.strip()
             if not trimmed:
-                raise OctopError(ErrorCode.SLASH_BAD_ARGS, "timezone cannot be empty")
+                raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "timezone cannot be empty")
             try:
                 ZoneInfo(trimmed)
             except ZoneInfoNotFoundError:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.SLASH_BAD_ARGS,
                     "timezone must be a valid IANA timezone",
                 ) from None

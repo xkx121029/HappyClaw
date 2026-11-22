@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from happyclaw.infra.bridge.transport import BridgeSession
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 @pytest.mark.asyncio
@@ -141,7 +141,7 @@ async def test_require_live_session_drops_stale_immediately() -> None:
     stale._last_recv = 0.0  # noqa: SLF001
     mgr._sessions["cid1"] = stale
 
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr._require_live_session("cid1")
     assert ei.value.code == ErrorCode.BRIDGE_NOT_CONNECTED
     assert stale.closed is True
@@ -462,7 +462,7 @@ async def test_relay_user_turn_fails_fast_when_session_closes() -> None:
 
     asyncio.create_task(killer())
     frames: list[dict[str, Any]] = []
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         await mgr.relay_user_turn(
             connection_id="cid1",
             owner_user_id=1,

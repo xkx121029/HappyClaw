@@ -26,7 +26,7 @@ def _origin_mono() -> float:
     """Monotonic value captured at ``octop`` package import."""
     import happyclaw  # noqa: PLC0415 - lazy to avoid an import cycle
 
-    origin = getattr(octop, "PROCESS_MONO_ORIGIN", None)
+    origin = getattr(happyclaw, "PROCESS_MONO_ORIGIN", None)
     return origin if origin is not None else time.perf_counter()
 
 

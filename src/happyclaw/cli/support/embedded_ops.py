@@ -1,4 +1,4 @@
-"""Embedded OctopServer helpers for CLI ops that need a live runtime."""
+"""Embedded HappyclawServer helpers for CLI ops that need a live runtime."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Any, cast
 
 from happyclaw.cli.repl.embedded_session import embedded_runtime
 from happyclaw.infra.agents.providers.probe import probe_provider_row
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 async def cron_run_now_async(agent_id: str, cron_id: str) -> None:
@@ -19,7 +19,7 @@ async def cron_run_now_async(agent_id: str, cron_id: str) -> None:
         mgr = server.app_runtime.cron_manager
         row = mgr.get(cron_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.NOT_FOUND, "cron job not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "cron job not found")
         await mgr.run_now(cron_id, wait=True)
 
 
@@ -51,11 +51,11 @@ async def fetch_thread_history_async(agent_id: str, thread_id: str, *, limit: in
         registry = server.app_runtime.gateway.thread_registry
         row = registry.get_thread(thread_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
         agents = server.app_runtime.agent_registry
         try:
             harness = agents.get_agent(agent_id)
-        except OctopError:
+        except HappyclawError:
             await agents.start(agent_id)
             harness = agents.get_agent(agent_id)
         if hasattr(harness, "aget_history"):
@@ -75,7 +75,7 @@ async def probe_provider_async(provider_id: int, *, model_id: str | None = None)
     with open_cli_services() as svc:
         row = svc.provider_repo.get(provider_id)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "provider not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "provider not found")
     return await probe_provider_row(row, model_id=model_id, locale=resolve_cli_locale())
 
 
@@ -94,7 +94,7 @@ async def test_channel_async(
         gateway = server.app_runtime.gateway
         existing = gateway.get_channel(channel_id)
         if existing is None or existing.agent_id != agent_id:
-            raise OctopError(ErrorCode.NOT_FOUND, "channel not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "channel not found")
         return await gateway.probe_channel(channel_id, locale=loc)
 
 
@@ -102,7 +102,7 @@ def test_channel(agent_id: str, channel_id: str, *, locale: str = "zh") -> dict[
     return asyncio.run(test_channel_async(agent_id, channel_id, locale=locale))
 
 
-# ── Bridge (lightweight manager; no full OctopServer) ────────────────────────
+# ── Bridge (lightweight manager; no full HappyclawServer) ────────────────────────
 
 
 async def apply_migration_async(plan: Any, *, agent_id: str, **options: Any) -> Any:
@@ -114,7 +114,7 @@ async def apply_migration_async(plan: Any, *, agent_id: str, **options: Any) -> 
         registry = server.app_runtime.agent_registry
         workspace = await asyncio.to_thread(registry.workspace_for_agent, agent_id)
         if workspace is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         return await apply_plan(
             plan,
             services=server.services,

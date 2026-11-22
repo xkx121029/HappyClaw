@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 from happyclaw_harness.security.models import SecurityPolicy
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentManager
 from happyclaw.infra.agents.security.hitl_session import (
     HitlSessionPolicy,
@@ -35,7 +35,7 @@ def manager(tmp_path: Path) -> AgentManager:
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     return AgentManager(repos=services.repos, paths=services.paths)
 
 

@@ -9,7 +9,7 @@ import happyclaw.infra.market.http as market_http
 from happyclaw.infra.agents.plugins.bundled import default_bundled_plugins_root
 from happyclaw.infra.agents.plugins.manager import PluginManager
 from happyclaw.infra.agents.plugins.seed import seed_bundled_plugins
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.market import PortalMarketError, clear_market_cache
 
 
@@ -57,7 +57,7 @@ def test_list_market_does_not_fall_back_to_bundled_plugins(
     monkeypatch.setenv("OCTOP_PORTAL_ORIGIN", "")
     clear_market_cache()
     mgr = PluginManager(plugins_dir=tmp_path / "plugins", config_path=tmp_path / "config.json")
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         mgr.list_market()
     assert raised.value.code is ErrorCode.PLUGIN_MARKET_FAILED
 
@@ -75,7 +75,7 @@ def test_list_market_network_failure_is_not_a_market_outage(
 
     monkeypatch.setattr(market_http, "fetch_bytes", fake_fetch)
     mgr = PluginManager(plugins_dir=tmp_path / "plugins", config_path=tmp_path / "config.json")
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         mgr.list_market()
     assert raised.value.code is ErrorCode.NETWORK_ERROR
 
@@ -94,7 +94,7 @@ def test_install_from_market_does_not_copy_bundled_plugin(
     monkeypatch.setattr(market_http, "fetch_bytes", fake_fetch)
     plugins_dir = tmp_path / "plugins"
     mgr = PluginManager(plugins_dir=plugins_dir, config_path=tmp_path / "config.json")
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         mgr.install_from_market("fortune")
     assert raised.value.code is ErrorCode.NOT_FOUND
     assert not (plugins_dir / "fortune").exists()

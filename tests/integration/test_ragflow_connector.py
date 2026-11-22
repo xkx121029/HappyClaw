@@ -10,12 +10,12 @@ import pytest
 
 from happyclaw.api.routers.internal_mcp import _service
 from happyclaw.infra.connectors.gateway.adapters import ragflow
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 from tests.support.auth import create_user
 
 
 async def test_ragflow_credentials_edit_probe_and_authenticated_mcp(
-    env_with_agent: tuple[httpx.AsyncClient, OctopServer, dict[str, str], str],
+    env_with_agent: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client, server, auth, _ = env_with_agent
@@ -100,7 +100,7 @@ async def test_ragflow_credentials_edit_probe_and_authenticated_mcp(
 
 @pytest.mark.parametrize(("locale", "expected"), [("en", "HTTP 401"), ("zh", "请求失败")])
 async def test_ragflow_probe_localizes_errors(
-    env_with_agent: tuple[httpx.AsyncClient, OctopServer, dict[str, str], str],
+    env_with_agent: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str],
     monkeypatch: pytest.MonkeyPatch,
     locale: str,
     expected: str,
@@ -131,7 +131,7 @@ async def test_ragflow_probe_localizes_errors(
 
 @pytest.mark.parametrize(("locale", "label"), [("en", "Service URL"), ("zh", "服务地址")])
 async def test_ragflow_catalog_is_visible_in_both_locales(
-    env_with_agent: tuple[httpx.AsyncClient, OctopServer, dict[str, str], str],
+    env_with_agent: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str],
     locale: str,
     label: str,
 ) -> None:

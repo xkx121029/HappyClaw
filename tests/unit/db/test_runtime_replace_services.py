@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentManager
 from happyclaw.infra.cron.delivery import CronDeliveryService
 from happyclaw.infra.cron.manager import CronManager
@@ -24,7 +24,7 @@ def _services(tmp_path: Path, name: str):
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    cfg = OctopConfig()
+    cfg = HappyclawConfig()
     return build_shared_services(db=db, paths=paths, config=cfg), cfg, paths
 
 

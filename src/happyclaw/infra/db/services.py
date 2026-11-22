@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import Any
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.crypto.sealed_repos import (
     SealedBackendRepo,
     SealedProviderRepo,
@@ -134,7 +134,7 @@ class RepoBundle:
 @dataclass(frozen=True)
 class SharedServices:
     paths: PathLayout
-    config: OctopConfig
+    config: HappyclawConfig
     repos: RepoBundle
 
     @property
@@ -283,7 +283,7 @@ class SharedServices:
 
 
 def build_shared_services(
-    *, db: DatabasePool, paths: PathLayout, config: OctopConfig
+    *, db: DatabasePool, paths: PathLayout, config: HappyclawConfig
 ) -> SharedServices:
     return SharedServices(
         paths=paths,

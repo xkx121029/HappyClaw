@@ -11,7 +11,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 # Recurring jobs only catch a short outage; the next tick covers the rest.
 RECURRING_MISFIRE_GRACE_SECONDS = 60
@@ -84,11 +84,11 @@ def build_trigger(spec: str, *, timezone: str | None = None) -> BaseTrigger | Ag
     Callers that schedule the built trigger must therefore forward the server timezone here.
     """
     if ":" not in spec:
-        raise OctopError(ErrorCode.CRON_TRIGGER_INVALID, f"trigger spec missing kind: {spec!r}")
+        raise HappyclawError(ErrorCode.CRON_TRIGGER_INVALID, f"trigger spec missing kind: {spec!r}")
     kind, _, value = spec.partition(":")
     value = value.strip()
     if not value:
-        raise OctopError(ErrorCode.CRON_TRIGGER_INVALID, f"trigger value empty: {spec!r}")
+        raise HappyclawError(ErrorCode.CRON_TRIGGER_INVALID, f"trigger value empty: {spec!r}")
     try:
         if kind == "agently":
             if not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", value):
@@ -109,11 +109,11 @@ def build_trigger(spec: str, *, timezone: str | None = None) -> BaseTrigger | Ag
             # Naive ISO times are wall-clock in *timezone* (same host-zone trap as cron:).
             return DateTrigger(run_date=dt.datetime.fromisoformat(value), timezone=timezone)
     except (ValueError, TypeError) as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CRON_TRIGGER_INVALID,
             f"trigger spec {spec!r} could not be parsed: {exc}",
         ) from exc
-    raise OctopError(ErrorCode.CRON_TRIGGER_INVALID, f"unknown trigger kind: {kind!r}")
+    raise HappyclawError(ErrorCode.CRON_TRIGGER_INVALID, f"unknown trigger kind: {kind!r}")
 
 
 def one_shot_disposition(

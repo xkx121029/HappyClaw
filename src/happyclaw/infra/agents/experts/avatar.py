@@ -10,7 +10,7 @@ from typing import Any, Protocol
 
 from happyclaw_harness.backends.utils import BackendOperationNotSupportedError
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.media.attachment_hints import sniff_image_media_type
 
 MAX_AVATAR_BYTES = 5 * 1024 * 1024
@@ -97,12 +97,12 @@ def display_agent_icon_url(
 def sniff_avatar_media_type(data: bytes) -> str:
     """Return a sniffed image media type or raise ``AVATAR_INVALID``."""
     if not data:
-        raise OctopError(ErrorCode.AVATAR_INVALID, "avatar file is empty")
+        raise HappyclawError(ErrorCode.AVATAR_INVALID, "avatar file is empty")
     if len(data) > MAX_AVATAR_BYTES:
-        raise OctopError(ErrorCode.AVATAR_TOO_LARGE, "avatar exceeds 5 MiB")
+        raise HappyclawError(ErrorCode.AVATAR_TOO_LARGE, "avatar exceeds 5 MiB")
     media_type = sniff_image_media_type(data)
     if media_type is None:
-        raise OctopError(ErrorCode.AVATAR_INVALID, "avatar content is not a valid image")
+        raise HappyclawError(ErrorCode.AVATAR_INVALID, "avatar content is not a valid image")
     return media_type
 
 
@@ -266,6 +266,6 @@ async def materialize_remote_icon_url(
         return False
     try:
         await write_workspace_avatar(workspace, data)
-    except OctopError:
+    except HappyclawError:
         return False
     return await bind_workspace_avatar_icon_url(registry, agent_id, workspace)

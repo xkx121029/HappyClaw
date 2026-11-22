@@ -47,7 +47,7 @@ from happyclaw.api.common.agent_workspace import resolve_agent_workspace_dir
 from happyclaw.api.common.memory_client import call_memory_rpc
 from happyclaw.api.common.workspace import require_agent_workspace, require_running_workspace
 from happyclaw.api.deps import current_user, get_server, require_permission
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -298,7 +298,7 @@ _DAILY_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\.md$")
 def _validate_filename(filename: str) -> str:
     m = _DAILY_RE.match(filename)
     if not m:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.NOT_FOUND,
             f"invalid daily memory filename {filename!r} (expected YYYY-MM-DD.md)",
         )
@@ -359,7 +359,7 @@ async def read_daily_memory(
     target = f"daily/{filename}"
     content = await ws.aread_text(target)
     if content is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"cannot read {target!r}")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot read {target!r}")
     return {"date": date, "filename": filename, "content": str(content)}
 
 
@@ -383,8 +383,8 @@ async def delete_daily_memory(
     try:
         target.relative_to(workspace.resolve())
     except ValueError as exc:
-        raise OctopError(ErrorCode.FORBIDDEN, "path escapes workspace") from exc
+        raise HappyclawError(ErrorCode.FORBIDDEN, "path escapes workspace") from exc
     if not target.exists():
-        raise OctopError(ErrorCode.NOT_FOUND, f"daily memory {filename!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"daily memory {filename!r} not found")
     target.unlink()
     return Response(status_code=204)

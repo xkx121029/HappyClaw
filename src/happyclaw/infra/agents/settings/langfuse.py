@@ -14,7 +14,7 @@ from typing import Any
 from happyclaw.infra.crypto.fernet import PURPOSE_SETTINGS, open_secret_bytes, seal_secret_bytes
 from happyclaw.infra.db.repos.secrets import SecretRepo
 from happyclaw.infra.db.repos.settings import SettingsRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -107,12 +107,12 @@ class LangfuseSettingsStore:
         public_key = public_key.strip()
         host = host.strip().rstrip("/")
         if enabled and (not public_key or not host):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 "public_key and host are required when Langfuse is enabled",
             )
         if enabled and not (secret_key or self._secrets.get(_SECRET_KEY) is not None):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 "secret_key is required when Langfuse is enabled",
             )
@@ -148,7 +148,7 @@ class LangfuseSettingsStore:
                 else None
             )
         if not pk or not h or not sk:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "Langfuse credentials are incomplete")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "Langfuse credentials are incomplete")
 
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, verify_langfuse_credentials, h, pk, sk)

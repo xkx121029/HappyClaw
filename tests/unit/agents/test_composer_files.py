@@ -11,7 +11,7 @@ from happyclaw.infra.agents.experts.composer_files import (
     composer_patch_from_payload,
     normalize_composer_relpath,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 @pytest.mark.parametrize(
@@ -34,7 +34,7 @@ def test_normalize_composer_relpath_accepts_editable_paths(name: str, expected: 
     [".octop/secret", "../AGENTS.md", "skills/../x", "etc/passwd", ""],
 )
 def test_normalize_composer_relpath_rejects_unsafe_paths(name: str) -> None:
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         normalize_composer_relpath(name, allow_skill_dir=True)
     assert exc.value.code == ErrorCode.SLASH_BAD_ARGS
 
@@ -124,7 +124,7 @@ async def test_apply_composer_workspace_patch_writes_and_omits() -> None:
 
 
 def test_composer_copies_from_payload_rejects_unsafe_source() -> None:
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         composer_copies_from_payload([{"agent_id": "../x", "slug": "demo"}])
     assert exc.value.code == ErrorCode.SLASH_BAD_ARGS
 

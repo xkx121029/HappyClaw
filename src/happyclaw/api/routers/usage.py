@@ -24,7 +24,7 @@ from fastapi.responses import StreamingResponse
 
 from happyclaw.api.common.content_disposition import content_disposition
 from happyclaw.api.deps import current_user, get_server
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.usage.report import UsageReportService
 from happyclaw.infra.utils.locale import resolve_request_locale
 
@@ -127,7 +127,7 @@ async def admin_summary(
     """Global usage roll-up. Optional ``user_id`` / ``agent_id`` narrow
     the scope; absent both fields mean *all rows*. Admin only."""
     if not getattr(user, "is_admin", False):
-        raise OctopError(ErrorCode.FORBIDDEN, "admin required")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "admin required")
     return service.summary(
         user_id=user_id,
         agent_id=agent_id,
@@ -150,7 +150,7 @@ async def admin_export(
     service: UsageReportService = Depends(get_usage_service),
 ) -> StreamingResponse:
     if not getattr(user, "is_admin", False):
-        raise OctopError(ErrorCode.FORBIDDEN, "admin required")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "admin required")
     locale = resolve_request_locale(request)
     payload, filename = service.export_xlsx(
         user_id=user_id,

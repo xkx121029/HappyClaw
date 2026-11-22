@@ -79,7 +79,7 @@ from happyclaw.infra.agents.experts.snapshot_store import (
     read_published_avatar,
     read_snapshot_manifest,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.history.trajectory.settings import apply_enable_trajectory
 from happyclaw.infra.market import (
     PortalMarketError,
@@ -261,7 +261,7 @@ def _resolve_composer_copies(
         seen.add(item.slug)
         try:
             require_agent_owner_row(item.agent_id, user=user, as_user=None, server=server)
-        except OctopError:
+        except HappyclawError:
             report.copy_skill_errors.append(item.slug)
             continue
         src = server.app_runtime.agent_registry.workspace_for_agent(item.agent_id)
@@ -515,15 +515,15 @@ def _expert_dict(
     return result
 
 
-def _map_skillhub_error(exc: SkillHubMarketError) -> OctopError:
+def _map_skillhub_error(exc: SkillHubMarketError) -> HappyclawError:
     kind = getattr(exc, "kind", SkillHubMarketErrorKind.UPSTREAM_FAILED)
     if kind in (
         SkillHubMarketErrorKind.NOT_FOUND,
         SkillHubMarketErrorKind.INVALID_SLUG,
     ):
-        return OctopError(ErrorCode.NOT_FOUND, "skillhub expert not found")
+        return HappyclawError(ErrorCode.NOT_FOUND, "skillhub expert not found")
     if kind == SkillHubMarketErrorKind.SSL_ERROR:
-        return OctopError(
+        return HappyclawError(
             ErrorCode.SKILLHUB_SSL_FAILED,
             "skillhub ssl error",
             details={"reason": "ssl_error", "kind": kind.value},
@@ -531,7 +531,7 @@ def _map_skillhub_error(exc: SkillHubMarketError) -> OctopError:
     reason = _SAFE_MARKET_REASONS.get(
         kind, _SAFE_MARKET_REASONS[SkillHubMarketErrorKind.UPSTREAM_FAILED]
     )
-    return OctopError(
+    return HappyclawError(
         ErrorCode.EXPERT_MARKET_FAILED,
         f"expert market failed: {reason}",
         details={"reason": reason, "kind": kind.value},
@@ -608,7 +608,7 @@ async def get_published_expert_avatar(
     row = _require_published_expert(server, expert_id)
     found = read_published_avatar(server.services.control_file_repo, row.id)
     if found is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "avatar not uploaded")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "avatar not uploaded")
     data, media_type = found
     return Response(content=data, media_type=media_type)
 
@@ -631,7 +631,7 @@ async def get_published_expert(
             snapshot_dir,
         )
         if not found:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.NOT_FOUND,
                 f"published expert {expert_id!r} snapshot not found",
             )
@@ -669,12 +669,12 @@ async def publish_agent_expert(
     """Snapshot an owned agent workspace into a globally installable expert template."""
     source = require_agent_owner_row(agent_id, user=user, as_user=None, server=server)
     if not user_owns_agent(source, user):
-        raise OctopError(ErrorCode.FORBIDDEN, "agent not owned by user")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "agent not owned by user")
     assert server.app_runtime is not None
     assert server.services is not None
     workspace = server.app_runtime.agent_registry.workspace_for_agent(agent_id)
     if workspace is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     welcome_zh, welcome_en = _publish_welcome_fields(body.welcome_message)
     row = await publish_owned_agent_expert(
         services=server.services,
@@ -705,13 +705,13 @@ async def refresh_published_expert(
     """Replace a published snapshot using its still-owned source agent workspace."""
     row = _require_published_expert(server, expert_id)
     if row.source_agent_id is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "published expert source agent not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "published expert source agent not found")
     source = require_agent_owner_row(row.source_agent_id, user=user, as_user=None, server=server)
     assert server.app_runtime is not None
     assert server.services is not None
     workspace = server.app_runtime.agent_registry.workspace_for_agent(row.source_agent_id)
     if workspace is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {row.source_agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {row.source_agent_id!r} not found")
     welcome_zh: str | None = None
     welcome_en: str | None = None
     quick_prompts: tuple[dict[str, Any], ...] | None = None
@@ -851,7 +851,7 @@ async def list_expert_hub(
         network_error = local_network_error(exc)
         if network_error is not None:
             raise network_error from exc
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.EXPERT_MARKET_FAILED,
             "expert market failed: upstream request failed",
             details={"reason": "upstream request failed"},
@@ -883,13 +883,13 @@ async def get_expert_hub_item(
         network_error = local_network_error(exc)
         if network_error is not None:
             raise network_error from exc
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.EXPERT_MARKET_FAILED,
             "expert market failed: upstream request failed",
             details={"reason": "upstream request failed"},
         ) from exc
     if portal_item is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "expert not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "expert not found")
     return _portal_hub_item(portal_item, include_content=True, featured_ids=featured_ids)
 
 
@@ -1002,7 +1002,7 @@ async def get_expert(
     catalog = server.expert_catalog
     expert = None if catalog is None else catalog.get(expert_id)
     if expert is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"expert {expert_id!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"expert {expert_id!r} not found")
     return _expert_dict(expert, catalog, include_file_contents=True)
 
 
@@ -1017,7 +1017,7 @@ async def create_agent_from_expert(
     catalog = server.expert_catalog
     expert = None if catalog is None else catalog.get(expert_id)
     if expert is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"expert {expert_id!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"expert {expert_id!r} not found")
     assert server.app_runtime is not None
     # 未指定名称时视为「确保该专家已就绪」：云主机面板授权后会静默调用本接口，
     # 刷新或重试必须复用已有 agent。显式传 name / agent_id 仍是新建，重名保持 409。

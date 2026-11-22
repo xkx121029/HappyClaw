@@ -6,7 +6,7 @@ from typing import NoReturn
 
 import click
 
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.setup.service import (
     DEFAULT_HEALTH_ATTEMPTS,
     DEFAULT_HEALTH_DELAY_SECONDS,
@@ -134,7 +134,7 @@ def start(host: str | None, port: int | None, force_install: bool, scope: str) -
             runtime = _runtime(host, port, _resolve_scope(scope))
         wrote = install_service(runtime, force=force_install)
         start_service(runtime, apply_unit=wrote)
-    except (RuntimeError, OctopError) as exc:
+    except (RuntimeError, HappyclawError) as exc:
         _fail(exc)
     _echo_summary_for(runtime, warn_health=True)
 

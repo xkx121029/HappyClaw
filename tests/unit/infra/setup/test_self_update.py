@@ -608,7 +608,7 @@ def test_target_version_prevents_downgrade_before_service_restart(
     import happyclaw
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setattr(octop, "__version__", "1.0.2b4")
+    monkeypatch.setattr(happyclaw, "__version__", "1.0.2b4")
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
     _write_octop_package(tmp_path, "1.0.2b6")
     assert self_update.get_local_version() == "1.0.2b6"
@@ -1054,7 +1054,7 @@ def test_upgrade_keeps_locale_bundle_when_installer_replaces_resources(
     original = {}
     for language in ("en", "zh"):
         content = (
-            loader.resources.files("octop.i18n")
+            loader.resources.files("happyclaw.i18n")
             .joinpath(f"{language}.json")
             .read_text(encoding="utf-8")
         )

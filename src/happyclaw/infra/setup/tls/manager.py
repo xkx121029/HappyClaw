@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.i18n import tr
 from happyclaw.infra.setup.tls.acme_issue import issue_certificate_http01
 from happyclaw.infra.setup.tls.listeners import TLS_HTTP_PORT, TLS_HTTPS_PORT
@@ -88,7 +88,7 @@ class TlsManager:
         with self._task_guard:
             self._task.steps.append(step)
 
-    def status_payload(self, config: OctopConfig, paths: PathLayout) -> dict[str, Any]:
+    def status_payload(self, config: HappyclawConfig, paths: PathLayout) -> dict[str, Any]:
         tls = config.tls
         task = self._snapshot_task()
         state = self._resolve_display_state(config, paths, task)
@@ -127,7 +127,7 @@ class TlsManager:
 
     def _resolve_display_state(
         self,
-        config: OctopConfig,
+        config: HappyclawConfig,
         paths: PathLayout,
         task: TlsTask,
     ) -> TlsTaskState:
@@ -154,7 +154,7 @@ class TlsManager:
     async def run_preflight(
         self,
         domain: str,
-        config: OctopConfig,
+        config: HappyclawConfig,
         *,
         locale: str = "en",
     ) -> PreflightResult:
@@ -164,7 +164,7 @@ class TlsManager:
         self,
         *,
         domain: str,
-        config: OctopConfig,
+        config: HappyclawConfig,
         paths: PathLayout,
         staging: bool = False,
         locale: str = "en",

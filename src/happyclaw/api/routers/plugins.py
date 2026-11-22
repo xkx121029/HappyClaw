@@ -21,8 +21,8 @@ from happyclaw.infra.agents.plugins.plugin_tool_defaults import (
     merge_plugins_enabled_settings,
     merge_plugins_tool_settings,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.server import HappyclawServer
 
 router = APIRouter(prefix="/plugins", tags=["plugins"])
 
@@ -90,16 +90,16 @@ class AgentPluginsPatch(BaseModel):
     plugins: dict[str, AgentPluginEnabledPatch]
 
 
-def _plugin_manager(server: OctopServer) -> PluginManager:
+def _plugin_manager(server: HappyclawServer) -> PluginManager:
     mgr = server.plugin_manager
     if mgr is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "plugin manager not initialized")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "plugin manager not initialized")
     return mgr
 
 
 @router.get("", summary="List installed plugins")
 async def list_plugins(
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(current_user),
 ) -> list[dict[str, Any]]:
     return [
@@ -109,7 +109,7 @@ async def list_plugins(
 
 @router.post("/reload", summary="Reload plugins from disk (admin)")
 async def reload_plugins(
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(require_permission("plugins")),
 ) -> dict[str, Any]:
     """Re-read ``~/.octop/plugins`` into the process registry and reload agents.
@@ -138,16 +138,16 @@ async def reload_plugins(
 @router.post("/install", summary="Install plugin from URL (admin)")
 async def install_plugin(
     body: PluginInstallBody,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(require_permission("plugins")),
 ) -> dict[str, Any]:
     mgr = _plugin_manager(server)
     try:
         loaded = mgr.install_url(body.url)
-    except OctopError:
+    except HappyclawError:
         raise
     except Exception as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PLUGIN_INSTALL_FAILED,
             f"plugin install failed: {exc}",
             details={"reason": str(exc)},
@@ -168,7 +168,7 @@ async def install_plugin(
 async def upload_plugin(
     file: UploadFile = File(...),
     force: bool = Form(default=False),
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(require_permission("plugins")),
 ) -> dict[str, Any]:
     """Install a plugin from a locally-uploaded ZIP archive.
@@ -187,7 +187,7 @@ async def upload_plugin(
         code=ErrorCode.PLUGIN_INVALID_ARCHIVE,
     )
     if not raw:
-        raise OctopError(ErrorCode.PLUGIN_INVALID_ARCHIVE, "empty plugin archive")
+        raise HappyclawError(ErrorCode.PLUGIN_INVALID_ARCHIVE, "empty plugin archive")
     try:
         with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
             tmp.write(raw)
@@ -196,10 +196,10 @@ async def upload_plugin(
             loaded = mgr.install_archive(tmp_path, force=force)
         finally:
             tmp_path.unlink(missing_ok=True)
-    except OctopError:
+    except HappyclawError:
         raise
     except Exception as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PLUGIN_INSTALL_FAILED,
             f"plugin install failed: {exc}",
             details={"reason": str(exc)},
@@ -219,7 +219,7 @@ async def upload_plugin(
 @router.get("/market", summary="List marketplace catalog plugins")
 async def list_market_plugins(
     accept_language: str | None = Header(default=None),
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(require_permission("plugin_market")),
 ) -> list[dict[str, Any]]:
     """Return the portal marketplace catalog in the caller's language."""
@@ -246,7 +246,7 @@ async def install_market_plugin(
         default=False,
         description="Replace an install of the same release.",
     ),
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(require_permission("plugin_market")),
 ) -> dict[str, Any]:
     """Download one catalog release into ``~/.octop/plugins``."""
@@ -257,10 +257,10 @@ async def install_market_plugin(
             None,
             lambda: mgr.install_from_market(plugin_id, version=version, force=force),
         )
-    except OctopError:
+    except HappyclawError:
         raise
     except Exception as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PLUGIN_INSTALL_FAILED,
             f"plugin install failed: {exc}",
             details={"reason": str(exc)},
@@ -285,7 +285,7 @@ async def install_market_plugin(
 async def get_market_plugin_ui_asset(
     plugin_id: str,
     file_path: str,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(require_permission("plugin_market")),
 ) -> Response:
     target = _plugin_manager(server).resolve_market_ui_file(plugin_id, file_path)
@@ -305,16 +305,16 @@ class PluginPatchBody(BaseModel):
     group_ids: list[str] | None = None
 
 
-def _plugin_group_access(server: OctopServer) -> Any:
+def _plugin_group_access(server: HappyclawServer) -> Any:
     from happyclaw.infra.users.groups import GroupAccess
 
     services = server.services
     if services is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "services unavailable")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "services unavailable")
     return GroupAccess(services.repos)
 
 
-def _with_plugin_visibility(server: OctopServer, item: dict[str, Any]) -> dict[str, Any]:
+def _with_plugin_visibility(server: HappyclawServer, item: dict[str, Any]) -> dict[str, Any]:
     from happyclaw.infra.users.groups import RESOURCE_PLUGIN
 
     plugin_id = str(item.get("id") or "")
@@ -330,7 +330,7 @@ def _with_plugin_visibility(server: OctopServer, item: dict[str, Any]) -> dict[s
 async def patch_plugin(
     plugin_id: str,
     body: PluginPatchBody,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(require_permission("plugins")),
 ) -> dict[str, Any]:
     """Enable/disable a plugin and/or set who may use it on agents.
@@ -339,7 +339,7 @@ async def patch_plugin(
     skills / hooks are unavailable to all agents until re-enabled.
     """
     if body.enabled is None and body.visibility is None:
-        raise OctopError(ErrorCode.FORBIDDEN, "provide enabled and/or visibility", status=400)
+        raise HappyclawError(ErrorCode.FORBIDDEN, "provide enabled and/or visibility", status=400)
     mgr = _plugin_manager(server)
     item: dict[str, Any] | None = None
     if body.enabled is not None:
@@ -362,14 +362,14 @@ async def patch_plugin(
                 item = row
                 break
     if item is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "plugin not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "plugin not found")
     return _with_plugin_visibility(server, item)
 
 
 @router.delete("/{plugin_id}", summary="Uninstall plugin (admin)")
 async def uninstall_plugin(
     plugin_id: str,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(require_permission("plugins")),
 ) -> dict[str, str]:
     from happyclaw.infra.users.groups import RESOURCE_PLUGIN
@@ -390,7 +390,7 @@ async def uninstall_plugin(
 async def get_plugin_ui_asset(
     plugin_id: str,
     file_path: str,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _user: Any = Depends(current_user),
 ) -> Response:
     """Read-only static files from ``~/.octop/plugins/<id>/`` (typically ``ui/dist/``).
@@ -409,7 +409,7 @@ async def get_plugin_ui_asset(
 
 
 def _agent_row_and_config(
-    server: OctopServer,
+    server: HappyclawServer,
     agent_id: str,
     user: Any,
 ) -> tuple[Any, dict[str, Any]]:
@@ -418,13 +418,13 @@ def _agent_row_and_config(
     registry = runtime.agent_registry
     row = registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     return row, registry.get_config(agent_id)
 
 
 def _agent_plugins_response(
-    server: OctopServer,
+    server: HappyclawServer,
     agent_cfg: dict[str, Any],
     *,
     user: Any,
@@ -476,7 +476,7 @@ def _agent_plugins_response(
 )
 async def list_agent_plugins(
     agent_id: str,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: Any = Depends(current_user),
 ) -> AgentPluginsResponse:
     """List global and per-agent plugin state. Missing agent switches default on."""
@@ -492,7 +492,7 @@ async def list_agent_plugins(
 async def patch_agent_plugins(
     agent_id: str,
     body: AgentPluginsPatch,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: Any = Depends(require_permission("agent_plugins")),
 ) -> AgentPluginsResponse:
     """Merge plugin switches, preserve tool settings, and reload only this agent."""
@@ -504,7 +504,7 @@ async def patch_agent_plugins(
     }
     unknown = sorted(set(body.plugins) - installed)
     if unknown:
-        raise OctopError(ErrorCode.NOT_FOUND, f"plugin {unknown[0]!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"plugin {unknown[0]!r} not found")
 
     runtime = server.app_runtime
     assert runtime is not None
@@ -521,13 +521,13 @@ async def patch_agent_plugins(
 @router.get("/agents/{agent_id}/tools", summary="List plugin tools for an agent")
 async def list_agent_plugin_tools(
     agent_id: str,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: Any = Depends(current_user),
 ) -> dict[str, Any]:
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     mgr = _plugin_manager(server)
     agent_cfg = server.app_runtime.agent_registry.get_config(agent_id)
@@ -573,7 +573,7 @@ async def list_agent_plugin_tools(
 async def patch_agent_plugin_tools(
     agent_id: str,
     body: AgentPluginToolsPatch,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     user: Any = Depends(require_permission("tools")),
 ) -> dict[str, str]:
     """Persist per-agent plugin tool enable flags and hot-sync the denylist.
@@ -584,7 +584,7 @@ async def patch_agent_plugin_tools(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     registry = server.app_runtime.agent_registry
     cfg = registry.get_config(agent_id)

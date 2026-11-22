@@ -9,7 +9,7 @@ from urllib.parse import quote, urljoin, urlparse
 
 import httpx
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 # Cloud metadata / link-local — always rejected even for self-hosted LAN peers.
 _BLOCKED_NETWORKS = (
@@ -32,7 +32,7 @@ def _host_resolves_blocked(host: str) -> bool:
     try:
         infos = socket.getaddrinfo(hostname, None)
     except socket.gaierror as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.BRIDGE_PEER_UNREACHABLE,
             f"peer host could not be resolved: {hostname}",
         ) from exc
@@ -53,12 +53,12 @@ _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "0.0.0.0"})
 def _parse_peer_url(raw: str) -> Any:
     text = (raw or "").strip().rstrip("/")
     if not text:
-        raise OctopError(ErrorCode.BRIDGE_PEER_UNREACHABLE, "peer base URL required")
+        raise HappyclawError(ErrorCode.BRIDGE_PEER_UNREACHABLE, "peer base URL required")
     parsed = urlparse(text if "://" in text else f"http://{text}")
     if parsed.scheme not in {"http", "https"}:
-        raise OctopError(ErrorCode.BRIDGE_PEER_UNREACHABLE, "peer URL must be http or https")
+        raise HappyclawError(ErrorCode.BRIDGE_PEER_UNREACHABLE, "peer URL must be http or https")
     if not parsed.netloc:
-        raise OctopError(ErrorCode.BRIDGE_PEER_UNREACHABLE, "peer URL host required")
+        raise HappyclawError(ErrorCode.BRIDGE_PEER_UNREACHABLE, "peer URL host required")
     return parsed
 
 
@@ -87,7 +87,7 @@ def is_self_peer_url(peer_base_url: str, advertise_base_url: str) -> bool:
         return False
     try:
         return peer_url_identity(peer_base_url) == peer_url_identity(advertise)
-    except OctopError:
+    except HappyclawError:
         return False
 
 
@@ -95,7 +95,7 @@ def normalize_peer_base_url(raw: str) -> str:
     parsed = _parse_peer_url(raw)
     host = parsed.hostname or ""
     if _host_resolves_blocked(host):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.BRIDGE_PEER_UNREACHABLE,
             "peer URL host is not allowed (link-local / metadata addresses blocked)",
         )
@@ -127,23 +127,23 @@ async def login_peer(
                 json={"username": username, "password": password},
             )
     except httpx.HTTPError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.BRIDGE_PEER_UNREACHABLE,
             f"peer login failed: {exc}",
         ) from exc
 
     if resp.status_code == 401:
-        raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "peer rejected credentials")
+        raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "peer rejected credentials")
     if resp.status_code >= 400:
         detail = resp.text[:300]
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.BRIDGE_AUTH_FAILED,
             f"peer login HTTP {resp.status_code}: {detail}",
         )
     try:
         data = resp.json()
     except ValueError as exc:
-        raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "peer login returned non-JSON") from exc
+        raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "peer login returned non-JSON") from exc
     if not isinstance(data, dict) or not str(data.get("access_token") or "").strip():
-        raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "peer login missing access_token")
+        raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "peer login missing access_token")
     return data

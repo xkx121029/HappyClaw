@@ -215,7 +215,7 @@ def _envelope_from_manifest(manifest_path: Path) -> PluginEnvelope:
     )
 
 
-class OctopPluginLoader:
+class HappyclawPluginLoader:
     """Unified loader facade for Octop's existing ``plugin.yaml`` plugins."""
 
     kind = PluginKind.OCTOP
@@ -275,4 +275,4 @@ class OctopPluginLoader:
         self._store.deactivate(handle)
 
 
-__all__ = ["OctopPluginLoader"]
+__all__ = ["HappyclawPluginLoader"]

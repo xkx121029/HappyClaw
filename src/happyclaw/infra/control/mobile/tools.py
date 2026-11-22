@@ -13,7 +13,7 @@ from langchain_core.tools import StructuredTool
 from langgraph.config import get_config
 from pydantic import Field
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.i18n import tr
 from happyclaw.infra.control.mobile.adb import find_adb, list_devices, screencap_png, shell, swipe, tap
 from happyclaw.infra.control.mobile.setup import mobile_status
@@ -35,7 +35,7 @@ def _tool_ctx() -> dict[str, Any]:
     return get_config().get("configurable") or {}
 
 
-def _require_mobile_access(config: OctopConfig, ctx: dict[str, Any], user_repo: Any) -> None:
+def _require_mobile_access(config: HappyclawConfig, ctx: dict[str, Any], user_repo: Any) -> None:
     if not config.capabilities.mobile.enabled:
         raise ValueError("Remote Phone is not enabled on this host")
     user_raw = ctx.get("user")
@@ -48,7 +48,7 @@ def _require_mobile_access(config: OctopConfig, ctx: dict[str, Any], user_repo: 
         raise ValueError("mobile permission required")
 
 
-def _require_ready(config: OctopConfig, *, locale: str) -> None:
+def _require_ready(config: HappyclawConfig, *, locale: str) -> None:
     status = mobile_status(config, locale=locale)
     if status.setup_state != "ready" or not status.ok:
         reason = status.reason or status.setup_state
@@ -75,7 +75,7 @@ async def _resolve_device(device: str | None) -> str:
 
 
 def build_mobile_tools(
-    config: OctopConfig,
+    config: HappyclawConfig,
     *,
     user_repo: Any,
     workspace_for: Callable[[str], Any] | None = None,

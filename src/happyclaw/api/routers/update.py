@@ -22,8 +22,8 @@ from happyclaw.api.routers.update_store import (
     update_task,
 )
 from happyclaw.infra.desktop import desktop_shell_enabled
-from happyclaw.infra.errors import ErrorCode, OctopError
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.server import HappyclawServer
 from happyclaw.infra.setup.self_update import (
     UpgradeResult,
     fetch_pypi_info,
@@ -337,7 +337,7 @@ async def trigger_upgrade(
 ) -> dict[str, Any]:
     _reject_shell_updates()
     if get_editable_path() is not None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.FORBIDDEN,
             "editable installs must be upgraded manually (git pull / uv sync)",
         )
@@ -374,7 +374,7 @@ async def upgrade_progress(
 ) -> dict[str, Any]:
     task = await get_task(task_id)
     if task is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "upgrade task not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "upgrade task not found")
     return {
         "task_id": task.task_id,
         "status": task.status.value,
@@ -397,7 +397,7 @@ def _is_desktop_process() -> bool:
 def _reject_shell_updates() -> None:
     """Reject self-update requests when the Electron shell owns this process."""
     if desktop_shell_enabled():
-        raise OctopError(ErrorCode.FORBIDDEN, _SHELL_UPDATE_FORBIDDEN)
+        raise HappyclawError(ErrorCode.FORBIDDEN, _SHELL_UPDATE_FORBIDDEN)
 
 
 def _desktop_shell_status() -> dict[str, Any]:
@@ -423,7 +423,7 @@ def _desktop_shell_status() -> dict[str, Any]:
     }
 
 
-def _restart_desktop_process(server: OctopServer) -> None:
+def _restart_desktop_process(server: HappyclawServer) -> None:
     time.sleep(0.4)
 
     # Flush SQLite WAL before replacing the process image, otherwise uncheckpointed
@@ -450,17 +450,17 @@ def _restart_service_task(runtime: ServiceRuntime) -> None:
 @router.post("/restart")
 async def restart_service_endpoint(
     background_tasks: BackgroundTasks,
-    server: OctopServer = Depends(get_server),
+    server: HappyclawServer = Depends(get_server),
     _: Any = Depends(require_permission("update")),
 ) -> dict[str, Any]:
     if desktop_shell_enabled():
-        raise OctopError(ErrorCode.FORBIDDEN, _SHELL_UPDATE_FORBIDDEN)
+        raise HappyclawError(ErrorCode.FORBIDDEN, _SHELL_UPDATE_FORBIDDEN)
     if _is_desktop_process():
         background_tasks.add_task(_restart_desktop_process, server)
         return {"status": "restarting", "service_mode": "desktop"}
     mode = detect_service_mode()
     if mode is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.FORBIDDEN,
             "service restart is only available when OCTOP_SERVICE_MODE is set",
         )
@@ -475,8 +475,8 @@ async def restart_service_endpoint(
                 f"octop system service is not installed (expected unit for mode={runtime.mode})"
             )
     except RuntimeError as exc:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
     except Exception as exc:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc)) from exc
     background_tasks.add_task(_restart_service_task, runtime)
     return {"status": "restarting", "service_mode": mode}

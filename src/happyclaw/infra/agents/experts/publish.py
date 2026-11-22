@@ -21,7 +21,7 @@ from happyclaw.infra.agents.experts.catalog import (
 )
 from happyclaw.infra.agents.subagents.catalog import slugify
 from happyclaw.infra.db.repos.published_experts import PublishedExpertRepo, PublishedExpertRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import User
 
 _EXCLUDED_PARTS = frozenset(
@@ -80,7 +80,7 @@ def assert_can_mutate_published(row: PublishedExpertRow, user: User) -> None:
     """Allow a published expert's creator or an administrator to mutate it."""
     if user.is_admin or str(user.id) == row.created_by:
         return
-    raise OctopError(ErrorCode.FORBIDDEN, "published expert can only be modified by its creator")
+    raise HappyclawError(ErrorCode.FORBIDDEN, "published expert can only be modified by its creator")
 
 
 def resolve_published_expert_slug(
@@ -94,7 +94,7 @@ def resolve_published_expert_slug(
     requested = requested_slug or slugify(name) or "expert"
     if requested_slug:
         if repo.get_by_slug(requested) is not None:
-            raise OctopError.localized(
+            raise HappyclawError.localized(
                 ErrorCode.PUBLISHED_EXPERT_SLUG_TAKEN,
                 slug=requested,
                 details={"slug": requested},

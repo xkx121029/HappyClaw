@@ -22,7 +22,7 @@ from happyclaw_harness.backends.workspace import BackendWorkspace
 
 from happyclaw.infra.agents.manager import AgentCreateSpec
 from happyclaw.infra.agents.workspace.dir import DEFAULT_SYSTEM_FILES_PATH
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -407,12 +407,12 @@ async def apply_workspace_quick_prompts(
         try:
             parsed: object = json.loads(text)
         except json.JSONDecodeError as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 "workspace manifest.json is not valid JSON",
             ) from exc
         if not isinstance(parsed, dict):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 "workspace manifest.json is not a JSON object",
             )

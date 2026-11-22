@@ -9,7 +9,7 @@ import click
 
 from happyclaw.cli.support.ctx import json_output_enabled, require_agent
 from happyclaw.cli.support.errors import fail_octop
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 @click.group()
@@ -31,7 +31,7 @@ def list_jobs(agent_id: str | None, as_user: str | None) -> None:
     try:
         resolve_cron_user_id(aid, as_user)
         rows = list_cron_offline(aid)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     if json_output_enabled():
         click.echo(_json.dumps(rows, indent=2))
@@ -78,7 +78,7 @@ def create_job(
             fresh_thread=fresh_thread,
             task_type=task_type,
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo(_json.dumps(row, indent=2))
     click.echo("hint: restart `octop run` to load new cron jobs into the running server.")
@@ -96,7 +96,7 @@ def delete_job(agent_id: str | None, cron_id: str, as_user: str | None) -> None:
     try:
         resolve_cron_user_id(aid, as_user)
         delete_cron_offline(aid, cron_id)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo("deleted")
 
@@ -114,7 +114,7 @@ def run_now(agent_id: str | None, cron_id: str, as_user: str | None) -> None:
     try:
         resolve_cron_user_id(aid, as_user)
         cron_run_now(aid, cron_id)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     except Exception as exc:
         raise click.ClickException(str(exc) or type(exc).__name__) from exc

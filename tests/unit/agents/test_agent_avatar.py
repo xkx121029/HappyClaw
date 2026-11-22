@@ -17,7 +17,7 @@ from happyclaw.infra.agents.experts.avatar import (
     sniff_avatar_media_type,
     write_workspace_avatar,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 8
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 8
@@ -40,13 +40,13 @@ class _MemoryWorkspace:
 def test_sniff_and_reject() -> None:
     assert sniff_avatar_media_type(PNG) == "image/png"
     assert sniff_avatar_media_type(JPEG) == "image/jpeg"
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         sniff_avatar_media_type(b"")
     assert raised.value.code is ErrorCode.AVATAR_INVALID
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         sniff_avatar_media_type(b"not-an-image")
     assert raised.value.code is ErrorCode.AVATAR_INVALID
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         sniff_avatar_media_type(b"\x89PNG\r\n\x1a\n" + b"x" * (MAX_AVATAR_BYTES + 1))
     assert raised.value.code is ErrorCode.AVATAR_TOO_LARGE
 

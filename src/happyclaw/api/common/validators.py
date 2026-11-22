@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.resource_policy import raise_if_backend_outside_user_root
 from happyclaw.infra.utils.host_dirs import assert_backend_root_dirs_allowed
 
@@ -32,7 +32,7 @@ def assert_user_backend_root_dirs(
     try:
         assert_backend_root_dirs_allowed(backend, restrict_to_home=False)
     except ValueError as exc:
-        raise OctopError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc)) from exc
+        raise HappyclawError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, str(exc)) from exc
 
 
 async def validate_chat_mcp_servers(
@@ -56,7 +56,7 @@ async def validate_chat_mcp_servers(
     try:
         return list(svc.validate_mcp_servers_for_user(user_id, names))
     except ValueError as exc:
-        raise OctopError(ErrorCode.CONNECTOR_NOT_BOUND, str(exc)) from exc
+        raise HappyclawError(ErrorCode.CONNECTOR_NOT_BOUND, str(exc)) from exc
 
 
 async def validate_chat_skills(
@@ -82,7 +82,7 @@ async def validate_chat_skills(
                 allowed.add(str(slug))
     bad = [n for n in names if n not in allowed]
     if bad:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.NOT_FOUND,
             f"skill(s) not found or disabled: {', '.join(bad)}",
         )

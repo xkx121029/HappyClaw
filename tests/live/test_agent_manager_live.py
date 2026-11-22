@@ -12,7 +12,7 @@ import pytest
 
 from happyclaw.infra.agents.manager import AgentCreateSpec
 from happyclaw.infra.agents.providers import KIND_TO_PROTOCOL
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 pytestmark = pytest.mark.live
 
@@ -107,7 +107,7 @@ async def test_delete_removes_agent(live_agent_manager, live_openai_config) -> N
     await live_agent_manager.delete(agent_id)
 
     assert live_agent_manager.get_row(agent_id) is None
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         live_agent_manager.get_agent(agent_id)
 
 

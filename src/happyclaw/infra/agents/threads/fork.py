@@ -12,7 +12,7 @@ from typing import Any
 
 from happyclaw.i18n import tr
 from happyclaw.infra.db.repos.threads import ThreadRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.threads import ThreadRegistry
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ def find_assistant_fork_index(
     """
     answers = _assistant_answer_indices(messages)
     if not answers:
-        raise OctopError(ErrorCode.NOT_FOUND, "no assistant message to fork from")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "no assistant message to fork from")
 
     wanted_id = (message_id or "").strip()
     wanted_text = (content or "").strip()
@@ -131,7 +131,7 @@ def find_assistant_fork_index(
         if matches:
             return matches[-1]
 
-    raise OctopError(ErrorCode.NOT_FOUND, "assistant message not found in thread")
+    raise HappyclawError(ErrorCode.NOT_FOUND, "assistant message not found in thread")
 
 
 async def load_checkpoint_messages(harness: Any, thread_id: str) -> list[Any]:
@@ -167,7 +167,7 @@ async def write_checkpoint_messages(
     graph = getattr(harness, "graph", None)
     aupdate = getattr(graph, "aupdate_state", None) if graph is not None else None
     if aupdate is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.AGENT_NOT_RUNNING,
             "agent checkpointer cannot copy thread state",
         )

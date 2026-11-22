@@ -11,7 +11,7 @@ from happyclaw_harness.plugins import PluginRegistry
 
 from happyclaw.infra.agents.plugins.manager import PluginManager
 from happyclaw.infra.agents.plugins.seed import seed_bundled_plugins
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def _write_plugin(root: Path, plugin_id: str, *, version: str = "0.1.0") -> Path:
@@ -181,7 +181,7 @@ def test_seed_refuses_corrupt_config_and_preserves_bytes(tmp_path: Path) -> None
     config_path = tmp_path / "config.json"
     original = '{\n  "bind_host": "0.0.0.0",\n  "database": {"driver": "postgresql"}\n,}'
     config_path.write_text(original, encoding="utf-8")
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         seed_bundled_plugins(
             bundled_root=bundled,
             plugins_dir=plugins_dir,

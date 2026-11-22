@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.voice.adapters import _mimo_audio_mime, _voice_format
 
 
@@ -29,7 +29,7 @@ def test_tencent_voice_format_mapping(mime: str, expected: str) -> None:
 
 
 def test_tencent_voice_format_rejects_unknown_container() -> None:
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         _voice_format("audio/webm")
     assert exc.value.code == ErrorCode.VOICE_KIND_UNSUPPORTED
     assert exc.value.details == {"mime": "audio/webm"}
@@ -38,6 +38,6 @@ def test_tencent_voice_format_rejects_unknown_container() -> None:
 def test_mimo_mime_mapping() -> None:
     assert _mimo_audio_mime("audio/wav") == "audio/wav"
     assert _mimo_audio_mime("audio/mpeg") == "audio/mpeg"
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         _mimo_audio_mime("audio/webm")
     assert exc.value.code == ErrorCode.VOICE_KIND_UNSUPPORTED

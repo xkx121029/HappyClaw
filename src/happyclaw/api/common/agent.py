@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def agent_is_shared(row: Any) -> bool:
@@ -20,7 +20,7 @@ def assert_agent_owner(row: Any, user: Any) -> None:
     if user.is_admin:
         return
     if row.user_id is None or row.user_id != user.id:
-        raise OctopError(ErrorCode.FORBIDDEN, "agent not owned by user")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "agent not owned by user")
 
 
 def _user_may_access(row: Any, user: Any, *, repos: Any | None = None) -> bool:
@@ -39,7 +39,7 @@ def _user_may_access(row: Any, user: Any, *, repos: Any | None = None) -> bool:
 
 def assert_agent_access_row(row: Any, user: Any, *, repos: Any | None = None) -> None:
     if not _user_may_access(row, user, repos=repos):
-        raise OctopError(ErrorCode.FORBIDDEN, "agent not accessible to user")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "agent not accessible to user")
 
 
 def require_agent_row(
@@ -53,15 +53,15 @@ def require_agent_row(
     assert server.app_runtime is not None
     row = server.app_runtime.agent_registry.get_row(agent_id)
     if row is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     if as_user is not None and as_user != user.id:
         if not user.is_admin:
-            raise OctopError(ErrorCode.FORBIDDEN, "as_user requires admin")
+            raise HappyclawError(ErrorCode.FORBIDDEN, "as_user requires admin")
         target = server.user_manager.get_by_id(as_user)
         if target is None:
-            raise OctopError(ErrorCode.NOT_FOUND, f"user {as_user} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"user {as_user} not found")
         if row.user_id is not None and row.user_id != as_user:
-            raise OctopError(ErrorCode.FORBIDDEN, "agent not owned by as_user")
+            raise HappyclawError(ErrorCode.FORBIDDEN, "agent not owned by as_user")
     else:
         repos = getattr(getattr(server, "services", None), "repos", None)
         assert_agent_access_row(row, user, repos=repos)

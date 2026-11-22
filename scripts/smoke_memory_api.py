@@ -1,6 +1,6 @@
 """End-to-end smoke for the orca memory router using TestClient.
 
-Bypasses OctopServer / DB / auth — we override the FastAPI deps used
+Bypasses HappyclawServer / DB / auth — we override the FastAPI deps used
 by the router (``current_user``, ``get_server``, ``require_agent_row``)
 with stubs that point straight at the real ZYWZTD sqlite. Useful for
 hand-checking the wire shape before the dashboard frontend is wired.
@@ -19,7 +19,7 @@ from happyclaw.api.routers import memory
 
 
 class _StubPaths:
-    """Stub of ``OctopServer.services.paths`` with ensure_agent_workspace."""
+    """Stub of ``HappyclawServer.services.paths`` with ensure_agent_workspace."""
 
     def __init__(self, root: Path) -> None:
         self._root = root
@@ -45,14 +45,14 @@ def _build_app() -> FastAPI:
     app = FastAPI()
     app.include_router(memory.router, prefix="/api")
 
-    # OctopError → JSON envelope (production app does this in app.py).
+    # HappyclawError → JSON envelope (production app does this in app.py).
     from fastapi.responses import JSONResponse
     from starlette.requests import Request
 
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
-    @app.exception_handler(OctopError)
-    async def _octop_error_handler(_req: Request, exc: OctopError):
+    @app.exception_handler(HappyclawError)
+    async def _octop_error_handler(_req: Request, exc: HappyclawError):
         return JSONResponse(status_code=exc.status, content=exc.to_envelope())
 
     # Override the router's auth + server deps with no-op stubs.

@@ -80,7 +80,7 @@ octop acp --agent main
 | `--agent ID` | Agent to expose (default: CLI `default_agent` or first agent) |
 | `--debug` | Log to stderr |
 
-This starts a **standalone** `OctopServer` (reads `~/.happyclaw`), boots the agent, and speaks ACP on stdin/stdout. It does **not** require `octop run` to be running; it is a separate process.
+This starts a **standalone** `HappyclawServer` (reads `~/.happyclaw`), boots the agent, and speaks ACP on stdin/stdout. It does **not** require `octop run` to be running; it is a separate process.
 
 Pin the default agent for convenience:
 

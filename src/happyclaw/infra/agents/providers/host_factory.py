@@ -16,7 +16,7 @@ from happyclaw_harness.llm.access import ModelAccess
 from happyclaw_harness.llm.factory import ChatModelFactory
 from happyclaw_harness.protocols.base import ChatProtocol
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class HostModelFactory:
         """Return ``ModelAccess`` for an explicit ref, or harness ``auto``."""
         factory = self._factory
         if factory is None:
-            raise OctopError(ErrorCode.INTERNAL_ERROR, "model factory unavailable")
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, "model factory unavailable")
         requested = (spec or "").strip()
         if not requested or requested.lower() == "auto":
             requested = "auto"
@@ -75,11 +75,11 @@ class HostModelFactory:
         except Exception as exc:
             logger.warning("host model unavailable spec=%s: %s", requested, exc)
             if requested == "auto":
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.INTERNAL_ERROR,
                     "no usable model for text assist",
                 ) from exc
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.INTERNAL_ERROR,
                 "model unavailable for text assist",
             ) from exc

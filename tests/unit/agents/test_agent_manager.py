@@ -16,7 +16,7 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.i18n.domains.agents import NO_MODELS_CONFIGURED, format_agent_start_error
 from happyclaw.infra.agents.manager import AgentManager, _memory_extract_settings
 from happyclaw.infra.backend.resolver import default_agent_backend_spec
@@ -24,7 +24,7 @@ from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.agents import AgentRow
 from happyclaw.infra.db.services import build_shared_services
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 
 # Real HarnessAgentManager starts memory maintenance (GC/vacuum) on a daemon
@@ -56,7 +56,7 @@ def manager(tmp_path: Path) -> AgentManager:
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     return AgentManager(repos=services.repos, paths=services.paths)
 
 
@@ -128,7 +128,7 @@ async def test_stopped_agent_manual_review_closes_temporary_runtime(
     monkeypatch.setattr(manager, "workspace_for_agent", lambda _: ws)
 
     def stopped(_: str) -> Any:
-        raise OctopError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
+        raise HappyclawError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
 
     monkeypatch.setattr(manager, "get_agent", stopped)
     monkeypatch.setattr(manager, "get_row", lambda _: _row())
@@ -1220,7 +1220,7 @@ def test_is_bootstrapped_assumes_true_when_backend_check_fails(manager: AgentMan
 
 @pytest.mark.asyncio
 async def test_delete_thread_checkpoint_missing_agent_raises(manager: AgentManager) -> None:
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await manager.delete_thread_checkpoint("NOPE", "thr_1")
     assert exc.value.code == ErrorCode.AGENT_NOT_FOUND
 
@@ -1338,7 +1338,7 @@ async def test_delete_thread_checkpoint_propagates_unexpected_errors(
     harness_manager.get_agent.return_value = MagicMock(agent=agent)
     manager._harness_manager = harness_manager
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await manager.delete_thread_checkpoint("AGT1", "thr_1")
     assert exc.value.code == ErrorCode.CHECKPOINT_DELETE_FAILED
 
@@ -2033,7 +2033,7 @@ async def test_stop_and_start_round_trip(manager: AgentManager) -> None:
     await manager.stop("STOP01")
     assert manager.get_row("STOP01") is not None
     assert manager.get_row("STOP01").last_state == "stopped"
-    with pytest.raises(OctopError, match="not running") as stopped_exc:
+    with pytest.raises(HappyclawError, match="not running") as stopped_exc:
         manager.get_agent("STOP01")
     assert stopped_exc.value.code is ErrorCode.AGENT_NOT_RUNNING
 
@@ -2097,7 +2097,7 @@ async def test_reload_skips_stopped_agent(manager: AgentManager) -> None:
     await manager.reload("SKIP01")
     assert manager.get_row("SKIP01") is not None
     assert manager.get_row("SKIP01").last_state == "stopped"
-    with pytest.raises(OctopError, match="not running") as skipped_exc:
+    with pytest.raises(HappyclawError, match="not running") as skipped_exc:
         manager.get_agent("SKIP01")
     assert skipped_exc.value.code is ErrorCode.AGENT_NOT_RUNNING
 
@@ -2665,7 +2665,7 @@ async def test_reload_agent_does_not_block_event_loop(
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     registry = AgentManager(repos=services.repos, paths=services.paths)
 
     fake_hm = MagicMock()
@@ -3174,7 +3174,7 @@ def test_require_live_agent_converts_harness_keyerror_to_no_model() -> None:
     row = SimpleNamespace(agent_id="main", last_state="created", default_model=None)
     manager.get_row = lambda agent_id: row  # type: ignore[method-assign]
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         manager._require_live_agent("main")
 
     assert exc_info.value.code is ErrorCode.AGENT_NO_MODEL

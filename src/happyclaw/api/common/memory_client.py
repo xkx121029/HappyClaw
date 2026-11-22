@@ -16,7 +16,7 @@ from typing import Any
 from happyclaw.api.common.agent import require_agent_owner_row
 from happyclaw.infra.agents.memory.backend import open_memory_kwargs
 from happyclaw.infra.agents.workspace.dir import host_system_dir
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -176,14 +176,14 @@ def call_memory_rpc(
         }:
             # Avoid synchronous dashboard writes holding the event loop in a
             # SQLite busy wait while maintenance status needs to remain visible.
-            raise OctopError.localized(ErrorCode.AGENT_BUSY)
+            raise HappyclawError.localized(ErrorCode.AGENT_BUSY)
     _memory, bridge = _open_memory_for_agent(server, agent_id)
     if method == "promote_candidate":
         candidate = _memory.get_candidate((params or {}).get("candidate_id", ""))
         if candidate is not None and candidate.payload.get("manual_revision"):
             workspace = runtime.agent_registry.workspace_for_agent(agent_id)
             if workspace is None:
-                raise OctopError.localized(ErrorCode.AGENT_BUSY)
+                raise HappyclawError.localized(ErrorCode.AGENT_BUSY)
             params = {
                 **(params or {}),
                 "manual_documents": {
@@ -203,15 +203,15 @@ def call_memory_rpc(
         code = err.get("code")
         message = err.get("message", "memory bridge error")
         if code == -32010:  # ERR_PATH_NOT_FOUND
-            raise OctopError(ErrorCode.NOT_FOUND, message)
+            raise HappyclawError(ErrorCode.NOT_FOUND, message)
         if code == -32602:  # ERR_INVALID_PARAMS
-            raise OctopError(ErrorCode.INTERNAL_ERROR, message, status=400)
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, message, status=400)
         if code == -32601:  # ERR_METHOD_NOT_FOUND
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.INTERNAL_ERROR,
                 f"unknown memory dashboard method: {method!r}",
             )
-        raise OctopError(ErrorCode.INTERNAL_ERROR, message)
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, message)
     return response["result"]
 
 

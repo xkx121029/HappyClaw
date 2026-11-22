@@ -49,7 +49,7 @@ from happyclaw.infra.bridge.transport import (
 from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRepo, BridgeConnectionRow
 from happyclaw.infra.db.repos.secrets import SecretRepo
 from happyclaw.infra.db.repos.users import UserRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.ulid import new_short_id
 
 logger = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ _PERMANENT_DIAL_CODES = frozenset(
 )
 
 
-def bridge_failure_from_dial(exc: BaseException) -> OctopError:
+def bridge_failure_from_dial(exc: BaseException) -> HappyclawError:
     """Map a peer WebSocket close into a user-facing bridge error.
 
     The raw ``websockets`` text (``received 4003 (private use) ...``) is not
@@ -103,29 +103,29 @@ def bridge_failure_from_dial(exc: BaseException) -> OctopError:
     reason = _close_reason(exc).lower()
     code = _close_code(exc)
     if code == 4004 or "self connect" in reason:
-        return OctopError(
+        return HappyclawError(
             ErrorCode.BRIDGE_SELF_CONNECT,
             "cannot link this HappyClaw instance to itself",
         )
     if code == 4003 and "permission" in reason:
-        return OctopError(
+        return HappyclawError(
             ErrorCode.BRIDGE_PEER_FORBIDDEN,
             "peer account lacks cloud collab permission",
         )
     if code == 4003 and "owned by another" in reason:
-        return OctopError(
+        return HappyclawError(
             ErrorCode.BRIDGE_PEER_CONNECTION_OWNED,
             "connection owned by another user on the peer",
         )
     if code == 4008 or "connection limit" in reason:
-        return OctopError(
+        return HappyclawError(
             ErrorCode.BRIDGE_CONNECTION_LIMIT,
             f"at most {MAX_CONNECTIONS_PER_USER} cloud collab connections",
             details={"limit": MAX_CONNECTIONS_PER_USER},
         )
     if code == 4001:
-        return OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "peer rejected credentials")
-    return OctopError(ErrorCode.BRIDGE_PEER_UNREACHABLE, _annotate_bridge_dial_error(exc))
+        return HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "peer rejected credentials")
+    return HappyclawError(ErrorCode.BRIDGE_PEER_UNREACHABLE, _annotate_bridge_dial_error(exc))
 
 
 def dial_error_note(exc: BaseException) -> str:
@@ -146,7 +146,7 @@ def dial_error_note(exc: BaseException) -> str:
     return _annotate_bridge_dial_error(exc)
 
 
-def error_from_dial_note(note: str | None) -> OctopError | None:
+def error_from_dial_note(note: str | None) -> HappyclawError | None:
     text = (note or "").strip()
     if not text.startswith(_DIAL_ERROR_PREFIX):
         return None
@@ -159,7 +159,7 @@ def error_from_dial_note(note: str | None) -> OctopError | None:
     details: dict[str, Any] = {}
     for key, value in parse_qsl(query, keep_blank_values=False):
         details[key] = int(value) if key == "limit" and value.isdigit() else value
-    return OctopError(code, name, details=details)
+    return HappyclawError(code, name, details=details)
 
 
 def _should_refresh_peer_token(exc: BaseException) -> bool:
@@ -402,7 +402,7 @@ class BridgeManager:
     def get_owned(self, connection_id: str, owner_user_id: int) -> BridgeConnectionRow:
         row = self._repo.get_for_owner(connection_id, owner_user_id)
         if row is None:
-            raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+            raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
         return row
 
     def get_usable(self, connection_id: str, user_id: int) -> BridgeConnectionRow:
@@ -414,7 +414,7 @@ class BridgeManager:
         """
         row = self._repo.get_visible(connection_id, user_id)
         if row is None:
-            raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+            raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
         return row
 
     def _find_peer_link(
@@ -432,7 +432,7 @@ class BridgeManager:
             try:
                 if peer_identity_key(row.peer_base_url, row.peer_username) == want:
                     return row
-            except OctopError:
+            except HappyclawError:
                 continue
         return None
 
@@ -445,7 +445,7 @@ class BridgeManager:
         exclude_connection_id: str | None = None,
     ) -> None:
         if is_self_peer_url(peer_base_url, self._advertise_base_url):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_SELF_CONNECT,
                 "cannot link this HappyClaw instance to itself",
             )
@@ -456,7 +456,7 @@ class BridgeManager:
             exclude_connection_id=exclude_connection_id,
         )
         if other is not None:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_PEER_ALREADY_LINKED,
                 f"already linked as {other.display_name!r}",
                 details={"name": other.display_name, "connection_id": other.connection_id},
@@ -521,7 +521,7 @@ class BridgeManager:
         base = normalize_peer_base_url(peer_base_url)
         username = peer_username.strip()
         if not username or not password:
-            raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "username and password required")
+            raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "username and password required")
         login = await login_peer(base_url=base, username=username, password=password)
         token = str(login["access_token"])
         raw_user = login.get("user")
@@ -534,24 +534,24 @@ class BridgeManager:
                     headers={"Authorization": f"Bearer {token}"},
                 )
         except httpx.HTTPError as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_PEER_UNREACHABLE,
                 f"peer agents probe failed: {exc}",
             ) from exc
         if resp.status_code >= 400:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_AUTH_FAILED,
                 f"peer agents HTTP {resp.status_code}: {resp.text[:200]}",
             )
         try:
             data = resp.json()
         except ValueError as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 "peer agents returned non-JSON",
             ) from exc
         if not isinstance(data, list):
-            raise OctopError(ErrorCode.BRIDGE_TUNNEL_FAILED, "peer agents payload invalid")
+            raise HappyclawError(ErrorCode.BRIDGE_TUNNEL_FAILED, "peer agents payload invalid")
         agents = [
             _probe_agent_summary(item, peer_base_url=base, connection_id=connection_id)
             for item in data
@@ -570,10 +570,10 @@ class BridgeManager:
 
     def _stored_peer_password(self, row: BridgeConnectionRow) -> str:
         if not row.credential_blob:
-            raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "password required")
+            raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "password required")
         secret = str(decrypt_payload(self._secrets, row.credential_blob).get("password") or "")
         if not secret:
-            raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "password required")
+            raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "password required")
         return secret
 
     async def probe_owned_connection(
@@ -588,7 +588,7 @@ class BridgeManager:
         """Probe using the form endpoint; empty password reuses the stored secret."""
         row = self.get_owned(connection_id, owner_user_id)
         if _is_inbound(row):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_INBOUND_PASSIVE,
                 "inbound bridge cannot probe peer",
             )
@@ -627,23 +627,23 @@ class BridgeManager:
         note = (notes or "").strip() or None
         icon = (icon_name or "").strip() or None
         if not username or not password:
-            raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "username and password required")
+            raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "username and password required")
         self._validate_peer_endpoint(owner_user_id, base, username)
         if self._at_connection_limit(owner_user_id):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_CONNECTION_LIMIT,
                 f"at most {MAX_CONNECTIONS_PER_USER} cloud collab connections",
                 details={"limit": MAX_CONNECTIONS_PER_USER},
             )
         if not name:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN,
                 "display_name required",
                 status=400,
                 details={"field": "display_name"},
             )
         if self._repo.find_by_display_name(owner_user_id, name) is not None:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_DISPLAY_NAME_TAKEN,
                 f"display name {name!r} already in use",
                 details={"name": name},
@@ -708,7 +708,7 @@ class BridgeManager:
         self.get_owned(connection_id, owner_user_id)
         updated = self._repo.set_shared(connection_id, shared)
         if updated is None:
-            raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+            raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
         return updated
 
     def set_icon_url(
@@ -717,13 +717,13 @@ class BridgeManager:
         self.get_owned(connection_id, owner_user_id)
         updated = self._repo.set_icon_url(connection_id, icon_url)
         if updated is None:
-            raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+            raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
         return updated
 
     async def connect(self, connection_id: str, *, owner_user_id: int) -> BridgeConnectionRow:
         row = self.get_owned(connection_id, owner_user_id)
         if _is_inbound(row):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_INBOUND_PASSIVE,
                 "inbound bridge cannot dial out",
             )
@@ -774,7 +774,7 @@ class BridgeManager:
         detail = (note or fallback)[:500]
         if latest is not None and latest.status != "error":
             self._repo.update_status(connection_id, status="error", last_error=detail)
-        raise OctopError(ErrorCode.BRIDGE_PEER_UNREACHABLE, detail)
+        raise HappyclawError(ErrorCode.BRIDGE_PEER_UNREACHABLE, detail)
 
     async def disconnect(self, connection_id: str) -> None:
         self._user_stopped.add(connection_id)
@@ -794,7 +794,7 @@ class BridgeManager:
     ) -> BridgeConnectionRow:
         row = self.get_owned(connection_id, owner_user_id)
         if enabled and _is_inbound(row):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_INBOUND_PASSIVE,
                 "inbound bridge cannot auto-reconnect",
             )
@@ -834,7 +834,7 @@ class BridgeManager:
             user_touch = peer_username is not None and peer_username.strip() != row.peer_username
             pwd_touch = bool((password or "").strip())
             if url_touch or user_touch or pwd_touch:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.BRIDGE_INBOUND_PASSIVE,
                     "inbound bridge cannot change peer credentials",
                 )
@@ -845,7 +845,7 @@ class BridgeManager:
         if display_name is not None:
             name = display_name.strip()
             if not name:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.FORBIDDEN,
                     "display_name required",
                     status=400,
@@ -853,7 +853,7 @@ class BridgeManager:
                 )
             other = self._repo.find_by_display_name(owner_user_id, name)
             if other is not None and other.connection_id != connection_id:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.BRIDGE_DISPLAY_NAME_TAKEN,
                     f"display name {name!r} already in use",
                     details={"name": name},
@@ -867,7 +867,7 @@ class BridgeManager:
 
         next_user = peer_username.strip() if peer_username is not None else row.peer_username
         if not next_user:
-            raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "username required")
+            raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "username required")
 
         pwd_raw = (password or "").strip()
         url_changed = False
@@ -890,17 +890,17 @@ class BridgeManager:
                 icon_name=icon,
             )
             if updated is None:
-                raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+                raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
             return updated
 
         if password_changed:
             secret = pwd_raw
         else:
             if not row.credential_blob:
-                raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "password required")
+                raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "password required")
             secret = str(decrypt_payload(self._secrets, row.credential_blob).get("password") or "")
             if not secret:
-                raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "password required")
+                raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "password required")
 
         if url_changed:
             assert peer_base_url is not None
@@ -936,14 +936,14 @@ class BridgeManager:
             update_credentials=True,
         )
         if updated is None:
-            raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+            raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
 
         await self.disconnect(connection_id)
         self._user_stopped.discard(connection_id)
         if was_live or updated.auto_reconnect:
             try:
                 return await self.connect(connection_id, owner_user_id=owner_user_id)
-            except OctopError:
+            except HappyclawError:
                 return self._repo.get(connection_id) or updated
         return self._repo.get(connection_id) or updated
 
@@ -1075,7 +1075,7 @@ class BridgeManager:
             if token and (exp is None or exp > now_ts() + 60):
                 return token
         if not row.credential_blob:
-            raise OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "no peer credentials stored")
+            raise HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "no peer credentials stored")
         creds = decrypt_payload(self._secrets, row.credential_blob)
         password = str(creds.get("password") or "")
         login = await login_peer(
@@ -1150,13 +1150,13 @@ class BridgeManager:
                         continue
                     ack_id = str(ack.get("connection_id") or "").strip()
                     if ack_id and ack_id != connection_id:
-                        raise OctopError(
+                        raise HappyclawError(
                             ErrorCode.BRIDGE_PEER_UNREACHABLE,
                             "peer rebound this link onto another connection",
                         )
                     peer_version = int(ack.get("protocol_version") or 0)
                     if peer_version != PROTOCOL_VERSION:
-                        raise OctopError(
+                        raise HappyclawError(
                             ErrorCode.BRIDGE_PEER_UNREACHABLE,
                             f"bridge protocol mismatch: peer={peer_version} local={PROTOCOL_VERSION}",
                         )
@@ -1234,7 +1234,7 @@ class BridgeManager:
         advertise_user = str(payload.get("advertise_username") or "").strip() or "peer"
         try:
             advertise_base = normalize_peer_base_url(advertise_base)
-        except OctopError:
+        except HappyclawError:
             advertise_base = "http://127.0.0.1"
 
         # Default installs advertise http://127.0.0.1:<port>. That URL is shared
@@ -1356,7 +1356,7 @@ class BridgeManager:
     def require_session(self, connection_id: str) -> BridgeSession:
         sess = self._sessions.get(connection_id)
         if sess is None or sess.closed:
-            raise OctopError(ErrorCode.BRIDGE_NOT_CONNECTED, "bridge not connected")
+            raise HappyclawError(ErrorCode.BRIDGE_NOT_CONNECTED, "bridge not connected")
         return sess
 
     async def _require_live_session(self, connection_id: str) -> BridgeSession:
@@ -1374,19 +1374,19 @@ class BridgeManager:
             return sess
         supervisor = self._client_tasks.get(connection_id)
         if supervisor is None or supervisor.done():
-            raise OctopError(ErrorCode.BRIDGE_NOT_CONNECTED, "bridge not connected")
+            raise HappyclawError(ErrorCode.BRIDGE_NOT_CONNECTED, "bridge not connected")
         deadline = asyncio.get_running_loop().time() + _RECONNECT_GRACE_SEC
         while asyncio.get_running_loop().time() < deadline:
             live = self._sessions.get(connection_id)
             if live is not None and not live.closed:
                 return live
             await asyncio.sleep(0.1)
-        raise OctopError(ErrorCode.BRIDGE_NOT_CONNECTED, "bridge not connected")
+        raise HappyclawError(ErrorCode.BRIDGE_NOT_CONNECTED, "bridge not connected")
 
-    def _bridge_link_error(self, exc: BaseException) -> OctopError:
+    def _bridge_link_error(self, exc: BaseException) -> HappyclawError:
         if isinstance(exc, TimeoutError):
-            return OctopError(ErrorCode.BRIDGE_TUNNEL_FAILED, str(exc) or "bridge tunnel timeout")
-        return OctopError(ErrorCode.BRIDGE_NOT_CONNECTED, "bridge not connected")
+            return HappyclawError(ErrorCode.BRIDGE_TUNNEL_FAILED, str(exc) or "bridge tunnel timeout")
+        return HappyclawError(ErrorCode.BRIDGE_NOT_CONNECTED, "bridge not connected")
 
     async def tunnel_http(
         self,
@@ -1410,13 +1410,13 @@ class BridgeManager:
         if int(row.owner_user_id) != int(owner_user_id) and not shared_viewer_may_tunnel(
             method, path
         ):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN,
                 "shared cloud collab users cannot manage this expert",
             )
         # Fail fast with a user-facing "unsupported on remote" code before the hop.
         if not is_tunnel_path_allowed(method, path):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_REMOTE_UNSUPPORTED,
                 "This action is not available through the remote bridge. Manage it on the peer HappyClaw.",
             )
@@ -1428,7 +1428,7 @@ class BridgeManager:
             )
             if len(body) > limit:
                 max_mb = max(1, limit // (1024 * 1024))
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.ATTACHMENT_TOO_LARGE,
                     f"file too large (max {max_mb}MB)",
                     details={"max_mb": max_mb},
@@ -1455,11 +1455,11 @@ class BridgeManager:
                 code_raw or "unknown",
             )
             if code_raw == ErrorCode.BRIDGE_REMOTE_UNSUPPORTED.value:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.BRIDGE_REMOTE_UNSUPPORTED,
                     "This action is not available through the remote bridge. Manage it on the peer HappyClaw.",
                 )
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 str(result.get("message") or "tunnel error"),
             )
@@ -1471,12 +1471,12 @@ class BridgeManager:
     async def _owner_access_token(self, connection_id: str) -> str:
         row = self._repo.get(connection_id)
         if row is None:
-            raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+            raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
         if self._token_signer is None:
-            raise OctopError(ErrorCode.INTERNAL_ERROR, "bridge token signer not configured")
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, "bridge token signer not configured")
         user = self._users.get(row.owner_user_id)
         if user is None:
-            raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge owner missing")
+            raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge owner missing")
         return str(self._token_signer(user))
 
     async def _handle_inbound_tunnel(
@@ -1515,13 +1515,13 @@ class BridgeManager:
             query="scope=mine",
         )
         if resp.status_code >= 400:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 f"peer agents HTTP {resp.status_code}: {resp.text[:200]}",
             )
         data = resp.json()
         if not isinstance(data, list):
-            raise OctopError(ErrorCode.BRIDGE_TUNNEL_FAILED, "peer agents payload invalid")
+            raise HappyclawError(ErrorCode.BRIDGE_TUNNEL_FAILED, "peer agents payload invalid")
         out: list[dict[str, Any]] = []
         for item in data:
             if not isinstance(item, dict):
@@ -1578,14 +1578,14 @@ class BridgeManager:
             query=query,
         )
         if resp.status_code >= 400:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 f"peer {path} HTTP {resp.status_code}: {resp.text[:200]}",
             )
         try:
             return resp.json()
         except Exception as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 f"peer {path} returned invalid JSON",
             ) from exc
@@ -1599,7 +1599,7 @@ class BridgeManager:
             path="/api/providers/resolved",
         )
         if not isinstance(data, list):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 "peer providers/resolved payload invalid",
             )
@@ -1614,7 +1614,7 @@ class BridgeManager:
             path="/api/providers/active-model",
         )
         if not isinstance(data, dict):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 "peer providers/active-model payload invalid",
             )
@@ -1629,7 +1629,7 @@ class BridgeManager:
             path="/api/knowledge-bases",
         )
         if not isinstance(data, list):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 "peer knowledge-bases payload invalid",
             )
@@ -1644,7 +1644,7 @@ class BridgeManager:
             path="/api/knowledge-bases/capability",
         )
         if not isinstance(data, dict):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 "peer knowledge-bases/capability payload invalid",
             )
@@ -1659,7 +1659,7 @@ class BridgeManager:
             path="/api/browser/env-status",
         )
         if not isinstance(data, dict):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 "peer browser/env-status payload invalid",
             )
@@ -1674,7 +1674,7 @@ class BridgeManager:
             path="/api/browser/harness-sessions",
         )
         if not isinstance(data, dict):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 "peer browser/harness-sessions payload invalid",
             )
@@ -1690,7 +1690,7 @@ class BridgeManager:
     ) -> dict[str, Any]:
         sid = (session_id or "").strip()
         if not sid or "/" in sid or ".." in sid:
-            raise OctopError(ErrorCode.BRIDGE_TUNNEL_FAILED, "invalid browser session_id")
+            raise HappyclawError(ErrorCode.BRIDGE_TUNNEL_FAILED, "invalid browser session_id")
         raw = json.dumps(body).encode("utf-8")
         resp = await self.tunnel_http(
             connection_id=connection_id,
@@ -1701,19 +1701,19 @@ class BridgeManager:
             body=raw,
         )
         if resp.status_code >= 400:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 f"peer browser handoff HTTP {resp.status_code}: {resp.text[:200]}",
             )
         try:
             data = resp.json()
         except Exception as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 "peer browser handoff returned invalid JSON",
             ) from exc
         if not isinstance(data, dict):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.BRIDGE_TUNNEL_FAILED,
                 "peer browser handoff payload invalid",
             )

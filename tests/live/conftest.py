@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.experts.catalog import ExpertCatalog, default_library_root
 from happyclaw.infra.agents.manager import AgentCreateSpec, AgentManager
 from happyclaw.infra.db.migrate import run_migrations
@@ -101,7 +101,7 @@ async def live_agent_manager(
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     _seed_live_provider(services, live_openai_config)
 
     catalog = ExpertCatalog(default_library_root())

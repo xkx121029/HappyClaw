@@ -9,7 +9,7 @@ from typing import Any
 import click
 
 from happyclaw.cli.support.errors import fail_octop
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 @click.group()
@@ -39,7 +39,7 @@ def create(
 
     try:
         uid = resolve_cli_acting_user_id(None, as_user)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
 
     async def _run() -> Any:
@@ -56,7 +56,7 @@ def create(
 
     try:
         row = asyncio.run(_run())
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo(_json.dumps({"agent_id": row.agent_id, "name": row.name}, indent=2))
 
@@ -76,7 +76,7 @@ def from_expert(expert_id: str, name: str | None, as_user: str | None) -> None:
 
     try:
         uid = resolve_cli_acting_user_id(None, as_user)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
 
     async def _run() -> Any:
@@ -86,7 +86,7 @@ def from_expert(expert_id: str, name: str | None, as_user: str | None) -> None:
             catalog = server.expert_catalog
             expert = None if catalog is None else catalog.get(expert_id)
             if expert is None:
-                raise OctopError(ErrorCode.NOT_FOUND, f"expert {expert_id!r} not found")
+                raise HappyclawError(ErrorCode.NOT_FOUND, f"expert {expert_id!r} not found")
             locale = resolve_user_locale(user_repo=server.services.user_repo, user_id=uid)
             spec = build_create_spec_from_expert(
                 expert_id=expert_id,
@@ -99,7 +99,7 @@ def from_expert(expert_id: str, name: str | None, as_user: str | None) -> None:
 
     try:
         row = asyncio.run(_run())
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo(_json.dumps({"agent_id": row.agent_id, "name": row.name}, indent=2))
 
@@ -169,14 +169,14 @@ def _act(action: str, agent_id: str, as_user: str | None) -> None:
 
     try:
         resolve_cli_acting_user_id(agent_id, as_user)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     if action == "delete":
         from happyclaw.cli.support.offline_ops import delete_agent_offline
 
         try:
             delete_agent_offline(agent_id)
-        except OctopError as exc:
+        except HappyclawError as exc:
             fail_octop(exc)
         click.echo("deleted")
         return

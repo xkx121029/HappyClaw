@@ -353,14 +353,14 @@ async def test_registration_failure_reaches_mutation_caller(
 ) -> None:
     from types import SimpleNamespace
 
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
     from happyclaw.infra.gateway import plugin_channels as bridge
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
 
     monkeypatch.setattr(bridge, "_CURRENT_ERRORS", {"broken": "not BaseChannel"})
     fake = SimpleNamespace(app_runtime=None, _apply_plugin_channels=lambda: None)
-    with pytest.raises(OctopError):
-        await OctopServer.refresh_plugin_channels(fake)
+    with pytest.raises(HappyclawError):
+        await HappyclawServer.refresh_plugin_channels(fake)
 
 
 @pytest.mark.asyncio
@@ -448,7 +448,7 @@ async def test_existing_failed_registration_does_not_fail_unrelated_refresh(
     from unittest.mock import Mock
 
     from happyclaw.infra.gateway import plugin_channels as bridge
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
 
     registry = _StubRegistry(_StubReg("bad", "broken", _FakeChannel))
     register = Mock(side_effect=ValueError("invalid class"))
@@ -458,7 +458,7 @@ async def test_existing_failed_registration_does_not_fail_unrelated_refresh(
 
     apply()
     monkeypatch.setattr("happyclaw_harness.plugins.registry.PluginRegistry", lambda: registry)
-    await OctopServer.refresh_plugin_channels(
+    await HappyclawServer.refresh_plugin_channels(
         SimpleNamespace(app_runtime=None, _apply_plugin_channels=apply)
     )
     assert register.call_count == 1
@@ -471,9 +471,9 @@ async def test_removed_kind_retries_unregister_without_blocking_unrelated_refres
 ) -> None:
     from types import SimpleNamespace
 
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
     from happyclaw.infra.gateway import plugin_channels as bridge
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
 
     gateway = _RecordingGateway()
     registry = _StubRegistry(_StubReg("owner", "acme", _FakeChannel))
@@ -493,8 +493,8 @@ async def test_removed_kind_retries_unregister_without_blocking_unrelated_refres
     server = SimpleNamespace(app_runtime=None, _apply_plugin_channels=apply)
     apply()
     registry._regs.clear()
-    with pytest.raises(OctopError):
-        await OctopServer.refresh_plugin_channels(server)
+    with pytest.raises(HappyclawError):
+        await HappyclawServer.refresh_plugin_channels(server)
     assert gateway.registered == {"acme": _FakeChannel}
     assert "acme" in bridge._APPLIED
     assert "acme" not in bridge._CLASSES
@@ -504,7 +504,7 @@ async def test_removed_kind_retries_unregister_without_blocking_unrelated_refres
 
     # Existing cleanup failure remains visible, but a sibling can still register.
     registry._regs.append(_StubReg("owner", "beta", _FakeChannel))
-    await OctopServer.refresh_plugin_channels(server)
+    await HappyclawServer.refresh_plugin_channels(server)
     assert attempts == [("acme", "owner")] * 2
     assert gateway.registered == {"acme": _FakeChannel, "beta": _FakeChannel}
     assert "owner" in bridge.registration_errors()
@@ -512,7 +512,7 @@ async def test_removed_kind_retries_unregister_without_blocking_unrelated_refres
     assert [info.kind for info in bridge.plugin_channel_kinds(registry=registry)] == ["beta"]
 
     failing = False
-    await OctopServer.refresh_plugin_channels(server)
+    await HappyclawServer.refresh_plugin_channels(server)
     assert attempts == [("acme", "owner")] * 3
     assert gateway.registered == {"beta": _FakeChannel}
     assert set(bridge._APPLIED) == set(bridge._CLASSES) == {"beta"}
@@ -520,7 +520,7 @@ async def test_removed_kind_retries_unregister_without_blocking_unrelated_refres
     assert bridge.registration_errors() == bridge.current_registration_errors() == {}
     assert bridge.changed_plugin_channel_kinds(registry) == set()
     registry._regs.clear()
-    await OctopServer.refresh_plugin_channels(server)
+    await HappyclawServer.refresh_plugin_channels(server)
     assert gateway.registered == bridge._APPLIED == bridge._CLASSES == bridge._KIND_ERRORS == {}
     assert bridge.plugin_channel_kinds(registry=registry) == []
 

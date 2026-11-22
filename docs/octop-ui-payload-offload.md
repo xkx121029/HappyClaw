@@ -54,7 +54,7 @@
 
 ## 4. 方案
 
-### 4.1 新增中间件 `OctopUiOffloadMiddleware`
+### 4.1 新增中间件 `HappyclawUiOffloadMiddleware`
 
 位置：`src/happyclaw/infra/agents/middleware/octop_ui_offload.py`。实现 `awrap_tool_call`（async 版，F1）：
 

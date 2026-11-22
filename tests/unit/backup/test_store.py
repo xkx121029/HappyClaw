@@ -18,7 +18,7 @@ from happyclaw.infra.backup.store import (
     read_backup_file,
     write_backup_file,
 )
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 
 
@@ -42,9 +42,9 @@ def test_store_roundtrip(tmp_path: Path) -> None:
 
 
 def test_reject_unsafe_filename() -> None:
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         normalize_backup_filename("../escape.tar.gz")
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         normalize_backup_filename("bad.zip")
 
 

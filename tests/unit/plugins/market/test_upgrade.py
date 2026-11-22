@@ -16,7 +16,7 @@ from happyclaw.infra.plugins.market import (
     MarketEntry,
     MarketError,
     MarketplaceIndex,
-    OctopSource,
+    HappyclawSource,
     PluginKind,
     PluginRelease,
     PluginRequirement,
@@ -56,7 +56,7 @@ def install_guard(root: Path) -> None:
         releases=(PluginRelease("1.0.0", Artifact(url=GUARD_URL)),),
         requires=(PluginRequirement("dsh:weather", "<2"),),
     )
-    source = OctopSource(
+    source = HappyclawSource(
         loader=lambda: [],
         transport=lambda url: octop_package("guard", "1.0.0"),
     )

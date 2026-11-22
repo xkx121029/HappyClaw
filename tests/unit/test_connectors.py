@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.connectors.builder import (
     build_http_mcp_spec,
     mcp_server_name,
@@ -48,7 +48,7 @@ def test_build_tencent_remote_spec():
         entry=entry,
         instance_id="x",
         creds={"token": "tok"},
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec["transport"] == "http"
     assert spec["headers"]["Authorization"] == "tok"
@@ -62,7 +62,7 @@ def test_build_weiyun_remote_spec():
         entry=entry,
         instance_id="x",
         creds={"token": "wy-token"},
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec["transport"] == "http"
     assert spec["url"] == "https://www.weiyun.com/api/v3/mcpserver"
@@ -109,7 +109,7 @@ def test_build_notion_remote_spec():
         entry=entry,
         instance_id="x",
         creds={"access_token": "ntn_xxx"},
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec["url"] == "https://mcp.notion.com/mcp"
     assert spec["headers"]["Authorization"] == "Bearer ntn_xxx"
@@ -165,7 +165,7 @@ def test_build_dida365_remote_spec():
         entry=entry,
         instance_id="x",
         creds={"access_token": "dida-tok"},
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec["transport"] == "http"
     assert spec["url"] == "https://mcp.dida365.com"
@@ -238,9 +238,9 @@ def test_obsidian_cli_catalog_and_credentials(tmp_path: Path):
 
 
 def test_weknora_rejects_non_https_remote_url():
-    from happyclaw.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         validate_create_credentials(
             "weknora",
             {"base_url": "http://weknora.example.com", "api_key": "sk-secret"},
@@ -278,7 +278,7 @@ def test_dify_builds_streamable_http_spec():
         entry=entry,
         instance_id="x",
         creds=creds,
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec == {
         "transport": "http",
@@ -319,7 +319,7 @@ def test_didi_builds_streamable_http_spec_from_user_key():
         entry=entry,
         instance_id="x",
         creds=creds,
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec == {
         "transport": "http",
@@ -368,7 +368,7 @@ async def test_didi_probe_uses_streamable_http(monkeypatch: pytest.MonkeyPatch):
         entry,
         {"api_key": "mcp-key"},
         instance_id="probe",
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert result["ok"] is True
     assert seen == {
@@ -474,7 +474,7 @@ async def test_dify_probe_uses_streamable_http(monkeypatch: pytest.MonkeyPatch):
         entry,
         {"mcp_url": "https://dify.example.com/mcp/server/code/mcp"},
         instance_id="probe",
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert result["ok"] is True
     assert seen == {
@@ -584,7 +584,7 @@ def test_gateway_probe_rejects_bad_ima_credentials(monkeypatch: pytest.MonkeyPat
             entry,
             {"api_key": "bad", "client_id": "bad"},
             instance_id="probe",
-            config=OctopConfig(),
+            config=HappyclawConfig(),
         )
     )
     assert out["ok"] is False
@@ -605,7 +605,7 @@ def test_gateway_probe_accepts_valid_ima_credentials(monkeypatch: pytest.MonkeyP
             entry,
             {"api_key": "k", "client_id": "c"},
             instance_id="probe",
-            config=OctopConfig(),
+            config=HappyclawConfig(),
         )
     )
     assert out["ok"] is True
@@ -778,7 +778,7 @@ def test_build_gateway_mcp_spec():
         entry=entry,
         instance_id="inst1",
         creds={"api_key": "k", "client_id": "c", "internal_token": "tok"},
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec["transport"] == "http"
     assert "/api/internal/mcp/tencent-ima/inst1" in spec["url"]
@@ -913,7 +913,7 @@ def test_tencent_news_probe_rejects_bad_api_key(monkeypatch: pytest.MonkeyPatch)
             entry,
             {"api_key": "bad"},
             instance_id="probe",
-            config=OctopConfig(),
+            config=HappyclawConfig(),
         )
     )
     assert out["ok"] is False
@@ -1152,7 +1152,7 @@ def test_new_gateway_probe_rejects_bad_credentials(monkeypatch: pytest.MonkeyPat
                 entry,
                 {"api_key": "bad"},
                 instance_id="probe",
-                config=OctopConfig(),
+                config=HappyclawConfig(),
             )
         )
         assert out["ok"] is False, kind
@@ -1183,7 +1183,7 @@ def test_probe_notion_routes_to_streamable(monkeypatch: pytest.MonkeyPatch):
             entry,
             {"access_token": "ntn_tok"},
             instance_id="probe",
-            config=OctopConfig(),
+            config=HappyclawConfig(),
         )
     )
     assert captured["kind"] == "notion"
@@ -1207,7 +1207,7 @@ def test_build_tencent_meeting_remote_spec():
         entry=entry,
         instance_id="x",
         creds={"token": "tok"},
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec["transport"] == "http"
     assert spec["url"] == "https://mcp.meeting.tencent.com/mcp/wemeet-open/v1"
@@ -1225,7 +1225,7 @@ def test_build_tencent_ardot_remote_spec():
         entry=entry,
         instance_id="x",
         creds={"access_token": "ardot-tok"},
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec["transport"] == "http"
     assert spec["url"] == "https://ardot.tencent.com/mcp"
@@ -1265,7 +1265,7 @@ def test_probe_tencent_ardot_routes_to_streamable(monkeypatch: pytest.MonkeyPatc
             entry,
             {"access_token": "ardot-tok"},
             instance_id="probe",
-            config=OctopConfig(),
+            config=HappyclawConfig(),
         )
     )
     assert captured["kind"] == "tencent-ardot"
@@ -1347,7 +1347,7 @@ def test_build_youdao_remote_spec():
         entry=entry,
         instance_id="x",
         creds={"token": "api-key"},
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec["transport"] == "sse"
     assert spec["url"] == "https://open.mail.163.com/api/ynote/mcp/sse"
@@ -1400,7 +1400,7 @@ def test_probe_youdao_routes_to_sse_probe(monkeypatch: pytest.MonkeyPatch):
             entry,
             {"token": "yn-key"},
             instance_id="probe",
-            config=OctopConfig(),
+            config=HappyclawConfig(),
         )
     )
     assert captured["api_key"] == "yn-key"
@@ -1414,7 +1414,7 @@ def test_build_tencent_lexiang_remote_spec():
         entry=entry,
         instance_id="x",
         creds={"api_key": "lx-tok", "company_from": "csig"},
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     assert spec["url"] == "https://mcp.lexiang-app.com/mcp?company_from=csig&preset=meta"
     assert spec["headers"]["Authorization"] == "Bearer lx-tok"

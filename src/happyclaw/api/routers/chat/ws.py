@@ -24,7 +24,7 @@ from happyclaw.api.routers.chat.turn import (
 )
 from happyclaw.infra.agents.teams.team_manager import subscribe_with_member_catchup
 from happyclaw.infra.bridge.ids import parse_bridge_agent_id
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.gateway.steer import SteerAdmitOk, SteerAdmitReject, SteerCoordinator
 from happyclaw.infra.gateway.steer.types import preview_text
 from happyclaw.infra.gateway.threads import thread_visible_to
@@ -65,7 +65,7 @@ async def dashboard_chat_ws(
     # socket (the dashboard no longer signs in).
     try:
         user = resolve_user_from_token(server, token or "")
-    except OctopError as exc:
+    except HappyclawError as exc:
         await websocket.close(code=4001, reason=f"auth: {exc.code.value}")
         return
 
@@ -84,7 +84,7 @@ async def dashboard_chat_ws(
 
     try:
         assert_agent_access(server, agent_id, user)
-    except OctopError as exc:
+    except HappyclawError as exc:
         from happyclaw.infra.errors import ErrorCode  # noqa: PLC0415
 
         code = 4003 if exc.code == ErrorCode.FORBIDDEN else 4404
@@ -224,7 +224,7 @@ async def dashboard_chat_ws(
                     user=user,
                     turn=turn,
                 )
-            except OctopError as exc:
+            except HappyclawError as exc:
                 await send_frame(
                     {
                         "type": "error",
@@ -330,7 +330,7 @@ async def _bridge_chat_ws(
     try:
         mgr.get_usable(ref.connection_id, user.id)
         mgr.require_session(ref.connection_id)
-    except OctopError as exc:
+    except HappyclawError as exc:
         await websocket.close(code=1011, reason=str(exc.code.value))
         return
 
@@ -429,7 +429,7 @@ async def _bridge_chat_ws(
             )
         except asyncio.CancelledError:
             raise
-        except OctopError as exc:
+        except HappyclawError as exc:
             await send_frame({"type": "error", "message": str(exc)})
             await send_frame({"type": "done"})
         except Exception:
@@ -505,7 +505,7 @@ async def _bridge_chat_ws(
                         thread_id=thread_id,
                         on_frame=send_frame,
                     )
-                except OctopError as exc:
+                except HappyclawError as exc:
                     await send_frame({"type": "error", "message": str(exc)})
                 except Exception:
                     logger.exception("bridge chat cancel failed")
@@ -520,7 +520,7 @@ async def _bridge_chat_ws(
                         payload=payload,
                         on_frame=send_frame,
                     )
-                except OctopError as exc:
+                except HappyclawError as exc:
                     await send_frame({"type": "error", "message": str(exc)})
                 except Exception:
                     logger.exception("bridge chat steer_remove failed")

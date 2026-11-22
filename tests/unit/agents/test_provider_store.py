@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentManager
 from happyclaw.infra.agents.providers import KIND_TO_PROTOCOL, ProviderStore
 from happyclaw.infra.agents.providers.store import (
@@ -32,7 +32,7 @@ def store(tmp_path: Path) -> ProviderStore:
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     return ProviderStore(
         provider_repo=services.repos.provider_repo,
     )
@@ -457,7 +457,7 @@ def test_clear_stale_pins_for_provider(tmp_path: Path) -> None:
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     agent_repo = services.repos.agent_repo
     settings_repo = services.repos.settings_repo
     agent_repo.create(
@@ -525,7 +525,7 @@ def test_manager_exposes_provider_store(tmp_path: Path) -> None:
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     manager = AgentManager(repos=services.repos, paths=services.paths)
     assert isinstance(manager.providers, ProviderStore)
 

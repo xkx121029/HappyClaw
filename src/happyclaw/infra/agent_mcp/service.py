@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.hitl.coordinator import (
     HitlStreamContext,
     decision_rejection_reason,
@@ -205,11 +205,11 @@ class AgentMcpGatewayService:
     def _require_mcp_thread(self, thread_id: str, *, expert_id: str, user_id: int) -> Any:
         row = self._gateway.thread_registry.get_thread(thread_id)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, f"thread {thread_id!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"thread {thread_id!r} not found")
         if row.agent_id != expert_id or row.user_id != user_id:
-            raise OctopError(ErrorCode.FORBIDDEN, "thread is not accessible")
+            raise HappyclawError(ErrorCode.FORBIDDEN, "thread is not accessible")
         if row.channel_type != ThreadRegistry.CHANNEL_MCP:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN,
                 "only MCP-created threads can be continued through this gateway",
             )
@@ -218,11 +218,11 @@ class AgentMcpGatewayService:
     def _require_expert(self, expert_id: str, user: User) -> Any:
         row = self._agent_manager.get_row(expert_id)
         if row is None or row.kind != "expert":
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"expert {expert_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"expert {expert_id!r} not found")
         if not self._can_access(row, user):
-            raise OctopError(ErrorCode.FORBIDDEN, "expert is not accessible")
+            raise HappyclawError(ErrorCode.FORBIDDEN, "expert is not accessible")
         if not row.enabled:
-            raise OctopError(ErrorCode.AGENT_NOT_RUNNING, "expert is disabled")
+            raise HappyclawError(ErrorCode.AGENT_NOT_RUNNING, "expert is disabled")
         return row
 
     def _can_access(self, row: Any, user: User) -> bool:

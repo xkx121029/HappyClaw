@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from happyclaw.i18n import tr
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,7 @@ def compact_agent_store(
         raise ValueError(tr("slash.memory.compact_busy", locale))
     try:
         agent = agent_manager.get_agent(agent_id)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise ValueError(tr("slash.memory.compact_not_running", locale)) from exc
     memory = getattr(getattr(agent, "_memory_runtime", None), "memory", None)
     if memory is None:

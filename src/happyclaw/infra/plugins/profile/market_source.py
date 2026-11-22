@@ -28,7 +28,7 @@ from happyclaw.infra.plugins.runtime.contract import (
     PluginRequirement,
 )
 from happyclaw.infra.plugins.runtime.dsh_plugin import DshPluginLoader
-from happyclaw.infra.plugins.runtime.octop_plugin import OctopPluginLoader
+from happyclaw.infra.plugins.runtime.octop_plugin import HappyclawPluginLoader
 
 __all__ = ["InstalledSlot", "MarketInstallSource"]
 
@@ -61,7 +61,7 @@ class MarketInstallSource:
         self._dest_root = Path(dest_root)
         if adapters is None:
             adapters = {
-                PluginKind.OCTOP: OctopPluginLoader(),
+                PluginKind.OCTOP: HappyclawPluginLoader(),
                 PluginKind.DSH: DshPluginLoader(),
             }
         self._adapters = dict(adapters)

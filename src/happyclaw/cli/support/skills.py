@@ -8,11 +8,11 @@ from typing import Any
 
 from happyclaw.cli.repl.embedded_session import embedded_runtime
 from happyclaw.infra.agents.manager import skills_disabled_set
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 async def list_skills_async(agent_id: str) -> list[dict[str, Any]]:
-    """List installed skills via a short-lived embedded OctopServer."""
+    """List installed skills via a short-lived embedded HappyclawServer."""
     async with embedded_runtime() as server:
         assert server.app_runtime is not None
         return await server.app_runtime.agent_registry.list_skill_summaries(agent_id)
@@ -29,7 +29,7 @@ def set_skill_enabled(agent_id: str, name: str, *, enabled: bool) -> None:
     with open_cli_services() as svc:
         row = svc.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         raw = row.config_json or "{}"
         try:
             cfg = json.loads(raw)

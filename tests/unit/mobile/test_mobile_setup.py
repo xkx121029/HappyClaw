@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from happyclaw.config import CapabilitiesConfig, MobileCapabilities, OctopConfig
+from happyclaw.config import CapabilitiesConfig, MobileCapabilities, HappyclawConfig
 from happyclaw.infra.control.mobile.setup import mobile_status
 
 
-def _cfg(**mobile: object) -> OctopConfig:
-    return OctopConfig(
+def _cfg(**mobile: object) -> HappyclawConfig:
+    return HappyclawConfig(
         capabilities=CapabilitiesConfig(
             mobile=MobileCapabilities(**mobile)  # type: ignore[arg-type]
         )

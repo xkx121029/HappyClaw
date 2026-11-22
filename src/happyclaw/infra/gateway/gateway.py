@@ -22,7 +22,7 @@ from happyclaw.i18n import channel_probe_incomplete, channel_runtime_reason, tr
 from happyclaw.infra.db.lease import LEASE_SECONDS, RECONCILE_SECONDS
 from happyclaw.infra.db.repos.channels import ChannelRow
 from happyclaw.infra.db.repos.sessions import SessionRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.cli import CLI_CHANNEL_ID, CliChannel, CliHub
 from happyclaw.infra.gateway.history_backfill import HistoryBackfillQueue
 from happyclaw.infra.gateway.process import media_backend_for_agent
@@ -407,7 +407,7 @@ class Gateway:
         existing = self._repos.channel_repo.get_by_agent_and_name(spec.agent_id, spec.name)
         if existing is not None:
             if existing.kind != str(spec.kind):
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.CHANNEL_NAME_TAKEN,
                     f"channel name {spec.name!r} already in use by kind {existing.kind!r}",
                 )
@@ -663,7 +663,7 @@ class Gateway:
         """
         row = self.get_channel(channel_id)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "channel not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "channel not found")
         return await self._probe_row(row, locale=locale)
 
     async def probe_config(
@@ -715,7 +715,7 @@ class Gateway:
             return {"ok": True}
         except ChannelCredentialsError as exc:
             return {"ok": False, "error": channel_probe_incomplete(exc.missing, locale)}
-        except OctopError as exc:
+        except HappyclawError as exc:
             return {"ok": False, "error": exc.localized_message(locale)}
         except Exception as exc:
             logger.exception("Channel probe failed for %s", row.channel_id)
@@ -893,12 +893,12 @@ class Gateway:
         try:
             raw = json.loads(row.config_json or "{}")
         except json.JSONDecodeError as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CHANNEL_INVALID_CREDENTIALS,
                 f"channel {row.channel_id} config is not valid JSON",
             ) from exc
         if not isinstance(raw, dict):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CHANNEL_INVALID_CREDENTIALS,
                 f"channel {row.channel_id} config must be a JSON object",
             )

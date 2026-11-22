@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 from weakref import WeakKeyDictionary
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.connectors import qcc
 from happyclaw.infra.connectors.builder import build_http_mcp_spec, mcp_server_name, new_internal_token
 from happyclaw.infra.connectors.catalog import get_catalog_entry, uses_internal_http_mcp
@@ -44,7 +44,7 @@ from happyclaw.infra.connectors.oauth import refresh_oauth_credentials
 from happyclaw.infra.connectors.oauth.registry import refresh_custom_mcp_oauth
 from happyclaw.infra.db.repos.connectors import ConnectorRepo, ConnectorRow
 from happyclaw.infra.db.repos.secrets import SecretRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 from happyclaw.infra.utils.ulid import new_ulid
 
@@ -84,7 +84,7 @@ class ConnectorService:
         repo: ConnectorRepo,
         secret_repo: SecretRepo,
         settings_repo: Any,
-        config: OctopConfig,
+        config: HappyclawConfig,
     ) -> None:
         self._repo = repo
         self._secret_repo = secret_repo
@@ -781,11 +781,11 @@ class ConnectorService:
         async with locks.setdefault(instance_id, asyncio.Lock()):
             inst = self._repo.get(instance_id)
             if inst is None:
-                raise OctopError.localized(ErrorCode.CONNECTOR_NOT_FOUND, locale)
+                raise HappyclawError.localized(ErrorCode.CONNECTOR_NOT_FOUND, locale)
             if inst.user_id != user_id:
-                raise OctopError.localized(ErrorCode.FORBIDDEN, locale)
+                raise HappyclawError.localized(ErrorCode.FORBIDDEN, locale)
             if inst.kind not in ("agently-cli", "dingtalk-cli"):
-                raise OctopError.localized(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, locale)
+                raise HappyclawError.localized(ErrorCode.CONNECTOR_KIND_UNSUPPORTED, locale)
             creds = self.decrypt(instance_id)
             creds.setdefault("instance_id", instance_id)
             result = await agently_auth.authorize(creds, action, kind=inst.kind, locale=locale)
@@ -853,16 +853,16 @@ class ConnectorService:
     ) -> tuple[ConnectorRow, dict[str, Any]]:
         inst = self._repo.get(instance_id)
         if inst is None:
-            raise OctopError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+            raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
         if inst.user_id != user_id:
-            raise OctopError(ErrorCode.FORBIDDEN, "not your connector instance")
+            raise HappyclawError(ErrorCode.FORBIDDEN, "not your connector instance")
         if inst.kind != "feishu-cli":
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_KIND_UNSUPPORTED,
                 "only feishu-cli supports user device login",
             )
         if not inst.has_credentials:
-            raise OctopError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "missing credentials")
+            raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "missing credentials")
         return inst, dict(self.decrypt(instance_id))
 
     async def start_feishu_user_auth_for_instance(
@@ -873,7 +873,7 @@ class ConnectorService:
         app_id = str(creds.get("app_id") or "").strip()
         app_secret = str(creds.get("app_secret") or "").strip()
         if not app_id or not app_secret:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
                 "stored Feishu app credentials incomplete",
                 details={"reason": "stored Feishu app credentials incomplete"},
@@ -911,7 +911,7 @@ class ConnectorService:
             creds["cli_config_key"] = override
         cli_key = resolve_cli_config_key(creds)
         if not app_id or not app_secret or not device_code:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CONNECTOR_INVALID_CREDENTIALS,
                 "incomplete Feishu user auth payload",
                 details={"reason": "incomplete Feishu user auth payload"},

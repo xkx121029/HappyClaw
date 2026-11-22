@@ -11,7 +11,7 @@ import click
 
 from happyclaw.cli.support.acting import resolve_cli_acting_user_id
 from happyclaw.cli.support.ctx import require_agent
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 @click.group()
@@ -22,7 +22,7 @@ def channel() -> None:
 def _resolve_user(agent_id: str, as_user: str | None) -> int:
     try:
         return resolve_cli_acting_user_id(agent_id, as_user)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
 
 
@@ -78,11 +78,11 @@ def get_channel(agent_id: str | None, channel_id: str, as_user: str | None) -> N
     aid = require_agent(agent_id)
     _resolve_user(aid, as_user)
     from happyclaw.cli.support.offline_ops import get_channel_offline
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     try:
         row = get_channel_offline(aid, channel_id)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     cfg = row.get("config") or {}
     secret_keys = {"bot_token", "secret", "app_secret", "client_secret", "token"}
@@ -109,7 +109,7 @@ def create(
     aid = require_agent(agent_id)
     user_id = _resolve_user(aid, as_user)
     from happyclaw.cli.support.offline_ops import create_channel_offline
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     try:
         data = create_channel_offline(
@@ -119,7 +119,7 @@ def create(
             name=name or kind,
             config=_parse_json_object("config", config_json),
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(_json.dumps(data, indent=2))
 
@@ -147,7 +147,7 @@ def patch_channel(
             "nothing to patch; pass --name, --enabled/--disabled, or --config"
         )
     from happyclaw.cli.support.offline_ops import patch_channel_offline
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     config = _parse_json_object("config", config_json) if config_json is not None else None
     try:
@@ -158,7 +158,7 @@ def patch_channel(
             config=config,
             enabled=enabled,
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(_json.dumps(data, indent=2))
 
@@ -172,11 +172,11 @@ def delete(agent_id: str | None, channel_id: str, as_user: str | None) -> None:
     aid = require_agent(agent_id)
     _resolve_user(aid, as_user)
     from happyclaw.cli.support.offline_ops import delete_channel_offline
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     try:
         delete_channel_offline(aid, channel_id)
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo("deleted")
 
@@ -189,13 +189,13 @@ def test(agent_id: str | None, channel_id: str, as_user: str | None) -> None:
     """Probe a channel: instantiate, start(), then stop()."""
     from happyclaw.cli.support.db import resolve_cli_locale
     from happyclaw.cli.support.embedded_ops import test_channel
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     aid = require_agent(agent_id)
     _resolve_user(aid, as_user)
     try:
         body = test_channel(aid, channel_id, locale=resolve_cli_locale())
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     if body.get("ok"):
         click.echo("ok")
@@ -277,7 +277,7 @@ def bind_qq(agent_id: str | None, channel_id: str | None, as_user: str | None) -
                 name="qq",
                 config=cfg,
             )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(_json.dumps(row, indent=2))
 
@@ -336,7 +336,7 @@ def bind_wecom(agent_id: str | None, channel_id: str | None, as_user: str | None
                 name="wecom",
                 config=cfg,
             )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(_json.dumps(row, indent=2))
 
@@ -402,7 +402,7 @@ def bind_weixin(agent_id: str | None, channel_id: str | None, as_user: str | Non
                 name="weixin",
                 config=cfg,
             )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(click.style("WeChat account linked.", fg="green"))
     click.echo(_json.dumps(row, indent=2))
@@ -418,7 +418,7 @@ def config_channels(agent_id: str | None, as_user: str | None) -> None:
     aid = require_agent(agent_id)
     user_id = _resolve_user(aid, as_user)
     from happyclaw.cli.support.offline_ops import create_channel_offline, patch_channel_offline
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     kinds = ["feishu", "wecom", "weixin", "qq", "dingtalk", "telegram", "yuanbao"]
     kind = _prompts.select("Channel kind:", choices=kinds)
@@ -431,7 +431,7 @@ def config_channels(agent_id: str | None, as_user: str | None) -> None:
             name=name,
             config={"enabled": False},
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     cid = row.get("id") or row.get("channel_id")
     click.echo(f"Created channel {cid} ({kind})")
@@ -501,7 +501,7 @@ def config_channels(agent_id: str | None, as_user: str | None) -> None:
             config=cfg,
             enabled=bool(cfg.get("enabled", True)),
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo("Channel configured.")
 
@@ -524,7 +524,7 @@ def feishu_setup(
     """Run Feishu scan-to-create (lark-oapi QR) and save app credentials."""
     from happyclaw.cli.support.feishu_creator import dry_run_feishu_setup, run_feishu_bot_creator
     from happyclaw.cli.support.offline_ops import create_channel_offline, patch_channel_offline
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     aid = require_agent(agent_id)
     user_id = _resolve_user(aid, as_user)
@@ -565,7 +565,7 @@ def feishu_setup(
                 name="feishu",
                 config=cfg,
             )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     click.echo(click.style("Feishu channel configured.", fg="green"))
     click.echo(_json.dumps(row, indent=2))

@@ -665,7 +665,7 @@ Every non-2xx JSON response uses:
 ```
 
 `code` matches the `ErrorCode` enum in `happyclaw.infra.errors`; the
-server-localized `message` is rendered by `OctopError.to_envelope`
+server-localized `message` is rendered by `HappyclawError.to_envelope`
 with the locale from `Accept-Language` (falling back to `en`). The
 dashboard mirrors every code under `apiErrors.*` in
 `dashboard/src/locales/{en,zh}.json`.

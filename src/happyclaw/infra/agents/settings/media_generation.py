@@ -14,7 +14,7 @@ import httpx
 from happyclaw.infra.connectors.crypto import decrypt_credentials, encrypt_credentials
 from happyclaw.infra.db.repos.secrets import SecretRepo
 from happyclaw.infra.db.repos.settings import SettingsRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 if TYPE_CHECKING:
     from happyclaw_harness import MediaGenerationConfig
@@ -181,8 +181,8 @@ def _stored_bool(settings: SettingsRepo, key: str, *, default: bool) -> bool:
     return raw.lower() in {"1", "true", "yes"}
 
 
-def _bad_args(message: str) -> OctopError:
-    return OctopError(ErrorCode.SLASH_BAD_ARGS, message)
+def _bad_args(message: str) -> HappyclawError:
+    return HappyclawError(ErrorCode.SLASH_BAD_ARGS, message)
 
 
 def _normalized_update(item: MediaProviderUpdate) -> MediaProviderUpdate:

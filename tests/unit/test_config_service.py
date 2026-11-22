@@ -53,10 +53,10 @@ def test_reload_picks_up_changes(tmp_path: Path) -> None:
 
 
 def test_preloaded_avoids_file_read(tmp_path: Path) -> None:
-    from happyclaw.config import BackupConfig, OctopConfig
+    from happyclaw.config import BackupConfig, HappyclawConfig
 
     cfg_path = tmp_path / "does-not-exist.json"
-    preloaded = OctopConfig(
+    preloaded = HappyclawConfig(
         backup=BackupConfig(auto_enabled=True),
         default_timezone="UTC",
     )

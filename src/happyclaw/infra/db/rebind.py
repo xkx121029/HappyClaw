@@ -7,15 +7,15 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from happyclaw.config import DatabaseConfig, OctopConfig, load_config, parse_database_config
+from happyclaw.config import DatabaseConfig, HappyclawConfig, load_config, parse_database_config
 from happyclaw.infra.db.factory import open_database
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.services import build_shared_services
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 
 if TYPE_CHECKING:
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +27,12 @@ def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
     tmp.replace(path)
 
 
-def persist_database_config(config_path: Path, db_config: DatabaseConfig) -> OctopConfig:
+def persist_database_config(config_path: Path, db_config: DatabaseConfig) -> HappyclawConfig:
     """Merge ``database`` into ``config.json`` and return the reloaded config."""
     if config_path.exists():
         raw = json.loads(config_path.read_text(encoding="utf-8"))
         if not isinstance(raw, dict):
-            raise OctopError(ErrorCode.INTERNAL_ERROR, "config.json must be a JSON object")
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, "config.json must be a JSON object")
     else:
         raw = {}
 
@@ -88,14 +88,14 @@ def assert_control_plane_database_empty(db_config: DatabaseConfig, paths: PathLa
     from happyclaw.infra.db.probe import control_plane_user_count
 
     if control_plane_user_count(db_config, paths) != 0:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.DATABASE_NOT_EMPTY,
             "target database already has users",
             status=409,
         )
 
 
-def rebind_control_plane(server: OctopServer, *, adopt_existing: bool = False) -> None:
+def rebind_control_plane(server: HappyclawServer, *, adopt_existing: bool = False) -> None:
     """Close the current pool, open from config, migrate, and retarget runtime repos.
 
     Only allowed while the current install has ``user_count == 0`` (first-run
@@ -104,9 +104,9 @@ def rebind_control_plane(server: OctopServer, *, adopt_existing: bool = False) -
     another admin.
     """
     if server.user_manager is None or server.services is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "server not started")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "server not started")
     if server.user_manager.count() != 0:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SETUP_REQUIRED,
             "cannot change database after setup has users",
             status=410,
@@ -121,7 +121,7 @@ def rebind_control_plane(server: OctopServer, *, adopt_existing: bool = False) -
             n = int(conn.execute("SELECT COUNT(*) FROM users").fetchone()[0])
         allow_existing = adopt_existing and config.database.is_postgresql
         if n != 0 and not allow_existing:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.DATABASE_NOT_EMPTY,
                 "target database already has users",
                 status=409,

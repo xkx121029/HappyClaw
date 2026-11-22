@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from mcp.shared.version import SUPPORTED_PROTOCOL_VERSIONS
 
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 if TYPE_CHECKING:
     from happyclaw.infra.agent_mcp.service import AgentMcpGatewayService
@@ -156,7 +156,7 @@ async def handle_agent_mcp_request(
                 {"error": f"unknown tool: {name}"},
                 is_error=True,
             )
-    except (OctopError, ValueError) as exc:
+    except (HappyclawError, ValueError) as exc:
         return _tool_result(request_id, {"error": str(exc)}, is_error=True)
     except Exception:
         logger.exception("agent MCP tool %s failed", name)

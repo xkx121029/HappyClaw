@@ -11,13 +11,13 @@ from tests.support.auth import TEST_PASSWORD, bootstrap_admin
 
 from happyclaw.api.app import build_app
 from happyclaw.infra.auth.mfa.service import MfaService
-from happyclaw.infra.errors import ErrorCode, OctopError
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.server import HappyclawServer
 
 
 @pytest.fixture()
 async def env(tmp_path: Path):
-    server = OctopServer(home=tmp_path)
+    server = HappyclawServer(home=tmp_path)
     await server.start()
     await ensure_control_plane_bound(server)
     app = build_app(server)
@@ -79,6 +79,6 @@ async def test_recovery_refused_without_verified_factor(env) -> None:
     user = server.services.owner.owner()
     mfa = MfaService(server.services)
     assert not mfa.has_verified_factor(user.id)
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         mfa.recovery_regenerate(user, reauth_token="not-a-token")
     assert ei.value.code in {ErrorCode.MFA_REAUTH_REQUIRED, ErrorCode.MFA_INVALID}

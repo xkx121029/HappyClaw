@@ -1,4 +1,4 @@
-"""``errors.*`` — API / OctopError messages."""
+"""``errors.*`` — API / HappyclawError messages."""
 
 from __future__ import annotations
 

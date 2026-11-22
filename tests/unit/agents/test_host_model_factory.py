@@ -9,7 +9,7 @@ from happyclaw_harness.config import ModelConfig, ProviderConfig
 from happyclaw_harness.llm.factory import ChatModelFactory
 
 from happyclaw.infra.agents.providers.host_factory import HostModelFactory
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def _provider(provider_id: str, *model_ids: str, disabled: str = "") -> ProviderConfig:
@@ -71,7 +71,7 @@ def test_explicit_ref_is_forwarded(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_auto_alias_and_missing_factory() -> None:
     host = HostModelFactory()
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         host.get("auto")
     assert exc.value.code == ErrorCode.INTERNAL_ERROR
     assert exc.value.message == "model factory unavailable"
@@ -80,7 +80,7 @@ def test_auto_alias_and_missing_factory() -> None:
 def test_unknown_ref_is_rejected() -> None:
     host = HostModelFactory()
     host.sync([_provider("openai", "gpt-4o")])
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         host.get("other/model")
     assert exc.value.message == "model unavailable for text assist"
     host.close()
@@ -91,6 +91,6 @@ def test_sync_drop_closes_factory(monkeypatch: pytest.MonkeyPatch) -> None:
     host = HostModelFactory()
     host.sync([_provider("openai", "gpt-4o")])
     host.sync([])
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         host.get("auto")
     assert exc.value.code == ErrorCode.INTERNAL_ERROR

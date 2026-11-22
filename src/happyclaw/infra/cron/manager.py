@@ -31,7 +31,7 @@ from happyclaw.infra.cron.trigger import (
 )
 from happyclaw.infra.db.lease import LEASE_SECONDS, RECONCILE_SECONDS, RENEW_SECONDS
 from happyclaw.infra.db.repos.audit import ACTOR_SYSTEM
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.threads import ThreadRegistry
 from happyclaw.infra.utils.locale import resolve_user_locale
 
@@ -252,7 +252,7 @@ class CronManager:
         async with self._lock:
             existing = self._repos.cron_repo.get(cron_id)
             if existing is None:
-                raise OctopError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
+                raise HappyclawError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
             trigger_changed = trigger is not None and trigger != existing.trigger
             enabled_changed = enabled_bool is not None and enabled_bool != bool(existing.enabled)
             # Validate a new trigger, or a mailbox, before persisting. Echoing the
@@ -282,7 +282,7 @@ class CronManager:
             self._repos.cron_repo.update(cron_id, **repo_kwargs)
             row = self._repos.cron_repo.get(cron_id)
             if row is None:
-                raise OctopError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
+                raise HappyclawError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
             if self._schedule_needs_rebuild(
                 existing,
                 row,
@@ -294,7 +294,7 @@ class CronManager:
                     self._schedule(row)
                     row = self._repos.cron_repo.get(cron_id)
                     if row is None:
-                        raise OctopError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
+                        raise HappyclawError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
             logger.info("CronJob %s updated", cron_id)
             return row
 
@@ -334,7 +334,7 @@ class CronManager:
         """Trigger a run; embedded callers wait for bookkeeping and receive failures."""
         row = self._repos.cron_repo.get(cron_id)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"cron job {cron_id!r} not found")
         logger.info("CronJob %s triggered manually", cron_id)
         if wait:
             await self._run_user_job(cron_id, raise_on_error=True, force=True)
@@ -356,7 +356,7 @@ class CronManager:
         )
         if claimed is None:
             if raise_on_error and self._repos.cron_repo.get(cron_id) is not None:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.CRON_ALREADY_RUNNING,
                     f"cron job {cron_id!r} is already running",
                 )
@@ -407,7 +407,7 @@ class CronManager:
                     await run_task
                 logger.warning("CronJob %s lost its run lease", row.cron_id)
                 if raise_on_error:
-                    raise OctopError(
+                    raise HappyclawError(
                         ErrorCode.CRON_ALREADY_RUNNING,
                         f"cron job {row.cron_id!r} lost its run lease",
                     )
@@ -468,7 +468,7 @@ class CronManager:
         try:
             trigger = build_trigger(row.trigger, timezone=self._timezone)
             source = self._mail_source(row.trigger, row.user_id)
-        except OctopError:
+        except HappyclawError:
             logger.warning(
                 "CronJob %s has invalid trigger %r; skipping schedule",
                 row.cron_id,
@@ -545,13 +545,13 @@ class CronManager:
             or source.status != "active"
             or not source.has_credentials
         ):
-            raise OctopError(ErrorCode.CRON_TRIGGER_INVALID, "Agent Mail source is unavailable")
+            raise HappyclawError(ErrorCode.CRON_TRIGGER_INVALID, "Agent Mail source is unavailable")
         if source.user_id != user_id and not source.shared:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN, "Agent Mail source is not visible to the job owner"
             )
         if not self._mailbox_authorized(source):
-            raise OctopError(ErrorCode.CRON_TRIGGER_INVALID, "Agent Mail mailbox is not authorized")
+            raise HappyclawError(ErrorCode.CRON_TRIGGER_INVALID, "Agent Mail mailbox is not authorized")
         return source
 
     async def _run_mail_event(self, cron_id: str, message_id: str) -> None:
@@ -655,7 +655,7 @@ class CronManager:
         """Register a process-level job that is not stored in the cron DB."""
         built = build_trigger(trigger, timezone=self._timezone)
         if isinstance(built, AgentlyMailTrigger):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.CRON_TRIGGER_INVALID, "system jobs cannot use Agent Mail triggers"
             )
         self._system_job_ids.add(job_id)

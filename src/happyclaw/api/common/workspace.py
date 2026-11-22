@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
 from happyclaw.api.common.agent import require_agent_owner_row, require_agent_row
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 if TYPE_CHECKING:
     from happyclaw_harness import HarnessAgent
@@ -55,7 +55,7 @@ async def require_running_workspace(
     row = checker(agent_id, user=user, as_user=as_user, server=server)
     try:
         return require_running_agent(server, agent_id).workspace
-    except OctopError as exc:
+    except HappyclawError as exc:
         if exc.code is not ErrorCode.AGENT_NOT_RUNNING:
             raise
         state = str(getattr(row, "last_state", "") or "").strip().lower()
@@ -87,7 +87,7 @@ async def require_agent_workspace(
     assert server.app_runtime is not None
     workspace = server.app_runtime.agent_registry.workspace_for_agent(agent_id)
     if workspace is None:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     return cast("BackendWorkspace", workspace)
 
 

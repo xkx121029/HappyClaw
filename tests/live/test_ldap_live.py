@@ -29,13 +29,13 @@ from tests.support.app import octop_client
 from tests.support.auth import bootstrap_admin
 from tests.support.secrets import optional_env, require_env
 
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 
 pytestmark = pytest.mark.live
 
 
 @pytest.fixture
-async def client(tmp_octop_home: Path) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer]]:
+async def client(tmp_octop_home: Path) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer]]:
     async with octop_client(tmp_octop_home) as (http, srv):
         await bootstrap_admin(http, tmp_octop_home)
         yield http, srv

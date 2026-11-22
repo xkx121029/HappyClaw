@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from happyclaw.api.deps import current_user
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.browser_media import user_browser_profile
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ async def resolve_harness_session(
         from happyclaw_browser import BrowserSession
         from happyclaw_browser.tool_interface import _registry
     except ImportError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             "happyclaw-browser not installed",
             status=503,
@@ -98,7 +98,7 @@ async def resolve_harness_session(
     if not hint or hint == "auto":
         if not create:
             return None
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "browser profile is required")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "browser profile is required")
 
     cached = _registry.get(hint)
     if cached is not None:
@@ -119,7 +119,7 @@ async def resolve_harness_session(
     from happyclaw.infra.control.browser.bundled import browser_enabled  # noqa: PLC0415
 
     if not browser_enabled():
-        raise OctopError(ErrorCode.BROWSER_NOT_ENABLED, "The browser is installed but not enabled.")
+        raise HappyclawError(ErrorCode.BROWSER_NOT_ENABLED, "The browser is installed but not enabled.")
 
     profile = hint
     harness_settings = None
@@ -190,13 +190,13 @@ async def resolve_harness_session(
                     profile_manager=profile_manager,
                 )
             except Exception as retry_exc:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.INTERNAL_ERROR,
                     f"failed to attach browser profile {profile!r}: {retry_exc}",
                     status=503,
                 ) from retry_exc
         else:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.INTERNAL_ERROR,
                 f"failed to attach browser profile {profile!r}: {exc}",
                 status=503,
@@ -318,7 +318,7 @@ async def handoff(
         logger.debug("handoff path %r ignored; using %r", session_id, profile)
     target = body.target
     if target not in ("agent", "user"):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "target must be 'agent' or 'user'")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "target must be 'agent' or 'user'")
     _CONTROL_OWNERS[profile] = target
 
     payload = await harness_sessions_payload(profile)
@@ -353,7 +353,7 @@ async def shutdown_browser(user: Any = Depends(current_user)) -> dict[str, Any]:
     try:
         from happyclaw_browser.tool_interface import browser_tool
     except ImportError as exc:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             "happyclaw-browser not installed",
             status=503,
@@ -364,7 +364,7 @@ async def shutdown_browser(user: Any = Depends(current_user)) -> dict[str, Any]:
     result = await browser_tool(action="close_session", profile=hint, kill=True)
     _CONTROL_OWNERS.pop(hint, None)
     if not result.success:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.INTERNAL_ERROR,
             result.error or f"failed to stop browser profile {hint!r}",
             status=503,

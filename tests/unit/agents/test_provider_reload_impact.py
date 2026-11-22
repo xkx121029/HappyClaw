@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock
 import pytest
 from tests.support.harness import build_harness_manager_mock
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentManager
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
@@ -23,7 +23,7 @@ from happyclaw.infra.utils.paths import PathLayout
 def _make_services(tmp_path: Path):
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
     services.provider_repo.create(
         name="test-openai",
         kind="openai",

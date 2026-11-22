@@ -5,7 +5,7 @@ from __future__ import annotations
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 _HASHER = PasswordHasher()
 
@@ -46,25 +46,25 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def validate_password_policy(password: str, *, old_password: str | None = None) -> None:
-    """Raise ``OctopError`` when ``password`` is too weak or equals ``old_password``.
+    """Raise ``HappyclawError`` when ``password`` is too weak or equals ``old_password``.
 
     Rules: at least ``MIN_PASSWORD_LENGTH`` chars, include a letter and a digit,
     not in a small common-password denylist, and not identical to the current password
     when ``old_password`` is provided.
     """
     if old_password is not None and password == old_password:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PASSWORD_SAME_AS_OLD,
             "new password must differ from current password",
         )
     if len(password) < MIN_PASSWORD_LENGTH:
-        raise OctopError(ErrorCode.PASSWORD_TOO_WEAK, "password too short")
+        raise HappyclawError(ErrorCode.PASSWORD_TOO_WEAK, "password too short")
     has_letter = any(c.isalpha() for c in password)
     has_digit = any(c.isdigit() for c in password)
     if not (has_letter and has_digit):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.PASSWORD_TOO_WEAK,
             "password must include letters and digits",
         )
     if password.lower() in _COMMON_PASSWORDS:
-        raise OctopError(ErrorCode.PASSWORD_TOO_WEAK, "password is too common")
+        raise HappyclawError(ErrorCode.PASSWORD_TOO_WEAK, "password is too common")

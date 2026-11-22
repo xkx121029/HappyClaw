@@ -26,7 +26,7 @@ from happyclaw.infra.control.desktop.session import (
     supersede_user_stream,
 )
 from happyclaw.infra.control.desktop.setup import desktop_status
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import User
 from happyclaw.infra.users.permissions import user_has_permission
 from happyclaw.infra.utils.locale import resolve_request_locale
@@ -129,7 +129,7 @@ async def _stream_loop(
             if miss_streak == 1:
                 logger.warning("desktop capture returned no frame (display=%s)", session.display)
             if miss_streak >= 30:
-                err = OctopError.localized(ErrorCode.DESKTOP_CAPTURE_FAILED, locale)
+                err = HappyclawError.localized(ErrorCode.DESKTOP_CAPTURE_FAILED, locale)
                 await _send_json(
                     ws,
                     {
@@ -299,7 +299,7 @@ async def desktop_stream_ws(
                 monitor=monitor,
             )
         except DesktopSessionLimitError as exc:
-            err = OctopError.localized(
+            err = HappyclawError.localized(
                 ErrorCode.DESKTOP_SESSION_LIMIT,
                 locale,
                 details={"limit": exc.limit},

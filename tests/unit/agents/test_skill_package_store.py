@@ -9,7 +9,7 @@ import pytest
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.skill_packages import SkillPackageRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 from happyclaw.infra.users.identity import Role, User
 
@@ -100,7 +100,7 @@ def test_skill_validation_errors_are_mapped_to_octop_errors(
 ) -> None:
     row = store.create(name="P", description="", created_by="42")
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         if method == "write_skill":
             assert files is not None
             store.write_skill(row.id, slug, files)
@@ -204,7 +204,7 @@ def test_assert_can_mutate_allows_creator_and_admin_only(
     store.assert_can_mutate(row, creator)
     store.assert_can_mutate(row, admin)
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         store.assert_can_mutate(row, other)
     assert exc_info.value.code is ErrorCode.FORBIDDEN
 
@@ -238,7 +238,7 @@ def test_list_skill_tree_and_read_file(store: SkillPackageStore) -> None:
     assert store.read_skill_file_text(row.id, "pdf", "notes.txt") == "hello"
     assert store.read_skill_file_bytes(row.id, "pdf", "references/guide.md") == b"# Guide"
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         store.list_skill_tree(row.id, "pdf", "../escape")
     assert exc_info.value.code is ErrorCode.SLASH_BAD_ARGS
 

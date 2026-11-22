@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 import httpx
 
 from happyclaw.infra.bridge.tunnel_policy import is_tunnel_path_allowed
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ async def execute_local_http(
 ) -> dict[str, Any]:
     """Run ``method path`` against the local FastAPI app as ``access_token``."""
     if not is_tunnel_path_allowed(method, path):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.BRIDGE_REMOTE_UNSUPPORTED,
             "This action is not available through the remote bridge. Manage it on the peer HappyClaw.",
         )

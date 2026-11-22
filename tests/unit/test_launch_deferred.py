@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 
 
 @pytest.mark.asyncio
@@ -24,7 +24,7 @@ async def test_deferred_start_exposes_config_for_listen(tmp_octop_home: Path, mo
         return original_probe(path)
 
     monkeypatch.setattr(config_probe, "ensure_mobile_capabilities_probed", probe)
-    srv = OctopServer(home=tmp_octop_home)
+    srv = HappyclawServer(home=tmp_octop_home)
     await srv.start()
     try:
         # Single-user boot always binds SQLite, so services exist right away.

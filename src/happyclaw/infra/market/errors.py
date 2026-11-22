@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 class PortalMarketError(RuntimeError):
@@ -22,7 +22,7 @@ class PortalMarketError(RuntimeError):
         self.network = network
 
 
-def local_network_error(exc: PortalMarketError) -> OctopError | None:
+def local_network_error(exc: PortalMarketError) -> HappyclawError | None:
     """Network error only when this host could not reach the catalog.
 
     Every other catalog failure returns ``None`` so the caller keeps the
@@ -30,4 +30,4 @@ def local_network_error(exc: PortalMarketError) -> OctopError | None:
     """
     if not exc.network:
         return None
-    return OctopError(ErrorCode.NETWORK_ERROR, "market request failed: network error")
+    return HappyclawError(ErrorCode.NETWORK_ERROR, "market request failed: network error")

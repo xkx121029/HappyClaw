@@ -20,7 +20,7 @@ from typing import Any
 
 import click
 
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 @click.group()
@@ -95,7 +95,7 @@ def import_tccli(profile: str, as_user: str | None, as_json: bool, quiet: bool) 
 
     try:
         uid = resolve_cli_acting_user_id(None, as_user)
-    except OctopError as exc:
+    except HappyclawError as exc:
         # Unattended call (skill script after an OAuth login): fall back to the
         # first admin instead of failing the sync.
         fallback = _first_admin_id() if as_user is None else None

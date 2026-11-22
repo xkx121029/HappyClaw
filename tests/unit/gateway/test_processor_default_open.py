@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.process.processor import GlobalProcessor
 from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
 
@@ -325,7 +325,7 @@ async def test_resolve_turn_mcp_servers_raises_when_prepare_fails() -> None:
         gateway=None,
     )
 
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await processor._resolve_turn_mcp_servers(
             agent_id="a1",
             user_id=1,

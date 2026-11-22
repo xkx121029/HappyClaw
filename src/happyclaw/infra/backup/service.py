@@ -225,15 +225,15 @@ class BackupService:
 
     def import_backup(self, filename: str, raw: bytes) -> BackupFileInfo:
         if len(raw) > _MAX_IMPORT_BYTES:
-            from happyclaw.infra.errors import ErrorCode, OctopError
+            from happyclaw.infra.errors import ErrorCode, HappyclawError
 
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS, "backup archive too large (max 512MB)"
             )
         if not raw:
-            from happyclaw.infra.errors import ErrorCode, OctopError
+            from happyclaw.infra.errors import ErrorCode, HappyclawError
 
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "empty backup archive")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "empty backup archive")
         safe = normalize_backup_filename(filename)
         return write_backup_file(self._paths, safe, raw)
 

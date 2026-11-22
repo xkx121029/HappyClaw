@@ -14,8 +14,8 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTex
 
 from happyclaw.api.middleware.jwt_auth import install as install_jwt_auth
 from happyclaw.api.openapi_meta import API_DESCRIPTION, OPENAPI_TAGS, configure_openapi
-from happyclaw.infra.errors import ErrorCode, OctopError
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.server import HappyclawServer
 from happyclaw.infra.utils.locale import resolve_request_locale
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ def _retired_multi_user_router() -> Any:
 
     async def retired_multi_user_endpoint(rest: str = "") -> None:
         _ = rest
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.NOT_FOUND,
             "this endpoint was removed in single-user mode",
         )
@@ -168,13 +168,13 @@ def _mount_routers(app: FastAPI, mounts: Sequence[_RouterMount]) -> None:
 
 
 def _install_exception_handlers(app: FastAPI) -> None:
-    @app.exception_handler(OctopError)
-    async def _octop(request: Request, exc: OctopError) -> JSONResponse:
+    @app.exception_handler(HappyclawError)
+    async def _octop(request: Request, exc: HappyclawError) -> JSONResponse:
         # Client responses are locale-localized; log the original English message
         # so INTERNAL_ERROR (and other 5xx) remain diagnosable in ~/.octop/logs.
         if exc.status >= 500:
             logger.error(
-                "OctopError %s in %s: %s",
+                "HappyclawError %s in %s: %s",
                 exc.code.value,
                 request.url.path,
                 exc.message,
@@ -187,11 +187,11 @@ def _install_exception_handlers(app: FastAPI) -> None:
     async def _unhandled(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("unhandled exception in %s", request.url.path)
         locale = resolve_request_locale(request)
-        err = OctopError.localized(ErrorCode.INTERNAL_ERROR, locale)
+        err = HappyclawError.localized(ErrorCode.INTERNAL_ERROR, locale)
         return JSONResponse(status_code=err.status, content=err.to_envelope())
 
 
-def build_app(server: OctopServer, *, defer_heavy: bool = False) -> FastAPI:
+def build_app(server: HappyclawServer, *, defer_heavy: bool = False) -> FastAPI:
     """Build the FastAPI app.
 
     ``defer_heavy=True`` mounts only the routes needed for the first dashboard
@@ -336,7 +336,7 @@ def build_app(server: OctopServer, *, defer_heavy: bool = False) -> FastAPI:
     return app
 
 
-def bind_bridge_asgi(app: FastAPI, server: OctopServer) -> None:
+def bind_bridge_asgi(app: FastAPI, server: HappyclawServer) -> None:
     """Attach the bridge peer ASGI app once the runtime exists (no-op before)."""
     runtime = server.app_runtime
     if runtime is None or runtime.bridge_manager is None:

@@ -11,7 +11,7 @@ from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.secrets import SecretRepo
 from happyclaw.infra.db.repos.settings import SettingsRepo
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 @pytest.fixture
@@ -187,7 +187,7 @@ def test_decision_settings_keeps_every_service(store: DecisionSettingsStore) -> 
 
 
 def test_decision_settings_requires_endpoint_and_model(store: DecisionSettingsStore) -> None:
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         store.save(
             enabled=True,
             provider="jev",
@@ -199,7 +199,7 @@ def test_decision_settings_requires_endpoint_and_model(store: DecisionSettingsSt
             threshold=0.6,
             tool_min_count=8,
         )
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         store.save(
             enabled=True,
             provider="jev",

@@ -15,7 +15,7 @@ from happyclaw.infra.backup.auto import (
     persist_backup_config,
     to_auto_backup_filename,
 )
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 def test_to_auto_backup_filename() -> None:
@@ -30,12 +30,12 @@ def test_to_auto_backup_filename() -> None:
 
 
 def test_backup_config_from_payload_rejects_bad_schedule() -> None:
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         backup_config_from_payload({"schedule": "not-a-trigger", "retention_count": 3})
 
 
 def test_backup_config_from_payload_rejects_bad_retention() -> None:
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         backup_config_from_payload({"schedule": "cron:0 4 * * *", "retention_count": 0})
 
 

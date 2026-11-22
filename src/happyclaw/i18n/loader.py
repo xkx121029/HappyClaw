@@ -25,7 +25,7 @@ def _resolve_node(table: dict[str, Any], key: str) -> str | None:
 def _load_all() -> dict[Locale, dict[str, Any]]:
     out: dict[Locale, dict[str, Any]] = {}
     for loc in ("en", "zh"):
-        raw = resources.files("octop.i18n").joinpath(f"{loc}.json").read_text(encoding="utf-8")
+        raw = resources.files("happyclaw.i18n").joinpath(f"{loc}.json").read_text(encoding="utf-8")
         out[loc] = json.loads(raw)
     return out
 

@@ -38,10 +38,10 @@ def test_root_help_lists_bridge() -> None:
 
 def test_bridge_list_requires_user(monkeypatch: Any) -> None:
     import happyclaw.cli.commands.bridge as bridge_cmd
-    from happyclaw.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     def _missing(*_a: Any, **_k: Any) -> int:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.NOT_FOUND,
             "user required (--user, CLI default_user, or agent with an owner)",
         )
@@ -239,12 +239,12 @@ def test_list_bridge_connections_reads_local_db(tmp_octop_home: Path, monkeypatc
 def test_bridge_get_missing_fails(monkeypatch: Any) -> None:
     import happyclaw.cli.commands.bridge as bridge_cmd
     from happyclaw.cli.support import embedded_ops as ops
-    from happyclaw.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     monkeypatch.setattr(bridge_cmd, "resolve_cli_acting_user_id", lambda *_a, **_k: 1)
 
     def _missing(*_a: Any, **_k: Any) -> dict[str, Any]:
-        raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+        raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
 
     monkeypatch.setattr(ops, "get_bridge_connection", _missing)
     runner = CliRunner()

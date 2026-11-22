@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.setup.tls.listeners import TLS_HTTP_PORT, TLS_HTTPS_PORT
 
 
@@ -18,7 +18,7 @@ def normalize_domain(domain: str) -> str:
     return domain.strip().lower().rstrip(".")
 
 
-def tls_issue_mode(config: OctopConfig) -> TlsIssueMode:
+def tls_issue_mode(config: HappyclawConfig) -> TlsIssueMode:
     if config.bind_host != "0.0.0.0":
         return TlsIssueMode.NONE
     if (
@@ -32,15 +32,15 @@ def tls_issue_mode(config: OctopConfig) -> TlsIssueMode:
     return TlsIssueMode.NONE
 
 
-def is_issue_eligible(config: OctopConfig) -> bool:
+def is_issue_eligible(config: HappyclawConfig) -> bool:
     return tls_issue_mode(config) != TlsIssueMode.NONE
 
 
-def is_renewal_mode(config: OctopConfig) -> bool:
+def is_renewal_mode(config: HappyclawConfig) -> bool:
     return tls_issue_mode(config) == TlsIssueMode.RENEWAL
 
 
-def validate_issue_domain(domain: str, config: OctopConfig) -> str:
+def validate_issue_domain(domain: str, config: HappyclawConfig) -> str:
     """Return normalized domain; raise ValueError when renewal domain mismatches."""
     normalized = normalize_domain(domain)
     if not normalized:

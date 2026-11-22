@@ -15,7 +15,7 @@ except ImportError:  # pragma: no cover - optional PostgreSQL driver
 
 from happyclaw.infra.db.file_store import SKILL_PACKAGE_FILES, open_postgres_files
 from happyclaw.infra.db.repos.skill_packages import SkillPackageRepo, SkillPackageRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.skills.blob_mirror import SkillPackageBlobMirror
 from happyclaw.infra.skills.presentation import apply_skill_presentation
 from happyclaw.infra.skills.skill_packages import (
@@ -52,7 +52,7 @@ def is_skill_package_name_conflict(exc: BaseException) -> bool:
 
 
 def raise_skill_package_name_taken(name: str) -> None:
-    raise OctopError.localized(
+    raise HappyclawError.localized(
         ErrorCode.SKILL_PACKAGE_NAME_TAKEN,
         name=name,
         details={"name": name},
@@ -192,7 +192,7 @@ class SkillPackageStore:
             safe_slug = validate_skill_slug(slug)
             normalized_files = normalize_skill_files(files)
         except SkillPackageError as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
         skill_dir = self.package_skills_dir(pack_id) / safe_slug
 
         shutil.rmtree(skill_dir, ignore_errors=True)
@@ -213,15 +213,15 @@ class SkillPackageStore:
         try:
             safe_slug = validate_skill_slug(slug)
         except SkillPackageError as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
         try:
             payload = content.encode("utf-8")
         except UnicodeEncodeError as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "SKILL.md must be UTF-8 text") from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "SKILL.md must be UTF-8 text") from exc
         skill_dir = self.package_skills_dir(pack_id) / safe_slug
         manifest = skill_dir / "SKILL.md"
         if not manifest.is_file():
-            raise OctopError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
         manifest.write_bytes(payload)
         self._persist_package(pack_id)
 
@@ -229,13 +229,13 @@ class SkillPackageStore:
         try:
             return validate_skill_slug(slug)
         except SkillPackageError as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
 
     def _skill_dir(self, pack_id: str, slug: str) -> Path:
         safe_slug = self._safe_slug(slug)
         skill_dir = self.package_skills_dir(pack_id) / safe_slug
         if not skill_dir.is_dir():
-            raise OctopError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"skill {slug!r} not found")
         return skill_dir
 
     def resolve_skill_entry(self, pack_id: str, slug: str, relative_path: str = "") -> Path:
@@ -253,18 +253,18 @@ class SkillPackageStore:
         try:
             normalized = PurePosixPath(text)
         except ValueError as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid path: {relative_path!r}") from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid path: {relative_path!r}") from exc
         if (
             normalized.is_absolute()
             or ".." in normalized.parts
             or (normalized.parts and normalized.parts[0].endswith(":"))
         ):
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"unsafe path: {relative_path!r}")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"unsafe path: {relative_path!r}")
         target = (skill_dir / Path(*normalized.parts)).resolve()
         try:
             target.relative_to(skill_dir.resolve())
         except ValueError as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"unsafe path: {relative_path!r}") from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"unsafe path: {relative_path!r}") from exc
         return target
 
     def list_skill_tree(
@@ -277,7 +277,7 @@ class SkillPackageStore:
         skill_dir = self._skill_dir(pack_id, slug)
         target = self.resolve_skill_entry(pack_id, slug, relative_path)
         if not target.is_dir() or target.is_symlink():
-            raise OctopError(ErrorCode.NOT_FOUND, f"cannot list {relative_path or '.'!r}")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot list {relative_path or '.'!r}")
         logical_root = f"skills/{skill_dir.name}"
         rows: list[dict[str, Any]] = []
         try:
@@ -286,7 +286,7 @@ class SkillPackageStore:
                 key=lambda p: (not p.is_dir(), p.name.lower()),
             )
         except OSError as exc:
-            raise OctopError(ErrorCode.NOT_FOUND, f"cannot list {relative_path or '.'!r}") from exc
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot list {relative_path or '.'!r}") from exc
         for entry in entries:
             try:
                 if entry.is_symlink():
@@ -307,31 +307,31 @@ class SkillPackageStore:
     def read_skill_file_text(self, pack_id: str, slug: str, relative_path: str) -> str:
         target = self.resolve_skill_entry(pack_id, slug, relative_path)
         if not target.is_file() or target.is_symlink():
-            raise OctopError(ErrorCode.NOT_FOUND, f"cannot read {relative_path!r}")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot read {relative_path!r}")
         try:
             return target.read_text(encoding="utf-8")
         except UnicodeDecodeError as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 f"file is not UTF-8 text: {relative_path!r}",
             ) from exc
         except OSError as exc:
-            raise OctopError(ErrorCode.NOT_FOUND, f"cannot read {relative_path!r}") from exc
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot read {relative_path!r}") from exc
 
     def read_skill_file_bytes(self, pack_id: str, slug: str, relative_path: str) -> bytes:
         target = self.resolve_skill_entry(pack_id, slug, relative_path)
         if not target.is_file() or target.is_symlink():
-            raise OctopError(ErrorCode.NOT_FOUND, f"cannot read {relative_path!r}")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot read {relative_path!r}")
         try:
             return target.read_bytes()
         except OSError as exc:
-            raise OctopError(ErrorCode.NOT_FOUND, f"cannot read {relative_path!r}") from exc
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot read {relative_path!r}") from exc
 
     def delete_skill(self, pack_id: str, slug: str) -> None:
         try:
             safe_slug = validate_skill_slug(slug)
         except SkillPackageError as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, str(exc)) from exc
         skill_dir = self.package_skills_dir(pack_id) / safe_slug
         shutil.rmtree(skill_dir, ignore_errors=True)
         self._persist_package(pack_id)
@@ -359,7 +359,7 @@ class SkillPackageStore:
     def assert_can_mutate(self, row: SkillPackageRow, user: User) -> None:
         if self.can_mutate(row, user):
             return
-        raise OctopError(ErrorCode.FORBIDDEN, "skill package can only be modified by its creator")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "skill package can only be modified by its creator")
 
     def can_view(self, row: SkillPackageRow, user: User) -> bool:
         """Whether *user* may see / mount / read this package."""
@@ -370,7 +370,7 @@ class SkillPackageStore:
     def assert_can_view(self, row: SkillPackageRow, user: User) -> None:
         if self.can_view(row, user):
             return
-        raise OctopError(ErrorCode.SKILL_PACKAGE_NOT_FOUND, "skill package not found")
+        raise HappyclawError(ErrorCode.SKILL_PACKAGE_NOT_FOUND, "skill package not found")
 
     def can_copy(self, row: SkillPackageRow, user: User) -> bool:
         """Whether *user* may copy this package's skills into a workspace (#770)."""
@@ -382,7 +382,7 @@ class SkillPackageStore:
         self.assert_can_view(row, user)
         if self.can_mutate(row, user) or normalize_copy_policy(row.copy_policy) != "deny":
             return
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SKILL_PACKAGE_COPY_DENIED,
             f"skill package {row.id!r} does not allow copying",
         )
@@ -399,7 +399,7 @@ class SkillPackageStore:
         self.assert_can_view(row, user)
         if self.can_mutate(row, user) or bool(getattr(row, "allow_download", True)):
             return
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SKILL_PACKAGE_DOWNLOAD_DENIED,
             f"skill package {row.id!r} does not allow download",
         )

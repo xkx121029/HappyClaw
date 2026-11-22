@@ -23,7 +23,7 @@ from happyclaw.infra.agents.experts.publish import (
     resolve_published_expert_slug,
 )
 from happyclaw.infra.db.repos.published_experts import PublishedExpertRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import Role, User
 from happyclaw.infra.utils.paths import PathLayout
 
@@ -56,7 +56,7 @@ def test_only_creator_or_admin_can_mutate_published_expert() -> None:
 
     assert_can_mutate_published(row, owner)
     assert_can_mutate_published(row, admin)
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         assert_can_mutate_published(row, other)
     assert exc.value.code is ErrorCode.FORBIDDEN
 
@@ -74,7 +74,7 @@ def test_resolve_published_expert_slug_retries_derived_name_and_rejects_taken_ex
     repo = Repo()
 
     assert resolve_published_expert_slug(repo=repo, name="Source Expert") == "source-expert-2"
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         resolve_published_expert_slug(repo=repo, name="Other", slug="chosen-slug")
     assert exc.value.code is ErrorCode.PUBLISHED_EXPERT_SLUG_TAKEN
 
@@ -541,7 +541,7 @@ async def test_publish_agent_expert_maps_sqlite_integrity_error(
         icon_url=None,
     )
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await mod.publish_agent_expert(
             services=services,
             registry=registry,

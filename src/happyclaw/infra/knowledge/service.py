@@ -10,7 +10,7 @@ from typing import Any, cast
 
 from happyclaw.config import DEFAULT_MAX_UPLOAD_MB, upload_mb_to_bytes
 from happyclaw.infra.db.repos.knowledge import KnowledgeBaseRow, KnowledgeDocumentRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.knowledge.blobs import KnowledgeBlobs
 from happyclaw.infra.knowledge.gate import assert_knowledge_usable
 from happyclaw.infra.knowledge.ocr import (
@@ -508,7 +508,7 @@ class KnowledgeService:
             if folder is None or not folder.is_dir:
                 raise LookupError("knowledge folder not found")
         if document.is_dir and (target == document.path or target.startswith(f"{document.path}/")):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.KNOWLEDGE_MOVE_INVALID,
                 "a folder cannot be moved into itself or one of its subfolders",
             )
@@ -516,7 +516,7 @@ class KnowledgeService:
             return cast(KnowledgeDocumentRow, document)
         new_path = normalize_kb_path(f"{target}/{path_basename(document.path)}")
         if self._repo.get_document_by_path(kb_id, new_path) is not None:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.KNOWLEDGE_MOVE_NAME_TAKEN,
                 "the target folder already has an item with this name",
             )

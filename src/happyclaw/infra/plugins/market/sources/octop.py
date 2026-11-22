@@ -66,7 +66,7 @@ def _default_loader() -> list[dict[str, Any]]:
         raise SourceUnreachableError(f"octop market unavailable: {exc}") from exc
 
 
-class OctopSource(Source):
+class HappyclawSource(Source):
     """Catalog backed by the octop portal plugin index."""
 
     source_id = PluginKind.OCTOP
@@ -392,4 +392,4 @@ def _text(value: Any) -> str:
     return str(value).strip() if value is not None else ""
 
 
-__all__ = ["OctopSource"]
+__all__ = ["HappyclawSource"]

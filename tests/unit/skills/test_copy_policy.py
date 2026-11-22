@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 from tests.unit.skills.test_skill_transfer import _MemWorkspace
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.skills.skill_package_store import (
     normalize_copy_policy,
 )
@@ -62,7 +62,7 @@ def test_can_copy_matrix(policy: str | None, user: SimpleNamespace, allowed: boo
 
 def test_assert_can_copy_raises_deny_for_others() -> None:
     store = _store()
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         store.assert_can_copy(_row("deny"), _user(2))
     assert excinfo.value.code == ErrorCode.SKILL_PACKAGE_COPY_DENIED
     # creator passes without raising
@@ -126,7 +126,7 @@ async def _run_guard(
     *,
     user: SimpleNamespace,
     origin_created_by: str = "7",
-) -> OctopError | None:
+) -> HappyclawError | None:
     from happyclaw.api.routers.skills import _guard_package_only_skill_write
 
     files = {"skills/alpha/SKILL.md": manifest} if manifest is not None else {}
@@ -144,7 +144,7 @@ async def _run_guard(
     )
     try:
         await _guard_package_only_skill_write(workspace, {}, server, "alpha", user)
-    except OctopError as exc:
+    except HappyclawError as exc:
         return exc
     return None
 

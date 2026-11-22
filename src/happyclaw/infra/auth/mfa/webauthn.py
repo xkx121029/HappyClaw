@@ -31,7 +31,7 @@ from happyclaw.infra.db.repos.auth_challenges import (
 )
 from happyclaw.infra.db.repos.settings import SettingsRepo
 from happyclaw.infra.db.repos.user_webauthn import UserWebauthnRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -119,12 +119,12 @@ def verify_registration(
     if challenge_b64:
         row = challenge_repo.get_by_challenge(challenge_b64)
     if row is None or row.kind != KIND_WEBAUTHN_REGISTER or row.user_id != user_id:
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
     if row.consumed_at is not None or row.expires_at < int(time.time()):
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
     consumed = challenge_repo.try_consume_id(row.id)
     if consumed is None:
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
     try:
         verified = verify_registration_response(
             credential=credential,
@@ -133,7 +133,7 @@ def verify_registration(
             expected_origin=origins,
         )
     except Exception as exc:  # noqa: BLE001 - library raises varied types
-        raise OctopError(ErrorCode.MFA_INVALID, "webauthn registration failed") from exc
+        raise HappyclawError(ErrorCode.MFA_INVALID, "webauthn registration failed") from exc
     # Must equal the user.id sent in registration_options (stable or prior row).
     handle = webauthn_repo.user_handle_for(user_id) or _b64url(_stable_user_handle(user_id))
     cred_id = _b64url(verified.credential_id)
@@ -228,29 +228,29 @@ def verify_assertion(
     rp_id, origins = assert_origin_allowed(settings_repo, origin)
     challenge_b64 = _extract_client_challenge(credential)
     if not challenge_b64:
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
     row = challenge_repo.get_by_challenge(challenge_b64)
     if row is None or row.kind not in expected_kinds:
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
     if row.consumed_at is not None or row.expires_at < int(time.time()):
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
     cred_id_b64 = _extract_credential_id(credential)
     if not cred_id_b64:
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid webauthn credential")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid webauthn credential")
     stored = webauthn_repo.get_by_credential_id(cred_id_b64)
     if stored is None:
-        raise OctopError(ErrorCode.MFA_INVALID, "unknown webauthn credential")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "unknown webauthn credential")
     if expected_user_id is not None and stored.user_id != expected_user_id:
-        raise OctopError(ErrorCode.MFA_INVALID, "webauthn credential user mismatch")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "webauthn credential user mismatch")
     if row.user_id is not None and row.user_id != stored.user_id:
-        raise OctopError(ErrorCode.MFA_INVALID, "webauthn credential user mismatch")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "webauthn credential user mismatch")
     # Defer userHandle check until after crypto — possession of the private key
     # is the real proof. Mismatches are healed (registration used to mint two
     # independent random handles for options vs DB insert).
     asserted_handle = _extract_user_handle(credential)
     consumed = challenge_repo.try_consume_id(row.id)
     if consumed is None:
-        raise OctopError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
+        raise HappyclawError(ErrorCode.MFA_INVALID, "invalid or expired webauthn challenge")
     try:
         verified = verify_authentication_response(
             credential=credential,
@@ -262,7 +262,7 @@ def verify_assertion(
         )
     except Exception as exc:  # noqa: BLE001
         logger.info("webauthn assertion crypto failed: %s", exc)
-        raise OctopError(ErrorCode.MFA_INVALID, "webauthn assertion failed") from exc
+        raise HappyclawError(ErrorCode.MFA_INVALID, "webauthn assertion failed") from exc
     if asserted_handle and asserted_handle != stored.user_handle:
         logger.info(
             "healing webauthn user_handle for user_id=%s credential=%s",
@@ -291,7 +291,7 @@ def json_loads_options(raw: str) -> dict[str, Any]:
 
     data = json.loads(raw)
     if not isinstance(data, dict):
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "invalid webauthn options")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "invalid webauthn options")
     return data
 
 

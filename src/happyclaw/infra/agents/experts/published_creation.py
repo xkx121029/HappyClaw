@@ -43,7 +43,7 @@ from happyclaw.infra.agents.experts.snapshot_store import (
 )
 from happyclaw.infra.agents.manager import AgentCreateSpec
 from happyclaw.infra.db.repos.published_experts import PublishedExpertRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.history.trajectory.settings import apply_enable_trajectory
 from happyclaw.infra.users.identity import User
 from happyclaw.infra.utils.ulid import new_ulid
@@ -220,7 +220,7 @@ def _snapshot_meta(
 def require_published_expert(services: Any, expert_id: str) -> PublishedExpertRow:
     row = services.published_expert_repo.get(expert_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"published expert {expert_id!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"published expert {expert_id!r} not found")
     return cast(PublishedExpertRow, row)
 
 
@@ -252,7 +252,7 @@ async def publish_agent_expert(
     repo = services.published_expert_repo
     existing = repo.get_by_source_agent_id(source.agent_id)
     if existing is not None:
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.PUBLISHED_EXPERT_ALREADY_EXISTS,
             name=existing.name,
             details={"id": existing.id, "slug": existing.slug},
@@ -302,7 +302,7 @@ async def publish_agent_expert(
         )
     except _DB_INTEGRITY_ERRORS as exc:
         await asyncio.to_thread(_discard_snapshot, services, expert_id)
-        raise OctopError.localized(
+        raise HappyclawError.localized(
             ErrorCode.PUBLISHED_EXPERT_SLUG_TAKEN,
             slug=resolved_slug,
             details={"slug": resolved_slug},
@@ -331,7 +331,7 @@ async def refresh_published_expert(
     row = require_published_expert(services, expert_id)
     assert_can_mutate_published(row, user)
     if row.source_agent_id is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "published expert source agent not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "published expert source agent not found")
 
     color = _agent_color(registry, source.agent_id) or ""
     icon_name = getattr(source, "icon_name", None) or source.icon or ""
@@ -417,13 +417,13 @@ async def install_published_expert(
         found = await asyncio.to_thread(materialize_snapshot, repo, row.id, snapshot_dir)
         if not found:
             await asyncio.to_thread(shutil.rmtree, staging, ignore_errors=True)
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.NOT_FOUND, f"published expert {expert_id!r} snapshot not found"
             )
     else:
         snapshot_dir = _snapshot_dir(services, row.id)
         if not snapshot_dir.is_dir():
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.NOT_FOUND, f"published expert {expert_id!r} snapshot not found"
             )
 

@@ -16,7 +16,7 @@ from happyclaw.infra.agents.experts.catalog import ExpertCatalog, default_librar
 from happyclaw.infra.agents.providers.model_flags import is_local_runtime_provider
 from happyclaw.infra.cron.task_type import normalize_cron_task_type, require_cron_prompt
 from happyclaw.infra.cron.trigger import build_trigger
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.threads import ThreadRegistry
 from happyclaw.infra.users.password import hash_password
 from happyclaw.infra.utils.ulid import new_cron_id, new_ulid
@@ -67,7 +67,7 @@ def _require_username(services: Any, username: str) -> int:
     try:
         return resolve_username(username, services)
     except ValueError as exc:
-        raise OctopError(ErrorCode.NOT_FOUND, str(exc)) from exc
+        raise HappyclawError(ErrorCode.NOT_FOUND, str(exc)) from exc
 
 
 # ── Users ────────────────────────────────────────────────────────────────────
@@ -92,12 +92,12 @@ def create_user_offline(
     normalized_email = parse_optional_email(email)
     with open_cli_services(home) as svc:
         if svc.user_repo.get_by_username(username) is not None:
-            raise OctopError(ErrorCode.USERNAME_TAKEN, f"username {username!r} already exists")
+            raise HappyclawError(ErrorCode.USERNAME_TAKEN, f"username {username!r} already exists")
         if (
             normalized_email is not None
             and svc.user_repo.get_by_email(normalized_email) is not None
         ):
-            raise OctopError(ErrorCode.EMAIL_TAKEN, f"email {normalized_email!r} already exists")
+            raise HappyclawError(ErrorCode.EMAIL_TAKEN, f"email {normalized_email!r} already exists")
         permissions = None
         role_name = None
         policies: list[tuple[str, str]] = []
@@ -134,7 +134,7 @@ def set_user_email_offline(
         if normalized_email is not None:
             owner = svc.user_repo.get_by_email(normalized_email)
             if owner is not None and owner.id != uid:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.EMAIL_TAKEN, f"email {normalized_email!r} already exists"
                 )
         svc.user_repo.set_email(uid, normalized_email)
@@ -221,7 +221,7 @@ def create_cron_offline(
     session_key = ThreadRegistry.dashboard_key(agent_id=agent_id, user_id=user_id)
     with open_cli_services(home) as svc:
         if svc.agent_repo.get(agent_id) is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         asyncio.run(
             _ensure_dashboard_session(
                 svc, agent_id=agent_id, user_id=user_id, session_key=session_key
@@ -256,7 +256,7 @@ def delete_cron_offline(agent_id: str, cron_id: str, *, home: Path | None = None
     with open_cli_services(home) as svc:
         row = svc.cron_repo.get(cron_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.NOT_FOUND, "cron job not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "cron job not found")
         svc.cron_repo.delete(cron_id)
 
 
@@ -283,7 +283,7 @@ def delete_agent_offline(agent_id: str, *, home: Path | None = None) -> None:
     with open_cli_services(home) as svc:
         row = svc.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         workspace_dir = workspace_dir_from_config_json(
             row.config_json, paths=svc.paths, agent_id=agent_id
         )
@@ -387,7 +387,7 @@ def create_provider_offline(
     models_json = json.dumps(models) if models is not None else None
     with open_cli_services(home) as svc:
         if svc.provider_repo.get_by_name(name) is not None:
-            raise OctopError(ErrorCode.PROVIDER_NAME_TAKEN, f"provider {name!r} already exists")
+            raise HappyclawError(ErrorCode.PROVIDER_NAME_TAKEN, f"provider {name!r} already exists")
         pid = svc.provider_repo.create(
             name=name,
             kind=kind,
@@ -404,19 +404,19 @@ def delete_provider_offline(provider_id: int, *, home: Path | None = None) -> No
     with open_cli_services(home) as svc:
         row = svc.provider_repo.get(provider_id)
         if row is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "provider not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "provider not found")
         if is_local_runtime_provider(
             row.name,
             provider_api_key=row.api_key,
             provider_base_url=row.base_url,
         ):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PROVIDER_LOCAL_PROTECTED,
                 "local runtime providers cannot be deleted",
             )
         refs = svc.provider_repo.find_referencing_agent_ids(svc.agent_repo, row.name)
         if refs:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.PROVIDER_REFERENCED,
                 f"provider {row.name!r} is referenced by {len(refs)} agent(s)",
             )
@@ -464,7 +464,7 @@ def get_channel_offline(
     with open_cli_services(home) as svc:
         row = svc.channel_repo.get(channel_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.NOT_FOUND, f"channel {channel_id!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"channel {channel_id!r} not found")
         return _channel_row_to_dict(row)
 
 
@@ -480,7 +480,7 @@ def create_channel_offline(
     channel_id = new_ulid()
     with open_cli_services(home) as svc:
         if svc.agent_repo.get(agent_id) is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         svc.channel_repo.create(
             channel_id=channel_id,
             agent_id=agent_id,
@@ -506,7 +506,7 @@ def patch_channel_offline(
     with open_cli_services(home) as svc:
         row = svc.channel_repo.get(channel_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.NOT_FOUND, f"channel {channel_id!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"channel {channel_id!r} not found")
         svc.channel_repo.update(
             channel_id,
             name=name,
@@ -522,7 +522,7 @@ def delete_channel_offline(agent_id: str, channel_id: str, *, home: Path | None 
     with open_cli_services(home) as svc:
         row = svc.channel_repo.get(channel_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.NOT_FOUND, f"channel {channel_id!r} not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, f"channel {channel_id!r} not found")
         svc.channel_repo.delete(channel_id)
 
 
@@ -570,7 +570,7 @@ def update_thread_offline(
     with open_cli_services(home) as svc:
         row = svc.thread_repo.get(thread_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
         if title is not None:
             svc.thread_repo.update_title(thread_id, title)
         if pinned is not None:
@@ -594,10 +594,10 @@ def delete_thread_offline(agent_id: str, thread_id: str, *, home: Path | None = 
     with open_cli_services(home) as svc:
         row = svc.thread_repo.get(thread_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
         agent = svc.agent_repo.get(agent_id)
         if agent is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         cfg = agent_config_from_row(agent)
         workspace = workspace_for_agent_row(agent, paths=svc.paths)
         delete_thread_from_agent_stores(

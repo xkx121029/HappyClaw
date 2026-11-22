@@ -9,7 +9,7 @@ import pytest
 
 from happyclaw.api.routers import backup as backup_router
 from happyclaw.infra.backup.service import BackupService
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 @pytest.mark.asyncio
@@ -73,10 +73,10 @@ async def test_create_backup_rejects_when_busy(monkeypatch: pytest.MonkeyPatch) 
     service = MagicMock(spec=BackupService)
 
     async def _busy_create(*_a: Any, **_k: Any) -> Any:
-        raise OctopError(ErrorCode.BACKUP_IN_PROGRESS, "busy")
+        raise HappyclawError(ErrorCode.BACKUP_IN_PROGRESS, "busy")
 
     service.acreate_backup = _busy_create
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await backup_router.create_backup(body=None, service=service)
     assert exc.value.code == ErrorCode.BACKUP_IN_PROGRESS

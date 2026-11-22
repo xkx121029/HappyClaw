@@ -8,7 +8,7 @@ from happyclaw_harness.slash import SlashCommand, SlashSink
 
 from happyclaw.i18n.domains.slash import localized_rows, tr
 from happyclaw.infra.agents.security import tool_execution_may_pause
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.slash.catalog import channel_origin
 from happyclaw.infra.gateway.slash.ctx import SlashCtx, ensure_thread_id, lang_of, resolve_user_agent
 from happyclaw.infra.gateway.slash.formatting import markdown_bullets, markdown_kv_block
@@ -155,7 +155,7 @@ async def cmd_connectors(
 
 
 async def cmd_exit(d: SlashDispatcher, cmd: SlashCommand, ctx: SlashCtx, sink: SlashSink) -> None:
-    raise OctopError(ErrorCode.SLASH_BAD_ARGS, "/exit handled at CLI level")
+    raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "/exit handled at CLI level")
 
 
 PLATFORM_HANDLERS: dict[str, GatewayHandler] = {

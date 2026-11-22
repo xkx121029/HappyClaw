@@ -10,12 +10,12 @@ import click
 
 async def _run_acp_server(*, agent_id: str | None, debug: bool) -> None:
     from happyclaw.cli.support.state import default_state_path, load
-    from happyclaw.infra.server import OctopServer
+    from happyclaw.infra.server import HappyclawServer
 
     level = logging.DEBUG if debug else logging.WARNING
     logging.basicConfig(level=level, format="%(levelname)s %(name)s: %(message)s")
 
-    srv = OctopServer()
+    srv = HappyclawServer()
     await srv.start()
     assert srv.app_runtime is not None
     registry = srv.app_runtime.agent_registry

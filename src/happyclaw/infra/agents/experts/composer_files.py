@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.skills.skill_packages import validate_skill_slug
 
 logger = logging.getLogger(__name__)
@@ -63,34 +63,34 @@ def normalize_composer_relpath(name: str, *, allow_skill_dir: bool = False) -> s
     """Normalize a composer-editable workspace path or raise ``SLASH_BAD_ARGS``."""
     rel = name.strip().replace("\\", "/").lstrip("/")
     if not rel or ".." in rel.split("/") or rel.startswith(".octop"):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
     parts = rel.split("/")
     if any(not part for part in parts):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
     if len(parts) == 1:
         if not _ROOT_MD.fullmatch(parts[0]):
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
         return parts[0]
     if parts[0] == "skills" and len(parts) >= 2:
         try:
             slug = validate_skill_slug(parts[1])
         except Exception as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}") from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}") from exc
         if len(parts) == 2:
             if not allow_skill_dir:
-                raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
+                raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
             return f"skills/{slug}"
         if any(not _NESTED_FILE.fullmatch(part) for part in parts[2:]):
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
         return "/".join([parts[0], slug, *parts[2:]])
     if parts[0] == "agents" and len(parts) == 2 and parts[1].endswith(".md"):
         slug = parts[1][:-3]
         try:
             validate_skill_slug(slug)
         except Exception as exc:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}") from exc
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}") from exc
         return f"agents/{slug}.md"
-    raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
+    raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid file path {name!r}")
 
 
 def composer_copies_from_payload(
@@ -100,11 +100,11 @@ def composer_copies_from_payload(
     for raw in copy_skills or []:
         agent_id = str(raw.get("agent_id") or "").strip()
         if not agent_id or "/" in agent_id or "\\" in agent_id or ".." in agent_id:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, f"invalid copy source {agent_id!r}")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid copy source {agent_id!r}")
         try:
             slug = validate_skill_slug(str(raw.get("slug") or ""))
         except Exception as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 f"invalid copy skill {raw.get('slug')!r}",
             ) from exc
@@ -133,7 +133,7 @@ def composer_patch_from_payload(
         try:
             skill_name = validate_skill_slug(str(raw.get("skill_name") or ""))
         except Exception as exc:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 f"invalid hub skill {raw.get('skill_name')!r}",
             ) from exc
@@ -162,10 +162,10 @@ def composer_patch_from_payload(
         hub_skills=tuple(picks),
     )
     if len(patch.file_overrides) + len(patch.omit_files) + len(patch.hub_skills) > _MAX_PATCH_FILES:
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "too many composer file patches")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "too many composer file patches")
     for _name, content in patch.file_overrides:
         if len(content.encode("utf-8")) > _MAX_FILE_BYTES:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "composer file is too large")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "composer file is too large")
     return patch
 
 
@@ -186,7 +186,7 @@ def composer_plan_from_payload(
         len(patch.file_overrides) + len(patch.omit_files) + len(patch.hub_skills) + len(copies)
         > _MAX_PATCH_FILES
     ):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "too many composer file patches")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "too many composer file patches")
     return patch, copies
 
 

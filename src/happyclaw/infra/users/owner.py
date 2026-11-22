@@ -21,7 +21,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.identity import Role, User
 from happyclaw.infra.users.permissions import PERMISSIONS
 
@@ -68,11 +68,11 @@ class OwnerIdentityService:
     def _resolve(self) -> User:
         try:
             row = self._adopt_or_create()
-        except OctopError:
+        except HappyclawError:
             raise
         except Exception as exc:  # pragma: no cover - defensive boundary
             logger.exception("single-user owner resolution failed")
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SINGLE_USER_INIT_FAILED,
                 "single-user owner initialization failed; existing data was preserved",
             ) from exc

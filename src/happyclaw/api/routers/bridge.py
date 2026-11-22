@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from starlette.websockets import WebSocketState
 
 from happyclaw.api.deps import get_server, require_permission, resolve_user_from_token
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.groups import RESOURCE_BRIDGE, GroupAccess
 from happyclaw.infra.users.permissions import user_has_permission
 from happyclaw.infra.users.profile_avatar import (
@@ -82,14 +82,14 @@ def _require_readable(server: Any, connection_id: str, user: Any) -> Any:
     mgr = _bridge(server)
     row = mgr.get(connection_id)
     if row is None:
-        raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+        raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
     if int(row.owner_user_id) == int(user.id) or _is_admin(user):
         return row
     if not bool(getattr(row, "shared", False)):
-        raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+        raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
     access = _group_access(server)
     if access is None:
-        raise OctopError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
+        raise HappyclawError(ErrorCode.BRIDGE_NOT_FOUND, "bridge connection not found")
     access.assert_allowed(
         user_id=user.id,
         is_admin=False,
@@ -174,7 +174,7 @@ class BridgeConnectionProbeBody(BaseModel):
 def _bridge(server: Any) -> Any:
     rt = server.app_runtime
     if rt is None or getattr(rt, "bridge_manager", None) is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "bridge not ready")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "bridge not ready")
     return rt.bridge_manager
 
 
@@ -658,7 +658,7 @@ async def bridge_browser_stream_ws(
     # Single-user mode: token optional; the resolver returns the local owner.
     try:
         user = resolve_user_from_token(server, raw_token or "")
-    except OctopError as exc:
+    except HappyclawError as exc:
         await websocket.close(code=4001, reason=f"auth: {exc.code.value}")
         return
     if not user_has_permission(user, "bridge"):
@@ -672,7 +672,7 @@ async def bridge_browser_stream_ws(
     try:
         row = _require_readable(server, connection_id, user)
         mgr.require_session(connection_id)
-    except OctopError as exc:
+    except HappyclawError as exc:
         await websocket.close(code=1011, reason=str(exc.code.value))
         return
 
@@ -719,7 +719,7 @@ async def bridge_browser_stream_ws(
             on_frame=send_frame,
             client_messages=client_messages,
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         await send_frame({"type": "error", "message": str(exc)})
         await send_frame({"type": "status", "status": "error"})
     except Exception:
@@ -752,7 +752,7 @@ async def bridge_inbound_ws(
     # Single-user mode: token optional; the resolver returns the local owner.
     try:
         user = resolve_user_from_token(server, raw or "")
-    except OctopError as exc:
+    except HappyclawError as exc:
         await websocket.close(code=4001, reason=f"auth: {exc.code.value}")
         return
     if not user_has_permission(user, "bridge"):

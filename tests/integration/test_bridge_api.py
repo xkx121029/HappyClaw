@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 async def test_bridge_list_empty(env: Any) -> None:
@@ -80,7 +80,7 @@ async def test_bridge_probe_peer_rejection_stays_logged_in(env: Any) -> None:
     with patch(
         "happyclaw.infra.bridge.manager.login_peer",
         new=AsyncMock(
-            side_effect=OctopError(ErrorCode.BRIDGE_AUTH_FAILED, "peer rejected credentials")
+            side_effect=HappyclawError(ErrorCode.BRIDGE_AUTH_FAILED, "peer rejected credentials")
         ),
     ):
         r = await client.post(

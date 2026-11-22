@@ -27,7 +27,7 @@ from happyclaw.infra.db.repos.thread_messages import (
     ThreadProjectionSummary,
 )
 from happyclaw.infra.db.repos.threads import ThreadRow
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.threads import thread_row_has_messages
 from happyclaw.infra.gateway.ws import WS_CHANNEL_ID, WebSocketChannel, WebSocketHub
 
@@ -537,7 +537,7 @@ async def test_delete_thread_rejects_active_turn() -> None:
     hub.mark_turn_active("thr_1")
     server, user = _delete_server(hub)
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         await history_mod.delete_thread("agt_1", "thr_1", compact=None, user=user, server=server)
 
     assert raised.value.code is ErrorCode.THREAD_TURN_ACTIVE
@@ -632,7 +632,7 @@ async def test_non_owner_cannot_change_shared_thread_settings(
     )
     body = RenameThreadBody(model_ref="prov/model")
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await history_mod.patch_thread(
             "agt_1",
             "thr",

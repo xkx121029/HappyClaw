@@ -125,7 +125,7 @@ class CapabilitiesConfig:
 
 
 @dataclass(frozen=True)
-class OctopConfig:
+class HappyclawConfig:
     bind_host: str = "127.0.0.1"
     port: int = 8088
     log_level: str = "info"
@@ -152,7 +152,7 @@ class OctopConfig:
 
 
 def _defaults_for_file() -> dict[str, Any]:
-    data = asdict(OctopConfig())
+    data = asdict(HappyclawConfig())
     data.pop("database_in_file", None)
     db = dict(data["database"])
     db.pop("password", None)
@@ -423,7 +423,7 @@ def _warn_retired_history_config() -> None:
     logger.warning("history_v2_enabled and OCTOP_HISTORY_V2_ENABLED are retired and ignored")
 
 
-def load_config(path: Path) -> OctopConfig:
+def load_config(path: Path) -> HappyclawConfig:
     """Load ``config.json``; write defaults if absent. Apply env overrides.
 
     A corrupt file raises with the path and parser position named, and is never
@@ -605,7 +605,7 @@ def load_config(path: Path) -> OctopConfig:
             include_chats=_coerce_bool("OCTOP_BACKUP_INCLUDE_CHATS", v, backup.include_chats),
         )
 
-    return OctopConfig(
+    return HappyclawConfig(
         bind_host=merged["bind_host"],
         port=int(merged["port"]),
         log_level=merged["log_level"],

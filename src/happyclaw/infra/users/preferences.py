@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlparse
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.url import normalize_nav_url
 
 MAX_REMOTE_BROWSER_BOOKMARKS = 12
@@ -103,7 +103,7 @@ def validate_remote_browser_bookmarks(items: list[Any]) -> list[RemoteBrowserBoo
             title_raw = urlparse(url).hostname or url
         out.append(RemoteBrowserBookmark(url=url, title=title_raw[:MAX_BOOKMARK_TITLE_LEN]))
     if len(out) > MAX_REMOTE_BROWSER_BOOKMARKS:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"remote_browser_bookmarks limit is {MAX_REMOTE_BROWSER_BOOKMARKS}",
         )
@@ -189,7 +189,7 @@ def merge_model_preferences_json(
         else:
             ref = normalize_model_ref(preferred_model)
             if ref is None:
-                raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid preferred_model")
+                raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid preferred_model")
             data[PREFERENCES_KEY_PREFERRED_MODEL] = ref
     if model_reasoning is not None:
         data[PREFERENCES_KEY_MODEL_REASONING] = {
@@ -202,29 +202,29 @@ def _sidebar_group_name(value: Any, *, builtin: bool) -> str | None:
     if value is None:
         if builtin:
             return None
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "sidebar nav group name is required")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "sidebar nav group name is required")
     if not isinstance(value, str):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav group name")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav group name")
     name = value.strip()
     if not name:
         if builtin:
             return None
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "sidebar nav group name is required")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "sidebar nav group name is required")
     if len(name) > _MAX_SIDEBAR_GROUP_NAME or any(ch in name for ch in "\n\r\t"):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav group name")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav group name")
     return name
 
 
 def validate_sidebar_nav(value: Any) -> tuple[list[SidebarNavGroup], list[SidebarNavItem]]:
     """Normalize a sidebar layout. Unknown keys and dangling groups are rejected."""
     if not isinstance(value, dict):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav layout")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav layout")
     raw_groups = value.get("groups", [])
     raw_items = value.get("items", [])
     if not isinstance(raw_groups, list) or not isinstance(raw_items, list):
-        raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav layout")
+        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav layout")
     if len(raw_groups) > _MAX_SIDEBAR_GROUPS:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             f"sidebar nav groups limit is {_MAX_SIDEBAR_GROUPS}",
         )
@@ -232,13 +232,13 @@ def validate_sidebar_nav(value: Any) -> tuple[list[SidebarNavGroup], list[Sideba
     seen_groups: set[str] = set()
     for raw in raw_groups:
         if not isinstance(raw, dict):
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav group")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav group")
         group_id = str(raw.get("id") or "").strip()
         builtin = group_id in _BUILTIN_SIDEBAR_GROUP_IDS
         if not builtin and _CUSTOM_SIDEBAR_GROUP_ID.fullmatch(group_id) is None:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav group id")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav group id")
         if group_id in seen_groups:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "duplicate sidebar nav group")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "duplicate sidebar nav group")
         seen_groups.add(group_id)
         groups.append(
             SidebarNavGroup(
@@ -250,12 +250,12 @@ def validate_sidebar_nav(value: Any) -> tuple[list[SidebarNavGroup], list[Sideba
     seen_keys: set[str] = set()
     for raw in raw_items:
         if not isinstance(raw, dict):
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav item")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "invalid sidebar nav item")
         key = str(raw.get("key") or "").strip()
         if key not in SIDEBAR_NAV_KEYS:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "unknown sidebar nav item")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "unknown sidebar nav item")
         if key in seen_keys:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "duplicate sidebar nav item")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "duplicate sidebar nav item")
         seen_keys.add(key)
         hidden = bool(raw.get("hidden"))
         raw_group = raw.get("group")
@@ -265,7 +265,7 @@ def validate_sidebar_nav(value: Any) -> tuple[list[SidebarNavGroup], list[Sideba
         if hidden:
             item_group = None
         elif item_group is not None and item_group not in seen_groups:
-            raise OctopError(ErrorCode.SLASH_BAD_ARGS, "sidebar nav item group does not exist")
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "sidebar nav item group does not exist")
         items.append(SidebarNavItem(key=key, group=item_group, hidden=hidden))
     return groups, items
 
@@ -297,7 +297,7 @@ def get_sidebar_nav_from_json(raw: str | None) -> dict[str, Any] | None:
         return None
     try:
         groups, items = validate_sidebar_nav(value)
-    except OctopError:
+    except HappyclawError:
         return None
     return sidebar_nav_to_dict(groups, items)
 

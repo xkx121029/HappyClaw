@@ -1,4 +1,4 @@
-"""Embedded OctopServer chat runtime via the CLI gateway channel."""
+"""Embedded HappyclawServer chat runtime via the CLI gateway channel."""
 
 from __future__ import annotations
 
@@ -11,11 +11,11 @@ from happyclaw.cli.repl.embedded_session import embedded_runtime
 from happyclaw.cli.repl.turn import ChatTurnResult
 from happyclaw.infra.gateway.cli import CLI_CHANNEL_ID
 from happyclaw.infra.gateway.cli.turn import build_cli_inbound, prepare_cli_turn
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 
 
 def resolve_embedded_user_id(
-    server: OctopServer,
+    server: HappyclawServer,
     *,
     agent_id: str,
     as_user: str | None,
@@ -38,7 +38,7 @@ def resolve_embedded_user_id(
 class CliChatSession:
     """One CLI connection into Gateway.cli_hub for streaming turns."""
 
-    def __init__(self, server: OctopServer, *, user_id: int) -> None:
+    def __init__(self, server: HappyclawServer, *, user_id: int) -> None:
         if server.app_runtime is None:
             raise RuntimeError("server not started")
         self._server = server

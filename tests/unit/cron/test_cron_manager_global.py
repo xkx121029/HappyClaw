@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.cron.delivery import CronDeliveryService
 from happyclaw.infra.cron.manager import CronManager
 from happyclaw.infra.db.migrate import run_migrations
@@ -20,7 +20,7 @@ from happyclaw.infra.utils.paths import PathLayout
 def _make_services(tmp_path: Path):
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
 
 
 @pytest.mark.asyncio

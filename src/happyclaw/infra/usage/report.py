@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from happyclaw.api.common.usage_xlsx import build_usage_xlsx
 from happyclaw.i18n import tr
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.locale import normalize_locale
 
 if TYPE_CHECKING:
@@ -61,17 +61,17 @@ class UsageReportService:
         if as_user is None or as_user == user_id:
             return user_id
         if not is_admin:
-            raise OctopError(ErrorCode.FORBIDDEN, "as_user requires admin")
+            raise HappyclawError(ErrorCode.FORBIDDEN, "as_user requires admin")
         target = self._user_manager.get_by_id(as_user)
         if target is None:
-            raise OctopError(ErrorCode.NOT_FOUND, "user not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user not found")
         return int(target.id)
 
     def assert_agent_exists(self, agent_id: str | None) -> None:
         if agent_id is None:
             return
         if not self._agent_exists(agent_id):
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
 
     # -- summary ----------------------------------------------------------
 
@@ -96,7 +96,7 @@ class UsageReportService:
                 ),
             )
         except ValueError as exc:
-            raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
         return self._present_summary(payload)
 
     # -- export -----------------------------------------------------------
@@ -118,7 +118,7 @@ class UsageReportService:
                 timezone=self._timezone,
             )
         except ValueError as exc:
-            raise OctopError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
+            raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
 
         by_day = self._summary_buckets(user_id, agent_id, window, "by_day")
         by_agent = self._summary_buckets(user_id, agent_id, window, "by_agent")

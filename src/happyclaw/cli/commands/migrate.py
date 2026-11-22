@@ -84,7 +84,7 @@ def _run(
     from happyclaw.cli.support.db import resolve_cli_locale
     from happyclaw.cli.support.embedded_ops import apply_migration
     from happyclaw.i18n import tr
-    from happyclaw.infra.errors import OctopError
+    from happyclaw.infra.errors import HappyclawError
 
     locale = resolve_cli_locale()
     home = Path(source_dir).expanduser() if source_dir else find_home()
@@ -101,7 +101,7 @@ def _run(
             overwrite=overwrite,
             dry_run=dry_run,
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         raise click.ClickException(exc.message) from exc
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc

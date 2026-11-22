@@ -1,7 +1,7 @@
 """Execution layer for login captcha: the only outbound-I/O seam.
 
 Providers stay pure (request spec + verdict); this module owns the HTTP
-call, timeout, error -> OctopError mapping, and the siteverify test seam.
+call, timeout, error -> HappyclawError mapping, and the siteverify test seam.
 Ensures a login captcha token against the effective provider.
 """
 
@@ -14,7 +14,7 @@ import httpx
 
 from happyclaw.infra.auth.captcha.providers import get_provider
 from happyclaw.infra.auth.captcha.store import EffectiveCaptcha
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +29,8 @@ def set_test_siteverify_url(slug: str, url: str | None) -> None:
         _TEST_URLS[slug] = url
 
 
-def _failed() -> OctopError:
-    return OctopError(
+def _failed() -> HappyclawError:
+    return HappyclawError(
         ErrorCode.CAPTCHA_FAILED,
         "Captcha verification failed. Try again.",
     )
@@ -43,7 +43,7 @@ async def ensure_captcha(
     if provider is None or not provider.requires_token:
         return
     if not (token or "").strip():
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CAPTCHA_REQUIRED,
             "This server requires a captcha token to sign in.",
         )

@@ -12,7 +12,7 @@ from happyclaw.api.common.agent import (
     assert_agent_owner,
     user_owns_agent,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def test_owner_may_access() -> None:
@@ -24,7 +24,7 @@ def test_owner_may_access() -> None:
 def test_non_owner_forbidden() -> None:
     row = SimpleNamespace(user_id=1)
     user = SimpleNamespace(id=2, is_admin=False)
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         assert_agent_owner(row, user)
     assert ei.value.code is ErrorCode.FORBIDDEN
 
@@ -32,7 +32,7 @@ def test_non_owner_forbidden() -> None:
 def test_shared_agent_non_admin_forbidden() -> None:
     row = SimpleNamespace(user_id=None)
     user = SimpleNamespace(id=1, is_admin=False)
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         assert_agent_owner(row, user)
     assert ei.value.code is ErrorCode.FORBIDDEN
 
@@ -52,7 +52,7 @@ def test_shared_agent_accessible_to_non_owner() -> None:
 def test_private_agent_forbidden_to_non_owner() -> None:
     row = SimpleNamespace(user_id=1, is_shared=0)
     user = SimpleNamespace(id=2, is_admin=False)
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         assert_agent_access_row(row, user)
     assert ei.value.code == ErrorCode.FORBIDDEN
 
@@ -60,7 +60,7 @@ def test_private_agent_forbidden_to_non_owner() -> None:
 def test_shared_non_owner_still_fails_owner_assert() -> None:
     row = SimpleNamespace(user_id=1, is_shared=1)
     user = SimpleNamespace(id=2, is_admin=False)
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         assert_agent_owner(row, user)
 
 

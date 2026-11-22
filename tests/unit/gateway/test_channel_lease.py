@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentManager
 from happyclaw.infra.db.lease import LEASE_SECONDS
 from happyclaw.infra.db.migrate import run_migrations
@@ -21,7 +21,7 @@ from happyclaw.infra.utils.paths import PathLayout
 
 def _gateway(path: Path, instance_id: str) -> Gateway:
     db = SqlitePool(path)
-    services = build_shared_services(db=db, paths=PathLayout(path.parent), config=OctopConfig())
+    services = build_shared_services(db=db, paths=PathLayout(path.parent), config=HappyclawConfig())
     registry = AgentManager(repos=services.repos, paths=services.paths, config=services.config)
     gateway = Gateway(agent_manager=registry, repos=services.repos, instance_id=instance_id)
     gateway._channel_manager = MagicMock()

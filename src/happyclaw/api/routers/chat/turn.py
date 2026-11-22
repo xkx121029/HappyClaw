@@ -19,7 +19,7 @@ from happyclaw_gateway.models import (
 from happyclaw.api.common.agent import require_agent_row
 from happyclaw.api.common.validators import validate_chat_mcp_servers, validate_chat_skills
 from happyclaw.api.routers.chat.models import ChatTurnBody
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.media.attachment_hints import (
     inbound_attachments_from_parts,
     is_vision_attachment,
@@ -70,9 +70,9 @@ async def resolve_thread_id(
     if thread_id:
         row = thread_registry.get_thread(thread_id)
         if row is None or row.agent_id != agent_id:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
         if not thread_visible_to(row, user_id):
-            raise OctopError(ErrorCode.FORBIDDEN, "thread not owned by user")
+            raise HappyclawError(ErrorCode.FORBIDDEN, "thread not owned by user")
         await thread_registry.rebind(
             session_key=sk,
             thread_id=thread_id,
@@ -282,7 +282,7 @@ async def prepare_dashboard_turn(
         )
         if failed:
             locale = getattr(user, "locale", None) or "zh"
-            raise OctopError.localized(
+            raise HappyclawError.localized(
                 ErrorCode.CONNECTOR_MCP_LOAD_FAILED,
                 locale,
                 servers=", ".join(failed),
@@ -301,7 +301,7 @@ async def prepare_dashboard_turn(
         model_ref is not None
         and not server.app_runtime.agent_registry.providers.is_model_ref_usable(model_ref)
     ):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             "default_model must reference an enabled model",
         )
@@ -309,7 +309,7 @@ async def prepare_dashboard_turn(
         user.id,
         model_ref,
     ):
-        raise OctopError(ErrorCode.RESOURCE_NOT_ALLOWED, "resource is not visible to this user")
+        raise HappyclawError(ErrorCode.RESOURCE_NOT_ALLOWED, "resource is not visible to this user")
     composer_updates: dict[str, Any] = {}
     if model_ref is not None:
         composer_updates["model_ref"] = model_ref

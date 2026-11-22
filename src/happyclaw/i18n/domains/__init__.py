@@ -3,11 +3,11 @@
 Exports are resolved lazily via PEP 562.  Historically this module eagerly
 imported every domain — including ``domains.stream``, whose top level imports
 ``langchain_core``.  That pulled the whole LangChain import tree into any CLI
-or error-handling path merely doing ``from happyclaw.infra.errors import OctopError``.
+or error-handling path merely doing ``from happyclaw.infra.errors import HappyclawError``.
 
-Importing ``octop.i18n.domains`` (or any *other* submodule) now stays cheap.
+Importing ``happyclaw.i18n.domains`` (or any *other* submodule) now stays cheap.
 Code that targets a specific submodule directly
-(``from octop.i18n.domains.stream import ...``) is unaffected, and every public
+(``from happyclaw.i18n.domains.stream import ...``) is unaffected, and every public
 name below still resolves on attribute access.
 """
 

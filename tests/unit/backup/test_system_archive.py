@@ -15,7 +15,7 @@ from happyclaw.infra.backup.manifest import MANIFEST_VERSION, BackupManifest
 from happyclaw.infra.backup.system_archive import create_system_backup, restore_system_backup
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.paths import PathLayout
 
 
@@ -1223,7 +1223,7 @@ def test_refuse_newer_schema_backup_before_database_replace(
             "VALUES ('still-here', 'hash', 'admin', 1)"
         )
 
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         restore_system_backup(
             archive,
             paths=layout,
@@ -1275,7 +1275,7 @@ def test_refuse_cross_engine_restore(layout: PathLayout, tmp_path: Path) -> None
             info = tarfile.TarInfo(name=name)
             info.size = len(blob)
             tf.addfile(info, BytesIO(blob))
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         restore_system_backup(
             archive,
             paths=layout,

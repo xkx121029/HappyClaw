@@ -10,7 +10,7 @@ from typing import Any
 import httpx
 from mcp.shared.exceptions import McpError
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.connectors.builder import (
     build_http_mcp_spec,
     normalize_weiyun_mcp_token,
@@ -24,7 +24,7 @@ from happyclaw.infra.connectors.catalog import (
 from happyclaw.infra.connectors.gateway.protocol import handle_mcp_request
 from happyclaw.infra.connectors.gateway.registry import probe_gateway_credentials
 from happyclaw.infra.connectors.oauth.discovery import discover_oauth_from_mcp_url
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.utils.ssrf_guard import UnsafeOutboundUrl, safe_request
 
 logger = logging.getLogger(__name__)
@@ -421,7 +421,7 @@ async def probe_connector(
     cred_payload: dict[str, Any],
     *,
     instance_id: str,
-    config: OctopConfig,
+    config: HappyclawConfig,
 ) -> dict[str, Any]:
     if entry.kind == "qcc":
         from happyclaw.infra.connectors.qcc import bearer_token, probe
@@ -561,7 +561,7 @@ async def probe_custom_mcp_server(spec: dict[str, Any]) -> dict[str, Any]:
 
     try:
         normalized = normalize_server_spec("probe", spec)
-    except OctopError as exc:
+    except HappyclawError as exc:
         return {
             "ok": False,
             "error": exc.message,

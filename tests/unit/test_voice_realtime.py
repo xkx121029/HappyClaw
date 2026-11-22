@@ -9,7 +9,7 @@ import pytest
 import websockets.asyncio.client as ws_client
 from websockets.exceptions import ConnectionClosed
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.voice import realtime
 from happyclaw.infra.voice.realtime import RealtimeEvent
 
@@ -85,7 +85,7 @@ async def test_connect_maps_a_tencent_error_code(
     _patch_connect(monkeypatch, conn)
 
     session = realtime.open_session(CONFIG)
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         await session.connect()
 
     assert excinfo.value.code == ErrorCode.VOICE_REALTIME_UNAVAILABLE
@@ -102,7 +102,7 @@ async def test_connect_rejects_an_unexpected_handshake_frame(
     _patch_connect(monkeypatch, conn)
 
     session = realtime.open_session(CONFIG)
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         await session.connect()
 
     assert excinfo.value.code == ErrorCode.VOICE_REALTIME_UNAVAILABLE
@@ -116,7 +116,7 @@ async def test_connect_wraps_transport_failures(
     _patch_connect(monkeypatch, None, error=OSError("network down"))
 
     session = realtime.open_session(CONFIG)
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         await session.connect()
 
     assert excinfo.value.code == ErrorCode.VOICE_REALTIME_UNAVAILABLE

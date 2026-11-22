@@ -19,7 +19,7 @@ from tests.support.app import ensure_control_plane_bound
 
 import happyclaw.api.app as app_module
 from happyclaw.api.app import build_app
-from happyclaw.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ async def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(app_module, "default_dashboard_dir", lambda: dash)
     home = tmp_path / "home"
     home.mkdir()
-    srv = OctopServer(home=home)
+    srv = HappyclawServer(home=home)
     await srv.start()
     await ensure_control_plane_bound(srv)
     app = build_app(srv)

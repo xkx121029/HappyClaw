@@ -32,7 +32,7 @@ from happyclaw.infra.agents.teams.team_manager import (
 from happyclaw.infra.agents.teams.team_manager import (
     stamp_team_host_chunk as _maybe_stamp_team_host,
 )
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 from happyclaw.infra.gateway.cli.events import message_event_to_cli_chunks
 from happyclaw.infra.gateway.hitl.coordinator import (
     HitlAnswerOutcome,
@@ -119,7 +119,7 @@ def _inbound_thread_id(msg: InboundMessage) -> str | None:
 
 
 def _stream_error(exc: Exception, locale: str) -> tuple[str, str | None]:
-    if isinstance(exc, OctopError):
+    if isinstance(exc, HappyclawError):
         return exc.localized_message(locale), exc.code.value
     return format_stream_error(exc, locale), None
 
@@ -1877,7 +1877,7 @@ class GlobalProcessor:
         flaky connector does not abort the whole message turn.
         """
         from happyclaw.infra.agents.teams import is_team_agent  # noqa: PLC0415
-        from happyclaw.infra.errors import ErrorCode, OctopError  # noqa: PLC0415
+        from happyclaw.infra.errors import ErrorCode, HappyclawError  # noqa: PLC0415
 
         # Team hosts only dispatch — never attach MCP tools.
         row = self._agent_manager.get_row(agent_id)
@@ -1909,7 +1909,7 @@ class GlobalProcessor:
         if failed:
             detail = f"mcp load failed: {', '.join(failed)}"
             if raise_on_failure:
-                raise OctopError(ErrorCode.CONNECTOR_MCP_LOAD_FAILED, detail)
+                raise HappyclawError(ErrorCode.CONNECTOR_MCP_LOAD_FAILED, detail)
             logger.warning(
                 "skipping turn MCP for agent=%s user=%s (%s)",
                 agent_id,

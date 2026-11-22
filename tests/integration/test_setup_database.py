@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from happyclaw.config import DatabaseConfig, OctopConfig, load_config
+from happyclaw.config import DatabaseConfig, HappyclawConfig, load_config
 from happyclaw.infra.db.factory import open_database
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.repos.users import UserRepo
@@ -19,7 +19,7 @@ from tests.support.auth import bootstrap_admin
 def _seed_occupied_sqlite(home, *, relative_path: str = "occupied.db") -> None:
     """Create a sibling SQLite control-plane DB that already has one user."""
     paths = PathLayout(home)
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         database=DatabaseConfig(driver="sqlite", sqlite_path=relative_path),
         database_in_file=True,
     )

@@ -7,7 +7,7 @@ import sys
 import click
 
 from happyclaw.cli.support.errors import fail_octop
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 @click.group()
@@ -37,7 +37,7 @@ def create(
                 email=email,
             )
         )
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
 
 
@@ -87,7 +87,7 @@ def set_email(username: str, email: str | None, clear: bool) -> None:
         raise click.UsageError("provide EMAIL or --clear")
     try:
         click.echo(set_user_email_offline(username, email))
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
 
 
@@ -100,7 +100,7 @@ def passwd(username: str, password: str) -> None:
 
     try:
         set_user_password_offline(username, password)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo("ok")
 
@@ -123,7 +123,7 @@ def reset_mfa(username: str, yes: bool) -> None:
         )
     try:
         reset_user_mfa_offline(username)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo("ok")
 
@@ -137,7 +137,7 @@ def set_role(username: str, role: str) -> None:
 
     try:
         set_user_role_offline(username, role)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo("ok")
 
@@ -150,7 +150,7 @@ def disable(username: str) -> None:
 
     try:
         disable_user_offline(username)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo("ok")
 
@@ -166,6 +166,6 @@ def delete(username: str, yes: bool) -> None:
         click.confirm(f"Really delete user {username}?", abort=True)
     try:
         delete_user_offline(username)
-    except OctopError as exc:
+    except HappyclawError as exc:
         fail_octop(exc)
     click.echo("deleted")

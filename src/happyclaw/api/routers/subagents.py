@@ -30,7 +30,7 @@ from happyclaw.api.common.agent import require_agent_owner_row
 from happyclaw.api.common.workspace import require_running_workspace
 from happyclaw.api.deps import current_user, get_server, require_permission
 from happyclaw.infra.agents.subagents.catalog import SubagentDefinition
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.locale import (
     Locale,
     normalize_locale,
@@ -78,7 +78,7 @@ def _summary_dict(defn: SubagentDefinition) -> dict[str, Any]:
 def _require_catalog(server: Any) -> Any:
     catalog = server.subagent_catalog
     if catalog is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "subagent catalog not loaded")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "subagent catalog not loaded")
     return catalog
 
 
@@ -140,7 +140,7 @@ async def get_subagent_catalog_item(
     catalog = _require_catalog(server)
     item = catalog.get(slug)
     if item is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"subagent {slug!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"subagent {slug!r} not found")
     contents: dict[str, str] = {}
     for loc in item.summary.available_locales:
         body = item.content_for(loc)
@@ -194,7 +194,7 @@ async def install_subagent(
     catalog = _require_catalog(server)
     item = catalog.get(slug)
     if item is None:
-        raise OctopError(ErrorCode.NOT_FOUND, f"subagent {slug!r} not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, f"subagent {slug!r} not found")
 
     requested = _resolve_install_locale(
         user=user,

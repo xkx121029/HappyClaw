@@ -19,11 +19,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$OctopHome     = if ($env:OCTOP_HOME) { $env:OCTOP_HOME } else { Join-Path $HOME ".octop" }
-$OctopVenv     = Join-Path $OctopHome "venv"
-$OctopBin      = Join-Path $OctopHome "bin"
+$HappyclawHome     = if ($env:OCTOP_HOME) { $env:OCTOP_HOME } else { Join-Path $HOME ".octop" }
+$HappyclawVenv     = Join-Path $HappyclawHome "venv"
+$HappyclawBin      = Join-Path $HappyclawHome "bin"
 $PythonVersion = "3.12"
-$OctopRepo     = if ($env:OCTOP_REPO) { $env:OCTOP_REPO } else { "https://github.com/xkx121029/HappyClaw.git" }
+$HappyclawRepo     = if ($env:OCTOP_REPO) { $env:OCTOP_REPO } else { "https://github.com/xkx121029/HappyClaw.git" }
 
 function Write-Info { param([string]$Message) Write-Host "[octop] " -ForegroundColor Green  -NoNewline; Write-Host $Message }
 function Write-Warn { param([string]$Message) Write-Host "[octop] " -ForegroundColor Yellow -NoNewline; Write-Host $Message }
@@ -54,7 +54,7 @@ Environment:
     exit 0
 }
 
-Write-Host "[octop] Installing HappyClaw into $OctopHome" -ForegroundColor Green
+Write-Host "[octop] Installing HappyClaw into $HappyclawHome" -ForegroundColor Green
 
 $policy = Get-ExecutionPolicy
 if ($policy -eq "Restricted") {
@@ -142,16 +142,16 @@ function Ensure-Uv {
 
 Ensure-Uv
 
-if (Test-Path $OctopVenv) {
+if (Test-Path $HappyclawVenv) {
     Write-Info "Existing environment found, upgrading..."
 } else {
     Write-Info "Creating Python $PythonVersion environment..."
 }
 
-uv venv $OctopVenv --python $PythonVersion --quiet --clear
+uv venv $HappyclawVenv --python $PythonVersion --quiet --clear
 if ($LASTEXITCODE -ne 0) { Stop-WithError "Failed to create virtual environment" }
 
-$VenvPython = Join-Path $OctopVenv "Scripts\python.exe"
+$VenvPython = Join-Path $HappyclawVenv "Scripts\python.exe"
 if (-not (Test-Path $VenvPython)) { Stop-WithError "Failed to create virtual environment" }
 $pyVersion = & $VenvPython --version 2>&1
 Write-Info "Python environment ready ($pyVersion)"
@@ -215,7 +215,7 @@ function Prepare-Console {
     }
 }
 
-$VenvOctop = Join-Path $OctopVenv "Scripts\octop.exe"
+$VenvOctop = Join-Path $HappyclawVenv "Scripts\octop.exe"
 
 if ($FromSource) {
     if ($SourceDir) {
@@ -229,7 +229,7 @@ if ($FromSource) {
         }
         $cloneDir = Join-Path $env:TEMP "octop-install-$(Get-Random)"
         try {
-            git clone --depth 1 $OctopRepo $cloneDir
+            git clone --depth 1 $HappyclawRepo $cloneDir
             Prepare-Console $cloneDir
             uv pip install "${cloneDir}${ExtrasSuffix}" --python $VenvPython
         } finally {
@@ -307,21 +307,21 @@ if (-not $wantPlaywrightChromium) {
     }
 }
 
-New-Item -ItemType Directory -Path $OctopBin -Force | Out-Null
+New-Item -ItemType Directory -Path $HappyclawBin -Force | Out-Null
 
-$wrapperPs1 = Join-Path $OctopBin "octop.ps1"
+$wrapperPs1 = Join-Path $HappyclawBin "octop.ps1"
 @'
 $ErrorActionPreference = "Stop"
-$OctopHome = if ($env:OCTOP_HOME) { $env:OCTOP_HOME } else { Join-Path $HOME ".octop" }
-$RealBin = Join-Path $OctopHome "venv\Scripts\octop.exe"
+$HappyclawHome = if ($env:OCTOP_HOME) { $env:OCTOP_HOME } else { Join-Path $HOME ".octop" }
+$RealBin = Join-Path $HappyclawHome "venv\Scripts\octop.exe"
 if (-not (Test-Path $RealBin)) {
-    Write-Error "HappyClaw environment not found at $OctopHome\venv"
+    Write-Error "HappyClaw environment not found at $HappyclawHome\venv"
     exit 1
 }
 & $RealBin @args
 '@ | Set-Content -Path $wrapperPs1 -Encoding UTF8
 
-$cmdWrapper = Join-Path $OctopBin "octop.cmd"
+$cmdWrapper = Join-Path $HappyclawBin "octop.cmd"
 @'
 @echo off
 set "OCTOP_HOME=%OCTOP_HOME%"
@@ -334,9 +334,9 @@ if not exist "%REAL_BIN%" (
 "%REAL_BIN%" %*
 '@ | Set-Content -Path $cmdWrapper -Encoding UTF8
 
-Write-Info "Wrappers created in $OctopBin"
+Write-Info "Wrappers created in $HappyclawBin"
 
-$targetPath = $OctopBin
+$targetPath = $HappyclawBin
 $registryPath = "HKCU:\Environment"
 $pathSavedForNewSessions = $false
 try {
@@ -361,7 +361,7 @@ if ($env:Path -notlike "*$targetPath*") {
 Write-Host ""
 Write-Host "HappyClaw installed successfully!" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Install location:  $OctopHome"
+Write-Host "  Install location:  $HappyclawHome"
 Write-Host "  Python:            $pyVersion"
 if ($script:ConsoleAvailable) {
     Write-Host "  Web UI:            available" -ForegroundColor Green

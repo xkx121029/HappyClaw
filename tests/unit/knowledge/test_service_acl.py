@@ -12,7 +12,7 @@ from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.knowledge import KnowledgeRepo
 from happyclaw.infra.db.repos.settings import SettingsRepo
 from happyclaw.infra.db.repos.users import UserRepo
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.knowledge import service as service_module
 from happyclaw.infra.knowledge.service import MAX_DOCS_PER_KB, KnowledgeService
 from happyclaw.infra.utils.paths import PathLayout
@@ -347,7 +347,7 @@ def test_move_folder_into_itself_is_rejected(service: KnowledgeService, target: 
     owner, kb_id = _base_with_tree(service)
     folder = service._services.knowledge_repo.get_document_by_path(kb_id, "notes")
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         service.move_document(kb_id, folder.id, actor_user_id=owner, target_folder=target)
 
     assert raised.value.code is ErrorCode.KNOWLEDGE_MOVE_INVALID
@@ -365,7 +365,7 @@ def test_move_rejects_a_name_collision_in_the_target(service: KnowledgeService) 
         path="archive/readme.md",
     )
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         service.move_document(
             kb_id,
             repo.get_document_by_path(kb_id, "notes/readme.md").id,

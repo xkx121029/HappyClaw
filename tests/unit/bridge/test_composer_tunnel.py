@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from happyclaw.infra.bridge.manager import BridgeManager
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def _mgr() -> BridgeManager:
@@ -107,7 +107,7 @@ def _owned_row(*, owner_user_id: int) -> MagicMock:
 async def test_tunnel_http_denies_disallowed_path() -> None:
     mgr = _mgr()
     mgr.get_usable = MagicMock(return_value=_owned_row(owner_user_id=1))  # type: ignore[method-assign]
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await mgr.tunnel_http(
             connection_id="cid1",
             owner_user_id=1,
@@ -121,7 +121,7 @@ async def test_tunnel_http_denies_disallowed_path() -> None:
 async def test_tunnel_http_shared_viewer_may_read_and_chat() -> None:
     mgr = _mgr()
     mgr.get_usable = MagicMock(return_value=_owned_row(owner_user_id=9))  # type: ignore[method-assign]
-    with pytest.raises(OctopError) as read_exc:
+    with pytest.raises(HappyclawError) as read_exc:
         await mgr.tunnel_http(
             connection_id="cid1",
             owner_user_id=2,
@@ -129,7 +129,7 @@ async def test_tunnel_http_shared_viewer_may_read_and_chat() -> None:
             path="/api/agents/01ABC",
         )
     assert read_exc.value.code == ErrorCode.BRIDGE_NOT_CONNECTED
-    with pytest.raises(OctopError) as chat_exc:
+    with pytest.raises(HappyclawError) as chat_exc:
         await mgr.tunnel_http(
             connection_id="cid1",
             owner_user_id=2,
@@ -150,7 +150,7 @@ async def test_tunnel_http_shared_viewer_cannot_manage_expert() -> None:
         ("PATCH", "/api/agents/01ABC"),
         ("DELETE", "/api/agents/01ABC"),
     ):
-        with pytest.raises(OctopError) as exc:
+        with pytest.raises(HappyclawError) as exc:
             await mgr.tunnel_http(
                 connection_id="cid1",
                 owner_user_id=2,
@@ -166,6 +166,6 @@ async def test_tunnel_json_get_rejects_http_error() -> None:
     mgr.tunnel_http = AsyncMock(  # type: ignore[method-assign]
         return_value=httpx.Response(502, text="boom")
     )
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await mgr.get_remote_knowledge_capability("cid1", owner_user_id=1)
     assert exc.value.code == ErrorCode.BRIDGE_TUNNEL_FAILED

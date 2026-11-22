@@ -26,7 +26,7 @@ from happyclaw.infra.agents.threads.artifact import thread_artifacts_payload
 from happyclaw.infra.agents.threads.context_breakdown import SEGMENT_KEYS, compute_context_breakdown
 from happyclaw.infra.agents.threads.fork import fork_dashboard_thread
 from happyclaw.infra.agents.workspace.dir import agent_facing_workspace_dir_from_config
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.hitl.coordinator import pending_hitl_payload
 from happyclaw.infra.gateway.threads import ThreadRegistry, thread_row_has_messages, thread_visible_to
 from happyclaw.infra.history.trajectory.service import TrajectoryService
@@ -157,13 +157,13 @@ def _require_thread(
     require_agent_row(agent_id, user=user, as_user=as_user, server=server)
     row = server.app_runtime.gateway.thread_registry.get_thread(thread_id)
     if row is None or row.agent_id != agent_id:
-        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
+        raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"thread {thread_id!r} not found")
     effective_uid = as_user if as_user is not None else user.id
     if write:
         if row.user_id != effective_uid:
-            raise OctopError(ErrorCode.FORBIDDEN, "thread not owned by user")
+            raise HappyclawError(ErrorCode.FORBIDDEN, "thread not owned by user")
     elif not thread_visible_to(row, effective_uid):
-        raise OctopError(ErrorCode.FORBIDDEN, "thread not owned by user")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "thread not owned by user")
     return row
 
 
@@ -558,7 +558,7 @@ async def fork_thread(
     assistant reply so the user can continue from that point.
     """
     if not (body.message_id or "").strip() and body.assistant_turns_from_end is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.SLASH_BAD_ARGS,
             "message_id or assistant_turns_from_end is required",
         )
@@ -618,7 +618,7 @@ async def patch_thread(
     }
     managing = bool(body.model_fields_set)
     if managing and row.user_id != effective_uid:
-        raise OctopError(ErrorCode.FORBIDDEN, "thread not owned by user")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "thread not owned by user")
     if (
         body.title is None
         and body.pinned is None
@@ -643,7 +643,7 @@ async def patch_thread(
         if body.contributed:
             agent_row = require_agent_row(agent_id, user=user, as_user=as_user, server=server)
             if not agent_is_shared(agent_row):
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.THREAD_CONTRIBUTE_REQUIRES_SHARE,
                     "only a shared expert can accept a contributed conversation",
                 )
@@ -663,7 +663,7 @@ async def patch_thread(
             model_ref is not None
             and not server.app_runtime.agent_registry.providers.is_model_ref_usable(model_ref)
         ):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.SLASH_BAD_ARGS,
                 "model_ref must reference an enabled model",
             )
@@ -674,7 +674,7 @@ async def patch_thread(
                 model_ref,
             )
         ):
-            raise OctopError(ErrorCode.RESOURCE_NOT_ALLOWED, "resource is not visible to this user")
+            raise HappyclawError(ErrorCode.RESOURCE_NOT_ALLOWED, "resource is not visible to this user")
     if "reasoning_mode" in body.model_fields_set:
         reasoning_mode = body.reasoning_mode
     if "reasoning_effort" in body.model_fields_set:
@@ -737,7 +737,7 @@ async def delete_thread(
     """
     _require_thread(server, agent_id, thread_id, user, as_user, write=True)
     if server.app_runtime.gateway.ws_hub.is_turn_active(thread_id):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.THREAD_TURN_ACTIVE,
             error_message(ErrorCode.THREAD_TURN_ACTIVE.value, "en"),
         )

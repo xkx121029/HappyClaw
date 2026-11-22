@@ -15,7 +15,7 @@ from happyclaw.infra.auth.tokens import (
 )
 from happyclaw.infra.db.repos.auth_challenges import KIND_REAUTH, AuthChallengeRepo
 from happyclaw.infra.db.services import SharedServices
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.password import verify_password
 
 
@@ -30,23 +30,23 @@ async def prove_password(
 ) -> None:
     """Validate local password, else throttled LDAP bind. SSO-only → PASSWORD_NOT_SET."""
     if not password:
-        raise OctopError(ErrorCode.PASSWORD_NOT_SET, "password required for reauth")
+        raise HappyclawError(ErrorCode.PASSWORD_NOT_SET, "password required for reauth")
     row = services.user_repo.get(user_id)
     if row is None:
-        raise OctopError(ErrorCode.AUTH_FAILED, "user not found")
+        raise HappyclawError(ErrorCode.AUTH_FAILED, "user not found")
     if row.password_hash:
         if verify_password(password, row.password_hash):
             return
-        raise OctopError(ErrorCode.AUTH_FAILED, "invalid credentials")
+        raise HappyclawError(ErrorCode.AUTH_FAILED, "invalid credentials")
     # No local password: directory-provisioned accounts may prove via LDAP.
     if ldap_service is None or not ldap_service.is_enabled():
-        raise OctopError(ErrorCode.PASSWORD_NOT_SET, "no local password for reauth")
+        raise HappyclawError(ErrorCode.PASSWORD_NOT_SET, "no local password for reauth")
     throttle = ldap_bind_throttle
     if throttle is not None:
         retry_after = throttle.retry_after(row.username, client_ip)
         if retry_after > 0:
             minutes = max(1, (retry_after + 59) // 60)
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.LOGIN_LOCKED,
                 "too many directory login attempts",
                 details={"retry_after_seconds": retry_after, "minutes": minutes},
@@ -59,12 +59,12 @@ async def prove_password(
             retry_after = throttle.record_failure(row.username, client_ip)
             if retry_after > 0:
                 minutes = max(1, (retry_after + 59) // 60)
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.LOGIN_LOCKED,
                     "too many directory login attempts",
                     details={"retry_after_seconds": retry_after, "minutes": minutes},
                 )
-        raise OctopError(ErrorCode.AUTH_FAILED, "invalid credentials")
+        raise HappyclawError(ErrorCode.AUTH_FAILED, "invalid credentials")
     if throttle is not None:
         throttle.clear(row.username, client_ip)
 
@@ -78,7 +78,7 @@ def issue_reauth_token(
 ) -> str:
     secret = services.secret_repo.get("jwt")
     if secret is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
     token = sign_token(
         secret,
         sub=user_id,
@@ -90,7 +90,7 @@ def issue_reauth_token(
     payload = decode_token(secret, token)
     jti = str(payload.get("jti") or "")
     if not jti:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "reauth token missing jti")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "reauth token missing jti")
     expires = int(time.time()) + REAUTH_TOKEN_TTL_SECONDS
     services.auth_challenge_repo.insert(
         kind=KIND_REAUTH,
@@ -110,22 +110,22 @@ def validate_reauth_grant(
     """Validate a reauth JWT + live challenge row. Returns jti (does not burn)."""
     secret = services.secret_repo.get("jwt")
     if secret is None:
-        raise OctopError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
+        raise HappyclawError(ErrorCode.INTERNAL_ERROR, "jwt secret missing")
     try:
         payload = decode_token(secret, reauth_token)
     except Exception as exc:  # noqa: BLE001 - TokenExpired/InvalidToken
-        raise OctopError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required") from exc
+        raise HappyclawError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required") from exc
     try:
         purpose = token_purpose(payload)
     except Exception as exc:  # noqa: BLE001
-        raise OctopError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required") from exc
+        raise HappyclawError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required") from exc
     if purpose != PURPOSE_REAUTH:
-        raise OctopError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")
+        raise HappyclawError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")
     if int(payload.get("sub") or 0) != user_id:
-        raise OctopError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")
+        raise HappyclawError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")
     jti = str(payload.get("jti") or "")
     if not jti:
-        raise OctopError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")
+        raise HappyclawError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")
     row = services.auth_challenge_repo.get_by_jti(jti)
     if (
         row is None
@@ -134,7 +134,7 @@ def validate_reauth_grant(
         or row.consumed_at is not None
         or row.expires_at < int(time.time())
     ):
-        raise OctopError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")
+        raise HappyclawError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")
     return jti
 
 
@@ -142,4 +142,4 @@ def burn_reauth_grant(challenge_repo: AuthChallengeRepo, jti: str) -> None:
     """Consume the reauth challenge exactly once at the committing step."""
     consumed = challenge_repo.try_consume_jti(jti)
     if consumed is None:
-        raise OctopError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")
+        raise HappyclawError(ErrorCode.MFA_REAUTH_REQUIRED, "reauth required")

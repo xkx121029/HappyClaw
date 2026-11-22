@@ -11,7 +11,7 @@ from happyclaw.infra.agents.settings.tool_catalog import BUILTIN_TOOL_CATALOG
 from happyclaw.infra.agents.teams.jobs import TeamJobTracker
 from happyclaw.infra.db.repos.agents import AgentRow
 from happyclaw.infra.db.services import RepoBundle
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 TEAM_KIND = "team"
 EXPERT_KIND = "expert"
@@ -153,7 +153,7 @@ class TeamService:
         workspace = self._workspace(team_agent_id)
         writer = getattr(workspace, "write_text", None) if workspace is not None else None
         if workspace is None or writer is None:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.AGENT_NOT_FOUND,
                 f"workspace missing for team {team_agent_id!r}",
                 details={"team_agent_id": team_agent_id},
@@ -200,13 +200,13 @@ class TeamService:
                 continue
             out.append(member_id)
         if invalid:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.TEAM_MEMBER_INVALID,
                 "one or more team members cannot be used",
                 details={"member_agent_ids": invalid},
             )
         if len(out) < TEAM_MIN_MEMBERS:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.TEAM_MEMBERS_TOO_FEW,
                 f"a team needs at least {TEAM_MIN_MEMBERS} members",
                 details={"min_members": TEAM_MIN_MEMBERS},
@@ -223,7 +223,7 @@ class TeamService:
         busy = self.jobs.busy_member_ids(team_agent_id)
         blocked = sorted(removed & busy)
         if blocked:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.TEAM_MEMBER_BUSY,
                 "cannot remove a member with an in-flight team job",
                 details={"member_agent_ids": blocked},
@@ -232,18 +232,18 @@ class TeamService:
     def assert_can_delete_agent(self, agent_id: str) -> None:
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
-            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+            raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         if is_team_agent(row):
             busy = self.jobs.busy_member_ids(agent_id)
             if busy:
-                raise OctopError(
+                raise HappyclawError(
                     ErrorCode.TEAM_MEMBER_BUSY,
                     "cannot delete a team while members have in-flight jobs",
                     details={"member_agent_ids": sorted(busy)},
                 )
             return
         if self.jobs.is_member_busy(agent_id):
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.TEAM_MEMBER_BUSY,
                 "cannot delete an expert with an in-flight team job",
                 details={"member_agent_id": agent_id},

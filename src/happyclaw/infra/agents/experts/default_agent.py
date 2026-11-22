@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from happyclaw.infra.agents.experts.catalog import ExpertCatalog, build_create_spec_from_expert
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.users.resource_policy import (
     POLICY_WORKSPACE_ROOT_DIR,
     effective_workspace_root_dir,
@@ -94,10 +94,10 @@ async def bootstrap_default_agent(
     if registry.list_agents(user_id):
         return None
     if catalog is None:
-        raise OctopError(ErrorCode.DEFAULT_EXPERT_FAILED, "could not create default expert")
+        raise HappyclawError(ErrorCode.DEFAULT_EXPERT_FAILED, "could not create default expert")
     expert = catalog.get(template_id)
     if expert is None:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.EXPERT_TEMPLATE_NOT_FOUND,
             "expert template not found",
         )

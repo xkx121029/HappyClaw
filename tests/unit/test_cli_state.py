@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from happyclaw.cli.support.state import CLIState, load, save
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def test_load_missing_returns_default(tmp_path: Path) -> None:
@@ -43,7 +43,7 @@ def test_load_corrupt_file_raises_typed_error(tmp_path: Path) -> None:
     """
     p = tmp_path / "cli_state.json"
     p.write_text('{"default_user": "u",}', encoding="utf-8")  # trailing comma
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         load(p)
     assert excinfo.value.code is ErrorCode.CONFIG_FILE_CORRUPT
 
@@ -51,7 +51,7 @@ def test_load_corrupt_file_raises_typed_error(tmp_path: Path) -> None:
 def test_load_non_object_raises_typed_error(tmp_path: Path) -> None:
     p = tmp_path / "cli_state.json"
     p.write_text("[1, 2]", encoding="utf-8")
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         load(p)
     assert excinfo.value.code is ErrorCode.CONFIG_FILE_CORRUPT
 

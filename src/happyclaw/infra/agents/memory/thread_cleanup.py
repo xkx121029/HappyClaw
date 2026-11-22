@@ -20,14 +20,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.memory.backend import open_memory_kwargs
 from happyclaw.infra.agents.workspace.dir import (
     agent_host_data_dirs,
     host_system_dir,
     workspace_dir_from_config_json,
 )
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ def delete_thread_from_agent_stores(
     agent_id: str,
     thread_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
     paths: Any | None = None,
     reclaim: bool = True,
@@ -133,7 +133,7 @@ def delete_agent_memory_and_checkpoints(
     agent_id: str,
     thread_ids: set[str],
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
     paths: Any | None = None,
 ) -> None:
@@ -178,7 +178,7 @@ def delete_stored_thread(
     agent_id: str,
     thread_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
     reclaim: bool = True,
 ) -> None:
@@ -218,7 +218,7 @@ def reclaim_stored_thread(
     agent_id: str,
     thread_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
 ) -> None:
     """Best-effort SQLite reclaim after a live harness already deleted the rows."""
@@ -241,7 +241,7 @@ def checkpoint_thread_bytes(
     *,
     agent_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
 ) -> dict[str, int]:
     """``thread_id -> checkpoint payload bytes`` currently stored for the agent."""
@@ -340,7 +340,7 @@ def _memory_location(
     *,
     agent_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
 ) -> tuple[str, str, dict[str, Any] | None, Path | None]:
     ns, backend, backend_config = open_memory_kwargs(
@@ -410,7 +410,7 @@ def _purge_sqlite_file(
     *,
     agent_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
 ) -> None:
     _purge_agent_memory(
@@ -425,7 +425,7 @@ def _purge_agent_memory(
     *,
     agent_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
 ) -> None:
     ns, backend, backend_config, sqlite_path = _memory_location(
@@ -460,7 +460,7 @@ def _purge_postgres_namespace(store: Any) -> None:
     ns = str(getattr(store, "_ns", "") or "")
     dsn = str(getattr(store, "_dsn", "") or "")
     if _IDENT.fullmatch(ns) is None or not dsn:
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.CHECKPOINT_DELETE_FAILED,
             "could not delete agent memory: backend namespace is missing",
         )
@@ -541,7 +541,7 @@ def agent_sqlite_freelist_bytes(
     *,
     agent_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
     paths: Any | None = None,
 ) -> int:
@@ -627,7 +627,7 @@ def compact_agent_store_file(
     *,
     agent_id: str,
     cfg: dict[str, Any],
-    octop_config: OctopConfig,
+    octop_config: HappyclawConfig,
     workspace_dir: Path,
 ) -> bool:
     """Open this agent's store and compact it. The agent must not be loaded."""
@@ -932,9 +932,9 @@ def _remove_deleted_agent_dirs(paths: Any, live_ids: set[str]) -> int:
     return removed
 
 
-def _delete_failed(thread_id: str, exc: BaseException) -> OctopError:
+def _delete_failed(thread_id: str, exc: BaseException) -> HappyclawError:
     logger.warning("checkpoint delete failed thread=%s", thread_id, exc_info=exc)
-    return OctopError(
+    return HappyclawError(
         ErrorCode.CHECKPOINT_DELETE_FAILED,
         f"could not delete conversation data for thread {thread_id!r}",
     )

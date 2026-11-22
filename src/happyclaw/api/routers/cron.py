@@ -16,7 +16,7 @@ from happyclaw.infra.cron.task_type import (
     require_cron_prompt,
 )
 from happyclaw.infra.cron.trigger import build_trigger
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.ulid import new_cron_id
 
 router = APIRouter()
@@ -70,9 +70,9 @@ def _assert_cron_manage(
     *, agent_id: str, agent_row: Any, user: Any, row: Any | None = None
 ) -> None:
     if row is not None and row.agent_id != agent_id:
-        raise OctopError(ErrorCode.NOT_FOUND, "cron job not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "cron job not found")
     if not _user_may_manage_agent_cron(agent_row=agent_row, user=user):
-        raise OctopError(ErrorCode.FORBIDDEN, "cron job not accessible to user")
+        raise HappyclawError(ErrorCode.FORBIDDEN, "cron job not accessible to user")
 
 
 @router.get("/cron/settings", summary="Cron server settings")
@@ -170,7 +170,7 @@ async def get_cron(
     agent_row = require_agent_row(agent_id, user=user, as_user=None, server=server)
     row = _get_cron_manager(server).get(cron_id)
     if row is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "cron job not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "cron job not found")
     _assert_cron_manage(agent_id=agent_id, agent_row=agent_row, user=user, row=row)
     return cast(dict[str, Any], row.to_public_dict(include_agent=True))
 
@@ -191,7 +191,7 @@ async def patch_cron(
     mgr = _get_cron_manager(server)
     existing = mgr.get(cron_id)
     if existing is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "cron job not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "cron job not found")
     _assert_cron_manage(agent_id=agent_id, agent_row=agent_row, user=user, row=existing)
     if body.trigger is not None:
         build_trigger(body.trigger)
@@ -233,7 +233,7 @@ async def delete_cron(
     mgr = _get_cron_manager(server)
     existing = mgr.get(cron_id)
     if existing is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "cron job not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "cron job not found")
     _assert_cron_manage(agent_id=agent_id, agent_row=agent_row, user=user, row=existing)
     await mgr.delete(cron_id)
 
@@ -250,6 +250,6 @@ async def run_now(
     mgr = _get_cron_manager(server)
     existing = mgr.get(cron_id)
     if existing is None:
-        raise OctopError(ErrorCode.NOT_FOUND, "cron job not found")
+        raise HappyclawError(ErrorCode.NOT_FOUND, "cron job not found")
     _assert_cron_manage(agent_id=agent_id, agent_row=agent_row, user=user, row=existing)
     await mgr.run_now(cron_id)

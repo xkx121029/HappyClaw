@@ -76,7 +76,7 @@ High-level tree — see [§5 Module boundaries](#5-module-boundaries) for what e
 ```
 HappyClaw (`octop/` workspace directory)     Python package root (`src/happyclaw/`)
   config.py
-  launch.py                   composition root: OctopServer + FastAPI + uvicorn
+  launch.py                   composition root: HappyclawServer + FastAPI + uvicorn
   i18n/                       locale JSON bundles + tr() + domain helpers
   infra/                      domain core (agents, DB, gateway, …)
   api/                        HTTP adapters (FastAPI)
@@ -101,9 +101,9 @@ cli/ ──► launch.py ──► api/ + infra/
 
 | Layer | Role | May import | Must NOT import |
 |-------|------|------------|-----------------|
-| `happyclaw.config` | Env-based `OctopConfig` | stdlib, pydantic | `infra/`, `api/`, `cli/`, `launch.py` |
+| `happyclaw.config` | Env-based `HappyclawConfig` | stdlib, pydantic | `infra/`, `api/`, `cli/`, `launch.py` |
 | `octop.i18n` | Locale JSON + `tr()` + per-namespace helpers | `infra/utils/locale`, stdlib | `api/`, `cli/`, `dashboard/` |
-| `octop.launch` | Wire `OctopServer`, `build_app`, uvicorn for `octop run` | `infra/`, `api/` | business logic; must not be imported by `infra/` |
+| `octop.launch` | Wire `HappyclawServer`, `build_app`, uvicorn for `octop run` | `infra/`, `api/` | business logic; must not be imported by `infra/` |
 | `infra/utils/` | Pure helpers (paths, ulid, env files, Ollama) | stdlib, third-party | any other `infra/*` domain code |
 | `infra/db/repos/` | One repo per table — SQL only | `infra/db/_base`, `infra/utils/` | `agents/`, `gateway/`, `api/`, orchestration |
 | `infra/` (domain) | Business logic & orchestration | `infra/utils/`, `infra/db/`, `happyclaw.config`, peer `infra/*` subpackages, `infra/errors`, `infra/metrics` | `api/`, `cli/`, `launch.py`, `dashboard/` |
@@ -135,15 +135,15 @@ cli/ ──► launch.py ──► api/ + infra/
 | `infra/setup/` | First-run wizard, system service install, TLS / Let's Encrypt | `server.py`, `launch.py`, `api/routers/setup.py`, `api/routers/tls.py` |
 | `infra/skills/` | Skill packages, SkillHub HTTP client (`skillhub_market`, `skillhub_common`) | `api/routers/skills.py`, `agents/experts` |
 | `infra/users/` | Legacy user tables, password hashing, `UserManager` — single local owner, kept for compatibility | `server.py`, `api/routers/auth.py`, `users.py` |
-| `infra/errors.py` | `OctopError`, `ErrorCode` — shared exception types | everywhere in `infra/` and `api/` |
+| `infra/errors.py` | `HappyclawError`, `ErrorCode` — shared exception types | everywhere in `infra/` and `api/` |
 | `infra/metrics.py` | In-process counters (`METRICS`) | lazy-import inside hot paths |
-| `infra/server.py` | `OctopServer.start()` — wires infra singletons | `launch.py`, `api/app.py` |
+| `infra/server.py` | `HappyclawServer.start()` — wires infra singletons | `launch.py`, `api/app.py` |
 
 ### `launch.py`
 
 | Path | Owns | Must NOT |
 |------|------|----------|
-| `launch.py` | `run_foreground` / `run_foreground_blocking` — boot `OctopServer`, serve via uvicorn + `build_app`, clean shutdown | HTTP routes, SQL, CLI argument parsing |
+| `launch.py` | `run_foreground` / `run_foreground_blocking` — boot `HappyclawServer`, serve via uvicorn + `build_app`, clean shutdown | HTTP routes, SQL, CLI argument parsing |
 
 Only `launch.py` may import both `infra/server` and `api/app` in the same module.
 
@@ -155,7 +155,7 @@ Only `launch.py` may import both `infra/server` and `api/app` in the same module
 | `api/deps.py` | JWT extraction, `current_user`, `get_server` | agent lifecycle, cron logic |
 | `api/middleware/` | JWT gate, setup lockdown | business validation beyond auth/setup |
 | `api/openapi_meta.py` | Scalar tags, API intro text | route handlers |
-| `api/errors.py` | Map `OctopError` → HTTP status + JSON | new error semantics (add to `infra/errors.py`) |
+| `api/errors.py` | Map `HappyclawError` → HTTP status + JSON | new error semantics (add to `infra/errors.py`) |
 | `api/routers/` | One resource per module; Pydantic request/response models | persistence, harness calls — delegate to `infra/` |
 | `api/routers/browser/` | Browser session/stream HTTP surface | CDP, profiles, and DOM stay in `happyclaw-browser`; this router is glue |
 
@@ -167,7 +167,7 @@ Only `launch.py` may import both `infra/server` and `api/app` in the same module
 | `cli/*_cmd.py` | User-facing subcommands |
 | `cli/support/db.py` | Offline DB (`open_cli_services`) |
 | `cli/support/offline_ops.py` | Local CRUD via repos (thin wrappers) |
-| `cli/support/embedded_ops.py` | Short-lived `OctopServer` for runtime ops |
+| `cli/support/embedded_ops.py` | Short-lived `HappyclawServer` for runtime ops |
 | `cli/support/acting.py` | Resolve `--user` / pinned defaults / agent owner |
 | `cli/support/ctx.py` | Root `--user` / `--agent` / `--json` resolution |
 | `cli/support/state.py` | Pinned `default_user` / `default_agent` in `cli_state.json` |
@@ -179,7 +179,7 @@ Only `launch.py` may import both `infra/server` and `api/app` in the same module
 | Layer | When | Examples |
 |-------|------|----------|
 | **Offline** | Read/write local `~/.happyclaw` SQLite only | `user *`, `provider *`, `cron` list/create/delete, `agent list/delete`, `chats` CRUD, `models` presets/list/active, `channel` CRUD, `admin`, `skills` enable/disable, `bridge` list/get |
-| **Embedded** | Needs harness/gateway runtime; boots in-process `OctopServer` | `chats send/repl`, `chats get` (history), `cron run-now`, `agent` create/start/stop/reload, `provider test`, `channel test`, `skills list`, `acp` |
+| **Embedded** | Needs harness/gateway runtime; boots in-process `HappyclawServer` | `chats send/repl`, `chats get` (history), `cron run-now`, `agent` create/start/stop/reload, `provider test`, `channel test`, `skills list`, `acp` |
 | **Embedded (bridge)** | In-process `BridgeManager` (no full server); CLI cannot keep Bridge WS after exit | `bridge` probe/create/patch/delete/connect/disconnect/agents |
 | **External** | Talks to OS/daemon directly, no HappyClaw HTTP | `models ollama-*`, channel QR bind (WeCom/WeChat), Feishu bot-creator subprocess |
 
@@ -221,7 +221,7 @@ make build-frontend                     # dashboard/ → src/happyclaw/dashboard
 
 ## 7. Key patterns
 
-**DI:** Routers receive `server: OctopServer = Depends(get_server)`; core services live on `server.services` (`SharedServices` from `infra/db/services.py`). Never import repos at module level outside `SharedServices` / `RepoBundle`.
+**DI:** Routers receive `server: HappyclawServer = Depends(get_server)`; core services live on `server.services` (`SharedServices` from `infra/db/services.py`). Never import repos at module level outside `SharedServices` / `RepoBundle`.
 
 **Agent scope:** Most agent routes use `/api/agents/{agent_id}/…` in the URL. A few legacy endpoints (e.g. MBTI) still take `X-Octop-Agent-Id`. Always validate ownership: load the agent row → `_assert_agent_owner(row, user)` (or admin bypass).
 
@@ -295,7 +295,7 @@ i18n/
 
 **Locale resolution** (`infra/utils/locale.py`): stored user preference wins, then `Accept-Language` (dashboard sends this on API calls), then channel-type hints (IM platforms default `zh`, `telegram` → `en`). Use `resolve_user_locale()` in gateway/IM paths; `resolve_request_locale()` in HTTP handlers.
 
-**API errors:** `ErrorCode` values map to `errors.<CODE>` in JSON. `OctopError.to_envelope(locale=…)` and the global exception handler localize `message`. Dashboard mirrors codes under `apiErrors.*` in `dashboard/src/locales/{en,zh}.json` — tests require backend and frontend keys to match.
+**API errors:** `ErrorCode` values map to `errors.<CODE>` in JSON. `HappyclawError.to_envelope(locale=…)` and the global exception handler localize `message`. Dashboard mirrors codes under `apiErrors.*` in `dashboard/src/locales/{en,zh}.json` — tests require backend and frontend keys to match.
 
 **IM channels:** Tool names and hint lines must be localized in `stream_project.py` — pass localized `tool_name` and pre-formatted `tool_hint_text` on `MessageEvent.tool_start/end` (happyclaw-gateway reads `tool_hint_text` when present). Do not rely on English `ChannelConstraints.tool_hint_template` alone.
 
@@ -319,7 +319,7 @@ User-facing datetime display and cron/scheduling defaults MUST use the server ti
 
 | Layer | Entry |
 |-------|--------|
-| Config | `OctopConfig.default_timezone` in `config.py` |
+| Config | `HappyclawConfig.default_timezone` in `config.py` |
 | API | `GET /api/settings/timezone` → `{ "timezone": "…" }` (`GET /api/cron/settings` remains a compat alias) |
 | Dashboard | `useServerTimezone()`; format with `formatServerDateTime` / `formatServerIsoDateTime` / `formatMessageTime(..., timeZone)` in `dashboard/src/utils/formatMessageTime.ts` |
 

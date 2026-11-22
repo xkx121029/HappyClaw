@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import Any, TypeVar
 
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 RESOURCE_SKILL_PACKAGE = "skill_package"
 RESOURCE_KNOWLEDGE_BASE = "knowledge_base"
@@ -135,7 +135,7 @@ class GroupAccess:
             is_owner=is_owner,
         ):
             return
-        raise OctopError(ErrorCode.RESOURCE_NOT_ALLOWED, "resource is not visible to this user")
+        raise HappyclawError(ErrorCode.RESOURCE_NOT_ALLOWED, "resource is not visible to this user")
 
     def filter_rows(
         self,
@@ -200,7 +200,7 @@ class GroupAccess:
         if visibility in {VISIBILITY_ALL, VISIBILITY_OWNER}:
             return []
         if visibility != VISIBILITY_GROUPS:
-            raise OctopError(ErrorCode.FORBIDDEN, "unknown visibility", status=400)
+            raise HappyclawError(ErrorCode.FORBIDDEN, "unknown visibility", status=400)
         cleaned: list[str] = []
         seen: set[str] = set()
         for raw in group_ids or []:
@@ -210,14 +210,14 @@ class GroupAccess:
             seen.add(group_id)
             cleaned.append(group_id)
         if not cleaned:
-            raise OctopError(
+            raise HappyclawError(
                 ErrorCode.FORBIDDEN,
                 "choose at least one user group",
                 status=400,
             )
         missing = [group_id for group_id in cleaned if self._groups.get(group_id) is None]
         if missing:
-            raise OctopError(ErrorCode.NOT_FOUND, "user group not found")
+            raise HappyclawError(ErrorCode.NOT_FOUND, "user group not found")
         return cleaned
 
     def set_visibility(
@@ -228,7 +228,7 @@ class GroupAccess:
         group_ids: Sequence[str] | None,
     ) -> None:
         if resource_type not in RESOURCE_TYPES:
-            raise OctopError(ErrorCode.FORBIDDEN, "unknown resource type", status=400)
+            raise HappyclawError(ErrorCode.FORBIDDEN, "unknown resource type", status=400)
         cleaned = self.validate_visibility(visibility, group_ids)
         if visibility in {VISIBILITY_ALL, VISIBILITY_OWNER}:
             self._grants.delete_resource(resource_type, resource_key)

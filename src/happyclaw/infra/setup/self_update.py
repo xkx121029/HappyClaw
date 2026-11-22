@@ -23,7 +23,7 @@ from typing import Any
 
 from happyclaw.i18n import lookup, tr
 from happyclaw.infra.desktop import desktop_shell_enabled
-from happyclaw.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.utils.locale import DEFAULT_LOCALE
 from happyclaw.infra.utils.paths import PathLayout
 
@@ -413,7 +413,7 @@ def is_newer(remote: str, local: str) -> bool:
 def validate_upgrade_target(version: str | None, local_ver: str) -> None:
     """Reject reinstalls/downgrades before any installer changes the environment."""
     if version is not None and not is_newer(version, local_ver):
-        raise OctopError(
+        raise HappyclawError(
             ErrorCode.UPDATE_TARGET_NOT_NEWER,
             tr("errors.UPDATE_TARGET_NOT_NEWER", "en", target=version, current=local_ver),
             details={"target": version, "current": local_ver},
@@ -616,9 +616,9 @@ def get_version_in_dir(python_exe: str, target: str, *, check_cli: bool = False)
             "import json, site, sys; from pathlib import Path; "
             "target = Path(sys.argv[1]).resolve(); "
             "sys.path.insert(0, str(target)); site.addsitedir(str(target)); "
-            "import octop; "
-            "actual = octop.__version__ if "
-            "Path(octop.__file__).resolve().is_relative_to(target) else None\n"
+            "import happyclaw; "
+            "actual = happyclaw.__version__ if "
+            "Path(happyclaw.__file__).resolve().is_relative_to(target) else None\n"
             "if actual is not None and sys.argv[2] == '1':\n"
             " import contextlib, io, runpy\n"
             " sys.argv = ['octop', '--version']\n"
@@ -992,7 +992,7 @@ def run_upgrade(
         return UpgradeResult(success=False, error="updates are managed by the desktop shell")
     try:
         validate_upgrade_target(version, get_local_version())
-    except OctopError as exc:
+    except HappyclawError as exc:
         return UpgradeResult(success=False, error=exc.localized_message(locale))
     # Cache this running updater's locale bundles before installation replaces
     # its package resources, so result messages use the matching translations.

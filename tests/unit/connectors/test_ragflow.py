@@ -9,13 +9,13 @@ from typing import Any
 import httpx
 import pytest
 
-from happyclaw.config import OctopConfig
+from happyclaw.config import HappyclawConfig
 from happyclaw.infra.connectors.builder import validate_create_credentials
 from happyclaw.infra.connectors.catalog import catalog_entry_to_dict, get_catalog_entry
 from happyclaw.infra.connectors.gateway.adapters import ragflow
 from happyclaw.infra.connectors.gateway.protocol import handle_mcp_request
 from happyclaw.infra.connectors.probe import probe_connector
-from happyclaw.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 CREDS = {"base_url": "http://127.0.0.1:9380/api/v1", "api_key": "ragflow-test-key"}
 
@@ -90,7 +90,7 @@ def test_credentials_require_api_key(key: str) -> None:
     ],
 )
 def test_credentials_reject_unsafe_or_non_api_urls(url: str) -> None:
-    with pytest.raises((ValueError, OctopError)):
+    with pytest.raises((ValueError, HappyclawError)):
         validate_create_credentials("ragflow", {**CREDS, "base_url": url})
 
 
@@ -301,10 +301,10 @@ async def test_gateway_probe_validates_auth_before_listing_tools(
     entry = get_catalog_entry("ragflow")
     assert entry is not None
     mock_http({"code": 109, "message": "invalid key"})
-    failed = await probe_connector(entry, CREDS, instance_id="probe", config=OctopConfig())
+    failed = await probe_connector(entry, CREDS, instance_id="probe", config=HappyclawConfig())
     assert failed["ok"] is False
     mock_http({"code": 0, "data": []})
-    success = await probe_connector(entry, CREDS, instance_id="probe", config=OctopConfig())
+    success = await probe_connector(entry, CREDS, instance_id="probe", config=HappyclawConfig())
     assert success["ok"] is True
     assert {tool["name"] for tool in success["tools"]} == {
         "list_datasets",
