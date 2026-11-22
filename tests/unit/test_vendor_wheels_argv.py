@@ -36,7 +36,11 @@ def _find_working_bash() -> str | None:
     if os.name == "nt":
         try:
             listed = subprocess.run(
-                ["where", "bash"], capture_output=True, text=True, timeout=15
+                ["where", "bash"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=15,
             ).stdout.split()
             candidates.extend(listed)
         except (OSError, subprocess.TimeoutExpired):
@@ -92,6 +96,8 @@ def _run_vendor(plat: str, tmp_path: Path) -> tuple[subprocess.CompletedProcess[
         [str(BASH), str(SCRIPT), plat],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         env=env,
         timeout=120,
         check=False,
@@ -148,6 +154,8 @@ def test_windows_arm64_overrides_drop_unwheeled_ocr(tmp_path: Path) -> None:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         env={**os.environ, "REPO_ROOT": str(REPO_ROOT), "GREEN_ROOT": str(tmp_path)},
         timeout=30,
         check=False,
