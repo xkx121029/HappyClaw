@@ -1,4 +1,4 @@
-"""octop version command."""
+"""happyclaw version command."""
 
 from __future__ import annotations
 
@@ -7,11 +7,14 @@ import click
 
 @click.command("version")
 def version() -> None:
-    """Show the installed octop version."""
-    try:
-        from importlib.metadata import version as _v
+    """Show the installed HappyClaw version."""
+    from importlib.metadata import PackageNotFoundError, version as _v
 
-        v = _v("octop")
-    except Exception:
-        v = "unknown"
-    click.echo(f"octop v{v}")
+    v = "unknown"
+    for dist in ("happyclaw", "octop"):
+        try:
+            v = _v(dist)
+            break
+        except PackageNotFoundError:
+            continue
+    click.echo(f"happyclaw v{v}")

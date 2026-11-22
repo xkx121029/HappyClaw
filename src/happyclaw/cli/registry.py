@@ -27,7 +27,7 @@ COMMANDS: dict[str, tuple[str, str, str]] = {
         "captcha",
         "Login captcha maintenance (lockout escape hatch).",
     ),
-    "version": (".commands.version", "version", "Show the installed octop version."),
+    "version": (".commands.version", "version", "Show the installed HappyClaw version."),
     "selfcheck": (
         ".commands.selfcheck",
         "selfcheck",

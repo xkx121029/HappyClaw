@@ -3,7 +3,7 @@ requires = ["hatchling>=1.18"]
 build-backend = "hatchling.build"
 
 [project]
-name = "octop"
+name = "happyclaw"
 version = "1.0.3b6"
 description = "Self-hosted single-user AI assistant workspace: one local owner, multiple agents, built on happyclaw-harness"
 readme = "README.md"
@@ -115,8 +115,10 @@ dev = [
 [project.scripts]
 # `happyclaw` is the product command; `octop` stays as an alias so existing
 # scripts and docs keep working.
-happyclaw = "happyclaw.cli.main:cli"
-octop = "happyclaw.cli.main:cli"
+happyclaw = "happyclaw.cli.main:main"
+# Deprecated alias, kept for one release: machine scripts, the docker entrypoint
+# and the fnOS packages all invoke `octop`. It prints a deprecation notice.
+octop = "happyclaw.cli.main:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/happyclaw"]

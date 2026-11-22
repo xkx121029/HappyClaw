@@ -1,14 +1,32 @@
-"""octop CLI entry point with lazy command loading."""
+"""happyclaw CLI entry point with lazy command loading."""
 
 from __future__ import annotations
 
 import importlib
+import os
 import sys
+from pathlib import Path
 from typing import Any, ClassVar
 
 import click
 
 from happyclaw.cli.registry import COMMANDS
+
+
+def _warn_if_invoked_as_octop() -> None:
+    """Tell the caller once when the pre-rename ``octop`` command is used."""
+    invoked = Path(sys.argv[0] if sys.argv else "").stem
+    if invoked == "octop" and not os.environ.get("HAPPYCLAW_SILENCE_RENAME_NOTICE"):
+        click.echo(
+            "`octop` is deprecated and will be removed in the next release; use `happyclaw`.",
+            err=True,
+        )
+
+
+def main() -> None:
+    """Console-script entry point shared by ``happyclaw`` and its ``octop`` alias."""
+    _warn_if_invoked_as_octop()
+    cli()
 
 
 def _ensure_utf8_stdio(
@@ -39,18 +57,20 @@ def _ensure_utf8_stdio(
 
 
 def _get_version() -> str:
-    try:
-        from importlib.metadata import version as pkg_version
+    from importlib.metadata import PackageNotFoundError, version as pkg_version
 
-        return pkg_version("octop")
-    except Exception:
-        return "unknown"
+    for dist in ("happyclaw", "octop"):
+        try:
+            return pkg_version(dist)
+        except PackageNotFoundError:
+            continue
+    return "unknown"
 
 
 def _print_version(ctx: click.Context, _param: click.Parameter, value: bool) -> None:
     if not value or ctx.resilient_parsing:
         return
-    click.echo(f"octop v{_get_version()}")
+    click.echo(f"happyclaw v{_get_version()}")
     ctx.exit()
 
 
@@ -88,7 +108,7 @@ class _LazyCLI(click.Group):
     is_eager=True,
     expose_value=False,
     callback=_print_version,
-    help="Show the installed octop version.",
+    help="Show the installed HappyClaw version.",
 )
 @click.option(
     "--user",
@@ -118,7 +138,7 @@ def cli(
     agent_id: str | None,
     json_out: bool,
 ) -> None:
-    """Octop command-line interface."""
+    """HappyClaw command-line interface."""
     _ensure_utf8_stdio()
     ctx.ensure_object(dict)
     ctx.obj["as_user"] = as_user
@@ -127,4 +147,4 @@ def cli(
 
 
 if __name__ == "__main__":
-    cli()
+    main()
