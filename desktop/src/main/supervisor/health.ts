@@ -11,12 +11,12 @@ export interface HealthResponse {
  * Cold import of the bundled Windows runtime has been observed at about 75s
  * before ``/api/health`` answers, and real first runs have needed over 4
  * minutes. The default is deliberately wider than the worst measured cold
- * start; ``OCTOP_READY_TIMEOUT_MS`` overrides it between 30s and 15min.
+ * start; ``HAPPYCLAW_READY_TIMEOUT_MS`` overrides it between 30s and 15min.
  */
 export const DEFAULT_HEALTH_TIMEOUT_MS = 300_000;
 export const MAX_HEALTH_TIMEOUT_MS = 900_000;
 const MIN_HEALTH_TIMEOUT_MS = 30_000;
-export const READY_TIMEOUT_ENV = "OCTOP_READY_TIMEOUT_MS";
+export const READY_TIMEOUT_ENV = "HAPPYCLAW_READY_TIMEOUT_MS";
 const POLL_INTERVAL_MS = 250;
 
 /** Readiness budget in ms: env override, clamped, or the measured default. */

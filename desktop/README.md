@@ -144,7 +144,7 @@ and is still unimplemented.
 
 
 Desktop builds run without the account system. `buildSidecarEnv()` gives the
-sidecar `OCTOP_REQUIRE_SETUP_PASSWORD=0`, so the wizard skips its CLI password
+sidecar `HAPPYCLAW_REQUIRE_SETUP_PASSWORD=0`, so the wizard skips its CLI password
 and the first admin gets a server-minted password nobody ever types
 (`POST /api/setup/initial-admin` accepts a body without `password`). The JWT
 lifetime is left at the server default: the session is renewed, not lengthened.
@@ -152,7 +152,7 @@ lifetime is left at the server default: the session is renewed, not lengthened.
 The Dashboard is not desktop-specific: it reads `wizard_password_required`
 from `/api/setup/status` and hides the password step plus the Admin step's
 password fields. A web deployment keeps the default `true` and the same code
-renders them again. While the shell runs `OCTOP_REQUIRE_SETUP_PASSWORD` is
+renders them again. While the shell runs `HAPPYCLAW_REQUIRE_SETUP_PASSWORD` is
 shell-owned — the `~/.happyclaw/env` file and `PUT /api/envs` cannot put the
 sign-in wall back.
 
@@ -281,7 +281,7 @@ Same as the HappyClaw CLI/server default:
 - Shell prefs → `~/.happyclaw/desktop-settings.json`
 - Shell session files → Electron `userData` (`desktop-window.json`, `desktop-session.json`)
 
-The shell points `OCTOP_GREEN_PACKAGES` at the extracted `packages/` directory, so
+The shell points `HAPPYCLAW_GREEN_PACKAGES` at the extracted `packages/` directory, so
 `octop update` upgrades it through HappyClaw's existing `--target` logic. Newer
 extracted runtimes are never downgraded; PostgreSQL stays externally managed and
 is not copied by the shell.

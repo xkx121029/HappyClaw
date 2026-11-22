@@ -29,7 +29,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 Open `http://localhost:8088`. Single-user mode needs no administrator password and no setup wizard: the first boot initializes the database and binds the local owner automatically, and the dashboard opens straight into the workspace.
 
-> **Upgrading from an older image:** the container no longer reads `OCTOP_DEFAULT_PASSWORD`, `OCTOP_ADMIN_USERNAME`, or `OCTOP_ADMIN_DISPLAY_NAME`, and creates no account. First boot runs `octop init --yes` (runtime directory + migrations only) and the server binds the local owner on start, so an existing data volume keeps every user row and you open the dashboard as that owner. `credential.txt` and `octop-login.txt` are no longer written; leftovers from an older image are harmless.
+> **Upgrading from an older image:** the container no longer reads `HAPPYCLAW_DEFAULT_PASSWORD`, `HAPPYCLAW_ADMIN_USERNAME`, or `HAPPYCLAW_ADMIN_DISPLAY_NAME`, and creates no account. First boot runs `octop init --yes` (runtime directory + migrations only) and the server binds the local owner on start, so an existing data volume keeps every user row and you open the dashboard as that owner. `credential.txt` and `octop-login.txt` are no longer written; leftovers from an older image are harmless.
 
 Compose sets the open-file limit to 65535 for multi-agent workloads. Server startup also raises the soft limit up to 65535 within the inherited hard limit and logs the effective limits. Recreate existing containers to apply changed Compose limits; a restart alone does not change their hard limit.
 
@@ -46,7 +46,7 @@ docker run -d \
   octop:latest
 ```
 
-Published tags: `ghcr.io/xkx121029/happyclaw:<version>` and `:latest` are the lite image. `:<version>-full` and `:full` add desktop, OCR, and local embedding. A local build is full unless you pass `--build-arg OCTOP_IMAGE_VARIANT=lite`. The image name comes from the repository that runs `docker-publish`, so a tag is pullable only after that workflow has completed once for it; until then build locally.
+Published tags: `ghcr.io/xkx121029/happyclaw:<version>` and `:latest` are the lite image. `:<version>-full` and `:full` add desktop, OCR, and local embedding. A local build is full unless you pass `--build-arg HAPPYCLAW_IMAGE_VARIANT=lite`. The image name comes from the repository that runs `docker-publish`, so a tag is pullable only after that workflow has completed once for it; until then build locally.
 
 ### Faster downloads (China mirrors)
 
@@ -65,10 +65,10 @@ bash docker/docker_build.sh
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `HOME` | `/data` | Must be `/data` so `~/.happyclaw` maps to the data volume |
-| `OCTOP_PORT` | `8088` | HTTP listen port |
-| `OCTOP_DATA` | `~/.happyclaw` | Host data directory (mounted at `/data/.octop`) |
-| `OCTOP_DATABASE_URL` | — | PostgreSQL DSN (or other `OCTOP_DATABASE_*`; see [configuration.md](../docs/configuration.md)) |
-| `OCTOP_DATABASE_DRIVER` | — | `sqlite` \| `postgresql` when overriding defaults via env |
+| `HAPPYCLAW_PORT` | `8088` | HTTP listen port |
+| `HAPPYCLAW_DATA` | `~/.happyclaw` | Host data directory (mounted at `/data/.octop`) |
+| `HAPPYCLAW_DATABASE_URL` | — | PostgreSQL DSN (or other `HAPPYCLAW_DATABASE_*`; see [configuration.md](../docs/configuration.md)) |
+| `HAPPYCLAW_DATABASE_DRIVER` | — | `sqlite` \| `postgresql` when overriding defaults via env |
 | `OPENAI_API_KEY` | — | OpenAI-compatible API key |
 | `DASHSCOPE_API_KEY` | — | Alibaba DashScope API key |
 

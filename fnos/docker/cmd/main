@@ -6,9 +6,9 @@
 # 并把卷指到 TRIM_DATA_SHARE_PATHS，避免重启后再次走首次配置。
 #
 
-_OCTOP_COMMON="$(dirname "$0")/common.sh"
-[ -f "$_OCTOP_COMMON" ] || _OCTOP_COMMON="/var/apps/octop/cmd/common.sh"
-[ -f "$_OCTOP_COMMON" ] && source "$_OCTOP_COMMON"
+_HAPPYCLAW_COMMON="$(dirname "$0")/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] || _HAPPYCLAW_COMMON="/var/apps/octop/cmd/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] && source "$_HAPPYCLAW_COMMON"
 
 FILE_PATH="${TRIM_APPDEST}/docker/docker-compose.yaml"
 ENV_FILE="${TRIM_APPDEST:-/var/apps/octop/target}/docker/.env"

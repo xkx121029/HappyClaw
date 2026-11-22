@@ -1,6 +1,6 @@
 """Default-off shadow writer for real chat turns.
 
-When ``OCTOP_DSH_SHADOW`` is truthy, the chat processor appends a DSH event log
+When ``HAPPYCLAW_DSH_SHADOW`` is truthy, the chat processor appends a DSH event log
 next to the normal history write. The switch is checked per turn; when it is
 off no shadow file is opened and no shadow code path runs.
 
@@ -51,8 +51,8 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
-ENV_ENABLED = "OCTOP_DSH_SHADOW"
-ENV_SHADOW_DIR = "OCTOP_DSH_SHADOW_DIR"
+ENV_ENABLED = "HAPPYCLAW_DSH_SHADOW"
+ENV_SHADOW_DIR = "HAPPYCLAW_DSH_SHADOW_DIR"
 DEFAULT_DIRNAME = "dsh-shadow"
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 _SAFE_THREAD_RE = re.compile(r"[^A-Za-z0-9._-]")
@@ -81,7 +81,7 @@ def shadow_enabled() -> bool:
 
 
 def shadow_root() -> Path:
-    """Resolve the shadow log root from ``OCTOP_DSH_SHADOW_DIR`` or the home."""
+    """Resolve the shadow log root from ``HAPPYCLAW_DSH_SHADOW_DIR`` or the home."""
     raw = os.environ.get(ENV_SHADOW_DIR, "").strip()
     if raw:
         return Path(raw).expanduser()

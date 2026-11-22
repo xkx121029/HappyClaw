@@ -16,7 +16,7 @@ from happyclaw.infra.market.errors import PortalMarketError
 DEFAULT_REMOTE_BASE = "https://github.com"
 # Off by default: this ships as a single-user self-hosted install, and pointing
 # every fresh install at a catalog site we do not run is a dependency, not a
-# feature. Set ``OCTOP_PORTAL_ORIGIN`` to a self-hosted market (see
+# feature. Set ``HAPPYCLAW_PORTAL_ORIGIN`` to a self-hosted market (see
 # ``docs/private-market.md``) to turn the plugin and expert catalogs on.
 DEFAULT_PORTAL_BASE = ""
 
@@ -32,7 +32,7 @@ _LOCAL_NETWORK_ERRNOS = frozenset(
 
 
 def portal_base() -> str:
-    """Site origin. The remote catalog is off unless ``OCTOP_PORTAL_ORIGIN`` is set.
+    """Site origin. The remote catalog is off unless ``HAPPYCLAW_PORTAL_ORIGIN`` is set.
 
     An explicitly empty value means the same as unset.
 
@@ -43,9 +43,9 @@ def portal_base() -> str:
     unavailable". Only the origin is kept, so a pasted path does not change the
     catalog endpoints.
     """
-    if "OCTOP_PORTAL_ORIGIN" not in os.environ:
+    if "HAPPYCLAW_PORTAL_ORIGIN" not in os.environ:
         return DEFAULT_PORTAL_BASE
-    raw = os.environ.get("OCTOP_PORTAL_ORIGIN", "").strip()
+    raw = os.environ.get("HAPPYCLAW_PORTAL_ORIGIN", "").strip()
     if not raw:
         return ""
     if "://" not in raw:
@@ -62,11 +62,11 @@ def portal_base() -> str:
 def remote_base() -> str:
     """Object origin for plugin and expert packages.
 
-    ``OCTOP_MARKET_REMOTE_ORIGIN`` overrides the public origin. A bare host is
+    ``HAPPYCLAW_MARKET_REMOTE_ORIGIN`` overrides the public origin. A bare host is
     treated as ``https://``. An empty or unusable value keeps the default.
     Only the origin is kept, so a pasted path does not change object keys.
     """
-    raw = os.environ.get("OCTOP_MARKET_REMOTE_ORIGIN", "").strip()
+    raw = os.environ.get("HAPPYCLAW_MARKET_REMOTE_ORIGIN", "").strip()
     if not raw:
         return DEFAULT_REMOTE_BASE
     if "://" not in raw:

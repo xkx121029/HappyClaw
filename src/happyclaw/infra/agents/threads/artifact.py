@@ -41,7 +41,7 @@ _PATH_KEYS = (
 )
 
 _PATH_EXT_RE = re.compile(r"\.[A-Za-z][A-Za-z0-9._+-]{0,11}$")
-_ABS_OCTOP_RE = re.compile(r"(?:/[\w.-]+)*/\.octop/agents/[^\s\"'<>]+", re.IGNORECASE)
+_ABS_HAPPYCLAW_RE = re.compile(r"(?:/[\w.-]+)*/\.octop/agents/[^\s\"'<>]+", re.IGNORECASE)
 _REL_DIR_RE = re.compile(
     r"(?:^|[\s\"'`])((?:outbound|inbound|generated)/[^\s\"'<>]+)",
     re.IGNORECASE,
@@ -287,7 +287,7 @@ def _paths_from_content(content: Any) -> list[str]:
 def _paths_from_text(text: str) -> list[str]:
     if not text:
         return []
-    abs_match = _ABS_OCTOP_RE.search(text)
+    abs_match = _ABS_HAPPYCLAW_RE.search(text)
     if abs_match:
         return [abs_match.group(0)]
     rel_match = _REL_DIR_RE.search(text)

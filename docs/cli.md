@@ -13,8 +13,8 @@ hand-written summary: `octop <group> --help` prints the same rows.
 | Option | Env | Effect |
 |--------|-----|--------|
 | `-v, --version` | — | Print the installed version and exit |
-| `--user TEXT` | `OCTOP_USER` | Default `--user` for subcommands (admin acting on behalf of a user). Ignored in single-user mode. |
-| `--agent TEXT` | `OCTOP_AGENT` | Default `--agent` for subcommands |
+| `--user TEXT` | `HAPPYCLAW_USER` | Default `--user` for subcommands (admin acting on behalf of a user). Ignored in single-user mode. |
+| `--agent TEXT` | `HAPPYCLAW_AGENT` | Default `--agent` for subcommands |
 | `--json` | — | Emit machine-readable JSON for list-style commands |
 
 ## Command groups
@@ -85,10 +85,10 @@ Usage: octop init [OPTIONS]
 
 Options:
   --admin-username TEXT      Legacy: also create a named admin row (or set
-                             OCTOP_ADMIN_USERNAME). Single-user installs need
+                             HAPPYCLAW_ADMIN_USERNAME). Single-user installs need
                              no account and pass neither admin option.
   --admin-password TEXT      Legacy: password for --admin-username (or set
-                             OCTOP_ADMIN_PASSWORD).
+                             HAPPYCLAW_ADMIN_PASSWORD).
   --admin-display-name TEXT  Legacy: optional display name for the admin row.
   --force                    Delete HappyClaw application state under ~/.happyclaw
                              before bootstrapping. Keeps the install runtime
@@ -125,7 +125,7 @@ Options:
   -h, --help                  Show this message and exit.
 ```
 
-Host and port resolve as CLI flag → `OCTOP_BIND_HOST` / `OCTOP_PORT` →
+Host and port resolve as CLI flag → `HAPPYCLAW_BIND_HOST` / `HAPPYCLAW_PORT` →
 `config.json` → default (`127.0.0.1:8088`).
 
 ## `octop service`
@@ -148,7 +148,7 @@ Commands:
 ```
 
 `start`, `stop`, `restart` and `status` accept `--scope`
-(`user` vs `system`; default `auto`, also settable via `OCTOP_SERVICE_SCOPE`).
+(`user` vs `system`; default `auto`, also settable via `HAPPYCLAW_SERVICE_SCOPE`).
 `start` takes `--host` / `--port` to write the bind address into `config.json`
 before installing, and `--force-install` to rewrite the unit file. `status`
 takes `--host` / `--port` for the health probe and `--no-health` to skip it.
@@ -425,8 +425,8 @@ Commands:
 
 Automatic backups are scheduled **inside** a running `octop run` process (the
 same system-job mechanism as TLS renewal). Configure in `config.json` under
-`backup`, with env overrides `OCTOP_BACKUP_AUTO_ENABLED`,
-`OCTOP_BACKUP_SCHEDULE`, `OCTOP_BACKUP_RETENTION_COUNT`, or via the dashboard.
+`backup`, with env overrides `HAPPYCLAW_BACKUP_AUTO_ENABLED`,
+`HAPPYCLAW_BACKUP_SCHEDULE`, `HAPPYCLAW_BACKUP_RETENTION_COUNT`, or via the dashboard.
 
 ```
 Usage: octop backup auto [OPTIONS] COMMAND [ARGS]...

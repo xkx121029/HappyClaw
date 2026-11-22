@@ -12,7 +12,7 @@ bottleneck is **startup import time**, not runtime CPU. A full Rust rewrite of
 Instead, this launcher does the small, high-value part in Rust:
 
 1. Spawns the backend immediately.
-2. Polls `GET /api/health` and emits a machine-readable `OCTOP_READY` line the
+2. Polls `GET /api/health` and emits a machine-readable `HAPPYCLAW_READY` line the
    moment the backend is usable — so the desktop shell / dashboard splash can
    switch away from the loading screen at the earliest correct moment.
 3. Two readiness modes:
@@ -73,10 +73,10 @@ octop-launcher --workdir E:/HAPPYclaw/Octop/src run --port 8097
 The readiness line looks like:
 
 ```
-OCTOP_READY pid=12345 elapsed_ms=3910
+HAPPYCLAW_READY pid=12345 elapsed_ms=3910
 ```
 
-Consumers should treat any `OCTOP_READY` line on stdout as "safe to leave the
+Consumers should treat any `HAPPYCLAW_READY` line on stdout as "safe to leave the
 splash". If health times out, a warning is printed to stderr but the backend is
 **not killed** — a slow boot is not a failed boot, and the launcher keeps
 proxying its lifetime and exit code.
@@ -88,7 +88,7 @@ point the desktop shell / service definition at `octop-launcher` instead:
 
 - Desktop shell: set the sidecar command to
   `octop-launcher --port <port> -- run --port <port>` and watch stdout for
-  `OCTOP_READY`.
+  `HAPPYCLAW_READY`.
 - Service / Docker entrypoint: use it as the container entrypoint with the same
   flags.
 

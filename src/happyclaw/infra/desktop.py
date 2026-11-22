@@ -1,9 +1,9 @@
 """Desktop shell ownership for the Octop Python sidecar.
 
 The Electron shell marks the Python process it owns with
-``OCTOP_DESKTOP_SHELL=1``.  This flag is authoritative for "this process is the
-desktop-hosted sidecar" and is intentionally distinct from ``OCTOP_DESKTOP`` /
-``OCTOP_GREEN_PACKAGES``: a standalone green portable install may set those
+``HAPPYCLAW_DESKTOP_SHELL=1``.  This flag is authoritative for "this process is the
+desktop-hosted sidecar" and is intentionally distinct from ``HAPPYCLAW_DESKTOP`` /
+``HAPPYCLAW_GREEN_PACKAGES``: a standalone green portable install may set those
 without being shell-owned, and it must keep its self-upgrade ability.
 
 ``happyclaw.config`` must stay free of ``infra`` imports (AGENTS.md §5), so this
@@ -15,18 +15,18 @@ from __future__ import annotations
 
 import os
 
-_DESKTOP_SHELL_ENV = "OCTOP_DESKTOP_SHELL"
+_DESKTOP_SHELL_ENV = "HAPPYCLAW_DESKTOP_SHELL"
 
 # Shell-owned keys that the ``~/.octop/env`` file and ``/api/envs`` must never
 # override: they control process identity, bind address, and update ownership.
 SHELL_OWNED_ENV_KEYS = frozenset(
     {
-        "OCTOP_DESKTOP_SHELL",
-        "OCTOP_DESKTOP",
-        "OCTOP_GREEN_PACKAGES",
-        "OCTOP_BIND_HOST",
-        "OCTOP_PORT",
-        "OCTOP_HOME",
+        "HAPPYCLAW_DESKTOP_SHELL",
+        "HAPPYCLAW_DESKTOP",
+        "HAPPYCLAW_GREEN_PACKAGES",
+        "HAPPYCLAW_BIND_HOST",
+        "HAPPYCLAW_PORT",
+        "HAPPYCLAW_HOME",
         "PYTHONNOUSERSITE",
     }
 )
@@ -38,7 +38,7 @@ SHELL_OWNED_ENV_KEYS = frozenset(
 # build deliberately removed.
 SHELL_POLICY_ENV_KEYS = frozenset(
     {
-        "OCTOP_REQUIRE_SETUP_PASSWORD",
+        "HAPPYCLAW_REQUIRE_SETUP_PASSWORD",
     }
 )
 

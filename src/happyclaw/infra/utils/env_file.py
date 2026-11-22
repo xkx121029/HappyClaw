@@ -136,7 +136,7 @@ def save_env_file(path: Path, values: dict[str, str]) -> None:
 def apply_env_file(path: Path) -> dict[str, str]:
     """Load ``path`` and merge into ``os.environ`` (does not unset missing keys).
 
-    Shell-owned keys (``OCTOP_DESKTOP_SHELL``, ``OCTOP_PORT``, …) are never
+    Shell-owned keys (``HAPPYCLAW_DESKTOP_SHELL``, ``HAPPYCLAW_PORT``, …) are never
     applied: the shell sets them for the whole process and a persisted env file
     must not be able to flip desktop identity or the loopback bind.
     """
@@ -166,7 +166,7 @@ def search_env_changed(previous: Mapping[str, str], new: Mapping[str, str]) -> b
 
 
 def _is_protected_env_key(key: str) -> bool:
-    return key in _PROTECTED_EXACT or key.startswith("OCTOP_")
+    return key in _PROTECTED_EXACT or key.startswith("HAPPYCLAW_")
 
 
 def overlay_stdio_spec_env(spec: dict[str, Any], global_env: Mapping[str, str]) -> dict[str, Any]:

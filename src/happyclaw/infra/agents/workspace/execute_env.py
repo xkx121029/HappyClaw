@@ -4,7 +4,7 @@ Global admin env (``~/.octop/env``) and workspace ``.env`` are merged at
 **execute** time inside harness (``inherit_env`` / ``environment_file`` /
 ``BackendWorkspace`` reader) — not snapshotted here.
 
-``OCTOP_AUTH_DIR`` / ``OCTOP_SKILLS_DIR`` use agent-facing paths when the
+``HAPPYCLAW_AUTH_DIR`` / ``HAPPYCLAW_SKILLS_DIR`` use agent-facing paths when the
 backend is scoped (bwrap / virtual rootfs), so skill scripts resolve the same
 locations inside the jail. Host paths are still mkdir'd for Octop host ops.
 """
@@ -83,10 +83,10 @@ def agent_execute_env_defaults(
         skills_host=skills_dir,
     )
     return {
-        "OCTOP_AGENT_ID": agent_id,
-        "OCTOP_AUTH_DIR": auth_env,
-        "OCTOP_HOME": str(paths.root),
-        "OCTOP_SKILLS_DIR": skills_env,
+        "HAPPYCLAW_AGENT_ID": agent_id,
+        "HAPPYCLAW_AUTH_DIR": auth_env,
+        "HAPPYCLAW_HOME": str(paths.root),
+        "HAPPYCLAW_SKILLS_DIR": skills_env,
     }
 
 

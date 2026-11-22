@@ -43,7 +43,7 @@ from happyclaw.infra.plugins.sandbox import (
 
 logger = logging.getLogger(__name__)
 
-ENV_SANDBOX_ABSENCE = "OCTOP_DSH_SANDBOX_ABSENCE"
+ENV_SANDBOX_ABSENCE = "HAPPYCLAW_DSH_SANDBOX_ABSENCE"
 
 ANNOUNCED: set[tuple[str, str]] = set()
 

@@ -15,7 +15,7 @@
 export interface AppVersionSources {
   /** Version from the bundled `resources/portable/portable-version.json`. */
   readBundled: () => Promise<string | null>;
-  /** Version from the dev runtime's `version.json` (`OCTOP_PORTABLE_DIR`). */
+  /** Version from the dev runtime's `version.json` (`HAPPYCLAW_PORTABLE_DIR`). */
   readDevRuntime: () => Promise<string | null>;
   /** Last resort: `app.getVersion()` from `package.json`. */
   readPackage: () => string;

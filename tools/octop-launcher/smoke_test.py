@@ -20,7 +20,7 @@ def run_mode(mode_flag, delay):
     ready_ms = None
     for line in proc.stdout:
         line = line.strip()
-        if line.startswith("OCTOP_READY"):
+        if line.startswith("HAPPYCLAW_READY"):
             ready_ms = (time.monotonic() - t0) * 1000
             break
     # cleanup
@@ -34,10 +34,10 @@ def run_mode(mode_flag, delay):
 
 print("=== chat-ready mode (expect ready >= 2500ms) ===")
 r1 = run_mode("--chat-ready", 2.5)
-print(f"  OCTOP_READY after {r1:.0f}ms" if r1 else "  NO READY SIGNAL")
+print(f"  HAPPYCLAW_READY after {r1:.0f}ms" if r1 else "  NO READY SIGNAL")
 print("=== liveness-only mode (expect ready before chat-ready) ===")
 r2 = run_mode("--liveness-only", 2.5)
-print(f"  OCTOP_READY after {r2:.0f}ms" if r2 else "  NO READY SIGNAL")
+print(f"  HAPPYCLAW_READY after {r2:.0f}ms" if r2 else "  NO READY SIGNAL")
 
 # Core assertion: chat-ready must be clearly slower than liveness-only
 # (it waits for agents_running to flip). Absolute time varies with load,

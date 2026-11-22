@@ -29,8 +29,8 @@ MEMORY_TABLES = (
 CHECKPOINT_TABLES = ("checkpoints", "writes", "hm_checkpoint_blobs")
 COUNT_BUDGET_SECONDS = 5.0
 _VACUUM_RECOMMEND_BYTES = 32 * 1024 * 1024
-_BACKUP_MODE_ENV = "OCTOP_CHECKPOINT_BACKUP_BEFORE_PRUNE"
-_BACKUP_KEEP_DAYS_ENV = "OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS"
+_BACKUP_MODE_ENV = "HAPPYCLAW_CHECKPOINT_BACKUP_BEFORE_PRUNE"
+_BACKUP_KEEP_DAYS_ENV = "HAPPYCLAW_CHECKPOINT_BACKUP_KEEP_DAYS"
 
 
 def _env_flag(name: str, default: bool) -> bool:
@@ -91,14 +91,14 @@ def _checkpoint_policy(reclaimable_bytes: int) -> dict[str, Any]:
     """Retention window shown on the storage page.
 
     Matches idle maintenance in happyclaw-harness: keep the newest 20 checkpoints
-    unless ``OCTOP_CHECKPOINT_RETENTION`` is turned off.
+    unless ``HAPPYCLAW_CHECKPOINT_RETENTION`` is turned off.
     """
-    keep_last = _optional_positive_int("OCTOP_CHECKPOINT_KEEP_LAST")
-    keep_days = _optional_positive_int("OCTOP_CHECKPOINT_KEEP_DAYS")
-    if not _env_flag("OCTOP_CHECKPOINT_RETENTION", True):
+    keep_last = _optional_positive_int("HAPPYCLAW_CHECKPOINT_KEEP_LAST")
+    keep_days = _optional_positive_int("HAPPYCLAW_CHECKPOINT_KEEP_DAYS")
+    if not _env_flag("HAPPYCLAW_CHECKPOINT_RETENTION", True):
         keep_last = None
         keep_days = None
-    elif "OCTOP_CHECKPOINT_KEEP_LAST" not in os.environ:
+    elif "HAPPYCLAW_CHECKPOINT_KEEP_LAST" not in os.environ:
         keep_last = 20
     backup_mode, backup_keep_days = _checkpoint_backup_policy_from_env()
     return {

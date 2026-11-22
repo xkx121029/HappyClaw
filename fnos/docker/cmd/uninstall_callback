@@ -3,9 +3,9 @@
 # 根据卸载向导选择：完全删除时清理 data-share 用户数据；保留数据时不作处理。
 set -euo pipefail
 
-_OCTOP_COMMON="$(dirname "$0")/common.sh"
-[ -f "$_OCTOP_COMMON" ] || _OCTOP_COMMON="/var/apps/octop/cmd/common.sh"
-[ -f "$_OCTOP_COMMON" ] && source "$_OCTOP_COMMON"
+_HAPPYCLAW_COMMON="$(dirname "$0")/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] || _HAPPYCLAW_COMMON="/var/apps/octop/cmd/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] && source "$_HAPPYCLAW_COMMON"
 
 if [ "${wizard_delete_data:-no}" = "yes" ]; then
     DATA_DIR="${TRIM_DATA_SHARE_PATHS:-}"

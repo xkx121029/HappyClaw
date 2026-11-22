@@ -939,7 +939,7 @@
     "target": "本次整理智能体：{agent_id}",
     "elapsed": "已用时 {seconds} 秒",
     "scanned": "已扫描 {scanned}/{total} 条",
-    "all_conflict": "--all 不能与 --agent 或 OCTOP_AGENT 同时使用。",
+    "all_conflict": "--all 不能与 --agent 或 HAPPYCLAW_AGENT 同时使用。",
     "batch_target": "[{index}/{total}] 正在整理：{name} [{agent_id}]",
     "batch_stopped": "批量整理已停止：{agent_id} 未确认完成；已完成 {completed} 个，另有 {remaining} 个未执行。原因：{detail}",
     "batch_done": "批量整理完成，共完成 {total} 个智能体。",

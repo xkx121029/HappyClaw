@@ -13,7 +13,7 @@ from uuid import uuid4
 
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
-from happyclaw.infra.agents.builtin_skills import OCTOP_BUILTIN_SKILLS_ROOT
+from happyclaw.infra.agents.builtin_skills import HAPPYCLAW_BUILTIN_SKILLS_ROOT
 from happyclaw.infra.agents.experts.avatar import copy_workspace_avatar_to_dir
 from happyclaw.infra.agents.experts.catalog import (
     MANIFEST_FILENAME,
@@ -29,7 +29,7 @@ _EXCLUDED_PARTS = frozenset(
         ".git",
         "__pycache__",
         ".harness-materialize",
-        OCTOP_BUILTIN_SKILLS_ROOT,
+        HAPPYCLAW_BUILTIN_SKILLS_ROOT,
         # Runtime / user-session data — never seed into published templates.
         "inbound",
         "daily",

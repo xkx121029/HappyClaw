@@ -1,6 +1,6 @@
 # 内网自建插件市场与专家市场
 
-HappyClaw 不内置任何远程目录：没设置 `OCTOP_PORTAL_ORIGIN` 时插件市场和专家市场不会发出请求，页面显示「暂时不可用」。可以在局域网里按本文的 HTTP 接口自建市场，再把源站写进环境变量。HappyClaw 只认这两份目录和目录里给出的安装包地址，不需要部署一套完整的市场服务器。
+HappyClaw 不内置任何远程目录：没设置 `HAPPYCLAW_PORTAL_ORIGIN` 时插件市场和专家市场不会发出请求，页面显示「暂时不可用」。可以在局域网里按本文的 HTTP 接口自建市场，再把源站写进环境变量。HappyClaw 只认这两份目录和目录里给出的安装包地址，不需要部署一套完整的市场服务器。
 
 技能市场（控制台「技能」里的 SkillHub）是另一套上游，默认 `https://api.skillhub.cn`，用 `SKILL_MARKET_ORIGIN` 指定。协议见 [技能市场](skill-market.md)。
 
@@ -10,8 +10,8 @@ HappyClaw 不内置任何远程目录：没设置 `OCTOP_PORTAL_ORIGIN` 时插�
 控制台打开插件市场 / 专家市场
         │
         ▼
-HappyClaw 进程  GET {OCTOP_PORTAL_ORIGIN}/api/market/plugins
-            GET {OCTOP_PORTAL_ORIGIN}/api/market/experts
+HappyClaw 进程  GET {HAPPYCLAW_PORTAL_ORIGIN}/api/market/plugins
+            GET {HAPPYCLAW_PORTAL_ORIGIN}/api/market/experts
         │
         │  成功后把 data.items 整表缓存 30 秒
         ▼
@@ -19,7 +19,7 @@ HappyClaw 进程  GET {OCTOP_PORTAL_ORIGIN}/api/market/plugins
         │
         ▼
 HappyClaw 进程  GET 该条目的 download_url
-            （协议、主机、端口必须与 OCTOP_MARKET_REMOTE_ORIGIN 一致；路径不限）
+            （协议、主机、端口必须与 HAPPYCLAW_MARKET_REMOTE_ORIGIN 一致；路径不限）
 ```
 
 两条目录都是一次取全量。HappyClaw 不传查询参数，专家的搜索和场景筛选都在本地做。所以 `content`、`quick_prompts` 也要放在列表条目里：详情页读的是同一份缓存，不会再去请求 `/{id}`。
@@ -35,16 +35,16 @@ HappyClaw 进程  GET 该条目的 download_url
 在 **跑 `octop run` 的那台机器** 上设置环境变量，然后重启进程。可以写进 `~/.happyclaw/env`（服务启动时会载入），也可以写进 systemd 的 `Environment=`。
 
 ```bash
-OCTOP_PORTAL_ORIGIN=http://market.internal:9000
-OCTOP_MARKET_REMOTE_ORIGIN=http://market.internal:9000
+HAPPYCLAW_PORTAL_ORIGIN=http://market.internal:9000
+HAPPYCLAW_MARKET_REMOTE_ORIGIN=http://market.internal:9000
 ```
 
 | 变量 | 含义 |
 |---|---|
-| `OCTOP_PORTAL_ORIGIN` | 目录源站，只写协议、主机和端口，**不要带路径**。未设置即为空：HappyClaw 不连任何远程目录，市场显示「暂时不可用」。要启用目录（自建或公网）就显式写上源站。 |
-| `OCTOP_MARKET_REMOTE_ORIGIN` | 安装包源站，同样只保留源站。未设置或无法解析时默认 `https://github.com`，即本仓库的 Releases；自建市场要按自己的源站显式设置。 |
+| `HAPPYCLAW_PORTAL_ORIGIN` | 目录源站，只写协议、主机和端口，**不要带路径**。未设置即为空：HappyClaw 不连任何远程目录，市场显示「暂时不可用」。要启用目录（自建或公网）就显式写上源站。 |
+| `HAPPYCLAW_MARKET_REMOTE_ORIGIN` | 安装包源站，同样只保留源站。未设置或无法解析时默认 `https://github.com`，即本仓库的 Releases；自建市场要按自己的源站显式设置。 |
 
-目录和安装包可以放同一台机器，所以上面两个变量可以相同。`download_url` 的协议、主机必须与 `OCTOP_MARKET_REMOTE_ORIGIN` 一致；环境变量里写了端口时，URL 的端口也要相同，没写端口就用该协议的默认端口。路径和查询参数不限制，自建市场可以按自己的接口给出地址。下面只是静态文件的一种放法：
+目录和安装包可以放同一台机器，所以上面两个变量可以相同。`download_url` 的协议、主机必须与 `HAPPYCLAW_MARKET_REMOTE_ORIGIN` 一致；环境变量里写了端口时，URL 的端口也要相同，没写端口就用该协议的默认端口。路径和查询参数不限制，自建市场可以按自己的接口给出地址。下面只是静态文件的一种放法：
 
 ```text
 /octop/market/plugins/{id}/{version}/{id}-{version}.zip
@@ -245,8 +245,8 @@ server {
 
 | 现象 | 原因 |
 |---|---|
-| 插件市场或专家市场显示暂时不可用 | 目录请求失败、超时，或 `OCTOP_PORTAL_ORIGIN` 为空。在 HappyClaw 机器上 `curl` 两个列表地址，确认 8 秒内返回 `"success": true`。 |
-| 卡片在，安装报没有安装包 | `download_url` 的协议、主机、端口和 `OCTOP_MARKET_REMOTE_ORIGIN` 不一致。 |
+| 插件市场或专家市场显示暂时不可用 | 目录请求失败、超时，或 `HAPPYCLAW_PORTAL_ORIGIN` 为空。在 HappyClaw 机器上 `curl` 两个列表地址，确认 8 秒内返回 `"success": true`。 |
+| 卡片在，安装报没有安装包 | `download_url` 的协议、主机、端口和 `HAPPYCLAW_MARKET_REMOTE_ORIGIN` 不一致。 |
 | 安装后版本对不上 | 目录 `version` 与 `plugin.yaml` 的 `version` 不一致；或专家 `slug` 与 `manifest.json` 的 `id` 不一致。 |
 | 改了 JSON 页面不变 | 进程内缓存约 30 秒。等待或重启 HappyClaw。 |
 | 图标空白 | 图标地址仍指向公网。改成 emoji、`icon_name`，或浏览器和 HappyClaw 都能打开的内网地址。 |

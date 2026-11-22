@@ -63,7 +63,7 @@ ui:
 Dashboard 通过 `GET /api/plugins/{id}/ui/…` 加载 `index.js`，调用 `setup(host)` 注册渲染器。
 `host.patchResult(callId, data)` 可在不重跑 LLM 的情况下刷新气泡（L2）；流式仍走 SSE 整段替换 `output`（L1）。
 
-插件 ESM 为自包含文件；React 由 Dashboard 注入 `window.__OCTOP_REACT__` / `__OCTOP_JSX__`。
+插件 ESM 为自包含文件；React 由 Dashboard 注入 `window.__HAPPYCLAW_REACT__` / `__HAPPYCLAW_JSX__`。
 
 ## 本地安装
 

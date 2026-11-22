@@ -20,6 +20,6 @@ __version__ = "1.0.3b6"
 # touch the network no longer pay httpx's ~1s import cost up front.
 install_lazy_httpx_proxy_patch()
 
-# Every reader in the tree still asks for OCTOP_* names, so mirror the renamed
+# Every reader in the tree still asks for HAPPYCLAW_* names, so mirror the renamed
 # HAPPYCLAW_* variables onto them once, before any configuration is loaded.
 alias_legacy_env()

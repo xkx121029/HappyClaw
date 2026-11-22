@@ -18,7 +18,7 @@ export interface ClientSettings {
   /** The two-step first-run guide has been seen (or skipped). */
   onboardingCompleted: boolean;
   /**
-   * Data root the guide was completed on. A different ``OCTOP_HOME`` counts as
+   * Data root the guide was completed on. A different ``HAPPYCLAW_HOME`` counts as
    * a fresh install and shows the guide again; null means "adopt on next boot".
    */
   onboardingHome: string | null;
@@ -31,7 +31,7 @@ export interface ClientSettings {
 export interface DesktopInfo {
   appVersion: string;
   platform: "darwin" | "win32" | "linux";
-  /** OCTOP_HOME — database, credentials, workspaces and the log all live here. */
+  /** HAPPYCLAW_HOME — database, credentials, workspaces and the log all live here. */
   dataDirectory: string;
   /** Stored backup archives under the data root. */
   backupsDirectory: string;

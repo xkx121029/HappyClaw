@@ -6,7 +6,7 @@
 
 ## 1. 问题
 
-桌面首次安装没有用户时，初始化向导在 `OCTOP_REQUIRE_SETUP_PASSWORD=0` 下创建管理员，密码由服务端随机生成，壳把设备凭据绑到这个用户上。之后冷启动用 `POST /api/auth/device/token` 换 JWT，不再出现登录页。
+桌面首次安装没有用户时，初始化向导在 `HAPPYCLAW_REQUIRE_SETUP_PASSWORD=0` 下创建管理员，密码由服务端随机生成，壳把设备凭据绑到这个用户上。之后冷启动用 `POST /api/auth/device/token` 换 JWT，不再出现登录页。
 
 一旦 `user_count > 0`，`GET /api/setup/status` 的 `setup_required` 为 false，向导不会出现。旧桌面、以及用 `octop run` 装过的服务端，都停在这里：库里有人，`secrets` 里没有匹配的 `desktop_device`，`renewDesktopSession()` 失败，界面是 `dashboard/src/pages/Login/index.tsx`。
 
@@ -20,7 +20,7 @@
 
 新建本地账户是次要出口，只给明确不想使用现有数据的人。文案写明原有智能体和会话仍属于旧账户。
 
-浏览器打开的服务端不出现这三块界面，三个新接口在未设置 `OCTOP_DESKTOP_SHELL=1` 时拒绝。
+浏览器打开的服务端不出现这三块界面，三个新接口在未设置 `HAPPYCLAW_DESKTOP_SHELL=1` 时拒绝。
 
 认领不改 `password_hash`。之后用命令行或浏览器，原来的密码仍然有效。
 

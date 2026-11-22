@@ -21,7 +21,7 @@ def should_defer_control_plane_db(config: HappyclawConfig, paths: PathLayout) ->
     """Deprecated: single-user mode always opens the default SQLite control plane.
 
     Kept as a public name for older callers/tests. Deferring the DB made a clean
-    ``OCTOP_HOME`` wait for the setup wizard, which left ``/api/health``
+    ``HAPPYCLAW_HOME`` wait for the setup wizard, which left ``/api/health``
     unreachable for up to 90s on first launch.
     """
     return False
@@ -30,7 +30,7 @@ def should_defer_control_plane_db(config: HappyclawConfig, paths: PathLayout) ->
 def open_database(config: HappyclawConfig, paths: PathLayout) -> DatabasePool:
     """Return a DB pool for the configured driver.
 
-    When ``config.json`` has no ``database`` section and no ``OCTOP_DATABASE_*``
+    When ``config.json`` has no ``database`` section and no ``HAPPYCLAW_DATABASE_*``
     env overrides are set, falls back to ``paths.db`` (legacy layout).
     """
     db_cfg = config.database

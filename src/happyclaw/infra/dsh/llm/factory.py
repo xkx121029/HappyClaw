@@ -3,8 +3,8 @@
 Design constraints enforced here:
 
 * **Off by default, off per ref.** Nothing is replaced unless
-  ``OCTOP_DSH_RUNTIME`` + ``OCTOP_DSH_LLM`` are on *and* the ref appears in
-  ``OCTOP_DSH_LLM_REFS``. Every other ref is served by the original harness
+  ``HAPPYCLAW_DSH_RUNTIME`` + ``HAPPYCLAW_DSH_LLM`` are on *and* the ref appears in
+  ``HAPPYCLAW_DSH_LLM_REFS``. Every other ref is served by the original harness
   factory unchanged.
 * **Per-ref failure isolation.** If one ref cannot build an adapter (missing
   transport, unsupported protocol, bad config) that ref falls back to the
@@ -207,7 +207,7 @@ def install_dsh_model_factory(
     booting with the original factory. Failures are always logged at ERROR.
     """
     if not llm_enabled():
-        return InstallResult(False, "OCTOP_DSH_LLM is off", outcome=InstallOutcome.SKIPPED)
+        return InstallResult(False, "HAPPYCLAW_DSH_LLM is off", outcome=InstallOutcome.SKIPPED)
     # The version warning comes first so a mismatched harness is always visible
     # in the startup log, even when a later check skips the install.
     warning = harness_version_warning()
@@ -216,7 +216,7 @@ def install_dsh_model_factory(
     refs = llm_refs()
     if not refs:
         return InstallResult(
-            False, "OCTOP_DSH_LLM_REFS is empty", warning, InstallOutcome.SKIPPED
+            False, "HAPPYCLAW_DSH_LLM_REFS is empty", warning, InstallOutcome.SKIPPED
         )
 
     try:
@@ -267,7 +267,7 @@ def describe_installation(
 
     ``refs`` are the refs that would use the adapter *right now*: the wrapper
     must still be installed and the switches must still allow each ref, so
-    turning ``OCTOP_DSH_LLM`` off is reflected immediately.
+    turning ``HAPPYCLAW_DSH_LLM`` off is reflected immediately.
     """
     current: Any = None
     if manager is not None:

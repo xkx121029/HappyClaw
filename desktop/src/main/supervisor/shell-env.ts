@@ -3,13 +3,13 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 /**
- * OCTOP_HOME resolution (§3.2): the data root used both for the extraction
+ * HAPPYCLAW_HOME resolution (§3.2): the data root used both for the extraction
  * directory and the child process env, so the shell and ``PathLayout.from_env()``
  * agree on one location.
  *
  * Priority:
- *   1. non-empty ``OCTOP_HOME`` inherited by the process (trimmed)
- *   2. non-empty ``OCTOP_HOME`` from the login shell (macOS / Linux only)
+ *   1. non-empty ``HAPPYCLAW_HOME`` inherited by the process (trimmed)
+ *   2. non-empty ``HAPPYCLAW_HOME`` from the login shell (macOS / Linux only)
  *   3. ``~/.octop`` (``%USERPROFILE%\.octop`` on Windows)
  *
  * A leading ``~`` expands against the current user's home directory.
@@ -29,9 +29,9 @@ export function resolveOctopHome(
   loginShellEnv: Record<string, string | undefined>,
   home = homedir(),
 ): string {
-  const inherited = (processEnv.OCTOP_HOME ?? "").trim();
+  const inherited = (processEnv.HAPPYCLAW_HOME ?? "").trim();
   if (inherited) return expandHome(inherited, home);
-  const shellValue = (loginShellEnv.OCTOP_HOME ?? "").trim();
+  const shellValue = (loginShellEnv.HAPPYCLAW_HOME ?? "").trim();
   if (shellValue) return expandHome(shellValue, home);
   return join(home, ".octop");
 }

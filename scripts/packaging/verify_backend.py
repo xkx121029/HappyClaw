@@ -5,7 +5,7 @@ a machine that has no Python:
 
 0. the agent stack is importable and an agent graph compiles (``exe selfcheck``)
    — lazy deps like numpy/tiktoken only surface on the first chat turn;
-1. ``OCTOP_HOME`` an env-provided home is honoured (DB / logs / data land there);
+1. ``HAPPYCLAW_HOME`` an env-provided home is honoured (DB / logs / data land there);
 2. the bundled dashboard is served (SPA shell, ``index.html``, hashed assets)
    **and is the one built for this package** (index.html sha256 + version stamp);
 3. Playwright is importable, its Chromium search path is reported, and a
@@ -189,7 +189,7 @@ def main() -> int:
     before = tree_stats(internal) if internal.is_dir() else (0, 0)
 
     env = os.environ.copy()
-    env["OCTOP_HOME"] = str(home)
+    env["HAPPYCLAW_HOME"] = str(home)
     env["NO_PROXY"] = "127.0.0.1,localhost,::1"
     env["no_proxy"] = env["NO_PROXY"]
     for key in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY"):
@@ -221,13 +221,13 @@ def main() -> int:
             return 1
         ok("服务就绪", f"{health_s}s")
 
-        # 1. OCTOP_HOME
+        # 1. HAPPYCLAW_HOME
         written = [p for p in home.rglob("*") if p.is_file()]
         if written:
             sample = ", ".join(str(p.relative_to(home)) for p in written[:3])
-            ok("OCTOP_HOME 生效", f"{len(written)} 个文件落在自定义 home（如 {sample}）")
+            ok("HAPPYCLAW_HOME 生效", f"{len(written)} 个文件落在自定义 home（如 {sample}）")
         else:
-            fail("OCTOP_HOME 生效", f"{home} 下没有任何文件")
+            fail("HAPPYCLAW_HOME 生效", f"{home} 下没有任何文件")
 
         # 2. dashboard
         status, ctype, body = get(op, f"{base}/")

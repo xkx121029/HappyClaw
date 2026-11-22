@@ -42,7 +42,7 @@ Octop-<plat>/
    does not.
 4. Set `PYTHONPYCACHEPREFIX` to `<HAPPYCLAW_HOME>/pyc` so bytecode is not written
    into the app bundle or the install directory.
-5. Set `PYTHONNOUSERSITE=1` and `OCTOP_GREEN_PACKAGES=<extract>/packages`.
+5. Set `PYTHONNOUSERSITE=1` and `HAPPYCLAW_GREEN_PACKAGES=<extract>/packages`.
    **Do not set `PYTHONPATH`.**
 
 6. Spawn `launch.py run` **without** `--host` or `--port`. Those flags are
@@ -54,7 +54,7 @@ Octop-<plat>/
    is not HappyClaw: that file is the port a previous desktop start actually bound
    after a conflict, and a live health check there means attach instead of
    starting a second server. If the port is taken by something else, set
-   `OCTOP_PORT` to the next free port, then write that port to `desktop-port`.
+   `HAPPYCLAW_PORT` to the next free port, then write that port to `desktop-port`.
    The override applies to this process only and is not saved to `config.json`.
    Delete `desktop-port` when the process you started exits. A listen failure
    other than "address already in use" is reported immediately — do not scan
@@ -64,8 +64,8 @@ Octop-<plat>/
    - Windows: `<extract>/runtime/python.exe <extract>/launch.py run`
 
 7. Read `bind_host` and `port` from `HAPPYCLAW_HOME/config.json` (defaults
-   `127.0.0.1` and `8088` when the file or keys are absent; `OCTOP_BIND_HOST`
-   / `OCTOP_PORT` override the file for this process and are not saved).
+   `127.0.0.1` and `8088` when the file or keys are absent; `HAPPYCLAW_BIND_HOST`
+   / `HAPPYCLAW_PORT` override the file for this process and are not saved).
    When `bind_host` is `0.0.0.0` or `::`, poll and load
    `http://127.0.0.1:<port>/`. Otherwise use the configured host.
 8. First run uses the **normal HappyClaw setup wizard** (create admin). The

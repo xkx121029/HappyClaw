@@ -32,7 +32,7 @@
 
 服务端是一个进程，Web 控制台、IM 通道与定时任务都在它里面；CLI 连的是同一个控制面数据库。所有数据都留在 `~/.happyclaw/`。你可以创建多个专家，每个专家有自己的模型、工作区、技能与定时任务，日常可以在网页里对话，也可以把飞书、钉钉、企业微信、微信、QQ、元宝、小艺、MQTT、Telegram、Discord 接进来。
 
-> 产品叫 HappyClaw，但 Python 分发名、`octop` 命令、`~/.happyclaw/` 数据根目录和 `OCTOP_*` 环境变量沿用原来的命名。两个名字说的是同一个东西。
+> 产品叫 HappyClaw，但 Python 分发名、`octop` 命令、`~/.happyclaw/` 数据根目录和 `HAPPYCLAW_*` 环境变量沿用原来的命名。两个名字说的是同一个东西。
 
 ## 🚀 快速开始
 
@@ -41,16 +41,16 @@
 **Windows（PowerShell）**
 
 ```powershell
-if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
+if (-not $env:HAPPYCLAW_INSTALL_BASE) { $env:HAPPYCLAW_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:HAPPYCLAW_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 **macOS / Linux**
 
 ```bash
-curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
+curl -fsSL "${HAPPYCLAW_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
 ```
 
-> 两条一键命令都读 `OCTOP_INSTALL_BASE`，默认取本仓库 GitHub `main` 分支。若你的网络访问 GitHub 受限，把该变量指向提供同样 `scripts/` 目录的自建镜像，再重跑一键命令。
+> 两条一键命令都读 `HAPPYCLAW_INSTALL_BASE`，默认取本仓库 GitHub `main` 分支。若你的网络访问 GitHub 受限，把该变量指向提供同样 `scripts/` 目录的自建镜像，再重跑一键命令。
 
 安装完成后打开一个新终端，启动服务：
 
@@ -131,7 +131,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 # 打开 http://localhost:8088
 ```
 
-容器首次启动会执行 `octop init` 并拉起服务，数据放在 `/data/.octop`（Compose 把 `${OCTOP_DATA:-~/.happyclaw}` 挂到这里）。单人模式不需要预置管理员密码。完整说明见 [docker/README_CN.md](docker/README_CN.md)。
+容器首次启动会执行 `octop init` 并拉起服务，数据放在 `/data/.octop`（Compose 把 `${HAPPYCLAW_DATA:-~/.happyclaw}` 挂到这里）。单人模式不需要预置管理员密码。完整说明见 [docker/README_CN.md](docker/README_CN.md)。
 
 同目录下还有 `docker-compose.postgres.yml`（PostgreSQL + pgvector）与 `docker-compose.cn.yml`（直接拉取已发布镜像，不在本地构建）。
 
@@ -270,7 +270,7 @@ octop backup auto run            # 立即执行一次自动备份
 | 控制 | **工作台** — 终端 AI+、浏览器 AI+、云浏览器；**远程桌面**；**ACP**（出站编程 Agent Runner） |
 | 管理 | **模型管理**、**存储管理**（数据库与对象存储）、**插件管理**、**安全管理**（工具审批、命令护栏、文件规则、PII 脱敏）、**应用设置**（TLS、监听地址、日志、备份、更新） |
 
-交互式 API 文档默认关闭，在 `~/.happyclaw/config.json` 里设置 `"enable_api_docs": true`（或 `OCTOP_ENABLE_API_DOCS=1`）后访问 `/api/docs`。
+交互式 API 文档默认关闭，在 `~/.happyclaw/config.json` 里设置 `"enable_api_docs": true`（或 `HAPPYCLAW_ENABLE_API_DOCS=1`）后访问 `/api/docs`。
 
 ## 🏗️ 架构与项目结构
 
@@ -317,7 +317,7 @@ make dev-frontend          # 只起 Vite 开发服务器
 make build-frontend        # 生产构建 → src/happyclaw/dashboard/
 ```
 
-单独执行：`make test`、`make test-fast`（跳过 `slow`）、`make test-live`、`make lint`、`make typecheck`、`make format`、`make check-all`；只跑前端用 `make lint-frontend`、`make typecheck-frontend`。pytest 标记在 `pyproject.toml` 中声明：`live`（真实 LLM 调用）、`slow`、`postgresql`（需要 `OCTOP_TEST_DATABASE_URL`）。
+单独执行：`make test`、`make test-fast`（跳过 `slow`）、`make test-live`、`make lint`、`make typecheck`、`make format`、`make check-all`；只跑前端用 `make lint-frontend`、`make typecheck-frontend`。pytest 标记在 `pyproject.toml` 中声明：`live`（真实 LLM 调用）、`slow`、`postgresql`（需要 `HAPPYCLAW_TEST_DATABASE_URL`）。
 
 ## 🔒 安全与隐私
 
@@ -339,7 +339,7 @@ make build-frontend        # 生产构建 → src/happyclaw/dashboard/
 不需要。首次 `octop run` 会创建 `~/.happyclaw/`、数据库与本机使用者。`octop init` 用于重新初始化和执行迁移，`octop init --force` 会清空应用数据。
 
 **怎么让局域网里的其他设备访问？**
-`octop run --host 0.0.0.0 --port 8088`，或设置 `OCTOP_BIND_HOST=0.0.0.0`。注意命令行上的 `--host` / `--port` 会被写进 `config.json`，并且这等于把控制台暴露给局域网，请自行确认网络环境。
+`octop run --host 0.0.0.0 --port 8088`，或设置 `HAPPYCLAW_BIND_HOST=0.0.0.0`。注意命令行上的 `--host` / `--port` 会被写进 `config.json`，并且这等于把控制台暴露给局域网，请自行确认网络环境。
 
 **模型测试连接失败？**
 检查 API Key、Base URL、网络连通性与账户配额；本地模型确认 Ollama 已在运行。
@@ -351,7 +351,7 @@ make build-frontend        # 生产构建 → src/happyclaw/dashboard/
 换端口启动：`octop run --port 8090`；或修改 `~/.happyclaw/config.json` 的 `port`。
 
 **为什么包名还是 `octop`？**
-分发名、CLI 命令、数据目录与 `OCTOP_*` 变量都在 HappyClaw 这个名字之前就定了，为兼容保留。你安装的产品叫 HappyClaw，它以 `octop` 的名字发布。
+分发名、CLI 命令、数据目录与 `HAPPYCLAW_*` 变量都在 HappyClaw 这个名字之前就定了，为兼容保留。你安装的产品叫 HappyClaw，它以 `octop` 的名字发布。
 
 更多问题与排障见 [docs/user-guide.md](docs/user-guide.md)。
 

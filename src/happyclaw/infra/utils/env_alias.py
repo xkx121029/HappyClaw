@@ -1,41 +1,59 @@
-"""Keep the pre-rename ``OCTOP_*`` environment variables working under the new prefix.
+"""Accept the pre-rename ``OCTOP_*`` environment variables under the new prefix.
 
-Readers across the codebase still ask for ``OCTOP_*`` names. Rather than touch
-every call site, the process mirrors each ``HAPPYCLAW_*`` variable onto its
-``OCTOP_*`` twin at startup when the old name is unset, so both spellings select
-the same value and existing deployments keep working unchanged.
+Reader code now asks for ``HAPPYCLAW_*`` names. Deployments that still export
+``OCTOP_*`` — the documented variables, docker compose files and the fnOS
+packages all do — keep working because the process mirrors the old spelling onto
+the new one once at import time and warns, so nothing changes silently.
 """
 
 from __future__ import annotations
 
 import os
+import warnings
 from collections.abc import MutableMapping
 
 LEGACY_PREFIX = "OCTOP_"
 CURRENT_PREFIX = "HAPPYCLAW_"
 
-__all__ = ["LEGACY_PREFIX", "CURRENT_PREFIX", "alias_legacy_env", "legacy_env_name"]
+__all__ = ["CURRENT_PREFIX", "LEGACY_PREFIX", "alias_legacy_env", "current_env_name", "legacy_env_name"]
+
+_warned: set[str] = set()
 
 
-def legacy_env_name(name: str) -> str:
-    """Return the pre-rename spelling of a ``HAPPYCLAW_*`` variable name."""
-    return LEGACY_PREFIX + name[len(CURRENT_PREFIX) :]
+def current_env_name(legacy: str) -> str:
+    """The post-rename spelling of an ``OCTOP_*`` variable name."""
+    return CURRENT_PREFIX + legacy[len(LEGACY_PREFIX):]
+
+
+def legacy_env_name(current: str) -> str:
+    """The pre-rename spelling of a ``HAPPYCLAW_*`` variable name."""
+    return LEGACY_PREFIX + current[len(CURRENT_PREFIX):]
+
+
+def _warn(legacy: str, current: str) -> None:
+    if legacy in _warned or os.environ.get("HAPPYCLAW_SILENCE_RENAME_NOTICE"):
+        return
+    _warned.add(legacy)
+    warnings.warn(f"{legacy} is deprecated; set {current} instead", DeprecationWarning, stacklevel=3)
 
 
 def alias_legacy_env(environ: MutableMapping[str, str] | None = None) -> list[str]:
-    """Mirror every ``HAPPYCLAW_*`` variable onto its ``OCTOP_*`` name.
+    """Mirror every ``OCTOP_*`` variable onto its ``HAPPYCLAW_*`` name.
 
-    An explicitly set ``OCTOP_*`` value always wins, so a deployment that has not
-    migrated yet is never overridden. Returns the legacy names that were filled
-    in, which is what the tests assert on.
+    An explicitly set new name always wins, so a half-migrated environment never
+    silently reverts to the old value. Returns the new names that were filled in.
     """
     env: MutableMapping[str, str] = os.environ if environ is None else environ
     aliased: list[str] = []
     for name, value in list(env.items()):
-        if not name.startswith(CURRENT_PREFIX) or len(name) == len(CURRENT_PREFIX):
+        if not name.startswith(LEGACY_PREFIX) or len(name) == len(LEGACY_PREFIX):
             continue
-        legacy = legacy_env_name(name)
-        if legacy not in env:
-            env[legacy] = value
-            aliased.append(legacy)
+        current = current_env_name(name)
+        if current in env:
+            if env[current] != value:
+                _warn(name, current)
+            continue
+        env[current] = value
+        aliased.append(current)
+        _warn(name, current)
     return aliased

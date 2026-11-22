@@ -21,19 +21,19 @@ DEFAULT_BROWSER_IDLE_TIMEOUT_MINUTES = 30
 _VALID_DRIVERS = frozenset({"sqlite", "postgresql"})
 
 _DATABASE_ENV_KEYS = (
-    "OCTOP_DATABASE_URL",
-    "OCTOP_DATABASE_DRIVER",
-    "OCTOP_DATABASE_SQLITE_PATH",
-    "OCTOP_DATABASE_HOST",
-    "OCTOP_DATABASE_PORT",
-    "OCTOP_DATABASE_NAME",
-    "OCTOP_DATABASE_USER",
-    "OCTOP_DATABASE_PASSWORD",
+    "HAPPYCLAW_DATABASE_URL",
+    "HAPPYCLAW_DATABASE_DRIVER",
+    "HAPPYCLAW_DATABASE_SQLITE_PATH",
+    "HAPPYCLAW_DATABASE_HOST",
+    "HAPPYCLAW_DATABASE_PORT",
+    "HAPPYCLAW_DATABASE_NAME",
+    "HAPPYCLAW_DATABASE_USER",
+    "HAPPYCLAW_DATABASE_PASSWORD",
 )
 
 
 def database_env_configured() -> bool:
-    """True when any ``OCTOP_DATABASE_*`` env var is set."""
+    """True when any ``HAPPYCLAW_DATABASE_*`` env var is set."""
     return any(os.environ.get(k) for k in _DATABASE_ENV_KEYS)
 
 
@@ -48,7 +48,7 @@ class DatabaseConfig:
     database: str = "octop"
     user: str = "octop"
     password: str | None = None
-    url: str | None = None  # verbatim OCTOP_DATABASE_URL when set
+    url: str | None = None  # verbatim HAPPYCLAW_DATABASE_URL when set
 
     @property
     def is_sqlite(self) -> bool:
@@ -277,7 +277,7 @@ def _coerce_int(name: str, value: str, default: int) -> int:
     try:
         return int(value)
     except ValueError:
-        # Do not log the raw env value — names like OCTOP_*_PASSWORD can flow here.
+        # Do not log the raw env value — names like HAPPYCLAW_*_PASSWORD can flow here.
         logger.warning("env %s is not int; using %s", name, default)
         return default
 
@@ -288,7 +288,7 @@ def _coerce_bool(name: str, value: str, default: bool) -> bool:
         return True
     if normalized in {"0", "false", "no", "off"}:
         return False
-    # Do not log the raw env value — OCTOP_REQUIRE_SETUP_PASSWORD is classified as
+    # Do not log the raw env value — HAPPYCLAW_REQUIRE_SETUP_PASSWORD is classified as
     # sensitive by CodeQL (py/clear-text-logging-sensitive-data).
     logger.warning("env %s is not bool; using %s", name, default)
     return default
@@ -297,12 +297,12 @@ def _coerce_bool(name: str, value: str, default: bool) -> bool:
 def _parse_database_url(url: str) -> dict[str, Any]:
     parsed = urlparse(url)
     if parsed.scheme not in ("postgresql", "postgres"):
-        msg = f"OCTOP_DATABASE_URL scheme must be postgresql, got {parsed.scheme!r}"
+        msg = f"HAPPYCLAW_DATABASE_URL scheme must be postgresql, got {parsed.scheme!r}"
         raise ValueError(msg)
     if not parsed.hostname:
-        raise ValueError("OCTOP_DATABASE_URL missing host")
+        raise ValueError("HAPPYCLAW_DATABASE_URL missing host")
     if not parsed.path or parsed.path == "/":
-        raise ValueError("OCTOP_DATABASE_URL missing database name in path")
+        raise ValueError("HAPPYCLAW_DATABASE_URL missing database name in path")
     out: dict[str, Any] = {
         "driver": "postgresql",
         "host": parsed.hostname,
@@ -375,52 +375,52 @@ def parse_database_config(merged: dict[str, Any]) -> DatabaseConfig:
 
 def _apply_database_env(merged_db: dict[str, Any]) -> dict[str, Any]:
     out = dict(merged_db)
-    if v := os.environ.get("OCTOP_DATABASE_URL"):
+    if v := os.environ.get("HAPPYCLAW_DATABASE_URL"):
         out.update(_parse_database_url(v))
-    if v := os.environ.get("OCTOP_DATABASE_DRIVER"):
+    if v := os.environ.get("HAPPYCLAW_DATABASE_DRIVER"):
         out["driver"] = v.strip().lower()
-    if v := os.environ.get("OCTOP_DATABASE_SQLITE_PATH"):
+    if v := os.environ.get("HAPPYCLAW_DATABASE_SQLITE_PATH"):
         out["sqlite_path"] = v
-    if v := os.environ.get("OCTOP_DATABASE_HOST"):
+    if v := os.environ.get("HAPPYCLAW_DATABASE_HOST"):
         out["host"] = v
-    if v := os.environ.get("OCTOP_DATABASE_PORT"):
-        out["port"] = _coerce_int("OCTOP_DATABASE_PORT", v, int(out.get("port", 5432)))
-    if v := os.environ.get("OCTOP_DATABASE_NAME"):
+    if v := os.environ.get("HAPPYCLAW_DATABASE_PORT"):
+        out["port"] = _coerce_int("HAPPYCLAW_DATABASE_PORT", v, int(out.get("port", 5432)))
+    if v := os.environ.get("HAPPYCLAW_DATABASE_NAME"):
         out["database"] = v
-    if v := os.environ.get("OCTOP_DATABASE_USER"):
+    if v := os.environ.get("HAPPYCLAW_DATABASE_USER"):
         out["user"] = v
-    if v := os.environ.get("OCTOP_DATABASE_PASSWORD"):
+    if v := os.environ.get("HAPPYCLAW_DATABASE_PASSWORD"):
         out["password"] = v
     return out
 
 
 def env_bind_overrides() -> tuple[str | None, int | None]:
-    """``OCTOP_BIND_HOST`` / ``OCTOP_PORT`` overrides shared by config and CLI.
+    """``HAPPYCLAW_BIND_HOST`` / ``HAPPYCLAW_PORT`` overrides shared by config and CLI.
 
-    An invalid ``OCTOP_PORT`` logs a warning and yields no override, so the
+    An invalid ``HAPPYCLAW_PORT`` logs a warning and yields no override, so the
     file/default value wins — same fallback semantics as ``load_config``.
     """
-    host = os.environ.get("OCTOP_BIND_HOST") or None
+    host = os.environ.get("HAPPYCLAW_BIND_HOST") or None
     port: int | None = None
-    if v := os.environ.get("OCTOP_PORT"):
+    if v := os.environ.get("HAPPYCLAW_PORT"):
         try:
             port = int(v)
         except ValueError:
             # Do not log the raw env value.
-            logger.warning("env %s is not int; ignoring override", "OCTOP_PORT")
+            logger.warning("env %s is not int; ignoring override", "HAPPYCLAW_PORT")
         # ``resolve_bind`` reads port 0 as "let the OS pick a free port", so the
         # bindable range here is 0-65535. Anything outside it outranks a valid
         # config.json port and kills startup inside ``socket.bind`` with a bare
         # ``OverflowError``, which names neither the key nor the value.
         if port is not None and not 0 <= port <= 65535:
-            logger.warning("env %s is out of range; ignoring override", "OCTOP_PORT")
+            logger.warning("env %s is out of range; ignoring override", "HAPPYCLAW_PORT")
             port = None
     return host, port
 
 
 @cache
 def _warn_retired_history_config() -> None:
-    logger.warning("history_v2_enabled and OCTOP_HISTORY_V2_ENABLED are retired and ignored")
+    logger.warning("history_v2_enabled and HAPPYCLAW_HISTORY_V2_ENABLED are retired and ignored")
 
 
 def load_config(path: Path) -> HappyclawConfig:
@@ -453,7 +453,7 @@ def load_config(path: Path) -> HappyclawConfig:
         raw = {}
         database_in_file = False
 
-    if "history_v2_enabled" in raw or "OCTOP_HISTORY_V2_ENABLED" in os.environ:
+    if "history_v2_enabled" in raw or "HAPPYCLAW_HISTORY_V2_ENABLED" in os.environ:
         _warn_retired_history_config()
     merged = {**file_defaults, **raw}
     # Legacy key: prefer default_timezone when both are present in the file.
@@ -472,39 +472,39 @@ def load_config(path: Path) -> HappyclawConfig:
         merged["bind_host"] = env_host
     if env_port is not None:
         merged["port"] = env_port
-    if v := os.environ.get("OCTOP_LOG_LEVEL"):
+    if v := os.environ.get("HAPPYCLAW_LOG_LEVEL"):
         merged["log_level"] = v
-    if v := os.environ.get("OCTOP_ACCESS_TOKEN_TTL"):
+    if v := os.environ.get("HAPPYCLAW_ACCESS_TOKEN_TTL"):
         merged["access_token_ttl_seconds"] = _coerce_int(
-            "OCTOP_ACCESS_TOKEN_TTL", v, merged["access_token_ttl_seconds"]
+            "HAPPYCLAW_ACCESS_TOKEN_TTL", v, merged["access_token_ttl_seconds"]
         )
-    if v := os.environ.get("OCTOP_LOGIN_MAX_ATTEMPTS"):
+    if v := os.environ.get("HAPPYCLAW_LOGIN_MAX_ATTEMPTS"):
         merged["login_max_attempts"] = _coerce_int(
-            "OCTOP_LOGIN_MAX_ATTEMPTS", v, merged.get("login_max_attempts", 5)
+            "HAPPYCLAW_LOGIN_MAX_ATTEMPTS", v, merged.get("login_max_attempts", 5)
         )
-    if v := os.environ.get("OCTOP_LOGIN_LOCKOUT_SECONDS"):
+    if v := os.environ.get("HAPPYCLAW_LOGIN_LOCKOUT_SECONDS"):
         merged["login_lockout_seconds"] = _coerce_int(
-            "OCTOP_LOGIN_LOCKOUT_SECONDS", v, merged.get("login_lockout_seconds", 900)
+            "HAPPYCLAW_LOGIN_LOCKOUT_SECONDS", v, merged.get("login_lockout_seconds", 900)
         )
-    if (v := os.environ.get("OCTOP_DEFAULT_TIMEZONE")) or (
-        v := os.environ.get("OCTOP_CRON_TIMEZONE")
+    if (v := os.environ.get("HAPPYCLAW_DEFAULT_TIMEZONE")) or (
+        v := os.environ.get("HAPPYCLAW_CRON_TIMEZONE")
     ):
         merged["default_timezone"] = v
-    if v := os.environ.get("OCTOP_CORS_ORIGINS"):
+    if v := os.environ.get("HAPPYCLAW_CORS_ORIGINS"):
         merged["cors_origins"] = [s.strip() for s in v.split(",") if s.strip()]
-    if v := os.environ.get("OCTOP_ENABLE_DASHBOARD"):
+    if v := os.environ.get("HAPPYCLAW_ENABLE_DASHBOARD"):
         merged["enable_dashboard"] = _coerce_bool(
-            "OCTOP_ENABLE_DASHBOARD", v, bool(merged["enable_dashboard"])
+            "HAPPYCLAW_ENABLE_DASHBOARD", v, bool(merged["enable_dashboard"])
         )
-    if v := os.environ.get("OCTOP_ENABLE_API_DOCS"):
+    if v := os.environ.get("HAPPYCLAW_ENABLE_API_DOCS"):
         merged["enable_api_docs"] = _coerce_bool(
-            "OCTOP_ENABLE_API_DOCS", v, bool(merged["enable_api_docs"])
+            "HAPPYCLAW_ENABLE_API_DOCS", v, bool(merged["enable_api_docs"])
         )
-    if v := os.environ.get("OCTOP_REQUIRE_SETUP_PASSWORD"):
+    if v := os.environ.get("HAPPYCLAW_REQUIRE_SETUP_PASSWORD"):
         merged["require_setup_password"] = _coerce_bool(
-            "OCTOP_REQUIRE_SETUP_PASSWORD", v, bool(merged["require_setup_password"])
+            "HAPPYCLAW_REQUIRE_SETUP_PASSWORD", v, bool(merged["require_setup_password"])
         )
-    if v := os.environ.get("OCTOP_MAX_UPLOAD_MB"):
+    if v := os.environ.get("HAPPYCLAW_MAX_UPLOAD_MB"):
         merged["max_upload_mb"] = parse_max_upload_mb(
             v, default=int(merged.get("max_upload_mb", DEFAULT_MAX_UPLOAD_MB))
         )
@@ -512,9 +512,9 @@ def load_config(path: Path) -> HappyclawConfig:
         merged["max_upload_mb"] = parse_max_upload_mb(
             merged.get("max_upload_mb", DEFAULT_MAX_UPLOAD_MB)
         )
-    if v := os.environ.get("OCTOP_BROWSER_IDLE_TIMEOUT_MINUTES"):
+    if v := os.environ.get("HAPPYCLAW_BROWSER_IDLE_TIMEOUT_MINUTES"):
         merged["browser_idle_timeout_minutes"] = _coerce_int(
-            "OCTOP_BROWSER_IDLE_TIMEOUT_MINUTES",
+            "HAPPYCLAW_BROWSER_IDLE_TIMEOUT_MINUTES",
             v,
             int(
                 merged.get(
@@ -525,8 +525,8 @@ def load_config(path: Path) -> HappyclawConfig:
         )
 
     capabilities = _parse_capabilities_section(raw.get("capabilities"))
-    if v := os.environ.get("OCTOP_ENABLE_MOBILE"):
-        forced = _coerce_bool("OCTOP_ENABLE_MOBILE", v, capabilities.mobile.enabled)
+    if v := os.environ.get("HAPPYCLAW_ENABLE_MOBILE"):
+        forced = _coerce_bool("HAPPYCLAW_ENABLE_MOBILE", v, capabilities.mobile.enabled)
         capabilities = CapabilitiesConfig(
             mobile=MobileCapabilities(
                 enabled=forced,
@@ -537,8 +537,8 @@ def load_config(path: Path) -> HappyclawConfig:
         )
 
     capabilities = _parse_capabilities_section(raw.get("capabilities"))
-    if v := os.environ.get("OCTOP_ENABLE_MOBILE"):
-        forced = _coerce_bool("OCTOP_ENABLE_MOBILE", v, capabilities.mobile.enabled)
+    if v := os.environ.get("HAPPYCLAW_ENABLE_MOBILE"):
+        forced = _coerce_bool("HAPPYCLAW_ENABLE_MOBILE", v, capabilities.mobile.enabled)
         capabilities = CapabilitiesConfig(
             mobile=MobileCapabilities(
                 enabled=forced,
@@ -549,60 +549,60 @@ def load_config(path: Path) -> HappyclawConfig:
         )
 
     backup = _parse_backup_section(raw.get("backup"))
-    if v := os.environ.get("OCTOP_BACKUP_AUTO_ENABLED"):
+    if v := os.environ.get("HAPPYCLAW_BACKUP_AUTO_ENABLED"):
         backup = replace(
             backup,
-            auto_enabled=_coerce_bool("OCTOP_BACKUP_AUTO_ENABLED", v, backup.auto_enabled),
+            auto_enabled=_coerce_bool("HAPPYCLAW_BACKUP_AUTO_ENABLED", v, backup.auto_enabled),
         )
-    if v := os.environ.get("OCTOP_BACKUP_SCHEDULE"):
+    if v := os.environ.get("HAPPYCLAW_BACKUP_SCHEDULE"):
         schedule = v.strip() or backup.schedule
         backup = replace(backup, schedule=schedule)
-    if v := os.environ.get("OCTOP_BACKUP_RETENTION_COUNT"):
-        retention = _coerce_int("OCTOP_BACKUP_RETENTION_COUNT", v, backup.retention_count)
+    if v := os.environ.get("HAPPYCLAW_BACKUP_RETENTION_COUNT"):
+        retention = _coerce_int("HAPPYCLAW_BACKUP_RETENTION_COUNT", v, backup.retention_count)
         if retention < 1:
             logger.warning(
-                "env OCTOP_BACKUP_RETENTION_COUNT is < 1; using %s",
+                "env HAPPYCLAW_BACKUP_RETENTION_COUNT is < 1; using %s",
                 backup.retention_count,
             )
             retention = backup.retention_count
         backup = replace(backup, retention_count=retention)
-    if v := os.environ.get("OCTOP_BACKUP_INCLUDE_CONFIG"):
+    if v := os.environ.get("HAPPYCLAW_BACKUP_INCLUDE_CONFIG"):
         backup = replace(
             backup,
-            include_config=_coerce_bool("OCTOP_BACKUP_INCLUDE_CONFIG", v, backup.include_config),
+            include_config=_coerce_bool("HAPPYCLAW_BACKUP_INCLUDE_CONFIG", v, backup.include_config),
         )
-    if v := os.environ.get("OCTOP_BACKUP_INCLUDE_WORKSPACES"):
+    if v := os.environ.get("HAPPYCLAW_BACKUP_INCLUDE_WORKSPACES"):
         backup = replace(
             backup,
             include_workspaces=_coerce_bool(
-                "OCTOP_BACKUP_INCLUDE_WORKSPACES", v, backup.include_workspaces
+                "HAPPYCLAW_BACKUP_INCLUDE_WORKSPACES", v, backup.include_workspaces
             ),
         )
-    if v := os.environ.get("OCTOP_BACKUP_INCLUDE_SKILL_PACKAGES"):
+    if v := os.environ.get("HAPPYCLAW_BACKUP_INCLUDE_SKILL_PACKAGES"):
         backup = replace(
             backup,
             include_skill_packages=_coerce_bool(
-                "OCTOP_BACKUP_INCLUDE_SKILL_PACKAGES",
+                "HAPPYCLAW_BACKUP_INCLUDE_SKILL_PACKAGES",
                 v,
                 backup.include_skill_packages,
             ),
         )
-    if v := os.environ.get("OCTOP_BACKUP_INCLUDE_PLUGINS"):
+    if v := os.environ.get("HAPPYCLAW_BACKUP_INCLUDE_PLUGINS"):
         backup = replace(
             backup,
-            include_plugins=_coerce_bool("OCTOP_BACKUP_INCLUDE_PLUGINS", v, backup.include_plugins),
+            include_plugins=_coerce_bool("HAPPYCLAW_BACKUP_INCLUDE_PLUGINS", v, backup.include_plugins),
         )
-    if v := os.environ.get("OCTOP_BACKUP_INCLUDE_KNOWLEDGE"):
+    if v := os.environ.get("HAPPYCLAW_BACKUP_INCLUDE_KNOWLEDGE"):
         backup = replace(
             backup,
             include_knowledge=_coerce_bool(
-                "OCTOP_BACKUP_INCLUDE_KNOWLEDGE", v, backup.include_knowledge
+                "HAPPYCLAW_BACKUP_INCLUDE_KNOWLEDGE", v, backup.include_knowledge
             ),
         )
-    if v := os.environ.get("OCTOP_BACKUP_INCLUDE_CHATS"):
+    if v := os.environ.get("HAPPYCLAW_BACKUP_INCLUDE_CHATS"):
         backup = replace(
             backup,
-            include_chats=_coerce_bool("OCTOP_BACKUP_INCLUDE_CHATS", v, backup.include_chats),
+            include_chats=_coerce_bool("HAPPYCLAW_BACKUP_INCLUDE_CHATS", v, backup.include_chats),
         )
 
     return HappyclawConfig(

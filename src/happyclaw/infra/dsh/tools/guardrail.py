@@ -9,7 +9,7 @@ guardrail that pipeline evaluates before dispatch:
   ``TOOL_CAPABILITY_UNAVAILABLE``;
 * risk: read-only tools are LOW. A tool that somehow carries a write/egress
   declaration is HIGH with a user-visible reason, so the approval layer decides;
-* approval: attached only when ``OCTOP_DSH_HITL`` is on. With HITL off there is
+* approval: attached only when ``HAPPYCLAW_DSH_HITL`` is on. With HITL off there is
   no approval channel, and ``ToolGuardrail`` denies a call that needs approval
   with ``TOOL_APPROVAL_UNAVAILABLE`` instead of letting it run.
 """

@@ -196,7 +196,7 @@ catch {
 # ---------------------------------------------------------------------------
 # 5. 数据目录可写
 # ---------------------------------------------------------------------------
-$octopHome = $env:OCTOP_HOME
+$octopHome = $env:HAPPYCLAW_HOME
 if (-not $octopHome) { $octopHome = Join-Path $HOME ".octop" }
 if (Test-Path $octopHome) {
     try {

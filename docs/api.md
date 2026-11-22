@@ -5,7 +5,7 @@ endpoints emit `text/event-stream`; chat turns use a WebSocket
 described in [Chat (WebSocket)](#chat-websocket).
 
 > **Interactive docs** (Scalar) live at `/api/docs` when
-> `enable_api_docs=true` (or `OCTOP_ENABLE_API_DOCS=1`). The schema
+> `enable_api_docs=true` (or `HAPPYCLAW_ENABLE_API_DOCS=1`). The schema
 > is at `/api/openapi.json`.
 
 ## Authentication
@@ -434,7 +434,7 @@ namespace and row count; subsequent records contain table names and original row
 excluding generated search columns. PostgreSQL JSONL restore is not supported by this endpoint.
 
 To verify the PostgreSQL isolation/backup/rollback gate against a dedicated test
-database, set `OCTOP_MEMORY_MAINTENANCE_TEST_DSN` and run
+database, set `HAPPYCLAW_MEMORY_MAINTENANCE_TEST_DSN` and run
 `uv run pytest tests/integration/test_postgres_memory_storage.py -q`. Never point
 this gate at production: it creates test namespaces and a temporary failure trigger.
 

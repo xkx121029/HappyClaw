@@ -14,20 +14,20 @@ import click
 @click.command("init")
 @click.option(
     "--admin-username",
-    envvar="OCTOP_ADMIN_USERNAME",
+    envvar="HAPPYCLAW_ADMIN_USERNAME",
     default=None,
-    help="Legacy: also create a named admin row (or set OCTOP_ADMIN_USERNAME). "
+    help="Legacy: also create a named admin row (or set HAPPYCLAW_ADMIN_USERNAME). "
     "Single-user installs need no account and pass neither admin option.",
 )
 @click.option(
     "--admin-password",
-    envvar="OCTOP_ADMIN_PASSWORD",
+    envvar="HAPPYCLAW_ADMIN_PASSWORD",
     default=None,
-    help="Legacy: password for --admin-username (or set OCTOP_ADMIN_PASSWORD).",
+    help="Legacy: password for --admin-username (or set HAPPYCLAW_ADMIN_PASSWORD).",
 )
 @click.option(
     "--admin-display-name",
-    envvar="OCTOP_ADMIN_DISPLAY_NAME",
+    envvar="HAPPYCLAW_ADMIN_DISPLAY_NAME",
     default=None,
     help="Legacy: optional display name for the admin row.",
 )

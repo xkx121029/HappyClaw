@@ -32,7 +32,7 @@
 
 One server process serves the web console, the IM channels, and the scheduled jobs; the CLI talks to the same control-plane database. Everything stays under `~/.happyclaw/`. You can create several experts, each with its own model, workspace, skills, and cron jobs, then reach them from the browser or from Feishu, DingTalk, WeCom, WeChat, QQ, Yuanbao, Xiaoyi, MQTT, Telegram, and Discord.
 
-> The product is called HappyClaw, but the Python distribution, the `octop` command, the `~/.happyclaw/` data root, and the `OCTOP_*` environment variables keep their original names. Both names refer to the same thing.
+> The product is called HappyClaw, but the Python distribution, the `octop` command, the `~/.happyclaw/` data root, and the `HAPPYCLAW_*` environment variables keep their original names. Both names refer to the same thing.
 
 ## 🚀 Quick Start
 
@@ -41,16 +41,16 @@ One server process serves the web console, the IM channels, and the scheduled jo
 **Windows (PowerShell)**
 
 ```powershell
-if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
+if (-not $env:HAPPYCLAW_INSTALL_BASE) { $env:HAPPYCLAW_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:HAPPYCLAW_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 **macOS / Linux**
 
 ```bash
-curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
+curl -fsSL "${HAPPYCLAW_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
 ```
 
-> Both one-liners read `OCTOP_INSTALL_BASE` and default to this repository's `main` branch on GitHub. If GitHub is unreachable from your network, export that variable with a mirror that serves the same `scripts/` tree and re-run the one-liner.
+> Both one-liners read `HAPPYCLAW_INSTALL_BASE` and default to this repository's `main` branch on GitHub. If GitHub is unreachable from your network, export that variable with a mirror that serves the same `scripts/` tree and re-run the one-liner.
 
 Then open a new terminal and start the server:
 
@@ -131,7 +131,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 # open http://localhost:8088
 ```
 
-The container runs `octop init` on first boot, starts the server, and keeps data in `/data/.octop` (Compose mounts `${OCTOP_DATA:-~/.happyclaw}` there). No administrator password is required for single-user mode. See [docker/README.md](docker/README.md).
+The container runs `octop init` on first boot, starts the server, and keeps data in `/data/.octop` (Compose mounts `${HAPPYCLAW_DATA:-~/.happyclaw}` there). No administrator password is required for single-user mode. See [docker/README.md](docker/README.md).
 
 Other Compose files in the same directory: `docker-compose.postgres.yml` (PostgreSQL + pgvector) and `docker-compose.cn.yml` (pull the published image instead of building).
 
@@ -270,7 +270,7 @@ After `octop run`, open **http://127.0.0.1:8088**; it opens straight into the ch
 | Control | **Workbench** — terminal AI+, browser AI+, cloud browser; **Remote desktop**; **ACP** (outbound coding-agent runners) |
 | Admin | **Models**, **Storage** (database and object storage), **Plugins**, **Security** (tool approval, command guard, filesystem rules, PII redaction), **Advanced** (TLS, bind address, logging, backups, updates) |
 
-Interactive API docs are off by default; set `"enable_api_docs": true` in `~/.happyclaw/config.json` (or `OCTOP_ENABLE_API_DOCS=1`) to enable `/api/docs`.
+Interactive API docs are off by default; set `"enable_api_docs": true` in `~/.happyclaw/config.json` (or `HAPPYCLAW_ENABLE_API_DOCS=1`) to enable `/api/docs`.
 
 ## 🏗️ Architecture & Layout
 
@@ -317,7 +317,7 @@ make dev-frontend          # Vite dev server only
 make build-frontend        # production build → src/happyclaw/dashboard/
 ```
 
-Individual targets: `make test`, `make test-fast` (skips `slow`), `make test-live`, `make lint`, `make typecheck`, `make format`, `make check-all`. Frontend only: `make lint-frontend`, `make typecheck-frontend`. pytest markers are declared in `pyproject.toml`: `live` (real LLM calls), `slow`, and `postgresql` (needs `OCTOP_TEST_DATABASE_URL`).
+Individual targets: `make test`, `make test-fast` (skips `slow`), `make test-live`, `make lint`, `make typecheck`, `make format`, `make check-all`. Frontend only: `make lint-frontend`, `make typecheck-frontend`. pytest markers are declared in `pyproject.toml`: `live` (real LLM calls), `slow`, and `postgresql` (needs `HAPPYCLAW_TEST_DATABASE_URL`).
 
 ## 🔒 Security & Privacy
 
@@ -339,7 +339,7 @@ No. Single-user mode has no login page and no account system; the console opens 
 No. The first `octop run` creates `~/.happyclaw/`, the database, and the local owner. `octop init` exists for re-bootstrapping and migrations; `octop init --force` deletes application state.
 
 **How do I reach it from another device on my LAN?**
-`octop run --host 0.0.0.0 --port 8088`, or set `OCTOP_BIND_HOST=0.0.0.0`. Note that `--host` / `--port` on the command line are persisted to `config.json`. This exposes the console to your LAN — make sure that is what you want.
+`octop run --host 0.0.0.0 --port 8088`, or set `HAPPYCLAW_BIND_HOST=0.0.0.0`. Note that `--host` / `--port` on the command line are persisted to `config.json`. This exposes the console to your LAN — make sure that is what you want.
 
 **Model test connection fails.**
 Check the API key, base URL, network access, and account quota. For local models, confirm Ollama is running.
@@ -351,7 +351,7 @@ Everything is under `~/.happyclaw/`. Run `octop backup create --include-chats -o
 Start on another port with `octop run --port 8090`, or edit `port` in `~/.happyclaw/config.json`.
 
 **Why is the package still called `octop`?**
-The distribution, the CLI command, the data directory, and the `OCTOP_*` variables predate the HappyClaw name and are kept for compatibility. HappyClaw is the product you install; `octop` is what it ships as.
+The distribution, the CLI command, the data directory, and the `HAPPYCLAW_*` variables predate the HappyClaw name and are kept for compatibility. HappyClaw is the product you install; `octop` is what it ships as.
 
 More troubleshooting: [docs/user-guide.md](docs/user-guide.md).
 

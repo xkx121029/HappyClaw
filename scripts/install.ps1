@@ -1,7 +1,7 @@
 # HappyClaw Installer for Windows (PowerShell)
-# Usage: irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
+# Usage: irm "$env:HAPPYCLAW_INSTALL_BASE/scripts/install.ps1" | iex
 #    or: irm https://raw.githubusercontent.com/xkx121029/HappyClaw/main/scripts/install.ps1 | iex
-# The one-liner defaults to this repository's main branch; set OCTOP_INSTALL_BASE
+# The one-liner defaults to this repository's main branch; set HAPPYCLAW_INSTALL_BASE
 # with a mirror that serves the same scripts/ tree when GitHub is unreachable.
 #    or: .\install.ps1 [-Version X.Y.Z] [-FromSource] [-SourceDir DIR] [-Extras "browser"]
 #
@@ -19,11 +19,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$HappyclawHome     = if ($env:OCTOP_HOME) { $env:OCTOP_HOME } else { Join-Path $HOME ".octop" }
+$HappyclawHome     = if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } else { Join-Path $HOME ".octop" }
 $HappyclawVenv     = Join-Path $HappyclawHome "venv"
 $HappyclawBin      = Join-Path $HappyclawHome "bin"
 $PythonVersion = "3.12"
-$HappyclawRepo     = if ($env:OCTOP_REPO) { $env:OCTOP_REPO } else { "https://github.com/xkx121029/HappyClaw.git" }
+$HappyclawRepo     = if ($env:HAPPYCLAW_REPO) { $env:HAPPYCLAW_REPO } else { "https://github.com/xkx121029/HappyClaw.git" }
 
 function Write-Info { param([string]$Message) Write-Host "[octop] " -ForegroundColor Green  -NoNewline; Write-Host $Message }
 function Write-Warn { param([string]$Message) Write-Host "[octop] " -ForegroundColor Yellow -NoNewline; Write-Host $Message }
@@ -48,8 +48,8 @@ to install it, or install later from the dashboard. If a system Chrome already
 exists, that download is skipped even with -Extras browser.
 
 Environment:
-  OCTOP_HOME            Installation directory (default: ~/.octop)
-  OCTOP_REPO            Git clone URL for -FromSource without -SourceDir
+  HAPPYCLAW_HOME            Installation directory (default: ~/.octop)
+  HAPPYCLAW_REPO            Git clone URL for -FromSource without -SourceDir
 "@
     exit 0
 }
@@ -312,7 +312,7 @@ New-Item -ItemType Directory -Path $HappyclawBin -Force | Out-Null
 $wrapperPs1 = Join-Path $HappyclawBin "octop.ps1"
 @'
 $ErrorActionPreference = "Stop"
-$HappyclawHome = if ($env:OCTOP_HOME) { $env:OCTOP_HOME } else { Join-Path $HOME ".octop" }
+$HappyclawHome = if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } else { Join-Path $HOME ".octop" }
 $RealBin = Join-Path $HappyclawHome "venv\Scripts\octop.exe"
 if (-not (Test-Path $RealBin)) {
     Write-Error "HappyClaw environment not found at $HappyclawHome\venv"
@@ -324,11 +324,11 @@ if (-not (Test-Path $RealBin)) {
 $cmdWrapper = Join-Path $HappyclawBin "octop.cmd"
 @'
 @echo off
-set "OCTOP_HOME=%OCTOP_HOME%"
-if "%OCTOP_HOME%"=="" set "OCTOP_HOME=%USERPROFILE%\.octop"
-set "REAL_BIN=%OCTOP_HOME%\venv\Scripts\octop.exe"
+set "HAPPYCLAW_HOME=%HAPPYCLAW_HOME%"
+if "%HAPPYCLAW_HOME%"=="" set "HAPPYCLAW_HOME=%USERPROFILE%\.octop"
+set "REAL_BIN=%HAPPYCLAW_HOME%\venv\Scripts\octop.exe"
 if not exist "%REAL_BIN%" (
-    echo Error: HappyClaw environment not found at %OCTOP_HOME%\venv >&2
+    echo Error: HappyClaw environment not found at %HAPPYCLAW_HOME%\venv >&2
     exit /b 1
 )
 "%REAL_BIN%" %*

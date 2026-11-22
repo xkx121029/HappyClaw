@@ -49,13 +49,13 @@
 **Windows（PowerShell）**
 
 ```powershell
-if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
+if (-not $env:HAPPYCLAW_INSTALL_BASE) { $env:HAPPYCLAW_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:HAPPYCLAW_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 **macOS / Linux**
 
 ```bash
-curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
+curl -fsSL "${HAPPYCLAW_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
 ```
 
 安装脚本会在 `~/.happyclaw/venv` 创建隔离环境，**不会改动系统 Python**。
@@ -109,7 +109,7 @@ octop service start   # Linux(systemd) / macOS(launchd)
 octop run --host 0.0.0.0 --port 8090
 ```
 
-等价的环境变量是 `OCTOP_BIND_HOST` 与 `OCTOP_PORT`。默认只监听 `127.0.0.1`；改成 `0.0.0.0` 会把控制台暴露给局域网，请自行确认网络环境。
+等价的环境变量是 `HAPPYCLAW_BIND_HOST` 与 `HAPPYCLAW_PORT`。默认只监听 `127.0.0.1`；改成 `0.0.0.0` 会把控制台暴露给局域网，请自行确认网络环境。
 
 ### 3.3 验证跑通
 
@@ -258,7 +258,7 @@ CLI 只能新增、删除、探测供应商，没有 `provider edit`：改已有
   - **插件管理**（`/admin/plugins`）、**安全防护**（`/admin/security`）— 工具审批、Shell 命令护栏（`~/.happyclaw/security/tool_guard/`）、PII 与凭据策略。
   - **应用设置**（`/admin/advanced`）— 环境变量、可观测、**备份与恢复**、HTTPS、应用更新五个标签页。
 
-监听地址与端口没有面板开关：它们来自 `octop run --host/--port`、`OCTOP_BIND_HOST`/`OCTOP_PORT` 或 `config.json`；时区是 `config.json` 的 `default_timezone`。详见 [docs/configuration.md](configuration.md)。
+监听地址与端口没有面板开关：它们来自 `octop run --host/--port`、`HAPPYCLAW_BIND_HOST`/`HAPPYCLAW_PORT` 或 `config.json`；时区是 `config.json` 的 `default_timezone`。详见 [docs/configuration.md](configuration.md)。
 
 ![图 5.5 — 设置页面](assets/use-06-settings.png)
 
@@ -422,10 +422,10 @@ octop service stop      # 已注册为系统服务时
 - 检查 API Key、Base URL、网络连通性与账户配额。
 
 **Q：如何修改监听地址让局域网访问？**
-- `octop run --host 0.0.0.0 --port 8088`，或设置 `OCTOP_BIND_HOST=0.0.0.0`、`OCTOP_PORT=8088`。
+- `octop run --host 0.0.0.0 --port 8088`，或设置 `HAPPYCLAW_BIND_HOST=0.0.0.0`、`HAPPYCLAW_PORT=8088`。
 
 **Q：局域网访问不了插件市场和专家市场？**
-- HappyClaw 不内置任何远程目录：没设 `OCTOP_PORTAL_ORIGIN` 时这两页不会发出请求，只显示「暂时不可用」。内网自建（或指向你自己的公网目录）见 [内网自建市场](private-market.md)。
+- HappyClaw 不内置任何远程目录：没设 `HAPPYCLAW_PORTAL_ORIGIN` 时这两页不会发出请求，只显示「暂时不可用」。内网自建（或指向你自己的公网目录）见 [内网自建市场](private-market.md)。
 
 **Q：局域网访问不了技能市场？**
 - 技能页默认请求 `https://api.skillhub.cn`。按同一接口自建并设置 `SKILL_MARKET_ORIGIN`，见 [技能市场](skill-market.md)。

@@ -9,9 +9,9 @@ rem   start.bat --home .\data --host 0.0.0.0 --port 8088
 
 set "ROOT=%~dp0"
 if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
-set "OCTOP_GREEN_PACKAGES=%ROOT%\packages"
+set "HAPPYCLAW_GREEN_PACKAGES=%ROOT%\packages"
 
-if not defined OCTOP_HOME set "OCTOP_HOME=%ROOT%\data"
+if not defined HAPPYCLAW_HOME set "HAPPYCLAW_HOME=%ROOT%\data"
 set "HOST="
 set "PORT="
 set "EXTRA="
@@ -23,7 +23,7 @@ if /I "%~1"=="--home" (
     echo start.bat: --home requires a path
     exit /b 1
   )
-  set "OCTOP_HOME=%~2"
+  set "HAPPYCLAW_HOME=%~2"
   shift
   shift
   goto parse
@@ -60,14 +60,14 @@ echo.
 echo Usage: start.bat [--home DIR] [--host HOST] [--port PORT] [octop run args...]
 echo.
 echo Defaults:
-echo   OCTOP_HOME / --home   %%ROOT%%\data
+echo   HAPPYCLAW_HOME / --home   %%ROOT%%\data
 echo   bind_host / port      config.json ^(127.0.0.1:8088 when unset^)
 echo.
 echo --host and --port override config.json and are saved back to it.
 exit /b 0
 
 :run
-if not exist "%OCTOP_HOME%" mkdir "%OCTOP_HOME%"
+if not exist "%HAPPYCLAW_HOME%" mkdir "%HAPPYCLAW_HOME%"
 
 set "PY=%ROOT%\runtime\python.exe"
 if not exist "%PY%" (
@@ -84,7 +84,7 @@ rem Prefer launch.py (site.addsitedir + pywin32 DLL path). Do not set PYTHONPATH
 set "PYTHONNOUSERSITE=1"
 set "PYTHONPATH="
 
-echo [octop] home=%OCTOP_HOME%
+echo [octop] home=%HAPPYCLAW_HOME%
 set "BIND_ARGS="
 if defined HOST set "BIND_ARGS=--host %HOST%"
 if defined PORT (

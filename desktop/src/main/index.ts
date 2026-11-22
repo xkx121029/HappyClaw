@@ -234,7 +234,7 @@ function resourcesRoot(): string {
 }
 
 function dashboardRoot(launch: BackendLaunch): string {
-  const override = (process.env.OCTOP_DASHBOARD_DIR ?? "").trim();
+  const override = (process.env.HAPPYCLAW_DASHBOARD_DIR ?? "").trim();
   if (override) return override;
   // The onedir backend already carries the built Dashboard under _internal,
   // so the installer does not ship a second copy of the same files.
@@ -297,7 +297,7 @@ async function resolveProductVersion(): Promise<string> {
   return resolveAppVersion({
     readBundled: async () => (await readBundledPortable()).version,
     readDevRuntime: async () => {
-      const dir = (process.env.OCTOP_PORTABLE_DIR ?? "").trim();
+      const dir = (process.env.HAPPYCLAW_PORTABLE_DIR ?? "").trim();
       if (!dir) return null;
       const raw = JSON.parse(await fs.readFile(join(dir, "version.json"), "utf8")) as {
         version?: unknown;
@@ -410,7 +410,7 @@ async function showShellError(
   else await dialog.showMessageBox(options);
 }
 
-/** Temp staging area for installers — never inside OCTOP_HOME (user data). */
+/** Temp staging area for installers — never inside HAPPYCLAW_HOME (user data). */
 function updateDownloadDir(): string {
   return join(app.getPath("temp"), "octop-update");
 }
@@ -977,7 +977,7 @@ async function startBackend(): Promise<boolean> {
   });
   supervisor = sidecar;
   // Cold starts of the bundled runtime have needed over four minutes; the
-  // budget is wide and ``OCTOP_READY_TIMEOUT_MS`` can widen it further.
+  // budget is wide and ``HAPPYCLAW_READY_TIMEOUT_MS`` can widen it further.
   const readyTimeoutMs = resolveHealthTimeoutMs();
   desktopLog().info(
     `starting sidecar on 127.0.0.1:${port} (ready timeout ${Math.round(readyTimeoutMs / 1000)}s)`,
@@ -1250,8 +1250,8 @@ function revealAppWindow(): void {
 function showAboutDialog(version: string): void {
   const locale = app.getLocale();
   const stamp = resolveGitStamp(readGitStamp, {
-    commit: process.env.OCTOP_GIT_COMMIT,
-    date: process.env.OCTOP_GIT_DATE,
+    commit: process.env.HAPPYCLAW_GIT_COMMIT,
+    date: process.env.HAPPYCLAW_GIT_DATE,
   });
   void dialog.showMessageBox({
     type: "info",
@@ -1506,7 +1506,7 @@ async function boot(): Promise<void> {
   // macOS has a menu bar as soon as a window exists; add the Help entries now.
   installMacHelpMenu();
 
-  // Resolve OCTOP_HOME, reading the login shell on macOS/Linux (GUI apps don't
+  // Resolve HAPPYCLAW_HOME, reading the login shell on macOS/Linux (GUI apps don't
   // inherit it). The extraction dir and the child env must agree on one root.
   const loginShellEnv =
     process.platform === "win32" ? {} : await readLoginShellEnv(process.env.SHELL);
@@ -1515,7 +1515,7 @@ async function boot(): Promise<void> {
   installDesktopLog(octopHome);
   desktopLog().info(`desktop ${appVersion} home=${octopHome}`);
   // The guide used to be remembered only in Electron's userData. Stamp the data
-  // root that finished it, so another OCTOP_HOME replays the guide.
+  // root that finished it, so another HAPPYCLAW_HOME replays the guide.
   if (settings.onboardingCompleted && !settings.onboardingHome) {
     try {
       settingsStore.save({ onboardingHome: octopHome });
@@ -1529,7 +1529,7 @@ async function boot(): Promise<void> {
   // `pnpm dev:runtime` writes to .dev-runtime) and skip bundling/extraction.
   // Packaged Windows (NSIS → resources/sidecar) and macOS (expanded before
   // signing → resources/portable) already contain the tree; do not unzip again.
-  const devPortableDir = (process.env.OCTOP_PORTABLE_DIR ?? "").trim();
+  const devPortableDir = (process.env.HAPPYCLAW_PORTABLE_DIR ?? "").trim();
   let portableDir = devPortableDir;
   // Windows installer shape: one PyInstaller onedir backend under
   // resources/sidecar/backend. No Python, no extraction, nothing to compile.
@@ -1548,7 +1548,7 @@ async function boot(): Promise<void> {
   }
 
   // A package that still ships only the zip (not the Win/mac/Linux installers):
-  // version guard (§2.3) then atomic extract into OCTOP_HOME. Must run BEFORE spawning Python.
+  // version guard (§2.3) then atomic extract into HAPPYCLAW_HOME. Must run BEFORE spawning Python.
   if (!portableDir && !onedirDir) {
     portableDir = join(octopHome, "portable");
     try {

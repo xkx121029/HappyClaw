@@ -1065,7 +1065,7 @@ def instance_action(
 
 
 _TCCLI_PROFILE_POINTER = ".octop-profile"
-_TCCLI_ISOLATION_ENV = "OCTOP_TCCLI_PROFILE_ISOLATION"
+_TCCLI_ISOLATION_ENV = "HAPPYCLAW_TCCLI_PROFILE_ISOLATION"
 
 
 def tccli_profile_for_user(uid: int | None) -> str:
@@ -1073,7 +1073,7 @@ def tccli_profile_for_user(uid: int | None) -> str:
 
     Multi-user isolation (``octop-<uid>``) stops two Octop accounts from
     overwriting each other's machine-wide ``~/.tccli`` login. It stays opt-in
-    (``OCTOP_TCCLI_PROFILE_ISOLATION=1``) because plain ``tccli`` without
+    (``HAPPYCLAW_TCCLI_PROFILE_ISOLATION=1``) because plain ``tccli`` without
     ``--profile`` always reads ``default``.
     """
     if uid is None:

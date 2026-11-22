@@ -1,6 +1,6 @@
 """Wire DSH skills and prompt sections into Octop's agent runtime (opt-in).
 
-The integration is disabled unless ``OCTOP_DSH_SKILLS_PROMPTS`` is truthy, so the
+The integration is disabled unless ``HAPPYCLAW_DSH_SKILLS_PROMPTS`` is truthy, so the
 default prompt path stays byte-identical and performs no extra file I/O. When it
 is enabled:
 
@@ -48,8 +48,8 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
-DSH_SKILLS_PROMPTS_ENV = "OCTOP_DSH_SKILLS_PROMPTS"
-DSH_SKILLS_STRICT_ENV = "OCTOP_DSH_SKILLS_STRICT"
+DSH_SKILLS_PROMPTS_ENV = "HAPPYCLAW_DSH_SKILLS_PROMPTS"
+DSH_SKILLS_STRICT_ENV = "HAPPYCLAW_DSH_SKILLS_STRICT"
 
 # Custom rank: the workspace tree is a project-level source in DSH terms.
 WORKSPACE_SKILLS_RANK = 300
@@ -143,7 +143,7 @@ def workspace_skill_snapshot(
     the skills root (or any other parse error) does **not** break the turn by
     default: it is logged as a warning and this build injects no skills, so a
     single bad package cannot take the conversation down. Set
-    ``OCTOP_DSH_SKILLS_STRICT=1`` (or pass ``strict=True``) to raise instead.
+    ``HAPPYCLAW_DSH_SKILLS_STRICT=1`` (or pass ``strict=True``) to raise instead.
     """
 
     root = workspace_dir / "skills"

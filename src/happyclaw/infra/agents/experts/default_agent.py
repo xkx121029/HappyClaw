@@ -32,7 +32,7 @@ SETUP_DEFAULT_AGENT_ID = "main"
 def default_home_local_backend(*, root_dir: str | None = None) -> dict[str, Any]:
     """Same local backend as the dashboard create-from-expert default.
 
-    Defaults to the root that contains the real ``OCTOP_HOME`` workspace; pass
+    Defaults to the root that contains the real ``HAPPYCLAW_HOME`` workspace; pass
     *root_dir* when a user ``workspace_root_dir`` policy applies.
     """
     resolved = (root_dir or "").strip() or _default_local_root()
@@ -47,9 +47,9 @@ def _default_local_root() -> str:
     """Host root that contains this install's data directory.
 
     On POSIX that is ``/``. On Windows :func:`host_fs_tree_root` returns the
-    *home drive* root (``C:/``), which breaks every agent whose ``OCTOP_HOME``
+    *home drive* root (``C:/``), which breaks every agent whose ``HAPPYCLAW_HOME``
     lives on another drive: deepagents rejects the workspace with
-    ``Path ... outside root directory``. Derive the drive from ``OCTOP_HOME``
+    ``Path ... outside root directory``. Derive the drive from ``HAPPYCLAW_HOME``
     instead so skills / artifacts stay under the same root as the workspace.
     """
     if os.name != "nt":

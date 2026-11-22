@@ -36,7 +36,7 @@
 - 启动时会自动完成数据库结构迁移，不需要手动执行脚本；
 - 旧的账号、角色、邀请表仍留在数据库里作为兼容数据，但不再参与登录，也不会再出现账号切换；
 - 旧书签 `/admin/users`、`/admin/sso` 会自动跳回聊天页；`/login`、`/invite` 已不存在，会落到 404 提示，重新打开根地址即可；
-- Docker 部署的数据卷 `/data/.octop` 不变，`OCTOP_DEFAULT_PASSWORD`、`OCTOP_ADMIN_USERNAME` 这类旧环境变量不再需要。
+- Docker 部署的数据卷 `/data/.octop` 不变，`HAPPYCLAW_DEFAULT_PASSWORD`、`HAPPYCLAW_ADMIN_USERNAME` 这类旧环境变量不再需要。
 
 两点提醒：
 

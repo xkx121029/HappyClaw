@@ -19,9 +19,9 @@ fi
 # 注意：FPK 解包后 cmd/ 落在 /var/apps/octop-native/cmd（管理目录），而本文件位于
 # 负载目录 $TRIM_APPDEST/bin，`$0/../cmd` 指向载荷内不存在的位置，故需回退到
 # 外层 cmd 的实际落点。
-_OCTOP_COMMON="$(dirname "$0")/../cmd/common.sh"
-[ -f "$_OCTOP_COMMON" ] || _OCTOP_COMMON="/var/apps/octop-native/cmd/common.sh"
-[ -f "$_OCTOP_COMMON" ] && source "$_OCTOP_COMMON"
+_HAPPYCLAW_COMMON="$(dirname "$0")/../cmd/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] || _HAPPYCLAW_COMMON="/var/apps/octop-native/cmd/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] && source "$_HAPPYCLAW_COMMON"
 
 APPDEST="${TRIM_APPDEST:-/var/apps/octop-native}"
 PKGVAR="${TRIM_PKGVAR:-/var/apps/octop-native/var}"
@@ -43,8 +43,8 @@ if [ -f "$PKGVAR/.env" ]; then
 fi
 
 export HOME="$DATA_DIR"
-export OCTOP_HOME="${DATA_DIR}/.octop"
-export OCTOP_DATA_DIR="$DATA_DIR"
+export HAPPYCLAW_HOME="${DATA_DIR}/.octop"
+export HAPPYCLAW_DATA_DIR="$DATA_DIR"
 
 # 查找飞牛系统上的 Python 3.12（优先应用商店安装路径，再 PATH）。
 # 若应用中心已装 Node.js，一并加入 PATH，供专家 shell / npx 使用。
@@ -81,8 +81,8 @@ fi
 # 飞牛 FPK 部署标识 + 打包 site-packages 路径：内置在线升级安装到此目录
 # （launcher 实际加载的位置），重启服务后即加载新版，升级真正生效
 # （见 src/happyclaw/infra/setup/self_update.py 的 _run_fpk_upgrade）。
-export OCTOP_INSTALL_MODE="fpk-native"
-export OCTOP_FPK_SITE_PACKAGES="$SITE_PACKAGES"
+export HAPPYCLAW_INSTALL_MODE="fpk-native"
+export HAPPYCLAW_FPK_SITE_PACKAGES="$SITE_PACKAGES"
 
 # 兜底：若包内 site-packages 中未检测到 octop（升级异常 / 损坏等），
 # 用内置核心 whl 就地离线安装，避免用户联网下载。
@@ -94,18 +94,18 @@ if ! "$PY" -c "import octop" >/dev/null 2>&1; then
     }
 fi
 
-OCTOP_PORT="${OCTOP_PORT:-8089}"
-OCTOP_LOG_LEVEL="${OCTOP_LOG_LEVEL:-info}"
-OCTOP_BIND_HOST="${OCTOP_BIND_HOST:-0.0.0.0}"
+HAPPYCLAW_PORT="${HAPPYCLAW_PORT:-8089}"
+HAPPYCLAW_LOG_LEVEL="${HAPPYCLAW_LOG_LEVEL:-info}"
+HAPPYCLAW_BIND_HOST="${HAPPYCLAW_BIND_HOST:-0.0.0.0}"
 
-mkdir -p "$OCTOP_HOME"
+mkdir -p "$HAPPYCLAW_HOME"
 
 octop_cmd() {
     "$PY" -m happyclaw.cli.main "$@"
 }
 
 # 首次初始化（仅当数据库尚未建立）：单人版没有账号，只建目录 + 跑迁移。
-if [ ! -f "$OCTOP_HOME/octop.db" ]; then
+if [ ! -f "$HAPPYCLAW_HOME/octop.db" ]; then
     echo "[octop-native] 首次启动，正在初始化运行目录与数据库 ..."
     if ! octop_cmd init --yes; then
         echo "[octop-native] 错误：初始化失败，请查看上方日志。" >&2
@@ -118,5 +118,5 @@ if [ "$PREPARE_ONLY" = 1 ]; then
     exit 0
 fi
 
-echo "[octop-native] 正在启动 Octop，$OCTOP_BIND_HOST:$OCTOP_PORT ..."
-exec "$PY" -m happyclaw.cli.main run --host "$OCTOP_BIND_HOST" --port "$OCTOP_PORT" --log-level "${OCTOP_LOG_LEVEL}"
+echo "[octop-native] 正在启动 Octop，$HAPPYCLAW_BIND_HOST:$HAPPYCLAW_PORT ..."
+exec "$PY" -m happyclaw.cli.main run --host "$HAPPYCLAW_BIND_HOST" --port "$HAPPYCLAW_PORT" --log-level "${HAPPYCLAW_LOG_LEVEL}"

@@ -69,8 +69,8 @@ Prefer JSON tool output:
 The Dashboard loads `index.js` via `GET /api/plugins/{id}/ui/…`, calls
 `setup(host)`, and resolves renderers in chat. Use `host.patchResult` for
 interactive L2 updates; streaming still replaces `output` via SSE (L1).
-Ship a self-contained ESM; React is provided as `window.__OCTOP_REACT__` /
-`__OCTOP_JSX__`.
+Ship a self-contained ESM; React is provided as `window.__HAPPYCLAW_REACT__` /
+`__HAPPYCLAW_JSX__`.
 
 ## Install locally
 

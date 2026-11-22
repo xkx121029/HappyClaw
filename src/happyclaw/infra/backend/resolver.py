@@ -49,7 +49,7 @@ def windows_neutralize_host_root(
       than the agent workspace), so deepagents virtual-path checks reject every
       workspace path with ``Path ... outside root directory``.
     * a bare drive root on a *different* drive than the workspace (e.g. a
-      persisted ``C:/`` while ``OCTOP_HOME`` lives on ``E:``). Those were
+      persisted ``C:/`` while ``HAPPYCLAW_HOME`` lives on ``E:``). Those were
       written by the old default-expert bootstrap and can never reach the
       workspace; the original value is logged before the rewrite.
 

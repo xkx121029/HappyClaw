@@ -315,7 +315,7 @@ Do **not** use gettext (`.po` files). Do **not** embed user-visible English in `
 
 **Timezone (config.json):**
 
-User-facing datetime display and cron/scheduling defaults MUST use the server timezone from `config.json` → `default_timezone` (env override `OCTOP_DEFAULT_TIMEZONE`; legacy `cron_timezone` / `OCTOP_CRON_TIMEZONE` still accepted) — not the browser's local timezone.
+User-facing datetime display and cron/scheduling defaults MUST use the server timezone from `config.json` → `default_timezone` (env override `HAPPYCLAW_DEFAULT_TIMEZONE`; legacy `cron_timezone` / `HAPPYCLAW_CRON_TIMEZONE` still accepted) — not the browser's local timezone.
 
 | Layer | Entry |
 |-------|--------|

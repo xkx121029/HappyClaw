@@ -3,15 +3,15 @@ setlocal EnableDelayedExpansion
 
 REM HappyClaw Installer for Windows (cmd.exe)
 REM Usage: install.bat [-Version X.Y.Z] [-FromSource] [-SourceDir DIR] [-Extras browser] [-Help]
-REM Set OCTOP_INSTALL_BASE to a mirror serving the same scripts/ tree when GitHub is unreachable:
-REM   if not defined OCTOP_INSTALL_BASE set OCTOP_INSTALL_BASE=https://raw.githubusercontent.com/xkx121029/HappyClaw/main
-REM   curl -fsSL "%OCTOP_INSTALL_BASE%/scripts/install.bat" -o install.bat
+REM Set HAPPYCLAW_INSTALL_BASE to a mirror serving the same scripts/ tree when GitHub is unreachable:
+REM   if not defined HAPPYCLAW_INSTALL_BASE set HAPPYCLAW_INSTALL_BASE=https://raw.githubusercontent.com/xkx121029/HappyClaw/main
+REM   curl -fsSL "%HAPPYCLAW_INSTALL_BASE%/scripts/install.bat" -o install.bat
 
-if defined OCTOP_HOME (set "OCTOP_HOME=%OCTOP_HOME%") else (set "OCTOP_HOME=%USERPROFILE%\.octop")
-set "OCTOP_VENV=%OCTOP_HOME%\venv"
-set "OCTOP_BIN=%OCTOP_HOME%\bin"
+if defined HAPPYCLAW_HOME (set "HAPPYCLAW_HOME=%HAPPYCLAW_HOME%") else (set "HAPPYCLAW_HOME=%USERPROFILE%\.octop")
+set "HAPPYCLAW_VENV=%HAPPYCLAW_HOME%\venv"
+set "HAPPYCLAW_BIN=%HAPPYCLAW_HOME%\bin"
 set "PYTHON_VERSION=3.12"
-if defined OCTOP_REPO (set "OCTOP_REPO=%OCTOP_REPO%") else (set "OCTOP_REPO=https://github.com/xkx121029/HappyClaw.git")
+if defined HAPPYCLAW_REPO (set "HAPPYCLAW_REPO=%HAPPYCLAW_REPO%") else (set "HAPPYCLAW_REPO=https://github.com/xkx121029/HappyClaw.git")
 
 set "ARG_VERSION="
 set "ARG_FROM_SOURCE=0"
@@ -46,21 +46,21 @@ echo         to install it, or install later from the dashboard.
 exit /b 0
 
 :done_args
-echo [octop] Installing HappyClaw into %OCTOP_HOME%
+echo [octop] Installing HappyClaw into %HAPPYCLAW_HOME%
 
 call :ensure_uv
 if errorlevel 1 exit /b 1
 
-if exist "%OCTOP_VENV%" (
+if exist "%HAPPYCLAW_VENV%" (
     echo [octop] Existing environment found, upgrading...
 ) else (
     echo [octop] Creating Python %PYTHON_VERSION% environment...
 )
 
-uv venv "%OCTOP_VENV%" --python %PYTHON_VERSION% --quiet --clear
+uv venv "%HAPPYCLAW_VENV%" --python %PYTHON_VERSION% --quiet --clear
 if errorlevel 1 (echo [octop] ERROR: Failed to create venv & exit /b 1)
 
-set "VENV_PYTHON=%OCTOP_VENV%\Scripts\python.exe"
+set "VENV_PYTHON=%HAPPYCLAW_VENV%\Scripts\python.exe"
 if not exist "%VENV_PYTHON%" (echo [octop] ERROR: venv python missing & exit /b 1)
 
 for /f "delims=" %%v in ('"%VENV_PYTHON%" --version 2^>^&1') do set "PY_VERSION=%%v"
@@ -68,7 +68,7 @@ echo [octop] Python environment ready (%PY_VERSION%)
 
 set "EXTRAS_SUFFIX=[browser]"
 if defined ARG_EXTRAS set "EXTRAS_SUFFIX=[browser,%ARG_EXTRAS%]"
-set "VENV_OCTOP=%OCTOP_VENV%\Scripts\octop.exe"
+set "VENV_OCTOP=%HAPPYCLAW_VENV%\Scripts\octop.exe"
 
 if "%ARG_FROM_SOURCE%"=="1" goto :install_from_source
 goto :install_from_pypi
@@ -89,7 +89,7 @@ goto :install_verify
 where git >nul 2>&1
 if errorlevel 1 (echo [octop] ERROR: git required & exit /b 1)
 set "CLONE_DIR=%TEMP%\octop-install-%RANDOM%"
-git clone --depth 1 %OCTOP_REPO% "%CLONE_DIR%"
+git clone --depth 1 %HAPPYCLAW_REPO% "%CLONE_DIR%"
 if errorlevel 1 exit /b 1
 call :prepare_console "%CLONE_DIR%"
 uv pip install "%CLONE_DIR%%EXTRAS_SUFFIX%" --python "%VENV_PYTHON%"
@@ -128,8 +128,8 @@ if errorlevel 1 (
     goto :after_browser
 )
 call :detect_chrome
-if defined OCTOP_SYSTEM_CHROME (
-    echo [octop] Found system Chrome/Chromium: %OCTOP_SYSTEM_CHROME%
+if defined HAPPYCLAW_SYSTEM_CHROME (
+    echo [octop] Found system Chrome/Chromium: %HAPPYCLAW_SYSTEM_CHROME%
     echo [octop] Using system browser; skipping Playwright Chromium download.
     echo [octop] To use bundled Chromium instead, run: "%VENV_PYTHON%" -m playwright install chromium
     goto :after_browser
@@ -141,25 +141,25 @@ if errorlevel 1 (
 )
 :after_browser
 
-if not exist "%OCTOP_BIN%" mkdir "%OCTOP_BIN%"
+if not exist "%HAPPYCLAW_BIN%" mkdir "%HAPPYCLAW_BIN%"
 
-echo @echo off > "%OCTOP_BIN%\octop.cmd"
-echo set "OCTOP_HOME=%%OCTOP_HOME%%" >> "%OCTOP_BIN%\octop.cmd"
-echo if "%%OCTOP_HOME%%"=="" set "OCTOP_HOME=%%USERPROFILE%%\.octop" >> "%OCTOP_BIN%\octop.cmd"
-echo "%%OCTOP_HOME%%\venv\Scripts\octop.exe" %%* >> "%OCTOP_BIN%\octop.cmd"
+echo @echo off > "%HAPPYCLAW_BIN%\octop.cmd"
+echo set "HAPPYCLAW_HOME=%%HAPPYCLAW_HOME%%" >> "%HAPPYCLAW_BIN%\octop.cmd"
+echo if "%%HAPPYCLAW_HOME%%"=="" set "HAPPYCLAW_HOME=%%USERPROFILE%%\.octop" >> "%HAPPYCLAW_BIN%\octop.cmd"
+echo "%%HAPPYCLAW_HOME%%\venv\Scripts\octop.exe" %%* >> "%HAPPYCLAW_BIN%\octop.cmd"
 
-set "OCTOP_BIN_FOR_PS=%OCTOP_BIN%"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$bin=$env:OCTOP_BIN_FOR_PS; $cur=[Environment]::GetEnvironmentVariable('Path','User'); if(-not $cur){$cur=''}; $parts=$cur.Split(';')|?{$_}; $ok=$false; foreach($p in $parts){if($p.TrimEnd('\') -ieq $bin.TrimEnd('\')){$ok=$true}}; if(-not $ok){$new=if($cur){$cur.TrimEnd(';')+';'+$bin}else{$bin}; [Environment]::SetEnvironmentVariable('Path',$new,'User'); Write-Host '[octop] Added to User PATH'} else {Write-Host '[octop] Already in User PATH'}"
-set "OCTOP_BIN_FOR_PS="
-echo %PATH% | findstr /i /c:"%OCTOP_BIN%" >nul || set "PATH=%OCTOP_BIN%;%PATH%"
+set "HAPPYCLAW_BIN_FOR_PS=%HAPPYCLAW_BIN%"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$bin=$env:HAPPYCLAW_BIN_FOR_PS; $cur=[Environment]::GetEnvironmentVariable('Path','User'); if(-not $cur){$cur=''}; $parts=$cur.Split(';')|?{$_}; $ok=$false; foreach($p in $parts){if($p.TrimEnd('\') -ieq $bin.TrimEnd('\')){$ok=$true}}; if(-not $ok){$new=if($cur){$cur.TrimEnd(';')+';'+$bin}else{$bin}; [Environment]::SetEnvironmentVariable('Path',$new,'User'); Write-Host '[octop] Added to User PATH'} else {Write-Host '[octop] Already in User PATH'}"
+set "HAPPYCLAW_BIN_FOR_PS="
+echo %PATH% | findstr /i /c:"%HAPPYCLAW_BIN%" >nul || set "PATH=%HAPPYCLAW_BIN%;%PATH%"
 
 echo.
 echo HappyClaw installed successfully!
-echo   Location: %OCTOP_HOME%
+echo   Location: %HAPPYCLAW_HOME%
 echo   Python:   %PY_VERSION%
 echo.
 echo If 'octop' is not found in this session, run:
-echo   set PATH=%OCTOP_BIN%;%%PATH%%
+echo   set PATH=%HAPPYCLAW_BIN%;%%PATH%%
 echo Or open a new terminal ^(saved to User PATH^).
 echo.
 echo Then run:
@@ -170,7 +170,7 @@ echo   http://127.0.0.1:8088
 exit /b 0
 
 ::detect_chrome
-set "OCTOP_SYSTEM_CHROME="
+set "HAPPYCLAW_SYSTEM_CHROME="
 REM Prefer happyclaw-browser's own detector (same path used at runtime)
 "%VENV_PYTHON%" -c "from happyclaw_browser.cdp.launcher import find_chrome; p=find_chrome(); print(p or '', end='')" > "%TEMP%\_octop_chrome.tmp" 2>nul
 if not errorlevel 1 (
@@ -178,14 +178,14 @@ if not errorlevel 1 (
 )
 del "%TEMP%\_octop_chrome.tmp" >nul 2>&1
 if defined _CHROME (
-    set "OCTOP_SYSTEM_CHROME=%_CHROME%"
+    set "HAPPYCLAW_SYSTEM_CHROME=%_CHROME%"
     goto :detect_chrome_done
 )
 REM Fallback: common commands on PATH
 for %%c in (chrome google-chrome google-chrome-stable chromium chromium-browser) do (
     where %%c >nul 2>&1
     if not errorlevel 1 (
-        for /f "delims=" %%p in ('where %%c') do (set "OCTOP_SYSTEM_CHROME=%%p" & goto :detect_chrome_done)
+        for /f "delims=" %%p in ('where %%c') do (set "HAPPYCLAW_SYSTEM_CHROME=%%p" & goto :detect_chrome_done)
     )
 )
 REM Fallback: well-known GUI install paths
@@ -195,7 +195,7 @@ for %%p in (
     "%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"
     "%ProgramFiles%\Chromium\Application\chrome.exe"
 ) do (
-    if exist %%p (set "OCTOP_SYSTEM_CHROME=%%~p" & goto :detect_chrome_done)
+    if exist %%p (set "HAPPYCLAW_SYSTEM_CHROME=%%~p" & goto :detect_chrome_done)
 )
 :detect_chrome_done
 exit /b 0

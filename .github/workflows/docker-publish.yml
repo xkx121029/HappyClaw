@@ -157,7 +157,7 @@ jobs:
           sbom: false
           platforms: ${{ matrix.platform }}
           build-args: |
-            OCTOP_IMAGE_VARIANT=${{ matrix.variant }}
+            HAPPYCLAW_IMAGE_VARIANT=${{ matrix.variant }}
           tags: |
             octop:ci-${{ matrix.variant }}
             ${{ steps.meta.outputs.tags }}
@@ -176,8 +176,8 @@ jobs:
 
       - name: Boot-test image before publish
         env:
-          OCTOP_TEST_IMAGE: octop:ci-${{ matrix.variant }}
-          OCTOP_IMAGE_VARIANT: ${{ matrix.variant }}
+          HAPPYCLAW_TEST_IMAGE: octop:ci-${{ matrix.variant }}
+          HAPPYCLAW_IMAGE_VARIANT: ${{ matrix.variant }}
         run: |
           set -euo pipefail
           uv venv /tmp/octop-docker-test

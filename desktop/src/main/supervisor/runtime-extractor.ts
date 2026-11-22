@@ -65,7 +65,7 @@ export function onedirDashboardDir(backendDir: string): string {
 /**
  * Runtime extraction decision and safe atomic unzip for the portable Python
  * runtime (§2.2 / §2.3). The extracted runtime lives under
- * ``<OCTOP_HOME>/portable`` and is replaced atomically, never in place, so a
+ * ``<HAPPYCLAW_HOME>/portable`` and is replaced atomically, never in place, so a
  * failed extraction never leaves a half-written runtime that claims a version.
  */
 
@@ -81,7 +81,7 @@ export interface BundledPortable {
 }
 
 export interface LocalRuntime {
-  /** Parsed ``version`` from ``<OCTOP_HOME>/portable/version.json``. */
+  /** Parsed ``version`` from ``<HAPPYCLAW_HOME>/portable/version.json``. */
   version: string | null;
   /** True when the interpreter binary exists at the expected location. */
   interpreterExists: boolean;

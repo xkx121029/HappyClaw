@@ -5,7 +5,7 @@
 .DESCRIPTION
     步骤：
       1. 找一个空闲端口；
-      2. 把 OCTOP_HOME 指到临时目录（不触碰真实 ~/.octop）；
+      2. 把 HAPPYCLAW_HOME 指到临时目录（不触碰真实 ~/.octop）；
       3. 启动 `octop run`；
       4. 轮询 http://127.0.0.1:<port>/api/health；
       5. 输出响应、数据目录清单与日志末尾；
@@ -98,15 +98,15 @@ if (-not $octop) {
 
 Write-Host "HappyClaw smoke test" -ForegroundColor White
 Write-Host "  octop     : $($octop.File) $($octop.Args -join ' ')" -ForegroundColor DarkGray
-Write-Host "  OCTOP_HOME: $tempHome" -ForegroundColor DarkGray
+Write-Host "  HAPPYCLAW_HOME: $tempHome" -ForegroundColor DarkGray
 Write-Host "  port      : $Port" -ForegroundColor DarkGray
 
-$oldHome = $env:OCTOP_HOME
-$oldHost = $env:OCTOP_BIND_HOST
-$oldPort = $env:OCTOP_PORT
-$env:OCTOP_HOME = $tempHome
-$env:OCTOP_BIND_HOST = "127.0.0.1"
-$env:OCTOP_PORT = "$Port"
+$oldHome = $env:HAPPYCLAW_HOME
+$oldHost = $env:HAPPYCLAW_BIND_HOST
+$oldPort = $env:HAPPYCLAW_PORT
+$env:HAPPYCLAW_HOME = $tempHome
+$env:HAPPYCLAW_BIND_HOST = "127.0.0.1"
+$env:HAPPYCLAW_PORT = "$Port"
 
 $process = $null
 $startedAt = Get-Date
@@ -163,9 +163,9 @@ finally {
         $process.WaitForExit(5000) | Out-Null
         Write-Host "[INFO] 已停止测试进程 (PID $($process.Id))" -ForegroundColor DarkGray
     }
-    $env:OCTOP_HOME = $oldHome
-    $env:OCTOP_BIND_HOST = $oldHost
-    $env:OCTOP_PORT = $oldPort
+    $env:HAPPYCLAW_HOME = $oldHome
+    $env:HAPPYCLAW_BIND_HOST = $oldHost
+    $env:HAPPYCLAW_PORT = $oldPort
 
     if ($Keep) {
         Write-Host "[INFO] 保留临时目录：$tempHome" -ForegroundColor Yellow

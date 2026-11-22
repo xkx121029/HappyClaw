@@ -939,7 +939,7 @@
     "target": "Maintaining agent: {agent_id}",
     "elapsed": "Elapsed: {seconds}s",
     "scanned": "Scanned: {scanned}/{total}",
-    "all_conflict": "--all cannot be combined with --agent or OCTOP_AGENT.",
+    "all_conflict": "--all cannot be combined with --agent or HAPPYCLAW_AGENT.",
     "batch_target": "[{index}/{total}] Maintaining: {name} [{agent_id}]",
     "batch_stopped": "Batch stopped: {agent_id} did not confirm completion; {completed} completed, {remaining} not started. Reason: {detail}",
     "batch_done": "Batch complete: {total} agents maintained.",

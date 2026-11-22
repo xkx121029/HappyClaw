@@ -20,10 +20,10 @@ services:
       - "${TRIM_DATA_SHARE_PATHS}/.octop:/data/.octop"
     environment:
       - HOME=/data
-      - OCTOP_HOME=/data/.octop
-      - OCTOP_BIND_HOST=0.0.0.0
-      - OCTOP_PORT=${OCTOP_PORT:-8088}
-      - OCTOP_LOG_LEVEL=${OCTOP_LOG_LEVEL:-info}
+      - HAPPYCLAW_HOME=/data/.octop
+      - HAPPYCLAW_BIND_HOST=0.0.0.0
+      - HAPPYCLAW_PORT=${HAPPYCLAW_PORT:-8088}
+      - HAPPYCLAW_LOG_LEVEL=${HAPPYCLAW_LOG_LEVEL:-info}
     healthcheck:
       test:
         [

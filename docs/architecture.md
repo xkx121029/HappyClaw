@@ -110,7 +110,7 @@ sessions, audit) lives in either:
 
 * SQLite — default file under `~/.happyclaw/` (legacy `octop.db` or
   `config.json` → `database.sqlite_path`), or
-* PostgreSQL — `config.json` / `OCTOP_DATABASE_*` / first-boot database config.
+* PostgreSQL — `config.json` / `HAPPYCLAW_DATABASE_*` / first-boot database config.
 
 Migrations: `src/happyclaw/infra/db/migrations/NNN_*.sql` (SQLite) and
 `NNN_*.pg.sql` (PostgreSQL). Connection PRAGMAs live on the SQLite pool;

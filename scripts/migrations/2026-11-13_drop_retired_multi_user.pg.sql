@@ -7,7 +7,7 @@
 -- src/happyclaw/infra/db/migrations/, so the migration runner never picks it up.
 --
 -- BACKUP IS MANDATORY before running. Stop Octop first, then:
---   pg_dump --format=custom --file=octop-20261113.dump $env:OCTOP_DATABASE_URL
+--   pg_dump --format=custom --file=octop-20261113.dump $env:HAPPYCLAW_DATABASE_URL
 --
 -- MANDATORY CODE CHANGE, NOT OPTIONAL: running this script requires removing
 -- the matching CREATE/backfill code in src/happyclaw/infra/db/migrate.py in the
@@ -20,7 +20,7 @@
 -- See 2026-11-12/single-user-cleanup/outputs/multi-user-residue.md §13.
 --
 -- Run with psql:
---   psql "$OCTOP_DATABASE_URL" -f 2026-11-13_drop_retired_multi_user.pg.sql
+--   psql "$HAPPYCLAW_DATABASE_URL" -f 2026-11-13_drop_retired_multi_user.pg.sql
 --
 -- Idempotent: IF EXISTS makes a second run a no-op.
 

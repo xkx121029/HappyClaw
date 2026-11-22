@@ -7,7 +7,7 @@ Two separate streams keep facts apart:
 * ``checks.jsonl`` — aggregated traces of *allowed* probes, written by
   :class:`JsonlCheckLedger` through :class:`CheckAggregator`.
 
-The active files live in ``<OCTOP_HOME>/dsh-sandbox/`` (falling back to
+The active files live in ``<HAPPYCLAW_HOME>/dsh-sandbox/`` (falling back to
 ``~/.octop/dsh-sandbox/``). When a file would exceed ``max_bytes`` it rotates to
 ``.1``, older files shift up to ``max_files``, and the oldest is deleted, so
 neither stream grows without bound.
@@ -73,14 +73,14 @@ DEFAULT_MAX_FILES = 5
 
 
 def default_ledger_path(home: str | Path | None = None) -> Path:
-    """Return the default denial ledger path, honoring ``OCTOP_HOME``."""
+    """Return the default denial ledger path, honoring ``HAPPYCLAW_HOME``."""
 
     root = Path(home) if home is not None else PathLayout.from_env().root
     return root / DEFAULT_LEDGER_DIRNAME / DEFAULT_LEDGER_FILENAME
 
 
 def default_check_ledger_path(home: str | Path | None = None) -> Path:
-    """Return the default allowed-check ledger path, honoring ``OCTOP_HOME``."""
+    """Return the default allowed-check ledger path, honoring ``HAPPYCLAW_HOME``."""
 
     root = Path(home) if home is not None else PathLayout.from_env().root
     return root / DEFAULT_LEDGER_DIRNAME / DEFAULT_CHECK_FILENAME

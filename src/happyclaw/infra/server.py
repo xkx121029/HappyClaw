@@ -165,7 +165,7 @@ def gzip_rotated_log(path: Path) -> None:
 
 
 def _parse_log_compress() -> bool:
-    raw = (os.environ.get("OCTOP_LOG_COMPRESS", "1") or "1").strip().lower()
+    raw = (os.environ.get("HAPPYCLAW_LOG_COMPRESS", "1") or "1").strip().lower()
     return raw not in ("0", "false", "no", "off")
 
 
@@ -195,7 +195,7 @@ def delaycompress_rotated_logs(
 
 
 def _parse_log_retention_days() -> int:
-    raw = os.environ.get("OCTOP_LOG_RETENTION_DAYS", str(DEFAULT_LOG_RETENTION_DAYS)) or str(
+    raw = os.environ.get("HAPPYCLAW_LOG_RETENTION_DAYS", str(DEFAULT_LOG_RETENTION_DAYS)) or str(
         DEFAULT_LOG_RETENTION_DAYS
     )
     try:
@@ -205,7 +205,7 @@ def _parse_log_retention_days() -> int:
 
 
 def _parse_log_max_bytes() -> int:
-    raw = os.environ.get("OCTOP_LOG_MAX_BYTES", str(DEFAULT_LOG_MAX_BYTES)) or str(
+    raw = os.environ.get("HAPPYCLAW_LOG_MAX_BYTES", str(DEFAULT_LOG_MAX_BYTES)) or str(
         DEFAULT_LOG_MAX_BYTES
     )
     try:
@@ -691,9 +691,9 @@ class HappyclawServer:
         Fire-and-forget on purpose: first paint (``/api/health``) must never
         wait for market pulls or workspace seeding. Any failure is logged and
         ignored — the user can still create an expert by hand. Tests opt out
-        with ``OCTOP_DISABLE_DEFAULT_AGENT=1``.
+        with ``HAPPYCLAW_DISABLE_DEFAULT_AGENT=1``.
         """
-        disabled = os.environ.get("OCTOP_DISABLE_DEFAULT_AGENT", "").strip().lower()
+        disabled = os.environ.get("HAPPYCLAW_DISABLE_DEFAULT_AGENT", "").strip().lower()
         if disabled in {"1", "true", "yes", "on"}:
             return
         self._default_agent_task = asyncio.create_task(self._bootstrap_default_agent())
@@ -1166,7 +1166,7 @@ class HappyclawServer:
         for name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
             _attach_log_handler(logging.getLogger(name), handler)
 
-        level = os.environ.get("OCTOP_LOG_LEVEL", "info").upper()
+        level = os.environ.get("HAPPYCLAW_LOG_LEVEL", "info").upper()
         root.setLevel(getattr(logging, level, logging.INFO))
         if root.level > logging.DEBUG:
             # httpx logs full request URLs at INFO, leaking query-string

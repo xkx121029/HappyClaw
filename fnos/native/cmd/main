@@ -9,17 +9,17 @@
 
 set -uo pipefail
 
-_OCTOP_COMMON="$(dirname "$0")/common.sh"
-[ -f "$_OCTOP_COMMON" ] || _OCTOP_COMMON="/var/apps/octop-native/cmd/common.sh"
-[ -f "$_OCTOP_COMMON" ] && source "$_OCTOP_COMMON"
+_HAPPYCLAW_COMMON="$(dirname "$0")/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] || _HAPPYCLAW_COMMON="/var/apps/octop-native/cmd/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] && source "$_HAPPYCLAW_COMMON"
 
 APPDEST="${TRIM_APPDEST:-/var/apps/octop-native}"
 PKGVAR="${TRIM_PKGVAR:-/var/apps/octop-native/var}"
 LOG_FILE="${PKGVAR}/info.log"
 PID_FILE="${PKGVAR}/octop.pid"
-PORT="${OCTOP_PORT:-8089}"
+PORT="${HAPPYCLAW_PORT:-8089}"
 BIN="$APPDEST/bin/octop"
-START_WAIT_SECS="${OCTOP_START_WAIT_SECS:-90}"
+START_WAIT_SECS="${HAPPYCLAW_START_WAIT_SECS:-90}"
 
 if [ -n "${TRIM_DATA_SHARE_PATHS:-}" ]; then
     DATA_DIR="${TRIM_DATA_SHARE_PATHS%%:*}"
@@ -119,13 +119,13 @@ start_process() {
 
     if [ ! -f "${DATA_DIR}/.octop/octop.db" ] && [ ! -f "${DATA_DIR}/octop.db" ]; then
         log_msg "数据库尚未初始化，先执行 --prepare"
-        if ! OCTOP_PORT="$PORT" OCTOP_BIND_HOST=0.0.0.0 run_as_service "$BIN" --prepare >> "${LOG_FILE}" 2>&1; then
+        if ! HAPPYCLAW_PORT="$PORT" HAPPYCLAW_BIND_HOST=0.0.0.0 run_as_service "$BIN" --prepare >> "${LOG_FILE}" 2>&1; then
             fail_start "首次初始化失败。请打开数据目录 octop-start-error.txt，或确认已安装「Python 3.12」。"
             return 1
         fi
     fi
 
-    OCTOP_PORT="$PORT" OCTOP_BIND_HOST=0.0.0.0 run_as_service_bg "$BIN" --host 0.0.0.0 --port "$PORT"
+    HAPPYCLAW_PORT="$PORT" HAPPYCLAW_BIND_HOST=0.0.0.0 run_as_service_bg "$BIN" --host 0.0.0.0 --port "$PORT"
     octop_pid=$!
     # 先写 PID：飞牛若在端口就绪前杀掉 start（超时 / 用户取消），stop 仍找得到进程。
     printf "%s" "$octop_pid" > "${PID_FILE}"

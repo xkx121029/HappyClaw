@@ -91,7 +91,7 @@ settings / status / stream / uninstall），不能借用；`/api/runtime` 目前
 **鉴权**：`GET /api/runtime/activity` 加进 `src/happyclaw/api/deps.py:41` 的
 `_JWT_EXEMPT_EXACT`（和 `/api/auth/device/token` 并列），理由写在注释里；路由内部调用
 `_require_desktop_loopback(request)` 做真正的把关——它要求 `desktop_shell_enabled()`
-（`OCTOP_DESKTOP_SHELL=1`，只有壳拉起的 Sidecar 才有）且对端是 loopback。
+（`HAPPYCLAW_DESKTOP_SHELL=1`，只有壳拉起的 Sidecar 才有）且对端是 loopback。
 
 > `_require_desktop_loopback` 现在是 `auth_device.py:71` 的私有函数，实施时把它提到
 > `src/happyclaw/api/common/desktop.py`，两处共用；不要复制一份。

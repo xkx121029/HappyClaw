@@ -86,14 +86,14 @@ _PROFILE_POINTER = os.path.expanduser("~/.tccli/.octop-profile")
 
 
 def resolve_profile(explicit=None):
-    """选 profile：--profile > OCTOP_TCCLI_PROFILE > 工作台写入的指针 > default。
+    """选 profile：--profile > HAPPYCLAW_TCCLI_PROFILE > 工作台写入的指针 > default。
 
     多用户部署时工作台会把凭据写到 ``octop-<uid>`` 并更新指针文件，
     这样技能不用改调用方式也能读到正确的那份。
     """
     if explicit:
         return explicit
-    env = os.environ.get("OCTOP_TCCLI_PROFILE", "").strip()
+    env = os.environ.get("HAPPYCLAW_TCCLI_PROFILE", "").strip()
     if env:
         return env
     try:

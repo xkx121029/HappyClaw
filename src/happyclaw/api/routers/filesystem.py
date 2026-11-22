@@ -91,7 +91,7 @@ async def filesystem_defaults(
     gets OS-level confinement (Linux + bubblewrap) or only bounds the agent's
     tool paths, so the UI does not promise a sandbox it cannot deliver.
 
-    ``default_workspace_dir`` is ``{OCTOP_HOME}/agents``. Create forms append
+    ``default_workspace_dir`` is ``{HAPPYCLAW_HOME}/agents``. Create forms append
     the new expert id, which is the path the server assigns when the caller
     does not choose one.
     """

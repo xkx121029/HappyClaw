@@ -1,6 +1,6 @@
 """Setup endpoints for the single-user local runtime.
 
-There is no first-run wizard anymore: a clean ``OCTOP_HOME`` binds the default
+There is no first-run wizard anymore: a clean ``HAPPYCLAW_HOME`` binds the default
 SQLite control plane at boot and the local owner is created automatically. The
 historical paths stay mounted so an older dashboard/desktop build gets a clear
 Chinese answer instead of a 404 or a dead setup page.

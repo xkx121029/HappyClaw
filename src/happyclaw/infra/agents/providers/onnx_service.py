@@ -52,8 +52,8 @@ _LOCAL_PROBE_TEXT = "octop onnx probe"
 
 
 def runtime_pip_allowed() -> bool:
-    """Runtime pip is off by default; set OCTOP_ALLOW_RUNTIME_PIP=1 to enable."""
-    return os.environ.get("OCTOP_ALLOW_RUNTIME_PIP", "").strip().lower() in {
+    """Runtime pip is off by default; set HAPPYCLAW_ALLOW_RUNTIME_PIP=1 to enable."""
+    return os.environ.get("HAPPYCLAW_ALLOW_RUNTIME_PIP", "").strip().lower() in {
         "1",
         "true",
         "yes",

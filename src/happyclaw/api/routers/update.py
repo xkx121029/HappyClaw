@@ -390,7 +390,7 @@ async def upgrade_progress(
 def _is_desktop_process() -> bool:
     if green_packages_dir() is not None:
         return True
-    raw = (os.environ.get("OCTOP_DESKTOP") or "").strip().lower()
+    raw = (os.environ.get("HAPPYCLAW_DESKTOP") or "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
 
 
@@ -462,7 +462,7 @@ async def restart_service_endpoint(
     if mode is None:
         raise HappyclawError(
             ErrorCode.FORBIDDEN,
-            "service restart is only available when OCTOP_SERVICE_MODE is set",
+            "service restart is only available when HAPPYCLAW_SERVICE_MODE is set",
         )
     try:
         runtime = build_runtime(mode=mode)

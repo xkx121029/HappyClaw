@@ -81,7 +81,7 @@ function normalizeHome(value: string): string {
 
 /**
  * Onboarding belongs to one data root. The flag used to live only in Electron's
- * userData, so launching with another ``OCTOP_HOME`` silently skipped the guide;
+ * userData, so launching with another ``HAPPYCLAW_HOME`` silently skipped the guide;
  * recording the home makes a new directory look like a fresh install.
  *
  * A legacy record without a home is trusted (the boot path stamps the current

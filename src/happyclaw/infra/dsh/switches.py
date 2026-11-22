@@ -5,7 +5,7 @@ memory only: no file, database or network access. Callers must check the
 switch *before* importing any DSH implementation module so that a disabled
 stage costs nothing beyond one dictionary lookup.
 
-``OCTOP_DSH_RUNTIME`` is the master gate. When it is off (the default) every
+``HAPPYCLAW_DSH_RUNTIME`` is the master gate. When it is off (the default) every
 stage is off, regardless of the per-stage variables.
 """
 
@@ -14,9 +14,9 @@ from __future__ import annotations
 import os
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
-_MASTER = "OCTOP_DSH_RUNTIME"
-_STAGE_PREFIX = "OCTOP_DSH_"
-_LLM_REFS = "OCTOP_DSH_LLM_REFS"
+_MASTER = "HAPPYCLAW_DSH_RUNTIME"
+_STAGE_PREFIX = "HAPPYCLAW_DSH_"
+_LLM_REFS = "HAPPYCLAW_DSH_LLM_REFS"
 
 
 def _flag(name: str) -> bool:
@@ -32,7 +32,7 @@ def stage_enabled(stage: str) -> bool:
     """Return whether *stage* may run.
 
     ``stage`` is the bare name (``"tools"``, ``"hitl"``, ...); the environment
-    variable is ``OCTOP_DSH_<STAGE>``. The master switch always wins.
+    variable is ``HAPPYCLAW_DSH_<STAGE>``. The master switch always wins.
     """
     if not runtime_enabled():
         return False
@@ -42,8 +42,8 @@ def stage_enabled(stage: str) -> bool:
 def shadow_enabled() -> bool:
     """Switch for the session shadow writer (stage ``shadow``).
 
-    Compatibility carve-out: when ``OCTOP_DSH_RUNTIME`` is not set at all the
-    legacy ``OCTOP_DSH_SHADOW`` variable alone keeps working, so introducing
+    Compatibility carve-out: when ``HAPPYCLAW_DSH_RUNTIME`` is not set at all the
+    legacy ``HAPPYCLAW_DSH_SHADOW`` variable alone keeps working, so introducing
     the master switch does not change existing behaviour. Once the master
     variable is present, it gates the stage like every other switch.
     """
@@ -61,7 +61,7 @@ def llm_refs() -> frozenset[str]:
     """Explicit ``provider/model`` refs allowed to use the DSH adapter.
 
     S8 is opt-in per ref, never global: an empty allow-list means "use the
-    harness factory for everything", even when ``OCTOP_DSH_LLM`` is on.
+    harness factory for everything", even when ``HAPPYCLAW_DSH_LLM`` is on.
     """
     raw = os.environ.get(_LLM_REFS, "")
     return frozenset(part.strip() for part in raw.split(",") if part.strip())

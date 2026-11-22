@@ -25,7 +25,7 @@ router = APIRouter(prefix="/envs", tags=["envs"])
 logger = logging.getLogger(__name__)
 
 _KEY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-_CAPTCHA_SECRET_KEYS = frozenset({"OCTOP_CAPTCHA_SECRET", "OCTOP_CAPTCHA_CAM_SECRET_KEY"})
+_CAPTCHA_SECRET_KEYS = frozenset({"HAPPYCLAW_CAPTCHA_SECRET", "HAPPYCLAW_CAPTCHA_CAM_SECRET_KEY"})
 _SECRET_SENTINEL = "********"
 
 

@@ -233,7 +233,7 @@ echo "agent=$AGENT_ID"
 ```bash
 octop agent list
 # 记下 id 列，例如 main
-export OCTOP_AGENT=main
+export HAPPYCLAW_AGENT=main
 octop agent use main   # 写入 ~/.happyclaw/cli_state.json，后续可省略 --agent
 ```
 
@@ -241,7 +241,7 @@ octop agent use main   # 写入 ~/.happyclaw/cli_state.json，后续可省略 --
 
 ```bash
 octop --agent "$AGENT_ID" <子命令> ...
-# 或（已 octop agent use / 已 export OCTOP_AGENT）
+# 或（已 octop agent use / 已 export HAPPYCLAW_AGENT）
 octop <子命令> ...
 ```
 
@@ -279,7 +279,7 @@ octop service status
 代劳非交互命令前，可先执行（将 `main` 替换为实际 Agent ID）：
 
 ```bash
-export OCTOP_AGENT=main
+export HAPPYCLAW_AGENT=main
 octop config show
 octop service status
 octop agent list
@@ -369,7 +369,7 @@ octop provider delete <provider_id>
 
 ## 二、IM 通道配置
 
-通道按 **Agent** 隔离，所有命令需 `--agent`（或 `OCTOP_AGENT`）。
+通道按 **Agent** 隔离，所有命令需 `--agent`（或 `HAPPYCLAW_AGENT`）。
 
 ### 查看通道（直接执行）
 
@@ -594,7 +594,7 @@ octop plugin uninstall <plugin_id>
 | 层 | 位置 | 谁继承 |
 |---|---|---|
 | 全局 | `~/.happyclaw/env` | 所有 Agent（shell / Docker 沙箱 / ACP） |
-| Agent | 工作区 `.env` | 仅该 Agent（同名覆盖全局；不可覆盖 `OCTOP_*` / `HOME` / `USER`） |
+| Agent | 工作区 `.env` | 仅该 Agent（同名覆盖全局；不可覆盖 `HAPPYCLAW_*` / `HOME` / `USER`） |
 
 - 查看 / 编辑全局：Web 控制台 → **Admin → 应用设置 → 环境变量**
 - 或直接编辑 `~/.happyclaw/env`（控制台保存会立刻对齐进程环境；搜索类 key 变化会后台 reload Agent。手改文件后需保存一次或 `octop agent reload`）
@@ -648,7 +648,7 @@ octop plugin uninstall <plugin_id>
 ### 场景：CLI 报 `--agent is required`
 
 1. `octop agent list` 确定目标 id
-2. `export OCTOP_AGENT=<id>` 或 `octop agent use <id>`
+2. `export HAPPYCLAW_AGENT=<id>` 或 `octop agent use <id>`
 3. 所有 channel / cron / skills 命令带上 `--agent`
 
 ---

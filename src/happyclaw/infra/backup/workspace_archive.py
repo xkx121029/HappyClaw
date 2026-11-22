@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from happyclaw_harness.backends.utils import materialize_storage_path
 
 from happyclaw.infra.agents.builtin_skills import (
-    OCTOP_BUILTIN_SKILLS_ROOT,
+    HAPPYCLAW_BUILTIN_SKILLS_ROOT,
     is_octop_builtin_skills_path,
 )
 
@@ -257,7 +257,7 @@ async def import_workspace_zip(
     skipped = len(entries) - len(pairs)
     if skipped:
         warnings.append(
-            f"skipped {skipped} {OCTOP_BUILTIN_SKILLS_ROOT!r} entry/entries (owned by HappyClaw)"
+            f"skipped {skipped} {HAPPYCLAW_BUILTIN_SKILLS_ROOT!r} entry/entries (owned by HappyClaw)"
         )
     if pairs:
         await workspace.aupload_many(pairs)

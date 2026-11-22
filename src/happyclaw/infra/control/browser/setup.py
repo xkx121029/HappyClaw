@@ -176,7 +176,7 @@ def _probe_dir_writable(directory: Path) -> bool:
 def _under_root_home(path: Path) -> bool:
     """True for paths under ``/root`` that are unsafe for Chrome (YunJing).
 
-    Octop home (``OCTOP_HOME`` / ``~/.octop``) is exempt so shared profiles
+    Octop home (``HAPPYCLAW_HOME`` / ``~/.octop``) is exempt so shared profiles
     at ``~/.octop/browser-profiles`` stay put even when running as root.
     """
     if not sys.platform.startswith("linux"):

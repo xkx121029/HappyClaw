@@ -8,8 +8,8 @@ set -euo pipefail
 
 # 共享函数库（find_python312 / fix_ownership_and_perms / free_octop_ports）
 # 打包时由 scripts/build-fpk.sh 注入；仓库内运行无此文件时跳过（函数缺失时再报错）。
-_OCTOP_COMMON=""$(dirname "$0")/common.sh""
-[ -f "$_OCTOP_COMMON" ] && source "$_OCTOP_COMMON"
+_HAPPYCLAW_COMMON=""$(dirname "$0")/common.sh""
+[ -f "$_HAPPYCLAW_COMMON" ] && source "$_HAPPYCLAW_COMMON"
 
 log() { echo "[octop] $1" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true; }
 

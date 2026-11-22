@@ -44,5 +44,5 @@ fi
 printf '{ "version": "%s" }\n' "$APP_VERSION" > "$DEV/version.json"
 
 echo "dev runtime ready: $DEV"
-echo "export OCTOP_PORTABLE_DIR=\"$DEV\""
-echo "export OCTOP_DASHBOARD_DIR=\"$REPO_ROOT/src/happyclaw/dashboard\""
+echo "export HAPPYCLAW_PORTABLE_DIR=\"$DEV\""
+echo "export HAPPYCLAW_DASHBOARD_DIR=\"$REPO_ROOT/src/happyclaw/dashboard\""

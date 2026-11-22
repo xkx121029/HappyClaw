@@ -169,7 +169,7 @@ Get-FileHash D:\backup\happyclaw-full.tar.gz -Algorithm SHA256
 **第 2 步：新机装同版本或更新版本**
 
 ```powershell
-if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
+if (-not $env:HAPPYCLAW_INSTALL_BASE) { $env:HAPPYCLAW_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:HAPPYCLAW_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 重开一个 PowerShell：
@@ -335,7 +335,7 @@ pg_restore --version
 
 迁移顺序固定：
 
-1. 新机把 `config.json` 的 `database.driver` 改成 `postgresql`，填好连接信息；或者用 `OCTOP_DATABASE_URL`。
+1. 新机把 `config.json` 的 `database.driver` 改成 `postgresql`，填好连接信息；或者用 `HAPPYCLAW_DATABASE_URL`。
 2. 确认新库可连、为空库（不要指向已有业务库）。
 3. 停服后 `octop backup restore <归档> --no-config --yes`。
 4. 恢复完成后 `octop run`，看 `/api/health` 的 `db : True`。

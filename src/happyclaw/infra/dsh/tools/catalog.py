@@ -94,7 +94,7 @@ def build_dsh_plugin_tools(
     ``sandbox_root`` is the workspace the sandbox confines calls to. Without it
     the absence gate is used, which warns once and records ``unavailable``
     coverage on every call; ``sandbox_absence`` (``allow`` / ``strict``, default
-    from ``OCTOP_DSH_SANDBOX_ABSENCE``) decides whether such calls may run.
+    from ``HAPPYCLAW_DSH_SANDBOX_ABSENCE``) decides whether such calls may run.
 
     ``capability_declarations`` and ``inspections`` are keyed by plugin id and
     then by native tool name; they let the host narrow a tool's capabilities and

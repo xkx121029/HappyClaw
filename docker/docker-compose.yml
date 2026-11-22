@@ -3,17 +3,17 @@
 #
 # 用法（在仓库根目录执行）:
 #   docker compose -f docker/docker-compose.yml up -d --build
-#   OCTOP_PORT=9090 docker compose -f docker/docker-compose.yml up -d
+#   HAPPYCLAW_PORT=9090 docker compose -f docker/docker-compose.yml up -d
 #
 # 单人模式不需要管理员密码或设置向导：首次启动自动建库并绑定本机使用者。
 #
 # 可在 docker/ 目录放置 .env 文件，例如:
-#   OCTOP_PORT=9090
-#   OCTOP_DATA=D:/HappyClaw/data
-#   OCTOP_DATABASE_DRIVER=postgresql
-#   OCTOP_DATABASE_URL=postgresql://octop:octop@host.docker.internal:5432/octop
+#   HAPPYCLAW_PORT=9090
+#   HAPPYCLAW_DATA=D:/HappyClaw/data
+#   HAPPYCLAW_DATABASE_DRIVER=postgresql
+#   HAPPYCLAW_DATABASE_URL=postgresql://octop:octop@host.docker.internal:5432/octop
 #
-# 单人版没有账号：容器不读取 OCTOP_DEFAULT_PASSWORD 等旧变量。
+# 单人版没有账号：容器不读取 HAPPYCLAW_DEFAULT_PASSWORD 等旧变量。
 #
 # 注意: docker/.env 仅用于 Compose 插值；变量必须列在下方 environment
 # 才会进入容器。也可写入数据卷内的 ~/.octop/env（宿主机挂载目录下的 env）。
@@ -34,22 +34,22 @@ services:
     # Xvnc needs more than Docker's default 64MB /dev/shm after the user enables the desktop.
     shm_size: "1gb"
     ports:
-      - "${OCTOP_PORT:-8088}:${OCTOP_PORT:-8088}"
+      - "${HAPPYCLAW_PORT:-8088}:${HAPPYCLAW_PORT:-8088}"
     volumes:
-      - ${OCTOP_DATA:-~/.octop}:/data/.octop
+      - ${HAPPYCLAW_DATA:-~/.octop}:/data/.octop
     environment:
       - HOME=/data
-      - OCTOP_BIND_HOST=0.0.0.0
-      - OCTOP_PORT=${OCTOP_PORT:-8088}
-      - OCTOP_LOG_LEVEL=${OCTOP_LOG_LEVEL:-info}
-      - OCTOP_DATABASE_URL=${OCTOP_DATABASE_URL:-}
-      - OCTOP_DATABASE_DRIVER=${OCTOP_DATABASE_DRIVER:-}
-      - OCTOP_DATABASE_SQLITE_PATH=${OCTOP_DATABASE_SQLITE_PATH:-}
-      - OCTOP_DATABASE_HOST=${OCTOP_DATABASE_HOST:-}
-      - OCTOP_DATABASE_PORT=${OCTOP_DATABASE_PORT:-}
-      - OCTOP_DATABASE_NAME=${OCTOP_DATABASE_NAME:-}
-      - OCTOP_DATABASE_USER=${OCTOP_DATABASE_USER:-}
-      - OCTOP_DATABASE_PASSWORD=${OCTOP_DATABASE_PASSWORD:-}
+      - HAPPYCLAW_BIND_HOST=0.0.0.0
+      - HAPPYCLAW_PORT=${HAPPYCLAW_PORT:-8088}
+      - HAPPYCLAW_LOG_LEVEL=${HAPPYCLAW_LOG_LEVEL:-info}
+      - HAPPYCLAW_DATABASE_URL=${HAPPYCLAW_DATABASE_URL:-}
+      - HAPPYCLAW_DATABASE_DRIVER=${HAPPYCLAW_DATABASE_DRIVER:-}
+      - HAPPYCLAW_DATABASE_SQLITE_PATH=${HAPPYCLAW_DATABASE_SQLITE_PATH:-}
+      - HAPPYCLAW_DATABASE_HOST=${HAPPYCLAW_DATABASE_HOST:-}
+      - HAPPYCLAW_DATABASE_PORT=${HAPPYCLAW_DATABASE_PORT:-}
+      - HAPPYCLAW_DATABASE_NAME=${HAPPYCLAW_DATABASE_NAME:-}
+      - HAPPYCLAW_DATABASE_USER=${HAPPYCLAW_DATABASE_USER:-}
+      - HAPPYCLAW_DATABASE_PASSWORD=${HAPPYCLAW_DATABASE_PASSWORD:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
       - LANGFUSE_TRACING_ENABLED=${LANGFUSE_TRACING_ENABLED:-true}
