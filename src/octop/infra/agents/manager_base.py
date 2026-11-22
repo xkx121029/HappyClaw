@@ -88,5 +88,14 @@ class AgentManagerBase:
     def is_agent_active(self, agent_id: str) -> bool:
         raise NotImplementedError
 
+    def _backend_spec_for_row(
+        self,
+        row: AgentRow,
+        *,
+        cfg: dict[str, Any] | None = None,
+        workspace_dir: Path | None = None,
+    ) -> Any:
+        raise NotImplementedError
+
 
 __all__ = ["AgentManagerBase"]

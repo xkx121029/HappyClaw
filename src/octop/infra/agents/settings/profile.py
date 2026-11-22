@@ -67,6 +67,14 @@ def id_list_from_row(row: Any, attr: str) -> list[str]:
     return list(parsed) if parsed is not None else []
 
 
+def skill_package_ids_list(cfg: dict[str, Any]) -> list[str]:
+    """Return non-empty skill package ids from agent config."""
+    raw = cfg.get("skill_package_ids")
+    if not isinstance(raw, list):
+        return []
+    return [str(item) for item in raw if str(item).strip()]
+
+
 def _nonempty_str(value: Any) -> str | None:
     if not isinstance(value, str):
         return None
@@ -148,6 +156,7 @@ __all__ = [
     "overlay_skill_package_ids",
     "parse_config_json",
     "parse_id_list_json",
+    "skill_package_ids_list",
     "strip_profile_config",
     "welcome_from_row",
 ]
