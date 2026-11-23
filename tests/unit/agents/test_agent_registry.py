@@ -68,7 +68,7 @@ def _patch_harness(monkeypatch) -> MagicMock:
         return fake_hm
 
     monkeypatch.setattr(
-        "happyclaw.infra.agents.manager.HarnessAgentManager",
+        "happyclaw.infra.agents.manager.core.HarnessAgentManager",
         _constructor,
     )
     return fake_hm
@@ -168,7 +168,7 @@ async def test_boot_start_timeout_marks_failed_and_continues(
         return await original(row)
 
     monkeypatch.setattr(registry, "_start_agent", maybe_hang)
-    monkeypatch.setattr("happyclaw.infra.agents.manager._AGENT_BOOT_START_TIMEOUT", 0.05)
+    monkeypatch.setattr("happyclaw.infra.agents.manager.core._AGENT_BOOT_START_TIMEOUT", 0.05)
 
     await asyncio.wait_for(registry.boot(), timeout=2)
 
@@ -201,7 +201,7 @@ async def test_boot_start_timeout_keeps_registered_agent_running(
         await asyncio.Event().wait()
 
     monkeypatch.setattr(registry, "_start_agent", hang_after_register)
-    monkeypatch.setattr("happyclaw.infra.agents.manager._AGENT_BOOT_START_TIMEOUT", 0.05)
+    monkeypatch.setattr("happyclaw.infra.agents.manager.core._AGENT_BOOT_START_TIMEOUT", 0.05)
 
     await asyncio.wait_for(registry.boot(), timeout=2)
 
@@ -1023,7 +1023,7 @@ async def test_on_provider_changed_adds_new_provider(tmp_path: Path, monkeypatch
     fake_hm.remove_provider = MagicMock()
 
     monkeypatch.setattr(
-        "happyclaw.infra.agents.manager.HarnessAgentConfig",
+        "happyclaw.infra.agents.manager.harness_config.HarnessAgentConfig",
         MagicMock(return_value=MagicMock()),
     )
 

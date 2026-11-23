@@ -653,7 +653,7 @@ def test_memory_runtime_switches_skip_unsupported_harness_fields() -> None:
 def test_memory_runtime_switches_advertise_only_supported_options(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from happyclaw.infra.agents import manager as module
+    from happyclaw.infra.agents.manager import memory as module
 
     monkeypatch.setattr(
         module, "_HARNESS_AGENT_CONFIG_FIELDS", frozenset({"memory_capture_enabled"})
@@ -1958,7 +1958,7 @@ def test_build_harness_config_passes_default_model_without_embedded_providers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """default_model is forwarded; providers stay on HarnessAgentManager, not per-agent config."""
-    from happyclaw.infra.agents import manager as mgr_mod
+    from happyclaw.infra.agents.manager import harness_config as mgr_mod
 
     captured: list[dict] = []
 
