@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.selfcheck import SelfCheckReport, StartupSelfCheck
 from happyclaw.infra.utils.paths import PathLayout
 
@@ -30,7 +31,7 @@ class _FakePool:
     def __init__(self, fail: bool = False) -> None:
         self._fail = fail
 
-    def connection(self) -> Any:
+    def connect(self) -> Any:
         if self._fail:
             raise RuntimeError("db down")
         conn = MagicMock()
@@ -112,3 +113,21 @@ def test_report_to_dict_has_summary(tmp_path: Path) -> None:
     assert data["ok"] is True
     assert "summary" in data
     assert isinstance(data["items"], list)
+
+
+def test_passes_against_a_real_pool_and_real_layout(tmp_path: Path) -> None:
+    """The checks must hold for the production objects, not only for mocks."""
+    (tmp_path / "backups").mkdir()
+    pool = SqlitePool(tmp_path / "app.db")
+    try:
+        checker = StartupSelfCheck(
+            paths=PathLayout(root=tmp_path),
+            db_pool=pool,
+            providers_provider=_FakeProviderRepo([_FakeProviderRow("openai", "sk-abcdefghij")]),
+        )
+        report = checker.run()
+    finally:
+        pool.close()
+    db_item = next(i for i in report.items if i.name == "数据库")
+    assert db_item.ok is True, db_item.detail
+    assert report.ok is True

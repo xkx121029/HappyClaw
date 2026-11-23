@@ -82,7 +82,7 @@ class StartupSelfCheck:
 
     def _check_database(self) -> SelfCheckItem:
         try:
-            with self._pool.connection() as conn:
+            with self._pool.connect() as conn:
                 conn.execute("SELECT 1")
             return SelfCheckItem(name="数据库", ok=True, detail="连接正常")
         except Exception as exc:
