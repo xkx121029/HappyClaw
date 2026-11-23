@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
     from octop.config import OctopConfig
     from octop.infra.agents.plugins.manager import PluginManager
-    from octop.infra.agents.providers import ProviderStore
+    from octop.infra.agents.providers import HostModelFactory, ProviderStore
     from octop.infra.agents.providers.health import ModelHealthRegistry
     from octop.infra.agents.security import SecuritySettingsStore, ToolGuardRulesStore
     from octop.infra.agents.security.hitl_session import HitlSessionPolicyStore
@@ -41,6 +41,7 @@ class AgentManagerBase:
     _plugin_manager: PluginManager | None
     _connector_svc: ConnectorService
     _providers: ProviderStore
+    _host_models: HostModelFactory
     _model_health: ModelHealthRegistry
     _tool_guard_rules: ToolGuardRulesStore
     _hitl_session_store: HitlSessionPolicyStore | None
@@ -56,6 +57,11 @@ class AgentManagerBase:
     _pool_workspaces: dict[str, str]
     _pool_last_used: dict[str, float]
     _session_workspace_mw: dict[str, Any]
+
+    # Background hot-reload state.
+    _reload_dirty: set[str]
+    _reload_worker_running: dict[str, bool]
+    _bootstrap_graph_refresh_pending: set[str]
 
     # Invocation tracking + store reclaim state.
     _active_invocations: dict[str, int]
@@ -73,6 +79,10 @@ class AgentManagerBase:
         raise NotImplementedError
 
     def _octop_harness_or_none(self, agent_id: str) -> HarnessAgent | None:
+        raise NotImplementedError
+
+    @staticmethod
+    def _is_already_registered_error(exc: BaseException) -> bool:
         raise NotImplementedError
 
     def _lifecycle_lock_for(self, agent_id: str) -> asyncio.Lock:
@@ -157,6 +167,30 @@ class AgentManagerBase:
     def _backend_supports_host_skill_packages(
         self, spec: Any, *, workspace_dir: Path | None = None
     ) -> bool:
+        raise NotImplementedError
+
+    def find_agents_using_provider(self, provider_name: str) -> list[dict[str, str]]:
+        raise NotImplementedError
+
+    def _quiesce_octop_memory(self, agent_id: str) -> None:
+        raise NotImplementedError
+
+    async def _release_pool_for_agent(self, agent_id: str) -> None:
+        raise NotImplementedError
+
+    def _agent_runtime_bundle(
+        self, row: AgentRow
+    ) -> tuple[HarnessAgentConfig, dict[str, Any], list[str], str]:
+        raise NotImplementedError
+
+    async def _post_start_agent(
+        self,
+        row: AgentRow,
+        agent: HarnessAgent,
+        cfg: HarnessAgentConfig,
+        *,
+        user_display: str = "User",
+    ) -> None:
         raise NotImplementedError
 
 
