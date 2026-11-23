@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Drawer, Form, Input, Select, Spin, Switch, Alert } from "antd";
+import { Button, Drawer, Form, Input, Select, Spin, Alert } from "antd";
 import { message } from "@/utils/antdMessage";
 
 import {
@@ -14,10 +14,6 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import {
-  ResourceVisibilityFields,
-  ResourceVisibilityGate,
-} from "../../../../components/ResourceVisibilityFields";
 import { TextAssistBar } from "../../../../components/TextAssistBar";
 import type { ResourceVisibilityMode } from "../../../../api/modules/userGroups";
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
@@ -40,6 +36,7 @@ import {
   type FeishuUserAuthStartResult,
 } from "../../../../api/modules/connectors";
 import { AgentlyAuth } from "../AgentlyAuth";
+import { ConnectorFormOptions } from "./ConnectorFormOptions";
 import { ConnectorProbeResult } from "./ConnectorProbeResult";
 import { authCodeGuideLabel, openAuthorizeLabel } from "../connectorAuthLabels";
 import {
@@ -1957,58 +1954,15 @@ export function ConnectorConfigDrawer({
             </>
           )}
 
-          <div className={styles.formOptions}>
-            <div className={styles.formOptionRow}>
-              <div className={styles.formOptionCopy}>
-                <span className={styles.switchLabel}>
-                  {t("connectors.defaultEnabled", "是否默认开启")}
-                </span>
-                <span className={styles.formOptionHint}>
-                  {t(
-                    "connectors.defaultOpenHint",
-                    "关闭时需在对话中手动勾选才会注入工具。",
-                  )}
-                </span>
-              </div>
-              <Form.Item name="default_open" valuePropName="checked" noStyle>
-                <Switch size="small" />
-              </Form.Item>
-            </div>
-            <ResourceVisibilityGate allowOwner visibility={connectorVisibility}>
-              <div className={styles.formOptionRowVisibility}>
-                <div className={styles.formOptionCopy}>
-                  <span className={styles.switchLabel}>
-                    {t("resourceVisibility.label")}
-                  </span>
-                  <span className={styles.formOptionHint}>
-                    {t("connectors.visibilityHint")}
-                  </span>
-                </div>
-                <ResourceVisibilityFields
-                  allowOwner
-                  visibility={connectorVisibility}
-                  groupIds={connectorGroupIds}
-                  onChange={(next) => {
-                    setConnectorVisibility(next.visibility);
-                    setConnectorGroupIds(
-                      next.visibility === "groups" ? next.groupIds : [],
-                    );
-                  }}
-                />
-              </div>
-            </ResourceVisibilityGate>
-          </div>
-          {defaultOpen ? (
-            <Alert
-              type="warning"
-              showIcon
-              style={{ marginTop: 12, marginBottom: 0 }}
-              message={t(
-                "connectors.defaultOpenWarning",
-                "开启后默认会在 Dashboard、IM 与 Cron（未特殊选连接器时）携带该工具（额外消耗 token）。Dashboard 可关本轮；Cron 若显式选择连接器则以选择为准。",
-              )}
-            />
-          ) : null}
+          <ConnectorFormOptions
+            defaultOpen={defaultOpen}
+            visibility={connectorVisibility}
+            groupIds={connectorGroupIds}
+            onVisibilityChange={(visibility, groupIds) => {
+              setConnectorVisibility(visibility);
+              setConnectorGroupIds(groupIds);
+            }}
+          />
         </Form>
 
         {probeResult !== null && (
