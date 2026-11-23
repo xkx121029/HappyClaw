@@ -93,7 +93,7 @@ class StartupSelfCheck:
             )
 
     def _check_home_dir(self) -> SelfCheckItem:
-        home = Path(self._paths.home)
+        home = Path(self._paths.root)
         if home.is_dir():
             return SelfCheckItem(name="主目录", ok=True, detail=str(home))
         return SelfCheckItem(name="主目录", ok=False, detail=f"目录不存在：{home}")
@@ -134,7 +134,7 @@ class StartupSelfCheck:
         )
 
     def _check_disk_space(self) -> SelfCheckItem:
-        home = Path(self._paths.home)
+        home = Path(self._paths.root)
         try:
             usage = shutil.disk_usage(home)
             free_gb = usage.free / (1024**3)

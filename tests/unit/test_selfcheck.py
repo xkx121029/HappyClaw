@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from happyclaw.infra.selfcheck import SelfCheckReport, StartupSelfCheck
+from happyclaw.infra.utils.paths import PathLayout
 
 
 class _FakeProviderRow:
@@ -38,11 +39,8 @@ class _FakePool:
         return conn
 
 
-def _paths(tmp_path: Path) -> MagicMock:
-    paths = MagicMock()
-    paths.home = str(tmp_path)
-    paths.backups_dir = str(tmp_path / "backups")
-    return paths
+def _paths(tmp_path: Path) -> PathLayout:
+    return PathLayout(root=tmp_path)
 
 
 def test_all_checks_pass(tmp_path: Path) -> None:
