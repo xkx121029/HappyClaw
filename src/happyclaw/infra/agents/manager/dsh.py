@@ -18,7 +18,7 @@ def _dsh_local_roots() -> tuple[str, ...]:
     No default roots: scanning the home directory on every config build would be
     a surprise, and the market install root already covers installed plugins.
     """
-    raw = env_get("DSH_TOOL_ROOTS", "")
+    raw = env_get("DSH_TOOL_ROOTS", "") or ""
     return tuple(part.strip() for part in raw.split(",") if part.strip())
 
 
