@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, Response
 
 from happyclaw.api.common.agent import agent_is_shared, require_agent_row
 from happyclaw.api.common.agent_workspace import resolve_agent_workspace_dir
+from happyclaw.api.common.json_response import OrjsonResponse
 from happyclaw.api.deps import current_user, get_server
 from happyclaw.api.routers.chat.models import ForkThreadBody, RebindSessionBody, RenameThreadBody
 from happyclaw.api.routers.chat.responses import (
@@ -432,6 +433,7 @@ async def get_thread_context_usage(
     "/agents/{agent_id}/threads/{thread_id}/history",
     summary="Thread history",
     response_model=ThreadHistoryOut,
+    response_class=OrjsonResponse,
 )
 async def get_thread_history(
     agent_id: str,

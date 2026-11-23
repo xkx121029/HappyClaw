@@ -43,6 +43,9 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "langgraph-checkpoint-postgres>=2.0",
     "mcp>=1.9,<2",
+    # History responses render through orjson; the native encoder is ~6x faster
+    # than stdlib json.dumps on a 160 KB page body.
+    "orjson>=3.10",
     "pillow>=13.0.0",
     "pypdf>=5.0",
     "python-docx>=1.2.0",
