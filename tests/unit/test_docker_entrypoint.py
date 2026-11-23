@@ -67,7 +67,7 @@ exit 0
 
 
 def _init_marker(tmp_path: Path) -> Path:
-    return tmp_path / "data" / ".octop" / ".initialized"
+    return tmp_path / "data" / ".happyclaw" / ".initialized"
 
 
 def _run_entrypoint(
@@ -81,7 +81,7 @@ def _run_entrypoint(
     home = tmp_path / "data"
     stub_dir = tmp_path / "stub-bin"
     stub_dir.mkdir(exist_ok=True)
-    stub = stub_dir / "octop"
+    stub = stub_dir / "happyclaw"
     if not stub.exists():
         stub.write_text(_STUB_OCTOP, encoding="utf-8", newline="\n")
         stub.chmod(0o755)
@@ -91,7 +91,7 @@ def _run_entrypoint(
     env.update(
         {
             "HOME": str(home),
-            "OCTOP_HOME": str(home / ".octop"),
+            "HAPPYCLAW_HOME": str(home / ".happyclaw"),
             "PATH": str(stub_dir) + os.pathsep + env.get("PATH", ""),
             "OCTOP_STUB_LOG": str(log),
             "OCTOP_PORT": "8088",
@@ -117,13 +117,13 @@ def test_entrypoint_restart_skips_init_for_external_db(tmp_path: Path) -> None:
     """Issue #1866: with PostgreSQL there is no octop.db; a restart must not re-run init."""
     pg_env = {
         "OCTOP_DATABASE_DRIVER": "postgresql",
-        "OCTOP_DATABASE_URL": "postgresql://octop:octop@postgres:5432/octop",
+        "HAPPYCLAW_DATABASE_URL": "postgresql://octop:octop@postgres:5432/octop",
     }
     first, calls = _run_entrypoint(tmp_path, extra_env=pg_env)
     assert first.returncode == 0, first.stderr
     assert any(call.startswith("init ") for call in calls), calls
     assert any(call.startswith("run --host") for call in calls), calls
-    assert not (tmp_path / "data" / ".octop" / "octop.db").exists()
+    assert not (tmp_path / "data" / ".happyclaw" / "octop.db").exists()
     assert _init_marker(tmp_path).is_file(), first.stdout
 
     second, calls = _run_entrypoint(tmp_path, extra_env=pg_env)
@@ -135,7 +135,7 @@ def test_entrypoint_restart_skips_init_for_external_db(tmp_path: Path) -> None:
 @bash_only
 def test_entrypoint_sqlite_install_skips_init_without_marker(tmp_path: Path) -> None:
     """Backward compat: an existing octop.db still short-circuits the guard."""
-    octop_home = tmp_path / "data" / ".octop"
+    octop_home = tmp_path / "data" / ".happyclaw"
     octop_home.mkdir(parents=True)
     (octop_home / "octop.db").write_text("", encoding="utf-8")
 
@@ -150,7 +150,7 @@ def test_entrypoint_writes_no_credentials_on_first_boot(tmp_path: Path) -> None:
     """Single-user mode creates no account, so there is nothing to write to disk."""
     result, calls = _run_entrypoint(tmp_path)
     assert result.returncode == 0, result.stderr
-    octop_home = tmp_path / "data" / ".octop"
+    octop_home = tmp_path / "data" / ".happyclaw"
     assert not (octop_home / "credential.txt").exists()
     assert not (octop_home / "octop-login.txt").exists()
     init_call = next(call for call in calls if call.startswith("init"))
