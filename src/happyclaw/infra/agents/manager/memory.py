@@ -9,10 +9,9 @@ import time
 from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from happyclaw.i18n.domains.agents import format_agent_start_error
-from happyclaw.infra.agents.manager import AgentManager
 from happyclaw.infra.agents.manager.base import AgentManagerBase
 from happyclaw.infra.agents.manager.constants import _HARNESS_AGENT_CONFIG_FIELDS
 from happyclaw.infra.agents.memory.backend import memory_backend_from_agent_config
@@ -20,6 +19,9 @@ from happyclaw.infra.errors import (
     ErrorCode,
     HappyclawError,
 )
+
+if TYPE_CHECKING:
+    from happyclaw.infra.agents.manager import AgentManager
 
 logger = logging.getLogger(__name__)
 

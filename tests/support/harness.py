@@ -193,7 +193,7 @@ def patch_harness(fake_agent: Any | None = None):
         )
 
     with patch(
-        "happyclaw.infra.agents.manager.HarnessAgentManager",
+        "happyclaw.infra.agents.manager.core.HarnessAgentManager",
         side_effect=_constructor,
     ):
         yield agent
