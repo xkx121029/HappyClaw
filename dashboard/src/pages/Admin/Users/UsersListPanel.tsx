@@ -22,33 +22,26 @@ import {
   Modal,
   Form,
   Input,
-  Space,
-  Popconfirm,
   Switch,
   Typography,
-  Tooltip,
   Drawer,
   Empty,
   Spin,
-  Tag,
   Segmented,
   Checkbox,
 } from "antd";
 import { message } from "@/utils/antdMessage";
-import { ResizableTable } from "@/components/ResizableTable";
 
 import {
   Bot,
   CircleHelp,
   Coins,
   IdCard,
-  KeyRound,
   LayoutGrid,
   Link2,
   List,
   Lock,
   LockOpen,
-  Pencil,
   Plus,
   Power,
   PowerOff,
@@ -84,7 +77,6 @@ import expertStyles from "../../Experts/index.module.less";
 import styles from "./index.module.less";
 import {
   deleteUserAvatar,
-  ProfileAvatar,
   ProfileAvatarPicker,
   uploadUserAvatar,
 } from "./ProfileAvatar";
@@ -104,17 +96,16 @@ import {
   type UserRow,
 } from "./usersListTypes";
 import { policyFieldsFromRole, policyPayload } from "./policyForm";
-import { formatUserTs, lockRemainingSeconds, useNowSeconds } from "./userTime";
+import { lockRemainingSeconds, useNowSeconds } from "./userTime";
 import { MaxAgentsInput, TokenQuotaInput } from "./QuotaInputs";
 import { ExpertTemplatePicker } from "./ExpertTemplatePicker";
 import { UserRoleField } from "./UserRoleField";
-import { RoleLegend, RoleNameMark } from "./RoleDisplay";
 import { ResourcePolicyFields } from "./ResourcePolicyFields";
 import {
   CollapsiblePermissionsField,
-  PermissionSummary,
 } from "./PermissionFields";
 import { UserCardGrid } from "./UserCardGrid";
+import { UsersTable } from "./UsersTable";
 
 const { Text } = Typography;
 
@@ -156,61 +147,7 @@ export {
   type PermissionCheckboxPickerProps,
 } from "./PermissionFields";
 export { UserCardGrid, type UserCardGridProps } from "./UserCardGrid";
-
-function UserLoginLock({
-  row,
-  nowSec,
-  onUnlock,
-}: {
-  row: UserRow;
-  nowSec: number;
-  onUnlock: () => void;
-}) {
-  const { t } = useTranslation();
-  const failedCount = row.login_failed_count ?? 0;
-  if (!row.login_locked) {
-    if (failedCount > 0) {
-      return (
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          {t("adminUsers.loginFailedCount", { count: failedCount })}
-        </Text>
-      );
-    }
-    return (
-      <Text type="secondary" style={{ fontSize: 12 }}>
-        {t("adminUsers.loginLockNone")}
-      </Text>
-    );
-  }
-  const remaining = lockRemainingSeconds(row, nowSec);
-  const minutes = Math.max(1, Math.ceil(remaining / 60));
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        flexWrap: "wrap",
-        justifyContent: "flex-end",
-      }}
-    >
-      <Tag
-        color="error"
-        style={{ margin: 0, fontSize: 11, lineHeight: "18px" }}
-      >
-        {t("adminUsers.loginLockActive", { minutes })}
-      </Tag>
-      <Button
-        size="small"
-        type="link"
-        onClick={onUnlock}
-        style={{ padding: 0, fontSize: 12, height: "auto" }}
-      >
-        {t("adminUsers.unlockLogin")}
-      </Button>
-    </span>
-  );
-}
+export { UsersTable } from "./UsersTable";
 
 export default function UsersListPanel() {
   const { t, i18n } = useTranslation();
@@ -1031,233 +968,29 @@ export default function UsersListPanel() {
           userRoles={userRoles}
         />
       ) : (
-        <ResizableTable
-          storageKey="admin-users"
-          rowKey="id"
-          size="middle"
-          className={styles.userTable}
+        <UsersTable
+          rows={filteredRows}
           loading={loading}
-          dataSource={filteredRows}
-          pagination={false}
-          scroll={{ x: 1360 }}
-          rowSelection={{
-            selectedRowKeys: selectedIds,
-            onChange: (keys) => setSelectedIds(keys.map((key) => Number(key))),
-            preserveSelectedRowKeys: true,
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+          currentUserId={currentUserId}
+          agentsByUserId={agentsByUserId}
+          agentsLoading={agentsLoading}
+          permLabelByKey={permLabelByKey}
+          userRoles={userRoles}
+          nowSec={nowSec}
+          timeZone={timeZone}
+          isMobile={isMobile}
+          onShowAgents={setAgentDrawerUser}
+          onTogglePatch={togglePatch}
+          onEdit={openEdit}
+          onResetPassword={(row) => {
+            setResetTarget(row);
+            resetForm.resetFields();
           }}
-          rowClassName={(row) =>
-            cx(
-              row.disabled && styles.userTableRowDisabled,
-              row.login_locked && styles.userTableRowLocked,
-            )
-          }
-          columns={[
-            {
-              title: t("adminUsers.colUsername"),
-              width: 240,
-              fixed: isMobile ? undefined : "left",
-              render: (_, row) => {
-                const displayName = row.display_name?.trim() || row.username;
-                return (
-                  <div className={styles.userCell}>
-                    <ProfileAvatar
-                      url={row.avatar_url}
-                      icon={row.avatar_icon}
-                      kind="user"
-                      className={styles.userCellAvatar}
-                    />
-                    <span className={styles.userCellText}>
-                      <span className={styles.userCellName}>
-                        {displayName}
-                        {row.id === currentUserId && (
-                          <span className={styles.userCellYou}>
-                            {t("adminUsers.you")}
-                          </span>
-                        )}
-                      </span>
-                      <span className={styles.userCellHandle}>
-                        @{row.username}
-                      </span>
-                    </span>
-                  </div>
-                );
-              },
-            },
-            {
-              title: t("adminUsers.colEmail"),
-              width: 180,
-              ellipsis: true,
-              render: (_, row) => (
-                <span className={styles.userCellMuted}>
-                  {row.email?.trim() || "—"}
-                </span>
-              ),
-            },
-            {
-              title: t("adminUsers.colAuth"),
-              width: 120,
-              render: (_, row) => {
-                const parts = [
-                  row.directory
-                    ? t("adminUsers.directoryBadge")
-                    : row.sso_linked
-                    ? t("adminUsers.ssoBadge")
-                    : null,
-                  row.has_password ? t("adminUsers.passwordBadge") : null,
-                  row.mfa_active ? t("adminUsers.mfaBadge") : null,
-                ].filter(Boolean);
-                return (
-                  <span className={styles.userCellMuted}>
-                    {parts.length ? parts.join(" · ") : "—"}
-                  </span>
-                );
-              },
-            },
-            {
-              title: t("adminUsers.colAgents"),
-              width: 80,
-              render: (_, row) => {
-                const count = agentsByUserId.get(row.id)?.length ?? 0;
-                return (
-                  <button
-                    type="button"
-                    className={styles.userCellLink}
-                    onClick={() => setAgentDrawerUser(row)}
-                  >
-                    <Bot size={13} />
-                    {agentsLoading ? "…" : count}
-                  </button>
-                );
-              },
-            },
-            {
-              title: t("adminUsers.colRoleName"),
-              width: 220,
-              render: (_, row) => (
-                <RoleNameMark
-                  row={row}
-                  roles={userRoles}
-                  className={styles.userCellMuted}
-                />
-              ),
-            },
-            {
-              title: t("adminUsers.colPermissions"),
-              width: 120,
-              render: (_, row) => (
-                <PermissionSummary row={row} permLabelByKey={permLabelByKey} />
-              ),
-            },
-            {
-              title: t("common.enabled"),
-              width: 72,
-              render: (_, row) => (
-                <Switch
-                  size="small"
-                  checked={!row.disabled}
-                  onChange={(checked) =>
-                    togglePatch(row, { disabled: !checked })
-                  }
-                />
-              ),
-            },
-            {
-              title: t("adminUsers.colCreatedAt"),
-              dataIndex: "created_at",
-              width: 156,
-              render: (ts: number | undefined) => (
-                <span className={styles.userCellMuted}>
-                  {formatUserTs(ts, timeZone)}
-                </span>
-              ),
-            },
-            {
-              title: t("adminUsers.colLoginLock"),
-              width: 180,
-              render: (_, row) => (
-                <UserLoginLock
-                  row={row}
-                  nowSec={nowSec}
-                  onUnlock={() => void onUnlockLogin(row)}
-                />
-              ),
-            },
-            {
-              title: t("adminUsers.colActions"),
-              width: 120,
-              fixed: isMobile ? undefined : "right",
-              render: (_, row) => (
-                <Space size={4}>
-                  <Tooltip title={t("common.edit")}>
-                    <button
-                      type="button"
-                      className={styles.userCardIconBtn}
-                      onClick={() => openEdit(row)}
-                      aria-label={t("common.edit")}
-                    >
-                      <Pencil size={14} />
-                    </button>
-                  </Tooltip>
-                  <Tooltip title={t("adminUsers.resetPassword")}>
-                    <button
-                      type="button"
-                      className={styles.userCardIconBtn}
-                      onClick={() => {
-                        setResetTarget(row);
-                        resetForm.resetFields();
-                      }}
-                      aria-label={t("adminUsers.resetPassword")}
-                    >
-                      <KeyRound size={14} />
-                    </button>
-                  </Tooltip>
-                  <Popconfirm
-                    title={t("adminUsers.mfaResetConfirm", {
-                      username: row.username,
-                    })}
-                    onConfirm={() => void onResetMfa(row)}
-                  >
-                    <Tooltip title={t("adminUsers.mfaReset")}>
-                      <button
-                        type="button"
-                        className={styles.userCardIconBtn}
-                        aria-label={t("adminUsers.mfaReset")}
-                      >
-                        <ShieldCheck size={14} />
-                      </button>
-                    </Tooltip>
-                  </Popconfirm>
-                  <Popconfirm
-                    title={t("adminUsers.deleteConfirm", {
-                      username: row.username,
-                    })}
-                    onConfirm={() => onDelete(row)}
-                    disabled={row.id === currentUserId}
-                  >
-                    <Tooltip
-                      title={
-                        row.id === currentUserId
-                          ? t("adminUsers.deleteSelf")
-                          : t("common.delete")
-                      }
-                    >
-                      <button
-                        type="button"
-                        className={cx(
-                          styles.userCardIconBtn,
-                          styles.userCardIconBtnDanger,
-                        )}
-                        disabled={row.id === currentUserId}
-                        aria-label={t("common.delete")}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </Tooltip>
-                  </Popconfirm>
-                </Space>
-              ),
-            },
-          ]}
+          onResetMfa={onResetMfa}
+          onDelete={onDelete}
+          onUnlockLogin={onUnlockLogin}
         />
       )}
 
