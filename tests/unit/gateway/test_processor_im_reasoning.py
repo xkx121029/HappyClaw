@@ -82,7 +82,7 @@ async def test_im_request_carries_reasoning_overrides() -> None:
             new=fake_project_stream,
         ),
         patch(
-            "happyclaw.infra.gateway.process.processor.reasoning_request_parameters",
+            "happyclaw.infra.gateway.process.processor_model_routes.reasoning_request_parameters",
             return_value=overrides,
         ),
     ):
