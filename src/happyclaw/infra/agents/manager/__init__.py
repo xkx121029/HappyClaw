@@ -19,10 +19,7 @@ from contextlib import (
     asynccontextmanager,
     suppress,
 )
-from dataclasses import (
-    fields,
-    replace,
-)
+from dataclasses import replace
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -43,6 +40,7 @@ from happyclaw.i18n.domains.agents import (
     format_agent_start_error,
 )
 from happyclaw.infra.agents.manager.base import AgentManagerBase
+from happyclaw.infra.agents.manager.constants import _HARNESS_AGENT_CONFIG_FIELDS
 from happyclaw.infra.agents.manager.create_spec import (
     AgentCreateSpec,
     _stored_id_list,
@@ -204,8 +202,6 @@ _AGENT_BOOT_START_TIMEOUT = 60.0
 _MEMORY_NS_PREFIX = "agent_"
 
 _AGENT_STATES_NEEDING_MODEL_RELOAD = frozenset({"failed", "created"})
-
-_HARNESS_AGENT_CONFIG_FIELDS = frozenset(item.name for item in fields(HarnessAgentConfig))
 
 
 def _memory_namespace(agent_id: str) -> str:
