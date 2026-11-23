@@ -39,7 +39,6 @@ import {
   SharedResourceBadge,
 } from "../../components/SharedResourceBadge";
 import {
-  Check,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -162,6 +161,7 @@ import TextDocumentEditorModal, {
 } from "./TextDocumentEditorModal";
 import styles from "./index.module.less";
 import { DocumentFormatIcon } from "./components/DocumentFormatIcon";
+import { ReadinessRow } from "./components/ReadinessRow";
 
 type BaseFormValues = {
   name: string;
@@ -172,32 +172,6 @@ type BaseFormValues = {
 };
 
 type DocTreeNode = TreeDataNode & { path: string; isDir: boolean };
-
-function ReadinessRow({
-  label,
-  ok,
-  okText,
-  failText,
-}: {
-  label: string;
-  ok: boolean;
-  okText: string;
-  failText: string;
-}) {
-  return (
-    <div className={styles.onnxReadinessRow}>
-      <span className={styles.onnxReadinessLabel}>{label}</span>
-      {ok ? (
-        <Check size={13} color="var(--fn-color-success)" />
-      ) : (
-        <X size={13} color="var(--fn-color-warning)" />
-      )}
-      <Typography.Text type={ok ? "success" : "warning"}>
-        {ok ? okText : failText}
-      </Typography.Text>
-    </div>
-  );
-}
 
 export default function KnowledgeBasesPage() {
   const { t } = useTranslation();
