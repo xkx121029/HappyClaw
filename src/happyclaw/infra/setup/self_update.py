@@ -24,19 +24,33 @@ from typing import Any
 from happyclaw.i18n import lookup, tr
 from happyclaw.infra.desktop import desktop_shell_enabled
 from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.locale import DEFAULT_LOCALE
 from happyclaw.infra.utils.paths import PathLayout
 
 logger = logging.getLogger(__name__)
 
-_PACKAGE_NAME = "octop"
+_PACKAGE_NAME = "happyclaw"
+"""The distribution this updater resolves, downloads, installs and verifies."""
+
+_LEGACY_PACKAGE_NAMES = ("octop",)
+"""Pre-rename distribution names, read only to recognise the install being upgraded.
+
+A user who installed before the rename still runs an ``octop`` distribution, so the
+local side of an upgrade has to look at both names while the remote side, the
+install requirement and the verification stay on :data:`_PACKAGE_NAME`. Remove each
+name here once its last published release is older than the support window.
+"""
+
 _PYPI_URL = f"https://pypi.org/pypi/{_PACKAGE_NAME}/json"
 _PYPI_SIMPLE = "https://pypi.org/simple"
 _PYPI_UA = {"User-Agent": f"{_PACKAGE_NAME}-updater/1.0"}
-_GREEN_PACKAGES_ENV = "OCTOP_GREEN_PACKAGES"
-_STASH_SUFFIX = ".octop-old"
+_GREEN_PACKAGES_VAR = "GREEN_PACKAGES"
+_FPK_SITE_PACKAGES_VAR = "FPK_SITE_PACKAGES"
+_STASH_SUFFIX = ".happyclaw-old"
+_LEGACY_STASH_SUFFIX = ".octop-old"
 _PROBE_TIMEOUT_S = 8
-_PROBE_PREFIX = "__OCTOP_PROBE__"
+_PROBE_PREFIX = "__HAPPYCLAW_PROBE__"
 _INSTALL_TIMEOUT_S = 90
 _TARGET_INSTALL_TIMEOUT_S = 900
 
@@ -66,7 +80,7 @@ class UpgradeResult:
 
 @dataclass(frozen=True)
 class IndexProbe:
-    """Result of probing a PEP 503 simple index for ``octop``."""
+    """Result of probing a PEP 503 simple index for ``happyclaw``."""
 
     index_url: str
     label: str
@@ -77,15 +91,20 @@ class IndexProbe:
 
 def green_packages_dir() -> Path | None:
     """Return ``--target`` dir for green portable installs, if configured."""
-    raw = (os.environ.get(_GREEN_PACKAGES_ENV) or "").strip()
+    raw = (env_get(_GREEN_PACKAGES_VAR) or "").strip()
     if not raw:
         return None
     return Path(raw).expanduser()
 
 
+def fpk_site_packages() -> str:
+    """Return the fnOS launcher's packaged site-packages dir, if exported."""
+    return (env_get(_FPK_SITE_PACKAGES_VAR) or "").strip()
+
+
 def resolve_venv_python() -> str:
-    """Return the Python executable for the managed ~/.octop/venv install."""
-    # Green portable: always the interpreter that launched launch.py, never ~/.octop/venv.
+    """Return the Python executable for the managed ~/.happyclaw/venv install."""
+    # Green portable: always the interpreter that launched launch.py, never ~/.happyclaw/venv.
     if green_packages_dir() is not None:
         return sys.executable
 
@@ -141,27 +160,48 @@ def find_uv_executable() -> str:
     return "uv"
 
 
-def get_local_version() -> str:
+def installed_distribution() -> tuple[str | None, str | None]:
+    """Return ``(name, version)`` of the distribution this process runs as.
+
+    ``happyclaw`` is looked up first. An install that predates the rename is still
+    published under ``octop``, and reporting its version is what lets the upgrade
+    compare against the right baseline instead of ``0.0.0``.
+    """
+    for name in (_PACKAGE_NAME, *_LEGACY_PACKAGE_NAMES):
+        found = _distribution_version(name)
+        if found:
+            return name, found
+    return None, None
+
+
+def _distribution_version(name: str) -> str | None:
     try:
         from importlib.metadata import version
 
-        target = green_packages_dir()
-        fpk_target = os.environ.get("OCTOP_FPK_SITE_PACKAGES", "").strip()
-        if target is not None or fpk_target:
-            found = get_version_in_dir(sys.executable, str(target or fpk_target))
-            if found:
-                return found
-            # Desktop dev shell: the runtime points the green target at an empty
-            # ``packages/`` because octop comes from the editable venv instead.
-            # Report the install we are actually running rather than claiming an
-            # unknown ``0.0.0``; a real green install with a broken target still
-            # has no editable metadata and keeps ``0.0.0`` below.
-            if get_editable_path() is not None:
-                return version(_PACKAGE_NAME)
-            return "0.0.0"
-        return version(_PACKAGE_NAME)
+        return version(name)
     except Exception:
+        return None
+
+
+def get_local_version() -> str:
+    target = green_packages_dir()
+    fpk_target = fpk_site_packages()
+    if target is not None or fpk_target:
+        found = get_version_in_dir(sys.executable, str(target or fpk_target))
+        if found:
+            return found
+        # Desktop dev shell: the runtime points the green target at an empty
+        # ``packages/`` because happyclaw comes from the editable venv instead.
+        # Report the install we are actually running rather than claiming an
+        # unknown ``0.0.0``; a real green install with a broken target still
+        # has no editable metadata and keeps ``0.0.0`` below.
+        if get_editable_path() is not None:
+            _, version = installed_distribution()
+            if version:
+                return version
         return "0.0.0"
+    _, version = installed_distribution()
+    return version or "0.0.0"
 
 
 @dataclass
@@ -424,7 +464,10 @@ def get_editable_path() -> str | None:
     try:
         import importlib.metadata as meta
 
-        dist = meta.distribution(_PACKAGE_NAME)
+        name, _ = installed_distribution()
+        if name is None:
+            return None
+        dist = meta.distribution(name)
         direct_url = dist.read_text("direct_url.json")
         if direct_url:
             info = json.loads(direct_url)
@@ -458,7 +501,7 @@ def find_pip_in_venv(python_exe: str) -> str | None:
 
 
 def package_requirement(version: str | None = None) -> str:
-    """Return ``octop`` or a pinned ``octop==<version>`` spec."""
+    """Return ``happyclaw`` or a pinned ``happyclaw==<version>`` spec."""
     if version:
         return f"{_PACKAGE_NAME}=={version}"
     return _PACKAGE_NAME
@@ -534,20 +577,26 @@ def _is_windows() -> bool:
 
 
 def stash_console_scripts(python_exe: str) -> list[tuple[Path, Path]]:
-    """Rename the ``octop`` launchers next to *python_exe* out of the way.
+    """Rename the ``happyclaw`` launchers next to *python_exe* out of the way.
 
     Windows refuses to delete or overwrite the executable backing a running
     process (``os error 32``), which makes pip and uv fail while rewriting
-    ``Scripts/octop.exe`` during ``octop update``. Renaming the file is still
+    ``Scripts/happyclaw.exe`` during ``happyclaw update``. Renaming the file is still
     permitted, so the installer gets a free path and the running process keeps
-    its handle. Returns the ``(original, stash)`` pairs that were moved.
+    its handle. A launcher left behind by a pre-rename install is stashed too:
+    the new distribution ships both entry points and would otherwise collide
+    with the ``octop.exe`` the user is upgrading from. Returns the
+    ``(original, stash)`` pairs that were moved.
     """
     if not _is_windows():
         return []
     script_dir = Path(python_exe).parent
     _purge_stale_stashes(script_dir)
     moved: list[tuple[Path, Path]] = []
-    for script in sorted(script_dir.glob(f"{_PACKAGE_NAME}*.exe")):
+    prefixes = (_PACKAGE_NAME, *_LEGACY_PACKAGE_NAMES)
+    for script in sorted(script_dir.glob("*.exe")):
+        if not script.name.startswith(prefixes):
+            continue
         stash = script.with_name(script.name + _STASH_SUFFIX)
         try:
             script.replace(stash)
@@ -576,8 +625,9 @@ def discard_console_script_stashes(moved: list[tuple[Path, Path]]) -> None:
 
 
 def _purge_stale_stashes(script_dir: Path) -> None:
-    for stale in script_dir.glob(f"*{_STASH_SUFFIX}"):
-        _unlink_quietly(stale)
+    for suffix in (_STASH_SUFFIX, _LEGACY_STASH_SUFFIX):
+        for stale in script_dir.glob(f"*{suffix}"):
+            _unlink_quietly(stale)
 
 
 def _unlink_quietly(path: Path) -> None:
@@ -591,6 +641,12 @@ def _unlink_quietly(path: Path) -> None:
 
 
 def get_installed_version(python_exe: str) -> str | None:
+    """Read the version the installer just wrote, under the current name only.
+
+    Verification must not fall back to a legacy distribution: an untouched
+    ``octop`` install would then report the old version as if the upgrade had
+    landed.
+    """
     try:
         result = subprocess.run(
             [
@@ -611,26 +667,34 @@ def get_installed_version(python_exe: str) -> str | None:
 
 def get_version_in_dir(python_exe: str, target: str, *, check_cli: bool = False) -> str | None:
     """Read the loaded target version, optionally exercising its CLI entry point."""
+    candidates = ",".join((_PACKAGE_NAME, *_LEGACY_PACKAGE_NAMES))
     try:
         code = (
-            "import json, site, sys; from pathlib import Path; "
+            "import importlib, json, site, sys; from pathlib import Path; "
             "target = Path(sys.argv[1]).resolve(); "
             "sys.path.insert(0, str(target)); site.addsitedir(str(target)); "
-            "import octop; "
-            "actual = octop.__version__ if "
-            "Path(octop.__file__).resolve().is_relative_to(target) else None\n"
+            "loaded = None\n"
+            "for name in sys.argv[3].split(','):\n"
+            " try:\n"
+            "  module = importlib.import_module(name)\n"
+            " except Exception:\n"
+            "  continue\n"
+            " if Path(module.__file__).resolve().is_relative_to(target):\n"
+            "  loaded = module\n"
+            "  break\n"
+            "actual = getattr(loaded, '__version__', None) if loaded is not None else None\n"
             "if actual is not None and sys.argv[2] == '1':\n"
             " import contextlib, io, runpy\n"
-            " sys.argv = ['octop', '--version']\n"
+            " sys.argv = [loaded.__name__, '--version']\n"
             " with contextlib.redirect_stdout(io.StringIO()):\n"
             "  try:\n"
-            "   runpy.run_module('octop', run_name='__main__', alter_sys=True)\n"
+            "   runpy.run_module(loaded.__name__, run_name='__main__', alter_sys=True)\n"
             "  except SystemExit as exc:\n"
             "   if exc.code not in (None, 0): raise\n"
             f"print('\\n{_PROBE_PREFIX}' + json.dumps(actual))"
         )
         result = subprocess.run(
-            [python_exe, "-B", "-c", code, target, "1" if check_cli else "0"],
+            [python_exe, "-B", "-c", code, target, "1" if check_cli else "0", candidates],
             capture_output=True,
             text=True,
             check=False,
@@ -748,7 +812,7 @@ def page_has_package_version(body: str, version: str | None) -> bool:
     """True when a PEP 503 simple page lists *version* (or any file when unpinned)."""
     if not version:
         return bool(body.strip())
-    # Wheel / sdist names: octop-1.0.1-py3-none-any.whl, octop-1.0.1.tar.gz
+    # Wheel / sdist names: happyclaw-1.0.1-py3-none-any.whl, happyclaw-1.0.1.tar.gz
     return f"{_PACKAGE_NAME}-{version}-" in body or f"{_PACKAGE_NAME}-{version}." in body
 
 
@@ -904,12 +968,12 @@ def _run_fpk_upgrade(
 ) -> UpgradeResult:
     """FnOS FPK 部署下的在线升级：把新版安装到 launcher 实际加载的打包目录。
 
-    launcher 通过 PYTHONPATH 从应用中心托管的打包 site-packages 加载 octop，
+    launcher 通过 PYTHONPATH 从应用中心托管的打包 site-packages 加载 happyclaw，
     在线安装到系统 Python 永远不会被加载（重启后仍是旧版）。本函数把新版
     安装到该打包目录本身，重启服务后即加载新版，升级真正生效。
 
     与普通部署不同，FPK 首次在线升级需要从零解析并下载完整依赖树
-    （octop 依赖 happyclaw-harness 等大包），故安装超时显著放宽；先并行探测
+    （happyclaw 依赖 happyclaw-harness 等大包），故安装超时显著放宽；先并行探测
     simple index，缺版本/不可达的镜像直接跳过，最后以 pypi.org 兜底。
     """
     if not os.path.isdir(site_packages):
@@ -986,7 +1050,7 @@ def run_upgrade(
     version: str | None = None,
     locale: str = DEFAULT_LOCALE,
 ) -> UpgradeResult:
-    # Desktop-hosted sidecars must never mutate OCTOP_GREEN_PACKAGES: the shell
+    # Desktop-hosted sidecars must never mutate HAPPYCLAW_GREEN_PACKAGES: the shell
     # owns the runtime and upgrades it atomically with the shell release.
     if desktop_shell_enabled():
         return UpgradeResult(success=False, error="updates are managed by the desktop shell")
@@ -998,10 +1062,10 @@ def run_upgrade(
     # its package resources, so result messages use the matching translations.
     lookup("update.completed", locale)
     # [FPK] FnOS FPK 部署：launcher 通过 PYTHONPATH 从应用中心托管的打包
-    # site-packages 加载 octop，在线安装到系统 Python 永远不会被加载（重启
-    # 无效）。launcher 导出 OCTOP_FPK_SITE_PACKAGES 指向该打包目录，升级即
+    # site-packages 加载 happyclaw，在线安装到系统 Python 永远不会被加载（重启
+    # 无效）。launcher 导出 HAPPYCLAW_FPK_SITE_PACKAGES 指向该打包目录，升级即
     # 安装到此目录并提示重启服务生效——升级真正可用，而非禁止升级。
-    _fpk_site = os.environ.get("OCTOP_FPK_SITE_PACKAGES", "").strip()
+    _fpk_site = fpk_site_packages()
     if _fpk_site:
         return _run_fpk_upgrade(
             _fpk_site,
@@ -1011,7 +1075,7 @@ def run_upgrade(
             locale=locale,
         )
 
-    # Windows keeps the running octop.exe locked (os error 32), so pip / uv
+    # Windows keeps the running happyclaw.exe locked (os error 32), so pip / uv
     # cannot rewrite the console script. Renaming it is still allowed, so move
     # the launchers aside first and restore them if the upgrade fails.
     stashed = stash_console_scripts(resolve_venv_python())
@@ -1065,7 +1129,7 @@ def _run_managed_upgrade(
         fast_path = installer == "pip" and target is not None
         if fast_path and target is not None:
             pip_cmd = cmd[: cmd.index("install")]
-            with tempfile.TemporaryDirectory(prefix="octop-upgrade-") as download_dir:
+            with tempfile.TemporaryDirectory(prefix="happyclaw-upgrade-") as download_dir:
                 download_timeout = float(_INSTALL_TIMEOUT_S)
                 if fallback_deadline is not None:
                     download_timeout = min(download_timeout, fallback_deadline - time.monotonic())
