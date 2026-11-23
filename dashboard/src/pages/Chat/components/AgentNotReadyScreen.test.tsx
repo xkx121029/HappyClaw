@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { message } from "antd";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import type { OctopAgent } from "../../../context/AgentContext";
@@ -95,6 +96,12 @@ describe("AgentNotReadyScreen", () => {
   });
 
   it("offers a one-click enable when a model is already configured", async () => {
+    // 真 antd message 会开一个 3s 自动关闭的计时器；本用例只关心 start 请求，
+    // 计时器若残留到文件结束后触发 React 提交，会在环境 teardown 后抛
+    // "window is not defined"。这里把它降级为 no-op。
+    const successSpy = vi
+      .spyOn(message, "success")
+      .mockImplementation(() => ({}) as never);
     const fetchMock = vi.fn(() =>
       Promise.resolve(
         new Response("{}", {
@@ -116,6 +123,14 @@ describe("AgentNotReadyScreen", () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
       "/agents/a1/start",
     );
+    // 等按钮恢复可点击，确保 request → refresh → setEnabling(false) 整条链
+    // 在测试内结算完成，而不是留到 teardown 之后再提交。
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "启用这个专家" }),
+      ).toBeEnabled(),
+    );
+    successSpy.mockRestore();
   });
 
   it("sends an expert without a model to model configuration first", () => {

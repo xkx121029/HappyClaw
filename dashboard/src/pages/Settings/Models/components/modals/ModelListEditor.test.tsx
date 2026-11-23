@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "antd";
 import { describe, expect, it, vi } from "vitest";
@@ -32,16 +32,16 @@ describe("ModelListEditor", () => {
   it("shows protocol fallback after selecting Responses", async () => {
     const user = userEvent.setup();
     HTMLElement.prototype.scrollIntoView = vi.fn();
-    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
-      cb(0);
-      return 1;
-    });
     renderEditor([
       { id: "deepseek-chat", name: "DeepSeek Chat", enabled: true },
     ]);
 
     await user.click(screen.getByRole("button", { name: "models.editModel" }));
-    await user.click(screen.getByText("models.apiModeChatCompletions"));
+    // antd Select 只在选择器上的 mousedown 时展开下拉；用 userEvent 点击选中值
+    // 文本在 jsdom 里不会触发 rc-select 的展开逻辑（与 RootDirSelect 测试同法）。
+    fireEvent.mouseDown(
+      screen.getByRole("combobox", { name: "models.apiMode" }),
+    );
     await user.click(await screen.findByText("models.apiModeResponses"));
 
     expect(screen.getByText("models.apiFallback")).toBeInTheDocument();
