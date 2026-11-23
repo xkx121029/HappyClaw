@@ -21,19 +21,20 @@ from dataclasses import fields
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
-from langchain_core.messages import AIMessage, HumanMessage
-from octop_harness.messages import extract_call_response
-from octop_harness.teams.inbox import InboxMessage
-from octop_harness.teams.processor import ReplyEvent
-from octop_harness.teams.util import (
+from happyclaw_harness.messages import extract_call_response
+from happyclaw_harness.teams.inbox import InboxMessage
+from happyclaw_harness.teams.processor import ReplyEvent
+from happyclaw_harness.teams.util import (
     PeerCall,
     PeerSession,
     build_one_shot_request,
     derive_peer_thread_id,
 )
+from langchain_core.messages import AIMessage, HumanMessage
 
 from octop.i18n import tr
 from octop.i18n.domains.stream import format_stream_error
+from octop.infra.agents import protocol_keys
 from octop.infra.agents.teams.service import _user_may_use_member, is_team_agent
 from octop.infra.agents.threads.artifact import artifact_path_allowed, extract_artifact_paths
 from octop.infra.db.repos.agents import AgentRow
@@ -1404,9 +1405,11 @@ class TeamManager:
         if wrapup:
             extra["team_wrapup"] = True
         if error:
-            extra["octop_stream_error"] = {"code": "stream_error", "source": "team_task"}
+            extra.update(
+                protocol_keys.both("stream_error", {"code": "stream_error", "source": "team_task"})
+            )
         if decision:
-            extra["octop_decision"] = dict(decision)
+            extra.update(protocol_keys.both("decision", dict(decision)))
         msg = AIMessage(
             content=body,
             id=f"team-room:{new_ulid()}:assistant",
@@ -1789,7 +1792,7 @@ def _decision_from_messages(messages: Sequence[Any]) -> dict[str, Any] | None:
         )
         if not isinstance(kwargs, dict):
             continue
-        decision = kwargs.get("octop_decision")
+        decision = protocol_keys.read(kwargs, "decision")
         if isinstance(decision, dict):
             return dict(decision)
     return None
@@ -2107,11 +2110,13 @@ def _patch_inbox_wrapup(
             text=prompt,
             source="inbox",
             configurable={
-                **({"octop_memory_capture_exclude": True} if error_text else {}),
-                "octop_decision_followup": True,
+                **(protocol_keys.both("memory_capture_exclude", True) if error_text else {}),
+                **protocol_keys.both("decision_followup", True),
                 "peer_invoke_mode": "async",
-                "octop_decision_finished_member": str(getattr(msg, "target_agent_id", "") or ""),
-                "octop_decision_task": str(getattr(msg, "message", "") or ""),
+                **protocol_keys.both(
+                    "decision_finished_member", str(getattr(msg, "target_agent_id", "") or "")
+                ),
+                **protocol_keys.both("decision_task", str(getattr(msg, "message", "") or "")),
             },
         )
         try:
@@ -2137,7 +2142,7 @@ def _clean_peer_names(raw: Sequence[str] | None) -> tuple[str, ...] | None:
 
 
 def _request_peer_allowlist() -> tuple[str, ...] | None:
-    from octop_harness.teams.team_manager import _request_team_peers  # noqa: PLC0415
+    from happyclaw_harness.teams.team_manager import _request_team_peers  # noqa: PLC0415
 
     return _clean_peer_names(_request_team_peers())
 

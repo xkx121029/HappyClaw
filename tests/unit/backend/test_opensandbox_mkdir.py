@@ -15,7 +15,7 @@ class _Result:
 
 def _backend() -> tuple[object, list[str]]:
     install_opensandbox_fs()
-    from octop_harness.backends.opensandbox_sandbox import OpenSandbox
+    from happyclaw_harness.backends.opensandbox_sandbox import OpenSandbox
 
     seen: list[str] = []
     backend = OpenSandbox.__new__(OpenSandbox)
@@ -43,7 +43,7 @@ def test_move_path_creates_parent_and_quotes() -> None:
 
 def test_nonzero_exit_raises() -> None:
     install_opensandbox_fs()
-    from octop_harness.backends.opensandbox_sandbox import OpenSandbox
+    from happyclaw_harness.backends.opensandbox_sandbox import OpenSandbox
 
     backend = OpenSandbox.__new__(OpenSandbox)
     backend.execute = lambda _command: _Result(exit_code=1, output="denied")  # type: ignore[method-assign]
@@ -52,7 +52,7 @@ def test_nonzero_exit_raises() -> None:
 
 
 def test_install_does_not_replace_existing_helper() -> None:
-    from octop_harness.backends.opensandbox_sandbox import OpenSandbox
+    from happyclaw_harness.backends.opensandbox_sandbox import OpenSandbox
 
     previous = getattr(OpenSandbox, "delete_path", None)
 

@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from typing import Any
 
 import pytest
-from octop_harness.plugins import PluginRegistry, build_plugin_tools
+from happyclaw_harness.plugins import PluginRegistry, build_plugin_tools
 
 from octop.infra.plugins.bridge import (
     ApprovalOutcome,

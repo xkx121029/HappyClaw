@@ -7,10 +7,11 @@ import sys
 from typing import Any
 
 import pytest
-from octop_harness.config import ModelConfig, ProviderConfig
-from octop_harness.llm.factory import ChatModelFactory
+from happyclaw_harness.config import ModelConfig, ProviderConfig
+from happyclaw_harness.llm.factory import ChatModelFactory
 
 from octop.infra.agents.manager import AgentManager
+from octop.infra.dsh.llm.langchain_model import REQUIRED_HARNESS_VERSION
 
 ADAPTER_MODULES = (
     "octop.infra.dsh.llm",
@@ -136,7 +137,7 @@ def test_status_query_distinguishes_installed_skipped_and_failed(
     assert installed["outcome"] == "installed"
     assert installed["applied"] is True
     assert installed["refs"] == ["p/m"]
-    assert installed["required_harness_version"] == "1.0.9"
+    assert installed["required_harness_version"] == REQUIRED_HARNESS_VERSION
 
 
 def test_version_warning_reaches_the_startup_log(
@@ -152,5 +153,7 @@ def test_version_warning_reaches_the_startup_log(
         AgentManager._install_dsh_llm(agent_manager)
 
     messages = [record.message for record in caplog.records]
-    assert any("9.9.9" in message and "1.0.9" in message for message in messages)
+    assert any(
+        "9.9.9" in message and REQUIRED_HARNESS_VERSION in message for message in messages
+    )
     assert agent_manager._dsh_llm_install.version_warning is not None

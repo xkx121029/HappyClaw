@@ -1,11 +1,11 @@
-"""Derive session keys and user ids from octop-gateway InboundMessage."""
+"""Derive session keys and user ids from happyclaw-gateway InboundMessage."""
 
 from __future__ import annotations
 
 import time
 from typing import Any
 
-from octop_gateway.models import ImageContent, InboundMessage
+from happyclaw_gateway.models import ImageContent, InboundMessage
 
 from octop.infra.gateway.threads import ThreadRegistry
 from octop.infra.utils.weixin_context import with_weixin_send_token
@@ -15,7 +15,7 @@ COMPOSER_CTX_KEY = "octop_composer_context"
 INBOUND_ATTACHMENTS_KEY = "octop_inbound_attachments"
 # Who sent this user turn. Shared conversations render a different portrait per person.
 AUTHOR_USER_ID_KEY = "octop_author_user_id"
-# Must match octop_harness.messages.CHECKPOINT_TS_KEY (epoch-ms).
+# Must match happyclaw_harness.messages.CHECKPOINT_TS_KEY (epoch-ms).
 CHECKPOINT_TS_KEY = "checkpoint_ts"
 # Persisted on AIMessage.additional_kwargs when a stream fails mid-turn.
 STREAM_ERROR_FLAG = "octop_stream_error"
@@ -60,8 +60,8 @@ def build_composer_context(
 
 
 try:
-    from octop_gateway.push_routing import EPHEMERAL_PUSH_META
-except ImportError:  # pragma: no cover - older octop-gateway
+    from happyclaw_gateway.push_routing import EPHEMERAL_PUSH_META
+except ImportError:  # pragma: no cover - older happyclaw-gateway
     EPHEMERAL_PUSH_META = frozenset(
         {
             "msg_id",

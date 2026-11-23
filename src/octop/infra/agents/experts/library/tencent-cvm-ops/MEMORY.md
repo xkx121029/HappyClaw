@@ -13,7 +13,7 @@
 
 | 凭据 | 位置 | 谁在用 |
 |---|---|---|
-| 工作台 OAuth | `~/.octop/secrets/cloud/<uid>.enc` | 工作台页面（实例列表、监控图表） |
+| 工作台 OAuth | `~/.happyclaw/secrets/cloud/<uid>.enc` | 工作台页面（实例列表、监控图表） |
 | tccli OAuth | `~/.tccli/<profile>.credential` | 对话里的我（走 tccli） |
 
 工作台授权后会镜像一份到 tccli；`默认 profile=default`，若开启 `OCTOP_TCCLI_PROFILE_ISOLATION=1` 则为 `octop-<uid>`，真实值看 `~/.tccli/.octop-profile`。

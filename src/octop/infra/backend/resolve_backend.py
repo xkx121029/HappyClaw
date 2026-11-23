@@ -43,7 +43,7 @@ def resolve_octop_backend(
 ) -> Any:
     """Harness ``resolve_backend``, after Octop spec materialization."""
     install_opensandbox_fs()
-    from octop_harness.backends import resolve_backend
+    from happyclaw_harness.backends import resolve_backend
 
     return resolve_backend(
         materialize_octop_specs(spec),

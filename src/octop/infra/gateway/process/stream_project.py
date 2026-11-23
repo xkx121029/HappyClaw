@@ -1,4 +1,4 @@
-"""Project harness stream chunks into octop-gateway MessageEvent objects."""
+"""Project harness stream chunks into happyclaw-gateway MessageEvent objects."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from octop_gateway.media import MediaBackend
-from octop_gateway.models import MessageEvent
+from happyclaw_gateway.media import MediaBackend
+from happyclaw_gateway.models import MessageEvent
 
 from octop.i18n import channel_tool_hint_end, channel_tool_hint_start, tool_display_name
 from octop.infra.gateway.hitl.format import format_hitl_card, normalize_hitl_request

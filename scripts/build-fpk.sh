@@ -183,9 +183,9 @@ build_one() {
       image_tag="${FPK_IMAGE_TAG:-${VER}-full}"
     fi
     if [ -f "$compose" ]; then
-      sed -i.bak -E "s#ghcr.io/tencentcloud/octop:[^[:space:]]+#ghcr.io/tencentcloud/octop:${image_tag}#" "$compose"
+      sed -i.bak -E "s#ghcr.io/xkx121029/happyclaw:[^[:space:]]+#ghcr.io/xkx121029/happyclaw:${image_tag}#" "$compose"
       rm -f "${compose}.bak"
-      echo "[build-fpk] compose 镜像: ghcr.io/tencentcloud/octop:${image_tag}"
+      echo "[build-fpk] compose 镜像: ghcr.io/xkx121029/happyclaw:${image_tag}"
     fi
   fi
 

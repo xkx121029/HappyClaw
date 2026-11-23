@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "octop"
 version = "1.0.3b6"
-description = "Self-hosted single-user AI assistant workspace: one local owner, multiple agents, built on octop-harness"
+description = "Self-hosted single-user AI assistant workspace: one local owner, multiple agents, built on happyclaw-harness"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.12"
@@ -21,10 +21,10 @@ dependencies = [
     "apscheduler>=3.10,<4",
     "argon2-cffi>=23.1",
     "pyjwt>=2.8",
-    "octop-harness[all]>=1.0.9",
-    "octop-memory>=1.0.4",
+    "happyclaw-harness[all]>=1.0.14",
+    "happyclaw-memory>=1.0.7",
     "lark-oapi>=1.7.3",
-    "octop-gateway>=1.0.3",
+    "happyclaw-gateway>=1.0.6",
     "cryptography>=41",
     "scalar-fastapi>=1.0",
     "edge-tts>=6.1",
@@ -37,7 +37,8 @@ dependencies = [
     "acme>=5.6.0",
     "josepy>=2.2.0",
     "boto3>=1.40.61",
-    "octop-browser>=1.0.0",
+    "google-api-python-client>=2.100",
+    "happyclaw-browser>=1.0.2",
     "playwright>=1.40",
     "psycopg[binary]>=3.2",
     "langgraph-checkpoint-postgres>=2.0",
@@ -55,6 +56,13 @@ dependencies = [
     "pyotp>=2.10.0",
     "webauthn>=3.0.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/xkx121029/HappyClaw"
+Repository = "https://github.com/xkx121029/HappyClaw"
+Issues = "https://github.com/xkx121029/HappyClaw/issues"
+Documentation = "https://github.com/xkx121029/HappyClaw/tree/main/docs"
+Changelog = "https://github.com/xkx121029/HappyClaw/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 # PEP 621 extras — kept so `pip install -e ".[dev]"` keeps working for
@@ -105,6 +113,9 @@ dev = [
 ]
 
 [project.scripts]
+# `happyclaw` is the product command; `octop` stays as an alias so existing
+# scripts and docs keep working.
+happyclaw = "octop.cli.main:cli"
 octop = "octop.cli.main:cli"
 
 [tool.hatch.build.targets.wheel]
@@ -227,3 +238,12 @@ markers = [
 filterwarnings = [
     "ignore::starlette.exceptions.StarletteDeprecationWarning",
 ]
+
+[tool.uv.sources]
+# The four HappyClaw libraries are not on PyPI. They ship as wheels vendored under
+# vendor/happyclaw-libs/ so `uv sync --frozen` needs no index or network for them.
+# Rebuild a wheel from the library repo's release tag and replace the file here.
+happyclaw-harness = { path = "vendor/happyclaw-libs/happyclaw_harness-1.0.14-py3-none-any.whl" }
+happyclaw-memory = { path = "vendor/happyclaw-libs/happyclaw_memory-1.0.7-py3-none-any.whl" }
+happyclaw-gateway = { path = "vendor/happyclaw-libs/happyclaw_gateway-1.0.6-py3-none-any.whl" }
+happyclaw-browser = { path = "vendor/happyclaw-libs/happyclaw_browser-1.0.2-py3-none-any.whl" }

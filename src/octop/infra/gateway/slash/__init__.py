@@ -1,6 +1,6 @@
 """Slash command parsing and dispatch."""
 
-from octop_harness.slash import BufferSink, SlashCommand, SlashSink
+from happyclaw_harness.slash import BufferSink, SlashCommand, SlashSink
 
 from octop.infra.gateway.slash.ctx import SlashCtx, build_slash_ctx
 from octop.infra.gateway.slash.dispatcher import SlashDispatcher, build_default_dispatcher

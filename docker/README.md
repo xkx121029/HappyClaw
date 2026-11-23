@@ -12,7 +12,7 @@ This directory contains the Docker build and deployment assets for HappyClaw.
 | `../.dockerignore` | Build context ignore rules (applies to both Podman and BuildKit) |
 | `docker_build.sh` | Build image from source (BuildKit cache enabled by default) |
 | `docker-compose.yml` | One-command local / self-hosted deployment |
-| `docker-compose.cn.yml` | Same stack, pulls `ghcr.nju.edu.cn/tencentcloud/octop:latest` (no local build) |
+| `docker-compose.cn.yml` | Same stack, pulls `ghcr.nju.edu.cn/xkx121029/happyclaw:latest` (no local build) |
 | `docker-compose.postgres.yml` | PostgreSQL (+ pgvector) for dual-backend dev/tests |
 | `postgres/init-vector.sql` | Instance-level `CREATE EXTENSION vector` (initdb.d; **not** HappyClaw migrations) |
 | `docker-entrypoint.sh` | Container entrypoint: first-run bootstrap (dirs + DB, no account) + start server |
@@ -46,7 +46,7 @@ docker run -d \
   octop:latest
 ```
 
-Published tags: `ghcr.io/tencentcloud/octop:<version>` and `:latest` are the lite image. `:<version>-full` and `:full` add desktop, OCR, and local embedding. A local build is full unless you pass `--build-arg OCTOP_IMAGE_VARIANT=lite`.
+Published tags: `ghcr.io/xkx121029/happyclaw:<version>` and `:latest` are the lite image. `:<version>-full` and `:full` add desktop, OCR, and local embedding. A local build is full unless you pass `--build-arg OCTOP_IMAGE_VARIANT=lite`. The image name comes from the repository that runs `docker-publish`, so a tag is pullable only after that workflow has completed once for it; until then build locally.
 
 ### Faster downloads (China mirrors)
 
@@ -64,15 +64,15 @@ bash docker/docker_build.sh
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `HOME` | `/data` | Must be `/data` so `~/.octop` maps to the data volume |
+| `HOME` | `/data` | Must be `/data` so `~/.happyclaw` maps to the data volume |
 | `OCTOP_PORT` | `8088` | HTTP listen port |
-| `OCTOP_DATA` | `~/.octop` | Host data directory (mounted at `/data/.octop`) |
+| `OCTOP_DATA` | `~/.happyclaw` | Host data directory (mounted at `/data/.octop`) |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN (or other `OCTOP_DATABASE_*`; see [configuration.md](../docs/configuration.md)) |
 | `OCTOP_DATABASE_DRIVER` | — | `sqlite` \| `postgresql` when overriding defaults via env |
 | `OPENAI_API_KEY` | — | OpenAI-compatible API key |
 | `DASHSCOPE_API_KEY` | — | Alibaba DashScope API key |
 
-For Compose, put these in `docker/.env`. Values only reach the container if listed under `environment:` in `docker-compose.yml` (Compose interpolates `.env`; it does not auto-export every key). Alternatively write the same keys into the mounted data dir as `~/.octop/env`.
+For Compose, put these in `docker/.env`. Values only reach the container if listed under `environment:` in `docker-compose.yml` (Compose interpolates `.env`; it does not auto-export every key). Alternatively write the same keys into the mounted data dir as `~/.happyclaw/env`.
 
 ### Node.js
 
@@ -94,7 +94,7 @@ image to receive these dependencies; restarting an older image is insufficient.
 
 ### Data persistence
 
-- Compose mounts host `~/.octop` → container `/data/.octop`
+- Compose mounts host `~/.happyclaw` → container `/data/.octop`
 - `docker run` example uses named volume `octop-data`
 - First boot: initializes the runtime directory and database, then creates the local owner; no password, wizard, or `credential.txt`
 - Upgrade: keep the data volume and rebuild the image; schema migrations run at startup

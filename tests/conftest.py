@@ -99,7 +99,7 @@ def _isolated_user_home(
 
 @pytest.fixture
 def tmp_octop_home(_isolated_user_home: Path) -> Iterator[Path]:
-    """Redirect ``~/.octop`` under the autouse isolated HOME."""
-    octop = _isolated_user_home / ".octop"
-    octop.mkdir(exist_ok=True)
-    yield octop
+    """Redirect the data directory under the autouse isolated HOME."""
+    home = _isolated_user_home / ".happyclaw"
+    home.mkdir(exist_ok=True)
+    yield home

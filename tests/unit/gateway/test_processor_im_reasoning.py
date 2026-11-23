@@ -5,7 +5,7 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from octop_gateway.models import ChannelSubject, InboundMessage, TextContent
+from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
 from octop.infra.gateway.process.processor import GlobalProcessor
 from octop.infra.gateway.slash.dispatcher import SlashDispatcher

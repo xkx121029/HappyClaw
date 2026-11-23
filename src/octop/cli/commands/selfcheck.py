@@ -24,7 +24,7 @@ _IMPORTS: tuple[tuple[str, str], ...] = (
     ("octop.api.app", "octop.api.app"),
     ("octop.infra.server", "octop.infra.server"),
     ("octop.infra.agents.manager", "octop.infra.agents.manager"),
-    ("octop_harness", "octop_harness"),
+    ("happyclaw_harness", "happyclaw_harness"),
     ("langchain_core", "langchain_core"),
     ("langchain", "langchain"),
     ("langchain_aws", "langchain_aws"),

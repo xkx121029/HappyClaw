@@ -241,7 +241,7 @@ def test_docker_image_runs_on_this_cpu_and_stays_disabled(docker_boot: Any) -> N
 
     Run on the machine that fails, for example an ARM FnOS host::
 
-        OCTOP_TEST_IMAGE=ghcr.io/tencentcloud/octop:1.0.2 \\
+        OCTOP_TEST_IMAGE=ghcr.io/xkx121029/happyclaw:1.0.2 \\
             uv run pytest tests/integration/test_docker_image_boot.py -m live -q
 
     Exit 132 / ``Illegal instruction`` is the failure in issues #2190 and #2301.

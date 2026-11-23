@@ -1,10 +1,47 @@
-"""Filesystem layout for ``~/.octop/``."""
+"""Filesystem layout for ``~/.happyclaw/``."""
 
 from __future__ import annotations
 
 import os
+import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+LEGACY_HOME_DIRNAME = ".octop"
+HOME_DIRNAME = ".happyclaw"
+
+
+def legacy_home() -> Path:
+    """Data directory used before the HappyClaw rename."""
+    return Path.home() / LEGACY_HOME_DIRNAME
+
+
+def migrate_legacy_home(legacy: Path, target: Path) -> bool:
+    """Copy a pre-rename data directory to its new location, once.
+
+    The copy is deliberate: the old directory is the owner's durable data, so
+    leaving it in place keeps rollback free and loses nothing if the copy dies
+    half-way. Returns False when the source could not be copied, and the caller
+    then keeps using the legacy directory rather than starting empty.
+    """
+    if target.exists():
+        return True
+    try:
+        shutil.copytree(legacy, target, symlinks=True, ignore=shutil.ignore_patterns("*.lock"))
+    except OSError as exc:
+        print(
+            f"[happyclaw] could not copy {legacy} to {target}: {exc}; continuing to use {legacy}",
+            file=sys.stderr,
+        )
+        shutil.rmtree(target, ignore_errors=True)
+        return False
+    print(
+        f"[happyclaw] moved the data directory {legacy} -> {target} "
+        f"(copied; the old directory is untouched and no longer used)",
+        file=sys.stderr,
+    )
+    return True
 
 
 @dataclass(frozen=True)
@@ -13,11 +50,21 @@ class PathLayout:
 
     @classmethod
     def from_env(cls) -> PathLayout:
-        """Resolve install root from ``OCTOP_HOME`` or ``~/.octop``."""
-        raw = os.environ.get("OCTOP_HOME", "").strip()
+        """Resolve the install root from ``HAPPYCLAW_HOME``/``OCTOP_HOME`` or ``~/.happyclaw``.
+
+        A data directory left behind under the pre-rename name is copied across
+        on first use; see :func:`migrate_legacy_home`.
+        """
+        raw = (
+            os.environ.get("HAPPYCLAW_HOME", "").strip() or os.environ.get("OCTOP_HOME", "").strip()
+        )
         if raw:
             return cls(Path(raw).expanduser())
-        return cls(Path.home() / ".octop")
+        target = Path.home() / HOME_DIRNAME
+        legacy = legacy_home()
+        if not target.exists() and legacy.is_dir() and not migrate_legacy_home(legacy, target):
+            return cls(legacy)
+        return cls(target)
 
     @property
     def wizard_password_file(self) -> Path:

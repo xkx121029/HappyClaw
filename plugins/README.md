@@ -2,7 +2,7 @@
 
 [中文版](./README_CN.md)
 
-Sample plugins for HappyClaw / octop-harness `kind` values, plus a **dual
+Sample plugins for HappyClaw / happyclaw-harness `kind` values, plus a **dual
 frontend + backend** demo that renders tool results in chat.
 Layout inspired by [octop-toolkit](https://github.com/veenyi/octop-plugins/tree/main/octop-toolkit).
 
@@ -100,7 +100,7 @@ The ZIP must contain **exactly one** plugin root that includes `plugin.yaml`.
 ```bash
 uv run python - <<'PY'
 from pathlib import Path
-from octop_harness.plugins import PluginRegistry, load_plugin_dir
+from happyclaw_harness.plugins import PluginRegistry, load_plugin_dir
 
 for name in ("demo-toolkit", "demo-greeting-skill", "demo-turn-logger", "demo-ui-card"):
     PluginRegistry.reset()

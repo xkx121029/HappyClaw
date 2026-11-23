@@ -1,13 +1,14 @@
 import type { Session } from "../hooks/useSessions";
+import { readStorage, writeStorage } from "../../../utils/storageKeys";
 
 export type SessionSortMode = "recent" | "name";
 
-const STORAGE_KEY = "octop.chat.sessionSort";
+const STORAGE_KEY = "chat.sessionSort";
 
 /** 会话列表排序偏好：单人本机，直接存 localStorage，刷新后保持。 */
 export function readSessionSortMode(): SessionSortMode {
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored = readStorage(STORAGE_KEY);
     return stored === "name" ? "name" : "recent";
   } catch {
     return "recent";
@@ -16,7 +17,7 @@ export function readSessionSortMode(): SessionSortMode {
 
 export function writeSessionSortMode(mode: SessionSortMode) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, mode);
+    writeStorage(STORAGE_KEY, mode);
   } catch {
     // 隐私模式或存储被禁用时保持当前内存顺序，不阻断列表渲染。
   }

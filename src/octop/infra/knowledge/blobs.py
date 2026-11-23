@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from octop_harness.backends.postgres import PostgresBackend
+from happyclaw_harness.backends.postgres import PostgresBackend
 
 from octop.config import DatabaseConfig
 from octop.infra.db.file_store import KNOWLEDGE_FILES, open_postgres_files

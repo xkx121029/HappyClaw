@@ -6,7 +6,7 @@ import time
 from unittest.mock import MagicMock
 
 import pytest
-from octop_gateway.models import MessageEvent, MessageEventType, TextContent
+from happyclaw_gateway.models import MessageEvent, MessageEventType, TextContent
 
 from octop.infra.gateway.hitl.coordinator import (
     HitlChannelCoordinator,
@@ -163,7 +163,7 @@ async def test_coordinator_slash_approve_resumes() -> None:
     ctx.channel_type = "feishu"
     ctx.thread_registry = MagicMock()
 
-    from octop_harness.slash import SlashCommand
+    from happyclaw_harness.slash import SlashCommand
 
     cmd = SlashCommand(name="approve", args="")
     events: list[MessageEvent] = []
@@ -213,7 +213,7 @@ async def test_coordinator_slash_approve_wakes_team_member_without_host_resume()
     ctx.channel_type = "feishu"
     ctx.thread_registry = MagicMock()
 
-    from octop_harness.slash import SlashCommand
+    from happyclaw_harness.slash import SlashCommand
 
     events: list[MessageEvent] = []
     async for ev in coordinator.iter_slash_resolution(
@@ -251,7 +251,7 @@ async def test_coordinator_slash_approve_invalid_pending_id() -> None:
         review_configs=None,
     )
 
-    from octop_harness.slash import SlashCommand
+    from happyclaw_harness.slash import SlashCommand
 
     ctx = MagicMock()
     ctx.session_key = "sk1"
@@ -304,7 +304,7 @@ async def test_coordinator_resume_failure_keeps_pending() -> None:
     ctx.channel_type = "feishu"
     ctx.thread_registry = MagicMock()
 
-    from octop_harness.slash import SlashCommand
+    from happyclaw_harness.slash import SlashCommand
 
     cmd = SlashCommand(name="approve", args="")
     async for _ in coordinator.iter_slash_resolution(
@@ -734,7 +734,7 @@ async def test_slash_outcome_completed_turn() -> None:
     ctx.channel_type = "feishu"
     ctx.thread_registry = MagicMock()
 
-    from octop_harness.slash import SlashCommand
+    from happyclaw_harness.slash import SlashCommand
 
     outcome = HitlSlashOutcome()
     cmd = SlashCommand(name="approve", args="")
@@ -979,7 +979,7 @@ def test_owned_tool_approval_ignores_other_user_and_questions() -> None:
 async def test_im_phrase_approves_without_slash() -> None:
     from types import SimpleNamespace
 
-    from octop_gateway.models import ChannelSubject, InboundMessage
+    from happyclaw_gateway.models import ChannelSubject, InboundMessage
 
     from octop.infra.gateway.process.processor import GlobalProcessor
     from octop.infra.gateway.slash.dispatcher import SlashDispatcher
@@ -1038,7 +1038,7 @@ async def test_im_phrase_approves_without_slash() -> None:
 async def test_im_phrase_does_not_steal_question_answer() -> None:
     from types import SimpleNamespace
 
-    from octop_gateway.models import ChannelSubject, InboundMessage
+    from happyclaw_gateway.models import ChannelSubject, InboundMessage
 
     from octop.infra.gateway.process.processor import GlobalProcessor
     from octop.infra.gateway.slash.dispatcher import SlashDispatcher
@@ -1123,7 +1123,7 @@ def _phrase_processor(
 
 
 def _phrase_message(text: str) -> object:
-    from octop_gateway.models import ChannelSubject, InboundMessage
+    from happyclaw_gateway.models import ChannelSubject, InboundMessage
 
     return InboundMessage(
         channel_id="c1",

@@ -16,7 +16,7 @@ server side, and `/api/auth/me` returns that owner with `role: "admin"` so the
 dashboard exposes the full surface.
 
 > **Verification status (2026-11-12 07:06, local smoke):** verified against a
-> running server on a temporary `OCTOP_HOME` (fresh database, port 7462).
+> running server on a temporary `HAPPYCLAW_HOME` (fresh database, port 7462).
 > Observed: no credential is required for `/api/users` or `/api/teams`;
 > `/api/auth/me` returns the pre-provisioned `local-owner`; `/api/setup/status`
 > reports `setup_required: false`. Remaining schema differences are called out
@@ -265,7 +265,7 @@ an optional display label; when omitted, the server derives one from
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `GET` | `/models/presets` | user | provider templates from `octop-harness` |
+| `GET` | `/models/presets` | user | provider templates from `happyclaw-harness` |
 | `GET` | `/models` | user | resolved models across enabled providers |
 | `GET` | `/models/active` | user | `{provider_name, model}` |
 | `PUT` | `/models/active` | admin | body `{provider_name, model}` |
@@ -380,9 +380,9 @@ version. The file save remains successful if the subsequent semantic check fails
 
 ### Current-expert memory storage maintenance
 
-SQLite restore requires a harness runtime with `MemoryMiddleware.pause_background`
-([octop-harness #69](https://github.com/TencentCloud/octop-harness/pull/69)). Older runtimes
-reject restore before stopping the expert or changing its database. Independent retry
+SQLite restore requires a harness runtime that ships
+`MemoryMiddleware.pause_background`. Older runtimes reject restore before stopping the
+expert or changing its database. Independent retry
 controls also require this runtime; the extraction config API reports supported options.
 
 | Method | Path | Auth | Notes |
@@ -417,7 +417,7 @@ because maintenance preserves history; concurrent background writes may affect t
 
 PostgreSQL limits every read/delete to the live expert's verified namespace and
 backs up exact target rows to a private JSONL file under
-`OCTOP_HOME/backups/memory-maintenance/` before committing a single transaction:
+`HAPPYCLAW_HOME/backups/memory-maintenance/` before committing a single transaction:
 
 - Rejected candidates decided more than 30 days ago, with no atom referencing them.
 - Operational journal entries older than 14 days (`extract_run`, `gc_*`,
@@ -530,11 +530,11 @@ for servers that publish no metadata; both must be public HTTPS URLs. Register
 `<public base>/api/connectors/oauth/callback` as the redirect URI of the OAuth app. Changing
 the client drops the stored tokens, so the server asks for authorization again.
 
-## Internal MCP (octop-harness agents)
+## Internal MCP (happyclaw-harness agents)
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `POST`/`GET`/… | `/internal/mcp/*` | public (mTLS / network-isolated) | MCP gateway used by octop-harness agents (not the dashboard) |
+| `POST`/`GET`/… | `/internal/mcp/*` | public (mTLS / network-isolated) | MCP gateway used by happyclaw-harness agents (not the dashboard) |
 
 ## HappyClaw Agent MCP Gateway
 
@@ -613,7 +613,7 @@ endpoint (public, mounted directly in `api/app.py`).
 |--------|------|------|-------|
 | `WS`/`POST`/`GET`/… | `/agents/{aid}/terminal` | owner | AI-assisted remote PTY |
 | `GET` | `/agents/{aid}/terminal/context` | owner | recent terminal context for the AI helper |
-| `WS`/`POST`/`GET`/… | `/browser/...` | user | octop-browser sessions, live stream, record/replay |
+| `WS`/`POST`/`GET`/… | `/browser/...` | user | happyclaw-browser sessions, live stream, record/replay |
 | `POST` | `/browser/shutdown` | user | stop the current user's HappyClaw-managed Chrome |
 | `POST` | `/agents/{aid}/upload` | user | multipart upload → `{workspace}/inbound/` |
 | `POST` | `/agents/{aid}/files/access-urls` | user | refresh inbound media URLs (signed) |

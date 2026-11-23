@@ -1,4 +1,4 @@
-"""GlobalProcessor — octop-gateway MessageProcessor; team room lives on TeamManager."""
+"""GlobalProcessor — happyclaw-gateway MessageProcessor; team room lives on TeamManager."""
 
 from __future__ import annotations
 
@@ -11,16 +11,16 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
-from octop_gateway.models import (
+from happyclaw_gateway.models import (
     InboundMessage,
     MessageEvent,
     MessageEventType,
     TextContent,
 )
-from octop_harness.slash import SlashCommand, SlashSink
-from octop_harness.teams.inbox import InboxMessage
-from octop_harness.teams.processor import ReplyEvent
-from octop_harness.teams.util import PeerCall, PeerSession
+from happyclaw_harness.slash import SlashCommand, SlashSink
+from happyclaw_harness.teams.inbox import InboxMessage
+from happyclaw_harness.teams.processor import ReplyEvent
+from happyclaw_harness.teams.util import PeerCall, PeerSession
 
 from octop.i18n.domains.stream import format_stream_error
 from octop.infra.agents.providers.reasoning import reasoning_request_parameters
@@ -1152,7 +1152,7 @@ class GlobalProcessor:
 
         For transports that consume the dashboard chunk protocol (``token``,
         ``tool_result``, ``attachment``, ``done``, …) without going through
-        octop-gateway :class:`MessageEvent` batching.
+        happyclaw-gateway :class:`MessageEvent` batching.
 
         IM channels use :meth:`__call__` → ``project_stream`` → ``MessageEvent``
         (e.g. DingTalk ``BaseChannel.handle_inbound``).

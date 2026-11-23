@@ -15,9 +15,9 @@ from pathlib import Path
 import pytest
 from deepagents.backends.local_shell import LocalShellBackend
 from deepagents.backends.utils import validate_path
-from octop_gateway.models import ImageContent, InboundMessage
-from octop_harness.backends import DEFAULT_BACKEND_SPEC, resolve_backend
-from octop_harness.backends.workspace import BackendWorkspace
+from happyclaw_gateway.models import ImageContent, InboundMessage
+from happyclaw_harness.backends import DEFAULT_BACKEND_SPEC, resolve_backend
+from happyclaw_harness.backends.workspace import BackendWorkspace
 
 from octop.api.common.attachments import save_attachment
 from octop.infra.agents.middleware.binary_read_guard import read_file_block_reason
@@ -87,7 +87,7 @@ async def test_hint_uses_agent_facing_absolute_path() -> None:
 def test_hint_uses_remote_virtual_root_for_cloud_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     """Postgres/S3 store the file under /.octop/workspaces/<id>, not the host dir."""
     monkeypatch.setattr(
-        "octop_harness.backends.workspace.is_cloud_storage_backend",
+        "happyclaw_harness.backends.workspace.is_cloud_storage_backend",
         lambda _backend: True,
     )
     with tempfile.TemporaryDirectory() as root_dir:

@@ -2,9 +2,9 @@
 
 HappyClaw is a single-user, local AI assistant workspace with multiple agents,
 delivered as one server process.
-It glues four reusable libraries — `octop-harness` (LangGraph-based chat
-runtime), `octop-gateway` (IM channel pipeline), `octop-memory` (capture,
-recall, ranking, per-agent storage), and `octop-browser` (Chrome CDP sessions)
+It glues four reusable libraries — `happyclaw-harness` (LangGraph-based chat
+runtime), `happyclaw-gateway` (IM channel pipeline), `happyclaw-memory` (capture,
+recall, ranking, per-agent storage), and `happyclaw-browser` (Chrome CDP sessions)
 — plus a React + TypeScript dashboard, into one wheel that ships with a CLI,
 an HTTP/WebSocket API, and a web UI.
 
@@ -24,7 +24,7 @@ an HTTP/WebSocket API, and a web UI.
 │  Domain layer     │  AgentManager   Gateway   GlobalProcessor             │
 │                   │  CronManager  OwnerIdentityService  SharedServices    │
 ├───────────────────────────────────────────────────────────────────────────┤
-│  Reusable libs    │  octop-harness  octop-gateway  octop-memory  octop-browser │
+│  Reusable libs    │  happyclaw-harness  happyclaw-gateway  happyclaw-memory  happyclaw-browser │
 ├───────────────────────────────────────────────────────────────────────────┤
 │  Storage          │  SQLite or PostgreSQL control plane + file workspaces │
 └───────────────────────────────────────────────────────────────────────────┘
@@ -53,14 +53,14 @@ OctopServer.start()
  ├─ SharedServices (repos + factories)
  ├─ OwnerIdentityService             (resolve-or-create the single owner row)
  ├─ ExpertCatalog  / SubagentCatalog (bundled MD libraries)
- ├─ PluginManager.seed_bundled() then load_installed()  (~/.octop/plugins/*; bundled default off)
+ ├─ PluginManager.seed_bundled() then load_installed()  (~/.happyclaw/plugins/*; bundled default off)
  ├─ AgentManager (global registry — one per process)
  │    └─ for each agent row: builds HarnessAgentRuntime on demand
  │       ├─ HarnessAgent (LangGraph)
  │       ├─ GlobalProcessor (slash dispatch + chunk projection)
  │       └─ BackendWorkspace (filesystem or remote storage adapter)
  ├─ Gateway                         (IM channels + WS hub + cron trigger source)
- │    ├─ ChannelManager (octop-gateway; one per agent that has a channel row)
+ │    ├─ ChannelManager (happyclaw-gateway; one per agent that has a channel row)
  │    └─ WebSocketHub  (local: infra/gateway/ws/ws_hub.py; dashboard + CLI channel)
  └─ CronManager (process-wide APScheduler)
 ```
@@ -108,14 +108,14 @@ see `infra/gateway/threads.py` for the full state machine.
 The **control plane** (local owner, agents, providers, channels, cron,
 sessions, audit) lives in either:
 
-* SQLite — default file under `~/.octop/` (legacy `octop.db` or
+* SQLite — default file under `~/.happyclaw/` (legacy `octop.db` or
   `config.json` → `database.sqlite_path`), or
 * PostgreSQL — `config.json` / `OCTOP_DATABASE_*` / first-boot database config.
 
 Migrations: `src/octop/infra/db/migrations/NNN_*.sql` (SQLite) and
 `NNN_*.pg.sql` (PostgreSQL). Connection PRAGMAs live on the SQLite pool;
 PostgreSQL extensions (e.g. `vector`) are docker/ops init, not app
-migrations. Agent memory DDL is owned by octop-memory. See
+migrations. Agent memory DDL is owned by happyclaw-memory. See
 [ADR 002](./adr/002-database-backends.md).
 
 The wheel ships the built dashboard SPA under `src/octop/dashboard/`, so the
@@ -125,9 +125,9 @@ sources in `dashboard/`, never the built copy.
 
 Per-agent workspace files (Markdown, skills, expert templates) are
 read and written through the agent's `BackendWorkspace`
-(`octop.infra.backend` → `octop_harness.backends`). The default
+(`octop.infra.backend` → `happyclaw_harness.backends`). The default
 backend is a `filesystem` adapter rooted at
-`~/.octop/agents/<agent_id>/`; remote backends (S3, COS) are mounted
+`~/.happyclaw/agents/<agent_id>/`; remote backends (S3, COS) are mounted
 on top of the same root_dir and the HappyClaw service never reads
 content files via `Path.write_text` / `read_text` (see
 [agent-backend-file-io.md](./agent-backend-file-io.md) for the full
@@ -162,7 +162,7 @@ checkpoint and are pushed to the dashboard / IM channel by
 
 - [AGENTS.md](../AGENTS.md) — module boundaries, hard bans, change workflow
 - [Architecture Decision Records](./adr/) — single-process, no queue (ADR 001)
-- [Configuration](configuration.md) — `~/.octop/` layout + env vars
+- [Configuration](configuration.md) — `~/.happyclaw/` layout + env vars
 - [API reference](api.md) — every route, body, and error
 - [CLI reference](cli.md) — every subcommand
 - [Personas](personas.md) — MBTI templates and the mbti_profiles data module

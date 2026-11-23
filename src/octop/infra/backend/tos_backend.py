@@ -7,7 +7,7 @@ from typing import Any
 from urllib.parse import unquote
 
 from deepagents.backends.protocol import FileData, FileInfo
-from octop_harness.backends.cloud_storage_base import CloudStorageBackend
+from happyclaw_harness.backends.cloud_storage_base import CloudStorageBackend
 
 _MISSING = "TOS backend requires the optional dependency 'tos'. Install with: uv pip install 'tos>=2.9,<3'."
 

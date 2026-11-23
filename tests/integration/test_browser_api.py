@@ -60,12 +60,12 @@ def test_probe_env_harness_browser_without_chromium() -> None:
     from octop.api.routers.browser import env as br
 
     try:
-        import octop_browser  # noqa: F401
+        import happyclaw_browser  # noqa: F401
     except ImportError:
         return
 
     with patch(
-        "octop_browser.cdp.launcher.find_chrome",
+        "happyclaw_browser.cdp.launcher.find_chrome",
         return_value=None,
     ):
         out = br._probe_env()
@@ -79,13 +79,13 @@ def test_probe_env_accepts_system_chrome() -> None:
     from octop.api.routers.browser import env as br
 
     try:
-        import octop_browser  # noqa: F401
+        import happyclaw_browser  # noqa: F401
     except ImportError:
         return
 
     with (
         patch(
-            "octop_browser.cdp.launcher.find_chrome",
+            "happyclaw_browser.cdp.launcher.find_chrome",
             return_value="/usr/bin/google-chrome",
         ),
         patch(
@@ -110,13 +110,13 @@ def test_probe_env_bundled_chrome_stays_disabled_until_confirm() -> None:
     from octop.api.routers.browser import env as br
 
     try:
-        import octop_browser  # noqa: F401
+        import happyclaw_browser  # noqa: F401
     except ImportError:
         return
 
     with (
         patch(
-            "octop_browser.cdp.launcher.find_chrome",
+            "happyclaw_browser.cdp.launcher.find_chrome",
             return_value="/usr/bin/chromium",
         ),
         patch(
@@ -242,7 +242,7 @@ async def test_shutdown_ignores_client_profile(env: Any) -> None:
     c, _srv, auth = env
     result = SimpleNamespace(success=True, error=None)
     with patch(
-        "octop_browser.tool_interface.browser_tool",
+        "happyclaw_browser.tool_interface.browser_tool",
         new=AsyncMock(return_value=result),
     ) as tool:
         r = await c.post("/api/browser/shutdown?profile=work", headers=auth)
@@ -266,7 +266,7 @@ async def test_install_returns_pid(env: Any) -> None:
         yield {"done": True, "success": True}
 
     with patch(
-        "octop_browser.install_chromium_stream",
+        "happyclaw_browser.install_chromium_stream",
         side_effect=lambda: fake_stream(),
     ):
         r = await c.post("/api/browser/install", headers=auth)

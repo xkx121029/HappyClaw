@@ -6,9 +6,9 @@ import base64
 import logging
 from typing import Any
 
-from octop_gateway.channel import BaseChannel, MessageProcessor
-from octop_gateway.constraints import ChannelConstraints
-from octop_gateway.models import (
+from happyclaw_gateway.channel import BaseChannel, MessageProcessor
+from happyclaw_gateway.constraints import ChannelConstraints
+from happyclaw_gateway.models import (
     AudioContent,
     ChannelSubject,
     ContentPart,

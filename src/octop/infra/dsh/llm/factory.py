@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-from octop_harness.llm.factory import ChatModelFactory
+from happyclaw_harness.llm.factory import ChatModelFactory
 
 from octop.infra.dsh.llm.langchain_model import (
     REQUIRED_HARNESS_VERSION,

@@ -1,0 +1,131 @@
+== en 45
+   apiErrors.ACP_BACKEND_UNSUPPORTED => This agent has a sandbox enabled, so external runners can’t be enabled or edited here. The outbound acp_runner tool toggle is unaffected; connecting via IDE / octop acp i
+   setupWizard.password.desc => An initial password was randomly generated and saved to ~/octop-login.txt. Please enter it in the "Current Password" field below, then set your new password.
+   setupWizard.browser.manualCommand => octop install-browsers
+   experts.customIdHint => Leave empty to auto-generate. Cannot be changed after creation; used as the workspace directory name (~/.octop/agents/<ID>/).
+   experts.backendRootDirJailHint => Saving to a non-root directory enables a sandbox and confines the AI filesystem to that folder. External ACP runners can’t be used with this setup; connecting via IDE / o
+   experts.backendRootDirPathLimitHint => Saving to a non-root directory limits the AI’s file access to that folder, but this host provides no OS-level sandbox — the AI process still runs with the service account
+   stream_errors.path_outside_root => The file path is outside this expert's storage root, so it cannot be read or written. Use a path under the storage root, or widen the storage root in expert settings (on 
+   skills.contentPlaceholder => ---
+name: <skill_name> (required)
+description: <skill description> (required)
+metadata: { "octop": { "emoji": "🔧" } }
+---
+
+Skill implementation content...
+
+# Example:
+# -
+   skills.newSkillTemplate => ---
+name: my-skill
+description: Describe briefly when this skill should be used
+metadata:
+  octop:
+    emoji: ✨
+---
+# My skill
+
+Explain what this skill does and how to us
+   cronJobs.form.timezoneTooltip => Server-wide default timezone from config.json (default_timezone) or OCTOP_DEFAULT_TIMEZONE. Used for scheduling and dashboard timestamps.
+   channels.label_octopbot => OctopBot
+   channels.octopbotGetCredentialsHint => Get your API credentials from OctopBot platform
+   channels.intro_octopbot => Connect the OctopBot platform to Tencent Cloud-hosted bots and your agent.
+   channels.rawConfigTooltip => Channel-specific config — see happyclaw-gateway docs
+   environments.description => Global variables in ~/.octop/env. Every agent inherits them in shell and Docker. Per-agent values go in that agent's workspace .env (override globals on execute). Search 
+   tls.domainPlaceholder => octop.example.com
+   advancedSettings.bridge.peerUrlPlaceholder => https://octop.example.com
+   advancedSettings.update.manualUpgradeHint => You can also run: octop update --verbose
+   advancedSettings.update.restartTimeout => Restart timed out. Run manually: octop service restart
+   advancedSettings.update.guideIntro => If the one-click upgrade on the left is unavailable, pick the commands for your install method. Restart after upgrading; data stays in ~/.octop (or OCTOP_HOME).
+   advancedSettings.update.guide.installer.body => If you used the official install script, re-run the same install command to upgrade in place (it reuses the environment and data under ~/.octop).
+   advancedSettings.update.guide.cli.title => CLI: octop update
+   advancedSettings.update.guide.cli.body => If the octop command is on your PATH (installer or managed venv), run:
+   advancedSettings.update.guide.docker.body => Rebuild and restart the image, and keep the same data volume (~/.octop or octop-data) so nothing is lost:
+   advancedSettings.webauthn.rpIdHint => Usually the site hostname without port, e.g. octop.example.com. Must not be an IP address.
+   advancedSettings.webauthn.rpIdPlaceholder => octop.example.com
+   advancedSettings.webauthn.originsHint => One origin per line (scheme + host + optional port), e.g. https://octop.example.com
+   advancedSettings.webauthn.originsPlaceholder => https://octop.example.com
+   memory.settings.upgradeHint => Update the memory runtime (happyclaw-harness) alongside HappyClaw. Unavailable settings are disabled until the update.
+   remoteBrowser.playwrightMissing => The playwright package is missing. Install octop[browser] extras first.
+   remoteBrowser.playwrightOptionalDesc => happyclaw-browser (CDP) is ready; browser features work. Install octop[browser] extras only if you need Playwright fallback.
+   remoteDesktop.macPermStep3Detail => Restart HappyClaw (octop run), come back to this page, and click Recheck.
+   storage.sandboxPrefixExtra => Default octop_sandbox; names like {prefix}_agent_{id}
+   login.forgotPasswordCommand => octop user passwd <username> --password <new-password>
+   login.forgotPasswordLinux => Open Terminal, then run the command above. If octop is not found:
+   login.forgotPasswordMac => Open Terminal (Applications → Utilities → Terminal), then run the command above. If octop is not found:
+   login.forgotPasswordUnixPath => ~/.octop/bin/octop user passwd <username> --password <new-password>
+   login.forgotPasswordWindows => Open PowerShell or Command Prompt, then run the command above. If octop is not found:
+   login.forgotPasswordWindowsPs => & "$env:USERPROFILE\.octop\bin\octop.cmd" user passwd <username> --password <new-password>
+   login.forgotPasswordWindowsCmd => %USERPROFILE%\.octop\bin\octop.cmd user passwd <username> --password <new-password>
+   login.forgotPasswordDockerCommand => docker exec -it <container> octop user passwd <username> --password <new-password>
+   connectors.oauthNeedAdminHint => Set env vars on this machine (e.g. OCTOP_YOUDAO_CLIENT_ID, OCTOP_QQ_CONNECT_APP_ID), or fill in credentials under Advanced settings.
+   acp.outboundBlockedHint => This agent has a sandbox enabled, so external runners can’t be enabled or edited here. The outbound acp_runner tool toggle is unaffected; connecting via IDE / octop acp i
+   plugins.adminHint => Plugins live under ~/.octop/plugins/ on the server. Use this page to install, reload, globally enable, inspect, or uninstall them.
+   plugins.guideImportBody => Host the .zip where HappyClaw can download it over HTTP(S). Prefer a raw file URL. Configure each agent from Personalization → Plugins. Local demos: octop plugin install 
+== zh 45
+   apiErrors.ACP_BACKEND_UNSUPPORTED => 当前专家已启用沙箱环境，不可启用或编辑外部 Runner。启用向外委托（acp_runner）不受影响；通过 IDE / octop acp 接入也不受影响。
+   setupWizard.password.desc => 初始密码已随机生成并保存在 ~/octop-login.txt 文件中。请在下方「当前密码」中输入该密码，然后设置您的新密码。
+   setupWizard.browser.manualCommand => octop install-browsers
+   experts.backendRootDirJailHint => 保存至非根目录时，会启用沙箱环境并将 AI 文件系统限制在该目录内。此配置下无法调用外部 ACP Runner；通过 IDE / octop acp 接入不受影响。
+   experts.backendRootDirPathLimitHint => 保存至非根目录时，会将 AI 的文件访问限制在该目录内；但当前系统未提供操作系统级沙箱，AI 进程仍以服务账号自身的权限运行。此配置下无法调用外部 ACP Runner；通过 IDE / octop acp 接入不受影响。
+   stream_errors.path_outside_root => 文件路径超出当前专家的存储根目录，无法读写。请改用存储根目录内的路径，或在专家设置中扩大存储根目录（Windows 上请显式指定盘符路径，例如 D:/octop-data）。
+   skills.contentPlaceholder => ---
+name: <技能名称>（必填）
+description: <技能功能描述>（必填）
+metadata: { "octop": { "emoji": "🔧" } }
+---
+
+技能实现内容...
+
+# 示例：
+# ---
+# name: cron
+# description: 通过 octop 命令管理定时任务 - 创建、查询、暂
+   skills.newSkillTemplate => ---
+name: my-skill
+description: 简要描述这个技能在何种情境下会被使用
+metadata:
+ octop:
+ emoji: ✨
+---
+# My skill
+
+请在此说明这个技能的用途以及如何使用它。专家在选择当前轮次的技能时会读取这段 markdown,所以请写得清晰、可执行。
+
+   cronJobs.form.timezoneTooltip => 服务端默认时区，在 config.json 的 default_timezone 或环境变量 OCTOP_DEFAULT_TIMEZONE 中配置，用于定时任务与界面时间展示。
+   channels.label_octopbot => OctopBot
+   channels.octopbotGetCredentialsHint => 前往 OctopBot 平台获取 API 凭据
+   channels.intro_octopbot => 配置 OctopBot 平台频道，对接腾讯云托管机器人与你的专家。
+   channels.rawConfigTooltip => 渠道特定配置 — 详见 happyclaw-gateway 文档
+   environments.description => 全局变量保存在 ~/.octop/env，所有智能体的 shell / Docker 会继承。单个智能体的变量写入其工作区 .env，执行时覆盖同名全局变量。搜索类 API Key 请放全局，以便工具完成注册。
+   security.toolGuardResetConfirm => 恢复为 happyclaw-harness 内置默认规则？当前修改将丢失。
+   tls.domainPlaceholder => octop.example.com
+   advancedSettings.bridge.peerUrlPlaceholder => https://octop.example.com
+   advancedSettings.update.manualUpgradeHint => 也可手动运行：octop update --verbose
+   advancedSettings.update.restartTimeout => 重启超时，请手动执行：octop service restart
+   advancedSettings.update.guideIntro => 若不能使用左侧一键升级，请按你的安装方式选择下方命令。升级后请重启服务；配置与数据默认保留在 ~/.octop（或 OCTOP_HOME）。
+   advancedSettings.update.guide.installer.body => 若你是用官方安装脚本装的，重新执行同一安装命令即可自动升级到最新版（会复用 ~/.octop 下的环境与数据）。
+   advancedSettings.update.guide.cli.title => CLI：octop update
+   advancedSettings.update.guide.cli.body => 若命令行可直接使用 octop（安装脚本或 venv 布局），在终端执行：
+   advancedSettings.update.guide.docker.body => Docker 部署请重新构建并启动镜像，并继续挂载原有数据卷（~/.octop 或 octop-data），避免丢数据：
+   advancedSettings.webauthn.rpIdHint => 一般为站点主机名（不含端口），例如 octop.example.com。不能是 IP 地址。
+   advancedSettings.webauthn.rpIdPlaceholder => octop.example.com
+   advancedSettings.webauthn.originsHint => 每行一个 Origin（协议 + 主机 + 可选端口），例如 https://octop.example.com
+   advancedSettings.webauthn.originsPlaceholder => https://octop.example.com
+   memory.settings.upgradeHint => 请配套更新记忆运行组件（happyclaw-harness）。当前不可用的设置已禁用，更新后会恢复。
+   remoteBrowser.playwrightMissing => playwright 包未安装，请先安装 octop[browser] extras。
+   remoteBrowser.playwrightOptionalDesc => happyclaw-browser (CDP) 已就绪，浏览器功能可用。如需 Playwright 备用模式，可安装 octop[browser] extras。
+   remoteDesktop.macPermStep3Detail => 重启 HappyClaw（octop run），回到本页点击「重新检测」。
+   storage.sandboxPrefixExtra => 默认 octop_sandbox；命名如 {prefix}_agent_{id}
+   login.forgotPasswordCommand => octop user passwd <用户名> --password <新密码>
+   login.forgotPasswordLinux => 打开「终端」后执行上面的命令。若提示找不到 octop，改用：
+   login.forgotPasswordMac => 打开「终端」（应用程序 → 实用工具 → 终端）后执行。若提示找不到 octop，改用：
+   login.forgotPasswordUnixPath => ~/.octop/bin/octop user passwd <用户名> --password <新密码>
+   login.forgotPasswordWindows => 打开 PowerShell 或「命令提示符」后执行上面的命令。若提示找不到 octop，改用：
+   login.forgotPasswordWindowsPs => & "$env:USERPROFILE\.octop\bin\octop.cmd" user passwd <用户名> --password <新密码>
+   login.forgotPasswordWindowsCmd => %USERPROFILE%\.octop\bin\octop.cmd user passwd <用户名> --password <新密码>
+   login.forgotPasswordDockerCommand => docker exec -it <容器名> octop user passwd <用户名> --password <新密码>
+   connectors.oauthNeedAdminHint => 请在本机配置环境变量（如 OCTOP_YOUDAO_CLIENT_ID、OCTOP_QQ_CONNECT_APP_ID），或在高级设置中填写凭证。
+   acp.outboundBlockedHint => 当前专家已启用沙箱环境，不可启用或编辑外部 Runner。启用向外委托（acp_runner）不受影响；通过 IDE / octop acp 接入也不受影响。
+   plugins.adminHint => 插件安装在服务器 ~/.octop/plugins/。此页面仅用于安装、重载、全局启停、查看详情和卸载。
+   plugins.guideImportBody => 把 .zip 放到 HappyClaw 可通过 HTTP(S) 下载的位置，优先使用 raw 直链。安装后前往「个性化 → 插件」为专家配置。本地 demo：octop plugin install ./plugins/demo-toolkit --force

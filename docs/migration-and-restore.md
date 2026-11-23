@@ -16,11 +16,11 @@
 
 ## 1. 数据目录与归档范围
 
-默认根目录 `~/.octop/`（Windows 即 `%USERPROFILE%\.octop\`），可用 `OCTOP_HOME` 整体改位置。
+默认根目录 `~/.happyclaw/`（Windows 即 `%USERPROFILE%\.octop\`），可用 `HAPPYCLAW_HOME` 整体改位置。
 
 ```powershell
 # 确认当前实际使用的根目录
-if ($env:OCTOP_HOME) { $env:OCTOP_HOME } else { "$env:USERPROFILE\.octop" }
+if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } else { "$env:USERPROFILE\.octop" }
 ```
 
 `octop backup create` 打进去和打不进去的内容：
@@ -69,7 +69,7 @@ octop backup create --include-chats
 wrote C:\Users\you\.octop\backups\octop-backup-20261111T120000Z.tar.gz (18342011 bytes)
 ```
 
-- 默认目录：`~/.octop/backups/`
+- 默认目录：`~/.happyclaw/backups/`
 - 文件名：`octop-backup-<UTC 时间>.tar.gz`
 - 指定位置（建议放另一块盘）：
 
@@ -217,10 +217,10 @@ Invoke-RestMethod http://127.0.0.1:8088/api/health
 
 看到 `ok : True` 后，浏览器打开 `http://127.0.0.1:8088`，检查：专家列表数量、随便打开一个历史会话、发一条消息、看附件能否预览。
 
-**旧机自定义过 `OCTOP_HOME`？** 新机先设同一个变量，再执行恢复；否则归档会被展开到默认的 `~/.octop/`：
+**旧机自定义过 `HAPPYCLAW_HOME`？** 新机先设同一个变量，再执行恢复；否则归档会被展开到默认的 `~/.happyclaw/`：
 
 ```powershell
-[Environment]::SetEnvironmentVariable("OCTOP_HOME", "E:\octop-data", "User")
+[Environment]::SetEnvironmentVariable("HAPPYCLAW_HOME", "E:\octop-data", "User")
 # 重开终端后再执行 octop backup restore / octop run
 ```
 
@@ -256,7 +256,7 @@ octop backup restore <归档> --yes --no-config --owner-user-id <id> --home <目
 - `--yes`：跳过确认提示。
 - `--no-config`：不恢复 `config.json` / `env`。
 - `--owner-user-id`：仅用于旧版 LightClaw 迁移归档；普通备份不用填。
-- `--home`：指定数据根目录，等价于临时设置 `OCTOP_HOME`。
+- `--home`：指定数据根目录，等价于临时设置 `HAPPYCLAW_HOME`。
 
 ---
 
@@ -316,7 +316,7 @@ Copy-Item $env:TEMP\config.json $env:USERPROFILE\.octop\config.json -Force
 
 ### 6.5 不要做的事
 
-- 不要用 `octop clean --all` 来「重来一次」：它会删掉 `~/.octop/` 下的数据，包括你还没来得及回退的现场状态。
+- 不要用 `octop clean --all` 来「重来一次」：它会删掉 `~/.happyclaw/` 下的数据，包括你还没来得及回退的现场状态。
 - 不要在 `octop run` 还开着的时候替换 `octop.db`：Windows 上文件被占用，SQLite 也可能读到半截状态。
 - 不要把 SQLite 归档恢复到 PostgreSQL 实例（或反向），引擎检查会直接拒绝。
 

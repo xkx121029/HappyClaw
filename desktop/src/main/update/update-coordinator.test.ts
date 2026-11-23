@@ -130,9 +130,9 @@ test("asset urls must sit under a trusted https prefix", () => {
   assert.equal(isValidAssetUrl(`${RELEASE_ORIGIN}/v1.0.2/Octop.dll.dmg`, origins), true);
   assert.equal(isValidAssetUrl("http://github.com/xkx121029/HappyClaw/releases/download/a.dmg", origins), false);
   assert.equal(isValidAssetUrl("https://evil.example/a.dmg", origins), false);
-  assert.equal(isValidAssetUrl("https://download.octop.cloud/a.dmg", origins), false);
+  assert.equal(isValidAssetUrl("https://dl.example.com/a.dmg", origins), false);
   // The upstream host is no longer trusted by default.
-  assert.equal(isValidAssetUrl("https://download.octop.cloud/a.dmg"), false);
+  assert.equal(isValidAssetUrl("https://dl.example.com/a.dmg"), false);
   // A host that only shares the prefix text must not pass.
   assert.equal(isValidAssetUrl("https://github.com.evil.example/a.dmg"), false);
   // An empty allow-list trusts nothing.

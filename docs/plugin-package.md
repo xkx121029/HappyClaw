@@ -1,6 +1,6 @@
 # 插件压缩包
 
-插件就是一个目录，打成 ZIP 安装。HappyClaw 解压到 `~/.octop/plugins/<id>/`，再加载 `plugin.yaml` 指向的入口。入口模块必须导出 `setup(ctx)`。
+插件就是一个目录，打成 ZIP 安装。HappyClaw 解压到 `~/.happyclaw/plugins/<id>/`，再加载 `plugin.yaml` 指向的入口。入口模块必须导出 `setup(ctx)`。
 
 ## 压缩包里怎么放
 
@@ -54,7 +54,7 @@ weather/
 
 ## plugin.yaml
 
-必填的是 `id` 和 `version`，去掉首尾空白后不能为空。`id` 就是安装目录名 `~/.octop/plugins/<id>`，别带路径分隔符。`version` 按字符串逐字比较，不按语义化版本解析。
+必填的是 `id` 和 `version`，去掉首尾空白后不能为空。`id` 就是安装目录名 `~/.happyclaw/plugins/<id>`，别带路径分隔符。`version` 按字符串逐字比较，不按语义化版本解析。
 
 安装时如果请求里另外指定了期望的 `id` 或 `version`，必须和清单逐字对得上。
 
@@ -104,7 +104,7 @@ requires:
 `kind: tool` 的最小入口：
 
 ```python
-from octop_harness.plugins import PluginContext
+from happyclaw_harness.plugins import PluginContext
 
 
 async def city_weather(city: str) -> str:

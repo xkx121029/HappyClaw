@@ -1,6 +1,6 @@
 """Browser environment probe and Chromium install (SSE).
 
-Live sessions are octop-browser (see ``harness.py`` / ``stream.py``), not
+Live sessions are happyclaw-browser (see ``harness.py`` / ``stream.py``), not
 in-process Playwright.
 
   GET    /api/browser/env-status  → { playwright, browsers_ok, harness_browser, … }
@@ -58,8 +58,8 @@ def _probe_env() -> dict[str, Any]:
     out["playwright_chromium"] = playwright_chromium_installed()
 
     try:
-        from octop_browser import BrowserSession  # noqa: F401, PLC0415
-        from octop_browser.cdp.launcher import find_chrome  # noqa: PLC0415
+        from happyclaw_browser import BrowserSession  # noqa: F401, PLC0415
+        from happyclaw_browser.cdp.launcher import find_chrome  # noqa: PLC0415
 
         out["harness_browser"] = True
         try:
@@ -90,7 +90,7 @@ def _probe_env() -> dict[str, Any]:
             )
     except ImportError:
         out["hint_zh"] = (
-            "当前安装不包含浏览器组件（octop-browser），远程浏览器功能不可用。"
+            "当前安装不包含浏览器组件（happyclaw-browser），远程浏览器功能不可用。"
         )
 
     try:
@@ -100,7 +100,7 @@ def _probe_env() -> dict[str, Any]:
     except ImportError as exc:
         if not out["harness_browser"]:
             out["error"] = (
-                f"playwright not installed: {exc}. Install octop[browser] extras or octop-browser."
+                f"playwright not installed: {exc}. Install octop[browser] extras or happyclaw-browser."
             )
             out["hint_zh"] = "当前安装缺少 Playwright 组件，远程浏览器功能不可用。"
         return out
@@ -150,7 +150,7 @@ def _verify_browser_binary(exe: str) -> tuple[bool, str]:
 async def install(_: Any = Depends(require_permission("browser"))) -> StreamingResponse:
     """Stream Chromium install progress as SSE.
 
-    Each event is a JSON line conforming to ``octop_browser.InstallEvent``:
+    Each event is a JSON line conforming to ``happyclaw_browser.InstallEvent``:
       ``{"log": "..."}``                              — progress line
       ``{"done": true, "success": true}``             — finished OK
       ``{"done": true, "success": false, "error": "..."}``  — failed
@@ -165,7 +165,7 @@ async def install(_: Any = Depends(require_permission("browser"))) -> StreamingR
 
     async def _event_stream() -> AsyncGenerator[str, None]:
         try:
-            from octop_browser.cdp.launcher import find_chrome  # noqa: PLC0415
+            from happyclaw_browser.cdp.launcher import find_chrome  # noqa: PLC0415
 
             from octop.infra.control.browser.bundled import (  # noqa: PLC0415
                 confirm_browser_enabled,
@@ -194,7 +194,7 @@ async def install(_: Any = Depends(require_permission("browser"))) -> StreamingR
                     + "\n\n"
                 )
 
-            from octop_browser import install_chromium_stream  # noqa: PLC0415
+            from happyclaw_browser import install_chromium_stream  # noqa: PLC0415
 
             async for event in install_chromium_stream():
                 if isinstance(event, dict) and event.get("done") and event.get("success"):

@@ -7,7 +7,7 @@ the agent workspace under skills/.
 
 from __future__ import annotations
 
-from octop_harness.plugins import PluginContext
+from happyclaw_harness.plugins import PluginContext
 
 
 def setup(ctx: PluginContext) -> None:

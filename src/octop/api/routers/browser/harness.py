@@ -1,4 +1,4 @@
-"""Helpers for attaching dashboard / chat UI to octop-browser sessions."""
+"""Helpers for attaching dashboard / chat UI to happyclaw-browser sessions."""
 
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ async def resolve_harness_session(
     agent_id: str | None = None,
     create: bool = True,
 ) -> Any | None:
-    """Return a live :class:`octop_browser.BrowserSession` for ``profile_hint``.
+    """Return a live :class:`happyclaw_browser.BrowserSession` for ``profile_hint``.
 
     *profile_hint* must be a concrete profile name (``user-<id>``). Empty /
     ``auto`` never falls back to another user's session or to ``default``.
@@ -85,12 +85,12 @@ async def resolve_harness_session(
     When ``create=False`` and no live session exists, returns ``None``.
     """
     try:
-        from octop_browser import BrowserSession
-        from octop_browser.tool_interface import _registry
+        from happyclaw_browser import BrowserSession
+        from happyclaw_browser.tool_interface import _registry
     except ImportError as exc:
         raise OctopError(
             ErrorCode.INTERNAL_ERROR,
-            "octop-browser not installed",
+            "happyclaw-browser not installed",
             status=503,
         ) from exc
 
@@ -150,8 +150,8 @@ async def resolve_harness_session(
 
     # Fresh ProfileManager picks up any BROWSER_USE_PROFILES_DIR relocation
     # done by prepare (default singleton is bound at import time).
-    from octop_browser.profile import ProfileManager  # noqa: PLC0415
-    from octop_browser.settings import settings as hb_settings  # noqa: PLC0415
+    from happyclaw_browser.profile import ProfileManager  # noqa: PLC0415
+    from happyclaw_browser.settings import settings as hb_settings  # noqa: PLC0415
 
     profile_manager = ProfileManager(base_dir=Path(hb_settings.profiles_dir))
 
@@ -264,7 +264,7 @@ async def harness_list_tabs(sess: Any) -> list[dict[str, Any]]:
 async def harness_sessions_payload(profile_name: str) -> dict[str, Any]:
     """Shape expected by the dashboard ``BrowserSessionsResponse`` type."""
     try:
-        from octop_browser.tool_interface import _registry
+        from happyclaw_browser.tool_interface import _registry
     except ImportError:
         return {"ok": False, "environment": "headless-server", "sessions": []}
 
@@ -296,7 +296,7 @@ async def harness_sessions_payload(profile_name: str) -> dict[str, Any]:
 
 @router.get("/browser/harness-sessions")
 async def list_harness_sessions(user: Any = Depends(current_user)) -> dict[str, Any]:
-    """List the current user's live octop-browser profile."""
+    """List the current user's live happyclaw-browser profile."""
     return await harness_sessions_payload(user_browser_profile(user.id))
 
 
@@ -346,16 +346,16 @@ async def handoff(
 
 @router.post(
     "/browser/shutdown",
-    summary="Stop the local Chrome process for an octop-browser profile",
+    summary="Stop the local Chrome process for an happyclaw-browser profile",
 )
 async def shutdown_browser(user: Any = Depends(current_user)) -> dict[str, Any]:
     """Terminate the current user's Octop-managed Chrome. Cookies stay on disk."""
     try:
-        from octop_browser.tool_interface import browser_tool
+        from happyclaw_browser.tool_interface import browser_tool
     except ImportError as exc:
         raise OctopError(
             ErrorCode.INTERNAL_ERROR,
-            "octop-browser not installed",
+            "happyclaw-browser not installed",
             status=503,
         ) from exc
 

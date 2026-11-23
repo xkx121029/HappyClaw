@@ -842,7 +842,7 @@ async def list_expert_hub(
     scene: str = "",
     _: Any = Depends(current_user),
 ) -> dict[str, Any]:
-    """List experts published on the octop.cloud market."""
+    """List experts published on the remote market portal."""
     try:
         portal_items, portal_scenes = await asyncio.to_thread(list_market_experts, q, scene)
         featured_ids = featured_expert_template_ids()
@@ -874,7 +874,7 @@ async def get_expert_hub_item(
     slug: str,
     _: Any = Depends(current_user),
 ) -> dict[str, Any]:
-    """Expert detail from the octop.cloud market."""
+    """Expert detail from the remote market portal."""
     try:
         portal_item = await asyncio.to_thread(get_market_expert, slug)
         featured_ids = featured_expert_template_ids()
@@ -897,7 +897,7 @@ async def get_expert_hub_item(
     "/experts/hub/{slug}/install",
     status_code=201,
     response_model=MarketCreateResponse,
-    summary="Create an agent from an octop.cloud expert market card",
+    summary="Create an agent from a remote market expert card",
 )
 async def install_expert_hub_item(
     slug: str,
@@ -905,7 +905,7 @@ async def install_expert_hub_item(
     user: Any = Depends(current_user),
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
-    """Create an agent from an octop.cloud market expert package."""
+    """Create an agent from a remote market expert package."""
     assert server.app_runtime is not None
     assert_user_backend_root_dirs(
         user,

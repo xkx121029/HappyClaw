@@ -35,7 +35,7 @@ dist/backend/octop/
 1. 把 `octop.exe` 和 `_internal/` **一起**放进同一个程序目录（例如 `C:\Program Files\Octop\backend\`）。
 2. 升级时**整目录替换**：先解到临时目录再切换，不要只覆盖 `octop.exe` —— 新 exe 配旧 `_internal` 会缺扩展模块，属于最难查的一类故障。
 3. 启动方式：`octop.exe run --port <端口>`（与 `pip install octop` 后的 `octop run` 完全一致）。
-4. 数据目录通过环境变量 `OCTOP_HOME` 指定；不设则用 `~/.octop`。日志固定写在 `<OCTOP_HOME>/logs/octop.log`。
+4. 数据目录通过环境变量 `HAPPYCLAW_HOME` 指定；不设则用 `~/.happyclaw`。日志固定写在 `<HAPPYCLAW_HOME>/logs/octop.log`。
 5. 程序目录按**只读**处理：运行期不写 `_internal`，不生成 `.pyc`（已自检，见下）。
 
 ### 目标机器不需要
@@ -74,7 +74,7 @@ make package-backend     # 构建 + 自动跑 scripts/packaging/verify_backend.p
 自检覆盖五件事（任一项失败，`make` 以非 0 退出）：
 
 0. **agent 栈自检**：跑 `octop.exe selfcheck`，导入 20 个 agent 相关模块（`langchain*` 全家、`langchain_aws.embeddings.bedrock`、`tiktoken*`、`tqdm`、`numpy`、Gmail/Drive loader）并用 `langgraph` 编译+调用一张一次性的图。这一条专门防“包能启动、发第一条消息才炸”的懒加载依赖缺失（numpy 那次就是这么漏的）。
-1. `OCTOP_HOME` 自定义路径生效（DB / 日志 / 数据落在该目录）
+1. `HAPPYCLAW_HOME` 自定义路径生效（DB / 日志 / 数据落在该目录）
 2. dashboard 静态资源可返回（SPA 外壳、`index.html`、`/assets/*`），且包内 `index.html` 的 sha256 与本次前端构建输出一致（防旧界面），`/api/health` 的 `build` 版本戳与之匹配
 3. Playwright 路径可解析（缺失时给中文提示 `hint_zh`，不崩）
 4. 日志写在 home 下，且启动前后 `_internal` 文件数与字节数不变

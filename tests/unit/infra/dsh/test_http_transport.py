@@ -13,8 +13,8 @@ from typing import Any
 
 import pytest
 from langchain_core.messages import HumanMessage
-from octop_harness.config import ModelConfig, ProviderConfig
-from octop_harness.llm.factory import ChatModelFactory
+from happyclaw_harness.config import ModelConfig, ProviderConfig
+from happyclaw_harness.llm.factory import ChatModelFactory
 
 from octop.infra.dsh.llm.errors import FailureCode, ProviderFailure
 from octop.infra.dsh.llm.factory import DshModelFactory

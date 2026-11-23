@@ -230,7 +230,7 @@ memberOf: cn=admin,ou=groups,dc=example,dc=org
 
 ### 3.2 启动 HappyClaw（独立 HOME，避免污染现有实例）
 
-用独立 `HOME` + `OCTOP_HOME` 起一个一次性实例，数据库与向导密码都落在临时目录：
+用独立 `HOME` + `HAPPYCLAW_HOME` 起一个一次性实例，数据库与向导密码都落在临时目录：
 
 ```bash
 cd <repo 根目录>
@@ -238,7 +238,7 @@ RUNTIME=/tmp/octop-ldap-dev
 mkdir -p "$RUNTIME/home"
 
 HOME="$RUNTIME/home" \
-OCTOP_HOME="$RUNTIME/home/.octop" \
+HAPPYCLAW_HOME="$RUNTIME/home/.octop" \
 uv run octop run --host 127.0.0.1 --port 8799
 ```
 

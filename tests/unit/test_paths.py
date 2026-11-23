@@ -61,9 +61,11 @@ def test_knowledge_dir(tmp_path: Path) -> None:
     assert p.knowledge_dir == tmp_path / ".octop" / "knowledge"
 
 
-def test_path_layout_from_env_defaults_to_dot_octop(monkeypatch) -> None:
+def test_path_layout_from_env_defaults_to_dot_happyclaw(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.delenv("OCTOP_HOME", raising=False)
-    assert PathLayout.from_env().root == Path.home() / ".octop"
+    monkeypatch.delenv("HAPPYCLAW_HOME", raising=False)
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+    assert PathLayout.from_env().root == tmp_path / ".happyclaw"
 
 
 def test_path_layout_from_env_honors_octop_home(monkeypatch, tmp_path: Path) -> None:

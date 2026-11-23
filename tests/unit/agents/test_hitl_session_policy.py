@@ -8,7 +8,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from octop_harness.security.models import SecurityPolicy
+from happyclaw_harness.security.models import SecurityPolicy
 
 from octop.config import OctopConfig
 from octop.infra.agents.manager import AgentManager

@@ -31,8 +31,8 @@ import {
 import { ProfileAvatar, ProfileAvatarPicker } from "../pages/Admin/Users/ProfileAvatar";
 import styles from "./AvatarDropdown.module.less";
 
-const GITHUB_URL = "https://github.com/TencentCloud/Octop";
-const HELP_FEEDBACK_URL = "https://octop.cloud";
+const GITHUB_URL = "https://github.com/xkx121029/HappyClaw";
+const HELP_FEEDBACK_URL = "https://github.com/xkx121029/HappyClaw/issues";
 const LOCAL_PROFILE_NAME_MAX = 32;
 
 interface AvatarDropdownProps {

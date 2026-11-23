@@ -67,7 +67,7 @@ test("reload of a client route serves the dashboard shell", () => {
 });
 
 test("isExternalLink only allows real http(s) links", () => {
-  assert.equal(isExternalLink("https://octop.cloud/docs"), true);
+  assert.equal(isExternalLink("https://docs.example.com/"), true);
   assert.equal(isExternalLink("http://127.0.0.1:1234/api"), false);
   assert.equal(isExternalLink("octop://app/api/health"), false);
 });

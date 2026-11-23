@@ -7,8 +7,8 @@ from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
-from octop_gateway.models import MessageEvent
-from octop_harness.slash import SlashCommand
+from happyclaw_gateway.models import MessageEvent
+from happyclaw_harness.slash import SlashCommand
 
 from octop.i18n.domains.slash import tr
 from octop.infra.agents.security.hitl_session import (
@@ -73,7 +73,7 @@ class HitlAnswerOutcome:
 
 
 # Marker carried in the description of tool-guard approvals (see
-# ``octop_harness.security.tool_guard.engine.format_block_message``). Security
+# ``happyclaw_harness.security.tool_guard.engine.format_block_message``). Security
 # approvals must never be auto-approved by a per-session "allow all" choice:
 # one click would otherwise disable the command guard for the rest of the chat.
 _TOOL_GUARD_MARKERS = ("command guard", "command-guard", "命令护栏")

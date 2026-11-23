@@ -9,7 +9,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from octop_gateway.models import ChannelSubject, InboundMessage, TextContent
+from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
 from octop.infra.errors import ErrorCode, OctopError
 from octop.infra.gateway.process.processor import GlobalProcessor, _stream_error

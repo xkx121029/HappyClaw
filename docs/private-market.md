@@ -1,6 +1,6 @@
 # 内网自建插件市场与专家市场
 
-HappyClaw 不内置任何远程目录：没设置 `OCTOP_PORTAL_ORIGIN` 时插件市场和专家市场不会发出请求，页面显示「暂时不可用」。可以在局域网里按本文的 HTTP 接口自建市场，再把源站写进环境变量。HappyClaw 只认这两份目录和目录里给出的安装包地址，不需要部署完整的 octop.cloud。
+HappyClaw 不内置任何远程目录：没设置 `OCTOP_PORTAL_ORIGIN` 时插件市场和专家市场不会发出请求，页面显示「暂时不可用」。可以在局域网里按本文的 HTTP 接口自建市场，再把源站写进环境变量。HappyClaw 只认这两份目录和目录里给出的安装包地址，不需要部署一套完整的市场服务器。
 
 技能市场（控制台「技能」里的 SkillHub）是另一套上游，默认 `https://api.skillhub.cn`，用 `SKILL_MARKET_ORIGIN` 指定。协议见 [技能市场](skill-market.md)。
 
@@ -32,7 +32,7 @@ HappyClaw 进程  GET 该条目的 download_url
 
 ## 让 HappyClaw 指向自建市场
 
-在 **跑 `octop run` 的那台机器** 上设置环境变量，然后重启进程。可以写进 `~/.octop/env`（服务启动时会载入），也可以写进 systemd 的 `Environment=`。
+在 **跑 `octop run` 的那台机器** 上设置环境变量，然后重启进程。可以写进 `~/.happyclaw/env`（服务启动时会载入），也可以写进 systemd 的 `Environment=`。
 
 ```bash
 OCTOP_PORTAL_ORIGIN=http://market.internal:9000

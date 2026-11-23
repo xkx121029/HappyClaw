@@ -596,7 +596,7 @@ configure_desktop_environment() {
             *firefox*) browser_icon_path="$(_icon_or_theme "${INSTALL_ROOT}/icons/firefox.png" firefox)" ;;
             *chrome*) browser_icon_path="$(_icon_or_theme "${INSTALL_ROOT}/icons/chrome.png" google-chrome)" ;;
         esac
-        cat > "${INSTALL_ROOT}/octop-browser.desktop" << BROWSER_EOF
+        cat > "${INSTALL_ROOT}/happyclaw-browser.desktop" << BROWSER_EOF
 [Desktop Entry]
 Type=Application
 Name=${browser_name}
@@ -608,14 +608,14 @@ Categories=Network;WebBrowser;
 MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
 StartupNotify=true
 BROWSER_EOF
-        chmod 0644 "${INSTALL_ROOT}/octop-browser.desktop"
+        chmod 0644 "${INSTALL_ROOT}/happyclaw-browser.desktop"
         # Place a real .desktop file on the Desktop (matching terminal/files/editor)
         # instead of a symlink; xfdesktop renders symlinked launchers with a
         # "shortcut" link emblem, which makes the browser look inconsistent.
         # Remove any stale symlink from a previous install first so `cp` does not
         # write through it and re-create the link.
         rm -f "${DESKTOP_DIR}/browser.desktop"
-        cp -f "${INSTALL_ROOT}/octop-browser.desktop" "${DESKTOP_DIR}/browser.desktop"
+        cp -f "${INSTALL_ROOT}/happyclaw-browser.desktop" "${DESKTOP_DIR}/browser.desktop"
         chmod 0755 "${DESKTOP_DIR}/browser.desktop"
     fi
 
@@ -663,12 +663,12 @@ EDIT_EOF
 
     write_default_panel_layout
 
-    if [ -f "${INSTALL_ROOT}/octop-browser.desktop" ]; then
+    if [ -f "${INSTALL_ROOT}/happyclaw-browser.desktop" ]; then
         cat > /root/.config/mimeapps.list << 'MIME_EOF'
 [Default Applications]
-x-scheme-handler/http=octop-browser.desktop
-x-scheme-handler/https=octop-browser.desktop
-text/html=octop-browser.desktop
+x-scheme-handler/http=happyclaw-browser.desktop
+x-scheme-handler/https=happyclaw-browser.desktop
+text/html=happyclaw-browser.desktop
 MIME_EOF
     fi
 

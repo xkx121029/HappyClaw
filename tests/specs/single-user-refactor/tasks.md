@@ -10,7 +10,7 @@
 ## 阶段 0.3：桌面壳首次启动（P0）
 
 - [x] T0.3a `should_defer_control_plane_db` 恒 False（废弃标记），启动始终建库 + 迁移后再监听
-- [ ] T0.3b 全新 `OCTOP_HOME` 实测 `/api/health` 首次 200 耗时，写入简报
+- [ ] T0.3b 全新 `HAPPYCLAW_HOME` 实测 `/api/health` 首次 200 耗时，写入简报
 - [x] T0.3c 新增 `GET /api/runtime/activity`，返回 `{busy, counts, active_turns, terminal_sessions, running_agents, running_jobs, updated_at}`（`counts` 是桌面退出守卫实际读的契约）
 - [x] T0.3d 确认 `setUnsavedContent()` / 新建会话快捷键对接点（前端已实现于 `Chat/index.tsx` L1054–1070），写入简报交前端线
 - [x] T0.3e 监听后异步创建默认 `main` agent（fire-and-forget，失败只记日志，`OCTOP_DISABLE_DEFAULT_AGENT=1` 可关）
@@ -88,7 +88,7 @@
 
 ## 阶段 7：参考资料沉淀（单人化收口后，需先拍板）
 
-- [x] T7.1 确认 token 估算方式（本仓库无字符估算；阈值在 `octop-harness`）→ 只写简报，不改代码
+- [x] T7.1 确认 token 估算方式（本仓库无字符估算；阈值在 `happyclaw-harness`）→ 只写简报，不改代码
 - [ ] T7.2 阅读 `deepseek-harness` 工具护栏报告，选 1–2 个低风险点（建议：输出 schema 校验、执行前 checkpoint），实施前说明改哪/影响/回退
 - [ ] T7.3 文档类改动（README/说明）只写简报，交文档线落盘；`docs/` 不由本线修改
 
@@ -97,6 +97,6 @@
 ```powershell
 py -3.13 -m pip --python "E:\HAPPYclaw\Octop\.venv\Scripts\python.exe" install -e "E:\HAPPYclaw\Octop" pytest pytest-asyncio httpx
 & "E:\HAPPYclaw\Octop\.venv\Scripts\python.exe" -m pytest tests/unit/single_user tests/unit/db tests/unit/api -q
-$env:OCTOP_HOME="E:\HAPPYclaw\.octop-preview"; $env:OCTOP_PORT="8089"
+$env:HAPPYCLAW_HOME="E:\HAPPYclaw\.octop-preview"; $env:OCTOP_PORT="8089"
 & "E:\HAPPYclaw\Octop\.venv\Scripts\python.exe" -m octop serve
 ```

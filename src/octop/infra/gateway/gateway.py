@@ -13,10 +13,10 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from octop_gateway.channel import ChannelCredentialsError
-from octop_gateway.channels import ChannelKind
-from octop_gateway.manager import ChannelManager
-from octop_gateway.models import ChannelSubject
+from happyclaw_gateway.channel import ChannelCredentialsError
+from happyclaw_gateway.channels import ChannelKind
+from happyclaw_gateway.manager import ChannelManager
+from happyclaw_gateway.models import ChannelSubject
 
 from octop.i18n import channel_probe_incomplete, channel_runtime_reason, tr
 from octop.infra.db.lease import LEASE_SECONDS, RECONCILE_SECONDS
@@ -108,7 +108,7 @@ class _ChannelLease:
 class Gateway:
     """Global AI interaction entry point.
 
-    Owns the octop-gateway ChannelManager. Routes IM messages
+    Owns the happyclaw-gateway ChannelManager. Routes IM messages
     by ``InboundMessage.tenant_id`` (== agent ULID) via GlobalProcessor.
     """
 
@@ -544,7 +544,7 @@ class Gateway:
         return session.channel_id
 
     def _resolve_push_subject(self, session: SessionRow) -> ChannelSubject:
-        """Build ChannelSubject from session; IM routing enrichment is in octop-gateway."""
+        """Build ChannelSubject from session; IM routing enrichment is in happyclaw-gateway."""
         subject = session.to_channel_subject()
         if not ThreadRegistry.is_virtual_channel(session.channel_type):
             return subject

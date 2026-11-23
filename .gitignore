@@ -131,3 +131,10 @@ scripts/lh_image_install_octop_tencentos.sh
 .perf/
 .req-lock.txt
 .verify-electron.ps1
+
+# The vendored HappyClaw library wheels are real source inputs (see [tool.uv.sources]).
+# The blanket `wheels/` and `*.whl` rules above would otherwise keep them out of git;
+# a directory-level ignore cannot be undone by a file-level negation, so this dir is
+# deliberately not named `wheels/`.
+!vendor/happyclaw-libs/
+!vendor/happyclaw-libs/*.whl

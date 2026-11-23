@@ -107,7 +107,7 @@ class McpOutputSchemaMiddleware(AgentMiddleware[Any, Any]):
 
 def harness_handles_mcp_tool_errors() -> bool:
     try:
-        from octop_harness.middleware.mcp_tool_error import McpToolErrorMiddleware
+        from happyclaw_harness.middleware.mcp_tool_error import McpToolErrorMiddleware
     except ImportError:
         return False
     return McpToolErrorMiddleware is not None

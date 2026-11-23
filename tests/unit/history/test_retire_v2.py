@@ -11,8 +11,8 @@ from types import SimpleNamespace
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, message_to_dict
 from langgraph.checkpoint.base import empty_checkpoint
-from octop_memory import Memory
-from octop_memory.pipeline.lifecycle.checkpoint_gc import prune_checkpoints
+from happyclaw_memory import Memory
+from happyclaw_memory.pipeline.lifecycle.checkpoint_gc import prune_checkpoints
 
 from octop.config import OctopConfig
 from octop.infra.db.migrate import run_migrations

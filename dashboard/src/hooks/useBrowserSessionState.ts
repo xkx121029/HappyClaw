@@ -102,7 +102,7 @@ export function useBrowserSessionState(
         }
       }
     } catch {
-      // octop-browser / bridge tunnel may be unavailable — ignore
+      // happyclaw-browser / bridge tunnel may be unavailable — ignore
     }
   }, []);
 

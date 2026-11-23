@@ -9,9 +9,9 @@ from typing import Any
 import pytest
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
-from octop_harness.config import ModelConfig, ProviderConfig
-from octop_harness.llm.factory import ChatModelFactory
-from octop_harness.manager import HarnessAgentManager
+from happyclaw_harness.config import ModelConfig, ProviderConfig
+from happyclaw_harness.llm.factory import ChatModelFactory
+from happyclaw_harness.manager import HarnessAgentManager
 
 from octop.infra.dsh.llm import factory as factory_module
 from octop.infra.dsh.llm.factory import DshModelFactory, install_dsh_model_factory

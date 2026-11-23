@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from octop_harness.slash import RuntimeSlashCtx, SlashCommand
+from happyclaw_harness.slash import RuntimeSlashCtx, SlashCommand
 
 from octop.infra.gateway.slash.ctx import SlashCtx, ensure_thread_id
 

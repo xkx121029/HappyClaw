@@ -18,14 +18,14 @@ OCTOP_VENV="$OCTOP_HOME/venv"
 OCTOP_BIN="$OCTOP_HOME/bin"
 PYTHON_VERSION="3.12"
 OCTOP_REPO="${OCTOP_REPO:-https://github.com/xkx121029/HappyClaw.git}"
-# The four runtime libraries live in the TencentCloud org until Phase 2 publishes
-# them under xkx121029 (xkx121029/octop-harness does not exist yet). They are also
-# pinned through PyPI in pyproject.toml; the clones below serve source checkouts.
-# Phase 2: point OCTOP_LIBS_BASE at https://github.com/xkx121029 once those repos exist.
-OCTOP_LIBS_BASE="${OCTOP_LIBS_BASE:-https://github.com/TencentCloud}"
-HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${OCTOP_LIBS_BASE}/octop-harness.git}"
-HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${OCTOP_LIBS_BASE}/octop-gateway.git}"
-HARNESS_BROWSER_REPO="${HARNESS_BROWSER_REPO:-${OCTOP_LIBS_BASE}/octop-browser.git}"
+# The four runtime libraries are HappyClaw's own repositories (happyclaw-harness,
+# happyclaw-gateway, happyclaw-browser; memory ships from PyPI with the rest of the
+# dependency set in pyproject.toml). The clones below serve source checkouts only;
+# override HARNESS_*_REPO to build a library from a fork or a local mirror.
+OCTOP_LIBS_BASE="${OCTOP_LIBS_BASE:-https://github.com/xkx121029}"
+HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${OCTOP_LIBS_BASE}/happyclaw-harness.git}"
+HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${OCTOP_LIBS_BASE}/happyclaw-gateway.git}"
+HARNESS_BROWSER_REPO="${HARNESS_BROWSER_REPO:-${OCTOP_LIBS_BASE}/happyclaw-browser.git}"
 
 if [ -n "${BASH_SOURCE[0]:-}" ]; then
     _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -103,11 +103,11 @@ Environment variables:
   OCTOP_HOME              Install directory (default: ~/.octop)
   OCTOP_PYPI_MIRROR       PyPI mirror URL (same as --mirror)
   OCTOP_REPO              Git URL to clone (used by --from-source with no local dir)
-  OCTOP_LIBS_BASE         Git org/user hosting the four runtime libraries
-                          (default: https://github.com/TencentCloud)
-  HARNESS_AGENT_REPO      octop-harness repo (derived from OCTOP_LIBS_BASE by default)
-  HARNESS_GATEWAY_REPO    octop-gateway repo (derived from OCTOP_LIBS_BASE by default)
-  HARNESS_BROWSER_REPO    octop-browser repo (used for source installs)
+  OCTOP_LIBS_BASE         Git org/user hosting the runtime libraries
+                          (default: https://github.com/xkx121029)
+  HARNESS_AGENT_REPO      happyclaw-harness repo (derived from OCTOP_LIBS_BASE by default)
+  HARNESS_GATEWAY_REPO    happyclaw-gateway repo (derived from OCTOP_LIBS_BASE by default)
+  HARNESS_BROWSER_REPO    happyclaw-browser repo (used for source installs)
   PLAYWRIGHT_DOWNLOAD_HOST  Playwright download mirror (optional; auto: npmmirror -> official)
   PLAYWRIGHT_INSTALL_TIMEOUT  Per-mirror download timeout in seconds (default 600)
 
@@ -629,7 +629,7 @@ prepare_console() {
 }
 
 # TEMP: mcp 2.x removed RequestContext and is incompatible with langchain-mcp-adapters.
-# octop-harness>=0.9.18 already pins this. Pin again before verification so an
+# happyclaw-harness>=0.9.18 already pins this. Pin again before verification so an
 # older harness or a lagging mirror still gets a compatible mcp.
 # Remove this once a HappyClaw release carries the pin on its own.
 _pin_mcp_compat() {
@@ -653,10 +653,10 @@ _clone_source_workspace() {
     local workdir="$1"
     command -v git &>/dev/null || die "git is required to clone the repos. Install git or use --from-pypi."
     mkdir -p "$workdir"
-    info "Cloning octop-harness / octop-gateway / HappyClaw sources..."
-    git clone --depth 1 "$HARNESS_AGENT_REPO" "$workdir/octop-harness"
-    git clone --depth 1 "$HARNESS_GATEWAY_REPO" "$workdir/octop-gateway"
-    git clone --depth 1 "$HARNESS_BROWSER_REPO" "$workdir/octop-browser"
+    info "Cloning happyclaw-harness / happyclaw-gateway / HappyClaw sources..."
+    git clone --depth 1 "$HARNESS_AGENT_REPO" "$workdir/happyclaw-harness"
+    git clone --depth 1 "$HARNESS_GATEWAY_REPO" "$workdir/happyclaw-gateway"
+    git clone --depth 1 "$HARNESS_BROWSER_REPO" "$workdir/happyclaw-browser"
     git clone --depth 1 "$OCTOP_REPO" "$workdir/orca"
 }
 
@@ -883,12 +883,12 @@ _install_playwright_browsers() {
 # Detect an already installed Chrome or Chromium.
 # GUI systems (macOS, Windows, Linux desktops) usually have one, so Playwright's bundled Chromium is unnecessary.
 _detect_system_chrome() {
-    # Prefer octop-browser's detector so this matches the runtime launch path.
+    # Prefer happyclaw-browser's detector so this matches the runtime launch path.
     local chrome
     chrome="$("$OCTOP_VENV/bin/python" -c '
 import sys
 try:
-    from octop_browser.cdp.launcher import find_chrome
+    from happyclaw_browser.cdp.launcher import find_chrome
 except Exception:
     sys.exit(0)
 p = find_chrome()

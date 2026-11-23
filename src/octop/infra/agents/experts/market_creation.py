@@ -1,4 +1,4 @@
-"""Create agents from octop.cloud expert market packages."""
+"""Create agents from remote market expert packages."""
 
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ async def create_agent_from_skillhub_skillset(
     slug: str,
     options: SkillHubMarketAgentCreateOptions,
 ) -> SkillHubMarketAgentCreateResult:
-    """Install an octop.cloud expert package and create an agent from it."""
+    """Install a remote market expert package and create an agent from it."""
     catalog = server.expert_catalog
     if catalog is None:
         raise OctopError(

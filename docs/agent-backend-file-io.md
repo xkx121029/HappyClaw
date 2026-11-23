@@ -7,13 +7,13 @@
 
 ## 1. 背景与问题
 
-当前部分代码在 agent 已配置远程 backend（S3/COS 等）时，仍向本地 `~/.octop/agents/<agent_id>/` 读写内容文件，导致：
+当前部分代码在 agent 已配置远程 backend（S3/COS 等）时，仍向本地 `~/.happyclaw/agents/<agent_id>/` 读写内容文件，导致：
 
 - 用户配置了 backend，agent 工具读的是远程存储；
 - HappyClaw 服务端 seed / 写 SOUL / 同步插件 skills 等仍写本地；
 - Dashboard 部分读路径优先本地，展示与真实存储不一致。
 
-默认未配置 backend 时，harness 使用 `filesystem` + `virtual_mode`，`root_dir` 由 `workspace_dir`（即 `~/.octop/agents/<id>/`）在创建 backend 时挂载。此时直连磁盘与经 backend 写入**同一物理文件**，但远程 backend 场景下必须统一走 backend。
+默认未配置 backend 时，harness 使用 `filesystem` + `virtual_mode`，`root_dir` 由 `workspace_dir`（即 `~/.happyclaw/agents/<id>/`）在创建 backend 时挂载。此时直连磁盘与经 backend 写入**同一物理文件**，但远程 backend 场景下必须统一走 backend。
 
 ---
 
@@ -34,7 +34,7 @@ backend = await agent_registry.resolve_harness_backend(agent_id)
 await backend.aupload_files([(soul_path, text.encode("utf-8"))])
 ```
 
-- **禁止**在 HappyClaw 层把 `~/.octop/agents/<id>/SOUL.md`「转换」为 `/SOUL.md`、`SOUL.md` 等另一套命名。
+- **禁止**在 HappyClaw 层把 `~/.happyclaw/agents/<id>/SOUL.md`「转换」为 `/SOUL.md`、`SOUL.md` 等另一套命名。
 - 专家模板、skills、seed 等：backend 参数中的 path 与原先 `disk_path = workspace_dir / rel` 的字符串形式一致。
 
 ### 2.2 Backend 获取方式
@@ -58,10 +58,10 @@ await backend.aupload_files([(soul_path, text.encode("utf-8"))])
 
 ### 2.4 `workspace_dir` 的保留用途
 
-`~/.octop/agents/<id>/` 仍作为 harness 的 `workspace_dir`，用于：
+`~/.happyclaw/agents/<id>/` 仍作为 harness 的 `workspace_dir`，用于：
 
 - 构造 backend 时的 `root_dir` 挂载（默认 filesystem）；
-- checkpoint、sessions JSONL、octop-memory SQLite 等**本地产物**（不由 backend 协议管理）；
+- checkpoint、sessions JSONL、happyclaw-memory SQLite 等**本地产物**（不由 backend 协议管理）；
 - 终端 PTY 的 cwd（见 §6 例外）。
 
 **内容文件**（md、skills 等）不再由 HappyClaw 对该目录做 `read_text` / `write_text`。
@@ -91,12 +91,12 @@ await backend.aupload_files([(soul_path, text.encode("utf-8"))])
 | `MEMORY.md` | 长期记忆 |
 | `daily/YYYY-MM-DD.md` | 日记忆；读已走 backend，删除暂可保留本地 `unlink` |
 | `sessions/*.jsonl` | 对话历史兜底 |
-| octop-memory / checkpoint | 绑定 `workspace_dir`，非 backend 内容文件 |
+| happyclaw-memory / checkpoint | 绑定 `workspace_dir`，非 backend 内容文件 |
 
 ### 3.3 不在范围
 
 - Expert library 内 skill 脚本（agent 运行时经 harness 工具执行）
-- `~/.octop/plugins/` 安装、`~/.octop/security/` tool guard
+- `~/.happyclaw/plugins/` 安装、`~/.happyclaw/security/` tool guard
 - Expert catalog  bundled 源码读取
 
 ---
@@ -226,7 +226,7 @@ create(agent)
 ## 11. 参考
 
 - Backend 解析：`infra/agents/manager.py` → `resolve_harness_backend`
-- Harness 挂载：`octop_harness.backends.resolve_backend(spec, workspace_dir=...)`
+- Harness 挂载：`happyclaw_harness.backends.resolve_backend(spec, workspace_dir=...)`
 - 已合规示例：`api/routers/workspace.py`、`api/routers/skills.py`
 - 路径布局：`infra/utils/paths.py` → `agent_workspace` / `ensure_agent_workspace`
 
@@ -234,7 +234,7 @@ create(agent)
 
 ## 12. 局部 root_dir 与 execute jail（补充）
 
-当 agent backend 为本地 `local_shell`，且同时满足 **Linux + `virtual_mode=True` + `root_dir` 非主机 `/` + 宿主机有 `bwrap`** 时，harness 在 **构造 backend 之前** 路由到 `BubbledLocalShellBackend`，将 `execute`（含 Skill 脚本）包进 bubblewrap：工作根绑到 `/`，与文件工具虚拟路径对齐。其余情况（宿主根、非 Linux、无 bwrap、`filesystem`）走普通 `HarnessLocalShellBackend`：无目录狱，但在 **octop-harness >= 1.0** 且 `virtual_mode` + 非宿主 `root_dir` 时，仍会把 `execute` 命令里的虚拟绝对路径改写到该 `root_dir` 下再在宿主机执行。
+当 agent backend 为本地 `local_shell`，且同时满足 **Linux + `virtual_mode=True` + `root_dir` 非主机 `/` + 宿主机有 `bwrap`** 时，harness 在 **构造 backend 之前** 路由到 `BubbledLocalShellBackend`，将 `execute`（含 Skill 脚本）包进 bubblewrap：工作根绑到 `/`，与文件工具虚拟路径对齐。其余情况（宿主根、非 Linux、无 bwrap、`filesystem`）走普通 `HarnessLocalShellBackend`：无目录狱，但在 **happyclaw-harness >= 1.0** 且 `virtual_mode` + 非宿主 `root_dir` 时，仍会把 `execute` 命令里的虚拟绝对路径改写到该 `root_dir` 下再在宿主机执行。
 
 `scripts/install.sh`（及 desktop Linux 安装脚本）会在 **Linux** 上尽力安装 `bubblewrap`；保存局部 `root_dir` 时仪表盘也会调用 `POST /api/filesystem/ensure-bwrap` 做同样的尽力安装。macOS / 无 bwrap 时无目录狱，文件工具仍靠 deepagents `virtual_mode`；`BackendWorkspace` 读/物化路径 failback 不变：绝对路径先 virtual 映到 `root_dir` 再原始宿主机路径；相对路径先 `{root_dir}/{rel}` 再 `{workspace_dir}/{rel}`。Dashboard path I/O: use ``dashboard/src/utils/workspaceIoPath.ts`` for download/file API paths
 (host absolute stays ``file://…``). Dock tab identity may still ``canonicalizeDockFilePath``;
@@ -244,10 +244,10 @@ do not collapse host abs before calling BackendWorkspace.
 
 ## 13. Docker sandbox backend
 
-需要把 agent 的文件系统工具与 `execute` 隔离到 Docker 容器时，配置 harness `type: "docker"`（需 `octop-harness[docker]`，本机 Docker daemon 可用）。
+需要把 agent 的文件系统工具与 `execute` 隔离到 Docker 容器时，配置 harness `type: "docker"`（需 `happyclaw-harness[docker]`，本机 Docker daemon 可用）。
 
 宿主 ``workspace_dir`` 在**创建专家时**写入 ``config_json.workspace_dir``（默认
-``{OCTOP_HOME}/agents/<agent_id>/``；创建时可覆盖）。**所有 backend 类型**共用这
+``{HAPPYCLAW_HOME}/agents/<agent_id>/``；创建时可覆盖）。**所有 backend 类型**共用这
 一路径作为 harness ``HarnessAgentConfig.workspace_dir``：
 
 | Backend | 专家可见内容 | 宿主 ``workspace_dir`` |
@@ -313,7 +313,7 @@ Harness 侧只认调用方传入的 ``workspace_dir``；Docker 默认把它镜�
 行为要点：
 
 - **同名路径、两处落盘（不自动挂载）**：
-  - 专家 ``workspace_dir``（创建时写入配置/库；HappyClaw 默认 ``{OCTOP_HOME}/agents/<id>/``）：宿主上放 sessions / memory / checkpoints
+  - 专家 ``workspace_dir``（创建时写入配置/库；HappyClaw 默认 ``{HAPPYCLAW_HOME}/agents/<id>/``）：宿主上放 sessions / memory / checkpoints
   - 容器内同一绝对路径：专家可见工作区（由传入的 ``workspace_dir`` 决定；可用 ``workspace_path`` 覆盖；皆无时回退 ``/workspace``）
 - **沙箱 FS**：`ls` / `read` / `write` / `execute` 都在容器内，经 Docker Python SDK 完成
 - **专家工作区**（专家页文件树 / SOUL.md 等）始终可预览；走 agent backend API（Docker 时即该专家对应容器内同名路径）

@@ -9,7 +9,7 @@ from langchain_core.exceptions import ModelAuthenticationError, ModelPermissionD
 from octop.i18n.loader import lookup, tr
 from octop.infra.utils.locale import Locale
 
-# Keep in sync with octop_harness.messages.MODEL_RETRY_FAILURE_MARK.
+# Keep in sync with happyclaw_harness.messages.MODEL_RETRY_FAILURE_MARK.
 # Defined locally so Octop still imports on older harness wheels.
 MODEL_RETRY_FAILURE_MARK = "[model_call_failed]"
 

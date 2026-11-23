@@ -12,7 +12,7 @@
 | `../.dockerignore` | 构建上下文忽略规则（Podman 与 BuildKit 均适用） |
 | `docker_build.sh` | 从源码构建镜像（默认开启 BuildKit 缓存） |
 | `docker-compose.yml` | 本地开发 / 自托管一键启动 |
-| `docker-compose.cn.yml` | 同一套服务，拉取 `ghcr.nju.edu.cn/tencentcloud/octop:latest`（不本地构建） |
+| `docker-compose.cn.yml` | 同一套服务，拉取 `ghcr.nju.edu.cn/xkx121029/happyclaw:latest`（不本地构建） |
 | `docker-compose.postgres.yml` | 仅 PostgreSQL（+ pgvector）开发/测试库；扩展在 `postgres/init-vector.sql` |
 | `postgres/init-vector.sql` | 实例级 `CREATE EXTENSION vector`（initdb.d；**不**进 HappyClaw 迁移） |
 | `docker-entrypoint.sh` | 容器入口：首次仅初始化目录与数据库（不建账号），然后启动服务 |
@@ -46,7 +46,7 @@ docker run -d \
   octop:latest
 ```
 
-已发布标签：`ghcr.io/tencentcloud/octop:<version>` 和 `:latest` 是精简版。`:<version>-full` 和 `:full` 才带桌面、OCR 和本地向量。本地构建默认是完整版，精简版要加 `--build-arg OCTOP_IMAGE_VARIANT=lite`。
+已发布标签：`ghcr.io/xkx121029/happyclaw:<version>` 和 `:latest` 是精简版。`:<version>-full` 和 `:full` 才带桌面、OCR 和本地向量。本地构建默认是完整版，精简版要加 `--build-arg OCTOP_IMAGE_VARIANT=lite`。镜像名取自运行 `docker-publish` 的仓库，因此要等该 workflow 在本仓跑完第一次，标签才可拉取；在那之前请本地构建。
 
 ### 国内镜像加速
 
@@ -64,15 +64,15 @@ bash docker/docker_build.sh
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `HOME` | `/data` | 必须为 `/data`，数据目录映射到 `~/.octop` |
+| `HOME` | `/data` | 必须为 `/data`，数据目录映射到 `~/.happyclaw` |
 | `OCTOP_PORT` | `8088` | HTTP 服务端口 |
-| `OCTOP_DATA` | `~/.octop` | 宿主机数据目录（Compose 挂载到 `/data/.octop`） |
+| `OCTOP_DATA` | `~/.happyclaw` | 宿主机数据目录（Compose 挂载到 `/data/.octop`） |
 | `OCTOP_DATABASE_URL` | — | PostgreSQL DSN（或其他 `OCTOP_DATABASE_*`，见 [configuration.md](../docs/configuration.md)） |
 | `OCTOP_DATABASE_DRIVER` | — | 通过环境变量覆盖时：`sqlite` \| `postgresql` |
 | `OPENAI_API_KEY` | — | OpenAI 兼容 API Key |
 | `DASHSCOPE_API_KEY` | — | 阿里云通义千问 API Key |
 
-Compose 可在 `docker/.env` 中配置上述变量。注意：`.env` 只参与 Compose 插值，变量必须出现在 `docker-compose.yml` 的 `environment:` 中才会进入容器。也可把相同键写入挂载数据目录下的 `~/.octop/env`。
+Compose 可在 `docker/.env` 中配置上述变量。注意：`.env` 只参与 Compose 插值，变量必须出现在 `docker-compose.yml` 的 `environment:` 中才会进入容器。也可把相同键写入挂载数据目录下的 `~/.happyclaw/env`。
 
 ### Node.js
 
@@ -91,7 +91,7 @@ Compose 可在 `docker/.env` 中配置上述变量。注意：`.env` 只参与 C
 
 ### 数据持久化
 
-- Compose 默认将宿主机 `~/.octop` 挂载到容器 `/data/.octop`
+- Compose 默认将宿主机 `~/.happyclaw` 挂载到容器 `/data/.octop`
 - `docker run` 示例使用命名卷 `octop-data`
 - 首次启动：初始化运行目录与数据库，自动创建本机使用者；不需要密码、向导或 `credential.txt`
 - 升级：保留数据卷、重新构建镜像即可，数据库结构在启动时迁移

@@ -9,7 +9,7 @@
 
 ## Context
 
-技能包正文与知识库原文/向量索引目前落在 `~/.octop/skill-packages/`、`~/.octop/knowledge/`（含本地 `index.sqlite`）。控制面虽可选 PostgreSQL，这些内容仍绑单机磁盘，无法在多实例间共享，也为后续水平扩展埋下瓶颈。
+技能包正文与知识库原文/向量索引目前落在 `~/.happyclaw/skill-packages/`、`~/.happyclaw/knowledge/`（含本地 `index.sqlite`）。控制面虽可选 PostgreSQL，这些内容仍绑单机磁盘，无法在多实例间共享，也为后续水平扩展埋下瓶颈。
 
 一期目标：**在不改变专家侧既有行为的前提下**，让 PostgreSQL 模式把技能包源与知识库存进同一套 PG；SQLite 模式保持现有本地布局。集群租约、IM 多活、composite 默认挂载等不在本期范围。
 
@@ -42,7 +42,7 @@
 
 ### 4. PG 文件存储：复用 PostgresBackend 形态，分表隔离
 
-不新造 zip 整包或平行 bytea 协议。技能包源、知识库原文均按 harness `PostgresBackend`（`octop-harness/src/octop_harness/backends/postgres.py`）的方式入库（`path` + `content` JSONB 等），并与专家 workspace 表隔离，例如：
+不新造 zip 整包或平行 bytea 协议。技能包源、知识库原文均按 harness `PostgresBackend`（`happyclaw-harness/src/happyclaw_harness/backends/postgres.py`）的方式入库（`path` + `content` JSONB 等），并与专家 workspace 表隔离，例如：
 
 - `public.skill_package_files`
 - `public.knowledge_files`

@@ -11,10 +11,10 @@ from __future__ import annotations
 import subprocess
 import sys
 
-_HEAVY = ("langchain_core", "octop_harness", "cryptography", "deepagents")
+_HEAVY = ("langchain_core", "happyclaw_harness", "cryptography", "deepagents")
 # Cron manager legitimately imports ``cryptography`` (credential decryption), but
 # must never drag in the agent stack that binds /api/agents during boot.
-_AGENT_STACK = ("langchain_core", "octop_harness", "deepagents")
+_AGENT_STACK = ("langchain_core", "happyclaw_harness", "deepagents")
 # ``octop.api.app`` (the boot-time app factory) must not pull the JWT stack;
 # tokens defer ``jwt`` to first sign/decode call.
 _JWT_STACK = ("jwt", "cryptography")

@@ -5,6 +5,7 @@ import { isValidAssetUrl, selectRelease } from "./update-coordinator";
 import {
   DEFAULT_UPDATE_ENDPOINT,
   manifestFromGitHubReleases,
+  PROJECT_REPO,
   resolveUpdateSource,
   UPDATE_DOWNLOAD_ORIGINS_ENV,
   UPDATE_ENDPOINT_ENV,
@@ -38,7 +39,7 @@ test("the default catalog is this project's own GitHub Releases", () => {
   assert.equal(source.manifestUrl, DEFAULT_UPDATE_ENDPOINT);
   assert.equal(source.manifestFormat, "github");
   assert.deepEqual(source.downloadOrigins, [PROJECT_DOWNLOADS]);
-  assert.equal(source.manifestUrl.includes("octop.cloud"), false);
+  assert.equal(source.manifestUrl.includes(PROJECT_REPO), true);
 });
 
 test("an unusable endpoint falls back to the default instead of a dead address", () => {

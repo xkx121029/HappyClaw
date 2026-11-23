@@ -31,7 +31,7 @@ test("downloadToFile streams to disk and reports progress", async () => {
     const dest = join(dir, "Octop.dmg");
     const seen: number[] = [];
     const fetchImpl: FetchLike = async () => bodyOf(["abc", "defg"]);
-    await downloadToFile("https://download.octop.cloud/Octop.dmg", dest, fetchImpl, {
+    await downloadToFile("https://dl.example.com/HappyClaw.dmg", dest, fetchImpl, {
       onProgress: (received, total) => seen.push(total === 0 ? received : total),
     });
     assert.equal(await readFile(dest, "utf8"), "abcdefg");
@@ -47,7 +47,7 @@ test("downloadToFile reports content-length as the total", async () => {
     const fetchImpl: FetchLike = async () =>
       bodyOf(["abc", "defg"], { "content-length": String(total) });
     const seen: number[] = [];
-    await downloadToFile("https://download.octop.cloud/Octop.dmg", dest, fetchImpl, {
+    await downloadToFile("https://dl.example.com/HappyClaw.dmg", dest, fetchImpl, {
       onProgress: (_received, receivedTotal) => seen.push(receivedTotal),
     });
     assert.deepEqual(seen, [total, total]);
@@ -59,7 +59,7 @@ test("downloadToFile rejects a non-2xx response and leaves no file", async () =>
     const dest = join(dir, "Octop.dmg");
     const fetchImpl: FetchLike = async () => new Response("nope", { status: 502 });
     await assert.rejects(
-      downloadToFile("https://download.octop.cloud/Octop.dmg", dest, fetchImpl),
+      downloadToFile("https://dl.example.com/HappyClaw.dmg", dest, fetchImpl),
       /HTTP 502/,
     );
     await assert.rejects(stat(dest));
@@ -80,7 +80,7 @@ test("downloadToFile removes a partial file when the body fails mid-stream", asy
         { status: 200 },
       );
     await assert.rejects(
-      downloadToFile("https://download.octop.cloud/Octop.dmg", dest, fetchImpl),
+      downloadToFile("https://dl.example.com/HappyClaw.dmg", dest, fetchImpl),
       /connection reset/,
     );
     await assert.rejects(stat(dest));

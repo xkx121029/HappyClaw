@@ -2,12 +2,12 @@
  * Experts page — redesigned as Agents Management Centre.
  *
  * Tab A: user's experts, shown as a card grid with start/stop/edit/delete.
- * Tab B: octop.cloud expert market, plus templates published by users on this instance.
+ * Tab B: remote expert market, plus templates published by users on this instance.
  *
  * API (all via request() which already prefixes /api):
  *   GET  /experts/default                 → blank expert seed
  *   GET  /experts/published               → templates published on this instance
- *   GET  /experts/hub                     → octop.cloud market cards (+ scenes)
+ *   GET  /experts/hub                     → remote market cards (+ scenes)
  *   GET  /experts/hub/{slug}              → market detail + quick prompts
  *   POST /experts/hub/{slug}/install      → create agent from market
  *   GET  /agents                          → via AgentContext

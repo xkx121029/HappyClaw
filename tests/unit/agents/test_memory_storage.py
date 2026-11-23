@@ -130,7 +130,7 @@ def test_stopped_expert_sharing_sqlite_disables_maintenance(store, monkeypatch, 
 @pytest.mark.asyncio
 async def test_failure_retains_result_and_releases_turn_gate(store, monkeypatch):
     coordinator, registry, _memory, _cfg, _cp = store
-    from octop_memory.application import checkpoint_maintenance
+    from happyclaw_memory.application import checkpoint_maintenance
 
     def fail(*args, **kwargs):
         raise OSError("disk full")
@@ -210,7 +210,7 @@ def test_read_only_counts_distinguish_missing_zero_and_timeout(tmp_path, monkeyp
     ],
 )
 def test_checkpoint_backup_modes_match_harness(value, mode, warning, monkeypatch, caplog):
-    # Same cases as octop-harness tests/test_checkpoint_backup.py, including
+    # Same cases as happyclaw-harness tests/test_checkpoint_backup.py, including
     # when this test runs against an older installed Harness wheel.
     variable = "OCTOP_CHECKPOINT_BACKUP_BEFORE_PRUNE"
     if value is None:
@@ -232,7 +232,7 @@ def test_checkpoint_backup_keep_days_match_harness(value, expected, monkeypatch)
 
 
 def test_checkpoint_backup_policy_agrees_with_installed_harness(monkeypatch):
-    harness = pytest.importorskip("octop_harness.middleware.checkpoint_backup")
+    harness = pytest.importorskip("happyclaw_harness.middleware.checkpoint_backup")
     mode_env = "OCTOP_CHECKPOINT_BACKUP_BEFORE_PRUNE"
     days_env = "OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS"
     for mode, days in (

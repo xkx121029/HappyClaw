@@ -30,8 +30,8 @@ import styles from "./UpdateConfig.module.less";
 
 /** Shell snippets shown in the manual upgrade guide (commands are locale-agnostic). */
 const UPGRADE_GUIDE_CODE = {
-  installerUnix: `curl -fsSL https://download.octop.cloud/octop/scripts/install.sh | bash`,
-  installerWin: `irm https://download.octop.cloud/octop/scripts/install.ps1 | iex`,
+  installerUnix: `curl -fsSL https://github.com/xkx121029/HappyClaw/raw/main/scripts/install.sh | bash`,
+  installerWin: `irm https://github.com/xkx121029/HappyClaw/raw/main/scripts/install.ps1 | iex`,
   cli: `octop update
 # or non-interactive:
 octop update --yes
@@ -40,7 +40,7 @@ octop update --yes
   pip: `pip install -U octop
 # optional extras, e.g. browser automation:
 # pip install -U "octop[browser]"`,
-  source: `cd Octop
+  source: `cd HappyClaw
 git pull
 make build-frontend
 # or: cd dashboard && npm ci && npm run build && cd ..

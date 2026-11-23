@@ -22,7 +22,7 @@ from octop.infra.gateway.media.attachment_hints import (
 )
 
 if TYPE_CHECKING:
-    from octop_harness.backends.workspace import BackendWorkspace
+    from happyclaw_harness.backends.workspace import BackendWorkspace
 
 
 def _same_blocks(prepared: Sequence[Any], original: Sequence[Any]) -> bool:

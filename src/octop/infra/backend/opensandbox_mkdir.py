@@ -16,7 +16,7 @@ from typing import Any
 def install_opensandbox_fs() -> None:
     """Attach missing filesystem helpers on the installed ``OpenSandbox`` class."""
     try:
-        from octop_harness.backends.opensandbox_sandbox import OpenSandbox
+        from happyclaw_harness.backends.opensandbox_sandbox import OpenSandbox
     except ImportError:
         return
 

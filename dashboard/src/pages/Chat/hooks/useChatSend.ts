@@ -11,6 +11,7 @@ import type { HitlSessionPolicy } from "../utils/hitlSessionPolicy";
 import * as chatStore from "./chatStore";
 import { EMPTY_CHAT_SESSION_KEY, PENDING_THREAD_ID } from "../constants";
 import { message } from "@/utils/antdMessage";
+import { readStorage, removeStorage } from "@/utils/storageKeys";
 
 import {
   buildComposerContext,
@@ -236,9 +237,9 @@ export function useChatSend({
 
   useEffect(() => {
     const consumePending = () => {
-      const raw = localStorage.getItem("octop.pendingChatMessage");
+      const raw = readStorage("pendingChatMessage");
       if (!raw) return;
-      localStorage.removeItem("octop.pendingChatMessage");
+      removeStorage("pendingChatMessage");
 
       let textToSend = raw;
       let autoRecord = false;

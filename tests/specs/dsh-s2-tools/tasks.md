@@ -35,4 +35,4 @@
 2. 关闭态：`octop.infra.dsh.tools*` 不在 `sys.modules`，`merged_tools` 无变化。
 3. provider 未注入时行为与现状一致（零新增工具）。
 4. `dsh_tools_status()` 对每个未挂载插件给出 `reason`，冲突/定义类另带 `tool`。
-5. 未修改 `octop_harness` 包，未改 `dashboard/`，未新增依赖。
+5. 未修改 `happyclaw_harness` 包，未改 `dashboard/`，未新增依赖。

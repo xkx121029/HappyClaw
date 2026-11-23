@@ -4,7 +4,7 @@ Entry points:
 
 * :class:`DshToolRegistry` — register / unregister DSH ``ToolDefinition`` objects
   per scope, project the model-facing schema, and map them into Octop's
-  ``octop_harness.plugins.PluginRegistry``.
+  ``happyclaw_harness.plugins.PluginRegistry``.
 * :class:`ToolPipeline` — one call through the guard-railed pipeline.
 * :class:`ToolBatcher` — concurrency-safe batching with ordered settlement.
 * :class:`ToolDefinition` — the DSH contract mirror (parameters / output /

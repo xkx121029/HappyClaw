@@ -186,7 +186,7 @@ class DecisionSettingsStore:
         view = self.load()
         if not view.active:
             return None
-        from octop_harness.decision.config import DecisionConfig
+        from happyclaw_harness.decision.config import DecisionConfig
 
         return DecisionConfig(
             enabled=True,
@@ -213,7 +213,7 @@ class DecisionSettingsStore:
         target = (endpoint if endpoint is not None else view.endpoint).strip()
         if not target.startswith(("http://", "https://")):
             raise OctopError(ErrorCode.SLASH_BAD_ARGS, "decision endpoint is required")
-        from octop_harness.decision.client import HttpDecisionClient
+        from happyclaw_harness.decision.client import HttpDecisionClient
 
         saved_key = ""
         if api_key is None and (

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from octop_harness.backends.utils import BackendOperationNotSupportedError
+from happyclaw_harness.backends.utils import BackendOperationNotSupportedError
 
 from octop.infra.agents.experts.avatar import (
     MAX_AVATAR_BYTES,

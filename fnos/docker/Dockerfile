@@ -3,7 +3,7 @@
 # Octop — 可选的源码镜像（飞牛 FPK 不使用本文件）
 #
 # 飞牛 Docker 版安装包复用 docker-publish 推送的
-# ghcr.io/tencentcloud/octop:{version}，那份镜像由 docker/Dockerfile 构建。
+# ghcr.io/xkx121029/happyclaw:{version}，那份镜像由 docker/Dockerfile 构建。
 # 本文件只在显式执行下面的命令时使用，构建上下文为仓库根目录：
 #   docker build -f fnos/docker/Dockerfile -t octop:fnos-source .
 #
@@ -48,10 +48,10 @@ RUN NODE_ENV=production NODE_OPTIONS="--max-old-space-size=${NODE_MAX_OLD_SPACE_
 # ---------------------------------------------------------------------------
 FROM python:3.12-slim AS runtime
 
-LABEL maintainer="TencentCloud"
-LABEL org.opencontainers.image.title="Octop"
-LABEL org.opencontainers.image.description="Smarter self-hosted AI assistant — multi-user, multi-agent (FnOS build with all addons)."
-LABEL org.opencontainers.image.source="https://github.com/TencentCloud/Octop"
+LABEL maintainer="HappyClaw"
+LABEL org.opencontainers.image.title="HappyClaw"
+LABEL org.opencontainers.image.description="Single-user local AI workbench: web console, CLI, IM channels, scheduled jobs (FnOS build with all addons)."
+LABEL org.opencontainers.image.source="https://github.com/xkx121029/HappyClaw"
 LABEL org.opencontainers.image.licenses="MIT"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

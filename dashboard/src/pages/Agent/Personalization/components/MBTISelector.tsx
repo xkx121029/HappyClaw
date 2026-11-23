@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { FlaskConical, Sparkles, Check } from "lucide-react";
 import cx from "classnames";
 import api from "../../../../api";
+import { writeStorage } from "../../../../utils/storageKeys";
 import type { MBTIType } from "../../../../api/types";
 import { useAgent } from "../../../../context/AgentContext";
 import MBTITest from "./MBTITest";
@@ -328,7 +329,7 @@ export default function MBTISelector({
           lang === "zh"
             ? `我刚刚把你的 MBTI 人格设定为了 ${selectedType.code}（${name}），快用你的新性格跟我打个招呼吧！`
             : `I just set your MBTI personality to ${selectedType.code} (${name}). Say hi with your new character!`;
-        localStorage.setItem("octop.pendingChatMessage", pendingMsg);
+        writeStorage("pendingChatMessage", pendingMsg);
         navigate("/chat");
         setTimeout(
           () =>

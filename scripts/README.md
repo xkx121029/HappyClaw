@@ -4,7 +4,7 @@
 
 ## 安装 HappyClaw（终端用户）
 
-将 HappyClaw 安装到隔离虚拟环境 `~/.octop/venv`，并创建 `~/.octop/bin/octop` 包装脚本加入 PATH。
+将 HappyClaw 安装到隔离虚拟环境 `~/.happyclaw/venv`，并创建 `~/.happyclaw/bin/octop` 包装脚本加入 PATH。
 脚本默认从本仓库 GitHub `main` 取；网络访问 GitHub 受限时把 `OCTOP_INSTALL_BASE` 指向提供同样 `scripts/` 目录的镜像。
 
 ### 远程一键安装（推荐）
@@ -49,7 +49,7 @@ Windows PowerShell 等价参数：`-Version`、`-FromSource`、`-SourceDir`、`-
 
 | 变量 | 说明 |
 |------|------|
-| `OCTOP_HOME` | 安装根目录，默认 `~/.octop` |
+| `HAPPYCLAW_HOME` | 安装根目录，默认 `~/.happyclaw` |
 | `OCTOP_REPO` | `--from-source` 无本地目录时的 git 克隆地址 |
 | `OCTOP_PYPI_MIRROR` | PyPI 镜像（与 `--mirror` 等效） |
 | `PLAYWRIGHT_DOWNLOAD_HOST` | Playwright 浏览器下载镜像（仅 `--extras browser`） |
@@ -83,7 +83,7 @@ powershell -File scripts/smoke_local.ps1              # 临时数据目录 + 随
 powershell -File scripts/smoke_local.ps1 -Port 8091 -Keep
 ```
 
-脚本用 `OCTOP_HOME` 指向临时目录启动 `octop run`，轮询 `/api/health`，输出响应与数据目录清单后停止进程；不会触碰 `~/.octop` 的真实数据。`-Keep` 保留临时目录便于排查。
+脚本用 `HAPPYCLAW_HOME` 指向临时目录启动 `octop run`，轮询 `/api/health`，输出响应与数据目录清单后停止进程；不会触碰 `~/.happyclaw` 的真实数据。`-Keep` 保留临时目录便于排查。
 
 ---
 
@@ -103,7 +103,7 @@ powershell -File scripts/wheel_build.ps1
 
 输出：`dist/*.whl`、`dist/*.tar.gz`
 
-发布前请确认 `pyproject.toml` 中的 `octop-harness`、`octop-gateway` 等依赖已发布到 PyPI（`[tool.uv.sources]` 仅对 uv 本地开发生效，pip/PyPI 不读取）。
+发布前请确认 `pyproject.toml` 中的 `happyclaw-harness`、`happyclaw-gateway` 等依赖已发布到 PyPI（`[tool.uv.sources]` 仅对 uv 本地开发生效，pip/PyPI 不读取）。
 
 ---
 
