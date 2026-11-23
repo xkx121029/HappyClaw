@@ -1,4 +1,4 @@
-"""`octop update` — self-upgrade via pip or uv."""
+"""`happyclaw update` — self-upgrade via pip or uv."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ from happyclaw.infra.setup.self_update import (
     help="Include and allow installing pre-releases (alpha / beta / rc / dev).",
 )
 def update(check: bool, yes: bool, verbose: bool, allow_prerelease: bool) -> None:
-    """Check for and install a newer Octop release."""
+    """Check for and install a newer HappyClaw release."""
     if desktop_shell_enabled():
         click.echo("updates are managed by the desktop shell", err=True)
         raise SystemExit(1)
@@ -63,7 +63,7 @@ def update(check: bool, yes: bool, verbose: bool, allow_prerelease: bool) -> Non
         raise SystemExit(1)
 
     if not yes:
-        click.confirm(f"Upgrade octop from {current} to {latest}?", abort=True)
+        click.confirm(f"Upgrade happyclaw from {current} to {latest}?", abort=True)
 
     venv_python = resolve_venv_python()
     click.echo(f"target python: {venv_python}")

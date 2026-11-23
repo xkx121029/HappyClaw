@@ -1,4 +1,4 @@
-"""Tests for `octop update`."""
+"""Tests for `happyclaw update`."""
 
 from __future__ import annotations
 
@@ -93,7 +93,7 @@ def test_build_upgrade_command_uses_managed_venv_python() -> None:
     assert "--python" in cmd
     assert python in cmd
     assert "--upgrade-package" in cmd
-    assert "octop" in cmd
+    assert "happyclaw" in cmd
     assert "https://mirror.example/simple" in cmd
     assert "--target" not in cmd
 
@@ -102,7 +102,7 @@ def test_build_upgrade_command_pins_version() -> None:
     python = "/home/user/.octop/venv/bin/python"
     cmd = self_update.build_upgrade_command("uv", python, version="0.9.33")
     assert cmd is not None
-    assert "octop==0.9.33" in cmd
+    assert "happyclaw==0.9.33" in cmd
     assert "--prerelease" not in cmd
 
 
@@ -111,7 +111,7 @@ def test_build_upgrade_command_green_packages_target(
 ) -> None:
     packages = tmp_path / "packages"
     packages.mkdir()
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(packages))
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(packages))
     python = "/opt/octop/runtime/bin/python3"
     cmd = self_update.build_upgrade_command("uv", python)
     assert cmd is not None

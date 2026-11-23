@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import os
+import shutil
 import sys
+import threading
 import zipfile
+from collections.abc import Iterator
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
@@ -119,9 +124,9 @@ def test_fetch_pypi_info_loads_prerelease_description(
     def fake_urlopen(req: object, timeout: int = 10) -> _JsonResp:
         url = getattr(req, "full_url", "")
         urls.append(url)
-        if url.endswith("/octop/json"):
+        if url.endswith("/happyclaw/json"):
             return _JsonResp(catalog)
-        if url.endswith("/octop/1.0.2b5/json"):
+        if url.endswith("/happyclaw/1.0.2b5/json"):
             return _JsonResp(beta)
         raise AssertionError(url)
 
@@ -132,7 +137,7 @@ def test_fetch_pypi_info_loads_prerelease_description(
     assert info.latest_stable == "1.0.1"
     assert info.description is not None
     assert "remote bridge" in info.description
-    assert any(url.endswith("/octop/1.0.2b5/json") for url in urls)
+    assert any(url.endswith("/happyclaw/1.0.2b5/json") for url in urls)
 
 
 def test_fetch_pypi_info_skips_versioned_fetch_when_stable_is_latest(
@@ -147,7 +152,7 @@ def test_fetch_pypi_info_skips_versioned_fetch_when_stable_is_latest(
     def fake_urlopen(req: object, timeout: int = 10) -> _JsonResp:
         url = getattr(req, "full_url", "")
         urls.append(url)
-        if url.endswith("/octop/json"):
+        if url.endswith("/happyclaw/json"):
             return _JsonResp(catalog)
         raise AssertionError(url)
 
@@ -157,22 +162,22 @@ def test_fetch_pypi_info_skips_versioned_fetch_when_stable_is_latest(
     assert info.version == "1.0.1"
     assert info.description is not None
     assert "stable" in info.description
-    assert urls == ["https://pypi.org/pypi/octop/json"]
+    assert urls == ["https://pypi.org/pypi/happyclaw/json"]
 
 
 def test_build_upgrade_command_prerelease_flags(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    python = "/home/user/.octop/venv/bin/python"
+    python = "/home/user/.happyclaw/venv/bin/python"
     uv_cmd = build_upgrade_command("uv", python, allow_prerelease=True, version="0.9.34b1")
     assert uv_cmd is not None
     assert uv_cmd[uv_cmd.index("--prerelease") + 1] == "allow"
-    assert "octop==0.9.34b1" in uv_cmd
+    assert "happyclaw==0.9.34b1" in uv_cmd
     monkeypatch.setattr("happyclaw.infra.setup.self_update.has_pip", lambda _: True)
     pip_cmd = build_upgrade_command("pip", python, allow_prerelease=True, version="0.9.34b1")
     assert pip_cmd is not None
     assert "--pre" in pip_cmd
-    assert "octop==0.9.34b1" in pip_cmd
+    assert "happyclaw==0.9.34b1" in pip_cmd
 
 
 def test_portable_upgrade_prefers_bundled_uv(
@@ -185,7 +190,7 @@ def test_portable_upgrade_prefers_bundled_uv(
     executable.parent.mkdir(parents=True)
     executable.write_text("bundled updater")
     executable.chmod(0o755)
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(packages))
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(packages))
     monkeypatch.setattr(self_update.shutil, "which", lambda _: "global-uv")
 
     assert self_update.detect_installer() == "uv"
@@ -201,7 +206,7 @@ def test_portable_without_bundled_uv_keeps_pip_fallback(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path / "packages"))
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path / "packages"))
     monkeypatch.setattr(self_update.shutil, "which", lambda _: None)
     monkeypatch.setattr(self_update, "_COMMON_UV_PATHS", [])
     assert self_update.detect_installer() == "pip"
@@ -210,23 +215,25 @@ def test_portable_without_bundled_uv_keeps_pip_fallback(
 def test_build_upgrade_command_pins_stable_without_pre(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    python = "/home/user/.octop/venv/bin/python"
+    python = "/home/user/.happyclaw/venv/bin/python"
     uv_cmd = build_upgrade_command("uv", python, version="0.9.33")
     assert uv_cmd is not None
-    assert "octop==0.9.33" in uv_cmd
+    assert "happyclaw==0.9.33" in uv_cmd
     assert "--prerelease" not in uv_cmd
     monkeypatch.setattr("happyclaw.infra.setup.self_update.has_pip", lambda _: True)
     pip_cmd = build_upgrade_command("pip", python, version="0.9.33")
     assert pip_cmd is not None
-    assert "octop==0.9.33" in pip_cmd
+    assert "happyclaw==0.9.33" in pip_cmd
     assert "--pre" not in pip_cmd
 
 
 def _fake_windows_scripts(tmp_path: Path) -> Path:
+    """A venv ``Scripts`` dir as an upgrade from a pre-rename install finds it."""
     script_dir = tmp_path / "Scripts"
     script_dir.mkdir()
     (script_dir / "python.exe").write_text("python")
-    (script_dir / "octop.exe").write_text("launcher")
+    (script_dir / "happyclaw.exe").write_text("launcher")
+    (script_dir / "octop.exe").write_text("legacy launcher")
     (script_dir / "octop.exe.octop-old").write_text("leftover")
     (script_dir / "pip.exe").write_text("pip")
     return script_dir
@@ -239,6 +246,7 @@ def test_stash_console_scripts_is_noop_off_windows(
     monkeypatch.setattr("happyclaw.infra.setup.self_update._is_windows", lambda: False)
     script_dir = _fake_windows_scripts(tmp_path)
     assert stash_console_scripts(str(script_dir / "python.exe")) == []
+    assert (script_dir / "happyclaw.exe").exists()
     assert (script_dir / "octop.exe").exists()
 
 
@@ -251,10 +259,18 @@ def test_stash_console_scripts_moves_launcher_and_purges_leftovers(
 
     moved = stash_console_scripts(str(script_dir / "python.exe"))
 
-    assert moved == [(script_dir / "octop.exe", script_dir / "octop.exe.octop-old")]
+    # Both entry points ship in the new distribution, and the pre-rename
+    # launcher is still locked by the running process.
+    assert moved == [
+        (script_dir / "happyclaw.exe", script_dir / "happyclaw.exe.happyclaw-old"),
+        (script_dir / "octop.exe", script_dir / "octop.exe.happyclaw-old"),
+    ]
+    assert not (script_dir / "happyclaw.exe").exists()
     assert not (script_dir / "octop.exe").exists()
-    # The leftover from an earlier upgrade is gone, replaced by the new stash.
-    assert (script_dir / "octop.exe.octop-old").read_text() == "launcher"
+    # Leftovers from either spelling of an earlier upgrade are gone, replaced
+    # by the new stashes.
+    assert (script_dir / "happyclaw.exe.happyclaw-old").read_text() == "launcher"
+    assert (script_dir / "octop.exe.happyclaw-old").read_text() == "legacy launcher"
     assert (script_dir / "pip.exe").exists()
 
 
@@ -268,7 +284,8 @@ def test_restore_console_scripts_puts_launcher_back(
 
     restore_console_scripts(moved)
 
-    assert (script_dir / "octop.exe").read_text() == "launcher"
+    assert (script_dir / "happyclaw.exe").read_text() == "launcher"
+    assert (script_dir / "octop.exe").read_text() == "legacy launcher"
     assert not (script_dir / "octop.exe.octop-old").exists()
 
 
@@ -279,7 +296,7 @@ def test_run_upgrade_restores_launcher_only_on_failure(
     success: bool,
 ) -> None:
     monkeypatch.setattr("happyclaw.infra.setup.self_update._is_windows", lambda: True)
-    monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
+    monkeypatch.delenv("HAPPYCLAW_FPK_SITE_PACKAGES", raising=False)
     script_dir = _fake_windows_scripts(tmp_path)
     monkeypatch.setattr(
         "happyclaw.infra.setup.self_update.resolve_venv_python",
@@ -288,9 +305,9 @@ def test_run_upgrade_restores_launcher_only_on_failure(
 
     def fake_upgrade(**_kwargs: object) -> UpgradeResult:
         # The installer only succeeds because the locked launcher moved aside.
-        assert not (script_dir / "octop.exe").exists()
+        assert not (script_dir / "happyclaw.exe").exists()
         if success:
-            (script_dir / "octop.exe").write_text("new launcher")
+            (script_dir / "happyclaw.exe").write_text("new launcher")
             return UpgradeResult(success=True, installed_version="1.0.1")
         return UpgradeResult(success=False, error="upgrade failed on all mirrors")
 
@@ -300,16 +317,20 @@ def test_run_upgrade_restores_launcher_only_on_failure(
 
     assert result.success is success
     expected = "new launcher" if success else "launcher"
-    assert (script_dir / "octop.exe").read_text() == expected
-    assert not (script_dir / "octop.exe.octop-old").exists()
+    assert (script_dir / "happyclaw.exe").read_text() == expected
+    assert not (script_dir / "octop.exe.happyclaw-old").exists()
 
 
 def test_page_has_package_version_matches_wheel_and_sdist() -> None:
-    body = '<a href="octop-1.0.1-py3-none-any.whl">octop-1.0.1-py3-none-any.whl</a>'
+    body = '<a href="happyclaw-1.0.1-py3-none-any.whl">happyclaw-1.0.1-py3-none-any.whl</a>'
     assert page_has_package_version(body, "1.0.1")
     assert not page_has_package_version(body, "1.0.10")
+    # A pre-rename release on the same index is not the version we install.
+    assert not page_has_package_version(
+        '<a href="octop-1.0.1-py3-none-any.whl">octop-1.0.1-py3-none-any.whl</a>', "1.0.1"
+    )
     assert page_has_package_version(
-        '<a href="octop-1.0.2.tar.gz">octop-1.0.2.tar.gz</a>',
+        '<a href="happyclaw-1.0.2.tar.gz">happyclaw-1.0.2.tar.gz</a>',
         "1.0.2",
     )
     assert page_has_package_version("any non-empty body", None)
@@ -339,7 +360,7 @@ def test_probe_index_classifies_missing_and_unreachable(
             return None
 
         def read(self) -> bytes:
-            return b'<a href="octop-0.9.0-py3-none-any.whl">x</a>'
+            return b'<a href="happyclaw-0.9.0-py3-none-any.whl">x</a>'
 
     monkeypatch.setattr(
         "happyclaw.infra.setup.self_update.urllib.request.urlopen",
@@ -413,7 +434,7 @@ def test_run_managed_upgrade_uses_ranked_indexes(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
+    monkeypatch.delenv("HAPPYCLAW_FPK_SITE_PACKAGES", raising=False)
     monkeypatch.setattr(self_update, "detect_installer", lambda: "uv")
     monkeypatch.setattr(self_update, "resolve_venv_python", lambda: "/venv/bin/python")
     monkeypatch.setattr(self_update, "get_local_version", lambda: "1.0.0")
@@ -461,32 +482,72 @@ def test_run_managed_upgrade_uses_ranked_indexes(
     assert any("fast.example" in err for err in (result.mirror_errors or []))
 
 
-@pytest.mark.parametrize("has_metadata", [True, False])
-def test_get_version_in_dir_does_not_use_other_installs(tmp_path: Path, has_metadata: bool) -> None:
+@pytest.mark.parametrize("dist_name", ["happyclaw", "octop"])
+def test_get_version_in_dir_does_not_use_other_installs(tmp_path: Path, dist_name: str) -> None:
+    """A dist-info alone is not an install: nothing importable lives there."""
     from happyclaw.infra.setup import self_update
 
-    if has_metadata:
-        metadata = tmp_path / "octop-1.0.2b4.dist-info" / "METADATA"
-        metadata.parent.mkdir()
-        metadata.write_text("Name: octop\nVersion: 1.0.2b4\n", encoding="utf-8")
+    metadata = tmp_path / f"{dist_name}-1.0.2b4.dist-info" / "METADATA"
+    metadata.parent.mkdir()
+    metadata.write_text(f"Name: {dist_name}\nVersion: 1.0.2b4\n", encoding="utf-8")
 
     assert self_update.get_version_in_dir(sys.executable, str(tmp_path)) is None
+
+
+def _write_isolated_dist(root: Path, name: str, version: str, *, editable: bool = False) -> None:
+    """Create a dist-info tree that ``importlib.metadata`` finds through sys.path."""
+    dist_info = root / f"{name}-{version}.dist-info"
+    dist_info.mkdir(parents=True)
+    (dist_info / "METADATA").write_text(
+        f"Metadata-Version: 2.1\nName: {name}\nVersion: {version}\n",
+        encoding="utf-8",
+    )
+    if editable:
+        (dist_info / "direct_url.json").write_text(
+            json.dumps({"url": root.as_uri(), "dir_info": {"editable": True}}),
+            encoding="utf-8",
+        )
 
 
 def test_get_local_version_falls_back_to_editable_install(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Desktop dev runtime: green target exists but is empty, venv provides octop."""
-    from importlib.metadata import version as dist_version
-
+    """Desktop dev runtime: green target exists but is empty, the venv provides happyclaw."""
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
-    monkeypatch.setattr(self_update, "get_editable_path", lambda: "/repo/octop")
+    install = tmp_path / "site"
+    _write_isolated_dist(install, "happyclaw", "9.9.9", editable=True)
+    monkeypatch.syspath_prepend(str(install))
+    monkeypatch.delenv("HAPPYCLAW_FPK_SITE_PACKAGES", raising=False)
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path / "packages"))
 
-    assert self_update.get_version_in_dir(sys.executable, str(tmp_path)) is None
-    assert self_update.get_local_version() == dist_version("octop")
+    assert self_update.get_version_in_dir(sys.executable, str(tmp_path / "packages")) is None
+    assert self_update.get_editable_path() is not None
+    assert self_update.get_local_version() == "9.9.9"
+
+
+def test_installed_distribution_reads_a_pre_rename_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A user who has not upgraded yet runs the old distribution; report its version."""
+    from happyclaw.infra.setup import self_update
+
+    installed = {"octop": "1.0.3b5"}
+    monkeypatch.setattr(self_update, "_distribution_version", lambda name: installed.get(name))
+
+    assert self_update.installed_distribution() == ("octop", "1.0.3b5")
+
+
+def test_installed_distribution_prefers_the_current_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An upgraded environment keeps the old dist-info around; the new name must win."""
+    from happyclaw.infra.setup import self_update
+
+    installed = {"happyclaw": "1.0.3b6", "octop": "1.0.3b5"}
+    monkeypatch.setattr(self_update, "_distribution_version", lambda name: installed.get(name))
+
+    assert self_update.installed_distribution() == ("happyclaw", "1.0.3b6")
 
 
 def test_get_local_version_stays_zero_for_broken_green_target(
@@ -495,14 +556,26 @@ def test_get_local_version_stays_zero_for_broken_green_target(
     """A green install with an empty target and no editable metadata is unknown."""
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
+    monkeypatch.delenv("HAPPYCLAW_FPK_SITE_PACKAGES", raising=False)
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update, "get_editable_path", lambda: None)
 
     assert self_update.get_local_version() == "0.0.0"
 
 
-@pytest.mark.parametrize("target_env", ["OCTOP_GREEN_PACKAGES", "OCTOP_FPK_SITE_PACKAGES"])
+def test_green_packages_reads_the_pre_rename_variable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A deployment that still exports OCTOP_GREEN_PACKAGES keeps its portable target."""
+    from happyclaw.infra.setup import self_update
+
+    monkeypatch.delenv("HAPPYCLAW_GREEN_PACKAGES", raising=False)
+    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
+
+    assert self_update.green_packages_dir() == tmp_path
+
+
+@pytest.mark.parametrize("target_env", ["HAPPYCLAW_GREEN_PACKAGES", "HAPPYCLAW_FPK_SITE_PACKAGES"])
 @pytest.mark.parametrize(
     "versions",
     [
@@ -517,40 +590,41 @@ def test_target_versions_load_package_despite_stale_metadata(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.delenv("OCTOP_GREEN_PACKAGES", raising=False)
-    monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
+    monkeypatch.delenv("HAPPYCLAW_GREEN_PACKAGES", raising=False)
+    monkeypatch.delenv("HAPPYCLAW_FPK_SITE_PACKAGES", raising=False)
     monkeypatch.setenv(target_env, str(tmp_path))
     for version in versions:
-        _write_octop_metadata(tmp_path, version)
+        _write_happyclaw_metadata(tmp_path, version)
     expected = max(versions, key=parse_version)
-    _write_octop_package(tmp_path, expected)
+    _write_happyclaw_package(tmp_path, expected)
     assert self_update.get_version_in_dir(sys.executable, str(tmp_path)) == expected
     assert self_update.get_local_version() == expected
 
 
-def _write_octop_metadata(target: Path, version: str) -> None:
-    metadata = target / f"octop-{version}.dist-info" / "METADATA"
+def _write_happyclaw_metadata(target: Path, version: str) -> None:
+    metadata = target / f"happyclaw-{version}.dist-info" / "METADATA"
     metadata.parent.mkdir(parents=True)
-    metadata.write_text(f"Name: octop\nVersion: {version}\n", encoding="utf-8")
+    metadata.write_text(f"Name: happyclaw\nVersion: {version}\n", encoding="utf-8")
 
 
-def _write_octop_package(target: Path, version: str) -> None:
-    package = target / "octop" / "__init__.py"
+def _write_happyclaw_package(target: Path, version: str) -> None:
+    package = target / "happyclaw" / "__init__.py"
     package.parent.mkdir(exist_ok=True)
     package.write_text(f"__version__ = {version!r}\n", encoding="utf-8")
     (package.parent / "__main__.py").write_text(
         "import sys\nfrom . import __version__\n"
         "assert sys.argv[1:] == ['--version']\n"
-        "print('octop v' + __version__)\nraise SystemExit(0)\n",
+        "print('happyclaw v' + __version__)\nraise SystemExit(0)\n",
         encoding="utf-8",
     )
 
 
 def _write_upgrade_wheel(directory: Path, metadata: str | None = None) -> Path:
-    wheel = directory / "octop-1.0.2b5-py3-none-any.whl"
+    wheel = directory / "happyclaw-1.0.2b5-py3-none-any.whl"
     with zipfile.ZipFile(wheel, "w") as archive:
         archive.writestr(
-            "octop-1.0.2b5.dist-info/METADATA", metadata or "Name: octop\nVersion: 1.0.2b5\n"
+            "happyclaw-1.0.2b5.dist-info/METADATA",
+            metadata or "Name: happyclaw\nVersion: 1.0.2b5\n",
         )
     return wheel
 
@@ -559,9 +633,9 @@ def _write_upgrade_wheel(directory: Path, metadata: str | None = None) -> Path:
 def test_target_probe_ignores_import_and_pth_output(tmp_path: Path, check_cli: bool) -> None:
     from happyclaw.infra.setup import self_update
 
-    _write_octop_package(tmp_path, "1.0.2b5")
+    _write_happyclaw_package(tmp_path, "1.0.2b5")
     (tmp_path / "noise.pth").write_text("import sys; print('pth output')\n", encoding="utf-8")
-    with (tmp_path / "octop" / "__init__.py").open("a", encoding="utf-8") as output:
+    with (tmp_path / "happyclaw" / "__init__.py").open("a", encoding="utf-8") as output:
         output.write("print('import output', end='')\n")
     assert (
         self_update.get_version_in_dir(sys.executable, str(tmp_path), check_cli=check_cli)
@@ -575,12 +649,12 @@ def test_new_metadata_cannot_hide_old_or_broken_package(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
-    _write_octop_metadata(tmp_path, "1.0.2b5")
-    _write_octop_package(tmp_path, "1.0.2b4")
+    _write_happyclaw_metadata(tmp_path, "1.0.2b5")
+    _write_happyclaw_package(tmp_path, "1.0.2b4")
     if broken_import:
-        (tmp_path / "octop" / "__init__.py").write_text(
+        (tmp_path / "happyclaw" / "__init__.py").write_text(
             "raise ImportError('missing dependency')\n", encoding="utf-8"
         )
     result = self_update._verify_upgrade("1.0.2b4", sys.executable, [], version="1.0.2b5")
@@ -595,8 +669,8 @@ def test_target_version_loads_pth_dependencies(tmp_path: Path) -> None:
     dependency.mkdir()
     (dependency / "upgrade_fixture_dep.py").write_text("VERSION = '1.0.2b5'\n", encoding="utf-8")
     (tmp_path / "dependencies.pth").write_text("dependencies\n", encoding="utf-8")
-    _write_octop_package(tmp_path, "1.0.2b4")
-    (tmp_path / "octop" / "__init__.py").write_text(
+    _write_happyclaw_package(tmp_path, "1.0.2b4")
+    (tmp_path / "happyclaw" / "__init__.py").write_text(
         "from upgrade_fixture_dep import VERSION as __version__\n", encoding="utf-8"
     )
     assert self_update.get_version_in_dir(sys.executable, str(tmp_path)) == "1.0.2b5"
@@ -609,8 +683,8 @@ def test_target_version_prevents_downgrade_before_service_restart(
     from happyclaw.infra.setup import self_update
 
     monkeypatch.setattr(happyclaw, "__version__", "1.0.2b4")
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
-    _write_octop_package(tmp_path, "1.0.2b6")
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path))
+    _write_happyclaw_package(tmp_path, "1.0.2b6")
     assert self_update.get_local_version() == "1.0.2b6"
     result = run_upgrade(version="1.0.2b5", locale="en")
     assert not result.success
@@ -622,10 +696,10 @@ def test_target_verification_exercises_cli_instead_of_accepting_import_alone(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
-    _write_octop_package(tmp_path, "1.0.2b5")
-    (tmp_path / "octop" / "__main__.py").write_text(
+    _write_happyclaw_package(tmp_path, "1.0.2b5")
+    (tmp_path / "happyclaw" / "__main__.py").write_text(
         "raise ImportError('CLI dependency unavailable')\n", encoding="utf-8"
     )
     assert self_update.get_version_in_dir(sys.executable, str(tmp_path)) == "1.0.2b5"
@@ -668,8 +742,8 @@ def test_application_only_checks_target_dependency_closure(
         requirement = "absent>=1; python_version < '0'"
     elif scenario == "direct-url":
         requirement = "upgrade-dep @ https://example.com/dep.whl"
-    release = f"Name: octop\nVersion: 1.0.2b5\nRequires-Dist: {requirement}\n"
-    metadata("octop", "1.0.2b4", ["old-absent-dep>=1"])
+    release = f"Name: happyclaw\nVersion: 1.0.2b5\nRequires-Dist: {requirement}\n"
+    metadata("happyclaw", "1.0.2b4", ["old-absent-dep>=1"])
     if scenario != "missing":
         metadata(
             "upgrade_dep",
@@ -696,10 +770,11 @@ def test_application_only_checks_target_dependency_closure(
     "metadata",
     [
         "Name: other\nVersion: 1.0.2b5\n",
-        "Name: octop\nVersion: 1.0.2b6\n",
-        "Name: octop\nVersion: broken\n",
-        "Name: octop\n",
-        "Name: octop\nVersion: 1.0.2b5\nVersion: 1.0.2b4\n",
+        "Name: octop\nVersion: 1.0.2b5\n",
+        "Name: happyclaw\nVersion: 1.0.2b6\n",
+        "Name: happyclaw\nVersion: broken\n",
+        "Name: happyclaw\n",
+        "Name: happyclaw\nVersion: 1.0.2b5\nVersion: 1.0.2b4\n",
     ],
 )
 def test_preflight_rejects_wrong_or_ambiguous_release(tmp_path: Path, metadata: str) -> None:
@@ -721,7 +796,7 @@ def test_preflight_rejects_unreadable_wheel(tmp_path: Path, broken: str) -> None
             pass
     else:
         with zipfile.ZipFile(wheel, "a") as archive:
-            archive.writestr("other.dist-info/METADATA", "Name: octop\nVersion: 1.0.2b5\n")
+            archive.writestr("other.dist-info/METADATA", "Name: happyclaw\nVersion: 1.0.2b5\n")
     assert not self_update._target_dependencies_satisfied(tmp_path, wheel)
 
 
@@ -735,7 +810,7 @@ def test_legacy_pip_fast_path_falls_back_and_verifies_full_install(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update, "detect_installer", lambda: "pip")
     monkeypatch.setattr(self_update, "has_pip", lambda _: True)
     monkeypatch.setattr(self_update, "get_local_version", lambda: "1.0.2b4")
@@ -744,9 +819,9 @@ def test_legacy_pip_fast_path_falls_back_and_verifies_full_install(
     monkeypatch.setattr(
         self_update, "rank_install_indexes", lambda _: ([("https://one.example", "one")], [])
     )
-    _write_octop_package(tmp_path, "1.0.2b4")
-    _write_octop_metadata(tmp_path, "1.0.2b4")
-    original = (tmp_path / "octop" / "__init__.py").read_bytes()
+    _write_happyclaw_package(tmp_path, "1.0.2b4")
+    _write_happyclaw_metadata(tmp_path, "1.0.2b4")
+    original = (tmp_path / "happyclaw" / "__init__.py").read_bytes()
     calls: list[tuple[str, float]] = []
     downloads: list[Path] = []
 
@@ -755,7 +830,7 @@ def test_legacy_pip_fast_path_falls_back_and_verifies_full_install(
             calls.append(("download", timeout))
             directory = Path(cmd[cmd.index("--dest") + 1])
             downloads.append(directory)
-            release = "Name: octop\nVersion: 1.0.2b5\n"
+            release = "Name: happyclaw\nVersion: 1.0.2b5\n"
             if failure == "dependency":
                 release += "Requires-Dist: missing-upgrade-dependency>=1\n"
             _write_upgrade_wheel(directory, release)
@@ -764,15 +839,15 @@ def test_legacy_pip_fast_path_falls_back_and_verifies_full_install(
         calls.append(("fast" if fast else "full", timeout))
         if failure == "dependency":
             assert not fast
-            assert (tmp_path / "octop" / "__init__.py").read_bytes() == original
+            assert (tmp_path / "happyclaw" / "__init__.py").read_bytes() == original
         if fast and failure == "install":
             return 1, "local wheel install failed"
         if not fast and not full_install_success:
             return 1, "dependency install failed"
         version = "1.0.2b4" if fast and failure == "version" else "1.0.2b5"
-        _write_octop_package(tmp_path, version)
+        _write_happyclaw_package(tmp_path, version)
         if fast and failure == "cli":
-            (tmp_path / "octop" / "__main__.py").write_text(
+            (tmp_path / "happyclaw" / "__main__.py").write_text(
                 "raise ImportError('missing CLI dependency')\n", encoding="utf-8"
             )
         return 0, ""
@@ -787,7 +862,7 @@ def test_legacy_pip_fast_path_falls_back_and_verifies_full_install(
     assert result.success is full_install_success
     assert all(not directory.exists() for directory in downloads)
     if failure == "dependency" and not full_install_success:
-        assert (tmp_path / "octop" / "__init__.py").read_bytes() == original
+        assert (tmp_path / "happyclaw" / "__init__.py").read_bytes() == original
         assert (
             self_update.get_version_in_dir(sys.executable, str(tmp_path), check_cli=True)
             == "1.0.2b4"
@@ -815,7 +890,7 @@ def test_verify_upgrade_requires_newer_requested_version(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.delenv("OCTOP_GREEN_PACKAGES", raising=False)
+    monkeypatch.delenv("HAPPYCLAW_GREEN_PACKAGES", raising=False)
     monkeypatch.setattr(self_update, "get_installed_version", lambda _: actual)
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
     result = self_update._verify_upgrade(
@@ -834,7 +909,7 @@ def test_verify_green_upgrade_reads_only_target(
     from happyclaw.i18n import tr
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
 
     def unexpected_global_read(_: str) -> str:
@@ -847,18 +922,18 @@ def test_verify_green_upgrade_reads_only_target(
     assert not missing.success
     assert missing.error == tr("update.version_unavailable", locale)
 
-    _write_octop_metadata(tmp_path, "1.0.2b4")
-    _write_octop_package(tmp_path, "1.0.2b4")
+    _write_happyclaw_metadata(tmp_path, "1.0.2b4")
+    _write_happyclaw_package(tmp_path, "1.0.2b4")
     unchanged = self_update._verify_upgrade(
         "1.0.2b4", sys.executable, [], version="1.0.2b5", locale=locale
     )
     assert not unchanged.success
     assert unchanged.installed_version == "1.0.2b4"
 
-    metadata = tmp_path / "octop-1.0.2b5.dist-info" / "METADATA"
+    metadata = tmp_path / "happyclaw-1.0.2b5.dist-info" / "METADATA"
     metadata.parent.mkdir()
-    metadata.write_text("Name: octop\nVersion: 1.0.2b5\n", encoding="utf-8")
-    _write_octop_package(tmp_path, "1.0.2b5")
+    metadata.write_text("Name: happyclaw\nVersion: 1.0.2b5\n", encoding="utf-8")
+    _write_happyclaw_package(tmp_path, "1.0.2b5")
     installed = self_update._verify_upgrade("1.0.2b4", sys.executable, [], version="1.0.2b5")
     assert installed.success
     assert installed.installed_version == "1.0.2b5"
@@ -869,10 +944,10 @@ def test_pip_target_upgrade_with_stale_metadata_succeeds_without_retry(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
-    monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
-    _write_octop_metadata(tmp_path, "1.0.2b4")
-    _write_octop_package(tmp_path, "1.0.2b4")
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path))
+    monkeypatch.delenv("HAPPYCLAW_FPK_SITE_PACKAGES", raising=False)
+    _write_happyclaw_metadata(tmp_path, "1.0.2b4")
+    _write_happyclaw_package(tmp_path, "1.0.2b4")
     monkeypatch.setattr(self_update, "detect_installer", lambda: "pip")
     monkeypatch.setattr(self_update, "has_pip", lambda _: True)
     monkeypatch.setattr(self_update, "stash_console_scripts", lambda _: [])
@@ -891,7 +966,7 @@ def test_pip_target_upgrade_with_stale_metadata_succeeds_without_retry(
         if "download" in cmd:
             assert kwargs["timeout"] == 90
             assert "--no-deps" in cmd and "--only-binary=:all:" in cmd
-            assert "--pre" in cmd and cmd[-1] == "octop==1.0.2b5"
+            assert "--pre" in cmd and cmd[-1] == "happyclaw==1.0.2b5"
             assert self_update.get_local_version() == "1.0.2b4"
             directory = Path(cmd[cmd.index("--dest") + 1])
             downloads.append(directory)
@@ -902,10 +977,10 @@ def test_pip_target_upgrade_with_stale_metadata_succeeds_without_retry(
         assert cmd[:4] == [sys.executable, "-m", "pip", "install"]
         assert cmd[cmd.index("--target") + 1] == str(tmp_path)
         assert "--no-index" in cmd and "--no-deps" in cmd
-        assert Path(cmd[-1]) == downloads[0] / "octop-1.0.2b5-py3-none-any.whl"
+        assert Path(cmd[-1]) == downloads[0] / "happyclaw-1.0.2b5-py3-none-any.whl"
         calls.append(label)
-        _write_octop_metadata(tmp_path, "1.0.2b5")
-        _write_octop_package(tmp_path, "1.0.2b5")
+        _write_happyclaw_metadata(tmp_path, "1.0.2b5")
+        _write_happyclaw_package(tmp_path, "1.0.2b5")
         return 0, ""
 
     monkeypatch.setattr(self_update, "_run_install_cmd", install)
@@ -922,10 +997,10 @@ def test_application_download_failure_retries_without_modifying_target(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update, "detect_installer", lambda: "pip")
     monkeypatch.setattr(self_update, "has_pip", lambda _: True)
-    _write_octop_package(tmp_path, "1.0.2b4")
+    _write_happyclaw_package(tmp_path, "1.0.2b4")
     monkeypatch.setattr(
         self_update,
         "rank_install_indexes",
@@ -956,11 +1031,11 @@ def test_legacy_pip_fallback_window_is_shared_across_mirrors(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update, "detect_installer", lambda: "pip")
     monkeypatch.setattr(self_update, "has_pip", lambda _: True)
-    _write_octop_package(tmp_path, "1.0.2b4")
-    original = (tmp_path / "octop" / "__init__.py").read_bytes()
+    _write_happyclaw_package(tmp_path, "1.0.2b4")
+    original = (tmp_path / "happyclaw" / "__init__.py").read_bytes()
     monkeypatch.setattr(
         self_update,
         "rank_install_indexes",
@@ -984,7 +1059,7 @@ def test_legacy_pip_fallback_window_is_shared_across_mirrors(
             elapsed += 80
             _write_upgrade_wheel(
                 Path(cmd[cmd.index("--dest") + 1]),
-                "Name: octop\nVersion: 1.0.2b5\nRequires-Dist: missing-upgrade-dependency>=1\n",
+                "Name: happyclaw\nVersion: 1.0.2b5\nRequires-Dist: missing-upgrade-dependency>=1\n",
             )
             return 0, ""
         assert "--no-deps" not in cmd
@@ -1005,7 +1080,7 @@ def test_legacy_pip_fallback_window_is_shared_across_mirrors(
         ]
     )
     assert elapsed == 980  # The first download precedes the single 900-second window.
-    assert (tmp_path / "octop" / "__init__.py").read_bytes() == original
+    assert (tmp_path / "happyclaw" / "__init__.py").read_bytes() == original
     assert (
         self_update.get_version_in_dir(sys.executable, str(tmp_path), check_cli=True) == "1.0.2b4"
     )
@@ -1021,10 +1096,10 @@ def test_fpk_verification_uses_target_and_rejects_missing_or_wrong_versions(
 
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
     if actual:
-        _write_octop_metadata(tmp_path, actual)
-        _write_octop_package(tmp_path, actual)
+        _write_happyclaw_metadata(tmp_path, actual)
+        _write_happyclaw_package(tmp_path, actual)
     if actual == "1.0.2b5":
-        _write_octop_metadata(tmp_path, "1.0.2b4")
+        _write_happyclaw_metadata(tmp_path, "1.0.2b4")
     result = self_update._verify_fpk_upgrade(
         "1.0.2b4", str(tmp_path), sys.executable, [], version="1.0.2b5", locale=locale
     )
@@ -1062,8 +1137,8 @@ def test_upgrade_keeps_locale_bundle_when_installer_replaces_resources(
         (bundles / f"{language}.json").write_text(content, encoding="utf-8")
     target = tmp_path / "packages"
     target.mkdir()
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(target))
-    monkeypatch.setenv("OCTOP_FPK_SITE_PACKAGES", str(target) if fpk else "")
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(target))
+    monkeypatch.setenv("HAPPYCLAW_FPK_SITE_PACKAGES", str(target) if fpk else "")
     monkeypatch.setattr(loader.resources, "files", lambda _: bundles)
     monkeypatch.setattr(self_update, "get_local_version", lambda: "1.0.2b4")
     monkeypatch.setattr(self_update, "get_version_in_dir", lambda *args, **kwargs: actual)
@@ -1111,7 +1186,7 @@ def test_run_upgrade_rejects_non_newer_target_before_changes(
     from happyclaw.i18n import tr
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_FPK_SITE_PACKAGES", "fpk-target" if fpk else "")
+    monkeypatch.setenv("HAPPYCLAW_FPK_SITE_PACKAGES", "fpk-target" if fpk else "")
     monkeypatch.setattr(self_update, "get_local_version", lambda: "1.0.2b4")
 
     def unexpected(*args: object, **kwargs: object) -> None:
@@ -1132,7 +1207,7 @@ def test_run_managed_upgrade_retries_after_failed_verification(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.delenv("OCTOP_GREEN_PACKAGES", raising=False)
+    monkeypatch.delenv("HAPPYCLAW_GREEN_PACKAGES", raising=False)
     monkeypatch.setattr(self_update, "detect_installer", lambda: "uv")
     monkeypatch.setattr(self_update, "get_local_version", lambda: "1.0.2b4")
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
@@ -1166,7 +1241,7 @@ def test_cold_target_install_budget_preserves_regular_timeout(
 ) -> None:
     from happyclaw.infra.setup import self_update
 
-    monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path) if portable else "")
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(tmp_path) if portable else "")
     monkeypatch.setattr(self_update, "detect_installer", lambda: installer)
     monkeypatch.setattr(self_update, "has_pip", lambda _: True)
     monkeypatch.setattr(self_update, "get_local_version", lambda: "1.0.2b4")
@@ -1186,7 +1261,7 @@ def test_cold_target_install_budget_preserves_regular_timeout(
         if "download" in cmd:
             _write_upgrade_wheel(
                 Path(cmd[cmd.index("--dest") + 1]),
-                "Name: octop\nVersion: 1.0.2b5\nRequires-Dist: absent>=1\n",
+                "Name: happyclaw\nVersion: 1.0.2b5\nRequires-Dist: absent>=1\n",
             )
         return (
             (0, "")
@@ -1198,6 +1273,116 @@ def test_cold_target_install_budget_preserves_regular_timeout(
     result = self_update._run_managed_upgrade(version="1.0.2b5", locale="en")
     assert result.success is (portable and installer == "pip")
     assert budgets == ([90, 900] if portable and installer == "pip" else [90])
+
+
+def _write_legacy_octop_install(target: Path, version: str) -> None:
+    """An install published under the pre-rename name, as an upgrading user has it."""
+    metadata = target / f"octop-{version}.dist-info" / "METADATA"
+    metadata.parent.mkdir(parents=True)
+    metadata.write_text(f"Name: octop\nVersion: {version}\n", encoding="utf-8")
+    package = target / "octop" / "__init__.py"
+    package.parent.mkdir(parents=True, exist_ok=True)
+    package.write_text(f"__version__ = {version!r}\n", encoding="utf-8")
+    (package.parent / "__main__.py").write_text(
+        "import sys\nfrom . import __version__\n"
+        "assert sys.argv[1:] == ['--version']\n"
+        "print('octop v' + __version__)\nraise SystemExit(0)\n",
+        encoding="utf-8",
+    )
+
+
+def _build_installable_wheel(directory: Path, version: str) -> Path:
+    """A minimal but genuine wheel: pip and uv install it, nothing is stubbed."""
+    directory.mkdir(parents=True, exist_ok=True)
+    wheel = directory / f"happyclaw-{version}-py3-none-any.whl"
+    info = f"happyclaw-{version}.dist-info"
+    files = {
+        "happyclaw/__init__.py": f"__version__ = {version!r}\n",
+        "happyclaw/__main__.py": (
+            "import sys\nfrom . import __version__\n"
+            "assert sys.argv[1:] == ['--version']\n"
+            "print('happyclaw v' + __version__)\nraise SystemExit(0)\n"
+        ),
+        f"{info}/METADATA": f"Metadata-Version: 2.1\nName: happyclaw\nVersion: {version}\n",
+        f"{info}/WHEEL": (
+            "Wheel-Version: 1.0\nGenerator: self_update fixture\n"
+            "Root-Is-Purelib: true\nTag: py3-none-any\n"
+        ),
+    }
+    files[f"{info}/RECORD"] = "".join(f"{name},,\n" for name in [*files, f"{info}/RECORD"])
+    with zipfile.ZipFile(wheel, "w") as archive:
+        for name, content in files.items():
+            archive.writestr(name, content)
+    return wheel
+
+
+class _QuietHandler(SimpleHTTPRequestHandler):
+    def log_message(self, *args: object) -> None:
+        return None
+
+
+@pytest.fixture
+def package_index(tmp_path: Path) -> Iterator[str]:
+    """Serve a PEP 503 simple index over HTTP, the way a mirror serves the release."""
+    root = tmp_path / "mirror"
+    package_dir = root / "simple" / "happyclaw"
+    wheel = _build_installable_wheel(package_dir, "1.0.3b6")
+    (package_dir / "index.html").write_text(
+        f'<!DOCTYPE html><html><body><a href="{wheel.name}">{wheel.name}</a></body></html>',
+        encoding="utf-8",
+    )
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0), functools.partial(_QuietHandler, directory=str(root))
+    )
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}/simple"
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_pre_rename_install_upgrades_to_the_current_distribution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, package_index: str
+) -> None:
+    """A user still on ``octop`` is recognised, served the new release, and renamed in place."""
+    import importlib.metadata
+    import urllib.request
+
+    from happyclaw.infra.setup import self_update
+
+    uv = shutil.which("uv")
+    if uv is None:
+        pytest.skip("the upgrade runs a real installer; uv is not on PATH")
+
+    target = tmp_path / "packages"
+    _write_legacy_octop_install(target, "1.0.3b5")
+    monkeypatch.setenv("HAPPYCLAW_GREEN_PACKAGES", str(target))
+    monkeypatch.delenv("HAPPYCLAW_FPK_SITE_PACKAGES", raising=False)
+    monkeypatch.delenv("HAPPYCLAW_DESKTOP_SHELL", raising=False)
+    monkeypatch.delenv("OCTOP_DESKTOP_SHELL", raising=False)
+    # The host proxy intercepts loopback requests; this index is local on purpose.
+    monkeypatch.setattr(urllib.request, "getproxies", lambda: {})
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
+    monkeypatch.setenv("no_proxy", "127.0.0.1,localhost")
+    monkeypatch.setattr(self_update, "_MIRRORS", [])
+    monkeypatch.setattr(self_update, "_PYPI_SIMPLE", package_index)
+    monkeypatch.setattr(self_update, "detect_installer", lambda: "uv")
+    monkeypatch.setattr(self_update, "find_uv_executable", lambda: uv)
+    monkeypatch.setattr(self_update, "stash_console_scripts", lambda _: [])
+
+    assert self_update.get_local_version() == "1.0.3b5"
+
+    result = self_update.run_upgrade(version="1.0.3b6", locale="en")
+
+    assert result.success, result.mirror_errors
+    assert result.installed_version == "1.0.3b6"
+    assert self_update.get_local_version() == "1.0.3b6"
+    installed = {
+        dist.metadata["Name"] for dist in importlib.metadata.distributions(path=[str(target)])
+    }
+    assert "happyclaw" in installed
+    assert (target / "happyclaw-1.0.3b6.dist-info" / "METADATA").is_file()
 
 
 # The desktop launcher compares versions with its own implementation
