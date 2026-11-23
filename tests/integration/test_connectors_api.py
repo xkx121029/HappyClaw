@@ -468,7 +468,7 @@ async def test_oauth_start_public_http_notion_error_is_actionable(tmp_octop_home
         await bootstrap_admin(c, tmp_octop_home)
         auth = await auth_header(c)
         mocked_start = AsyncMock()
-        with patch("happyclaw.api.routers.connectors.start_oauth_for_target", mocked_start):
+        with patch("happyclaw.api.routers.connectors.oauth.start_oauth_for_target", mocked_start):
             r = await c.post(
                 f"/api/connectors/oauth/{kind}/start",
                 headers={**auth, "host": "58.87.70.170"},
@@ -596,7 +596,7 @@ async def test_install_cli_admin_ok_mocked(env, monkeypatch: pytest.MonkeyPatch)
         }
 
     monkeypatch.setattr(
-        "happyclaw.api.routers.connectors.install_connector_cli",
+        "happyclaw.api.routers.connectors.cli_auth.install_connector_cli",
         _fake_install,
     )
     r = await c.post("/api/connectors/feishu-cli/install-cli", headers=auth)
@@ -610,7 +610,7 @@ async def test_cli_status_available_to_non_admin(env, monkeypatch: pytest.Monkey
     c, _, admin_auth, _ = env
     user_auth = await create_user(c, admin_auth, username="cli_status_user")
     monkeypatch.setattr(
-        "happyclaw.api.routers.connectors.cli_install_status",
+        "happyclaw.api.routers.connectors.cli_auth.cli_install_status",
         lambda kind: {
             "ok": True,
             "kind": kind,
@@ -776,7 +776,7 @@ async def test_custom_mcp_oauth_callback_applies_tokens(env):
     )
 
     with patch(
-        "happyclaw.api.routers.connectors.exchange_oauth_code",
+        "happyclaw.api.routers.connectors.oauth.exchange_oauth_code",
         new_callable=AsyncMock,
         return_value={
             "access_token": "new-access-token",
@@ -826,8 +826,8 @@ async def test_custom_mcp_oauth_start_unified(env):
         )
     )
     with (
-        patch("happyclaw.api.routers.connectors._is_public_http_uri", return_value=False),
-        patch("happyclaw.api.routers.connectors.start_oauth_for_target", mocked_start),
+        patch("happyclaw.api.routers.connectors.oauth._is_public_http_uri", return_value=False),
+        patch("happyclaw.api.routers.connectors.oauth.start_oauth_for_target", mocked_start),
     ):
         r = await c.post(
             "/api/connectors/oauth/start",
@@ -880,8 +880,8 @@ async def test_custom_mcp_oauth_client_is_saved_redacted_and_used(env):
         return_value=("https://auth.example.com/authorize?state=x", "verifier", {})
     )
     with (
-        patch("happyclaw.api.routers.connectors._is_public_http_uri", return_value=False),
-        patch("happyclaw.api.routers.connectors.start_oauth_for_target", mocked_start),
+        patch("happyclaw.api.routers.connectors.oauth._is_public_http_uri", return_value=False),
+        patch("happyclaw.api.routers.connectors.oauth.start_oauth_for_target", mocked_start),
     ):
         r = await c.post(
             "/api/connectors/oauth/start",
@@ -921,7 +921,7 @@ async def test_custom_mcp_oauth_client_is_saved_redacted_and_used(env):
         },
     )
     with patch(
-        "happyclaw.api.routers.connectors.exchange_oauth_code",
+        "happyclaw.api.routers.connectors.oauth.exchange_oauth_code",
         new_callable=AsyncMock,
         return_value={"access_token": "tok", "refresh_token": "r", "expires_at": 9_999_999_999},
     ):
@@ -1023,7 +1023,7 @@ async def test_oauth_callback_safely_renders_stored_redirect(env, redirect_after
         redirect_after=redirect_after,
     )
     with patch(
-        "happyclaw.api.routers.connectors.exchange_oauth_code",
+        "happyclaw.api.routers.connectors.oauth.exchange_oauth_code",
         new_callable=AsyncMock,
         return_value={"access_token": "test-token"},
     ):
@@ -1065,7 +1065,7 @@ async def test_oauth_callback_escapes_error_html(env, exchange_error):
         redirect_after="/connectors",
     )
     with patch(
-        "happyclaw.api.routers.connectors.exchange_oauth_code",
+        "happyclaw.api.routers.connectors.oauth.exchange_oauth_code",
         new_callable=AsyncMock,
         side_effect=ValueError(payload),
     ):

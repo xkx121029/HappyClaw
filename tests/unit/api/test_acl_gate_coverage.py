@@ -25,7 +25,7 @@ GATED_FILES = [
     "routers/search.py",
     "routers/ollama_models.py",
     "routers/onnx_models.py",
-    "routers/connectors.py",
+    "routers/connectors/cli_auth.py",
     "routers/bridge.py",
     "routers/knowledge_bases.py",
     "routers/browser/uninstall.py",
