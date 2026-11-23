@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import json
 import logging
 import os
@@ -84,7 +86,7 @@ def cos_base_url() -> str:
     An empty value drops the COS candidate entirely, leaving the Hugging Face
     and hf-mirror endpoints as the source of truth.
     """
-    return os.environ.get(_COS_BASE_ENV, COS_ENDPOINT_DEFAULT).strip().rstrip("/")
+    return env_get("ONNX_COS_BASE", COS_ENDPOINT_DEFAULT).strip().rstrip("/")
 
 
 def cos_object_key(model_name: str, rel_path: str = "") -> str:

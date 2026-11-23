@@ -84,8 +84,8 @@ def _parse_backup_keep_days(value: str) -> int:
 def _checkpoint_backup_policy_from_env() -> tuple[Literal["first", "always", "off"], int]:
     # Match Harness maintenance while remaining compatible with older Harness wheels.
     return (
-        _parse_backup_mode(os.environ.get(_BACKUP_MODE_ENV, "").strip().lower()),
-        _parse_backup_keep_days(os.environ.get(_BACKUP_KEEP_DAYS_ENV, "").strip()),
+        _parse_backup_mode(env_get("CHECKPOINT_BACKUP_BEFORE_PRUNE", "").strip().lower()),
+        _parse_backup_keep_days(env_get("CHECKPOINT_BACKUP_KEEP_DAYS", "").strip()),
     )
 
 

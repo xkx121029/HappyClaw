@@ -20,6 +20,8 @@ package: the sandbox decides, the host decides how to report it.
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import logging
 import os
 from collections.abc import Iterable, Mapping
@@ -87,7 +89,7 @@ def resolve_absence_mode_strict(raw: object | None) -> SandboxAbsenceMode:
     stricter mode.
     """
 
-    value = raw if raw is not None else os.environ.get(ENV_SANDBOX_ABSENCE)
+    value = raw if raw is not None else env_get("DSH_SANDBOX_ABSENCE")
     try:
         return resolve_absence_mode(value)
     except SandboxConfigError:

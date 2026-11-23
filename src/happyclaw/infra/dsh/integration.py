@@ -16,6 +16,8 @@ No module-level mutable state is used: cursors live on the owning
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import logging
 import os
 from dataclasses import dataclass, field, replace
@@ -60,14 +62,14 @@ _TRUTHY = frozenset({"1", "true", "yes", "on"})
 def dsh_skills_prompts_enabled() -> bool:
     """Return whether the opt-in DSH prompt integration is on (default: off)."""
 
-    raw = os.environ.get(DSH_SKILLS_PROMPTS_ENV, "")
+    raw = env_get("DSH_SKILLS_PROMPTS", "")
     return raw.strip().lower() in _TRUTHY
 
 
 def dsh_skills_strict_enabled() -> bool:
     """Return whether a skill parse error must fail the turn (default: degrade)."""
 
-    raw = os.environ.get(DSH_SKILLS_STRICT_ENV, "")
+    raw = env_get("DSH_SKILLS_STRICT", "")
     return raw.strip().lower() in _TRUTHY
 
 

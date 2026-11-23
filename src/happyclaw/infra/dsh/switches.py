@@ -66,7 +66,7 @@ def llm_refs() -> frozenset[str]:
     S8 is opt-in per ref, never global: an empty allow-list means "use the
     harness factory for everything", even when ``HAPPYCLAW_DSH_LLM`` is on.
     """
-    raw = os.environ.get(_LLM_REFS, "")
+    raw = env_get("DSH_LLM_REFS") or ""
     return frozenset(part.strip() for part in raw.split(",") if part.strip())
 
 

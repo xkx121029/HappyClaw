@@ -134,7 +134,7 @@ def resolve_service_scope(*, default: ServiceScope | None = None) -> ServiceScop
     loads it into the ``gui/$UID`` domain (no sudo); ``system`` writes to
     ``/Library/LaunchDaemons`` and loads into ``system`` (sudo required).
     """
-    raw = os.environ.get(_ENV_SCOPE, "").strip().lower()
+    raw = env_get("SERVICE_SCOPE", "").strip().lower()
     if raw in {"user", "system"}:
         return raw  # type: ignore[return-value]
     if raw == "auto":

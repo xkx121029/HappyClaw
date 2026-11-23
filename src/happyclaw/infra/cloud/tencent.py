@@ -10,6 +10,8 @@ automatically while the refresh token is still valid.
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import base64
 import json
 import logging
@@ -1078,7 +1080,7 @@ def tccli_profile_for_user(uid: int | None) -> str:
     """
     if uid is None:
         return "default"
-    enabled = os.environ.get(_TCCLI_ISOLATION_ENV, "").strip().lower()
+    enabled = env_get("TCCLI_PROFILE_ISOLATION", "").strip().lower()
     if enabled not in ("1", "true", "yes", "on"):
         return "default"
     return f"octop-{int(uid)}"

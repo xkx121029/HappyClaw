@@ -15,6 +15,8 @@ verification; the live path is the processor hook.
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import argparse
 import hashlib
 import json
@@ -77,12 +79,12 @@ class ParsedMessage:
 
 def shadow_enabled() -> bool:
     """Return whether the shadow switch is on. Defaults to off."""
-    return os.environ.get(ENV_ENABLED, "").strip().lower() in _TRUTHY
+    return env_get("DSH_SHADOW", "").strip().lower() in _TRUTHY
 
 
 def shadow_root() -> Path:
     """Resolve the shadow log root from ``HAPPYCLAW_DSH_SHADOW_DIR`` or the home."""
-    raw = os.environ.get(ENV_SHADOW_DIR, "").strip()
+    raw = env_get("DSH_SHADOW_DIR", "").strip()
     if raw:
         return Path(raw).expanduser()
     return PathLayout.from_env().root / DEFAULT_DIRNAME
