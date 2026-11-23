@@ -27,7 +27,7 @@ def _bash_path(path: Path) -> str:
 
 
 def _source_helpers() -> str:
-    return f'OCTOP_ENTRYPOINT_LIB=1; source "{_bash_path(ENTRYPOINT)}"'
+    return f'HAPPYCLAW_ENTRYPOINT_LIB=1; source "{_bash_path(ENTRYPOINT)}"'
 
 
 def _bash(script: str, *, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -239,7 +239,7 @@ def test_entrypoint_arm_prepare_skips_non_arm() -> None:
 def test_init_skip_message_still_marked_in_init_command() -> None:
     """Legacy admin bootstraps (fnOS) stay idempotent; ``octop init`` keeps the marker."""
     marker_text = "already exists, skipping"
-    init_cmd = REPO / "src" / "octop" / "cli" / "commands" / "init.py"
+    init_cmd = REPO / "src" / "happyclaw" / "cli" / "commands" / "init.py"
     assert marker_text in init_cmd.read_text(encoding="utf-8")
 
 
