@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 import warnings
 from collections.abc import MutableMapping
+from typing import overload
 
 LEGACY_PREFIX = "OCTOP_"
 CURRENT_PREFIX = "HAPPYCLAW_"
@@ -57,6 +58,18 @@ def alias_legacy_env(environ: MutableMapping[str, str] | None = None) -> list[st
         aliased.append(current)
         _warn(name, current)
     return aliased
+
+
+@overload
+def env_get(suffix: str) -> str | None: ...
+
+
+@overload
+def env_get(suffix: str, default: str) -> str: ...
+
+
+@overload
+def env_get(suffix: str, default: str | None) -> str | None: ...
 
 
 def env_get(suffix: str, default: str | None = None) -> str | None:
