@@ -63,7 +63,7 @@ def _agent_rows(server: Any) -> list[Any]:
 def _cron_scheduled(server: Any) -> bool:
     runtime = getattr(server, "app_runtime", None)
     if runtime is not None and runtime.cron_manager is not None:
-        return runtime.cron_manager.has_system_job(AUTO_BACKUP_JOB_ID)
+        return bool(runtime.cron_manager.has_system_job(AUTO_BACKUP_JOB_ID))
     return False
 
 

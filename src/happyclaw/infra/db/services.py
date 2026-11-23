@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from happyclaw.config import HappyclawConfig
 from happyclaw.infra.crypto.sealed_repos import (
@@ -48,6 +48,9 @@ from happyclaw.infra.db.repos.user_webauthn import UserWebauthnRepo
 from happyclaw.infra.db.repos.users import UserRepo
 from happyclaw.infra.db.repos.voice_providers import VoiceProviderRepo
 from happyclaw.infra.utils.paths import PathLayout
+
+if TYPE_CHECKING:
+    from happyclaw.infra.users.owner import OwnerIdentityService
 
 
 @dataclass(frozen=True)
@@ -266,7 +269,7 @@ class SharedServices:
         return self.repos.control_file_repo
 
     @cached_property
-    def owner(self) -> Any:
+    def owner(self) -> OwnerIdentityService:
         """Single-user owner resolver (see ``infra.users.owner``).
 
         Cached for the lifetime of this services bundle so the owner row is
