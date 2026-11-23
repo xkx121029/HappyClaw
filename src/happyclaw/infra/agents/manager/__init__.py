@@ -2,23 +2,39 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import asyncio
 import json
 import logging
 import os
-import re
 import shutil
 import threading
 import time
-from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
-from contextlib import asynccontextmanager, suppress
-from dataclasses import dataclass, field, fields, replace
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Sequence,
+)
+from contextlib import (
+    asynccontextmanager,
+    suppress,
+)
+from dataclasses import (
+    fields,
+    replace,
+)
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    cast,
+)
 
-from happyclaw_harness import HarnessAgent, HarnessAgentConfig, HarnessAgentManager
+from happyclaw_harness import (
+    HarnessAgent,
+    HarnessAgentConfig,
+    HarnessAgentManager,
+)
 from happyclaw_harness.registry import AgentEntry
 from happyclaw_harness.security.models import SecurityPolicy
 
@@ -27,11 +43,23 @@ from happyclaw.i18n.domains.agents import (
     format_agent_start_error,
 )
 from happyclaw.infra.agents.manager.base import AgentManagerBase
+from happyclaw.infra.agents.manager.create_spec import (
+    AgentCreateSpec,
+    _stored_id_list,
+    validate_custom_agent_id,
+)
 from happyclaw.infra.agents.memory.backend import memory_backend_from_agent_config
 from happyclaw.infra.agents.memory.slim import MemorySlimCoordinator
-from happyclaw.infra.agents.providers import HostModelFactory, ProviderStore, sync_providers_to_harness
+from happyclaw.infra.agents.providers import (
+    HostModelFactory,
+    ProviderStore,
+    sync_providers_to_harness,
+)
 from happyclaw.infra.agents.providers.health import ModelHealthRegistry
-from happyclaw.infra.agents.security import SecuritySettingsStore, ToolGuardRulesStore
+from happyclaw.infra.agents.security import (
+    SecuritySettingsStore,
+    ToolGuardRulesStore,
+)
 from happyclaw.infra.agents.security.hitl_session import (
     HitlSessionPolicyStore,
     apply_session_bypass,
@@ -39,8 +67,14 @@ from happyclaw.infra.agents.security.hitl_session import (
     thread_id_from_request,
 )
 from happyclaw.infra.agents.settings.acp import ACPSettingsStore
-from happyclaw.infra.agents.settings.decision import DecisionSettings, DecisionSettingsStore
-from happyclaw.infra.agents.settings.langfuse import LangfuseSettings, LangfuseSettingsStore
+from happyclaw.infra.agents.settings.decision import (
+    DecisionSettings,
+    DecisionSettingsStore,
+)
+from happyclaw.infra.agents.settings.langfuse import (
+    LangfuseSettings,
+    LangfuseSettingsStore,
+)
 from happyclaw.infra.agents.settings.media_generation import (
     MediaGenerationSettings,
     MediaGenerationSettingsStore,
@@ -87,14 +121,24 @@ from happyclaw.infra.dsh.integration import (
 )
 from happyclaw.infra.dsh.prompts.skills_injection import SkillPromptSnapshot
 from happyclaw.infra.dsh.switches import stage_enabled as dsh_stage_enabled
-from happyclaw.infra.errors import ErrorCode, HappyclawError
-from happyclaw.infra.skills.presentation import apply_skill_presentation, localize_skill_summary
+from happyclaw.infra.errors import (
+    ErrorCode,
+    HappyclawError,
+)
+from happyclaw.infra.skills.presentation import (
+    apply_skill_presentation,
+    localize_skill_summary,
+)
 from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 from happyclaw.infra.skills.workspace_catalog import (
     list_workspace_skill_summaries,
     repair_workspace_skill_manifests,
 )
-from happyclaw.infra.utils.locale import Locale, resolve_user_locale
+from happyclaw.infra.utils.env_alias import env_get
+from happyclaw.infra.utils.locale import (
+    Locale,
+    resolve_user_locale,
+)
 from happyclaw.infra.utils.turn_failure import turn_model_scope
 from happyclaw.infra.utils.ulid import new_short_id
 
@@ -108,8 +152,11 @@ if TYPE_CHECKING:
     from happyclaw.infra.proactive.scheduler import ProactiveCareScheduler
     from happyclaw.infra.utils.paths import PathLayout
 
-logger = logging.getLogger(__name__)
 
+from happyclaw.infra.agents.manager.create_spec import _CUSTOM_AGENT_ID_RE as _CUSTOM_AGENT_ID_RE
+from happyclaw.infra.agents.manager.create_spec import _RESERVED_AGENT_IDS as _RESERVED_AGENT_IDS
+
+logger = logging.getLogger(__name__)
 
 def _model_retry_on_failure(
     exc: Exception,
@@ -184,7 +231,9 @@ def skills_disabled_set(cfg: dict[str, Any]) -> set[str]:
 
 def tools_disabled_set(cfg: dict[str, Any]) -> set[str]:
     """Return disabled built-in tool names from agent config (critical stripped)."""
-    from happyclaw.infra.agents.settings.tool_catalog import tools_disabled_set as _tools_disabled_set
+    from happyclaw.infra.agents.settings.tool_catalog import (
+        tools_disabled_set as _tools_disabled_set,
+    )
 
     return _tools_disabled_set(cfg)
 
@@ -195,20 +244,6 @@ def skill_package_ids_list(cfg: dict[str, Any]) -> list[str]:
     if not isinstance(raw, list):
         return []
     return [str(item) for item in raw if str(item).strip()]
-
-
-def _stored_id_list(value: Any) -> list[str]:
-    """Normalize a persisted id list, whether it is already a list or JSON text."""
-    if isinstance(value, list):
-        return [str(item) for item in value if str(item).strip()]
-    if isinstance(value, str) and value.strip():
-        try:
-            parsed = json.loads(value)
-        except (json.JSONDecodeError, TypeError):
-            return []
-        if isinstance(parsed, list):
-            return [str(item) for item in parsed if str(item).strip()]
-    return []
 
 
 def _memory_aux_model_settings(
@@ -401,58 +436,6 @@ async def _fill_missing_subagent_colors(agent: Any, rows: list[dict[str, Any]]) 
 # ---------------------------------------------------------------------------
 # Data types
 # ---------------------------------------------------------------------------
-
-# Custom agent ids become workspace directory names (~/.octop/agents/<id>/),
-# so restrict to a conservative slug charset — no separators, dots, or
-# unicode — to keep every downstream path/URL usage safe.
-_CUSTOM_AGENT_ID_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{1,62}[a-zA-Z0-9]$")
-
-
-def validate_custom_agent_id(agent_id: str) -> str:
-    """Validate a user-supplied agent id; raise ``HappyclawError`` when invalid."""
-    if not _CUSTOM_AGENT_ID_RE.fullmatch(agent_id):
-        raise HappyclawError(
-            ErrorCode.AGENT_ID_INVALID,
-            "agent id must be 3-64 chars of letters/digits/underscore/hyphen, "
-            "starting and ending with a letter or digit",
-        )
-    lowered = agent_id.lower()
-    if lowered in _RESERVED_AGENT_IDS:
-        raise HappyclawError(ErrorCode.AGENT_ID_INVALID, f"agent id {agent_id!r} is reserved")
-    return agent_id
-
-
-# Lowercase names that would collide with workspace-adjacent directories or
-# well-known URL/route segments.
-_RESERVED_AGENT_IDS = frozenset({"api", "admin", "agents", "experts"})
-
-
-@dataclass
-class AgentCreateSpec:
-    """Input for :meth:`AgentManager.create`."""
-
-    name: str
-    agent_id: str | None = None
-    user_id: int | None = None
-    description: str | None = None
-    persona_mbti: str | None = None
-    default_model: str | None = None
-    system_prompt: str | None = None
-    icon: str | None = None
-    template_name: str | None = None
-    is_shared: bool = False
-    icon_name: str | None = None
-    icon_url: str | None = None
-    color: str | None = None
-    skill_package_ids: list[str] | None = None
-    published_expert_id: str | None = None
-    welcome_message: str | None = None
-    knowledge_base_ids: list[str] | None = None
-    mcp_servers: list[str] | None = None
-    runtime_config: dict[str, Any] = field(default_factory=dict)
-    config: dict[str, Any] = field(default_factory=dict)
-    kind: str = "expert"
-    member_ids: list[str] = field(default_factory=list)
 
 
 def _sanitize_bound_mcp_tools(agent: Any) -> None:
@@ -1225,7 +1208,9 @@ class AgentManager(AgentManagerBase):
                     workspace_dir=workspace_dir,
                     paths=self._paths,
                 )
-                from happyclaw.infra.agents.workspace.dir import remove_agent_host_dirs  # noqa: PLC0415
+                from happyclaw.infra.agents.workspace.dir import (
+                    remove_agent_host_dirs,  # noqa: PLC0415
+                )
 
                 await asyncio.to_thread(
                     remove_agent_host_dirs, cfg, paths=self._paths, agent_id=agent_id
@@ -1845,7 +1830,9 @@ class AgentManager(AgentManagerBase):
 
     def find_agents_using_storage_backend(self, backend_name: str) -> list[dict[str, str]]:
         """Return agents whose ``config.backend`` references a storage backend by name."""
-        from happyclaw.infra.backend.resolver import find_agents_using_storage_backend  # noqa: PLC0415
+        from happyclaw.infra.backend.resolver import (
+            find_agents_using_storage_backend,  # noqa: PLC0415
+        )
 
         return find_agents_using_storage_backend(
             agent_repo=self._repos.agent_repo,
@@ -4109,8 +4096,12 @@ class AgentManager(AgentManagerBase):
         """Resolve :class:`BackendWorkspace` for *row* without a running harness agent."""
         from happyclaw_harness.backends.workspace import BackendWorkspace  # noqa: PLC0415
 
-        from happyclaw.infra.agents.workspace.dir import system_files_path_from_config  # noqa: PLC0415
-        from happyclaw.infra.backend.opensandbox_deps import ensure_opensandbox_deps  # noqa: PLC0415
+        from happyclaw.infra.agents.workspace.dir import (
+            system_files_path_from_config,  # noqa: PLC0415
+        )
+        from happyclaw.infra.backend.opensandbox_deps import (
+            ensure_opensandbox_deps,  # noqa: PLC0415
+        )
         from happyclaw.infra.backend.resolve_backend import resolve_octop_backend  # noqa: PLC0415
 
         if cfg is None:
@@ -4912,7 +4903,11 @@ class AgentManager(AgentManagerBase):
         return replace(cfg, interrupt_on={**(cfg.interrupt_on or {}), **extra})
 
     def _apply_team_host_config(self, cfg: HarnessAgentConfig, row: Any) -> HarnessAgentConfig:
-        from happyclaw.infra.agents.teams import host_system_prompt, host_tools_disabled, is_team_agent
+        from happyclaw.infra.agents.teams import (
+            host_system_prompt,
+            host_tools_disabled,
+            is_team_agent,
+        )
 
         if not is_team_agent(row):
             if "peer_invoke_mode" in _HARNESS_AGENT_CONFIG_FIELDS:
