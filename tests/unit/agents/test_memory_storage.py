@@ -12,9 +12,13 @@ from unittest.mock import MagicMock
 import pytest
 from tests.unit.agents.test_memory_slim import make_manager
 
-from octop.config import OctopConfig
-from octop.infra.agents.memory.sqlite_storage import _checkpoint_policy
-from octop.infra.agents.memory.storage import sqlite_store_is_shared
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.agents.memory.sqlite_storage import (
+    _BACKUP_KEEP_DAYS_ENV,
+    _BACKUP_MODE_ENV,
+    _checkpoint_policy,
+)
+from happyclaw.infra.agents.memory.storage import sqlite_store_is_shared
 
 
 @pytest.fixture
@@ -24,7 +28,7 @@ def store(tmp_path):
     registry.get_row = lambda aid: row if aid == "a" else None
     registry._repos = SimpleNamespace(agent_repo=MagicMock())
     registry._repos.agent_repo.list_all.return_value = [row]
-    registry._config = OctopConfig()
+    registry._config = HappyclawConfig()
     registry._paths = SimpleNamespace()
     yield coordinator, registry, memory, cfg, cp
     memory._checkpointer.conn.close()
@@ -49,7 +53,7 @@ async def test_inspect_then_maintain_preserves_history_and_never_sweeps_host(sto
         pytest.fail("current-expert maintenance must never sweep the host")
 
     monkeypatch.setattr(
-        "octop.infra.agents.memory.thread_cleanup.sweep_deleted_residuals", forbidden
+        "happyclaw.infra.agents.memory.thread_cleanup.sweep_deleted_residuals", forbidden
     )
     first = coordinator.start_current("a", 1)
     assert first["busy"] and first["job"]["phase"] == "waiting"
@@ -118,7 +122,7 @@ def test_stopped_expert_sharing_sqlite_disables_maintenance(store, monkeypatch, 
     )
     registry._repos.agent_repo.list_all.return_value.append(other)
     monkeypatch.setattr(
-        "octop.infra.agents.memory.storage.workspace_for_agent_row",
+        "happyclaw.infra.agents.memory.storage.workspace_for_agent_row",
         lambda *args, **kwargs: tmp_path,
     )
     assert sqlite_store_is_shared(registry, "a", memory)
@@ -167,7 +171,7 @@ async def test_shared_file_counts_only_selected_namespace_and_never_maintains(st
 
 
 def test_read_only_counts_distinguish_missing_zero_and_timeout(tmp_path, monkeypatch):
-    from octop.infra.agents.memory.sqlite_storage import inspect_sqlite_storage
+    from happyclaw.infra.agents.memory.sqlite_storage import inspect_sqlite_storage
 
     path = tmp_path / "minimal.sqlite"
     with sqlite3.connect(path) as conn:
@@ -185,7 +189,7 @@ def test_read_only_counts_distinguish_missing_zero_and_timeout(tmp_path, monkeyp
     assert rows["checkpoints"]["rows"] == 3
     assert rows["checkpoint_threads"]["rows"] == 2
     assert path.read_bytes() == original
-    monkeypatch.setattr("octop.infra.agents.memory.sqlite_storage.COUNT_BUDGET_SECONDS", 0)
+    monkeypatch.setattr("happyclaw.infra.agents.memory.sqlite_storage.COUNT_BUDGET_SECONDS", 0)
     snapshot = inspect_sqlite_storage(backend, shared=False)
     assert snapshot["memory_counts"][0]["status"] == "timed_out"
     assert snapshot["memory_counts"][0]["rows"] is None
@@ -212,12 +216,12 @@ def test_read_only_counts_distinguish_missing_zero_and_timeout(tmp_path, monkeyp
 def test_checkpoint_backup_modes_match_harness(value, mode, warning, monkeypatch, caplog):
     # Same cases as happyclaw-harness tests/test_checkpoint_backup.py, including
     # when this test runs against an older installed Harness wheel.
-    variable = "OCTOP_CHECKPOINT_BACKUP_BEFORE_PRUNE"
+    variable = _BACKUP_MODE_ENV
     if value is None:
         monkeypatch.delenv(variable, raising=False)
     else:
         monkeypatch.setenv(variable, value)
-    monkeypatch.delenv("OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS", raising=False)
+    monkeypatch.delenv(_BACKUP_KEEP_DAYS_ENV, raising=False)
     for _ in range(2):
         policy = _checkpoint_policy(0)
         assert policy["checkpoint_backup_before_prune"] == mode
@@ -227,14 +231,14 @@ def test_checkpoint_backup_modes_match_harness(value, mode, warning, monkeypatch
 
 @pytest.mark.parametrize(("value", "expected"), [("0", 0), (" 14 ", 14), ("-1", 7), ("invalid", 7)])
 def test_checkpoint_backup_keep_days_match_harness(value, expected, monkeypatch):
-    monkeypatch.setenv("OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS", value)
+    monkeypatch.setenv(_BACKUP_KEEP_DAYS_ENV, value)
     assert _checkpoint_policy(0)["checkpoint_backup_keep_days"] == expected
 
 
 def test_checkpoint_backup_policy_agrees_with_installed_harness(monkeypatch):
     harness = pytest.importorskip("happyclaw_harness.middleware.checkpoint_backup")
-    mode_env = "OCTOP_CHECKPOINT_BACKUP_BEFORE_PRUNE"
-    days_env = "OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS"
+    mode_env = _BACKUP_MODE_ENV
+    days_env = _BACKUP_KEEP_DAYS_ENV
     for mode, days in (
         ("", ""),
         ("first", "7"),

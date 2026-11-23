@@ -80,13 +80,13 @@ jobs:
           cache: npm
           cache-dependency-path: dashboard/package-lock.json
 
-      - name: Build frontend → src/octop/dashboard
+      - name: Build frontend → src/happyclaw/dashboard
         run: make build-frontend
 
       - uses: actions/upload-artifact@v7
         with:
           name: dashboard-dist
-          path: src/octop/dashboard/
+          path: src/happyclaw/dashboard/
           if-no-files-found: error
           retention-days: 7
 
@@ -160,13 +160,13 @@ jobs:
         run: |
           set -euo pipefail
           VER=$(sed -nE 's/^version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' pyproject.toml | head -1)
-          echo "OCTOP_VERSION=${VER}" >> "$GITHUB_ENV"
+          echo "HAPPYCLAW_VERSION=${VER}" >> "$GITHUB_ENV"
           echo "version=${VER}"
 
       - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
-          path: src/octop/dashboard
+          path: src/happyclaw/dashboard
 
       - uses: astral-sh/setup-uv@v7
         with:
@@ -234,7 +234,7 @@ jobs:
       # With archive:false, artifact name is the filename (name: is ignored).
       - uses: actions/upload-artifact@v7
         with:
-          path: desktop/portable/release/Octop-portable-${{ matrix.plat }}-${{ env.OCTOP_VERSION }}.zip
+          path: desktop/portable/release/Octop-portable-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.zip
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -243,12 +243,12 @@ jobs:
         run: |
           set -euo pipefail
           plat="${{ matrix.plat }}"
-          zip="desktop/portable/release/Octop-portable-${plat}-${OCTOP_VERSION}.zip"
+          zip="desktop/portable/release/Octop-portable-${plat}-${HAPPYCLAW_VERSION}.zip"
           rm -rf desktop/src/resources/portable
           mkdir -p desktop/src/resources/portable
-          # The shell serves packages/octop/dashboard from this tree. There is
+          # The shell serves packages/happyclaw/dashboard from this tree. There is
           # no second copy under resources/dashboard.
-          test -f "desktop/portable/release/Octop-${plat}/packages/octop/dashboard/index.html"
+          test -f "desktop/portable/release/Octop-${plat}/packages/happyclaw/dashboard/index.html"
           # Windows keeps one zip; NSIS extracts it with tar.exe. Packing the
           # ~40k files into NSIS is slower. macOS (DMG) and Linux (deb/rpm)
           # copy the tree package.sh already assembled. No zip in those apps.
@@ -267,7 +267,7 @@ jobs:
             test ! -e desktop/src/resources/portable/*.zip
           fi
           if [[ "$plat" == windows-* ]]; then py=python; else py=python3; fi
-          "$py" - "$zip" "$OCTOP_VERSION" <<'PY'
+          "$py" - "$zip" "$HAPPYCLAW_VERSION" <<'PY'
           import hashlib
           import json
           import pathlib
@@ -283,7 +283,7 @@ jobs:
           print(f"Bundled {path.name} with SHA-256 {manifest['sha256']}")
           PY
           if [[ "$plat" != windows-* ]]; then
-            test -f desktop/src/resources/portable/packages/octop/dashboard/index.html
+            test -f desktop/src/resources/portable/packages/happyclaw/dashboard/index.html
           fi
 
       - uses: actions/setup-node@v5
@@ -307,7 +307,7 @@ jobs:
       - name: Build native Electron installers
         working-directory: desktop/src
         env:
-          OCTOP_PLATFORM: ${{ matrix.plat }}
+          HAPPYCLAW_PLATFORM: ${{ matrix.plat }}
           # Empty, not omitted: a CSC_LINK in the runner environment overrides
           # mac.identity: null and electron-builder tries to sign.
           CSC_LINK: ""
@@ -334,7 +334,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'darwin-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.OCTOP_VERSION }}.dmg
+          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.dmg
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -342,7 +342,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'darwin-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.OCTOP_VERSION }}.zip
+          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.zip
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -350,7 +350,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'windows-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.OCTOP_VERSION }}.exe
+          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.exe
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -358,7 +358,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'linux-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.OCTOP_VERSION }}.deb
+          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.deb
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -366,7 +366,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'linux-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.OCTOP_VERSION }}.rpm
+          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.rpm
           archive: false
           if-no-files-found: error
           retention-days: 14

@@ -7,7 +7,7 @@ import hashlib
 import hmac
 from urllib.parse import quote
 
-from octop.infra.utils.tencent_asr_sign import (
+from happyclaw.infra.utils.tencent_asr_sign import (
     ASR_V2_HOST,
     DEFAULT_ENGINE,
     DEFAULT_EXPIRED_SECONDS,

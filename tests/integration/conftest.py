@@ -10,9 +10,9 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from octop.api.app import build_app
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.server import OctopServer
+from happyclaw.api.app import build_app
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.server import HappyclawServer
 from tests.support.app import octop_client
 from tests.support.auth import (
     auth_header,
@@ -42,7 +42,7 @@ def _disable_remote_market(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 async def app_client(
     tmp_octop_home: Path,
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, Path]]:
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, Path]]:
     """HTTP client + server before setup wizard completes."""
     async with octop_client(tmp_octop_home, patch_llm=False) as (client, srv):
         yield client, srv, tmp_octop_home
@@ -51,7 +51,7 @@ async def app_client(
 @pytest.fixture
 async def patched_app_client(
     tmp_octop_home: Path,
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, Path]]:
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, Path]]:
     """HTTP client + server with harness patched (pre-setup wizard tests)."""
     async with octop_client(tmp_octop_home) as (client, srv):
         yield client, srv, tmp_octop_home
@@ -60,7 +60,7 @@ async def patched_app_client(
 @pytest.fixture
 async def env(
     tmp_octop_home: Path,
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str]]]:
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]]]:
     """Admin-authenticated client (no shared provider pre-seeded)."""
     async with octop_client(tmp_octop_home) as (client, srv):
         await bootstrap_admin(client, tmp_octop_home)
@@ -70,7 +70,7 @@ async def env(
 
 @pytest.fixture
 async def env_admin_client(
-    env: tuple[httpx.AsyncClient, OctopServer, dict[str, str]],
+    env: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]],
 ) -> AsyncIterator[tuple[httpx.AsyncClient, dict[str, str]]]:
     """``(client, admin auth)`` — no server handle."""
     client, _srv, auth = env
@@ -79,8 +79,8 @@ async def env_admin_client(
 
 @pytest.fixture
 async def env_with_provider(
-    env: tuple[httpx.AsyncClient, OctopServer, dict[str, str]],
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str]]]:
+    env: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]],
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]]]:
     """``env`` plus a shared OpenAI provider for agent CRUD tests."""
     client, srv, auth = env
     await seed_openai_provider(client, auth)
@@ -89,8 +89,8 @@ async def env_with_provider(
 
 @pytest.fixture
 async def env_with_agent(
-    env_with_provider: tuple[httpx.AsyncClient, OctopServer, dict[str, str]],
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str], str]]:
+    env_with_provider: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]],
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str]]:
     """``env_with_provider`` plus a default test agent."""
     client, srv, auth = env_with_provider
     agent_id = await create_agent(client, auth)
@@ -99,8 +99,8 @@ async def env_with_agent(
 
 @pytest.fixture
 async def env_with_main_agent(
-    env: tuple[httpx.AsyncClient, OctopServer, dict[str, str]],
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str], str]]:
+    env: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]],
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str]]:
     """``env`` plus the bootstrap ``main`` agent."""
     client, srv, auth = env
     agents = (await client.get("/api/agents", headers=auth)).json()
@@ -110,8 +110,8 @@ async def env_with_main_agent(
 
 @pytest.fixture
 async def env_with_provider_record(
-    env: tuple[httpx.AsyncClient, OctopServer, dict[str, str]],
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str], int]]:
+    env: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]],
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], int]]:
     """``env`` plus a created OpenAI provider; yields provider row id."""
     client, srv, auth = env
     row = await create_provider(
@@ -125,8 +125,8 @@ async def env_with_provider_record(
 
 @pytest.fixture
 async def env_alice_bob_agent(
-    env_with_provider: tuple[httpx.AsyncClient, OctopServer, dict[str, str]],
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str], dict[str, str], str]]:
+    env_with_provider: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]],
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], dict[str, str], str]]:
     """Two regular users plus alice-owned agent (channels / cron isolation)."""
     from tests.support.auth import ensure_users
 
@@ -150,8 +150,8 @@ async def env_alice_bob_agent(
 
 @pytest.fixture
 async def env_admin_alice(
-    env_with_provider: tuple[httpx.AsyncClient, OctopServer, dict[str, str]],
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str], dict[str, str]]]:
+    env_with_provider: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]],
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], dict[str, str]]]:
     client, srv, admin_auth = env_with_provider
     alice_auth = await create_user(client, admin_auth, username="alice")
     yield client, srv, admin_auth, alice_auth
@@ -159,9 +159,9 @@ async def env_admin_alice(
 
 @pytest.fixture
 async def env_usage(
-    env_admin_alice: tuple[httpx.AsyncClient, OctopServer, dict[str, str], dict[str, str]],
+    env_admin_alice: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], dict[str, str]],
 ) -> AsyncIterator[
-    tuple[httpx.AsyncClient, OctopServer, dict[str, str], dict[str, str], dict[str, int]]
+    tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], dict[str, str], dict[str, int]]
 ]:
     client, srv, admin_auth, alice_auth = env_admin_alice
     alice_id = await resolve_user_id(client, admin_auth, "alice")
@@ -170,11 +170,11 @@ async def env_usage(
 
 @pytest.fixture
 async def env_boundary(
-    env: tuple[httpx.AsyncClient, OctopServer, dict[str, str]],
+    env: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]],
 ) -> AsyncIterator[
     tuple[
         httpx.AsyncClient,
-        OctopServer,
+        HappyclawServer,
         dict[str, str],
         dict[str, str],
         dict[str, str],
@@ -188,8 +188,8 @@ async def env_boundary(
 
 @pytest.fixture
 async def env_acp_agent(
-    env: tuple[httpx.AsyncClient, OctopServer, dict[str, str]],
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str], str]]:
+    env: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str]],
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str]]:
     client, srv, auth = env
     agent_id = await create_agent(client, auth, name="acp-bot", config={})
     yield client, srv, auth, agent_id
@@ -197,8 +197,8 @@ async def env_acp_agent(
 
 @pytest.fixture
 async def env_with_channel(
-    env_with_agent: tuple[httpx.AsyncClient, OctopServer, dict[str, str], str],
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str], str, int]]:
+    env_with_agent: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str],
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str, int]]:
     client, srv, auth, agent_id = env_with_agent
     r = await client.post(
         f"/api/agents/{agent_id}/channels",
@@ -211,13 +211,13 @@ async def env_with_channel(
 
 @pytest.fixture
 async def env_skills_offline(
-    env_with_main_agent: tuple[httpx.AsyncClient, OctopServer, dict[str, str], str],
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, dict[str, str], str]]:
+    env_with_main_agent: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str],
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str]]:
     """Main agent with registry patched to simulate agent-not-running."""
     client, srv, auth, agent_id = env_with_main_agent
 
     def _agent_not_running(_agent_id: str) -> None:
-        raise OctopError(ErrorCode.AGENT_NOT_RUNNING, f"agent {_agent_id!r} not running")
+        raise HappyclawError(ErrorCode.AGENT_NOT_RUNNING, f"agent {_agent_id!r} not running")
 
     with patch.object(
         srv.app_runtime.agent_registry,
@@ -229,8 +229,8 @@ async def env_skills_offline(
 
 @pytest.fixture
 async def env_terminal(
-    env_with_main_agent: tuple[httpx.AsyncClient, OctopServer, dict[str, str], str],
-) -> AsyncIterator[tuple[OctopServer, Any, str, str]]:
+    env_with_main_agent: tuple[httpx.AsyncClient, HappyclawServer, dict[str, str], str],
+) -> AsyncIterator[tuple[HappyclawServer, Any, str, str]]:
     """``(server, app, token, agent_id)`` for terminal route tests."""
     client, srv, auth, agent_id = env_with_main_agent
     tok = auth["Authorization"].split(" ", 1)[1]
@@ -240,7 +240,7 @@ async def env_terminal(
 @pytest.fixture
 async def env_fake_harness(
     tmp_octop_home: Path,
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer, FakeHarnessAgent, Path]]:
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer, FakeHarnessAgent, Path]]:
     """Patched harness with default greeting tokens — golden-path tests."""
     fake = FakeHarnessAgent(
         chunks=[

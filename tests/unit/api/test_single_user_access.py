@@ -13,13 +13,13 @@ import httpx
 import pytest
 from tests.support.app import ensure_control_plane_bound
 
-from octop.api.app import build_app
-from octop.infra.server import OctopServer
+from happyclaw.api.app import build_app
+from happyclaw.infra.server import HappyclawServer
 
 
 @pytest.fixture
 async def client(tmp_path: Path):
-    srv = OctopServer(home=tmp_path)
+    srv = HappyclawServer(home=tmp_path)
     await srv.start()
     await ensure_control_plane_bound(srv)
     app = build_app(srv)

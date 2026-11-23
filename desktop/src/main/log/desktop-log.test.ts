@@ -163,7 +163,7 @@ test("openDesktopLog ignores a path it cannot create", async () => {
 
 test("installDesktopLog moves the legacy single file into logs/desktop", async () => {
   const home = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
-  await withEnv({ OCTOP_LOG_COMPRESS: "0", OCTOP_LOG_RETENTION_DAYS: "14" }, async () => {
+  await withEnv({ HAPPYCLAW_LOG_COMPRESS: "0", HAPPYCLAW_LOG_RETENTION_DAYS: "14" }, async () => {
     try {
       const logs = join(home, "logs");
       await mkdir(logs);
@@ -184,10 +184,10 @@ test("installDesktopLog moves the legacy single file into logs/desktop", async (
   });
 });
 
-test("installDesktopLog honors OCTOP_LOG_MAX_BYTES", async () => {
+test("installDesktopLog honors HAPPYCLAW_LOG_MAX_BYTES", async () => {
   const home = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
   await withEnv(
-    { OCTOP_LOG_MAX_BYTES: "80", OCTOP_LOG_COMPRESS: "0", OCTOP_LOG_RETENTION_DAYS: "14" },
+    { HAPPYCLAW_LOG_MAX_BYTES: "80", HAPPYCLAW_LOG_COMPRESS: "0", HAPPYCLAW_LOG_RETENTION_DAYS: "14" },
     async () => {
       try {
         const log = installDesktopLog(home);

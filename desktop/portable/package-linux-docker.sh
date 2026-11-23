@@ -32,7 +32,7 @@ docker run --rm \
   -e PBS_TAG="$PBS_TAG" \
   -e PBS_PY="$PBS_PY" \
   -e PBS_BASE_URL="${PBS_BASE_URL}" \
-  -e OCTOP_GREEN_OFFLINE="${OCTOP_GREEN_OFFLINE:-0}" \
+  -e HAPPYCLAW_GREEN_OFFLINE="${HAPPYCLAW_GREEN_OFFLINE:-0}" \
   -v "${REPO_ROOT}:/src" \
   -w /src \
   "$IMAGE" \

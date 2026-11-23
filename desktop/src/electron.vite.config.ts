@@ -26,9 +26,9 @@ function gitStamp(args: string[], envName: string): string {
 export default defineConfig({
   main: {
     define: {
-      "process.env.OCTOP_GIT_COMMIT": JSON.stringify(gitStamp(["rev-parse", "HEAD"], "GITHUB_SHA")),
-      "process.env.OCTOP_GIT_DATE": JSON.stringify(
-        gitStamp(["log", "-1", "--format=%cI"], "OCTOP_GIT_DATE"),
+      "process.env.HAPPYCLAW_GIT_COMMIT": JSON.stringify(gitStamp(["rev-parse", "HEAD"], "GITHUB_SHA")),
+      "process.env.HAPPYCLAW_GIT_DATE": JSON.stringify(
+        gitStamp(["log", "-1", "--format=%cI"], "HAPPYCLAW_GIT_DATE"),
       ),
     },
     plugins: [externalizeDepsPlugin()],

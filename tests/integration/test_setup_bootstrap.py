@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from octop.infra.server import OctopServer
+from happyclaw.infra.server import HappyclawServer
 from tests.support.app import write_octop_config
 from tests.support.auth import auth_header, bootstrap_admin
 
@@ -69,7 +69,7 @@ async def test_double_bootstrap_returns_410(patched_app_client: Any) -> None:
 
 async def test_start_writes_wizard_password_when_no_users(tmp_octop_home: Path) -> None:
     """Single-user boot never writes ``octop-login.txt``."""
-    srv = OctopServer(home=tmp_octop_home)
+    srv = HappyclawServer(home=tmp_octop_home)
     await srv.start()
     try:
         assert not (tmp_octop_home / "octop-login.txt").exists()
@@ -80,7 +80,7 @@ async def test_start_writes_wizard_password_when_no_users(tmp_octop_home: Path) 
 
 async def test_start_skips_wizard_password_when_disabled(tmp_octop_home: Path) -> None:
     write_octop_config(tmp_octop_home, require_setup_password=False)
-    srv = OctopServer(home=tmp_octop_home)
+    srv = HappyclawServer(home=tmp_octop_home)
     await srv.start()
     try:
         assert not (tmp_octop_home / "octop-login.txt").exists()
@@ -101,7 +101,7 @@ async def test_main_agent_seeds_general_assistant_workspace(patched_app_client: 
 
 async def test_main_agent_uses_fs_root_backend(patched_app_client: Any) -> None:
     """Default main uses the same FS-root local backend as dashboard-created agents."""
-    from octop.infra.utils.host_dirs import host_fs_tree_root
+    from happyclaw.infra.utils.host_dirs import host_fs_tree_root
 
     c, srv, home = patched_app_client
     await bootstrap_admin(c, home)

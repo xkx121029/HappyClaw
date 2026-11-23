@@ -1,8 +1,8 @@
 # LDAP 目录登录（单人模式下已停用）
 
 > **状态：单人模式下已无 HTTP 入口。** HappyClaw 已改为「本机单人使用」：启动后自动绑定本机使用者，没有登录表单、账号开通与角色映射。
-> `src/octop/api/app.py` 把 `/auth/ldap`（连同 `/auth/oidc`、`/auth/oauth`、`/auth/passkey`、`/auth/mfa`）放进 `_RETIRED_MULTI_USER_PREFIXES`，并在所有真实路由之前挂了兜底路由，所以 `/api/auth/ldap/status`、`/api/auth/ldap/config/test` 等路径一律返回 `404 this endpoint was removed in single-user mode`，**不再是** `{enabled: false}` 或 `400`。
-> `src/octop/infra/auth/ldap/` 的服务层代码仍在（`server.ldap_service` 会被构造），但除已被停用的 MFA 再认证外没有任何调用方，`/api/auth/login` 也不再回退目录认证。
+> `src/happyclaw/api/app.py` 把 `/auth/ldap`（连同 `/auth/oidc`、`/auth/oauth`、`/auth/passkey`、`/auth/mfa`）放进 `_RETIRED_MULTI_USER_PREFIXES`，并在所有真实路由之前挂了兜底路由，所以 `/api/auth/ldap/status`、`/api/auth/ldap/config/test` 等路径一律返回 `404 this endpoint was removed in single-user mode`，**不再是** `{enabled: false}` 或 `400`。
+> `src/happyclaw/infra/auth/ldap/` 的服务层代码仍在（`server.ldap_service` 会被构造），但除已被停用的 MFA 再认证外没有任何调用方，`/api/auth/login` 也不再回退目录认证。
 >
 > 本文仅作为历史实现与兼容配置的参考保留，方便读取旧备份或迁移旧部署；新安装无需、也无法启用 LDAP 登录。
 
@@ -239,7 +239,7 @@ mkdir -p "$RUNTIME/home"
 
 HOME="$RUNTIME/home" \
 HAPPYCLAW_HOME="$RUNTIME/home/.octop" \
-uv run octop run --host 127.0.0.1 --port 8799
+uv run happyclaw run --host 127.0.0.1 --port 8799
 ```
 
 首次启动会打印一次性的设置向导密码，同时写入 `$RUNTIME/home/octop-login.txt`：
@@ -481,18 +481,18 @@ uv run pytest tests/integration/test_auth_ldap.py -q
 需要 3.1 的目录在跑：
 
 ```bash
-OCTOP_LDAP_TEST_URL=ldap://127.0.0.1:3893 \
-OCTOP_LDAP_TEST_BIND_DN='uid=svc-octop,cn=users,dc=example,dc=org' \
-OCTOP_LDAP_TEST_BIND_PASSWORD=bindpw \
-OCTOP_LDAP_TEST_BASE_DN='dc=example,dc=org' \
-OCTOP_LDAP_TEST_ADMIN_GROUP=admin \
-OCTOP_LDAP_TEST_USER=alice \
-OCTOP_LDAP_TEST_PASSWORD=alicepw \
-OCTOP_LDAP_TEST_EXPECTED_ROLE=admin \
+HAPPYCLAW_LDAP_TEST_URL=ldap://127.0.0.1:3893 \
+HAPPYCLAW_LDAP_TEST_BIND_DN='uid=svc-octop,cn=users,dc=example,dc=org' \
+HAPPYCLAW_LDAP_TEST_BIND_PASSWORD=bindpw \
+HAPPYCLAW_LDAP_TEST_BASE_DN='dc=example,dc=org' \
+HAPPYCLAW_LDAP_TEST_ADMIN_GROUP=admin \
+HAPPYCLAW_LDAP_TEST_USER=alice \
+HAPPYCLAW_LDAP_TEST_PASSWORD=alicepw \
+HAPPYCLAW_LDAP_TEST_EXPECTED_ROLE=admin \
 uv run pytest tests/live/test_ldap_live.py -m live -v
 ```
 
-它经由真实 HTTP API 完成配置 → 连通性测试 → 目录登录 → `has_password=false` 校验 → 错误密码拒绝。换 `OCTOP_LDAP_TEST_USER` / `_PASSWORD` / `_EXPECTED_ROLE` 为 `bob`/`bobpw`/`user` 或 `carol`/`carolpw`/`user` 即可验证非管理员映射。缺任一环境变量则自动跳过，不会让 CI 变红。
+它经由真实 HTTP API 完成配置 → 连通性测试 → 目录登录 → `has_password=false` 校验 → 错误密码拒绝。换 `HAPPYCLAW_LDAP_TEST_USER` / `_PASSWORD` / `_EXPECTED_ROLE` 为 `bob`/`bobpw`/`user` 或 `carol`/`carolpw`/`user` 即可验证非管理员映射。缺任一环境变量则自动跳过，不会让 CI 变红。
 
 ### 7.4 浏览器验证要点
 
@@ -543,11 +543,11 @@ cd dashboard && npx tsc -b
 
 | 路径 | 作用 |
 |---|---|
-| `src/octop/infra/auth/ldap/config.py` | 配置模型、校验、`extra` 序列化与组名解析 |
-| `src/octop/infra/auth/ldap/client.py` | `ldap3` 客户端：服务 bind、检索、用户 bind 验证 |
-| `src/octop/infra/auth/ldap/service.py` | 配置读写、开通账号、角色映射 |
-| `src/octop/api/app.py`（`_RETIRED_MULTI_USER_PREFIXES`） | 现在的唯一 HTTP 行为：整段前缀返回 `404` |
-| `src/octop/infra/server.py`（`ldap_service`） | 惰性构造服务的唯一入口，当前没有业务调用方 |
+| `src/happyclaw/infra/auth/ldap/config.py` | 配置模型、校验、`extra` 序列化与组名解析 |
+| `src/happyclaw/infra/auth/ldap/client.py` | `ldap3` 客户端：服务 bind、检索、用户 bind 验证 |
+| `src/happyclaw/infra/auth/ldap/service.py` | 配置读写、开通账号、角色映射 |
+| `src/happyclaw/api/app.py`（`_RETIRED_MULTI_USER_PREFIXES`） | 现在的唯一 HTTP 行为：整段前缀返回 `404` |
+| `src/happyclaw/infra/server.py`（`ldap_service`） | 惰性构造服务的唯一入口，当前没有业务调用方 |
 | `dashboard/src/pages/Admin/Users/LdapPanel.tsx` | 管理端配置表单 |
 | `tests/support/ldap_fake.py` | 测试用假目录（替换 `ldap3.Connection`） |
 | `tests/live/test_ldap_live.py` | 对真实目录的端到端测试 |

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from octop.api.app import build_app
+from happyclaw.api.app import build_app
 from tests.support.app import octop_client
 
 _DASHBOARD = Path(__file__).resolve().parents[2] / "src" / "octop" / "dashboard"

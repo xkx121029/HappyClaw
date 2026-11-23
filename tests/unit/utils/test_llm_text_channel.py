@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.infra.utils.llm_text import prepare_channel_text, strip_thinking
+from happyclaw.infra.utils.llm_text import prepare_channel_text, strip_thinking
 
 
 def test_prepare_channel_text_strips_when_hidden() -> None:

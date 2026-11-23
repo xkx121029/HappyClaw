@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from starlette.requests import Request
 
-from octop.api.common.public_base import resolve_public_base
-from octop.infra.auth.sso.public_base import build_redirect_uri
+from happyclaw.api.common.public_base import resolve_public_base
+from happyclaw.infra.auth.sso.public_base import build_redirect_uri
 
 
 def _request(*, scheme: str = "http", headers: list[tuple[bytes, bytes]] | None = None) -> Request:

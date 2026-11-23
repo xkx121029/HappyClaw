@@ -12,13 +12,13 @@ from typing import Any
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
-from octop.cli.support import acting, embedded_ops
-from octop.config import OctopConfig
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import SharedServices, build_shared_services
-from octop.infra.utils.paths import PathLayout
+from happyclaw.cli.main import cli
+from happyclaw.cli.support import acting, embedded_ops
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import SharedServices, build_shared_services
+from happyclaw.infra.utils.paths import PathLayout
 
 AGENT = "agent-1"
 
@@ -43,7 +43,7 @@ def runtime(
 ) -> Iterator[tuple[SharedServices, _Workspace]]:
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
     uid = services.repos.user_repo.create(username="owner", password_hash="x", role="user")
     services.repos.agent_repo.create(agent_id=AGENT, user_id=uid, name="main")
     workspace = _Workspace()
@@ -60,7 +60,7 @@ def runtime(
 
     monkeypatch.setattr(embedded_ops, "embedded_runtime", fake_runtime)
     monkeypatch.setattr(acting, "resolve_cli_acting_user_id", lambda *args, **kwargs: uid)
-    monkeypatch.setattr("octop.cli.support.db.resolve_cli_locale", lambda: "en")
+    monkeypatch.setattr("happyclaw.cli.support.db.resolve_cli_locale", lambda: "en")
     try:
         yield services, workspace
     finally:

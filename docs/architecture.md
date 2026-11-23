@@ -39,13 +39,13 @@ in-process server for runtime commands) — see
 
 ## 2. Process model
 
-`OctopServer.start()` wires the runtime tree in dependency order. The
-composition root lives in `src/octop/infra/server.py`; FastAPI/uvicorn
-is attached from `src/octop/launch.py` (the only module that may import
+`HappyclawServer.start()` wires the runtime tree in dependency order. The
+composition root lives in `src/happyclaw/infra/server.py`; FastAPI/uvicorn
+is attached from `src/happyclaw/launch.py` (the only module that may import
 both `infra/server` and `api/app`).
 
 ```
-OctopServer.start()
+HappyclawServer.start()
  ├─ PathLayout.from_env()            (root + DB + secrets dirs)
  ├─ load_config(config.json)        (env overrides on top)
  ├─ open_database()                  (SQLite WAL or PostgreSQL via PostgresPool)
@@ -88,7 +88,7 @@ Four surfaces share the same agent runtime:
 | Surface | Wire | Session key (default) | Notes |
 |---------|------|-----------------------|-------|
 | Web UI | WebSocket `/api/agents/{aid}/chat/ws` | `<aid>:dashboard:local:dm` | Dashboard turn endpoint |
-| CLI | Embedded `OctopServer` (REPL) or WebSocket | `<aid>:cli:local:dm` | `octop chats send` / `chats repl` |
+| CLI | Embedded `HappyclawServer` (REPL) or WebSocket | `<aid>:cli:local:dm` | `happyclaw chats send` / `chats repl` |
 | IM channel | gateway `ChannelManager` | `<aid>:<channel_kind>:<platform_session>:<dm\|group>` | See `infra/gateway/process/message_keys.py` |
 | Cron job | APScheduler trigger → `Gateway.push_text_from_session` | row's `session_key` (defaults to `dashboard_key` of the owner) | `task_type=text\|agent` chooses direct-push vs run-AI-then-push |
 
@@ -110,22 +110,22 @@ sessions, audit) lives in either:
 
 * SQLite — default file under `~/.happyclaw/` (legacy `octop.db` or
   `config.json` → `database.sqlite_path`), or
-* PostgreSQL — `config.json` / `OCTOP_DATABASE_*` / first-boot database config.
+* PostgreSQL — `config.json` / `HAPPYCLAW_DATABASE_*` / first-boot database config.
 
-Migrations: `src/octop/infra/db/migrations/NNN_*.sql` (SQLite) and
+Migrations: `src/happyclaw/infra/db/migrations/NNN_*.sql` (SQLite) and
 `NNN_*.pg.sql` (PostgreSQL). Connection PRAGMAs live on the SQLite pool;
 PostgreSQL extensions (e.g. `vector`) are docker/ops init, not app
 migrations. Agent memory DDL is owned by happyclaw-memory. See
 [ADR 002](./adr/002-database-backends.md).
 
-The wheel ships the built dashboard SPA under `src/octop/dashboard/`, so the
+The wheel ships the built dashboard SPA under `src/happyclaw/dashboard/`, so the
 entire stack is one `pip install`. In the source tree that directory holds only
 `__init__.py` and `.gitkeep` until `make build-frontend` runs; edit the React
 sources in `dashboard/`, never the built copy.
 
 Per-agent workspace files (Markdown, skills, expert templates) are
 read and written through the agent's `BackendWorkspace`
-(`octop.infra.backend` → `happyclaw_harness.backends`). The default
+(`happyclaw.infra.backend` → `happyclaw_harness.backends`). The default
 backend is a `filesystem` adapter rooted at
 `~/.happyclaw/agents/<agent_id>/`; remote backends (S3, COS) are mounted
 on top of the same root_dir and the HappyClaw service never reads
@@ -139,8 +139,8 @@ they are harness-managed.
 
 Server-owned strings (slash replies, IM status, API error messages,
 tool display names, CLI output) come from the bundles in
-`src/octop/i18n/{en,zh}.json` and helpers under
-`src/octop/i18n/domains/`. Locale resolution lives in
+`src/happyclaw/i18n/{en,zh}.json` and helpers under
+`src/happyclaw/i18n/domains/`. Locale resolution lives in
 `infra/utils/locale.py`: local owner preference → `Accept-Language`
 header → channel-type hint. The dashboard mirrors the codes under
 `dashboard/src/locales/{en,zh}.json → apiErrors.*` and may hydrate

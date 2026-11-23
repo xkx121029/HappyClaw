@@ -18,15 +18,15 @@ from typing import Any
 
 import pytest
 
-from octop.infra.dsh.tools import build_dsh_plugin_tools
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.dsh.tools import build_dsh_plugin_tools
+from happyclaw.infra.plugins.bridge import (
     ApprovalOutcome,
     InMemoryApprovalLedger,
     ToolDefinition,
     ToolOutputSpec,
     text_content,
 )
-from octop.infra.plugins.sandbox import SandboxErrorCode, ToolInspection
+from happyclaw.infra.plugins.sandbox import SandboxErrorCode, ToolInspection
 from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 TOOL = "dsh_fixture_report"

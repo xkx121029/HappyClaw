@@ -13,9 +13,9 @@ import pytest
 from langgraph.checkpoint.base import empty_checkpoint
 from langgraph.checkpoint.sqlite import SqliteSaver
 
-from octop.infra.agents.manager import AgentManager
-from octop.infra.agents.memory.slim import MemorySlimCoordinator
-from octop.infra.agents.memory.slim_control import MemorySlimControl, request_memory_slim
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.agents.memory.slim import MemorySlimCoordinator
+from happyclaw.infra.agents.memory.slim_control import MemorySlimControl, request_memory_slim
 
 
 def make_manager(tmp_path):
@@ -177,8 +177,8 @@ async def test_manager_shutdown_waits_for_maintenance_before_closing_agents(tmp_
 def test_cli_prints_localized_progress_without_booting_another_host(tmp_path, monkeypatch):
     from click.testing import CliRunner
 
-    from octop.cli.commands import memory as command
-    from octop.cli.main import cli
+    from happyclaw.cli.commands import memory as command
+    from happyclaw.cli.main import cli
 
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(command, "resolve_cli_locale", lambda: "zh")
@@ -206,8 +206,8 @@ def test_cli_prints_localized_progress_without_booting_another_host(tmp_path, mo
 
 @pytest.mark.parametrize("phase", ["backing_up", "deduplicating", "compacting"])
 def test_memory_dashboard_rejects_busy_before_opening_database(phase, monkeypatch):
-    from octop.api.common import memory_client
-    from octop.infra.errors import ErrorCode, OctopError
+    from happyclaw.api.common import memory_client
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     monkeypatch.setattr(memory_client, "require_agent_owner_row", lambda *args, **kwargs: None)
     opened = []
@@ -232,7 +232,7 @@ def test_memory_dashboard_rejects_busy_before_opening_database(phase, monkeypatc
         "as_user": None,
         "server": host,
     }
-    with pytest.raises(OctopError) as error:
+    with pytest.raises(HappyclawError) as error:
         memory_client.call_memory_rpc(**kwargs)
     assert error.value.code == ErrorCode.AGENT_BUSY
     assert not opened
@@ -277,8 +277,8 @@ async def test_local_control_authenticates_and_streams_completion(tmp_path):
 def test_cli_selects_by_number_and_shows_counts(tmp_path, monkeypatch):
     from click.testing import CliRunner
 
-    from octop.cli.commands import memory as command
-    from octop.cli.main import cli
+    from happyclaw.cli.commands import memory as command
+    from happyclaw.cli.main import cli
 
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(command, "resolve_cli_locale", lambda: "zh")
@@ -316,8 +316,8 @@ def test_cli_selects_by_number_and_shows_counts(tmp_path, monkeypatch):
 def test_discovery_never_starts_maintenance(tmp_path, monkeypatch, args):
     from click.testing import CliRunner
 
-    from octop.cli.commands import memory as command
-    from octop.cli.main import cli
+    from happyclaw.cli.commands import memory as command
+    from happyclaw.cli.main import cli
 
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(command, "resolve_agent", lambda _: None)
@@ -343,8 +343,8 @@ def test_discovery_never_starts_maintenance(tmp_path, monkeypatch, args):
 def test_empty_discovery_exits_without_a_prompt(tmp_path, monkeypatch):
     from click.testing import CliRunner
 
-    from octop.cli.commands import memory as command
-    from octop.cli.main import cli
+    from happyclaw.cli.commands import memory as command
+    from happyclaw.cli.main import cli
 
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(command, "resolve_agent", lambda _: None)
@@ -357,7 +357,7 @@ def test_empty_discovery_exits_without_a_prompt(tmp_path, monkeypatch):
 
 
 def test_live_discovery_filters_unavailable_agents_without_opening_memory(tmp_path):
-    from octop.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     coordinator, registry, memory, _, _ = make_manager(tmp_path)
     compatible = registry.get_agent("a")
@@ -367,7 +367,7 @@ def test_live_discovery_filters_unavailable_agents_without_opening_memory(tmp_pa
 
     def get_agent(agent_id):
         if agent_id == "stopped":
-            raise OctopError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
+            raise HappyclawError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
         return compatible if agent_id == "a" else SimpleNamespace()
 
     registry.get_agent = get_agent
@@ -384,7 +384,7 @@ def test_live_discovery_filters_unavailable_agents_without_opening_memory(tmp_pa
 async def test_control_discovery_and_heartbeat_during_unchanged_phase(tmp_path, monkeypatch):
     from happyclaw_memory.application import checkpoint_maintenance
 
-    from octop.infra.agents.memory.slim_control import list_memory_slim_agents
+    from happyclaw.infra.agents.memory.slim_control import list_memory_slim_agents
 
     coordinator, registry, memory, _, _ = make_manager(tmp_path)
     registry.list_rows = lambda: [SimpleNamespace(agent_id="a", name="助手")]
@@ -440,8 +440,8 @@ async def test_control_discovery_and_heartbeat_during_unchanged_phase(tmp_path, 
 def batch_cli(tmp_path, monkeypatch):
     from click.testing import CliRunner
 
-    from octop.cli.commands import memory as command
-    from octop.cli.main import cli
+    from happyclaw.cli.commands import memory as command
+    from happyclaw.cli.main import cli
 
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.delenv("OCTOP_AGENT", raising=False)
@@ -678,7 +678,7 @@ def test_chat_preview_has_no_job_reservation_or_database_writes(tmp_path):
 
 @pytest.mark.parametrize("phase", ["done", "failed", "skipped"])
 def test_status_api_preserves_manual_terminal_result(phase):
-    from octop.api.routers.agents import _memory_maintenance_status
+    from happyclaw.api.routers.agents import _memory_maintenance_status
 
     state = {"phase": phase, "kind": "memory_slim"}
     host = SimpleNamespace(
@@ -693,7 +693,7 @@ def test_status_api_preserves_manual_terminal_result(phase):
 def test_preview_reports_specific_ineligibility_without_starting(tmp_path, monkeypatch, reason):
     from happyclaw_memory.application import checkpoint_maintenance
 
-    from octop.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     coordinator, registry, memory, _, _ = make_manager(tmp_path)
     chat_registry(registry)
@@ -716,7 +716,7 @@ def test_preview_reports_specific_ineligibility_without_starting(tmp_path, monke
         elif reason == "stopped":
 
             def stopped(_):
-                raise OctopError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
+                raise HappyclawError(ErrorCode.AGENT_NOT_RUNNING, "stopped")
 
             registry.get_agent = stopped
             expected = "尚未启动"

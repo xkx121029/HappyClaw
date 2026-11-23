@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from octop.infra.agents.experts.catalog import ExpertCatalog, default_library_root
-from octop.infra.agents.experts.skillhub_market import _SCENE_ORDER
+from happyclaw.infra.agents.experts.catalog import ExpertCatalog, default_library_root
+from happyclaw.infra.agents.experts.skillhub_market import _SCENE_ORDER
 
 _LIBRARY = default_library_root()
 

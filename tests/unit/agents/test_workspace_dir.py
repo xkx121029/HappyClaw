@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.agents.workspace.dir import (
+from happyclaw.infra.agents.workspace.dir import (
     agent_facing_workspace_dir_from_config,
     agent_facing_workspace_root,
     apply_explicit_workspace_dir,
@@ -19,8 +19,8 @@ from octop.infra.agents.workspace.dir import (
     seed_workspace_dir_on_create,
     workspace_dir_from_config,
 )
-from octop.infra.utils.host_dirs import host_path_text
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.utils.host_dirs import host_path_text
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def test_default_workspace_parent_dir_follows_octop_home(
@@ -177,7 +177,7 @@ def test_default_workspace_falls_back_when_scoped_root_unwritable(tmp_path: Path
 
 
 def test_neutralize_unwritable_local_root(tmp_path: Path) -> None:
-    from octop.infra.agents.workspace.dir import neutralize_unwritable_local_root
+    from happyclaw.infra.agents.workspace.dir import neutralize_unwritable_local_root
 
     blocker = tmp_path / "not-a-dir"
     blocker.write_text("x", encoding="utf-8")

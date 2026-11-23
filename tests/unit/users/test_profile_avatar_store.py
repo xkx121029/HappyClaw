@@ -7,16 +7,16 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.users.profile_avatar import (
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.users.profile_avatar import (
     KIND_ROLE,
     KIND_USER,
     AvatarNamespace,
     adopt_local_avatars,
 )
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.utils.paths import PathLayout
 
 posix_only = pytest.mark.skipif(os.name != "posix", reason="POSIX symlinks")
 
@@ -28,11 +28,11 @@ _PNG = (
 
 
 def _services(tmp_path: Path):
-    from octop.config import OctopConfig
+    from happyclaw.config import HappyclawConfig
 
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
 
 
 def test_avatar_roundtrip_uses_database(tmp_path: Path) -> None:

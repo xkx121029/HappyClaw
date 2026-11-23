@@ -7,12 +7,12 @@ import pytest
 from langchain.agents.middleware import ModelRequest, ModelResponse
 from langchain_core.messages import AIMessage, HumanMessage
 
-from octop.infra.agents.middleware import model_failover
-from octop.infra.agents.middleware.model_failover import (
+from happyclaw.infra.agents.middleware import model_failover
+from happyclaw.infra.agents.middleware.model_failover import (
     AutoRouteCandidate,
     SafeModelFailoverMiddleware,
 )
-from octop.infra.agents.providers.health import ModelHealthRegistry
+from happyclaw.infra.agents.providers.health import ModelHealthRegistry
 
 
 def _model(ref: str, cap: int) -> SimpleNamespace:

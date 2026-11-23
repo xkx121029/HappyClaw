@@ -9,7 +9,7 @@ import { macPrivacyExtendInfo, writeMacPrivacyLocalizations } from "./mac-privac
 const pkg = JSON.parse(readFileSync(resolve(__dirname, "package.json"), "utf8")) as {
   version: string;
 };
-const productVersion = process.env.OCTOP_VERSION ?? pkg.version;
+const productVersion = process.env.HAPPYCLAW_VERSION ?? pkg.version;
 const electronVersion = productVersion.replace(
   /^(\d+\.\d+\.\d+)(a|b|rc)(\d+)$/,
   (_match, base: string, stage: string, number: string) =>
@@ -18,8 +18,8 @@ const electronVersion = productVersion.replace(
 if (!/^\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?$/.test(electronVersion)) {
   throw new Error(`Unsupported Octop release version: ${productVersion}`);
 }
-const artifactName = process.env.OCTOP_PLATFORM
-  ? `Octop-desktop-${process.env.OCTOP_PLATFORM}-${productVersion}.\${ext}`
+const artifactName = process.env.HAPPYCLAW_PLATFORM
+  ? `Octop-desktop-${process.env.HAPPYCLAW_PLATFORM}-${productVersion}.\${ext}`
   : `Octop-desktop-\${os}-\${arch}-\${version}.\${ext}`;
 const productName = "Octop";
 
@@ -29,7 +29,7 @@ export default {
   appId: "com.tencent.octop",
   productName,
   // extraResources places the portable tree outside asar. The shell reads
-  // Dashboard from portable/packages/octop/dashboard, so it is not copied again.
+  // Dashboard from portable/packages/happyclaw/dashboard, so it is not copied again.
   asar: true,
   // Bare "en" also keeps en-* region packs. zh_CN does not keep zh_TW.
   // zh-Hans InfoPlist.strings are written in afterPack, after this filter.
@@ -82,7 +82,7 @@ export default {
     target: ["nsis"],
     // PyInstaller onedir backend: octop.exe must stay next to _internal, so the
     // whole directory is copied as one unit into resources/sidecar/backend.
-    // It carries the built Dashboard under _internal/octop/dashboard; the shell
+    // It carries the built Dashboard under _internal/happyclaw/dashboard; the shell
     // serves that copy, so nothing is duplicated here.
     extraResources: [{ from: "../../dist/backend/octop", to: "sidecar/backend" }],
   },
@@ -97,7 +97,7 @@ export default {
     // for silent and interactive installs alike.
     createDesktopShortcut: true,
     runAfterFinish: true,
-    // User data lives outside the install dir (OCTOP_HOME) and must survive an
+    // User data lives outside the install dir (HAPPYCLAW_HOME) and must survive an
     // uninstall.
     deleteAppDataOnUninstall: false,
     // Verifies the onedir backend landed and refuses to finish a broken install.

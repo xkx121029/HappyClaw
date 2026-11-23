@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from octop.infra.selfcheck import SelfCheckReport, StartupSelfCheck
+from happyclaw.infra.selfcheck import SelfCheckReport, StartupSelfCheck
 
 
 class _FakeProviderRow:

@@ -5,13 +5,13 @@
 ## 安装 HappyClaw（终端用户）
 
 将 HappyClaw 安装到隔离虚拟环境 `~/.happyclaw/venv`，并创建 `~/.happyclaw/bin/octop` 包装脚本加入 PATH。
-脚本默认从本仓库 GitHub `main` 取；网络访问 GitHub 受限时把 `OCTOP_INSTALL_BASE` 指向提供同样 `scripts/` 目录的镜像。
+脚本默认从本仓库 GitHub `main` 取；网络访问 GitHub 受限时把 `HAPPYCLAW_INSTALL_BASE` 指向提供同样 `scripts/` 目录的镜像。
 
 ### 远程一键安装（推荐）
 
 | 平台 | 命令 |
 |------|------|
-| macOS / Linux | `curl -fsSL ${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh \| bash` |
+| macOS / Linux | `curl -fsSL ${HAPPYCLAW_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh \| bash` |
 | Windows (PowerShell) | `irm https://raw.githubusercontent.com/xkx121029/HappyClaw/main/scripts/install.ps1 \| iex` |
 | Windows (cmd) | 下载 `https://raw.githubusercontent.com/xkx121029/HappyClaw/main/scripts/install.bat` 后运行，或使用下方本地脚本 |
 
@@ -50,8 +50,8 @@ Windows PowerShell 等价参数：`-Version`、`-FromSource`、`-SourceDir`、`-
 | 变量 | 说明 |
 |------|------|
 | `HAPPYCLAW_HOME` | 安装根目录，默认 `~/.happyclaw` |
-| `OCTOP_REPO` | `--from-source` 无本地目录时的 git 克隆地址 |
-| `OCTOP_PYPI_MIRROR` | PyPI 镜像（与 `--mirror` 等效） |
+| `HAPPYCLAW_REPO` | `--from-source` 无本地目录时的 git 克隆地址 |
+| `HAPPYCLAW_PYPI_MIRROR` | PyPI 镜像（与 `--mirror` 等效） |
 | `PLAYWRIGHT_DOWNLOAD_HOST` | Playwright 浏览器下载镜像（仅 `--extras browser`） |
 
 默认不下载 Playwright Chromium。需要远程浏览器自动化时加 `--extras browser`，或安装后在控制台 / `python -m playwright install chromium` 按需安装。若系统已有 Chrome / Chromium，即使加了 `--extras browser` 也会跳过下载。
@@ -59,11 +59,11 @@ Windows PowerShell 等价参数：`-Version`、`-FromSource`、`-SourceDir`、`-
 安装完成后：
 
 ```bash
-octop init    # 初始化运行目录与数据库（可跳过，首次 run 会自动完成）
-octop run     # 启动服务 → http://127.0.0.1:8088
+happyclaw init    # 初始化运行目录与数据库（可跳过，首次 run 会自动完成）
+happyclaw run     # 启动服务 → http://127.0.0.1:8088
 ```
 
-本机使用者在首次 `octop run` 时自动创建，无需账号或密码。
+本机使用者在首次 `happyclaw run` 时自动创建，无需账号或密码。
 
 ---
 
@@ -83,13 +83,13 @@ powershell -File scripts/smoke_local.ps1              # 临时数据目录 + 随
 powershell -File scripts/smoke_local.ps1 -Port 8091 -Keep
 ```
 
-脚本用 `HAPPYCLAW_HOME` 指向临时目录启动 `octop run`，轮询 `/api/health`，输出响应与数据目录清单后停止进程；不会触碰 `~/.happyclaw` 的真实数据。`-Keep` 保留临时目录便于排查。
+脚本用 `HAPPYCLAW_HOME` 指向临时目录启动 `happyclaw run`，轮询 `/api/health`，输出响应与数据目录清单后停止进程；不会触碰 `~/.happyclaw` 的真实数据。`-Keep` 保留临时目录便于排查。
 
 ---
 
 ## 构建 PyPI wheel
 
-先构建前端（产物写入 `src/octop/dashboard/`，与 `dashboard/vite.config.ts` 的 `outDir` 一致），再打包 wheel。
+先构建前端（产物写入 `src/happyclaw/dashboard/`，与 `dashboard/vite.config.ts` 的 `outDir` 一致），再打包 wheel。
 
 ```bash
 bash scripts/wheel_build.sh

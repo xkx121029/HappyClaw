@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from octop.infra.utils import ollama_manager as mod
-from octop.infra.utils.ollama_manager import (
+from happyclaw.infra.utils import ollama_manager as mod
+from happyclaw.infra.utils.ollama_manager import (
     OllamaModelInfo,
     apply_models_dir,
     list_models_from_dir,

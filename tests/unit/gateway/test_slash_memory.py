@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.infra.gateway.process.processor import GlobalProcessor
-from octop.infra.gateway.slash import build_default_dispatcher, catalog
-from octop.infra.gateway.slash.ctx import SlashCtx, build_slash_ctx
-from octop.infra.gateway.slash.runner import try_handle_slash
+from happyclaw.infra.gateway.process.processor import GlobalProcessor
+from happyclaw.infra.gateway.slash import build_default_dispatcher, catalog
+from happyclaw.infra.gateway.slash.ctx import SlashCtx, build_slash_ctx
+from happyclaw.infra.gateway.slash.runner import try_handle_slash
 
 
 @pytest.fixture
@@ -83,7 +83,7 @@ async def test_memory_compact_preview_does_not_run(ctx, monkeypatch):
         called = True
 
     monkeypatch.setattr(
-        "octop.infra.agents.memory.compact_store.compact_agent_store",
+        "happyclaw.infra.agents.memory.compact_store.compact_agent_store",
         _boom,
     )
     handled, lines, _ = await try_handle_slash(
@@ -105,7 +105,7 @@ async def test_memory_compact_confirm_runs_store(ctx, monkeypatch):
         tables_skipped=(),
     )
     monkeypatch.setattr(
-        "octop.infra.agents.memory.compact_store.compact_agent_store",
+        "happyclaw.infra.agents.memory.compact_store.compact_agent_store",
         lambda *_args, **_kwargs: stats,
     )
     handled, lines, _ = await try_handle_slash(
@@ -249,7 +249,7 @@ async def test_slim_explains_impact_and_requires_confirmation(ctx, suffix):
 @pytest.mark.parametrize("phase", ["inspecting", "cleaning", "done"])
 @pytest.mark.parametrize("locale", ["zh", "en"])
 def test_page_postgres_status_uses_namespace_cleanup_report(phase, locale):
-    from octop.infra.gateway.slash.handlers.memory import _status_line
+    from happyclaw.infra.gateway.slash.handlers.memory import _status_line
 
     state = {
         "agent_id": "main",
@@ -266,7 +266,7 @@ def test_page_postgres_status_uses_namespace_cleanup_report(phase, locale):
 
 @pytest.mark.parametrize("locale", ["zh", "en"])
 def test_restore_status_does_not_expect_maintenance_file_statistics(locale):
-    from octop.infra.gateway.slash.handlers.memory import _status_line
+    from happyclaw.infra.gateway.slash.handlers.memory import _status_line
 
     text = _status_line(
         {

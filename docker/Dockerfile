@@ -32,7 +32,7 @@
 # 或使用 Compose:
 #   docker compose -f docker/docker-compose.yml up -d
 #
-# 默认 OCTOP_IMAGE_VARIANT=full：虚拟桌面、系统浏览器、本地向量和 OCR 都在镜像里，
+# 默认 HAPPYCLAW_IMAGE_VARIANT=full：虚拟桌面、系统浏览器、本地向量和 OCR 都在镜像里，
 # 桌面不会启动，用户在控制台确认后才启用。桌面安装已经带上 Chromium，不再另下
 # Playwright 浏览器。lite 去掉这些重依赖，镜像更小，发布标签是 :<version>-lite。
 # 运行时带 Node.js 20（node / npm / npx），供依赖 Node 的技能使用。
@@ -61,7 +61,7 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
 
 COPY dashboard/ ./
 
-RUN mkdir -p ../src/octop/dashboard
+RUN mkdir -p ../src/happyclaw/dashboard
 
 # 镜像构建跳过完整 tsc；生产打包由 vite/esbuild 完成（使用 lockfile 中的 vite，不用 npx）
 RUN NODE_ENV=production NODE_OPTIONS="--max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE}" npm run build:docker
@@ -81,9 +81,9 @@ LABEL org.opencontainers.image.licenses="MIT"
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     HOME=/data \
-    OCTOP_BIND_HOST=0.0.0.0 \
-    OCTOP_PORT=8088 \
-    OCTOP_LOG_LEVEL=info \
+    HAPPYCLAW_BIND_HOST=0.0.0.0 \
+    HAPPYCLAW_PORT=8088 \
+    HAPPYCLAW_LOG_LEVEL=info \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never
@@ -122,19 +122,19 @@ WORKDIR /app
 
 # 先安装锁定依赖，仅改源码时可复用此层缓存。
 # full：桌面、本地向量、OCR。lite：只留运行所需的 browser extra。
-ARG OCTOP_IMAGE_VARIANT=full
+ARG HAPPYCLAW_IMAGE_VARIANT=full
 COPY pyproject.toml uv.lock README.md LICENSE ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     if [ -n "$PIP_INDEX_URL" ]; then \
         export UV_INDEX_URL="$PIP_INDEX_URL"; \
         if [ -n "$PIP_TRUSTED_HOST" ]; then export UV_INSECURE_HOST="$PIP_TRUSTED_HOST"; fi; \
     fi \
-    && case "$OCTOP_IMAGE_VARIANT" in \
+    && case "$HAPPYCLAW_IMAGE_VARIANT" in \
          full|lite) ;; \
-         *) echo "OCTOP_IMAGE_VARIANT must be full or lite" >&2; exit 1 ;; \
+         *) echo "HAPPYCLAW_IMAGE_VARIANT must be full or lite" >&2; exit 1 ;; \
        esac \
     && apt-get update && apt-get install -y --no-install-recommends build-essential \
-    && if [ "$OCTOP_IMAGE_VARIANT" = "lite" ]; then \
+    && if [ "$HAPPYCLAW_IMAGE_VARIANT" = "lite" ]; then \
          uv sync --frozen --no-install-project --no-dev --extra browser; \
        else \
          uv sync --frozen --no-install-project --no-dev \
@@ -147,7 +147,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
 
 COPY src/ ./src/
-COPY --from=frontend-builder /build/src/octop/dashboard/ ./src/octop/dashboard/
+COPY --from=frontend-builder /build/src/happyclaw/dashboard/ ./src/happyclaw/dashboard/
 
 COPY .env.example ./
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
@@ -155,13 +155,13 @@ COPY docker/bake-desktop.sh /usr/local/bin/bake-desktop.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/bake-desktop.sh
 
 # pynput 在 import 时会连接 X。full 的无头构建只确认包已安装，不加载后端。
-ARG OCTOP_IMAGE_VARIANT=full
+ARG HAPPYCLAW_IMAGE_VARIANT=full
 RUN --mount=type=cache,target=/root/.cache/uv \
     if [ -n "$PIP_INDEX_URL" ]; then \
         export UV_INDEX_URL="$PIP_INDEX_URL"; \
         if [ -n "$PIP_TRUSTED_HOST" ]; then export UV_INSECURE_HOST="$PIP_TRUSTED_HOST"; fi; \
     fi \
-    && if [ "$OCTOP_IMAGE_VARIANT" = "lite" ]; then \
+    && if [ "$HAPPYCLAW_IMAGE_VARIANT" = "lite" ]; then \
          uv sync --frozen --no-dev --extra browser \
          && .venv/bin/python -c "import octop"; \
        else \
@@ -177,8 +177,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
 # full 只装桌面包，不启动 Xvnc。lite 写明未捆绑桌面和浏览器。
-ARG OCTOP_IMAGE_VARIANT=full
-RUN if [ "$OCTOP_IMAGE_VARIANT" = "lite" ]; then \
+ARG HAPPYCLAW_IMAGE_VARIANT=full
+RUN if [ "$HAPPYCLAW_IMAGE_VARIANT" = "lite" ]; then \
       mkdir -p /etc/octop \
       && printf '%s\n' '{"desktop": false, "browser": false, "laya": false}' \
         > /etc/octop/bundled-components.json; \
@@ -191,7 +191,7 @@ RUN mkdir -p /data/.octop
 EXPOSE 8088
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
-    CMD ["sh", "-c", "curl -f http://localhost:${OCTOP_PORT:-8088}/api/health || exit 1"]
+    CMD ["sh", "-c", "curl -f http://localhost:${HAPPYCLAW_PORT:-8088}/api/health || exit 1"]
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD []

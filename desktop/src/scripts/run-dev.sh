@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHELL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$SHELL_DIR/../.." && pwd)"
 DEV_RUNTIME="$SHELL_DIR/.dev-runtime"
-DASHBOARD_DIR="$REPO_ROOT/src/octop/dashboard"
+DASHBOARD_DIR="$REPO_ROOT/src/happyclaw/dashboard"
 
 BUILD=1
 SANDBOX=1
@@ -67,9 +67,9 @@ if ((BUILD)); then
 
   bash "$SCRIPT_DIR/make-dev-runtime.sh" >/dev/null
 
-  # The window loads the Vite dev server (see OCTOP_DASHBOARD_DEV below), so a
+  # The window loads the Vite dev server (see HAPPYCLAW_DASHBOARD_DEV below), so a
   # production Dashboard build is not part of this launch. The static bundle
-  # under src/octop/dashboard stays for packaged and server deploys.
+  # under src/happyclaw/dashboard stays for packaged and server deploys.
 
   # Build the Electron main/preload/renderer bundles.
   echo "[dev] building electron shell…"
@@ -120,11 +120,11 @@ echo "[dev] launching (port from OS, loopback only; dashboard via Vite)…"
 # Replace the build shell so the supervisor owns the actual Electron PID.
 # No background shell/watchdog: the supervisor waits for the entire observed
 # tree, including Python's detached group, on signals and unexpected exits.
-# OCTOP_DASHBOARD_DEV makes the shell load Vite instead of the static build,
+# HAPPYCLAW_DASHBOARD_DEV makes the shell load Vite instead of the static build,
 # so dashboard source hot-reloads. The port must match the relay's allowed origin.
-exec env OCTOP_PORTABLE_DIR="$DEV_RUNTIME" \
-  OCTOP_DASHBOARD_DIR="$DASHBOARD_DIR" \
-  OCTOP_DASHBOARD_DEV=1 \
-  OCTOP_DASHBOARD_SOURCE="$REPO_ROOT/dashboard" \
-  OCTOP_DASHBOARD_DEV_PORT="${OCTOP_DASHBOARD_DEV_PORT:-5173}" \
+exec env HAPPYCLAW_PORTABLE_DIR="$DEV_RUNTIME" \
+  HAPPYCLAW_DASHBOARD_DIR="$DASHBOARD_DIR" \
+  HAPPYCLAW_DASHBOARD_DEV=1 \
+  HAPPYCLAW_DASHBOARD_SOURCE="$REPO_ROOT/dashboard" \
+  HAPPYCLAW_DASHBOARD_DEV_PORT="${HAPPYCLAW_DASHBOARD_DEV_PORT:-5173}" \
   "${launch[@]}"

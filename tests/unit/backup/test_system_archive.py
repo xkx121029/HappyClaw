@@ -10,13 +10,13 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import DatabaseConfig
-from octop.infra.backup.manifest import MANIFEST_VERSION, BackupManifest
-from octop.infra.backup.system_archive import create_system_backup, restore_system_backup
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import DatabaseConfig
+from happyclaw.infra.backup.manifest import MANIFEST_VERSION, BackupManifest
+from happyclaw.infra.backup.system_archive import create_system_backup, restore_system_backup
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.utils.paths import PathLayout
 
 
 @pytest.fixture
@@ -499,8 +499,8 @@ def test_restore_skips_chat_workspace_files_when_manifest_omits_chats(
 
 
 def test_sqlite_strip_chats_reclaims_pages(tmp_path: Path) -> None:
-    from octop.infra.backup.chats import strip_chat_tables_from_sqlite_file
-    from octop.infra.backup.snapshot import snapshot_sqlite_file
+    from happyclaw.infra.backup.chats import strip_chat_tables_from_sqlite_file
+    from happyclaw.infra.backup.snapshot import snapshot_sqlite_file
 
     layout = PathLayout(tmp_path / "home")
     layout.root.mkdir()
@@ -1135,7 +1135,7 @@ def test_restore_repairs_old_physical_schema_with_current_watermark(tmp_path: Pa
         conn.executescript(
             (
                 Path(__file__).resolve().parents[3]
-                / "src/octop/infra/db/migrations/001_initial.sql"
+                / "src/happyclaw/infra/db/migrations/001_initial.sql"
             ).read_text()
         )
         conn.execute("UPDATE _schema_version SET version = 13")
@@ -1223,7 +1223,7 @@ def test_refuse_newer_schema_backup_before_database_replace(
             "VALUES ('still-here', 'hash', 'admin', 1)"
         )
 
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         restore_system_backup(
             archive,
             paths=layout,
@@ -1275,7 +1275,7 @@ def test_refuse_cross_engine_restore(layout: PathLayout, tmp_path: Path) -> None
             info = tarfile.TarInfo(name=name)
             info.size = len(blob)
             tf.addfile(info, BytesIO(blob))
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         restore_system_backup(
             archive,
             paths=layout,

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.plugins.runtime.contract import (
+from happyclaw.infra.plugins.runtime.contract import (
     ActivationContext,
     CapabilityKind,
     InvalidManifestError,
@@ -28,8 +28,8 @@ from octop.infra.plugins.runtime.contract import (
     PluginSourceKind,
     VersionConflictError,
 )
-from octop.infra.plugins.runtime.dsh_plugin import DshPluginLoader
-from octop.infra.plugins.runtime.octop_plugin import OctopPluginLoader
+from happyclaw.infra.plugins.runtime.dsh_plugin import DshPluginLoader
+from happyclaw.infra.plugins.runtime.octop_plugin import HappyclawPluginLoader
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _OCTOP_PLUGINS = _REPO_ROOT / "plugins"
@@ -75,7 +75,7 @@ def _write_dsh_bundle(
 
 
 def test_octop_discover_maps_real_plugins() -> None:
-    envelopes = {item.id: item for item in OctopPluginLoader().discover(roots=[_OCTOP_PLUGINS])}
+    envelopes = {item.id: item for item in HappyclawPluginLoader().discover(roots=[_OCTOP_PLUGINS])}
 
     toolkit = envelopes["octop:demo-toolkit"]
     assert toolkit.version == "0.1.0"
@@ -107,7 +107,7 @@ def test_octop_manifest_separates_plugin_and_python_requires(tmp_path: Path) -> 
         encoding="utf-8",
     )
 
-    envelope = OctopPluginLoader().discover(roots=[tmp_path])[0]
+    envelope = HappyclawPluginLoader().discover(roots=[tmp_path])[0]
 
     assert envelope.requires == (PluginRequirement("octop:demo-toolkit", ">=0.1.0"),)
     assert envelope.metadata["python_requires"] == ["requests>=2.0"]
@@ -126,7 +126,7 @@ def test_octop_invalid_plugin_requirement_is_not_silently_dropped(tmp_path: Path
     )
 
     with pytest.raises(InvalidManifestError):
-        OctopPluginLoader().discover(roots=[tmp_path], strict=True)
+        HappyclawPluginLoader().discover(roots=[tmp_path], strict=True)
 
 
 def test_octop_invalid_manifest_uses_stable_code(tmp_path: Path) -> None:
@@ -138,7 +138,7 @@ def test_octop_invalid_manifest_uses_stable_code(tmp_path: Path) -> None:
     )
 
     with pytest.raises(InvalidManifestError) as raised:
-        OctopPluginLoader().discover(roots=[tmp_path], strict=True)
+        HappyclawPluginLoader().discover(roots=[tmp_path], strict=True)
 
     assert raised.value.code is PluginErrorCode.MANIFEST_INVALID
     assert raised.value.details["path"].endswith("plugin.yaml")
@@ -152,7 +152,7 @@ def test_octop_invalid_manifest_is_skipped_without_strict(tmp_path: Path) -> Non
         encoding="utf-8",
     )
 
-    assert OctopPluginLoader().discover(roots=[tmp_path]) == []
+    assert HappyclawPluginLoader().discover(roots=[tmp_path]) == []
 
 
 @_requires_dsh_checkout
@@ -287,7 +287,7 @@ def test_octop_undeclared_capabilities_stay_empty(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    envelope = OctopPluginLoader().discover(roots=[tmp_path])[0]
+    envelope = HappyclawPluginLoader().discover(roots=[tmp_path])[0]
 
     assert envelope.capabilities == ()
     assert envelope.metadata["capabilities_declared"] is False
@@ -393,7 +393,7 @@ def test_permissions_undeclared_are_empty_and_marked(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    octop = OctopPluginLoader().discover(roots=[octop_dir])[0]
+    octop = HappyclawPluginLoader().discover(roots=[octop_dir])[0]
 
     # ``kind: tool`` is a capability, not a permission: nothing may be inferred.
     assert octop.permissions == ()
@@ -417,7 +417,7 @@ def test_permissions_declared_are_parsed(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    octop = OctopPluginLoader().discover(roots=[octop_dir])[0]
+    octop = HappyclawPluginLoader().discover(roots=[octop_dir])[0]
 
     assert octop.permissions == (PermissionKind.FS_READ, PermissionKind.FS_WRITE)
     assert octop.metadata["permissions_declared"] is True
@@ -445,7 +445,7 @@ def test_unknown_permission_is_a_manifest_error(tmp_path: Path) -> None:
     )
 
     with pytest.raises(InvalidManifestError) as octop_error:
-        OctopPluginLoader().discover(roots=[octop_dir], strict=True)
+        HappyclawPluginLoader().discover(roots=[octop_dir], strict=True)
 
     assert octop_error.value.code is PluginErrorCode.MANIFEST_INVALID
     assert octop_error.value.details["permissions"] == ["fs.*"]

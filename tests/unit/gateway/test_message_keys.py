@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
-from octop.infra.gateway.process.message_keys import (
+from happyclaw.infra.gateway.process.message_keys import (
     resolve_user_id_for_message,
     sanitize_im_metadata,
     session_key_from_message,
@@ -105,7 +105,7 @@ def test_sanitize_im_metadata_persists_weixin_routing() -> None:
 
 
 def test_session_metadata_keeps_weixin_token_under_a_durable_key() -> None:
-    from octop.infra.gateway.process.message_keys import session_metadata_from_message
+    from happyclaw.infra.gateway.process.message_keys import session_metadata_from_message
 
     msg = InboundMessage(
         channel_type="weixin",

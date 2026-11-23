@@ -19,8 +19,8 @@ from happyclaw_memory import Memory
 from happyclaw_memory.storage.backends.postgres import PostgresMemoryBackend
 from happyclaw_memory.types import AtomCard, Candidate, JournalEntry
 
-from octop.infra.agents.memory import postgres_storage as storage
-from octop.infra.agents.memory.thread_cleanup import memory_namespace
+from happyclaw.infra.agents.memory import postgres_storage as storage
+from happyclaw.infra.agents.memory.thread_cleanup import memory_namespace
 
 DSN = os.environ.get("OCTOP_MEMORY_MAINTENANCE_TEST_DSN")
 pytestmark = pytest.mark.skipif(not DSN, reason="dedicated PostgreSQL test DSN not configured")

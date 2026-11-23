@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import load_config, parse_database_config
+from happyclaw.config import load_config, parse_database_config
 
 
 def test_defaults_when_missing(tmp_path: Path):

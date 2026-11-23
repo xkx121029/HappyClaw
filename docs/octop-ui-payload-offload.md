@@ -54,9 +54,9 @@
 
 ## 4. 方案
 
-### 4.1 新增中间件 `OctopUiOffloadMiddleware`
+### 4.1 新增中间件 `HappyclawUiOffloadMiddleware`
 
-位置：`src/octop/infra/agents/middleware/octop_ui_offload.py`。实现 `awrap_tool_call`（async 版，F1）：
+位置：`src/happyclaw/infra/agents/middleware/octop_ui_offload.py`。实现 `awrap_tool_call`（async 版，F1）：
 
 1. `result = await handler(request)`；非 ToolMessage（含 Command）→ 原样返回；
 2. 剥离条件（全部满足，任一不满足原样返回）：

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-from octop.infra.dsh import switches
+from happyclaw.infra.dsh import switches
 
 
 def test_master_switch_defaults_to_off(monkeypatch) -> None:
@@ -40,11 +40,11 @@ def test_shadow_stage_is_gated_by_master_when_present(monkeypatch) -> None:
 
 
 def test_processor_hook_does_not_import_session_module_when_off(monkeypatch) -> None:
-    from octop.infra.gateway.process.processor import GlobalProcessor
+    from happyclaw.infra.gateway.process.processor import GlobalProcessor
 
     monkeypatch.delenv("OCTOP_DSH_RUNTIME", raising=False)
     monkeypatch.delenv("OCTOP_DSH_SHADOW", raising=False)
-    name = "octop.infra.dsh.session.shadow"
+    name = "happyclaw.infra.dsh.session.shadow"
     original = sys.modules.pop(name, None)
     try:
         GlobalProcessor._write_shadow_history("thread-1", [])

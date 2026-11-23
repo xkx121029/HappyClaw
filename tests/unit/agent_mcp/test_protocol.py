@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.infra.agent_mcp.protocol import handle_agent_mcp_request
-from octop.infra.users.identity import User
+from happyclaw.infra.agent_mcp.protocol import handle_agent_mcp_request
+from happyclaw.infra.users.identity import User
 
 
 @pytest.fixture

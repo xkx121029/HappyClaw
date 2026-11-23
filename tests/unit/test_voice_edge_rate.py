@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-from octop.infra.db.repos.voice_providers import VoiceProviderRow
-from octop.infra.voice.adapters import synthesize_edge
+from happyclaw.infra.db.repos.voice_providers import VoiceProviderRow
+from happyclaw.infra.voice.adapters import synthesize_edge
 
 
 def _edge_row() -> VoiceProviderRow:

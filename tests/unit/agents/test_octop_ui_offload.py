@@ -1,4 +1,4 @@
-"""OctopUiOffloadMiddleware: oversized octop_ui payloads move to ToolMessage.artifact."""
+"""HappyclawUiOffloadMiddleware: oversized octop_ui payloads move to ToolMessage.artifact."""
 
 from __future__ import annotations
 
@@ -10,9 +10,9 @@ import pytest
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 
-from octop.infra.agents.middleware.octop_ui_offload import (
+from happyclaw.infra.agents.middleware.octop_ui_offload import (
     _OFFLOAD_MIN_CHARS,
-    OctopUiOffloadMiddleware,
+    HappyclawUiOffloadMiddleware,
 )
 
 
@@ -61,7 +61,7 @@ def _big_message() -> ToolMessage:
 
 
 def test_offloads_oversized_octop_ui_payload_in_place() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     result = _big_message()
     out = mw.wrap_tool_call(_request(), lambda _req: result)
 
@@ -86,7 +86,7 @@ def test_offloads_oversized_octop_ui_payload_in_place() -> None:
 
 @pytest.mark.asyncio
 async def test_awrap_tool_call_offloads() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     result = _big_message()
 
     async def handler(_req: Any) -> ToolMessage:
@@ -98,7 +98,7 @@ async def test_awrap_tool_call_offloads() -> None:
 
 
 def test_skips_small_payload() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     content = json.dumps(_envelope({"results": []}), ensure_ascii=False)
     assert len(content) < _OFFLOAD_MIN_CHARS
     result = ToolMessage(content=content, tool_call_id="tc1")
@@ -108,7 +108,7 @@ def test_skips_small_payload() -> None:
 
 
 def test_skips_non_json_text() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     content = "x" * (_OFFLOAD_MIN_CHARS + 10)
     result = ToolMessage(content=content, tool_call_id="tc1")
     out = mw.wrap_tool_call(_request(), lambda _req: result)
@@ -117,7 +117,7 @@ def test_skips_non_json_text() -> None:
 
 
 def test_skips_json_without_octop_ui() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     content = json.dumps({"data": {"big": "x" * _OFFLOAD_MIN_CHARS}})
     result = ToolMessage(content=content, tool_call_id="tc1")
     out = mw.wrap_tool_call(_request(), lambda _req: result)
@@ -126,7 +126,7 @@ def test_skips_json_without_octop_ui() -> None:
 
 
 def test_skips_octop_ui_without_renderer() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     envelope = _envelope({"big": "x" * _OFFLOAD_MIN_CHARS})
     envelope["octop_ui"] = {"renderer": " "}
     content = json.dumps(envelope)
@@ -137,7 +137,7 @@ def test_skips_octop_ui_without_renderer() -> None:
 
 
 def test_skips_empty_data() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     for empty in (None, {}, []):
         envelope = _envelope(empty)
         envelope["pad"] = "x" * _OFFLOAD_MIN_CHARS
@@ -149,7 +149,7 @@ def test_skips_empty_data() -> None:
 
 
 def test_skips_payload_with_file_url() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     data = _big_data()
     data["results"][0]["cover_file"] = "file:///tmp/cover.png"
     content = json.dumps(_envelope(data), ensure_ascii=False)
@@ -160,7 +160,7 @@ def test_skips_payload_with_file_url() -> None:
 
 
 def test_skips_non_string_content_and_command() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     blocks = [{"type": "text", "text": "x" * (_OFFLOAD_MIN_CHARS + 10)}]
     result = ToolMessage(content=blocks, tool_call_id="tc1")
     out = mw.wrap_tool_call(_request(), lambda _req: result)
@@ -172,10 +172,10 @@ def test_skips_non_string_content_and_command() -> None:
 
 
 def test_offload_never_breaks_tool_call() -> None:
-    mw = OctopUiOffloadMiddleware()
+    mw = HappyclawUiOffloadMiddleware()
     result = _big_message()
     with patch(
-        "octop.infra.agents.middleware.octop_ui_offload.json.loads",
+        "happyclaw.infra.agents.middleware.octop_ui_offload.json.loads",
         side_effect=RuntimeError("boom"),
     ):
         out = mw.wrap_tool_call(_request(), lambda _req: result)

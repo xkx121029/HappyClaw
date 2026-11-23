@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from octop.infra.control.mobile.adb import extract_png, extract_raw_rgba, screenrecord_h264_args
-from octop.infra.control.mobile.h264 import (
+from happyclaw.infra.control.mobile.adb import extract_png, extract_raw_rgba, screenrecord_h264_args
+from happyclaw.infra.control.mobile.h264 import (
     NAL_IDR,
     NAL_PPS,
     NAL_SPS,

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.utils.install_reset import (
+from happyclaw.infra.utils.install_reset import (
     InstallResetError,
     partition_install_root,
     wipe_octop_state,
@@ -52,7 +52,7 @@ def test_wipe_keeps_directory_that_holds_this_interpreter(
     custom = root / "custom-runtime"
     custom.mkdir(parents=True)
     (root / "octop.db").write_text("db", encoding="utf-8")
-    monkeypatch.setattr("octop.infra.utils.install_reset.sys.prefix", str(custom))
+    monkeypatch.setattr("happyclaw.infra.utils.install_reset.sys.prefix", str(custom))
 
     _removed, kept = wipe_octop_state(root)
     assert custom in kept
@@ -62,7 +62,7 @@ def test_wipe_keeps_directory_that_holds_this_interpreter(
 def test_partition_refuses_when_root_is_the_prefix(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("octop.infra.utils.install_reset.sys.prefix", str(tmp_path))
+    monkeypatch.setattr("happyclaw.infra.utils.install_reset.sys.prefix", str(tmp_path))
     with pytest.raises(InstallResetError, match="install.sh"):
         partition_install_root(tmp_path)
 

@@ -1,8 +1,8 @@
 # CLI Reference
 
 `octop` is a single Click app installed as `octop` on `pip install octop`.
-The entry point lives in `src/octop/cli/main.py`; commands are registered in
-`src/octop/cli/registry.py` and imported lazily, so `octop --help` never
+The entry point lives in `src/happyclaw/cli/main.py`; commands are registered in
+`src/happyclaw/cli/registry.py` and imported lazily, so `happyclaw --help` never
 imports the agent stack.
 
 Every table below is the command tree of the installed package, not a
@@ -13,8 +13,8 @@ hand-written summary: `octop <group> --help` prints the same rows.
 | Option | Env | Effect |
 |--------|-----|--------|
 | `-v, --version` | — | Print the installed version and exit |
-| `--user TEXT` | `OCTOP_USER` | Default `--user` for subcommands (admin acting on behalf of a user). Ignored in single-user mode. |
-| `--agent TEXT` | `OCTOP_AGENT` | Default `--agent` for subcommands |
+| `--user TEXT` | `HAPPYCLAW_USER` | Default `--user` for subcommands (admin acting on behalf of a user). Ignored in single-user mode. |
+| `--agent TEXT` | `HAPPYCLAW_AGENT` | Default `--agent` for subcommands |
 | `--json` | — | Emit machine-readable JSON for list-style commands |
 
 ## Command groups
@@ -45,7 +45,7 @@ hand-written summary: `octop <group> --help` prints the same rows.
 | `service` | systemd / launchd service lifecycle |
 | `skills` | Per-agent skill enable / disable |
 | `update` | Check for and install a newer release |
-| `user` | Deprecated in single-user mode; see `octop user` |
+| `user` | Deprecated in single-user mode; see `happyclaw user` |
 | `version` | Print the installed version |
 
 ## Transport layers
@@ -57,38 +57,38 @@ owner directly.
 | Layer | When | Examples |
 |-------|------|----------|
 | **Offline** (local DB / files only) | Read/write `~/.happyclaw` with no server boot | `init`, `backup create/restore`, `plugin`, `agent list/use`, `chats list/get/create/update/delete`, `cron list/create/delete`, `admin overview/audit`, `models presets/list/active/config`, `provider list/create/delete`, `skills enable/disable`, `bridge list/get`, `cloud import-tccli`, `captcha reset`, `config`, `clean` |
-| **Embedded** (in-process `OctopServer`) | Needs the harness / gateway runtime for one command | `chats send/repl`, `cron run-now`, `agent create/from-expert/start/stop/reload`, `provider test`, `channel test/config/feishu-setup/bind`, `migrate openclaw/hermes`, `acp` |
+| **Embedded** (in-process `HappyclawServer`) | Needs the harness / gateway runtime for one command | `chats send/repl`, `cron run-now`, `agent create/from-expert/start/stop/reload`, `provider test`, `channel test/config/feishu-setup/bind`, `migrate openclaw/hermes`, `acp` |
 | **Embedded (bridge)** | In-process `BridgeManager` only; the CLI cannot hold the Bridge WebSocket after exit | `bridge probe/create/patch/delete/connect/disconnect/agents` |
 | **External** | Talks to an OS daemon or the system service manager; no HappyClaw HTTP | `models ollama-list/pull/rm` (local Ollama daemon), `service start/stop/restart/status`, `update`, `completion install` |
 
-`octop run` itself is the server. Embedded commands always boot their own
-short-lived in-process `OctopServer` (`octop.cli.support.embedded_ops` →
-`embedded_runtime()`) — they do not attach to a running `octop run`, and they
+`happyclaw run` itself is the server. Embedded commands always boot their own
+short-lived in-process `HappyclawServer` (`happyclaw.cli.support.embedded_ops` →
+`embedded_runtime()`) — they do not attach to a running `happyclaw run`, and they
 exit when the command finishes. Data changes made offline (channels, cron,
 providers) are written to the same control-plane database and are picked up the
-next time `octop run` starts.
+next time `happyclaw run` starts.
 
-## `octop init`
+## `happyclaw init`
 
 Prepare `~/.happyclaw`: create the runtime directories, seed the bundled plugins,
 and run the control-plane database migrations. A single-user install has no
-account step — the local owner is bound by the first `octop run`.
+account step — the local owner is bound by the first `happyclaw run`.
 
 The `--admin-*` options are legacy: they create a named admin row for packages
 that still provision one (the fnOS build does), never prompt, and the
 single-user path ignores them.
 
 ```
-Usage: octop init [OPTIONS]
+Usage: happyclaw init [OPTIONS]
 
   Bootstrap a HappyClaw install (~/.happyclaw dir, DB migrations).
 
 Options:
   --admin-username TEXT      Legacy: also create a named admin row (or set
-                             OCTOP_ADMIN_USERNAME). Single-user installs need
+                             HAPPYCLAW_ADMIN_USERNAME). Single-user installs need
                              no account and pass neither admin option.
   --admin-password TEXT      Legacy: password for --admin-username (or set
-                             OCTOP_ADMIN_PASSWORD).
+                             HAPPYCLAW_ADMIN_PASSWORD).
   --admin-display-name TEXT  Legacy: optional display name for the admin row.
   --force                    Delete HappyClaw application state under ~/.happyclaw
                              before bootstrapping. Keeps the install runtime
@@ -97,18 +97,18 @@ Options:
   -h, --help                 Show this message and exit.
 ```
 
-A normal install does not need this command: the first `octop run` creates the
-data directory and resolves the local owner by itself. Use `octop init` when
+A normal install does not need this command: the first `happyclaw run` creates the
+data directory and resolves the local owner by itself. Use `happyclaw init` when
 you want to migrate the database ahead of time, or from a package that still
 needs a named admin row.
 
-## `octop run`
+## `happyclaw run`
 
 Start the FastAPI app in the foreground (delegates to
 `octop.launch.run_foreground_blocking`).
 
 ```
-Usage: octop run [OPTIONS]
+Usage: happyclaw run [OPTIONS]
 
   Run octop-server in the foreground.
 
@@ -125,10 +125,10 @@ Options:
   -h, --help                  Show this message and exit.
 ```
 
-Host and port resolve as CLI flag → `OCTOP_BIND_HOST` / `OCTOP_PORT` →
+Host and port resolve as CLI flag → `HAPPYCLAW_BIND_HOST` / `HAPPYCLAW_PORT` →
 `config.json` → default (`127.0.0.1:8088`).
 
-## `octop service`
+## `happyclaw service`
 
 Install and manage the HappyClaw system service. The backend is detected
 automatically (systemd on Linux, launchd on macOS); this is the only
@@ -136,7 +136,7 @@ platform-limited command group in the CLI, and it fails with an explicit
 message elsewhere.
 
 ```
-Usage: octop service [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw service [OPTIONS] COMMAND [ARGS]...
 
   Manage the Octop system service (systemd on Linux, launchd on macOS).
 
@@ -148,7 +148,7 @@ Commands:
 ```
 
 `start`, `stop`, `restart` and `status` accept `--scope`
-(`user` vs `system`; default `auto`, also settable via `OCTOP_SERVICE_SCOPE`).
+(`user` vs `system`; default `auto`, also settable via `HAPPYCLAW_SERVICE_SCOPE`).
 `start` takes `--host` / `--port` to write the bind address into `config.json`
 before installing, and `--force-install` to rewrite the unit file. `status`
 takes `--host` / `--port` for the health probe and `--no-health` to skip it.
@@ -166,20 +166,20 @@ To undo, delete the drop-ins and run
 [Configuration](configuration.md#local-knowledge-indexing-and-systemd-resource-limits)
 for the memory-budget override.
 
-## `octop user` (deprecated)
+## `happyclaw user` (deprecated)
 
 Kept so existing scripts fail softly in single-user mode: reads return the
 local owner, writes return a message explaining that multiple accounts are not
 supported. The subcommands (`create`, `delete`, `disable`, `list`, `passwd`,
 `reset-mfa`, `role`, `set-email`) still parse; there is nothing to log in to.
 
-## `octop agent`
+## `happyclaw agent`
 
 Lifecycle and templates. `create`, `from-expert`, `start`, `stop` and `reload`
-boot an embedded `OctopServer`; `list`, `use` and `delete` work offline.
+boot an embedded `HappyclawServer`; `list`, `use` and `delete` work offline.
 
 ```
-Usage: octop agent [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw agent [OPTIONS] COMMAND [ARGS]...
 
   Agent lifecycle commands.
 
@@ -199,14 +199,14 @@ Commands:
 always creates the expert for the local owner. `use` writes the agent id into
 `~/.happyclaw/cli_state.json` so later commands default to it.
 
-## `octop chats`
+## `happyclaw chats`
 
 Thread CRUD plus `send` / `repl`. `list` / `get` / `create` / `update` /
 `delete` / `gc-orphans` work offline against `~/.happyclaw/octop.db`; `send` and
 `repl` boot an embedded server and stream through the CLI gateway channel.
 
 ```
-Usage: octop chats [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw chats [OPTIONS] COMMAND [ARGS]...
 
   Chat REPL and session management.
 
@@ -224,15 +224,15 @@ Commands:
 `send` takes `--session-key`, `--thread-id` (pin a thread for every turn),
 `--model`, `--mode` (`ask` / `plan` / `default`) and `--plain` (raw token
 stream). `gc-orphans` scans checkpoints whose thread row is gone and, with
-`--yes`, deletes them. There is no `octop chat` alias.
+`--yes`, deletes them. There is no `happyclaw chat` alias.
 
-## `octop memory`
+## `happyclaw memory`
 
 Live memory maintenance for running agents. Both subcommands need the agent
 stack; see [memory slim](memory-slim.md) for what they do to the database.
 
 ```
-Usage: octop memory [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw memory [OPTIONS] COMMAND [ARGS]...
 
   Live memory maintenance (backup and slim).
 
@@ -241,13 +241,13 @@ Commands:
   slim  Back up and slim memory, pausing new turns until completion. Keeps all history.
 ```
 
-## `octop cron`
+## `happyclaw cron`
 
 Local DB cron management. `run-now` boots an embedded server because the fire
 is dispatched through the live `CronManager`.
 
 ```
-Usage: octop cron [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw cron [OPTIONS] COMMAND [ARGS]...
 
   Cron job management commands.
 
@@ -266,7 +266,7 @@ and disabled. The row stays in the list. `--task-type text` pushes the prompt
 verbatim; `--task-type agent` (default) runs the LLM and pushes the reply.
 `--prompt` is required, must be non-empty and ≤ 2000 characters.
 
-## `octop channel`
+## `happyclaw channel`
 
 Local channel CRUD plus platform-specific bot creators. `bind` drives the QR
 flows for QQ / WeCom / WeChat, `feishu-setup` drives Feishu scan-to-create, and
@@ -274,7 +274,7 @@ flows for QQ / WeCom / WeChat, `feishu-setup` drives Feishu scan-to-create, and
 stops it.
 
 ```
-Usage: octop channel [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw channel [OPTIONS] COMMAND [ARGS]...
 
   Channel management commands.
 
@@ -290,14 +290,14 @@ Commands:
   test          Probe a channel: instantiate, start(), then stop().
 ```
 
-## `octop bridge`
+## `happyclaw bridge`
 
 HappyClaw-to-HappyClaw peer links (same surface as dashboard **云端协同**,
 `/bridge`). `--user` / pinned `default_user` are compatibility fields; the
 local owner is always used. `--peer-user` is the **remote** peer's username.
 
 ```
-Usage: octop bridge [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw bridge [OPTIONS] COMMAND [ARGS]...
 
   Manage remote HappyClaw bridge peers (add / edit / probe / connect).
 
@@ -317,15 +317,15 @@ Commands:
 `probe CONNECTION_ID` reuses the stored password when `--peer-password` is
 omitted. `create` always needs the remote password: pass `--peer-password` or
 type it at the hidden prompt. `connect` and `agents` open the Bridge
-WebSocket, verify it, then close it — start `octop run` to keep a link alive.
+WebSocket, verify it, then close it — start `happyclaw run` to keep a link alive.
 
-## `octop provider`
+## `happyclaw provider`
 
 Local DB provider CRUD. `test` boots an embedded server and sends a one-token
 ping.
 
 ```
-Usage: octop provider [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw provider [OPTIONS] COMMAND [ARGS]...
 
   Provider management commands (local DB).
 
@@ -336,15 +336,15 @@ Commands:
   test    Probe a provider with a one-token ping.
 ```
 
-There is no `octop provider edit`: change a provider in the dashboard
+There is no `happyclaw provider edit`: change a provider in the dashboard
 (**管理 → 模型配置**) or delete and re-create it.
 
-## `octop models`
+## `happyclaw models`
 
 Provider presets and the resolved model catalog.
 
 ```
-Usage: octop models [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw models [OPTIONS] COMMAND [ARGS]...
 
   Model catalog and active-model settings.
 
@@ -359,16 +359,16 @@ Commands:
 ```
 
 The `ollama-*` subcommands talk to the Ollama daemon on this machine
-(`OllamaModelManager`), not to a running `octop run`. `ollama-pull --no-wait`
+(`OllamaModelManager`), not to a running `happyclaw run`. `ollama-pull --no-wait`
 is rejected: local pulls always block.
 
-## `octop skills`
+## `happyclaw skills`
 
 Per-agent skill enable / disable, plus an interactive `config`. These write the
 local DB and workspace skill config; no server is required.
 
 ```
-Usage: octop skills [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw skills [OPTIONS] COMMAND [ARGS]...
 
   Manage agent skills (enable / disable / list).
 
@@ -379,41 +379,41 @@ Commands:
   list     List skills for an agent.
 ```
 
-## `octop plugin`
+## `happyclaw plugin`
 
 Install and manage third-party plugins (they live in `~/.happyclaw/plugins/`). The
 same plugin manager powers the dashboard's **管理 → 插件管理** page.
 
 HappyClaw also **seeds bundled plugins** into `~/.happyclaw/plugins/` during
-`octop init` and every `octop run` start. They are listed in the dashboard but
+`happyclaw init` and every `happyclaw run` start. They are listed in the dashboard but
 stay **globally disabled** until you turn them on. An id already recorded in
 `config.json` → `bundled_plugins_seeded` is not copied again after uninstall.
 
 ```
-Usage: octop plugin [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw plugin [OPTIONS] COMMAND [ARGS]...
 
   Install and manage plugins.
 
 Commands:
   install    Install from a local directory or ZIP URL.
   list       List installed plugins.
-  reload     Reload plugins from disk (offline; restart `octop run` to apply to agents).
+  reload     Reload plugins from disk (offline; restart `happyclaw run` to apply to agents).
   uninstall  Remove an installed plugin.
 ```
 
-## `octop backup`
+## `happyclaw backup`
 
 Export and restore HappyClaw backups. Works fully offline.
 
 ```
-Usage: octop backup [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw backup [OPTIONS] COMMAND [ARGS]...
 
   Backup and restore database + local agent workspaces.
 
 Commands:
-  auto     Automatic backup status and one-shot run (schedule requires `octop run`).
+  auto     Automatic backup status and one-shot run (schedule requires `happyclaw run`).
   create   Create a selected-content backup archive.
-  restore  Restore from a backup archive. Stop `octop run` first for a clean restore.
+  restore  Restore from a backup archive. Stop `happyclaw run` first for a clean restore.
 ```
 
 `create` takes `-o/--output`, `--home`, `--include-chats`, and the
@@ -421,17 +421,17 @@ Commands:
 `--no-knowledge` opt-outs. `restore` takes the archive path plus `--home`,
 `--no-config`, `--owner-user-id` and `--yes`.
 
-### `octop backup auto`
+### `happyclaw backup auto`
 
-Automatic backups are scheduled **inside** a running `octop run` process (the
+Automatic backups are scheduled **inside** a running `happyclaw run` process (the
 same system-job mechanism as TLS renewal). Configure in `config.json` under
-`backup`, with env overrides `OCTOP_BACKUP_AUTO_ENABLED`,
-`OCTOP_BACKUP_SCHEDULE`, `OCTOP_BACKUP_RETENTION_COUNT`, or via the dashboard.
+`backup`, with env overrides `HAPPYCLAW_BACKUP_AUTO_ENABLED`,
+`HAPPYCLAW_BACKUP_SCHEDULE`, `HAPPYCLAW_BACKUP_RETENTION_COUNT`, or via the dashboard.
 
 ```
-Usage: octop backup auto [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw backup auto [OPTIONS] COMMAND [ARGS]...
 
-  Automatic backup status and one-shot run (schedule requires `octop run`).
+  Automatic backup status and one-shot run (schedule requires `happyclaw run`).
 
 Commands:
   status  Print automatic backup settings from config.json.
@@ -489,13 +489,13 @@ Commands:
   import-tccli  Import `~/.tccli/<profile>.credential` into the Octop cloud store.
 ```
 
-## `octop selfcheck`
+## `happyclaw selfcheck`
 
 Packaging check: imports the whole agent stack and compiles a throwaway graph,
 so a broken wheel fails loudly instead of at the first chat turn.
 
 ```
-Usage: octop selfcheck [OPTIONS]
+Usage: happyclaw selfcheck [OPTIONS]
 
   Import the agent stack and compile a throwaway graph (packaging check).
 
@@ -503,13 +503,13 @@ Options:
   -h, --help  Show this message and exit.
 ```
 
-## `octop update`
+## `happyclaw update`
 
 Check for and install a newer release from the configured channel (PyPI by
 default).
 
 ```
-Usage: octop update [OPTIONS]
+Usage: happyclaw update [OPTIONS]
 
   Check for and install a newer Octop release.
 
@@ -521,15 +521,15 @@ Options:
   -h, --help           Show this message and exit.
 ```
 
-## `octop migrate`
+## `happyclaw migrate`
 
 Bring an existing OpenClaw or Hermes Agent setup into one HappyClaw expert. The
 source is read where it lives (`~/.openclaw`, `~/.hermes`, or `--from`) and is
 never modified.
 
 ```
-Usage: octop migrate openclaw [OPTIONS]
-       octop migrate hermes [OPTIONS]
+Usage: happyclaw migrate openclaw [OPTIONS]
+       happyclaw migrate hermes [OPTIONS]
 
 Options:
   --from DIRECTORY     Source home directory (default: auto-detect).
@@ -563,22 +563,22 @@ with `--dry-run`; root `--json` prints the same report as JSON. The command
 exits with status 1 when any item failed.
 
 ```text
-$ octop --agent <id> migrate openclaw --dry-run
-$ octop --agent <id> migrate hermes --from /srv/hermes --skip channels
+$ happyclaw --agent <id> migrate openclaw --dry-run
+$ happyclaw --agent <id> migrate hermes --from /srv/hermes --skip channels
 ```
 
 Like `agent create`, the command boots a short-lived in-process server; if
-`octop run` is already running, restart it afterwards to load the migrated
+`happyclaw run` is already running, restart it afterwards to load the migrated
 providers and channels.
 
-## `octop acp`
+## `happyclaw acp`
 
 Expose an HappyClaw agent as a stdio JSON-RPC ACP server. Boots a
-standalone `OctopServer` (reads `~/.happyclaw`); does **not** require
-`octop run` to be running.
+standalone `HappyclawServer` (reads `~/.happyclaw`); does **not** require
+`happyclaw run` to be running.
 
 ```
-Usage: octop acp [OPTIONS]
+Usage: happyclaw acp [OPTIONS]
 
   Run HappyClaw agent as ACP server (stdio).
 
@@ -591,13 +591,13 @@ Options:
 See [ACP integration](./acp.md) for the Zed setup example and the
 runner object schema.
 
-## `octop clean`
+## `happyclaw clean`
 
 Reset CLI state (the default) or delete HappyClaw data under `~/.happyclaw`
 (`--all`). `--all` keeps the install runtime (`venv/`, `bin/`). Destructive.
 
 ```
-Usage: octop clean [OPTIONS]
+Usage: happyclaw clean [OPTIONS]
 
   Remove the CLI state file (default) or Octop data (--all).
 
@@ -609,12 +609,12 @@ Options:
   -h, --help Show this message and exit.
 ```
 
-## `octop config`
+## `happyclaw config`
 
 Inspect or edit `~/.happyclaw/cli_state.json`.
 
 ```
-Usage: octop config [OPTIONS] COMMAND [ARGS]...
+Usage: happyclaw config [OPTIONS] COMMAND [ARGS]...
 
   View or update CLI defaults (~/.happyclaw/cli_state.json).
 
@@ -623,12 +623,12 @@ Commands:
   show      Print pinned default user and agent.
 ```
 
-## `octop completion` / `octop version`
+## `happyclaw completion` / `happyclaw version`
 
 ```text
-$ octop completion show bash   # print a completion script to stdout
-$ octop completion install     # append the eval line to your rc file
-$ octop version                # print the installed octop version
+$ happyclaw completion show bash   # print a completion script to stdout
+$ happyclaw completion install     # append the eval line to your rc file
+$ happyclaw version                # print the installed happyclaw version
 ```
 
 ## CLI state file
@@ -642,7 +642,7 @@ $ octop version                # print the installed octop version
 }
 ```
 
-The path is exposed as `octop.cli.support.state.default_state_path()` and
+The path is exposed as `happyclaw.cli.support.state.default_state_path()` and
 follows `HAPPYCLAW_HOME`. `default_user` is a compatibility field that single-user
-mode ignores; `default_agent` is what `octop agent use` writes and what
+mode ignores; `default_agent` is what `happyclaw agent use` writes and what
 `--agent` falls back to. Delete the file to reset CLI defaults.

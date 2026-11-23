@@ -10,12 +10,12 @@ from typing import Any
 import pytest
 from fastapi import BackgroundTasks, Request
 
-from octop.infra.desktop import (
+from happyclaw.infra.desktop import (
     SHELL_OWNED_ENV_KEYS,
     desktop_shell_enabled,
     shell_owned_env_key,
 )
-from octop.infra.utils.env_file import apply_env_file, apply_env_file_replace, save_env_file
+from happyclaw.infra.utils.env_file import apply_env_file, apply_env_file_replace, save_env_file
 
 
 @pytest.fixture(autouse=True)
@@ -42,7 +42,7 @@ def test_desktop_shell_enabled_detects_flag(monkeypatch: pytest.MonkeyPatch) -> 
 
 
 def test_shell_owned_env_keys_covers_bind_and_identity() -> None:
-    for key in ("OCTOP_DESKTOP_SHELL", "OCTOP_GREEN_PACKAGES", "OCTOP_BIND_HOST", "OCTOP_PORT"):
+    for key in ("HAPPYCLAW_DESKTOP_SHELL", "HAPPYCLAW_GREEN_PACKAGES", "HAPPYCLAW_BIND_HOST", "HAPPYCLAW_PORT"):
         assert key in SHELL_OWNED_ENV_KEYS
 
 
@@ -113,11 +113,11 @@ def _fake_env_server(root: Path) -> Any:
 async def test_envs_api_rejects_shell_owned_key_write(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.api.routers import envs as envs_router
-    from octop.infra.errors import OctopError
+    from happyclaw.api.routers import envs as envs_router
+    from happyclaw.infra.errors import HappyclawError
 
     server = _fake_env_server(tmp_path)
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         await envs_router.batch_save_envs(
             {"OCTOP_PORT": "8088"},
             _=None,
@@ -129,11 +129,11 @@ async def test_envs_api_rejects_shell_owned_key_write(
 async def test_envs_api_rejects_shell_owned_key_delete(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.api.routers import envs as envs_router
-    from octop.infra.errors import OctopError
+    from happyclaw.api.routers import envs as envs_router
+    from happyclaw.infra.errors import HappyclawError
 
     server = _fake_env_server(tmp_path)
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         await envs_router.delete_env("OCTOP_DESKTOP_SHELL", _=None, server=server)
 
 
@@ -141,12 +141,12 @@ async def test_envs_api_rejects_shell_owned_key_delete(
 async def test_envs_api_rejects_policy_key_write_inside_the_shell(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.api.routers import envs as envs_router
-    from octop.infra.errors import OctopError
+    from happyclaw.api.routers import envs as envs_router
+    from happyclaw.infra.errors import HappyclawError
 
     monkeypatch.setenv("OCTOP_DESKTOP_SHELL", "1")
     server = _fake_env_server(tmp_path)
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         await envs_router.batch_save_envs(
             {"OCTOP_REQUIRE_SETUP_PASSWORD": "1"},
             _=None,
@@ -156,8 +156,8 @@ async def test_envs_api_rejects_policy_key_write_inside_the_shell(
 
 @pytest.mark.asyncio
 async def test_update_api_rejects_when_shell_owned(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.api.routers import update as update_router
-    from octop.infra.errors import ErrorCode, OctopError
+    from happyclaw.api.routers import update as update_router
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
     monkeypatch.setenv("OCTOP_DESKTOP_SHELL", "1")
     monkeypatch.setattr(update_router, "get_editable_path", lambda: None)
@@ -170,17 +170,17 @@ async def test_update_api_rejects_when_shell_owned(monkeypatch: pytest.MonkeyPat
     assert status["has_update"] is False
 
     # Mutating endpoints are rejected before any work.
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await update_router.check_for_updates(_=None, server=None)
     assert exc.value.code == ErrorCode.FORBIDDEN
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await update_router.update_settings(
             update_router.UpdateSettingsBody(stable_only=False), server=None, _=None
         )
     assert exc.value.code == ErrorCode.FORBIDDEN
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await update_router.trigger_upgrade(
             request=Request({"type": "http", "headers": []}),
             body=update_router.UpgradeBody(),
@@ -189,13 +189,13 @@ async def test_update_api_rejects_when_shell_owned(monkeypatch: pytest.MonkeyPat
         )
     assert exc.value.code == ErrorCode.FORBIDDEN
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await update_router.restart_service_endpoint(BackgroundTasks(), server=None, _=None)
     assert exc.value.code == ErrorCode.FORBIDDEN
 
 
 def test_self_update_run_upgrade_refuses_shell_owned(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_DESKTOP_SHELL", "1")
     result = self_update.run_upgrade(version="9.9.9")
@@ -204,7 +204,7 @@ def test_self_update_run_upgrade_refuses_shell_owned(monkeypatch: pytest.MonkeyP
 
 
 def test_cli_update_refuses_shell_owned(monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.cli.commands.update import update
+    from happyclaw.cli.commands.update import update
 
     monkeypatch.setenv("OCTOP_DESKTOP_SHELL", "1")
     with pytest.raises(SystemExit) as exc:

@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from happyclaw_gateway.models import ImageContent, TextContent
 
-from octop.infra.gateway.media.tool_media import iter_media_blocks
-from octop.infra.gateway.process import (
+from happyclaw.infra.gateway.media.tool_media import iter_media_blocks
+from happyclaw.infra.gateway.process import (
     build_content,
     build_harness_request,
     content_from_parts,
@@ -109,7 +109,7 @@ def test_build_harness_request_stores_dashboard_message_id() -> None:
 def test_overwrite_last_user_text_keeps_message_id() -> None:
     from langchain_core.messages import HumanMessage
 
-    from octop.infra.gateway.process.processor import _overwrite_last_user_text
+    from happyclaw.infra.gateway.process.processor import _overwrite_last_user_text
 
     request = {
         "messages": [HumanMessage(content="原话", id="1710000000000-ab12cd")],
@@ -138,7 +138,7 @@ def test_build_harness_request_marks_auto_route() -> None:
 async def test_block_to_content_part_base64_image():
     from tests.support.fakes import FakeHarnessAgent
 
-    from octop.infra.gateway.media.tool_media import block_to_content_part
+    from happyclaw.infra.gateway.media.tool_media import block_to_content_part
 
     part = await block_to_content_part(
         {

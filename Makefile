@@ -16,7 +16,7 @@ SHELL := /bin/bash
 
 REPO_ROOT     := $(shell pwd)
 DASHBOARD_DIR := $(REPO_ROOT)/dashboard
-DASHBOARD_DEST := $(REPO_ROOT)/src/octop/dashboard
+DASHBOARD_DEST := $(REPO_ROOT)/src/happyclaw/dashboard
 DIST_DIR      := $(REPO_ROOT)/dist
 # Backend bundle: build outputs stay outside src/ (both dirs are gitignored).
 # `make` on Windows may run under a POSIX shell, so the native CURDIR is used
@@ -51,7 +51,7 @@ help:
 	@echo "  build            Build frontend + Python wheel (full package)"
 	@echo "  build-frontend   Build React dashboard only → $(DASHBOARD_DEST)"
 	@echo "  build-wheel      Build Python wheel only (assumes frontend built)"
-	@echo "  precompile       Byte-compile src/octop into __pycache__ (ship with the app)"
+	@echo "  precompile       Byte-compile src/happyclaw into __pycache__ (ship with the app)"
 	@echo "  package-backend  Standalone backend (PyInstaller onedir) → dist/backend/octop"
 	@echo ""
 	@echo "Publish targets:"
@@ -74,7 +74,7 @@ help:
 	@echo "  lint             Ruff check + format check (src, tests)"
 	@echo "  check-upstream   Fail on any link or domain pointing at the pre-migration upstream octop project"
 	@echo "  format           Ruff auto-fix + format (src, tests)"
-	@echo "  typecheck        mypy --strict src/octop"
+	@echo "  typecheck        mypy --strict src/happyclaw"
 	@echo "  test             pytest -m \"not live\""
 	@echo "  test-live        pytest -m live"
 	@echo ""
@@ -120,7 +120,7 @@ build-frontend:
 # unchecked-hash when the archive is built before the copy).
 .PHONY: precompile
 precompile:
-	@echo "[precompile] Compiling src/octop (-q -j 0)..."
+	@echo "[precompile] Compiling src/happyclaw (-q -j 0)..."
 	$(PYTHON) -m compileall -q -j 0 $(REPO_ROOT)/src/octop
 	@echo "[precompile] Done."
 
@@ -141,11 +141,11 @@ package-backend: package-dashboard
 	@echo "[package-backend] Verifying the bundle starts and serves ..."
 	$(PACKAGE_PYTHON) "$(PACKAGE_ROOT)/scripts/packaging/verify_backend.py" \
 		--exe "$(PACKAGE_BACKEND_DIR)/octop/octop.exe" \
-		--dashboard-dir "$(PACKAGE_ROOT)/src/octop/dashboard"
+		--dashboard-dir "$(PACKAGE_ROOT)/src/happyclaw/dashboard"
 	@echo "[package-backend] Done: $(PACKAGE_BACKEND_DIR)/octop"
 
 # Always rebuild the dashboard before packaging: the bundle embeds
-# src/octop/dashboard, so a frontend-only change still requires re-packaging.
+# src/happyclaw/dashboard, so a frontend-only change still requires re-packaging.
 package-dashboard:
 	@echo "[package-dashboard] Building dashboard (no stale reuse) ..."
 	$(PACKAGE_PYTHON) "$(PACKAGE_ROOT)/scripts/packaging/build_dashboard.py"
@@ -257,6 +257,11 @@ lint:
 	@echo "[lint] Ruff format check..."
 	$(RUN) ruff format --check src tests
 
+.PHONY: check-env-compat
+check-env-compat:
+	@echo "[check-env-compat] Every HAPPYCLAW_* read goes through env_get/env_has..."
+	$(RUN) python scripts/check_env_compat.py
+
 .PHONY: check-upstream
 check-upstream:
 	@echo "[check-upstream] No links or domains pointing at the pre-migration upstream project..."
@@ -271,7 +276,7 @@ format:
 .PHONY: typecheck
 typecheck:
 	@echo "[typecheck] mypy..."
-	$(RUN) mypy src/octop
+	$(RUN) mypy src/happyclaw
 
 .PHONY: test
 test:

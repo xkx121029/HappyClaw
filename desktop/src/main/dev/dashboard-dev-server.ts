@@ -41,15 +41,15 @@ export function viteCommand(launch: { command: string; args: string[] }): {
 
 /** ``null`` when this launch should keep serving the static Dashboard. */
 export function readDashboardDev(env: NodeJS.ProcessEnv): DashboardDev | null {
-  if (env.OCTOP_DASHBOARD_DEV !== "1") return null;
-  const sourceDir = (env.OCTOP_DASHBOARD_SOURCE ?? "").trim();
+  if (env.HAPPYCLAW_DASHBOARD_DEV !== "1") return null;
+  const sourceDir = (env.HAPPYCLAW_DASHBOARD_SOURCE ?? "").trim();
   if (!sourceDir) {
-    throw new Error("OCTOP_DASHBOARD_DEV=1 requires OCTOP_DASHBOARD_SOURCE");
+    throw new Error("HAPPYCLAW_DASHBOARD_DEV=1 requires HAPPYCLAW_DASHBOARD_SOURCE");
   }
-  const raw = (env.OCTOP_DASHBOARD_DEV_PORT ?? "").trim();
+  const raw = (env.HAPPYCLAW_DASHBOARD_DEV_PORT ?? "").trim();
   const port = raw === "" ? DEFAULT_PORT : Number(raw);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error(`invalid OCTOP_DASHBOARD_DEV_PORT: ${env.OCTOP_DASHBOARD_DEV_PORT}`);
+    throw new Error(`invalid HAPPYCLAW_DASHBOARD_DEV_PORT: ${env.HAPPYCLAW_DASHBOARD_DEV_PORT}`);
   }
   return { sourceDir, port };
 }

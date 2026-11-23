@@ -59,7 +59,7 @@ HappyClaw Desktop 每次随壳启动自己的 Python 进程，监听回环地址
 - **macOS / Linux**：`package.sh` 组装出的目录原样复制到 `resources/portable/`（`launch.py` 在这一层），安装包里不再放 zip。复制发生在 electron-builder 打包之前。安装包不签名、不公证。Linux 的 deb、rpm 都带上这棵树。DMG 没有安装脚本，deb/rpm 安装的也是同一棵已展开的树，所以不能留到安装时再解压。
 - **Windows**：zip 与 `portable-version.json` 放在 `resources/portable/`。NSIS `customInstall` 用 `tar.exe` 解到 `$INSTDIR\resources\sidecar\`，卸载时删掉这个目录。不把四万多个文件逐个打进 NSIS。
 - 打 zip 之前删掉 `googleapiclient/discovery_cache/documents`、`PyObjCTest`、`*.dSYM`，以及第三方包里的 `tests` / `test` / `testing`。`octop` 自己的目录和 `numpy/testing` 保留。缺静态 discovery 文档时改为联网拉取。绿色 zip 和安装包是同一棵树，所以两处一起生效。
-- Dashboard 只留 wheel 里的 `packages/octop/dashboard`。壳从这份目录提供 `octop://app/`，不再另拷一份到 `resources/dashboard`。开发时 `OCTOP_DASHBOARD_DIR` 仍可指向另一份构建。
+- Dashboard 只留 wheel 里的 `packages/happyclaw/dashboard`。壳从这份目录提供 `octop://app/`，不再另拷一份到 `resources/dashboard`。开发时 `HAPPYCLAW_DASHBOARD_DIR` 仍可指向另一份构建。
 - 展开后的结构（zip 内层目录名已去掉）：
 
 ```text
@@ -73,7 +73,7 @@ start.sh/bat   # 独立启动脚本
 
 启动时按这个顺序找解释器，找到就直接拉起，不再解压：
 
-1. `OCTOP_PORTABLE_DIR`（开发时指向已经展开的目录）。
+1. `HAPPYCLAW_PORTABLE_DIR`（开发时指向已经展开的目录）。
 2. 安装目录里已经展开的树：先看 `resources/sidecar`（Windows 安装器写入），再看 `resources/portable`（macOS 与 Linux 打包时写入）。两者都要同时有 `launch.py` 和解释器；只有 zip 的目录不算。
 3. 都没有时，才把随包 zip 解压到 `<HAPPYCLAW_HOME>/portable/`。正式安装包不会走这里。
 
@@ -136,8 +136,8 @@ Windows 的 `pywin32_system32` 下的 `pywintypes*.dll` 在打 zip 时复制到 
 
 每次桌面启动都拉起自己的 Python 进程。壳不读取 `config.json` 的监听地址来寻找后台，也不读取 `desktop-port`，也不接管终端里已经运行的 `octop run`。
 
-1. **回环地址**：本次进程固定监听 `127.0.0.1`。通过 `OCTOP_BIND_HOST=127.0.0.1` 覆盖本次进程，不写回 `config.json`。
-2. **随机端口**：壳向操作系统申请一个临时端口（绑定 `127.0.0.1:0` 后立即关闭），再把得到的端口通过 `OCTOP_PORT` 传给子进程。端口只存在于本次进程。
+1. **回环地址**：本次进程固定监听 `127.0.0.1`。通过 `HAPPYCLAW_BIND_HOST=127.0.0.1` 覆盖本次进程，不写回 `config.json`。
+2. **随机端口**：壳向操作系统申请一个临时端口（绑定 `127.0.0.1:0` 后立即关闭），再把得到的端口通过 `HAPPYCLAW_PORT` 传给子进程。端口只存在于本次进程。
 3. **不写配置**：启动命令是 `launch.py run`，不传 `--host` 或 `--port`。这两个 CLI 参数会写回 `config.json`；环境变量只覆盖本次进程。
 4. **绑定失败立即报告**：子进程无法绑定该端口时，壳展示诊断信息并停止本次启动。壳不改连其他端口，也不改为附着到已有服务。
 5. **退出所有权**：退出时只回收本次启动的进程树。
@@ -154,10 +154,10 @@ const env = {
   HAPPYCLAW_HOME: octopHome,
   PYTHONNOUSERSITE: "1",
   PYTHONPYCACHEPREFIX: path.join(octopHome, "pyc"),
-  OCTOP_GREEN_PACKAGES: path.join(portableDir, "packages"),
-  OCTOP_BIND_HOST: "127.0.0.1",
-  OCTOP_PORT: String(assignedPort),
-  OCTOP_REQUIRE_SETUP_PASSWORD: "0",
+  HAPPYCLAW_GREEN_PACKAGES: path.join(portableDir, "packages"),
+  HAPPYCLAW_BIND_HOST: "127.0.0.1",
+  HAPPYCLAW_PORT: String(assignedPort),
+  HAPPYCLAW_REQUIRE_SETUP_PASSWORD: "0",
 }
 
 // 不设置 PYTHONPATH，由 launch.py 处理运行时和 .pth。
@@ -172,9 +172,9 @@ delete env.PYTHONPATH
 
 开头的 `~` 按当前用户主目录展开。展开后的路径是数据根，使壳与 Python 的 `PathLayout.from_env()` 指向同一位置。壳不把这个值写回 `config.json`。三个平台的运行时都不放在这里；只有安装目录里没有展开树时，才把 zip 解压到这个根目录下的 `portable/`。
 
-`assignedPort` 是本次向操作系统申请到的端口。`OCTOP_BIND_HOST` 与 `OCTOP_PORT` 都不写回 `config.json`。
+`assignedPort` 是本次向操作系统申请到的端口。`HAPPYCLAW_BIND_HOST` 与 `HAPPYCLAW_PORT` 都不写回 `config.json`。
 
-`OCTOP_REQUIRE_SETUP_PASSWORD` 是产品决定，不是界面开关：关掉初始化向导的 CLI 密码，安装完直接进主界面。前端从 `/api/setup/status` 的 `wizard_password_required` 读到同一个事实，据此隐藏密码步骤和 Admin 步骤的密码框；Web 部署不改前端代码，只是这个值仍为 `true`。壳运行期间这个键归壳所有，`~/.happyclaw/env` 和 `/api/envs` 都不能把登录墙改回来。
+`HAPPYCLAW_REQUIRE_SETUP_PASSWORD` 是产品决定，不是界面开关：关掉初始化向导的 CLI 密码，安装完直接进主界面。前端从 `/api/setup/status` 的 `wizard_password_required` 读到同一个事实，据此隐藏密码步骤和 Admin 步骤的密码框；Web 部署不改前端代码，只是这个值仍为 `true`。壳运行期间这个键归壳所有，`~/.happyclaw/env` 和 `/api/envs` 都不能把登录墙改回来。
 
 令牌有效期保持服务端默认值，壳不去改它 —— 无密码的账户配一个长令牌只是把死局往后推，同时放大令牌泄漏的后果。真正解决"JWT 过期后登不进去"的是设备凭据：
 
@@ -296,7 +296,7 @@ Electron main 入口：执行轻量初始化并获取单实例锁
 
 | 请求路径 | 处理机制 | 安全保障 |
 |---|---|---|
-| `octop://app/`、`/assets/*`、`*.js`、`*.css` | 从便携运行时的 `packages/octop/dashboard` 读取 | 只允许受支持的方法，路径必须位于静态资源根目录内 |
+| `octop://app/`、`/assets/*`、`*.js`、`*.css` | 从便携运行时的 `packages/happyclaw/dashboard` 读取 | 只允许受支持的方法，路径必须位于静态资源根目录内 |
 | `octop://app/api/*` | 主进程透明反向代理至 `http://127.0.0.1:<assigned-port>/api/*` | 校验来源和窗口身份，过滤伪造的 Host、Origin、Cookie 与连接级标头 |
 | 外部 `http://` / `https://` 链接 | 拦截导航并调用 `shell.openExternal` | 防止外部页面进入应用受信上下文 |
 
@@ -362,7 +362,7 @@ Preload 仅暴露最小类型化桥梁 `window.octopDesktop`：
 主进程按固定配置检测更新，渲染进程不能改这个地址，也不能提交另一个安装包 URL。
 
 - 默认请求：`GET https://api.github.com/repos/xkx121029/HappyClaw/releases?per_page=30`，即本仓库自己的 GitHub Releases。桌面安装包由 `octop-desktop.yml` upsert 到同一个 Release（`Octop-desktop-<plat>-<version>.<ext>`），壳不再依赖任何上游站点。
-- 覆盖：`OCTOP_UPDATE_ENDPOINT`。写成 GitHub Releases API 地址（`https://api.github.com/repos/<owner>/<repo>/releases`）时按下面的 release 结构读；写成其他 https 地址时，必须返回 `data.client` 信封（见下文「另一种目录格式」）。
+- 覆盖：`HAPPYCLAW_UPDATE_ENDPOINT`。写成 GitHub Releases API 地址（`https://api.github.com/repos/<owner>/<repo>/releases`）时按下面的 release 结构读；写成其他 https 地址时，必须返回 `data.client` 信封（见下文「另一种目录格式」）。
 - 时机：启动后，以及用户在设置里点击「检查更新」时。请求不经过 Python 后端。
 - 地址非法（非 https、无法解析）时回退到默认地址，不会变成「不检测」。
 - 成功响应使用 `data.client`。`data.pet` 是另一个产品，桌面壳不读。
@@ -376,7 +376,7 @@ Preload 仅暴露最小类型化桥梁 `window.octopDesktop`：
 
 每个通道包含 `tag`、`releasesUrl` 和 `assets`。安装包只从 `assets` 里取。`releasesUrl` 只用于打开对应的发布说明。每个 asset 有 `name`、`ext` 和 `url`。
 
-**安装包只允许从配置好的 https 前缀下载。** 前缀来自 `OCTOP_UPDATE_DOWNLOAD_ORIGINS`（逗号分隔，如 `https://dl.example.com/`）；不设时按目录地址推断：GitHub 目录 → `https://github.com/<owner>/<repo>/releases/download/`，自建目录 → 目录自身的源站。前缀比较带结尾 `/`，`https://dl.example.com` 不会放行 `https://dl.example.com.evil`。前缀表为空时一切安装包都被拒绝，这是坏配置的安全读法。
+**安装包只允许从配置好的 https 前缀下载。** 前缀来自 `HAPPYCLAW_UPDATE_DOWNLOAD_ORIGINS`（逗号分隔，如 `https://dl.example.com/`）；不设时按目录地址推断：GitHub 目录 → `https://github.com/<owner>/<repo>/releases/download/`，自建目录 → 目录自身的源站。前缀比较带结尾 `/`，`https://dl.example.com` 不会放行 `https://dl.example.com.evil`。前缀表为空时一切安装包都被拒绝，这是坏配置的安全读法。
 
 从 GitHub 目录读时，安装包按文件名里的平台串匹配，而不是按 assets 顺序：
 
@@ -389,7 +389,7 @@ Preload 仅暴露最小类型化桥梁 `window.octopDesktop`：
 
 release 的 `prerelease` 进 `beta` 通道，其余进 `stable`；`draft` 跳过；每个通道只保留版本号最高的那一个。
 
-**另一种目录格式**：`OCTOP_UPDATE_ENDPOINT` 指向自建站点时，响应必须是 `{"success": true, "data": {"client": {...}}}`，结构与上面的 `data.client` 相同。
+**另一种目录格式**：`HAPPYCLAW_UPDATE_ENDPOINT` 指向自建站点时，响应必须是 `{"success": true, "data": {"client": {...}}}`，结构与上面的 `data.client` 相同。
 
 按当前系统选择 asset 键：
 
@@ -422,10 +422,10 @@ release 的 `prerelease` 进 `beta` 通道，其余进 `stable`；`draft` 跳过
 
 服务器版和 CLI 仍然可以使用 Web 设置里的「检查更新」「立即升级」，以及 `octop update`。桌面托管的这次 Python 进程不行。
 
-壳启动该进程时设置 `OCTOP_DESKTOP_SHELL=1`。后端据此：
+壳启动该进程时设置 `HAPPYCLAW_DESKTOP_SHELL=1`。后端据此：
 
 - Web 设置里不提供应用内升级，也不展示 `octop update`、pip、安装脚本等手动升级入口。其余 Web 设置保留。
-- `octop update` 和 self-update API 直接拒绝，不修改 `OCTOP_GREEN_PACKAGES` 指向的 `packages/`。
+- `octop update` 和 self-update API 直接拒绝，不修改 `HAPPYCLAW_GREEN_PACKAGES` 指向的 `packages/`。
 - 前端不能下载、替换或切换 Python 运行时。
 
 检测到新版本后只点亮 Web 里已有的更新图标，不弹框。版本号和确认框在用户打开更新页之后才出现。用户同意后，页面调用不带参数的 `installUpdate()`。主进程重新选择发布，页面不能指定包地址。检查失败、已经是最新版本、安装失败仍由主进程的系统框提示。下载进度留在任务栏或 Dock。确认界面不把更新文档转发给 Python 进程。
@@ -659,6 +659,6 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 5. 就绪信号来自 `/api/health`，不解析日志文本。
 6. 渲染进程不知道后台凭据，不获得 Node.js 或原始 IPC 能力。
 7. 正常退出优先，强制进程树回收仅作为超时兜底。
-8. 桌面更新由壳检测，默认 `GET https://api.github.com/repos/xkx121029/HappyClaw/releases`（可用 `OCTOP_UPDATE_ENDPOINT` 换成自建目录），用 `data.client.stable` 与 `data.client.beta` 区分稳定版和测试版。用户默认只跟随稳定版，可以关闭该选项以接收测试版。壳、Dashboard 和绿色 Python 运行时同一发布版本。客户端设置加在原有 Web 设置里，不另开壳设置页；桌面进程拒绝 Web 应用内更新。
+8. 桌面更新由壳检测，默认 `GET https://api.github.com/repos/xkx121029/HappyClaw/releases`（可用 `HAPPYCLAW_UPDATE_ENDPOINT` 换成自建目录），用 `data.client.stable` 与 `data.client.beta` 区分稳定版和测试版。用户默认只跟随稳定版，可以关闭该选项以接收测试版。壳、Dashboard 和绿色 Python 运行时同一发布版本。客户端设置加在原有 Web 设置里，不另开壳设置页；桌面进程拒绝 Web 应用内更新。
 9. Windows 安装使用带目录页的 NSIS 向导，用户可以选择安装位置和盘符。升级沿用该目录；用户数据仍在 `HAPPYCLAW_HOME`（未设置时为 `%USERPROFILE%\.octop`）。
 10. 三个平台的运行时都随安装目录替换。只有退回把 zip 解压到 `HAPPYCLAW_HOME` 时，才用随包 `portable-version.json` 与 `<HAPPYCLAW_HOME>/portable/version.json` 的 `version` 比较。本地版本更高则停止启动，错误提示写出检测到的本地版本，并保留现有运行时与用户数据。

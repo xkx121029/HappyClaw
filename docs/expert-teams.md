@@ -151,7 +151,7 @@ conversation_id = 主持人 thread_id
 
 ## 隐藏模板
 
-`src/octop/infra/agents/teams/template/`，不进 `GET /api/experts`。`template_name = team-host` 仅内部标记。
+`src/happyclaw/infra/agents/teams/template/`，不进 `GET /api/experts`。`template_name = team-host` 仅内部标记。
 
 ## 非目标（第一版）
 

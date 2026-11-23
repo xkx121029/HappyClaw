@@ -9,10 +9,10 @@ Discord 适配器已随 `happyclaw-gateway 0.9.9` 发布。HappyClaw 要求 `hap
 ```sh
 cd HappyClaw
 uv sync --locked --extra dev
-uv run octop run
+uv run happyclaw run
 ```
 
-可在 `uv run octop run` 后追加原有启动参数。先停止占用同一服务端口的旧进程；不要同时启动两个使用同一 Bot Token 的实例。
+可在 `uv run happyclaw run` 后追加原有启动参数。先停止占用同一服务端口的旧进程；不要同时启动两个使用同一 Bot Token 的实例。
 
 仅在联调相邻 `happyclaw-gateway` 源码时使用 `bash scripts/run-discord-local.sh`；该脚本会覆盖发布包为本地可编辑依赖。恢复发布包时重新运行 `uv sync --locked --extra dev`。
 

@@ -6,19 +6,19 @@
 
 ```
 dist/backend/octop/
-├── octop.exe          # 63.3 MB，含全部纯 Python 模块（PYZ 归档）
+├── happyclaw.exe          # 63.3 MB，含全部纯 Python 模块（PYZ 归档）
 └── _internal/         # 4 423 个文件，约 293 MB：.pyd/.dll、dashboard 静态资源、技能库
 ```
 
-总计 4 424 个文件 / 356.5 MB。`octop.exe` **按相对路径**找 `_internal`，两者必须同级、不可改名。
+总计 4 424 个文件 / 356.5 MB。`happyclaw.exe` **按相对路径**找 `_internal`，两者必须同级、不可改名。
 
 ## 打包会自动重建前端（重要）
 
-后端产物内嵌 dashboard 的静态文件（Vite 输出到 `src/octop/dashboard`）。`make package-backend` 现在会先跑 `package-dashboard`：
+后端产物内嵌 dashboard 的静态文件（Vite 输出到 `src/happyclaw/dashboard`）。`make package-backend` 现在会先跑 `package-dashboard`：
 
 1. `node_modules` 缺失或 `package-lock.json` 比它新时执行 `npm ci`，然后 `npm run build`；
-2. 前端构建**失败就中止打包**，不会沿用上一次留在 `src/octop/dashboard` 的旧产物；
-3. 构建成功后在输出目录写 `version.json`（git commit、构建时间、`index.html` 的 sha256），随包进入 `_internal/octop/dashboard/`。
+2. 前端构建**失败就中止打包**，不会沿用上一次留在 `src/happyclaw/dashboard` 的旧产物；
+3. 构建成功后在输出目录写 `version.json`（git commit、构建时间、`index.html` 的 sha256），随包进入 `_internal/happyclaw/dashboard/`。
 
 > **只改前端也必须重打后端**。桌面壳重打安装包前不要复用旧的 `dist/backend/octop`；`verify_backend.py` 会把包内 `index.html` 的哈希与本次前端构建输出对比，不一致直接判失败。
 
@@ -32,9 +32,9 @@ dist/backend/octop/
 
 ## 安装器需要做的
 
-1. 把 `octop.exe` 和 `_internal/` **一起**放进同一个程序目录（例如 `C:\Program Files\Octop\backend\`）。
-2. 升级时**整目录替换**：先解到临时目录再切换，不要只覆盖 `octop.exe` —— 新 exe 配旧 `_internal` 会缺扩展模块，属于最难查的一类故障。
-3. 启动方式：`octop.exe run --port <端口>`（与 `pip install octop` 后的 `octop run` 完全一致）。
+1. 把 `happyclaw.exe` 和 `_internal/` **一起**放进同一个程序目录（例如 `C:\Program Files\Octop\backend\`）。
+2. 升级时**整目录替换**：先解到临时目录再切换，不要只覆盖 `happyclaw.exe` —— 新 exe 配旧 `_internal` 会缺扩展模块，属于最难查的一类故障。
+3. 启动方式：`happyclaw.exe run --port <端口>`（与 `pip install octop` 后的 `happyclaw run` 完全一致）。
 4. 数据目录通过环境变量 `HAPPYCLAW_HOME` 指定；不设则用 `~/.happyclaw`。日志固定写在 `<HAPPYCLAW_HOME>/logs/octop.log`。
 5. 程序目录按**只读**处理：运行期不写 `_internal`，不生成 `.pyc`（已自检，见下）。
 
@@ -42,7 +42,7 @@ dist/backend/octop/
 
 - 不需要 Python、pip、venv、`.pyc`、`site-packages`
 - 不需要 VC++ 运行库：`python313.dll`、`VCRUNTIME140.dll`、`VCRUNTIME140_1.dll`、`MSVCP140.dll` 及 `api-ms-win-crt-*` 已随包
-- 不需要 npm / dashboard 构建产物：`_internal/octop/dashboard/` 已是构建好的静态文件
+- 不需要 npm / dashboard 构建产物：`_internal/happyclaw/dashboard/` 已是构建好的静态文件
 
 ### 平台限制
 
@@ -73,7 +73,7 @@ make package-backend     # 构建 + 自动跑 scripts/packaging/verify_backend.p
 
 自检覆盖五件事（任一项失败，`make` 以非 0 退出）：
 
-0. **agent 栈自检**：跑 `octop.exe selfcheck`，导入 20 个 agent 相关模块（`langchain*` 全家、`langchain_aws.embeddings.bedrock`、`tiktoken*`、`tqdm`、`numpy`、Gmail/Drive loader）并用 `langgraph` 编译+调用一张一次性的图。这一条专门防“包能启动、发第一条消息才炸”的懒加载依赖缺失（numpy 那次就是这么漏的）。
+0. **agent 栈自检**：跑 `happyclaw.exe selfcheck`，导入 20 个 agent 相关模块（`langchain*` 全家、`langchain_aws.embeddings.bedrock`、`tiktoken*`、`tqdm`、`numpy`、Gmail/Drive loader）并用 `langgraph` 编译+调用一张一次性的图。这一条专门防“包能启动、发第一条消息才炸”的懒加载依赖缺失（numpy 那次就是这么漏的）。
 1. `HAPPYCLAW_HOME` 自定义路径生效（DB / 日志 / 数据落在该目录）
 2. dashboard 静态资源可返回（SPA 外壳、`index.html`、`/assets/*`），且包内 `index.html` 的 sha256 与本次前端构建输出一致（防旧界面），`/api/health` 的 `build` 版本戳与之匹配
 3. Playwright 路径可解析（缺失时给中文提示 `hint_zh`，不崩）
@@ -83,13 +83,13 @@ make package-backend     # 构建 + 自动跑 scripts/packaging/verify_backend.p
 
 ```powershell
 .venv\Scripts\python.exe scripts\packaging\verify_backend.py `
-    --exe dist\backend\octop\octop.exe --port 8117
+    --exe dist\backend\octop\happyclaw.exe --port 8117
 ```
 
 只查 agent 栈（秒级失败定位）：
 
 ```powershell
-dist\backend\octop\octop.exe selfcheck
+dist\backend\octop\happyclaw.exe selfcheck
 ```
 
 > `numpy` 是 `langchain_aws` 在 agent 构图时导入的隐式依赖，已写进 `hiddenimports`，**不要把它加回 `excludes`**。

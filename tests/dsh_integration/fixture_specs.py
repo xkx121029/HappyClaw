@@ -3,7 +3,7 @@
 The fixtures keep each ecosystem's native manifest (``plugin.yaml`` for Octop,
 ``package.json`` for DSH). This module is the scaffold-side adapter: it turns
 those manifests into the envelopes defined by
-``octop.infra.plugins.runtime.contract``, so the fixture half of the contract is
+``happyclaw.infra.plugins.runtime.contract``, so the fixture half of the contract is
 verified even while the runtime adapters are still unimplemented.
 """
 
@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from octop.infra.plugins.runtime import (
+from happyclaw.infra.plugins.runtime import (
     PluginEnvelope,
     PluginKind,
     PluginSource,

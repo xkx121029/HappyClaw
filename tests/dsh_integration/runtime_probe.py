@@ -10,7 +10,7 @@ Resolution order:
 1. ``DSH_SMOKE_RUNTIME`` environment variable, a comma-separated list of
    ``module:attribute`` targets. Use this to point the scaffold at an adapter
    that lives outside the default scan path.
-2. Every importable module in ``octop.infra.plugins.runtime``; classes that
+2. Every importable module in ``happyclaw.infra.plugins.runtime``; classes that
    implement the protocol are instantiated with no arguments.
 
 A missing facade raises :class:`NotAvailableError`, which callers translate to
@@ -26,8 +26,8 @@ import pkgutil
 from dataclasses import dataclass, field
 from typing import Any
 
-import octop.infra.plugins.runtime as runtime_package
-from octop.infra.plugins.runtime import (
+import happyclaw.infra.plugins.runtime as runtime_package
+from happyclaw.infra.plugins.runtime import (
     ActivationContext,
     PluginEnvelope,
     PluginLoader,

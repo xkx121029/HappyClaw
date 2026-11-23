@@ -9,9 +9,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from langgraph.config import var_child_runnable_config
 
-from octop.config import DatabaseConfig, OctopConfig
-from octop.infra.knowledge.plane import postgres_database
-from octop.infra.knowledge.tools import KnowledgeToolServices, build_knowledge_tools
+from happyclaw.config import DatabaseConfig, HappyclawConfig
+from happyclaw.infra.knowledge.plane import postgres_database
+from happyclaw.infra.knowledge.tools import KnowledgeToolServices, build_knowledge_tools
 
 
 @contextmanager
@@ -33,7 +33,7 @@ def _tool_by_name(tools: list, name: str):
 def test_tool_services_follow_control_plane_driver() -> None:
     """Search must see a driver swap; indexing already reads services.config."""
     manager = SimpleNamespace(
-        _config=OctopConfig(database=DatabaseConfig(driver="sqlite")),
+        _config=HappyclawConfig(database=DatabaseConfig(driver="sqlite")),
         _repos=SimpleNamespace(
             knowledge_repo=object(),
             settings_repo=object(),
@@ -43,7 +43,7 @@ def test_tool_services_follow_control_plane_driver() -> None:
     services = KnowledgeToolServices(manager)
     assert postgres_database(services) is None
 
-    manager._config = OctopConfig(
+    manager._config = HappyclawConfig(
         database=DatabaseConfig(
             driver="postgresql",
             host="db.example",
@@ -88,7 +88,7 @@ async def test_search_knowledge_returns_retrieved_context() -> None:
             knowledge_base_ids=["kb-1"],
             locale="zh",
         ),
-        patch("octop.infra.knowledge.tools.retrieve_context", retrieved),
+        patch("happyclaw.infra.knowledge.tools.retrieve_context", retrieved),
     ):
         out = await tool.ainvoke({"query": "refund rules", "k": 3})
 
@@ -114,7 +114,7 @@ async def test_search_knowledge_empty_hits_message() -> None:
     with (
         _configurable(user="1", knowledge_base_ids=["kb-1"]),
         patch(
-            "octop.infra.knowledge.tools.retrieve_context",
+            "happyclaw.infra.knowledge.tools.retrieve_context",
             AsyncMock(return_value=""),
         ),
     ):

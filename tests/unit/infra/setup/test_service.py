@@ -1,4 +1,4 @@
-"""Tests for octop.infra.setup.service."""
+"""Tests for happyclaw.infra.setup.service."""
 
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.setup import service as service_mod
-from octop.infra.setup.service import (
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.setup import service as service_mod
+from happyclaw.infra.setup.service import (
     ServiceRuntime,
     install_service,
     launchd_bootstrap_target,
@@ -28,7 +28,7 @@ from octop.infra.setup.service import (
     stop_service,
     unit_path,
 )
-from octop.infra.utils import posix_compat as pwd
+from happyclaw.infra.utils import posix_compat as pwd
 
 pytestmark = pytest.mark.skipif(os.name != "posix", reason="POSIX service management")
 
@@ -945,7 +945,7 @@ def test_persist_bind_options_refuses_corrupt_config(tmp_path: Path) -> None:
     home.mkdir()
     corrupt = '{"bind_host": "0.0.0.0", "database": {"driver": "postgresql"},}'
     (home / "config.json").write_text(corrupt, encoding="utf-8")
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         service_mod.persist_bind_options(home, host="127.0.0.1", port=443)
     assert excinfo.value.code is ErrorCode.CONFIG_FILE_CORRUPT
     assert (home / "config.json").read_text(encoding="utf-8") == corrupt

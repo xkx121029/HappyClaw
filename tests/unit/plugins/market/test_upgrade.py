@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.plugins.market import (
+from happyclaw.infra.plugins.market import (
     Artifact,
     CapabilityKind,
     ConfigSchemaChangedError,
@@ -16,7 +16,7 @@ from octop.infra.plugins.market import (
     MarketEntry,
     MarketError,
     MarketplaceIndex,
-    OctopSource,
+    HappyclawSource,
     PluginKind,
     PluginRelease,
     PluginRequirement,
@@ -56,7 +56,7 @@ def install_guard(root: Path) -> None:
         releases=(PluginRelease("1.0.0", Artifact(url=GUARD_URL)),),
         requires=(PluginRequirement("dsh:weather", "<2"),),
     )
-    source = OctopSource(
+    source = HappyclawSource(
         loader=lambda: [],
         transport=lambda url: octop_package("guard", "1.0.0"),
     )
@@ -97,7 +97,7 @@ def test_upgrade_restores_previous_version_when_switch_fails(tmp_path, monkeypat
         raise OSError("disk full")
 
     monkeypatch.setattr(
-        "octop.infra.plugins.market.pipeline._write_ledger",
+        "happyclaw.infra.plugins.market.pipeline._write_ledger",
         fail_write,
     )
 

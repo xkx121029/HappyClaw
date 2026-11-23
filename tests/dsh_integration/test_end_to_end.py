@@ -14,7 +14,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.plugins.bridge import (
     ApprovalOutcome,
     ApprovalRequest,
     CapabilityDecision,
@@ -26,9 +26,9 @@ from octop.infra.plugins.bridge import (
     ToolCall,
     ToolDefinition,
 )
-from octop.infra.plugins.bridge.approval import ApprovalDecision, ToolGuardrail
-from octop.infra.plugins.runtime.dsh_plugin import DshPluginLoader
-from octop.infra.plugins.sandbox import (
+from happyclaw.infra.plugins.bridge.approval import ApprovalDecision, ToolGuardrail
+from happyclaw.infra.plugins.runtime.dsh_plugin import DshPluginLoader
+from happyclaw.infra.plugins.sandbox import (
     InMemorySandboxLedger,
     PluginSandbox,
     SandboxCapability,

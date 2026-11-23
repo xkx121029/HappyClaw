@@ -5,13 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.threads import ThreadRepo
-from octop.infra.db.repos.trajectory_events import TrajectoryEventRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.history.trajectory.types import TrajectoryEvent
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.threads import ThreadRepo
+from happyclaw.infra.db.repos.trajectory_events import TrajectoryEventRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.history.trajectory.types import TrajectoryEvent
 
 
 def _seed_threads(db: SqlitePool, *thread_ids: str, agent_id: str = "A1") -> None:

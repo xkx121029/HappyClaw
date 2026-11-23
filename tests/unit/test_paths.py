@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def test_root_paths(tmp_path: Path):

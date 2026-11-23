@@ -30,12 +30,12 @@ export function buildSidecarEnv(
   },
 ): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...base };
-  env.OCTOP_HOME = options.octopHome;
-  env.OCTOP_BIND_HOST = options.bindHost;
-  env.OCTOP_PORT = String(options.port);
-  env.OCTOP_DESKTOP_SHELL = "1";
+  env.HAPPYCLAW_HOME = options.octopHome;
+  env.HAPPYCLAW_BIND_HOST = options.bindHost;
+  env.HAPPYCLAW_PORT = String(options.port);
+  env.HAPPYCLAW_DESKTOP_SHELL = "1";
   if (!options.onedir) {
-    env.OCTOP_GREEN_PACKAGES = joinPortable(options.portableDir);
+    env.HAPPYCLAW_GREEN_PACKAGES = joinPortable(options.portableDir);
     env.PYTHONNOUSERSITE = "1";
     // Bytecode must not be written next to the sources. On macOS those sources
     // live inside the app bundle; on Windows they live in the install dir.
@@ -50,7 +50,7 @@ export function buildSidecarEnv(
   // while in use (sliding renewal) and the shell holds a device credential for
   // cold starts, so a long-lived token is no longer needed to avoid a sign-in
   // wall.
-  env.OCTOP_REQUIRE_SETUP_PASSWORD = "0";
+  env.HAPPYCLAW_REQUIRE_SETUP_PASSWORD = "0";
   // The launch.py bootstrap handles runtime + .pth itself; an inherited
   // PYTHONPATH would shadow the bundled site-packages, so drop it.
   delete env.PYTHONPATH;

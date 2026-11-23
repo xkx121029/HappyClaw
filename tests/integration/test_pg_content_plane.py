@@ -12,18 +12,18 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import DatabaseConfig
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.skill_packages import SkillPackageRepo
-from octop.infra.knowledge.blobs import KnowledgeBlobs
-from octop.infra.knowledge.pg_index import PgVectorKnowledgeIndex
-from octop.infra.skills.skill_package_store import SkillPackageStore
+from happyclaw.config import DatabaseConfig
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.skill_packages import SkillPackageRepo
+from happyclaw.infra.knowledge.blobs import KnowledgeBlobs
+from happyclaw.infra.knowledge.pg_index import PgVectorKnowledgeIndex
+from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 from tests.support.postgresql import requires_postgresql
 
 
 def _database() -> DatabaseConfig:
-    from octop.config import _parse_database_url
+    from happyclaw.config import _parse_database_url
 
     parsed = _parse_database_url(os.environ["OCTOP_TEST_DATABASE_URL"])
     return DatabaseConfig(
@@ -74,7 +74,7 @@ def test_legacy_content_tables_move_into_public(database: DatabaseConfig) -> Non
     """Older octop_* schemas are renamed onto the public knowledge_* tables."""
     import psycopg
 
-    from octop.infra.db.file_store import adopt_legacy_content_tables
+    from happyclaw.infra.db.file_store import adopt_legacy_content_tables
 
     with psycopg.connect(database.postgresql_conninfo()) as conn:
         conn.execute("CREATE SCHEMA octop_knowledge")
@@ -121,7 +121,7 @@ def test_legacy_files_primary_keys_do_not_collide(database: DatabaseConfig) -> N
     """Two legacy ``files`` tables must not both keep the ``files_pkey`` index."""
     import psycopg
 
-    from octop.infra.db.file_store import adopt_legacy_content_tables
+    from happyclaw.infra.db.file_store import adopt_legacy_content_tables
 
     with psycopg.connect(database.postgresql_conninfo()) as conn:
         conn.execute("CREATE SCHEMA octop_knowledge")

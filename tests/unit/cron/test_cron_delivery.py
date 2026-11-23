@@ -9,15 +9,15 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
-from octop.infra.cron.delivery import CronDeliveryCommand, CronDeliveryService
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.sessions import SessionRepo
-from octop.infra.db.repos.thread_messages import ThreadMessageRepo
-from octop.infra.db.repos.threads import ThreadRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.cron.delivery import CronDeliveryCommand, CronDeliveryService
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.sessions import SessionRepo
+from happyclaw.infra.db.repos.thread_messages import ThreadMessageRepo
+from happyclaw.infra.db.repos.threads import ThreadRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.gateway.threads import ThreadRegistry
 
 
 def _command(**overrides: object) -> CronDeliveryCommand:

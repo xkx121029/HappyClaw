@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.config import _DATABASE_ENV_KEYS
+from happyclaw.config import _DATABASE_ENV_KEYS
 
 
 def _compose_environment_entries(compose_text: str) -> str:

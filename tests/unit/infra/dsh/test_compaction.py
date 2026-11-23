@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
-from octop.infra.dsh.session import (
+from happyclaw.infra.dsh.session import (
     BlobStore,
     CompactionConfig,
     CompactionEngine,

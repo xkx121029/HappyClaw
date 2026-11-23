@@ -1,40 +1,40 @@
 # Configuration
 
 HappyClaw stores all of its state under `~/.happyclaw/`. The directory is created
-on first server start (or by `octop init` / `octop run`).
+on first server start (or by `happyclaw init` / `happyclaw run`).
 
 ## Filesystem layout
 
 ```
 ~/.happyclaw/
 ├── config.json              # process-level settings (host, port, CORS, DB, TLS, …)
-├── env                      # optional dotenv (OCTOP_DATABASE_*, API keys, …); loaded at server start
+├── env                      # optional dotenv (HAPPYCLAW_DATABASE_*, API keys, …); loaded at server start
 ├── octop.db                 # SQLite — local owner, agents, providers, sessions, audit
 ├── cli_state.json           # CLI defaults (base URL, pinned agent)
-├── repl_history             # readline-style history for `octop chats repl`
+├── repl_history             # readline-style history for `happyclaw chats repl`
 ├── secrets/
 │   └── jwt_secret           # legacy file; kept for compatibility, not used for auth
 ├── agents/<agent_id>/       # per-agent workspace (LangGraph state, attachments, …)
 ├── plugins/                 # installed third-party plugins
-├── ssl/                     # self-signed certs when `octop run --ssl` is used without --cert/--key
-├── logs/                    # rotating log files (when `octop service start` writes a logfile)
+├── ssl/                     # self-signed certs when `happyclaw run --ssl` is used without --cert/--key
+├── logs/                    # rotating log files (when `happyclaw service start` writes a logfile)
 └── octop.log                # default foreground log path
 ```
 
 `env` is dotenv format, applied before `config.json` is loaded
-(`OctopServer.start` → `apply_env_file`). The dashboard path is **管理 → 应用设置 →
+(`HappyclawServer.start` → `apply_env_file`). The dashboard path is **管理 → 应用设置 →
 环境变量**, which writes this file. Saving **replaces** the file and drops removed
 keys from the process environment (host/systemd keys that were never in the
 file are left alone). Every running agent inherits those keys:
 
 - **Local shell** — live process env (including this file) plus the agent's
-  workspace `.env` (workspace wins on the same key; `OCTOP_*` / `HOME` / `USER`
+  workspace `.env` (workspace wins on the same key; `HAPPYCLAW_*` / `HOME` / `USER`
   cannot be overridden from `.env`). New agents store that file at
   `{workspace}/.octop/.env`; existing agents keep `{workspace}/.env` when
   their stored internal system-files prefix uses the legacy layout. Remote
   object-store workspaces are not read from the host path — HappyClaw/harness
   also reads `.env` through the agent backend on each execute. HappyClaw also
-  injects `OCTOP_AGENT_ID`, `OCTOP_AUTH_DIR` (under `{workspace}/.octop/auth`
+  injects `HAPPYCLAW_AGENT_ID`, `HAPPYCLAW_AUTH_DIR` (under `{workspace}/.octop/auth`
   for new agents; legacy agents keep `{workspace}/.octop-auth`),
   and `HAPPYCLAW_HOME` into shell/sandbox env.
 - **Docker sandbox** — re-reads `~/.happyclaw/env` on execute, plus workspace `.env`
@@ -51,7 +51,7 @@ That file is excluded from published-expert snapshots.
 
 The root can be overridden with `HAPPYCLAW_HOME` (absolute path). Most
 sub-paths are exposed as properties on `PathLayout` in
-`octop.infra.utils.paths`.
+`happyclaw.infra.utils.paths`.
 
 ## Local knowledge indexing and systemd resource limits
 
@@ -61,7 +61,7 @@ serialize inference. Switching the model or `HAPPYCLAW_HOME`, or deleting the ca
 model, releases the resident session. Knowledge indexing processes one document
 at a time; large imports continue in the background.
 
-On Linux, `octop service start` and `octop service restart` install/update two
+On Linux, `happyclaw service start` and `happyclaw service restart` install/update two
 drop-ins next to the existing service unit — `octop.service.d/10-nofile.conf`
 (`LimitNOFILE`) and `octop.service.d/15-resource-limits.conf` (the memory
 limits below). The main unit, custom `ExecStart`, service user, and other
@@ -93,7 +93,7 @@ deployments retain their own process/container resource policies.
 ## `config.json`
 
 Generated with defaults on first run; merged with environment overrides
-on each start. Schema (`OctopConfig` in `octop/config.py`):
+on each start. Schema (`HappyclawConfig` in `octop/config.py`):
 
 ```json
 {
@@ -147,19 +147,19 @@ on each start. Schema (`OctopConfig` in `octop/config.py`):
 ```
 
 `database.password` and `database.url` are omitted from the generated file:
-credentials belong in `OCTOP_DATABASE_PASSWORD` / `OCTOP_DATABASE_URL` (or the
+credentials belong in `HAPPYCLAW_DATABASE_PASSWORD` / `HAPPYCLAW_DATABASE_URL` (or the
 wizard writes `password` back when it configures PostgreSQL from the UI).
 
 Notes:
 
 - `default_timezone` is the process default for dashboard timestamps, cron
   scheduling, and harness. Legacy `cron_timezone` in `config.json` and
-  `OCTOP_CRON_TIMEZONE` are still accepted; the new key/env wins when both
+  `HAPPYCLAW_CRON_TIMEZONE` are still accepted; the new key/env wins when both
   are set.
 - `database.password`: when the wizard configures PostgreSQL via discrete
   fields, this **may** be written into `config.json` (convenient for local
-  first-run). In production, prefer using only `OCTOP_DATABASE_PASSWORD` or
-  a `OCTOP_DATABASE_URL` that includes the password, and restrict
+  first-run). In production, prefer using only `HAPPYCLAW_DATABASE_PASSWORD` or
+  a `HAPPYCLAW_DATABASE_URL` that includes the password, and restrict
   `config.json` file permissions. Environment variables always override the
   same-named setting in the file.
 - `enable_api_docs=false` keeps `/api/docs` (Scalar) off in production
@@ -186,43 +186,43 @@ Each variable, when set, takes precedence over the matching key in
 | Variable | Type | Default | Effect |
 |----------|------|---------|--------|
 | `HAPPYCLAW_HOME` | path | `~/.happyclaw` | Install root (DB, secrets, workspaces, plugins) |
-| `OCTOP_BIND_HOST` | string | `127.0.0.1` | Listen address (use `0.0.0.0` for LAN access) |
-| `OCTOP_PORT` | int | `8088` | Listen port (`0`–`65535`; `0` asks the OS for a free port) |
-| `OCTOP_LOG_LEVEL` | string | `info` | One of `debug` `info` `warning` `error` |
-| `OCTOP_LOG_RETENTION_DAYS` | int | `14` | Keep rotated `octop.YYYY-MM-DD.log` files for this many days |
-| `OCTOP_LOG_MAX_BYTES` | int | `104857600` (100 MiB) | Roll the active log when it exceeds this size (in addition to daily rotation) |
-| `OCTOP_LOG_COMPRESS` | bool | `true` | logrotate-style `compress` + `delaycompress`: gzip prior rotated plains on the next cycle (`octop.YYYY-MM-DD.log.gz`); the newest rotated file stays uncompressed until then |
-| `OCTOP_DEFAULT_TIMEZONE` | IANA tz | `Asia/Shanghai` | Default timezone for display, scheduling, and harness (`cron_timezone` / `OCTOP_CRON_TIMEZONE` still accepted) |
-| `OCTOP_CORS_ORIGINS` | comma-sep list | empty | Permitted CORS origins for the dashboard / external callers |
-| `OCTOP_ENABLE_DASHBOARD` | bool | `true` | Serve the built React SPA at `/` |
-| `OCTOP_ENABLE_API_DOCS` | bool | `false` | Expose Scalar API docs at `/api/docs` |
-| `OCTOP_MAX_UPLOAD_MB` | int | `100` | Max upload size in MiB for chat attachments, IM inbound, and knowledge documents (1–1024) |
-| `OCTOP_BROWSER_IDLE_TIMEOUT_MINUTES` | int | `30` | Idle minutes before a browser session (`happyclaw-browser`) is reclaimed |
-| `OCTOP_ENABLE_MOBILE` | bool | from `capabilities.mobile.enabled` | Force the Remote Android capability on or off for this process |
-| `OCTOP_DATABASE_URL` | string | empty | Full DSN — overrides the `OCTOP_DATABASE_*` fields below |
-| `OCTOP_DATABASE_DRIVER` | `sqlite` \| `postgresql` | `sqlite` | Storage backend |
-| `OCTOP_DATABASE_SQLITE_PATH` | path | `octop.db` | SQLite file path (relative to `HAPPYCLAW_HOME` unless absolute) |
-| `OCTOP_DATABASE_HOST` | string | `127.0.0.1` | PostgreSQL host (when `driver=postgresql`) |
-| `OCTOP_DATABASE_PORT` | int | `5432` | PostgreSQL port |
-| `OCTOP_DATABASE_NAME` | string | `octop` | PostgreSQL database name |
-| `OCTOP_DATABASE_USER` | string | `octop` | PostgreSQL user |
-| `OCTOP_DATABASE_PASSWORD` | string | empty | PostgreSQL password (overrides file; prefer env in production) |
-| `OCTOP_USER` | string | empty | Compatibility flag; ignored in single-user mode |
-| `OCTOP_AGENT` | string | empty | Default `--agent` for CLI subcommands |
-| `OCTOP_SERVICE_MODE` | `systemd` \| `launchd` | auto | Override the service backend (used by `octop service`) |
-| `OCTOP_SERVICE_SCOPE` | `user` \| `system` | auto | systemd `--user` vs system unit (Linux only) |
-| `OCTOP_ONNX_COS_BASE` | origin | `https://octop-1258344699.cos.ap-guangzhou.myqcloud.com` | Base the local embedding model weights are downloaded from. The default is a public bucket, which stays the shipping default on purpose: the official Hugging Face host is unreachable from mainland China, so pointing a fresh install there would fail its first run. Set this to a self-hosted mirror to avoid the public bucket, or to an explicitly empty value to drop that candidate entirely and let the model come from Hugging Face or the hf-mirror (reachable, slower). Serving the weights ourselves is future work. See [local knowledge indexing](#local-knowledge-indexing-and-systemd-resource-limits) |
-| `OCTOP_PORTAL_ORIGIN` | origin | empty (remote catalog off) | Plugin and expert catalog origin. No path. Empty means no request is sent and the market shows its "temporarily unavailable" state; set it to your own catalog origin to enable it. See [private market](private-market.md) |
-| `OCTOP_MARKET_REMOTE_ORIGIN` | origin | `https://github.com` | Origin allowed for market archive `download_url` values. Any path on that origin is accepted. The variable itself has no path. The default is this repository's Releases host, so a self-hosted market points it at its own origin. See [private market](private-market.md) |
+| `HAPPYCLAW_BIND_HOST` | string | `127.0.0.1` | Listen address (use `0.0.0.0` for LAN access) |
+| `HAPPYCLAW_PORT` | int | `8088` | Listen port (`0`–`65535`; `0` asks the OS for a free port) |
+| `HAPPYCLAW_LOG_LEVEL` | string | `info` | One of `debug` `info` `warning` `error` |
+| `HAPPYCLAW_LOG_RETENTION_DAYS` | int | `14` | Keep rotated `octop.YYYY-MM-DD.log` files for this many days |
+| `HAPPYCLAW_LOG_MAX_BYTES` | int | `104857600` (100 MiB) | Roll the active log when it exceeds this size (in addition to daily rotation) |
+| `HAPPYCLAW_LOG_COMPRESS` | bool | `true` | logrotate-style `compress` + `delaycompress`: gzip prior rotated plains on the next cycle (`octop.YYYY-MM-DD.log.gz`); the newest rotated file stays uncompressed until then |
+| `HAPPYCLAW_DEFAULT_TIMEZONE` | IANA tz | `Asia/Shanghai` | Default timezone for display, scheduling, and harness (`cron_timezone` / `HAPPYCLAW_CRON_TIMEZONE` still accepted) |
+| `HAPPYCLAW_CORS_ORIGINS` | comma-sep list | empty | Permitted CORS origins for the dashboard / external callers |
+| `HAPPYCLAW_ENABLE_DASHBOARD` | bool | `true` | Serve the built React SPA at `/` |
+| `HAPPYCLAW_ENABLE_API_DOCS` | bool | `false` | Expose Scalar API docs at `/api/docs` |
+| `HAPPYCLAW_MAX_UPLOAD_MB` | int | `100` | Max upload size in MiB for chat attachments, IM inbound, and knowledge documents (1–1024) |
+| `HAPPYCLAW_BROWSER_IDLE_TIMEOUT_MINUTES` | int | `30` | Idle minutes before a browser session (`happyclaw-browser`) is reclaimed |
+| `HAPPYCLAW_ENABLE_MOBILE` | bool | from `capabilities.mobile.enabled` | Force the Remote Android capability on or off for this process |
+| `HAPPYCLAW_DATABASE_URL` | string | empty | Full DSN — overrides the `HAPPYCLAW_DATABASE_*` fields below |
+| `HAPPYCLAW_DATABASE_DRIVER` | `sqlite` \| `postgresql` | `sqlite` | Storage backend |
+| `HAPPYCLAW_DATABASE_SQLITE_PATH` | path | `octop.db` | SQLite file path (relative to `HAPPYCLAW_HOME` unless absolute) |
+| `HAPPYCLAW_DATABASE_HOST` | string | `127.0.0.1` | PostgreSQL host (when `driver=postgresql`) |
+| `HAPPYCLAW_DATABASE_PORT` | int | `5432` | PostgreSQL port |
+| `HAPPYCLAW_DATABASE_NAME` | string | `octop` | PostgreSQL database name |
+| `HAPPYCLAW_DATABASE_USER` | string | `octop` | PostgreSQL user |
+| `HAPPYCLAW_DATABASE_PASSWORD` | string | empty | PostgreSQL password (overrides file; prefer env in production) |
+| `HAPPYCLAW_USER` | string | empty | Compatibility flag; ignored in single-user mode |
+| `HAPPYCLAW_AGENT` | string | empty | Default `--agent` for CLI subcommands |
+| `HAPPYCLAW_SERVICE_MODE` | `systemd` \| `launchd` | auto | Override the service backend (used by `happyclaw service`) |
+| `HAPPYCLAW_SERVICE_SCOPE` | `user` \| `system` | auto | systemd `--user` vs system unit (Linux only) |
+| `HAPPYCLAW_ONNX_COS_BASE` | origin | `https://octop-1258344699.cos.ap-guangzhou.myqcloud.com` | Base the local embedding model weights are downloaded from. The default is a public bucket, which stays the shipping default on purpose: the official Hugging Face host is unreachable from mainland China, so pointing a fresh install there would fail its first run. Set this to a self-hosted mirror to avoid the public bucket, or to an explicitly empty value to drop that candidate entirely and let the model come from Hugging Face or the hf-mirror (reachable, slower). Serving the weights ourselves is future work. See [local knowledge indexing](#local-knowledge-indexing-and-systemd-resource-limits) |
+| `HAPPYCLAW_PORTAL_ORIGIN` | origin | empty (remote catalog off) | Plugin and expert catalog origin. No path. Empty means no request is sent and the market shows its "temporarily unavailable" state; set it to your own catalog origin to enable it. See [private market](private-market.md) |
+| `HAPPYCLAW_MARKET_REMOTE_ORIGIN` | origin | `https://github.com` | Origin allowed for market archive `download_url` values. Any path on that origin is accepted. The variable itself has no path. The default is this repository's Releases host, so a self-hosted market points it at its own origin. See [private market](private-market.md) |
 | `SKILL_MARKET_ORIGIN` | origin | `https://api.skillhub.cn` | Skill search, rankings, and per-skill zip download. No path. Empty keeps the default. See [skill market](skill-market.md) |
 | `SKILLSET_ORIGIN` | origin | `https://api.skillhub.cn` | Skillset detail and skillset package used when importing a skill package. No path. Empty keeps the default. See [skill market](skill-market.md) |
 
 Invalid integer values are logged and ignored — the on-disk default
 remains in effect. `database_env_configured()` returns `True` when any
-`OCTOP_DATABASE_*` is set, which lets `OctopServer.start()` pick the
+`HAPPYCLAW_DATABASE_*` is set, which lets `HappyclawServer.start()` pick the
 configured backend at boot.
 
-**Docker Compose:** create `docker/.env` (it is not committed) and put `OCTOP_DATABASE_*` there *and* ensure
+**Docker Compose:** create `docker/.env` (it is not committed) and put `HAPPYCLAW_DATABASE_*` there *and* ensure
 they are listed under `environment:` in `docker/docker-compose.yml`
 (Compose uses `.env` for interpolation only; unset keys do not enter the
 container). Writing the same keys to the mounted `~/.happyclaw/env` also works.
@@ -266,7 +266,7 @@ provider toggle. See [ADR 002](./adr/002-database-backends.md).
 These settings require a Harness build with the scheduled backup policy below.
 
 Harness attempts a whole-database backup before the first scheduled cleanup
-with eligible checkpoints. The default `OCTOP_CHECKPOINT_BACKUP_BEFORE_PRUNE=first`
+with eligible checkpoints. The default `HAPPYCLAW_CHECKPOINT_BACKUP_BEFORE_PRUNE=first`
 writes `memory.sqlite.pre-prune.bak` alongside the database. If free space is
 less than the database plus WAL and 10% headroom, or if the backup fails,
 cleanup continues and a warning is logged. The adjacent
@@ -274,16 +274,16 @@ cleanup continues and a warning is logged. The adjacent
 its result. Remove the marker to allow another attempt the next time there are
 eligible checkpoints.
 
-Set `OCTOP_CHECKPOINT_BACKUP_BEFORE_PRUNE=always` (or `1`, `true`, `on`, or
+Set `HAPPYCLAW_CHECKPOINT_BACKUP_BEFORE_PRUNE=always` (or `1`, `true`, `on`, or
 `yes`) to replace the backup before each cleanup and defer checkpoint pruning
 if it cannot be written. Set it to `off` (or `0`, `false`, or `no`) to
 disable backup creation. Unrecognized values fall back to `first` with a warning.
-`OCTOP_CHECKPOINT_BACKUP_KEEP_DAYS` defaults to 7. Set it to 0 to disable
+`HAPPYCLAW_CHECKPOINT_BACKUP_KEEP_DAYS` defaults to 7. Set it to 0 to disable
 automatic expiration. Expiration leaves the marker in place.
 
 ## First boot
 
-HappyClaw is a single-user local tool. On the first `octop run` it creates the
+HappyClaw is a single-user local tool. On the first `happyclaw run` it creates the
 data directory, opens (or migrates) the control-plane database, and resolves a
 local owner row named `local`. No wizard, password, or account creation is
 involved; the dashboard opens directly on the chat page.
@@ -297,12 +297,12 @@ involved; the dashboard opens directly on the chat page.
   the owner; account writes return `400` with a Chinese explanation.
 
 Database selection still happens at boot: SQLite is the default, and
-PostgreSQL is chosen with `OCTOP_DATABASE_URL` or the `database` block in
+PostgreSQL is chosen with `HAPPYCLAW_DATABASE_URL` or the `database` block in
 `config.json`. Pointing at an existing database migrates it in place.
 
-For unattended installs, `octop init --yes` prepares the directory and runs
-migrations. `OCTOP_ADMIN_USERNAME` / `OCTOP_ADMIN_PASSWORD` and
-`OCTOP_REQUIRE_SETUP_PASSWORD` are legacy variables: accepted, ignored, and
+For unattended installs, `happyclaw init --yes` prepares the directory and runs
+migrations. `HAPPYCLAW_ADMIN_USERNAME` / `HAPPYCLAW_ADMIN_PASSWORD` and
+`HAPPYCLAW_REQUIRE_SETUP_PASSWORD` are legacy variables: accepted, ignored, and
 safe to leave in old environment files.
 
 ## Secrets
@@ -317,7 +317,7 @@ Per-agent provider credentials (e.g. API keys) live in the SQLite
 
 ## Retired segmented history archive
 
-HappyClaw ignores the former `history_v2_enabled` and `OCTOP_HISTORY_V2_ENABLED` settings.
+HappyClaw ignores the former `history_v2_enabled` and `HAPPYCLAW_HISTORY_V2_ENABLED` settings.
 At startup, HappyClaw migrates existing archive messages and supported trajectory events into the
 control-plane database before starting agents. Successful migrations retain the original
 `history_v2.sqlite` and `history_v2.required` with a `.migrated-<timestamp>` suffix.

@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 from happyclaw_harness.plugins import PluginRegistry, build_plugin_tools
 
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.plugins.bridge import (
     ApprovalOutcome,
     DshToolErrorCode,
     DshToolRegistry,
@@ -22,7 +22,7 @@ from octop.infra.plugins.bridge import (
     describe_exception,
     text_content,
 )
-from octop.infra.plugins.runtime.contract import CapabilityKind, PluginErrorCode, PluginRequirement
+from happyclaw.infra.plugins.runtime.contract import CapabilityKind, PluginErrorCode, PluginRequirement
 
 ADD_PARAMETERS: dict[str, Any] = {
     "type": "object",

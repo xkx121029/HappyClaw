@@ -49,7 +49,7 @@ def test_import_octop_does_not_load_httpx() -> None:
     out = _run(
         """
 import sys
-import octop
+import happyclaw
 print("HTTPX_LOADED=" + str("httpx" in sys.modules))
 """
     )
@@ -60,7 +60,7 @@ def test_httpx_import_still_gets_cidr_patch() -> None:
     out = _run(
         """
 import os
-import octop  # registers the lazy hook
+import happyclaw  # registers the lazy hook
 os.environ["NO_PROXY"] = "192.168.0.0/16"
 import httpx
 from httpx._utils import URLPattern
@@ -79,8 +79,8 @@ def test_lazy_hook_install_is_idempotent() -> None:
     out = _run(
         """
 import sys
-import octop
-from octop.infra.utils.httpx_proxy import install_lazy_httpx_proxy_patch
+import happyclaw
+from happyclaw.infra.utils.httpx_proxy import install_lazy_httpx_proxy_patch
 install_lazy_httpx_proxy_patch()
 install_lazy_httpx_proxy_patch()
 hooks = [f for f in sys.meta_path if type(f).__name__ == "_HttpxPatchFinder"]

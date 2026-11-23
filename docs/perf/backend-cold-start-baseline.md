@@ -6,10 +6,10 @@
 
 | 项 | 值 |
 | --- | --- |
-| 形态 | PyInstaller `onedir`（`octop.exe` + `_internal/`），入口 `octop.cli.main:cli` |
+| 形态 | PyInstaller `onedir`（`happyclaw.exe` + `_internal/`），入口 `happyclaw.cli.main:cli` |
 | 产出方式 | `make package-backend` → `dist/backend/octop/` |
 | 构建耗时 | 2026-11-12 最终版（含强制前端重建）：dashboard 1720s + PyInstaller 930s + 自检，约 45 分钟（本机慢 CPU）。历史：`make package-backend` 1411s（复用分析缓存）；`--clean` 全量 1937s；numpy 修复后 2056s；discovery 裁剪后 2485s |
-| 产物 | 4 424 个文件 / 356.5 MB（`octop.exe` 63.3 MB 含 PYZ，`_internal` 4 423 文件 / 293.1 MB） |
+| 产物 | 4 424 个文件 / 356.5 MB（`happyclaw.exe` 63.3 MB 含 PYZ，`_internal` 4 423 文件 / 293.1 MB） |
 | 与上一版差异 | +14 文件 / +0.2 MB：dashboard 重建（508 → 509 文件，新增 `version.json`）+ exe 内 health/selfcheck 改动。相对起点 5 009 文件 / 454.3 MB 累计 −585 文件 / −97.8 MB |
 | 运行时依赖 | 无。不需要 Python / pip / venv / `.pyc` / VC++ 运行库（`python313.dll`、`VCRUNTIME140.dll`、`MSVCP140.dll` 已在内） |
 
@@ -131,11 +131,11 @@ make package-backend
 # 2) 冷启动三轮：每轮一份全新目录（不要复用，复用就是热态）
 robocopy dist\backend\octop E:\HAPPYclaw\.perf\cold\a\octop /E /MT:16 /NFL /NDL /NJH /NJS
 & .venv\Scripts\python.exe E:\HAPPYclaw\.perf\boot_bench_frozen.py `
-    --exe E:\HAPPYclaw\.perf\cold\a\octop\octop.exe --rounds 1 --kind cold --label onedir-cold1
+    --exe E:\HAPPYclaw\.perf\cold\a\octop\happyclaw.exe --rounds 1 --kind cold --label onedir-cold1
 
 # 3) 热态三轮（同一目录连跑，不拷贝）
 & .venv\Scripts\python.exe E:\HAPPYclaw\.perf\boot_bench_frozen.py `
-    --exe dist\backend\octop\octop.exe --rounds 3 --kind warm --label onedir-warm
+    --exe dist\backend\octop\happyclaw.exe --rounds 3 --kind warm --label onedir-warm
 ```
 
 `boot_bench_frozen.py` 目前放在仓库外的 `E:\HAPPYclaw\.perf\`（测量工具，未入库）；它只写 E 盘、不删文件，每轮输出的 JSON 落在同目录。
@@ -161,8 +161,8 @@ robocopy dist\backend\octop E:\HAPPYclaw\.perf\cold\a\octop /E /MT:16 /NFL /NDL 
 `octop` 与 `happyclaw_harness` 源码里**没有** `import googleapiclient`（它只是 `happyclaw_harness` 的 `web-search-all` extra 依赖，被装进 venv 后被 PyInstaller 收进来）。真正会用到它的是 `langchain_community` 的 Gmail / Google Drive / YouTube loader。
 
 - 实现：`octop.spec` 在 **Analysis 之后**过滤 `a.datas` 里 `googleapiclient/discovery_cache/documents/` 开头的条目（hook 在 Analysis 阶段才把数据塞进来，过滤必须放在其后）。
-- 副作用处理：`googleapiclient.discovery.build()` 默认 `static_discovery=True`，文档缺失会抛 `UnknownApiNameOrVersion`。冻结包的 `discovery.py` 在 PYZ 里不可改写，因此新增 `src/octop/infra/utils/google_discovery.py`：用 `sys.meta_path` finder 在该模块首次 import 时包装 `build()`，静态文档缺失就自动以 `static_discovery=False` 重试（联网获取）；联网也失败时抛中文 `RuntimeError` 提示检查网络/代理。`server.py` preflight 里安装该 finder（零导入成本，不进入 health 关键路径）。
-- 验证：`octop selfcheck` 的输出带 `google_discovery: {"offline_documents": false, "network_fallback": true, "hint_zh": "…"}`；另用伪服务名 + 不可达 URL 测得中文提示路径（`E:\HAPPYclaw\.perf\test_google_fallback.py`）。
+- 副作用处理：`googleapiclient.discovery.build()` 默认 `static_discovery=True`，文档缺失会抛 `UnknownApiNameOrVersion`。冻结包的 `discovery.py` 在 PYZ 里不可改写，因此新增 `src/happyclaw/infra/utils/google_discovery.py`：用 `sys.meta_path` finder 在该模块首次 import 时包装 `build()`，静态文档缺失就自动以 `static_discovery=False` 重试（联网获取）；联网也失败时抛中文 `RuntimeError` 提示检查网络/代理。`server.py` preflight 里安装该 finder（零导入成本，不进入 health 关键路径）。
+- 验证：`happyclaw selfcheck` 的输出带 `google_discovery: {"offline_documents": false, "network_fallback": true, "hint_zh": "…"}`；另用伪服务名 + 不可达 URL 测得中文提示路径（`E:\HAPPYclaw\.perf\test_google_fallback.py`）。
 - 代价：Gmail / Drive loader 首次调用需要联网下载 API 描述（离线环境下会失败并给出中文提示），这是裁剪换来的体积收益。
 
 ### 7.2 裁剪 `botocore/data` 到实际用到的服务（约 −1 700 文件 / −14 MB）
@@ -194,19 +194,19 @@ robocopy dist\backend\octop E:\HAPPYclaw\.perf\cold\a\octop /E /MT:16 /NFL /NDL 
 | 现象 | 装完能进主界面，发第一条消息时 `ModuleNotFoundError: No module named 'numpy'`（`langchain_aws/embeddings/bedrock.py` → `_create_bedrock_prompt_caching_middleware`） |
 | 根因 | `octop.spec` 的 `excludes` 里有 `numpy`。PyInstaller 静态分析把它排除，启动路径不导入它，所以 health / dashboard 都正常，直到 agent 构图才炸 |
 | 修复 | 从 `excludes` 移除 `numpy`；`hiddenimports` 补 `numpy`、`tqdm`、`tiktoken_ext`、`tiktoken_ext.openai_public` |
-| 防回归 | 新增 `octop selfcheck`（`src/octop/cli/commands/selfcheck.py`）：导入 20 个 agent 栈模块（`langchain*` 全家、`tiktoken*`、`tqdm`、`numpy`、Gmail/Drive loader）并用 `langgraph` 编译+调用一张一次性的图；`verify_backend.py` 在启动服务**之前**先跑它，失败则构建失败 |
+| 防回归 | 新增 `happyclaw selfcheck`（`src/happyclaw/cli/commands/selfcheck.py`）：导入 20 个 agent 栈模块（`langchain*` 全家、`tiktoken*`、`tqdm`、`numpy`、Gmail/Drive loader）并用 `langgraph` 编译+调用一张一次性的图；`verify_backend.py` 在启动服务**之前**先跑它，失败则构建失败 |
 | 冻结包实测 | `{"ok": true, "imports": [20 项], "failures": [], "graph": {"nodes": 1, "messages": 1}}`，55.4s（`make package-backend` 自检内） |
 
-numpy 带来的体积代价：+41 文件 / +27.7 MB（`numpy` 13 个 `.pyd` 6.0 MB + `numpy.libs` 2 个 DLL 20 MB + 24 个 dist-info 文件；纯 `.py` 进 `octop.exe` 的 PYZ，exe 62 → 63.3 MB）。
+numpy 带来的体积代价：+41 文件 / +27.7 MB（`numpy` 13 个 `.pyd` 6.0 MB + `numpy.libs` 2 个 DLL 20 MB + 24 个 dist-info 文件；纯 `.py` 进 `happyclaw.exe` 的 PYZ，exe 62 → 63.3 MB）。
 
 ## 9. 前端与后端产物一致性（2026-11-12）
 
 后端产物内嵌 dashboard 静态文件，但打包以前不会自动重建前端，所以“只改前端”可能装出旧界面且无人发现。现在：
 
 - `make package-backend` 依赖 `package-dashboard`：`scripts/packaging/build_dashboard.py` 先跑 `npm ci`（`node_modules` 缺失或 `package-lock.json` 更新时）和 `npm run build`，**任何失败都中止打包**；Vite `emptyOutDir=true`，不存在沿用旧产物的路径。
-- 构建完成后写 `src/octop/dashboard/version.json`：`git_commit`、`git_dirty`、`dashboard_built_at`（完成时间）、`index_sha256`、`build_seconds`，随包进入 `_internal/octop/dashboard/`。
+- 构建完成后写 `src/happyclaw/dashboard/version.json`：`git_commit`、`git_dirty`、`dashboard_built_at`（完成时间）、`index_sha256`、`build_seconds`，随包进入 `_internal/happyclaw/dashboard/`。
 - 运行时可查：`GET /api/health` 的 `build` 字段返回同一份内容，拿到安装包即可确认是哪一版前端。
-- 自检两道：`octop selfcheck` 校验包内 `index.html` 与其 `version.json` 的 sha256 一致；`verify_backend.py --dashboard-dir` 再把包内 `index.html` 与**本次**前端构建输出对比，并核对 `/api/health.build.index_sha256`。
+- 自检两道：`happyclaw selfcheck` 校验包内 `index.html` 与其 `version.json` 的 sha256 一致；`verify_backend.py --dashboard-dir` 再把包内 `index.html` 与**本次**前端构建输出对比，并核对 `/api/health.build.index_sha256`。
 - 本次实测：commit `0652610c`（dashboard 有 46 个未提交改动，`git_dirty=true`），前端构建 1720s（本机慢 CPU），`index.html` sha256 `c69f6a36…`。
-- 最终产物验证：`octop selfcheck` 返回 `dashboard.match=true`（`built_at` 2026-11-12T11:50:34+00:00，`stamp_sha256` 与包内 `index.html` 一致）；`verify_backend.py` 五项全过，含「dashboard 版本一致」与「health 版本戳」（`/api/health.build.index_sha256 = c69f6a36…`），且启动前后 `_internal` 保持 4 423 文件 / 307,388,702 B 不变。
+- 最终产物验证：`happyclaw selfcheck` 返回 `dashboard.match=true`（`built_at` 2026-11-12T11:50:34+00:00，`stamp_sha256` 与包内 `index.html` 一致）；`verify_backend.py` 五项全过，含「dashboard 版本一致」与「health 版本戳」（`/api/health.build.index_sha256 = c69f6a36…`），且启动前后 `_internal` 保持 4 423 文件 / 307,388,702 B 不变。
 

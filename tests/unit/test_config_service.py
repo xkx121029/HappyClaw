@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.config_service import LocalConfigService
+from happyclaw.infra.config_service import LocalConfigService
 
 
 def _write_config(path: Path, backup: dict) -> None:
@@ -53,10 +53,10 @@ def test_reload_picks_up_changes(tmp_path: Path) -> None:
 
 
 def test_preloaded_avoids_file_read(tmp_path: Path) -> None:
-    from octop.config import BackupConfig, OctopConfig
+    from happyclaw.config import BackupConfig, HappyclawConfig
 
     cfg_path = tmp_path / "does-not-exist.json"
-    preloaded = OctopConfig(
+    preloaded = HappyclawConfig(
         backup=BackupConfig(auto_enabled=True),
         default_timezone="UTC",
     )
@@ -65,7 +65,7 @@ def test_preloaded_avoids_file_read(tmp_path: Path) -> None:
 
 
 def test_update_backup_writes_and_reloads(tmp_path: Path) -> None:
-    from octop.config import BackupConfig
+    from happyclaw.config import BackupConfig
 
     cfg_path = tmp_path / "config.json"
     _write_config(cfg_path, {"auto_enabled": False, "schedule": "cron:0 4 * * *"})

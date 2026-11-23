@@ -13,17 +13,17 @@ from deepagents.backends.local_shell import LocalShellBackend
 from happyclaw_gateway.models import InboundMessage
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
-from octop.api.common.attachments import save_attachment
-from octop.api.routers.chat.models import ChatTurnBody
-from octop.api.routers.chat.turn import (
+from happyclaw.api.common.attachments import save_attachment
+from happyclaw.api.routers.chat.models import ChatTurnBody
+from happyclaw.api.routers.chat.turn import (
     content_parts_from_dashboard_turn,
 )
-from octop.infra.backend.resolver import default_agent_backend_spec
-from octop.infra.gateway.media.attachment_hints import content_blocks_need_vision
-from octop.infra.gateway.media.ingress import AgentBackedMediaBackend
-from octop.infra.gateway.process.harness_request import build_content_from_message
-from octop.infra.gateway.threads import ThreadRegistry
-from octop.infra.gateway.ws import WS_CHANNEL_ID
+from happyclaw.infra.backend.resolver import default_agent_backend_spec
+from happyclaw.infra.gateway.media.attachment_hints import content_blocks_need_vision
+from happyclaw.infra.gateway.media.ingress import AgentBackedMediaBackend
+from happyclaw.infra.gateway.process.harness_request import build_content_from_message
+from happyclaw.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.gateway.ws import WS_CHANNEL_ID
 
 _PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
 
@@ -115,7 +115,7 @@ async def test_file_in_workspace_with_workspace_path_reaches_llm() -> None:
         assert content_blocks_need_vision(content)
         assert _image_ref_path(content) == stored.data_path
         assert _image_bytes(content) is None
-        from octop.infra.gateway.media.attachment_hints import expand_workspace_image_ref
+        from happyclaw.infra.gateway.media.attachment_hints import expand_workspace_image_ref
 
         img = next(b for b in content if isinstance(b, dict) and b.get("type") == "image_url")
         expanded = await expand_workspace_image_ref(img, workspace=workspace)
@@ -218,7 +218,7 @@ async def test_default_backend_materialize_still_inlines_image() -> None:
         assert _has_image_url(content)
         assert _image_ref_path(content) == stored.data_path
         assert _image_bytes(content) is None
-        from octop.infra.gateway.media.attachment_hints import expand_workspace_image_ref
+        from happyclaw.infra.gateway.media.attachment_hints import expand_workspace_image_ref
 
         img = next(b for b in content if isinstance(b, dict) and b.get("type") == "image_url")
         expanded = await expand_workspace_image_ref(img, workspace=workspace)

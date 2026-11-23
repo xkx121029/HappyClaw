@@ -1,6 +1,6 @@
 """tests/integration/test_memory_api.py — dashboard memory router.
 
-End-to-end smoke: build a real OctopServer with a main agent, seed a
+End-to-end smoke: build a real HappyclawServer with a main agent, seed a
 small graph (entity / candidate / atom / episode / journal) directly
 into the agent memory SQLite (``.octop/memory.sqlite`` for new agents)
 via ``happyclaw_memory.Memory``, then drive the FastAPI router and assert
@@ -26,7 +26,7 @@ import pytest
 # this whole file silently skip).
 pytest.importorskip("happyclaw_memory.adapters.bridge.handlers")
 
-from octop.api.common.memory_client import (
+from happyclaw.api.common.memory_client import (
     invalidate_cached_memory,
     memory_db_path_for_cfg,
     memory_namespace,

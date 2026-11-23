@@ -9,11 +9,11 @@ import pytest
 from happyclaw_harness.backends import resolve_backend
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
-from octop.infra.agents.experts.catalog import ExpertCatalog, default_library_root
+from happyclaw.infra.agents.experts.catalog import ExpertCatalog, default_library_root
 
 
 def test_bootstrap_main_spec_en_locale_uses_english_label() -> None:
-    from octop.infra.agents.experts.catalog import (
+    from happyclaw.infra.agents.experts.catalog import (
         build_create_spec_from_expert,
     )
 

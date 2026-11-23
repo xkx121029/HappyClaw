@@ -5,17 +5,17 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.threads import ThreadRepo
-from octop.infra.db.repos.trajectory_events import TrajectoryEventRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.gateway.process.processor import GlobalProcessor
-from octop.infra.gateway.slash.dispatcher import SlashDispatcher
-from octop.infra.history.trajectory.live import TrajectoryLiveBus
-from octop.infra.history.trajectory.service import TrajectoryService
-from octop.infra.history.trajectory.store import TrajectoryStore
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.threads import ThreadRepo
+from happyclaw.infra.db.repos.trajectory_events import TrajectoryEventRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.gateway.process.processor import GlobalProcessor
+from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher
+from happyclaw.infra.history.trajectory.live import TrajectoryLiveBus
+from happyclaw.infra.history.trajectory.service import TrajectoryService
+from happyclaw.infra.history.trajectory.store import TrajectoryStore
 
 
 def _processor(

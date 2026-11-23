@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.usage import UsageRepo
-from octop.infra.db.repos.user_policies import UserPolicyRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.users.resource_policy import (
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.usage import UsageRepo
+from happyclaw.infra.db.repos.user_policies import UserPolicyRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.users.resource_policy import (
     POLICY_MAX_AGENTS,
     POLICY_TOKEN_QUOTA,
     POLICY_WORKSPACE_ROOT_DIR,
@@ -50,7 +50,7 @@ def test_normalize_workspace_root_dir_must_be_directory(
     assert normalize_workspace_root_dir(str(root)) == root.resolve().as_posix()
     file_path = tmp_path / "not-a-dir"
     file_path.write_text("x", encoding="utf-8")
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         normalize_workspace_root_dir(str(file_path))
     assert exc.value.code is ErrorCode.WORKSPACE_ROOT_RESTRICTED
 
@@ -58,13 +58,13 @@ def test_normalize_workspace_root_dir_must_be_directory(
 def test_normalize_workspace_root_dir_rejected_in_container(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.infra.users.resource_policy import effective_workspace_root_dir
+    from happyclaw.infra.users.resource_policy import effective_workspace_root_dir
 
     root = tmp_path / "jail"
     root.mkdir()
     monkeypatch.setenv("OCTOP_IN_CONTAINER", "1")
     assert normalize_workspace_root_dir(None) is None
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         normalize_workspace_root_dir(str(root))
     assert exc.value.code is ErrorCode.WORKSPACE_ROOT_CONTAINER_UNSUPPORTED
     assert effective_workspace_root_dir(str(root)) is None
@@ -182,7 +182,7 @@ def test_explicit_root_outside_workspace_root_is_rejected(
             "virtual_mode": True,
         }
     }
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         apply_workspace_root_to_config(
             _PolicyRepo(jail.resolve().as_posix()),
             7,
@@ -274,7 +274,7 @@ def test_assert_token_quota_available(db: SqlitePool) -> None:
         model="m",
         thread_id="t1",
     )
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         assert_token_quota_available(policies, usage, uid)
     assert exc.value.code is ErrorCode.TOKEN_QUOTA_EXCEEDED
     assert exc.value.details["used"] == 10
@@ -292,14 +292,14 @@ def test_assert_agent_quota_available(db: SqlitePool) -> None:
 
     policies.set(uid, POLICY_MAX_AGENTS, "1")
     agents.create(agent_id="a1", user_id=uid, name="a", kind="expert")
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         assert_agent_quota_available(policies, agents, uid)
     assert exc.value.code is ErrorCode.AGENT_QUOTA_EXCEEDED
     assert exc.value.details == {"used": 1, "quota": 1}
 
     # Teams do not count toward the expert quota.
     agents.create(agent_id="t1", user_id=uid, name="team", kind="team")
-    with pytest.raises(OctopError) as exc2:
+    with pytest.raises(HappyclawError) as exc2:
         assert_agent_quota_available(policies, agents, uid)
     assert exc2.value.details["used"] == 1
 

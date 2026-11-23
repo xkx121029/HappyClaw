@@ -13,7 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from octop.infra.setup.password_file import WIZARD_FILE_NAME, read_password
+from happyclaw.infra.setup.password_file import WIZARD_FILE_NAME, read_password
 from tests.support.app import octop_client, write_octop_config
 
 RETIRED_CODE = "SINGLE_USER_UNSUPPORTED"

@@ -7,10 +7,10 @@ from urllib.parse import quote
 
 import pytest
 
-from octop.infra.backend.adapter import row_to_backend_spec
-from octop.infra.backend.resolve_backend import materialize_octop_specs
-from octop.infra.backend.tos_backend import TOSBackend, tos_backend_from_spec
-from octop.infra.db.repos.backends import BackendRow
+from happyclaw.infra.backend.adapter import row_to_backend_spec
+from happyclaw.infra.backend.resolve_backend import materialize_octop_specs
+from happyclaw.infra.backend.tos_backend import TOSBackend, tos_backend_from_spec
+from happyclaw.infra.db.repos.backends import BackendRow
 
 
 class _ServerError(Exception):
@@ -136,7 +136,7 @@ def fake_sdk(monkeypatch: pytest.MonkeyPatch) -> _FakeClient:
         return client
 
     monkeypatch.setattr(
-        "octop.infra.backend.tos_backend._import_tos",
+        "happyclaw.infra.backend.tos_backend._import_tos",
         lambda: (_build, _ServerError, _ClientError),
     )
     return holder  # type: ignore[return-value]

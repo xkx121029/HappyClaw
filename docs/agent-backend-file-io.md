@@ -214,7 +214,7 @@ create(agent)
 
 ## 10. 完成标准
 
-- [ ] `src/octop/infra/agents/manager.py`、`src/octop/infra/agents/persona/`、`src/octop/infra/agents/plugins/manager.py` 中无对内容文件的 `write_text` / `copytree`（记忆豁免路径除外）
+- [ ] `src/happyclaw/infra/agents/manager.py`、`src/happyclaw/infra/agents/persona/`、`src/happyclaw/infra/agents/plugins/manager.py` 中无对内容文件的 `write_text` / `copytree`（记忆豁免路径除外）
 - [ ] `context_breakdown`、`bootstrap_pending` 经 backend 读
 - [ ] `gateway/backend_files` 无 agent workspace 本地 fallback
 - [ ] `system_archive` 备份含 backend 内容

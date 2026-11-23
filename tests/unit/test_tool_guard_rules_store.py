@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.agents.security import ToolGuardRulesStore
-from octop.infra.agents.security.tool_guard_rules import TOOL_GUARD_YAML
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.settings import SettingsRepo
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.agents.security import ToolGuardRulesStore
+from happyclaw.infra.agents.security.tool_guard_rules import TOOL_GUARD_YAML
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.utils.paths import PathLayout
 
 
 @pytest.fixture

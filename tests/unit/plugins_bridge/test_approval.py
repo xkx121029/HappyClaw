@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.plugins.bridge import (
     ApprovalOutcome,
     ApprovalRequest,
     CapabilityDecision,
@@ -21,7 +21,7 @@ from octop.infra.plugins.bridge import (
     ToolOutputSpec,
     text_content,
 )
-from octop.infra.plugins.bridge.approval import ApprovalDecision, ToolGuardrail
+from happyclaw.infra.plugins.bridge.approval import ApprovalDecision, ToolGuardrail
 
 WRITE_PARAMETERS: dict[str, Any] = {
     "type": "object",

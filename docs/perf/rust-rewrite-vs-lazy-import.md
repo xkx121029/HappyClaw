@@ -18,7 +18,7 @@
 
 | 类型 | 模块 | 耗时 | 说明 |
 | --- | --- | --- | --- |
-| cumulative | `octop.infra.server` → `happyclaw_harness` → `deepagents`/`langchain` | ~13.5s | 拖入整棵 LangChain 树 |
+| cumulative | `happyclaw.infra.server` → `happyclaw_harness` → `deepagents`/`langchain` | ~13.5s | 拖入整棵 LangChain 树 |
 | self | `apscheduler.schedulers.base` | 1.19s | 自身初始化重 |
 | self | `mcp.types` | 1.16s | Pydantic 模型构建 |
 | self | `langsmith.schemas` | 650ms | — |
@@ -67,12 +67,12 @@
 | 场景 | 改动前 | 改动后 | 收益 |
 | --- | --- | --- | --- |
 | fresh `import octop` | 2.069s | 0.487s | **-1.58s（-76%）** |
-| fresh `import octop.api.app` | 4.246s | 2.974s | **-1.27s（-30%）** |
+| fresh `import happyclaw.api.app` | 4.246s | 2.974s | **-1.27s（-30%）** |
 
 守卫：`tests/unit/test_httpx_lazy_patch.py`（独立子进程断言 octop 导入不加载
 httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相关单测 20 passed。
 
-**收益边界（诚实说明）**：`octop run` 主流程本来就要 import httpx 发 LLM 请求，
+**收益边界（诚实说明）**：`happyclaw run` 主流程本来就要 import httpx 发 LLM 请求，
 这部分延迟只是从「进程启动」移到「首次请求前」，总时长不变；真正省下的是
 不发网络的路径——CLI 元命令（`--help`/`--version`）、pytest 收集、插件扫描、
 以及任何只 import octop 做配置/检查的场景。
@@ -80,7 +80,7 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 ## 3c. 第三轮：i18n domains 惰性导出（2026-11-18）
 
 继续分解 CLI 启动链发现第二条隐藏导入树：`cli/support/errors.py` →
-`octop.infra.errors` → `octop.i18n` → **`domains/stream.py` 顶层 import
+`happyclaw.infra.errors` → `octop.i18n` → **`domains/stream.py` 顶层 import
 `langchain_core.exceptions`（2.25s）**。根因是 `i18n/domains/__init__.py`
 顶层 eager 导入了全部子域（含 stream），而任何错误处理/CLI 命令只需要
 `error_message`（来自轻量的 `domains/errors.py`）却被迫拉进整棵 LangChain。
@@ -97,8 +97,8 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 | 导入路径 | 改动前 | 改动后 | 收益 |
 | --- | --- | --- | --- |
 | `import octop.i18n.domains` | 1.250s | 0.785s | **-465ms** |
-| `from octop.infra.errors import OctopError` | 1.219s | 0.817s | **-401ms** |
-| `import octop.cli.commands.run` | 1.479s | 1.013s | **-466ms** |
+| `from happyclaw.infra.errors import HappyclawError` | 1.219s | 0.817s | **-401ms** |
+| `import happyclaw.cli.commands.run` | 1.479s | 1.013s | **-466ms** |
 
 所有上述路径改造后不再加载 `langchain_core`。守卫
 `tests/unit/i18n/test_domains_lazy.py`（4 子进程断言）。跨三轮守卫全集 10 passed。
@@ -108,14 +108,14 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 
 ## 3d. 第四轮：cron 交付链惰性导入（2026-11-18）
 
-`_prepare_runtime()` 在监听后逐个 import 运行时模块，其中 `import octop.infra.cron.manager`
+`_prepare_runtime()` 在监听后逐个 import 运行时模块，其中 `import happyclaw.infra.cron.manager`
 实测 **7.62s**，是 `post_listen.imports` 里仅次于 harness 主树的第二块。用 `-X importtime`
 拆开发现根因不在 apscheduler（仅 ~0.28s），而在 `cron/manager.py` 顶层导入
 `CronDeliveryService` → `cron/delivery.py` 顶层导入了 `langchain_core.messages`、
-`octop.infra.gateway.process`、`octop.infra.history.projection`、`knowledge.default_open`，
+`happyclaw.infra.gateway.process`、`happyclaw.infra.history.projection`、`knowledge.default_open`，
 把 deepagents/langchain 整棵树拖进来（cumulative 5.3–6.3s）。
 
-改动（`src/octop/infra/cron/delivery.py`）：上述重符号全部改为在用到它们的
+改动（`src/happyclaw/infra/cron/delivery.py`）：上述重符号全部改为在用到它们的
 `_deliver_text` / `_deliver_agent` / `_build_agent_request` / `_attach_turn_knowledge_config`
 内部局部导入；模块顶层只保留 i18n、errors、`gateway.threads`、轻量 utils。
 
@@ -123,8 +123,8 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 
 | 导入路径 | 改动前 | 改动后 | 收益 |
 | --- | ---: | ---: | ---: |
-| `import octop.infra.cron.delivery` | 6.88s | 1.78s | **-5.10s（-74%）** |
-| `import octop.infra.cron.manager` | 7.62s | 2.12s | **-5.50s（-72%）** |
+| `import happyclaw.infra.cron.delivery` | 6.88s | 1.78s | **-5.10s（-74%）** |
+| `import happyclaw.infra.cron.manager` | 7.62s | 2.12s | **-5.50s（-72%）** |
 
 剩余 1.6s 来自 `gateway.threads` → `db.repos.sessions` → `happyclaw_gateway.models`（aiohttp/pydantic），
 属共享基础设施，本轮不动。守卫：`tests/unit/test_import_lightweight.py` 新增
@@ -141,12 +141,12 @@ httpx、后续导入仍打补丁、CIDR 绕代理有效、hook 幂等）。相�
 ## 3e. 第五轮：auth tokens 的 jwt 惰性导入（2026-11-19 凌晨）
 
 对当前树重新 `-X importtime` 测绘发现，启动关键路径上还剩一条重链：
-`octop.api.app` → `api.deps` → `infra.auth.tokens` 顶层 `import jwt`，把
+`happyclaw.api.app` → `api.deps` → `infra.auth.tokens` 顶层 `import jwt`，把
 jwt + cryptography 整棵树（`cryptography.hazmat.bindings._rust` 等 40+ 模块）
 拖进 app 工厂导入。SSO/MFA/captcha 模块不在启动链中（测绘确认无出现），
 `tokens.py` 是启动路径上唯一的 jwt 入口。
 
-改动（`src/octop/infra/auth/tokens.py`）：顶层 `import jwt` 移除，改为在
+改动（`src/happyclaw/infra/auth/tokens.py`）：顶层 `import jwt` 移除，改为在
 `sign_token` / `decode_token` 内部局部导入；异常类捕获（`ExpiredSignatureError` /
 `InvalidTokenError`）随局部导入走，模块顶层只保留 stdlib。
 
@@ -154,15 +154,15 @@ jwt + cryptography 整棵树（`cryptography.hazmat.bindings._rust` 等 40+ 模�
 
 | 模块累计 | 改动前 | 改动后 | 收益 |
 | --- | ---: | ---: | ---: |
-| `octop.infra.auth.tokens` | 245.3ms | **4.1ms** | 树整体移出 |
-| `octop.api.deps` | 324.5ms | **110.7ms** | −213.8ms |
+| `happyclaw.infra.auth.tokens` | 245.3ms | **4.1ms** | 树整体移出 |
+| `happyclaw.api.deps` | 324.5ms | **110.7ms** | −213.8ms |
 
 改后捕获中 jwt/cryptography 相关行**零出现**。jwt 树连同 cryptography 不再
-进入 `import octop.api.app` 的启动路径（对冻结包冷启动收益更大——冷态测绘中
+进入 `import happyclaw.api.app` 的启动路径（对冻结包冷启动收益更大——冷态测绘中
 该树累计 42.5s，几乎全是磁盘冷读；PYZ 内同样省去 40+ 模块的首次读取）。
 
 **Wall-clock 说明（诚实记录）**：本轮 A/B 期间前端 vitest 全量测试正在同一台
-机器上运行，fresh 进程 `import octop.api.app` 绝对值在 3.2–4.8s 间波动，
+机器上运行，fresh 进程 `import happyclaw.api.app` 绝对值在 3.2–4.8s 间波动，
 前后中位数不可比；参照第四轮的处理方式，以 importtime 结构数据与守卫不变式
 为准，待机器空闲后可复测绝对值。
 
@@ -188,7 +188,7 @@ Rust 启动器 `tools/octop-launcher`：极速起进程 + 健康检查前置 + �
 
 ```bash
 # 测绘
-.venv/Scripts/python.exe -X importtime -c "import octop.infra.connectors.gateway" 2> imports.txt
+.venv/Scripts/python.exe -X importtime -c "import happyclaw.infra.connectors.gateway" 2> imports.txt
 .venv/Scripts/python.exe scripts/profile_imports.py imports.txt --top 25
 
 # 守卫测试（三轮全部）
@@ -196,9 +196,9 @@ Rust 启动器 `tools/octop-launcher`：极速起进程 + 健康检查前置 + �
   tests/unit/test_httpx_lazy_patch.py tests/unit/i18n/test_domains_lazy.py -q
 
 # 验证 i18n 惰性导出：导入不拉 langchain，符号仍可解析
-.venv/Scripts/python.exe -c "import sys; import octop.infra.errors; \
+.venv/Scripts/python.exe -c "import sys; import happyclaw.infra.errors; \
   assert 'langchain_core' not in sys.modules; \
-  import octop.i18n.domains as d; assert all(hasattr(d,s) for s in d.__all__); print('OK')"
+  import happyclaw.i18n.domains as d; assert all(hasattr(d,s) for s in d.__all__); print('OK')"
 
 # 验证 httpx 惰性补丁契约
 .venv/Scripts/python.exe -c "import sys, octop; assert 'httpx' not in sys.modules; \

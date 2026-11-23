@@ -2,7 +2,7 @@
 
 These exercise the *real* product code path:
 
-* :func:`octop.infra.backend.probe.probe_storage_backend` is exactly what the
+* :func:`happyclaw.infra.backend.probe.probe_storage_backend` is exactly what the
   dashboard calls when a user adds / verifies a storage backend — so a green
   probe means real credentials are accepted by the real mapping.
 * A boto3 put/get/delete round-trip proves end-to-end read/write on the bucket.
@@ -29,8 +29,8 @@ import pytest
 from botocore.config import Config
 from tests.support.secrets import optional_env, require_env
 
-from octop.infra.backend.adapter import row_to_backend_spec
-from octop.infra.backend.probe import probe_storage_backend, row_for_probe
+from happyclaw.infra.backend.adapter import row_to_backend_spec
+from happyclaw.infra.backend.probe import probe_storage_backend, row_for_probe
 
 pytestmark = pytest.mark.live
 

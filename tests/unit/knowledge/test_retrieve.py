@@ -5,14 +5,14 @@ from __future__ import annotations
 import asyncio
 from types import SimpleNamespace
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.knowledge import KnowledgeRepo
-from octop.infra.db.repos.settings import SettingsRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.knowledge import retrieve as retrieve_module
-from octop.infra.knowledge.citations import CITATIONS_MARKER_PREFIX
-from octop.infra.knowledge.index import KnowledgeIndex
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.knowledge import KnowledgeRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.knowledge import retrieve as retrieve_module
+from happyclaw.infra.knowledge.citations import CITATIONS_MARKER_PREFIX
+from happyclaw.infra.knowledge.index import KnowledgeIndex
 
 
 def test_retrieve_context_filters_unreadable_knowledge_base(tmp_path, monkeypatch) -> None:

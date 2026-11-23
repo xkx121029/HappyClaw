@@ -21,16 +21,16 @@
 
 ## 1. 安装（约 2 分钟）
 
-打开 **PowerShell**（普通权限即可），执行（命令默认从本仓库 GitHub `main` 拉脚本；GitHub 访问受限时先把 `$env:OCTOP_INSTALL_BASE` 指向提供同样 `scripts/` 目录的镜像）：
+打开 **PowerShell**（普通权限即可），执行（命令默认从本仓库 GitHub `main` 拉脚本；GitHub 访问受限时先把 `$env:HAPPYCLAW_INSTALL_BASE` 指向提供同样 `scripts/` 目录的镜像）：
 
 ```powershell
-if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
+if (-not $env:HAPPYCLAW_INSTALL_BASE) { $env:HAPPYCLAW_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:HAPPYCLAW_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 安装完成后**关闭当前窗口，重新打开一个 PowerShell**，让 PATH 生效。然后验证：
 
 ```powershell
-octop --version
+happyclaw --version
 ```
 
 能看到版本号（例如 `1.0.3b6`）就说明安装成功。
@@ -50,9 +50,9 @@ powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.c
 <summary>macOS / Linux</summary>
 
 ```bash
-curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
+curl -fsSL "${HAPPYCLAW_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash
 source ~/.zshrc   # 或 source ~/.bashrc
-octop --version
+happyclaw --version
 ```
 
 </details>
@@ -62,7 +62,7 @@ octop --version
 ## 2. 启动（约 10 秒）
 
 ```powershell
-octop run
+happyclaw run
 ```
 
 首次启动会自动创建 `%USERPROFILE%\.octop\`、SQLite 数据库和本机使用者。看到类似下面的输出即表示服务已起来：
@@ -156,18 +156,18 @@ Get-ChildItem $env:USERPROFILE\.octop
 ## 6. 第一次备份（建议）
 
 ```powershell
-octop backup create --include-chats
+happyclaw backup create --include-chats
 ```
 
 归档默认写到 `%USERPROFILE%\.octop\backups\`，文件名形如 `octop-backup-20261111T120000Z.tar.gz`（UTC 时间）。需要放到指定位置时用 `-o`：
 
 ```powershell
-octop backup create --include-chats -o D:\backup\happyclaw-full.tar.gz
+happyclaw backup create --include-chats -o D:\backup\happyclaw-full.tar.gz
 ```
 
 把它复制到其他磁盘或网盘即可。
 
-> 手动 `octop backup create` 默认不含聊天历史，需要完整迁移时加 `--include-chats`；自动备份与托盘「立即备份」默认包含。
+> 手动 `happyclaw backup create` 默认不含聊天历史，需要完整迁移时加 `--include-chats`；自动备份与托盘「立即备份」默认包含。
 
 ---
 
@@ -177,10 +177,10 @@ octop backup create --include-chats -o D:\backup\happyclaw-full.tar.gz
 # 停止：在运行的窗口按 Ctrl+C
 
 # 再次启动
-octop run
+happyclaw run
 
-# 后台常驻：Linux / macOS 用 octop service start；Windows 用「任务计划程序」开机启动 octop run
-# octop service start
+# 后台常驻：Linux / macOS 用 happyclaw service start；Windows 用「任务计划程序」开机启动 happyclaw run
+# happyclaw service start
 ```
 
 ---
@@ -190,10 +190,10 @@ octop run
 | 现象 | 原因 | 处理 |
 |------|------|------|
 | `octop` 不是内部或外部命令 | 安装后没有重开终端 | 重开 PowerShell，或检查 `%USERPROFILE%\.octop\bin` 是否在 PATH |
-| 8088 被占用 | 其他程序占用端口 | `octop run --port 8090`，再用新端口访问（端口会写回 `config.json`，之后直接 `octop run` 也是 8090） |
+| 8088 被占用 | 其他程序占用端口 | `happyclaw run --port 8090`，再用新端口访问（端口会写回 `config.json`，之后直接 `happyclaw run` 也是 8090） |
 | 页面能开但对话报错 | 模型未配置或 Key 无效 | 管理 → 模型配置 → 测试连接 |
 | 模型测试超时 | 网络不通 / Base URL 错 | 检查代理与 URL 路径（通常以 `/v1` 结尾） |
-| 想从别的设备访问 | 默认只监听本机 | `octop run --host 0.0.0.0 --port 8088`，注意局域网暴露风险 |
+| 想从别的设备访问 | 默认只监听本机 | `happyclaw run --host 0.0.0.0 --port 8088`，注意局域网暴露风险 |
 | 安装下载很慢 | 默认源慢 | 先设置 `$env:UV_DEFAULT_INDEX="https://pypi.tuna.tsinghua.edu.cn/simple"` 再执行安装；macOS/Linux 可用 `install.sh --mirror <url>` |
 
 更多问题见 [用户帮助文档](user-guide.md#八常见问题)。
@@ -202,7 +202,7 @@ octop run
 
 ## 9. 卸载
 
-1. 备份需要保留的数据：`octop backup create --include-chats`。
+1. 备份需要保留的数据：`happyclaw backup create --include-chats`。
 2. 停止服务。
 3. 删除数据目录：`Remove-Item -Recurse -Force $env:USERPROFILE\.octop`。
 4. 从 PATH 中移除 `%USERPROFILE%\.octop\bin`。

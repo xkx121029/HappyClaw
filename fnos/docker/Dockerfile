@@ -25,7 +25,7 @@
 # =============================================================================
 
 # ---------------------------------------------------------------------------
-# 阶段 1 — 前端构建（React / TypeScript → src/octop/dashboard）
+# 阶段 1 — 前端构建（React / TypeScript → src/happyclaw/dashboard）
 # ---------------------------------------------------------------------------
 FROM node:20-slim AS frontend-builder
 
@@ -40,7 +40,7 @@ RUN --mount=type=cache,target=/root/.npm \
 
 COPY dashboard/ ./
 
-RUN mkdir -p ../src/octop/dashboard
+RUN mkdir -p ../src/happyclaw/dashboard
 RUN NODE_ENV=production NODE_OPTIONS="--max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE}" npx vite build
 
 # ---------------------------------------------------------------------------
@@ -57,9 +57,9 @@ LABEL org.opencontainers.image.licenses="MIT"
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     HOME=/data \
-    OCTOP_BIND_HOST=0.0.0.0 \
-    OCTOP_PORT=8088 \
-    OCTOP_LOG_LEVEL=info \
+    HAPPYCLAW_BIND_HOST=0.0.0.0 \
+    HAPPYCLAW_PORT=8088 \
+    HAPPYCLAW_LOG_LEVEL=info \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never \
@@ -99,7 +99,7 @@ WORKDIR /app
 # 仅改源码时可复用此层缓存（用 uv pip 安装，避免 uv.lock 冻结冲突）
 COPY pyproject.toml README.md LICENSE ./
 COPY src/ ./src/
-COPY --from=frontend-builder /build/src/octop/dashboard/ ./src/octop/dashboard/
+COPY --from=frontend-builder /build/src/happyclaw/dashboard/ ./src/happyclaw/dashboard/
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY docker/bake-desktop.sh /usr/local/bin/bake-desktop.sh
@@ -109,33 +109,33 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/bake-desktop.sh
 # 桌面但不会启动。lite 只留 browser extra。UV_INDEX_URL 首选阿里云镜像加速；
 # UV_DEFAULT_INDEX 保留 PyPI 作为兜底。
 # pynput 在 import 时会连接 X。full 的无头构建只确认包已安装，不加载后端。
-ARG OCTOP_IMAGE_VARIANT=full
+ARG HAPPYCLAW_IMAGE_VARIANT=full
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv venv /app/.venv \
     && UV_DEFAULT_INDEX=https://pypi.org/simple \
        UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple \
        UV_INSECURE_HOST=mirrors.aliyun.com \
-    && case "$OCTOP_IMAGE_VARIANT" in \
+    && case "$HAPPYCLAW_IMAGE_VARIANT" in \
          full|lite) ;; \
-         *) echo "OCTOP_IMAGE_VARIANT must be full or lite" >&2; exit 1 ;; \
+         *) echo "HAPPYCLAW_IMAGE_VARIANT must be full or lite" >&2; exit 1 ;; \
        esac \
     && apt-get update && apt-get install -y --no-install-recommends build-essential \
-    && if [ "$OCTOP_IMAGE_VARIANT" = "lite" ]; then \
+    && if [ "$HAPPYCLAW_IMAGE_VARIANT" = "lite" ]; then \
          uv pip install --python /app/.venv ".[browser]" \
          && /app/.venv/bin/python -c "import octop"; \
        else \
          uv pip install --python /app/.venv ".[desktop,local-embedding,knowledge-ocr]" \
          && /app/.venv/bin/python -c "import cv2, fastembed, huggingface_hub, mss, rapidocr, onnxruntime, pymupdf; import importlib.util; assert importlib.util.find_spec('pynput')"; \
        fi \
-    && if [ "$OCTOP_IMAGE_VARIANT" != "lite" ]; then \
+    && if [ "$HAPPYCLAW_IMAGE_VARIANT" != "lite" ]; then \
          apt-get update && apt-get install -y --no-install-recommends fonts-noto-cjk; \
        fi \
     && apt-get purge -y --auto-remove build-essential \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
 # full 只装桌面包，不启动 Xvnc。lite 写明未捆绑桌面和浏览器。
-ARG OCTOP_IMAGE_VARIANT=full
-RUN if [ "$OCTOP_IMAGE_VARIANT" = "lite" ]; then \
+ARG HAPPYCLAW_IMAGE_VARIANT=full
+RUN if [ "$HAPPYCLAW_IMAGE_VARIANT" = "lite" ]; then \
       mkdir -p /etc/octop \
       && printf '%s\n' '{"desktop": false, "browser": false, "laya": false}' \
         > /etc/octop/bundled-components.json; \
@@ -151,7 +151,7 @@ RUN mkdir -p /data/.octop
 EXPOSE 8088
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-    CMD ["sh", "-c", "curl -f http://localhost:${OCTOP_PORT:-8088}/api/health || exit 1"]
+    CMD ["sh", "-c", "curl -f http://localhost:${HAPPYCLAW_PORT:-8088}/api/health || exit 1"]
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD []

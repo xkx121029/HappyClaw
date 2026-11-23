@@ -14,9 +14,9 @@ from langchain_core.messages import HumanMessage
 from happyclaw_harness.backends.workspace import BackendWorkspace
 from PIL import Image
 
-from octop.api.common.attachments import save_attachment
-from octop.infra.agents.middleware.workspace_image import WorkspaceImageMaterializeMiddleware
-from octop.infra.gateway.media.attachment_hints import (
+from happyclaw.api.common.attachments import save_attachment
+from happyclaw.infra.agents.middleware.workspace_image import WorkspaceImageMaterializeMiddleware
+from happyclaw.infra.gateway.media.attachment_hints import (
     VISION_SAFE_MAX_SIDE,
     make_image_url_block,
     make_workspace_image_ref,

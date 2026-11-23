@@ -19,15 +19,15 @@ from happyclaw_gateway.models import ImageContent, InboundMessage
 from happyclaw_harness.backends import DEFAULT_BACKEND_SPEC, resolve_backend
 from happyclaw_harness.backends.workspace import BackendWorkspace
 
-from octop.api.common.attachments import save_attachment
-from octop.infra.agents.middleware.binary_read_guard import read_file_block_reason
-from octop.infra.backend.resolver import default_agent_backend_spec
-from octop.infra.gateway.media.attachment_hints import format_attachment_path_hint
-from octop.infra.gateway.media.inbound_store import resolve_inbound_attachment_path, write_inbound
-from octop.infra.gateway.media.ingress import AgentBackedMediaBackend
-from octop.infra.gateway.process.harness_request import build_content_from_message
-from octop.infra.gateway.threads import ThreadRegistry
-from octop.infra.gateway.ws import WS_CHANNEL_ID
+from happyclaw.api.common.attachments import save_attachment
+from happyclaw.infra.agents.middleware.binary_read_guard import read_file_block_reason
+from happyclaw.infra.backend.resolver import default_agent_backend_spec
+from happyclaw.infra.gateway.media.attachment_hints import format_attachment_path_hint
+from happyclaw.infra.gateway.media.inbound_store import resolve_inbound_attachment_path, write_inbound
+from happyclaw.infra.gateway.media.ingress import AgentBackedMediaBackend
+from happyclaw.infra.gateway.process.harness_request import build_content_from_message
+from happyclaw.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.gateway.ws import WS_CHANNEL_ID
 
 
 def _octop_default_agent_workspace(ws_dir: str) -> BackendWorkspace:
@@ -237,7 +237,7 @@ async def test_image_materialize_keeps_workspace_path_for_history() -> None:
         img = next(b for b in content if b.get("type") == "image_url")
         assert img["workspace_path"] == stored.path
         assert img["image_url"]["url"] == f"workspace://{stored.path}"
-        from octop.infra.gateway.media.attachment_hints import expand_workspace_image_ref
+        from happyclaw.infra.gateway.media.attachment_hints import expand_workspace_image_ref
 
         expanded = await expand_workspace_image_ref(img, workspace=workspace)
         url = expanded["image_url"]["url"]

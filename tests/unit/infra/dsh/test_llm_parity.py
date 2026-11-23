@@ -17,7 +17,7 @@ from langchain_core.messages import AIMessageChunk, HumanMessage
 from happyclaw_harness.config import ModelConfig, ProviderConfig
 from happyclaw_harness.llm.factory import ChatModelFactory
 
-from octop.infra.dsh.llm.langchain_model import build_dsh_chat_model
+from happyclaw.infra.dsh.llm.langchain_model import build_dsh_chat_model
 
 MISSING = "<missing>"
 

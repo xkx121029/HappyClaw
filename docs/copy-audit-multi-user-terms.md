@@ -163,7 +163,7 @@
 
 ## 七、错误码对齐记录（2026-11-12）
 
-`tests/unit/i18n/test_errors.py` 要求 `dashboard/src/locales/*.json` 的 `apiErrors` 与后端 `src/octop/i18n/*.json` 的 `errors` 键集完全一致。此前两侧差 17 个键，处理方式如下。
+`tests/unit/i18n/test_errors.py` 要求 `dashboard/src/locales/*.json` 的 `apiErrors` 与后端 `src/happyclaw/i18n/*.json` 的 `errors` 键集完全一致。此前两侧差 17 个键，处理方式如下。
 
 ### 保留（未删，仍被真实抛出）
 

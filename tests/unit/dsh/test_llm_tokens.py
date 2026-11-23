@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.infra.dsh.llm import (
+from happyclaw.infra.dsh.llm import (
     LlmRequest,
     Role,
     TokenAuditPolicy,

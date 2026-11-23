@@ -7,15 +7,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.sessions import SessionRepo
-from octop.infra.db.repos.threads import ThreadRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.gateway.slash import BufferSink, SlashCommand, build_default_dispatcher
-from octop.infra.gateway.slash.ctx import SlashCtx
-from octop.infra.gateway.threads import ThreadRegistry
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.sessions import SessionRepo
+from happyclaw.infra.db.repos.threads import ThreadRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.gateway.slash import BufferSink, SlashCommand, build_default_dispatcher
+from happyclaw.infra.gateway.slash.ctx import SlashCtx
+from happyclaw.infra.gateway.threads import ThreadRegistry
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def ctx(tmp_path: Path):
     manager.get_row.return_value = agent_row
     manager.get_thread_model.return_value = None
     manager.harness_manager = None
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.infra.utils.paths import PathLayout
 
     paths = PathLayout(tmp_path)
     paths.ensure_root()

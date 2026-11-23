@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.agents.experts.supplements import install_supplements
+from happyclaw.infra.agents.experts.supplements import install_supplements
 
 
 async def test_install_supplements_copies_each_skill_once(
@@ -19,7 +19,7 @@ async def test_install_supplements_copies_each_skill_once(
     alpha.write_text("alpha body\n", encoding="utf-8", newline="\n")
     beta.write_text("beta body\n", encoding="utf-8", newline="\n")
     monkeypatch.setattr(
-        "octop.infra.agents.experts.supplements.supplement_paths",
+        "happyclaw.infra.agents.experts.supplements.supplement_paths",
         lambda: [alpha, beta],
     )
 

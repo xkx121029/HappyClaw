@@ -7,7 +7,7 @@ from pathlib import Path, PurePosixPath
 
 import pytest
 
-from octop.infra.agents.conversation_mode import (
+from happyclaw.infra.agents.conversation_mode import (
     HOST_READ_TOOLS,
     execute_user_message,
     is_allowed_plan_path,

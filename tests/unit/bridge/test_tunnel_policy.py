@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.infra.bridge.tunnel_policy import is_tunnel_path_allowed, shared_viewer_may_tunnel
+from happyclaw.infra.bridge.tunnel_policy import is_tunnel_path_allowed, shared_viewer_may_tunnel
 
 
 def test_allows_agent_list_get() -> None:

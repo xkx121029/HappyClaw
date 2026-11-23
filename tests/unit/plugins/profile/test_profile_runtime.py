@@ -1,6 +1,6 @@
 """Offline profile tests over real adapter-discovered envelopes.
 
-Every envelope here comes from ``OctopPluginLoader().discover`` reading the
+Every envelope here comes from ``HappyclawPluginLoader().discover`` reading the
 fixture plugins under ``tests/fixtures/plugins/profile``: one plugin requires
 another, one requires a version that is absent, and one declares no permissions.
 No envelope is hand-built in this module.
@@ -15,9 +15,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.plugins.market.pipeline import MarketplaceIndex, uninstall
-from octop.infra.plugins.market.sources.octop import OctopSource
-from octop.infra.plugins.profile import (
+from happyclaw.infra.plugins.market.pipeline import MarketplaceIndex, uninstall
+from happyclaw.infra.plugins.market.sources.octop import HappyclawSource
+from happyclaw.infra.plugins.profile import (
     LoadMode,
     MarketInstallSource,
     PluginStatus,
@@ -26,7 +26,7 @@ from octop.infra.plugins.profile import (
     ProfileRuntime,
     ProfileStore,
 )
-from octop.infra.plugins.runtime.contract import (
+from happyclaw.infra.plugins.runtime.contract import (
     ActivationContext,
     InvalidManifestError,
     MissingDependencyError,
@@ -39,7 +39,7 @@ from octop.infra.plugins.runtime.contract import (
     PluginRequirement,
     VersionConflictError,
 )
-from octop.infra.plugins.runtime.octop_plugin import OctopPluginLoader
+from happyclaw.infra.plugins.runtime.octop_plugin import HappyclawPluginLoader
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _PROFILE_FIXTURES = _REPO_ROOT / "tests" / "fixtures" / "plugins" / "profile"
@@ -67,7 +67,7 @@ class FakeClock:
 class CostedLoader:
     """Real Octop loader wrapper that records calls and simulates load cost.
 
-    Discovery and activation semantics stay in ``OctopPluginLoader``; only the
+    Discovery and activation semantics stay in ``HappyclawPluginLoader``; only the
     timing source and the failure injection are test-controlled.
     """
 
@@ -75,7 +75,7 @@ class CostedLoader:
 
     def __init__(
         self,
-        inner: OctopPluginLoader,
+        inner: HappyclawPluginLoader,
         clock: FakeClock,
         *,
         costs: Mapping[str, float] | None = None,
@@ -107,7 +107,7 @@ class CostedLoader:
 
 @pytest.fixture()
 def envelopes() -> dict[str, PluginEnvelope]:
-    discovered = OctopPluginLoader().discover(roots=[_PROFILE_FIXTURES])
+    discovered = HappyclawPluginLoader().discover(roots=[_PROFILE_FIXTURES])
     return {envelope.id: envelope for envelope in discovered}
 
 
@@ -121,7 +121,7 @@ def make_runtime(
 ) -> tuple[ProfileRuntime, CostedLoader]:
     tick = clock or FakeClock()
     loader = CostedLoader(
-        OctopPluginLoader(),
+        HappyclawPluginLoader(),
         tick,
         costs=costs,
         failing=failing,
@@ -443,14 +443,14 @@ def _catalog_index(
                 "requires": list(deps.get(native_id, ())),
             }
         )
-    source = OctopSource(loader=lambda: items, transport=archives.__getitem__)
+    source = HappyclawSource(loader=lambda: items, transport=archives.__getitem__)
     return MarketplaceIndex([source]), archives
 
 
 def _market_runtime(dest: Path) -> tuple[ProfileRuntime, MarketInstallSource]:
     source = MarketInstallSource(dest)
     runtime = ProfileRuntime(
-        loaders={PluginKind.OCTOP: OctopPluginLoader()},
+        loaders={PluginKind.OCTOP: HappyclawPluginLoader()},
         envelopes=[],
         envelope_provider=source.envelopes,
     )

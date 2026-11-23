@@ -2,8 +2,8 @@
 # HappyClaw 安装脚本 (macOS / Linux)
 # 用法: bash scripts/install.sh              # 从 PyPI 安装（默认）
 #   或: bash scripts/install.sh --from-source  # 从本地源码安装
-#   或: curl -fsSL "${OCTOP_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash   # 远程安装
-# 一键安装默认取本仓库 main 分支；GitHub 访问受限时把 OCTOP_INSTALL_BASE
+#   或: curl -fsSL "${HAPPYCLAW_INSTALL_BASE:-https://raw.githubusercontent.com/xkx121029/HappyClaw/main}/scripts/install.sh" | bash   # 远程安装
+# 一键安装默认取本仓库 main 分支；GitHub 访问受限时把 HAPPYCLAW_INSTALL_BASE
 # 指向提供同样 scripts/ 目录的自建镜像。
 #
 # 将 HappyClaw 安装到 ~/.octop，使用 uv 管理 Python 环境。
@@ -13,18 +13,18 @@
 set -euo pipefail
 
 # ── 默认配置 ──────────────────────────────────────────────────────────────────
-OCTOP_HOME="${OCTOP_HOME:-$HOME/.octop}"
-OCTOP_VENV="$OCTOP_HOME/venv"
-OCTOP_BIN="$OCTOP_HOME/bin"
+HAPPYCLAW_HOME="${HAPPYCLAW_HOME:-$HOME/.octop}"
+HAPPYCLAW_VENV="$HAPPYCLAW_HOME/venv"
+HAPPYCLAW_BIN="$HAPPYCLAW_HOME/bin"
 PYTHON_VERSION="3.12"
-OCTOP_REPO="${OCTOP_REPO:-https://github.com/xkx121029/HappyClaw.git}"
+HAPPYCLAW_REPO="${HAPPYCLAW_REPO:-https://github.com/xkx121029/HappyClaw.git}"
 # 四个运行库已是 HappyClaw 自有仓库（happyclaw-harness / happyclaw-gateway / happyclaw-browser，
 # memory 随 pyproject.toml 的依赖从 PyPI 装）；此处只用于源码克隆，
 # 要从 fork 或本地镜像构建某个库时覆盖对应的 HARNESS_*_REPO。
-OCTOP_LIBS_BASE="${OCTOP_LIBS_BASE:-https://github.com/xkx121029}"
-HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${OCTOP_LIBS_BASE}/happyclaw-harness.git}"
-HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${OCTOP_LIBS_BASE}/happyclaw-gateway.git}"
-HARNESS_BROWSER_REPO="${HARNESS_BROWSER_REPO:-${OCTOP_LIBS_BASE}/happyclaw-browser.git}"
+HAPPYCLAW_LIBS_BASE="${HAPPYCLAW_LIBS_BASE:-https://github.com/xkx121029}"
+HARNESS_AGENT_REPO="${HARNESS_AGENT_REPO:-${HAPPYCLAW_LIBS_BASE}/happyclaw-harness.git}"
+HARNESS_GATEWAY_REPO="${HARNESS_GATEWAY_REPO:-${HAPPYCLAW_LIBS_BASE}/happyclaw-gateway.git}"
+HARNESS_BROWSER_REPO="${HARNESS_BROWSER_REPO:-${HAPPYCLAW_LIBS_BASE}/happyclaw-browser.git}"
 
 if [ -n "${BASH_SOURCE[0]:-}" ]; then
     _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -99,13 +99,13 @@ Note: Playwright Chromium is not downloaded by default. Pass
   even with --extras browser.
 
 Environment variables:
-  OCTOP_HOME              Install directory (default: ~/.octop)
-  OCTOP_PYPI_MIRROR       PyPI mirror URL (same as --mirror)
-  OCTOP_REPO              Git URL to clone (used by --from-source with no local dir)
-  OCTOP_LIBS_BASE         Git org hosting the runtime libraries
+  HAPPYCLAW_HOME              Install directory (default: ~/.octop)
+  HAPPYCLAW_PYPI_MIRROR       PyPI mirror URL (same as --mirror)
+  HAPPYCLAW_REPO              Git URL to clone (used by --from-source with no local dir)
+  HAPPYCLAW_LIBS_BASE         Git org hosting the runtime libraries
                           (default: https://github.com/xkx121029)
-  HARNESS_AGENT_REPO      happyclaw-harness repo (derived from OCTOP_LIBS_BASE by default)
-  HARNESS_GATEWAY_REPO    happyclaw-gateway repo (derived from OCTOP_LIBS_BASE by default)
+  HARNESS_AGENT_REPO      happyclaw-harness repo (derived from HAPPYCLAW_LIBS_BASE by default)
+  HARNESS_GATEWAY_REPO    happyclaw-gateway repo (derived from HAPPYCLAW_LIBS_BASE by default)
   HARNESS_BROWSER_REPO    happyclaw-browser repo (used for source installs)
   PLAYWRIGHT_DOWNLOAD_HOST  Playwright download mirror (optional; auto: npmmirror -> official)
   PLAYWRIGHT_INSTALL_TIMEOUT  Per-mirror download timeout in seconds (default 600)
@@ -130,7 +130,7 @@ case "$OS" in
     *) die "Unsupported OS: $OS. Use install.ps1 or install.bat on Windows." ;;
 esac
 
-printf "${GREEN}[octop]${RESET} Installing HappyClaw into ${BOLD}%s${RESET}\n" "$OCTOP_HOME"
+printf "${GREEN}[octop]${RESET} Installing HappyClaw into ${BOLD}%s${RESET}\n" "$HAPPYCLAW_HOME"
 
 # ── 步骤 1: 确保 uv 可用 ────────────────────────────────────────────────────
 _install_uv_via_pip() {
@@ -307,7 +307,7 @@ _uv_pip_install_with_mirror_fallback() {
         seen+=("$mirror")
 
         local -a args=(
-            --python "$OCTOP_VENV/bin/python"
+            --python "$HAPPYCLAW_VENV/bin/python"
             --quiet
             --index-url https://pypi.org/simple
         )
@@ -390,8 +390,8 @@ _run_as_root() {
 # 当前将用于编译扩展的 Python 是否带有 Python.h（uv 自带或系统 python3-dev）
 _python_dev_headers_ok() {
     local py=""
-    if [ -x "${OCTOP_VENV:-}/bin/python" ]; then
-        py="$OCTOP_VENV/bin/python"
+    if [ -x "${HAPPYCLAW_VENV:-}/bin/python" ]; then
+        py="$HAPPYCLAW_VENV/bin/python"
     elif command -v python3 &>/dev/null; then
         py="$(command -v python3)"
     else
@@ -554,14 +554,14 @@ _ensure_old_glibc_build_toolchain() {
 }
 
 # ── 步骤 2: 创建/更新虚拟环境 ────────────────────────────────────────────────
-if [ -x "$OCTOP_VENV/bin/python" ]; then
+if [ -x "$HAPPYCLAW_VENV/bin/python" ]; then
     info "Existing environment found, upgrading..."
 else
     info "Creating the Python $PYTHON_VERSION environment..."
-    uv venv "$OCTOP_VENV" --python "$PYTHON_VERSION" --quiet --seed
+    uv venv "$HAPPYCLAW_VENV" --python "$PYTHON_VERSION" --quiet --seed
 fi
-[ -x "$OCTOP_VENV/bin/python" ] || die "Failed to create the virtualenv"
-info "Python environment ready ($("$OCTOP_VENV/bin/python" --version))"
+[ -x "$HAPPYCLAW_VENV/bin/python" ] || die "Failed to create the virtualenv"
+info "Python environment ready ($("$HAPPYCLAW_VENV/bin/python" --version))"
 
 # Linux 上始终确保可编译本地扩展（Ubuntu 缺 python3-dev、CentOS 缺 python3-devel 等）
 if [ "$OS" = "Linux" ]; then
@@ -588,7 +588,7 @@ _merge_install_extras() {
 EXTRAS_MERGED="$(_merge_install_extras)"
 EXTRAS_SUFFIX="[$EXTRAS_MERGED]"
 
-_EXTRA_MIRROR="${PYPI_MIRROR:-${OCTOP_PYPI_MIRROR:-}}"
+_EXTRA_MIRROR="${PYPI_MIRROR:-${HAPPYCLAW_PYPI_MIRROR:-}}"
 if [ -z "$_EXTRA_MIRROR" ]; then
     _select_fastest_pypi_mirror
     _EXTRA_MIRROR="$_FASTEST_MIRROR"
@@ -599,7 +599,7 @@ fi
 _CONSOLE_AVAILABLE=0
 prepare_console() {
     local repo_dir="$1"
-    local console_dest="$repo_dir/src/octop/dashboard"
+    local console_dest="$repo_dir/src/happyclaw/dashboard"
 
     if [ -f "$console_dest/index.html" ]; then
         _CONSOLE_AVAILABLE=1
@@ -641,7 +641,7 @@ _pin_mcp_compat() {
 
 _verify_install() {
     info "Verifying the installation..."
-    if ! "$OCTOP_VENV/bin/python" -c "from octop.infra.agents.manager import AgentManager" 2>/dev/null; then
+    if ! "$HAPPYCLAW_VENV/bin/python" -c "from happyclaw.infra.agents.manager import AgentManager" 2>/dev/null; then
         die "Verification failed: core modules cannot be imported. Check dependency versions or re-run the installer."
     fi
     info "Installation verified"
@@ -655,21 +655,21 @@ _clone_source_workspace() {
     git clone --depth 1 "$HARNESS_AGENT_REPO" "$workdir/happyclaw-harness"
     git clone --depth 1 "$HARNESS_GATEWAY_REPO" "$workdir/happyclaw-gateway"
     git clone --depth 1 "$HARNESS_BROWSER_REPO" "$workdir/happyclaw-browser"
-    git clone --depth 1 "$OCTOP_REPO" "$workdir/orca"
+    git clone --depth 1 "$HAPPYCLAW_REPO" "$workdir/orca"
 }
 
 if [ "$FROM_SOURCE" = true ]; then
     if [ -n "$SOURCE_DIR" ]; then
         info "Installing from local source: $SOURCE_DIR"
         prepare_console "$SOURCE_DIR"
-        uv pip install "${SOURCE_DIR}${EXTRAS_SUFFIX}" --python "$OCTOP_VENV/bin/python"
+        uv pip install "${SOURCE_DIR}${EXTRAS_SUFFIX}" --python "$HAPPYCLAW_VENV/bin/python"
     else
         INSTALL_WORKDIR="$(mktemp -d)"
         trap 'rm -rf "$INSTALL_WORKDIR"' EXIT
         _clone_source_workspace "$INSTALL_WORKDIR"
         REPO_DIR="$INSTALL_WORKDIR/orca"
         prepare_console "$REPO_DIR"
-        uv pip install "${REPO_DIR}${EXTRAS_SUFFIX}" --python "$OCTOP_VENV/bin/python"
+        uv pip install "${REPO_DIR}${EXTRAS_SUFFIX}" --python "$HAPPYCLAW_VENV/bin/python"
     fi
 else
     # PEP 508: extras 必须在包名与版本说明符之间（octop[browser]==x.y.z），
@@ -694,11 +694,11 @@ fi
 _pin_mcp_compat || true
 _verify_install
 
-[ -x "$OCTOP_VENV/bin/octop" ] || die "Install failed: octop CLI not found in the virtualenv"
+[ -x "$HAPPYCLAW_VENV/bin/octop" ] || die "Install failed: octop CLI not found in the virtualenv"
 info "HappyClaw installed successfully"
 
 if [ "$_CONSOLE_AVAILABLE" = 0 ]; then
-    CONSOLE_CHECK="$("$OCTOP_VENV/bin/python" -c "import importlib.resources, octop; p=importlib.resources.files('octop')/'dashboard'/'index.html'; print('yes' if p.is_file() else 'no')" 2>/dev/null || echo 'no')"
+    CONSOLE_CHECK="$("$HAPPYCLAW_VENV/bin/python" -c "import importlib.resources, octop; p=importlib.resources.files('octop')/'dashboard'/'index.html'; print('yes' if p.is_file() else 'no')" 2>/dev/null || echo 'no')"
     [ "$CONSOLE_CHECK" = "yes" ] && _CONSOLE_AVAILABLE=1
 fi
 
@@ -714,7 +714,7 @@ _install_playwright_system_deps() {
         info "Detected the apt package manager (Debian/Ubuntu)..."
         info "Installing Playwright system dependencies..."
         # 优先使用 Playwright 自带的 install-deps
-        if "$OCTOP_VENV/bin/python" -m playwright install-deps chromium --with-deps 2>/dev/null; then
+        if "$HAPPYCLAW_VENV/bin/python" -m playwright install-deps chromium --with-deps 2>/dev/null; then
             return
         fi
         # 回退：手动安装（Ubuntu 24+ 部分包名为 *t64）
@@ -800,9 +800,9 @@ _install_playwright_browsers() {
     local _pw_timeout="${PLAYWRIGHT_INSTALL_TIMEOUT:-600}"
     _run_playwright_chromium_install() {
         if command -v timeout &>/dev/null; then
-            timeout "$_pw_timeout" "$OCTOP_VENV/bin/python" -m playwright install chromium
+            timeout "$_pw_timeout" "$HAPPYCLAW_VENV/bin/python" -m playwright install chromium
         else
-            "$OCTOP_VENV/bin/python" -m playwright install chromium
+            "$HAPPYCLAW_VENV/bin/python" -m playwright install chromium
         fi
     }
 
@@ -838,7 +838,7 @@ _install_playwright_browsers() {
 
     warn "⚠ Playwright Chromium install failed; you can run this later:"
     warn "  PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright \\"
-    warn "    $OCTOP_VENV/bin/python -m playwright install chromium"
+    warn "    $HAPPYCLAW_VENV/bin/python -m playwright install chromium"
     return 1
 }
 
@@ -847,7 +847,7 @@ _install_playwright_browsers() {
 _detect_system_chrome() {
     # 优先复用 happyclaw-browser 的探测器（与运行期 launch 路径一致）
     local chrome
-    chrome="$("$OCTOP_VENV/bin/python" -c '
+    chrome="$("$HAPPYCLAW_VENV/bin/python" -c '
 import sys
 try:
     from happyclaw_browser.cdp.launcher import find_chrome
@@ -897,35 +897,35 @@ fi
 if [ "$_WANT_PW_CHROMIUM" != 1 ]; then
     info "Skipping Playwright Chromium download."
     info "For remote-browser automation, re-run with --extras browser, use the dashboard, or:"
-    info "  $OCTOP_VENV/bin/python -m playwright install chromium"
-elif "$OCTOP_VENV/bin/python" -c "import playwright" 2>/dev/null; then
+    info "  $HAPPYCLAW_VENV/bin/python -m playwright install chromium"
+elif "$HAPPYCLAW_VENV/bin/python" -c "import playwright" 2>/dev/null; then
     _SYSTEM_CHROME="$(_detect_system_chrome || true)"
     if [ -n "$_SYSTEM_CHROME" ]; then
         info "Detected system Chrome/Chromium: $_SYSTEM_CHROME"
         info "Using the system browser and skipping the Playwright Chromium download (faster, smaller)."
         info "To use Playwright's bundled Chromium instead, run:"
-        info "  $OCTOP_VENV/bin/python -m playwright install chromium"
+        info "  $HAPPYCLAW_VENV/bin/python -m playwright install chromium"
     else
         _install_playwright_system_deps
         _install_playwright_browsers || true
     fi
 else
-    warn "playwright is not in the virtualenv, skipping Chromium; you can later run: uv pip install playwright --python $OCTOP_VENV/bin/python"
+    warn "playwright is not in the virtualenv, skipping Chromium; you can later run: uv pip install playwright --python $HAPPYCLAW_VENV/bin/python"
 fi
 
 # ── 步骤 4: 创建包装脚本 ─────────────────────────────────────────────────────
-mkdir -p "$OCTOP_BIN"
+mkdir -p "$HAPPYCLAW_BIN"
 
-cat > "$OCTOP_BIN/octop" << 'WRAPPER'
+cat > "$HAPPYCLAW_BIN/octop" << 'WRAPPER'
 #!/usr/bin/env bash
 # HappyClaw CLI 包装脚本 — 委托给 uv 管理的环境。
 set -euo pipefail
 
-OCTOP_HOME="${OCTOP_HOME:-$HOME/.octop}"
-REAL_BIN="$OCTOP_HOME/venv/bin/octop"
+HAPPYCLAW_HOME="${HAPPYCLAW_HOME:-$HOME/.octop}"
+REAL_BIN="$HAPPYCLAW_HOME/venv/bin/octop"
 
 if [ ! -x "$REAL_BIN" ]; then
-    echo "Error: HappyClaw environment not found in $OCTOP_HOME/venv" >&2
+    echo "Error: HappyClaw environment not found in $HAPPYCLAW_HOME/venv" >&2
     echo "Please re-run the installer" >&2
     exit 1
 fi
@@ -933,8 +933,8 @@ fi
 exec "$REAL_BIN" "$@"
 WRAPPER
 
-chmod +x "$OCTOP_BIN/octop"
-info "Wrapper script created: $OCTOP_BIN/octop"
+chmod +x "$HAPPYCLAW_BIN/octop"
+info "Wrapper script created: $HAPPYCLAW_BIN/octop"
 
 # ── 步骤 5: 让 octop 立即可用（无需 source）──────────────────────────────────
 # 子进程无法修改父 shell 的 PATH。要让 curl|bash / bash install.sh 后立刻可用，
@@ -949,7 +949,7 @@ _try_symlink() {
     # 在 target_dir 创建指向包装脚本的 octop 符号链接。成功返回 0。
     local target_dir="$1"
     local link_path="$target_dir/octop"
-    local src="$OCTOP_BIN/octop"
+    local src="$HAPPYCLAW_BIN/octop"
 
     mkdir -p "$target_dir" 2>/dev/null || true
 
@@ -1013,12 +1013,12 @@ elif [ -n "$LINKED_PATH" ]; then
 fi
 
 # ── 步骤 6: 更新 shell / 系统 profile（新开终端持久生效）─────────────────────
-PATH_ENTRY="export PATH=\"${OCTOP_BIN}:\$PATH\""
+PATH_ENTRY="export PATH=\"${HAPPYCLAW_BIN}:\$PATH\""
 
 add_to_profile() {
     local profile="$1"
     local create="$2"
-    if [ -f "$profile" ] && grep -qF "$OCTOP_BIN" "$profile" 2>/dev/null; then
+    if [ -f "$profile" ] && grep -qF "$HAPPYCLAW_BIN" "$profile" 2>/dev/null; then
         return 0
     fi
     # 兼容旧版标记（仅含 .octop/bin 字样）
@@ -1037,7 +1037,7 @@ _write_profile_d() {
     # CentOS / Ubuntu 登录 shell 会加载 /etc/profile.d/*.sh
     local dest="/etc/profile.d/octop.sh"
     local content="# HappyClaw CLI
-export PATH=\"${OCTOP_BIN}:\$PATH\"
+export PATH=\"${HAPPYCLAW_BIN}:\$PATH\"
 "
     if [ -d /etc/profile.d ]; then
         if [ -w /etc/profile.d ] || _can_write_dir /etc/profile.d; then
@@ -1073,14 +1073,14 @@ case "$OS" in
         ;;
 esac
 
-export PATH="$OCTOP_BIN:$PATH"
+export PATH="$HAPPYCLAW_BIN:$PATH"
 
 # ── 完成 ──────────────────────────────────────────────────────────────────────
 echo ""
 printf "${GREEN}${BOLD}HappyClaw installed successfully!${RESET}\n"
 echo ""
-printf "  Location:          ${BOLD}%s${RESET}\n" "$OCTOP_HOME"
-printf "  Python:            ${BOLD}%s${RESET}\n" "$("$OCTOP_VENV/bin/python" --version 2>&1)"
+printf "  Location:          ${BOLD}%s${RESET}\n" "$HAPPYCLAW_HOME"
+printf "  Python:            ${BOLD}%s${RESET}\n" "$("$HAPPYCLAW_VENV/bin/python" --version 2>&1)"
 if [ -n "$LINKED_PATH" ]; then
     printf "  CLI link:          ${BOLD}%s${RESET}\n" "$LINKED_PATH"
 fi
@@ -1094,12 +1094,12 @@ echo ""
 if [ "$IMMEDIATE_OK" = true ]; then
     info "octop is ready to use in the current shell (no source needed)"
 elif [ -n "${BASH_SOURCE[0]:-}" ] && [ "${BASH_SOURCE[0]}" != "$0" ]; then
-    export PATH="$OCTOP_BIN:$PATH"
+    export PATH="$HAPPYCLAW_BIN:$PATH"
     info "PATH updated; octop is available now"
 else
     warn "Could not write to a directory already in PATH (e.g. /usr/local/bin). In this shell run:"
     echo ""
-    printf "  ${BOLD}export PATH=\"%s:\$PATH\"${RESET}\n" "$OCTOP_BIN"
+    printf "  ${BOLD}export PATH=\"%s:\$PATH\"${RESET}\n" "$HAPPYCLAW_BIN"
     echo ""
     if [ "$UPDATED_PROFILE" = true ]; then
         echo "New shells will not need this step."
@@ -1108,9 +1108,9 @@ fi
 echo ""
 echo "Then run:"
 echo ""
-printf "  ${BOLD}octop run${RESET}       # Run in the foreground (API + Web console)\n"
-printf "  ${BOLD}octop service start${RESET}  # Install and run in the background (systemd / launchd)\n"
+printf "  ${BOLD}happyclaw run${RESET}       # Run in the foreground (API + Web console)\n"
+printf "  ${BOLD}happyclaw service start${RESET}  # Install and run in the background (systemd / launchd)\n"
 printf "  ${BOLD}open http://127.0.0.1:8088${RESET}\n"
 echo ""
-printf "Upgrade: re-run this installer. Cleanup: ${BOLD}octop clean${RESET}\n"
-printf "Playwright Chromium (optional): ${BOLD}$OCTOP_VENV/bin/python -m playwright install chromium${RESET}\n"
+printf "Upgrade: re-run this installer. Cleanup: ${BOLD}happyclaw clean${RESET}\n"
+printf "Playwright Chromium (optional): ${BOLD}$HAPPYCLAW_VENV/bin/python -m playwright install chromium${RESET}\n"

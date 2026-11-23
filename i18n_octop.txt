@@ -26,7 +26,7 @@ metadata:
 # My skill
 
 Explain what this skill does and how to us
-   cronJobs.form.timezoneTooltip => Server-wide default timezone from config.json (default_timezone) or OCTOP_DEFAULT_TIMEZONE. Used for scheduling and dashboard timestamps.
+   cronJobs.form.timezoneTooltip => Server-wide default timezone from config.json (default_timezone) or HAPPYCLAW_DEFAULT_TIMEZONE. Used for scheduling and dashboard timestamps.
    channels.label_octopbot => OctopBot
    channels.octopbotGetCredentialsHint => Get your API credentials from OctopBot platform
    channels.intro_octopbot => Connect the OctopBot platform to Tencent Cloud-hosted bots and your agent.
@@ -36,7 +36,7 @@ Explain what this skill does and how to us
    advancedSettings.bridge.peerUrlPlaceholder => https://octop.example.com
    advancedSettings.update.manualUpgradeHint => You can also run: octop update --verbose
    advancedSettings.update.restartTimeout => Restart timed out. Run manually: octop service restart
-   advancedSettings.update.guideIntro => If the one-click upgrade on the left is unavailable, pick the commands for your install method. Restart after upgrading; data stays in ~/.octop (or OCTOP_HOME).
+   advancedSettings.update.guideIntro => If the one-click upgrade on the left is unavailable, pick the commands for your install method. Restart after upgrading; data stays in ~/.octop (or HAPPYCLAW_HOME).
    advancedSettings.update.guide.installer.body => If you used the official install script, re-run the same install command to upgrade in place (it reuses the environment and data under ~/.octop).
    advancedSettings.update.guide.cli.title => CLI: octop update
    advancedSettings.update.guide.cli.body => If the octop command is on your PATH (installer or managed venv), run:
@@ -58,7 +58,7 @@ Explain what this skill does and how to us
    login.forgotPasswordWindowsPs => & "$env:USERPROFILE\.octop\bin\octop.cmd" user passwd <username> --password <new-password>
    login.forgotPasswordWindowsCmd => %USERPROFILE%\.octop\bin\octop.cmd user passwd <username> --password <new-password>
    login.forgotPasswordDockerCommand => docker exec -it <container> octop user passwd <username> --password <new-password>
-   connectors.oauthNeedAdminHint => Set env vars on this machine (e.g. OCTOP_YOUDAO_CLIENT_ID, OCTOP_QQ_CONNECT_APP_ID), or fill in credentials under Advanced settings.
+   connectors.oauthNeedAdminHint => Set env vars on this machine (e.g. HAPPYCLAW_YOUDAO_CLIENT_ID, HAPPYCLAW_QQ_CONNECT_APP_ID), or fill in credentials under Advanced settings.
    acp.outboundBlockedHint => This agent has a sandbox enabled, so external runners can’t be enabled or edited here. The outbound acp_runner tool toggle is unaffected; connecting via IDE / octop acp i
    plugins.adminHint => Plugins live under ~/.octop/plugins/ on the server. Use this page to install, reload, globally enable, inspect, or uninstall them.
    plugins.guideImportBody => Host the .zip where HappyClaw can download it over HTTP(S). Prefer a raw file URL. Configure each agent from Personalization → Plugins. Local demos: octop plugin install 
@@ -92,7 +92,7 @@ metadata:
 
 请在此说明这个技能的用途以及如何使用它。专家在选择当前轮次的技能时会读取这段 markdown,所以请写得清晰、可执行。
 
-   cronJobs.form.timezoneTooltip => 服务端默认时区，在 config.json 的 default_timezone 或环境变量 OCTOP_DEFAULT_TIMEZONE 中配置，用于定时任务与界面时间展示。
+   cronJobs.form.timezoneTooltip => 服务端默认时区，在 config.json 的 default_timezone 或环境变量 HAPPYCLAW_DEFAULT_TIMEZONE 中配置，用于定时任务与界面时间展示。
    channels.label_octopbot => OctopBot
    channels.octopbotGetCredentialsHint => 前往 OctopBot 平台获取 API 凭据
    channels.intro_octopbot => 配置 OctopBot 平台频道，对接腾讯云托管机器人与你的专家。
@@ -103,7 +103,7 @@ metadata:
    advancedSettings.bridge.peerUrlPlaceholder => https://octop.example.com
    advancedSettings.update.manualUpgradeHint => 也可手动运行：octop update --verbose
    advancedSettings.update.restartTimeout => 重启超时，请手动执行：octop service restart
-   advancedSettings.update.guideIntro => 若不能使用左侧一键升级，请按你的安装方式选择下方命令。升级后请重启服务；配置与数据默认保留在 ~/.octop（或 OCTOP_HOME）。
+   advancedSettings.update.guideIntro => 若不能使用左侧一键升级，请按你的安装方式选择下方命令。升级后请重启服务；配置与数据默认保留在 ~/.octop（或 HAPPYCLAW_HOME）。
    advancedSettings.update.guide.installer.body => 若你是用官方安装脚本装的，重新执行同一安装命令即可自动升级到最新版（会复用 ~/.octop 下的环境与数据）。
    advancedSettings.update.guide.cli.title => CLI：octop update
    advancedSettings.update.guide.cli.body => 若命令行可直接使用 octop（安装脚本或 venv 布局），在终端执行：
@@ -125,7 +125,7 @@ metadata:
    login.forgotPasswordWindowsPs => & "$env:USERPROFILE\.octop\bin\octop.cmd" user passwd <用户名> --password <新密码>
    login.forgotPasswordWindowsCmd => %USERPROFILE%\.octop\bin\octop.cmd user passwd <用户名> --password <新密码>
    login.forgotPasswordDockerCommand => docker exec -it <容器名> octop user passwd <用户名> --password <新密码>
-   connectors.oauthNeedAdminHint => 请在本机配置环境变量（如 OCTOP_YOUDAO_CLIENT_ID、OCTOP_QQ_CONNECT_APP_ID），或在高级设置中填写凭证。
+   connectors.oauthNeedAdminHint => 请在本机配置环境变量（如 HAPPYCLAW_YOUDAO_CLIENT_ID、HAPPYCLAW_QQ_CONNECT_APP_ID），或在高级设置中填写凭证。
    acp.outboundBlockedHint => 当前专家已启用沙箱环境，不可启用或编辑外部 Runner。启用向外委托（acp_runner）不受影响；通过 IDE / octop acp 接入也不受影响。
    plugins.adminHint => 插件安装在服务器 ~/.octop/plugins/。此页面仅用于安装、重载、全局启停、查看详情和卸载。
    plugins.guideImportBody => 把 .zip 放到 HappyClaw 可通过 HTTP(S) 下载的位置，优先使用 raw 直链。安装后前往「个性化 → 插件」为专家配置。本地 demo：octop plugin install ./plugins/demo-toolkit --force

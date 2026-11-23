@@ -10,12 +10,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.infra.agents.providers.onnx_catalog import (
+from happyclaw.infra.agents.providers.onnx_catalog import (
     ONNX_PRESET_MODEL_IDS,
     get_onnx_model_meta,
     list_onnx_catalog_models,
 )
-from octop.infra.agents.providers.onnx_service import (
+from happyclaw.infra.agents.providers.onnx_service import (
     OnnxDownloadManager,
     OnnxDownloadState,
     OnnxDownloadStatus,
@@ -32,7 +32,7 @@ from octop.infra.agents.providers.onnx_service import (
 
 @pytest.fixture(autouse=True)
 def isolate_embedding_instance(monkeypatch, tmp_path):
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(mod, "_embedding_instance", None)
@@ -48,7 +48,7 @@ def test_ui_progress_from_bytes_is_byte_fraction() -> None:
 
 
 def test_download_sync_reports_tqdm_bytes(monkeypatch, tmp_path) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     mgr = OnnxDownloadManager()
@@ -142,7 +142,7 @@ def test_config_roundtrip_via_settings_dict(tmp_path, monkeypatch) -> None:
 
 
 def test_ensure_deps_noop_when_available(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.setattr(mod, "local_embedding_deps_available", lambda: True)
 
@@ -154,7 +154,7 @@ def test_ensure_deps_noop_when_available(monkeypatch) -> None:
 
 
 def test_ensure_deps_refuses_install_by_default(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.delenv("OCTOP_ALLOW_RUNTIME_PIP", raising=False)
     monkeypatch.setattr(mod, "local_embedding_deps_available", lambda: False)
@@ -163,7 +163,7 @@ def test_ensure_deps_refuses_install_by_default(monkeypatch) -> None:
 
 
 def test_ensure_deps_installs_when_env_allows(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.setenv("OCTOP_ALLOW_RUNTIME_PIP", "1")
     state = {"ok": False}
@@ -182,7 +182,7 @@ def test_ensure_deps_installs_when_env_allows(monkeypatch) -> None:
 
 
 def test_ensure_deps_installs_when_allow_install_true(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.delenv("OCTOP_ALLOW_RUNTIME_PIP", raising=False)
     state = {"ok": False}
@@ -209,7 +209,7 @@ def test_status_payload_omits_install_commands(tmp_path, monkeypatch) -> None:
 
 
 def test_assert_catalog_rejects_unknown_and_path_tricks() -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     with pytest.raises(ValueError, match="catalog"):
         mod.assert_catalog_model("evil/not-in-catalog")
@@ -222,7 +222,7 @@ def test_assert_catalog_rejects_unknown_and_path_tricks() -> None:
 
 def test_partial_cache_without_onnx_is_not_downloaded(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     mid = ONNX_PRESET_MODEL_IDS[0]
     partial = mod.model_cache_dir(mid)
@@ -234,8 +234,8 @@ def test_partial_cache_without_onnx_is_not_downloaded(tmp_path, monkeypatch) -> 
 
 def test_is_downloaded_recognizes_fastembed_hf_alias(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
-    from octop.infra.agents.providers import onnx_catalog as catalog
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_catalog as catalog
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     # CI often lacks the optional local-embedding extra; alias detection must
     # still work via static HF source fallbacks.
@@ -251,8 +251,8 @@ def test_is_downloaded_recognizes_fastembed_hf_alias(tmp_path, monkeypatch) -> N
 
 def test_build_embedding_uses_local_snapshot_without_hf_lookup(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
-    from octop.infra.agents.providers import onnx_catalog as catalog
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_catalog as catalog
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.setattr(catalog, "_fastembed_meta_map", lambda: {})
     repo = mod.embedding_models_dir() / "models--Qdrant--bge-small-zh-v1.5"
@@ -276,7 +276,7 @@ def test_build_embedding_uses_local_snapshot_without_hf_lookup(tmp_path, monkeyp
 
 
 def test_embedding_prerequisites_ignore_service_enabled(tmp_path, monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     store: dict[str, str] = {}
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
@@ -290,7 +290,7 @@ def test_embedding_prerequisites_ignore_service_enabled(tmp_path, monkeypatch) -
 
 
 def test_embed_texts_returns_vectors(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     class FakeEmb:
         def embed(self, texts, *, batch_size):
@@ -305,7 +305,7 @@ def test_embed_texts_returns_vectors(monkeypatch) -> None:
 
 
 def test_embed_texts_empty_input(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     called = {"n": 0}
 
@@ -319,7 +319,7 @@ def test_embed_texts_empty_input(monkeypatch) -> None:
 
 
 def test_embed_texts_bounds_batches_and_reuses_model(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     builds: list[str] = []
     batches: list[list[str]] = []
@@ -345,7 +345,7 @@ def test_embed_texts_bounds_batches_and_reuses_model(monkeypatch) -> None:
 
 
 def test_embed_texts_serializes_loading_and_inference(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     entered = threading.Event()
     query_entered = threading.Event()
@@ -389,7 +389,7 @@ def test_embed_texts_serializes_loading_and_inference(monkeypatch) -> None:
 
 
 def test_embed_texts_releases_cache_on_model_or_home_change(monkeypatch, tmp_path) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     builds: list[str] = []
 
@@ -415,7 +415,7 @@ def test_embed_texts_releases_cache_on_model_or_home_change(monkeypatch, tmp_pat
 
 
 def test_embed_texts_rejects_incomplete_batch(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.setattr(mod, "require_local_embedding_deps", lambda: None)
     monkeypatch.setattr(mod, "assert_catalog_model", lambda model: model)
@@ -427,7 +427,7 @@ def test_embed_texts_rejects_incomplete_batch(monkeypatch) -> None:
 
 
 def test_embedding_prerequisites_ok_for_model(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.setattr(mod, "local_embedding_deps_available", lambda: True)
     monkeypatch.setattr(
@@ -440,7 +440,7 @@ def test_embedding_prerequisites_ok_for_model(monkeypatch) -> None:
 
 
 def test_require_embedding_prerequisites_for_model(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.setattr(mod, "local_embedding_deps_available", lambda: True)
     monkeypatch.setattr(mod, "is_model_downloaded", lambda _m: True)
@@ -451,7 +451,7 @@ def test_require_embedding_prerequisites_for_model(monkeypatch) -> None:
 
 
 def test_require_embedding_prerequisites_for_model_raises(monkeypatch) -> None:
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     monkeypatch.setattr(mod, "local_embedding_deps_available", lambda: True)
     monkeypatch.setattr(mod, "is_model_downloaded", lambda _m: False)
@@ -461,7 +461,7 @@ def test_require_embedding_prerequisites_for_model_raises(monkeypatch) -> None:
 
 def test_delete_stays_under_cache_root(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     mid = ONNX_PRESET_MODEL_IDS[0]
     outside = tmp_path / "outside_secret.txt"
@@ -486,7 +486,7 @@ def test_is_downloaded_finds_nested_onnx_weights(tmp_path, monkeypatch) -> None:
     downloaded fine but every enable attempt reported it as missing.
     """
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     mid = "jinaai/jina-clip-v1"
     # Keep this cache-layout regression independent of whether the optional
@@ -505,7 +505,7 @@ def test_is_downloaded_finds_nested_onnx_weights(tmp_path, monkeypatch) -> None:
 def test_is_downloaded_ignores_dangling_snapshot_symlink(tmp_path, monkeypatch) -> None:
     """A snapshot entry whose blob is still downloading must not count."""
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
-    from octop.infra.agents.providers import onnx_service as mod
+    from happyclaw.infra.agents.providers import onnx_service as mod
 
     mid = ONNX_PRESET_MODEL_IDS[0]
     root = mod.model_cache_dir(mid)
@@ -529,7 +529,7 @@ def test_fallback_catalog_ids_stay_loadable_by_fastembed() -> None:
     Otherwise a user picks a model while the extra is absent, the click
     installs fastembed, and the id disappears from the catalog mid-flow.
     """
-    from octop.infra.agents.providers import onnx_catalog as catalog
+    from happyclaw.infra.agents.providers import onnx_catalog as catalog
 
     meta_map = catalog._fastembed_meta_map()
     if not meta_map:
@@ -549,7 +549,7 @@ async def test_provider_probe_never_leaves_the_host_for_local_onnx(monkeypatch) 
     """
     import httpx
 
-    from octop.infra.agents.providers import onnx_service, probe
+    from happyclaw.infra.agents.providers import onnx_service, probe
 
     def no_network(*_args, **_kwargs):
         raise AssertionError("local ONNX probe must not open a network client")

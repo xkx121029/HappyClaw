@@ -6,21 +6,21 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from octop.infra.dsh.tools import (
+from happyclaw.infra.dsh.tools import (
     SKIP_NO_PROVIDER,
     SKIP_NAME_CONFLICT,
     SKIP_PROVIDER_FAILED,
     SKIP_UNSAFE_PERMISSION,
     build_dsh_plugin_tools,
 )
-from octop.infra.dsh.tools.guardrail import build_read_only_guardrail
-from octop.infra.plugins.bridge import (
+from happyclaw.infra.dsh.tools.guardrail import build_read_only_guardrail
+from happyclaw.infra.plugins.bridge import (
     ApprovalOutcome,
     ToolCall,
     ToolDefinition,
     ToolExecutionContext,
 )
-from octop.infra.plugins.bridge.registry import DshToolRegistry
+from happyclaw.infra.plugins.bridge.registry import DshToolRegistry
 
 from tests.dsh_integration.fixtures.tools import fixture_tool
 from tests.unit.infra.dsh.plugin_fixtures import write_package
@@ -155,7 +155,7 @@ def test_name_conflict_is_traceable_and_does_not_overwrite(tmp_path: Path) -> No
 
 def _passing_probe(tool_name: str, arguments: Any) -> Any:
     """Test double: this file covers approval/risk, not sandbox inspection."""
-    from octop.infra.plugins.sandbox import SandboxCoverage, SandboxProbeResult
+    from happyclaw.infra.plugins.sandbox import SandboxCoverage, SandboxProbeResult
 
     return SandboxProbeResult(True, "test probe", SandboxCoverage.NOT_APPLICABLE)
 

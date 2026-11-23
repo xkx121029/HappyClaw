@@ -39,7 +39,7 @@
 ## 阶段 1：单用户身份（可独立验证）
 
 - [x] T1.1 新增 `tests/unit/single_user/test_owner_identity.py`（解析顺序、空库自建、缓存、失败中文告警）
-- [x] T1.2 实现 `src/octop/infra/users/owner.py::OwnerIdentityService`
+- [x] T1.2 实现 `src/happyclaw/infra/users/owner.py::OwnerIdentityService`
 - [x] T1.3 接入 `SharedServices` 只读属性 `owner`，`server.owner_identity` 访问器
 - [x] T1.4 重写 `api/deps.py`：`current_user` 恒 owner，`require_*` 恒放行，保留废弃 shim
 - [x] T1.5 新增 `tests/unit/api/test_single_user_access.py`（无令牌 200）
@@ -74,7 +74,7 @@
 - [ ] T5.1 备份完整性校验 `GET /api/admin/backup/verify`，恢复前自动校验
 - [ ] T5.2 启动自检输出中文摘要（端口/DB/目录/模型凭据/磁盘）
 - [ ] T5.3 用量接口单人化：`as_user` 忽略、`by_model` 可用、耗时字段确认
-- [ ] T5.4 错误中文抽检：`grep` 扫描 `OctopError(` 的英文 message，用户可见的改中文
+- [ ] T5.4 错误中文抽检：`grep` 扫描 `HappyclawError(` 的英文 message，用户可见的改中文
 - [ ] **简报 8：第一阶段完成**
 
 ## 阶段 6：第二轮后端优化（基线先行）

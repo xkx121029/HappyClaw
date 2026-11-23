@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.agents.providers.model_flags import (
+from happyclaw.infra.agents.providers.model_flags import (
     is_chat_eligible_model,
     is_embedding_model,
     is_rerank_model,

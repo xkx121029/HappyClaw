@@ -16,7 +16,7 @@ def run() -> CheckResult:
 
 async def _run() -> CheckResult:
     try:
-        from octop.infra.plugins.bridge import ToolCall, ToolPipeline
+        from happyclaw.infra.plugins.bridge import ToolCall, ToolPipeline
 
         from .fixtures.tools.fixture_tool import (
             EXPECTED_RESULT,

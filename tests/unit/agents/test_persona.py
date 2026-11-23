@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.agents.persona import PersonaLoader, render_persona_template
-from octop.infra.agents.persona.mbti_profiles import get_profile
+from happyclaw.infra.agents.persona import PersonaLoader, render_persona_template
+from happyclaw.infra.agents.persona.mbti_profiles import get_profile
 
 
 @pytest.fixture

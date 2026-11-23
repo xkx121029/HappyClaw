@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from octop.config import TlsConfig, load_config
-from octop.infra.setup.tls.store import install_letsencrypt_cert, resolve_tls_paths
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import TlsConfig, load_config
+from happyclaw.infra.setup.tls.store import install_letsencrypt_cert, resolve_tls_paths
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def test_install_letsencrypt_cert_updates_config(tmp_path: Path):

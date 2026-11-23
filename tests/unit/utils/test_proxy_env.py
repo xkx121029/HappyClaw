@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.infra.utils.proxy_env import LOOPBACK_HOSTS, skip_loopback_proxy
+from happyclaw.infra.utils.proxy_env import LOOPBACK_HOSTS, skip_loopback_proxy
 
 
 def test_loopback_hosts_are_added_to_empty_no_proxy() -> None:

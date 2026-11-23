@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from octop.api.routers.providers import (
+from happyclaw.api.routers.providers import (
     ProviderPatchBody,
     _patch_requires_provider_rehydrate,
     _provider_patch_updates,
@@ -161,7 +161,7 @@ async def test_admin_patch_models_clears_stale_agent_default_and_active() -> Non
     body = ProviderPatchBody.model_validate(
         {"models": [{"id": "keep", "name": "keep", "enabled": True}]}
     )
-    with patch("octop.api.routers.providers.clear_stale_pins_for_provider") as clear_pins:
+    with patch("happyclaw.api.routers.providers.clear_stale_pins_for_provider") as clear_pins:
         await admin_patch_provider(provider_id=1, body=body, _=None, server=server)
 
     clear_pins.assert_called_once_with(

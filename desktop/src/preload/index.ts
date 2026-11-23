@@ -157,7 +157,7 @@ const bridge = {
   },
 } as const;
 
-export type OctopDesktopBridge = typeof bridge;
+export type HappyclawDesktopBridge = typeof bridge;
 
 contextBridge.exposeInMainWorld("octopDesktop", bridge);
 

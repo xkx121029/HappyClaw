@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.plugins.market import verify_install
+from happyclaw.infra.plugins.market import verify_install
 from tests.dsh_integration import runtime_probe
 
 from .conftest import octop_package

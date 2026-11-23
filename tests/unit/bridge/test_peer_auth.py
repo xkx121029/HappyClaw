@@ -7,21 +7,21 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.i18n import error_message
-from octop.infra.bridge.manager import (
+from happyclaw.i18n import error_message
+from happyclaw.infra.bridge.manager import (
     _annotate_bridge_dial_error,
     _should_refresh_peer_token,
     bridge_failure_from_dial,
     dial_error_note,
     error_from_dial_note,
 )
-from octop.infra.bridge.peer_auth import (
+from happyclaw.infra.bridge.peer_auth import (
     is_self_peer_url,
     normalize_peer_base_url,
     peer_identity_key,
     peer_ws_url,
 )
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def test_normalize_accepts_https_host() -> None:
@@ -29,13 +29,13 @@ def test_normalize_accepts_https_host() -> None:
 
 
 def test_normalize_rejects_metadata_ip() -> None:
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         normalize_peer_base_url("http://169.254.169.254/latest/meta-data")
     assert ei.value.code == ErrorCode.BRIDGE_PEER_UNREACHABLE
 
 
 def test_normalize_rejects_non_http() -> None:
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         normalize_peer_base_url("ftp://peer.example")
     assert ei.value.code == ErrorCode.BRIDGE_PEER_UNREACHABLE
 
@@ -113,8 +113,8 @@ def test_connection_limit_note_keeps_the_limit() -> None:
 
 @pytest.mark.asyncio
 async def test_permanent_dial_stops_without_reconnect_backoff() -> None:
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.db.repos.bridge_connections import BridgeConnectionRow
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRow
 
     row = BridgeConnectionRow(
         pk=1,

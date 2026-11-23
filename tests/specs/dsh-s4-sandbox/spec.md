@@ -55,12 +55,12 @@ S2 给每个挂载的 DSH 工具绑定的 capability 探针是
 
 ## 4. 改动清单（精确到函数）
 
-### 4.1 `src/octop/infra/plugins/bridge/errors.py`
+### 4.1 `src/happyclaw/infra/plugins/bridge/errors.py`
 - `DshToolErrorCode` 增加：
   - `TOOL_SANDBOX_DENIED = "TOOL_SANDBOX_DENIED"`
   - `TOOL_SANDBOX_NOT_ASSEMBLED = "TOOL_SANDBOX_NOT_ASSEMBLED"`
 
-### 4.2 `src/octop/infra/plugins/bridge/approval.py`
+### 4.2 `src/happyclaw/infra/plugins/bridge/approval.py`
 - 增加常量 `SANDBOX_COVERAGE_UNAVAILABLE = "unavailable"`，加入 `__all__`。
 - `SandboxBacking` 增加 `inspected: bool = False`；`from_probe` 读取
   `raw.inspected`（非 bool 视为 False），合法 coverage 集合改为
@@ -72,25 +72,25 @@ S2 给每个挂载的 DSH 工具绑定的 capability 探针是
   `TOOL_CAPABILITY_UNAVAILABLE`（纯 `CapabilityDecision` 行为不变）。
 - 不改变 evaluate 的层序（capability 先于 approval）。
 
-### 4.3 `src/octop/infra/plugins/sandbox/inspection.py`
+### 4.3 `src/happyclaw/infra/plugins/sandbox/inspection.py`
 - `SandboxCoverage` 增加 `UNAVAILABLE = "unavailable"`。
 - `SandboxProbeResult` 增加字段 `inspected: bool = False`、
   `bridge_code: DshToolErrorCode | None = None`
-  （从 `octop.infra.plugins.bridge.errors` 导入，无循环：bridge 不导入 sandbox）。
+  （从 `happyclaw.infra.plugins.bridge.errors` 导入，无循环：bridge 不导入 sandbox）。
 
-### 4.4 `src/octop/infra/plugins/sandbox/absence.py`
+### 4.4 `src/happyclaw/infra/plugins/sandbox/absence.py`
 - `SandboxAbsenceGate.probe` 放行分支 coverage：
   `NOT_APPLICABLE` → `UNAVAILABLE`（allow 与 strict 的「不需要权限」分支都改）。
 - 拒绝分支保持 `error_code=SANDBOX_NOT_ASSEMBLED`。
 
-### 4.4b `src/octop/infra/plugins/sandbox/gate.py`
+### 4.4b `src/happyclaw/infra/plugins/sandbox/gate.py`
 - `_inspect` 三处 `SandboxProbeResult` 明确 `inspected`：
   - readiness 拒绝（还没走到参数检查）→ `False`；
   - 无检查计划 / 计划为空 → `False`；
   - 有检查计划但参数里没匹配到（`checked == ()`）→ `True`；
   - 实际检查过（含检查中途被拒 `SandboxDeniedError`）→ `True`。
 
-### 4.5 新增 `src/octop/infra/dsh/tools/sandbox.py`
+### 4.5 新增 `src/happyclaw/infra/dsh/tools/sandbox.py`
 - 常量 `ENV_SANDBOX_ABSENCE = "OCTOP_DSH_SANDBOX_ABSENCE"`。
 - `DshSandboxState(plugin_id, assembled, mode, reason)` + `to_dict()`。
 - `SandboxProbe(state, probe)`：可调用，转调 `probe` 并补 `bridge_code`。
@@ -111,13 +111,13 @@ S2 给每个挂载的 DSH 工具绑定的 capability 探针是
      `error_code is SANDBOX_NOT_ASSEMBLED` → `TOOL_SANDBOX_NOT_ASSEMBLED`，
      其余 → `TOOL_SANDBOX_DENIED`，用 `dataclasses.replace` 写入 `bridge_code`。
 
-### 4.6 `src/octop/infra/dsh/tools/guardrail.py`
+### 4.6 `src/happyclaw/infra/dsh/tools/guardrail.py`
 - 删除 `_read_only_capability`。
 - `build_read_only_guardrail` 增加必填关键字参数 `capability: CapabilityProbe`，
   传给 `ToolGuardrail(capability=capability, ...)`。
 - 其余风险/审批逻辑不动。
 
-### 4.7 `src/octop/infra/dsh/tools/catalog.py`
+### 4.7 `src/happyclaw/infra/dsh/tools/catalog.py`
 - `build_dsh_plugin_tools` 新增可选参数：
   `sandbox_root: str | Path | None = None`、
   `capability_declarations: Mapping[str, Mapping[str, Iterable[str]]] | None = None`、
@@ -131,10 +131,10 @@ S2 给每个挂载的 DSH 工具绑定的 capability 探针是
   传给 `build_read_only_guardrail(capability=...)`，把 `.state` 记入 build。
 - 组装失败仍然整体兜底成 `discovery_failed`（不变）。
 
-### 4.8 `src/octop/infra/dsh/tools/__init__.py`
+### 4.8 `src/happyclaw/infra/dsh/tools/__init__.py`
 - 导出 `ENV_SANDBOX_ABSENCE`、`build_capability_probe`。
 
-### 4.9 `src/octop/infra/agents/manager.py`
+### 4.9 `src/happyclaw/infra/agents/manager.py`
 - `_dsh_plugin_tools`：解析 agent 工作区（`workspace_for_agent_row`，try/except），
   将 `sandbox_root` 与 `sandbox_absence=os.environ.get("OCTOP_DSH_SANDBOX_ABSENCE")`
   传给 `build_dsh_plugin_tools`。开关、provider 注入、HITL 接线均不动。

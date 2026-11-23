@@ -5,20 +5,20 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from octop.infra.agents.plugins.manager import PLUGINS_ENABLED, PLUGINS_REVISION, PluginManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.control_files import ControlFileRepo
-from octop.infra.db.services import build_shared_services
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.agents.plugins.manager import PLUGINS_ENABLED, PLUGINS_REVISION, PluginManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.control_files import ControlFileRepo
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def _services(tmp_path: Path):
-    from octop.config import OctopConfig
+    from happyclaw.config import HappyclawConfig
 
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
 
 
 def _plugin(root: Path, plugin_id: str, body: str) -> None:

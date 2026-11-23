@@ -13,19 +13,19 @@ HappyClaw 单人版启动后即绑定本机使用者：没有注册、登录、�
 本地版安装后自动注册官方 CLI 到 PATH（`/usr/local/bin/octop` → `octop-cli`），SSH 进飞牛即可使用全部官方管理命令（以 root 或 octop-native 身份执行最顺）：
 
 ```bash
-octop --help            # 官方 CLI 全部子命令
-octop version
-octop provider list     # 模型 provider
-octop agent list        # 专家/Agent
-octop skills --help     # 技能管理
-octop backup --help     # 备份/恢复
+happyclaw --help            # 官方 CLI 全部子命令
+happyclaw version
+happyclaw provider list     # 模型 provider
+happyclaw agent list        # 专家/Agent
+happyclaw skills --help     # 技能管理
+happyclaw backup --help     # 备份/恢复
 ```
 
-> `octop user` 系列属于旧版多用户兼容命令，单人版不再需要账号管理，`octop user passwd` 也不再是改密入口。
+> `happyclaw user` 系列属于旧版多用户兼容命令，单人版不再需要账号管理，`happyclaw user passwd` 也不再是改密入口。
 
 > 本地版的系统账户 `octop-native` 已锁定（`passwd -l`），仅作包内服务身份使用，不能登录；它需要的 `/etc/sudoers.d/octop-native`（`NOPASSWD: ALL`）保持不变。
 
-> 注意：不要手动执行 `octop run`（会与飞牛应用中心托管的服务实例抢 8089 端口）；Web 服务一律由应用中心启停。
+> 注意：不要手动执行 `happyclaw run`（会与飞牛应用中心托管的服务实例抢 8089 端口）；Web 服务一律由应用中心启停。
 
 ## 两种安装包
 
@@ -75,7 +75,7 @@ fnos/
     │   ├── privilege       # 权限声明（root，用于 sudo / 远程桌面等）
     │   └── resource        # data-share + usr-local-linker
     ├── app/
-    │   ├── bin/octop       # 启动器（复用飞牛 Python 3.12，启动 octop init/run）
+    │   ├── bin/octop       # 启动器（复用飞牛 Python 3.12，启动 happyclaw init/run）
     │   ├── wizard/config.template   # 「设置」窗口表单模板（渲染当前用户名后落到已安装包 wizard/config）
     │   └── ui/             # 桌面图标入口
     └── wizard/             # 安装/配置/卸载/升级向导

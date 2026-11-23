@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 from langgraph.prebuilt.tool_node import ToolCallRequest
 
-from octop.infra.agents.middleware import browser_profile
+from happyclaw.infra.agents.middleware import browser_profile
 
 
 def _request(name: str, args: dict[str, object]) -> ToolCallRequest:

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.skills.skillhub_common import skill_market_origin, skillset_origin
-from octop.infra.skills.skillhub_market import SkillHubMarketError, _resolve_host
+from happyclaw.infra.skills.skillhub_common import skill_market_origin, skillset_origin
+from happyclaw.infra.skills.skillhub_market import SkillHubMarketError, _resolve_host
 
 
 def test_unset_origin_is_the_public_host(monkeypatch: pytest.MonkeyPatch) -> None:

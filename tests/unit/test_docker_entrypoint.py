@@ -27,7 +27,7 @@ def _bash_path(path: Path) -> str:
 
 
 def _source_helpers() -> str:
-    return f'OCTOP_ENTRYPOINT_LIB=1; source "{_bash_path(ENTRYPOINT)}"'
+    return f'HAPPYCLAW_ENTRYPOINT_LIB=1; source "{_bash_path(ENTRYPOINT)}"'
 
 
 def _bash(script: str, *, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -67,7 +67,19 @@ exit 0
 
 
 def _init_marker(tmp_path: Path) -> Path:
-    return tmp_path / "data" / ".octop" / ".initialized"
+    return tmp_path / "data" / ".happyclaw" / ".initialized"
+
+
+def _posix_path(path: Path) -> str:
+    """MSYS spelling of a Windows path (drive letter to /c form)."""
+    text = path.resolve().as_posix()
+    return "/" + text[0].lower() + text[2:]
+
+
+def _posix_path_list(value: str) -> str:
+    """Rewrite every Windows entry of a PATH into the MSYS form."""
+    parts = [part for part in value.split(";") if part.strip()]
+    return ":".join(_posix_path(Path(part)) if "\\" in part or ":" in part[:2] else part for part in parts)
 
 
 def _run_entrypoint(
@@ -81,7 +93,7 @@ def _run_entrypoint(
     home = tmp_path / "data"
     stub_dir = tmp_path / "stub-bin"
     stub_dir.mkdir(exist_ok=True)
-    stub = stub_dir / "octop"
+    stub = stub_dir / "happyclaw"
     if not stub.exists():
         stub.write_text(_STUB_OCTOP, encoding="utf-8", newline="\n")
         stub.chmod(0o755)
@@ -91,8 +103,10 @@ def _run_entrypoint(
     env.update(
         {
             "HOME": str(home),
-            "OCTOP_HOME": str(home / ".octop"),
-            "PATH": str(stub_dir) + os.pathsep + env.get("PATH", ""),
+            "HAPPYCLAW_HOME": str(home / ".happyclaw"),
+            # MSYS resolves POSIX-style PATH entries; a Windows path here leaves the
+            # stub unreachable and the entrypoint reports "command not found".
+            "PATH": _posix_path(stub_dir) + ":" + _posix_path_list(env.get("PATH", "")),
             "OCTOP_STUB_LOG": str(log),
             "OCTOP_PORT": "8088",
         }
@@ -117,13 +131,13 @@ def test_entrypoint_restart_skips_init_for_external_db(tmp_path: Path) -> None:
     """Issue #1866: with PostgreSQL there is no octop.db; a restart must not re-run init."""
     pg_env = {
         "OCTOP_DATABASE_DRIVER": "postgresql",
-        "OCTOP_DATABASE_URL": "postgresql://octop:octop@postgres:5432/octop",
+        "HAPPYCLAW_DATABASE_URL": "postgresql://octop:octop@postgres:5432/octop",
     }
     first, calls = _run_entrypoint(tmp_path, extra_env=pg_env)
     assert first.returncode == 0, first.stderr
     assert any(call.startswith("init ") for call in calls), calls
     assert any(call.startswith("run --host") for call in calls), calls
-    assert not (tmp_path / "data" / ".octop" / "octop.db").exists()
+    assert not (tmp_path / "data" / ".happyclaw" / "octop.db").exists()
     assert _init_marker(tmp_path).is_file(), first.stdout
 
     second, calls = _run_entrypoint(tmp_path, extra_env=pg_env)
@@ -135,7 +149,7 @@ def test_entrypoint_restart_skips_init_for_external_db(tmp_path: Path) -> None:
 @bash_only
 def test_entrypoint_sqlite_install_skips_init_without_marker(tmp_path: Path) -> None:
     """Backward compat: an existing octop.db still short-circuits the guard."""
-    octop_home = tmp_path / "data" / ".octop"
+    octop_home = tmp_path / "data" / ".happyclaw"
     octop_home.mkdir(parents=True)
     (octop_home / "octop.db").write_text("", encoding="utf-8")
 
@@ -150,7 +164,7 @@ def test_entrypoint_writes_no_credentials_on_first_boot(tmp_path: Path) -> None:
     """Single-user mode creates no account, so there is nothing to write to disk."""
     result, calls = _run_entrypoint(tmp_path)
     assert result.returncode == 0, result.stderr
-    octop_home = tmp_path / "data" / ".octop"
+    octop_home = tmp_path / "data" / ".happyclaw"
     assert not (octop_home / "credential.txt").exists()
     assert not (octop_home / "octop-login.txt").exists()
     init_call = next(call for call in calls if call.startswith("init"))
@@ -225,7 +239,7 @@ def test_entrypoint_arm_prepare_skips_non_arm() -> None:
 def test_init_skip_message_still_marked_in_init_command() -> None:
     """Legacy admin bootstraps (fnOS) stay idempotent; ``octop init`` keeps the marker."""
     marker_text = "already exists, skipping"
-    init_cmd = REPO / "src" / "octop" / "cli" / "commands" / "init.py"
+    init_cmd = REPO / "src" / "happyclaw" / "cli" / "commands" / "init.py"
     assert marker_text in init_cmd.read_text(encoding="utf-8")
 
 

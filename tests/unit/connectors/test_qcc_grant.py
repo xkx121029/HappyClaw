@@ -9,14 +9,14 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.connectors import qcc
-from octop.infra.connectors.service import ConnectorService
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.connectors import ConnectorRepo
-from octop.infra.db.repos.secrets import SecretRepo
-from octop.infra.db.repos.settings import SettingsRepo
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.connectors import qcc
+from happyclaw.infra.connectors.service import ConnectorService
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.connectors import ConnectorRepo
+from happyclaw.infra.db.repos.secrets import SecretRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
 
 
 def service(pool: SqlitePool, repo: ConnectorRepo | None = None) -> ConnectorService:
@@ -24,7 +24,7 @@ def service(pool: SqlitePool, repo: ConnectorRepo | None = None) -> ConnectorSer
         repo=repo or ConnectorRepo(pool),
         secret_repo=SecretRepo(pool),
         settings_repo=SettingsRepo(pool),
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
 
 
@@ -267,7 +267,7 @@ async def test_legacy_key_does_not_refresh_or_revoke(grant, monkeypatch):
     _, repo, svc = grant
     refresh = AsyncMock()
     revoke = AsyncMock()
-    monkeypatch.setattr("octop.infra.connectors.service.refresh_oauth_credentials", refresh)
+    monkeypatch.setattr("happyclaw.infra.connectors.service.refresh_oauth_credentials", refresh)
     monkeypatch.setattr(qcc, "revoke", revoke)
     error = httpx.HTTPStatusError(
         "unauthorized",

@@ -8,7 +8,7 @@
 # Usage:
 #   bash desktop/portable/package.sh                # host platform (online install)
 #   bash desktop/portable/package.sh darwin-arm64
-#   OCTOP_GREEN_OFFLINE=1 bash desktop/portable/package.sh   # require local wheels
+#   HAPPYCLAW_GREEN_OFFLINE=1 bash desktop/portable/package.sh   # require local wheels
 #
 # Layout of each zip:
 #   Octop-<plat>/
@@ -34,8 +34,8 @@ build_octop_wheel() {
   mkdir -p "$wheel_dir"
   # Drop previous local octop wheels so we pick the fresh build.
   find "$wheel_dir" -maxdepth 1 -type f -name 'octop-*.whl' -delete 2>/dev/null || true
-  if [[ ! -f "${REPO_ROOT}/src/octop/dashboard/index.html" ]]; then
-    echo "[package] WARNING: dashboard not built (src/octop/dashboard/index.html missing)." >&2
+  if [[ ! -f "${REPO_ROOT}/src/happyclaw/dashboard/index.html" ]]; then
+    echo "[package] WARNING: dashboard not built (src/happyclaw/dashboard/index.html missing)." >&2
     echo "  Run: make build-frontend" >&2
   fi
   echo "[package] building octop wheel → ${wheel_dir}" >&2
@@ -182,9 +182,9 @@ assemble_one() {
     echo "[package] ${plat}: cross-assemble from ${host} (binary wheels only)" >&2
   fi
 
-  if [[ "${OCTOP_GREEN_OFFLINE:-0}" == "1" ]]; then
+  if [[ "${HAPPYCLAW_GREEN_OFFLINE:-0}" == "1" ]]; then
     if ! wheel_cache_usable "$wheel_dir"; then
-      echo "[package] OCTOP_GREEN_OFFLINE=1 but wheels cache incomplete (requires uv==${GREEN_UV_VERSION}): ${wheel_dir}" >&2
+      echo "[package] HAPPYCLAW_GREEN_OFFLINE=1 but wheels cache incomplete (requires uv==${GREEN_UV_VERSION}): ${wheel_dir}" >&2
       echo "  Run: bash desktop/portable/vendor-wheels.sh ${plat}" >&2
       exit 1
     fi

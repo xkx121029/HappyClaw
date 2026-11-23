@@ -10,10 +10,10 @@ from typing import Any
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.voice import realtime
-from octop.infra.voice.manager import VoiceManager
-from octop.infra.voice.realtime import RealtimeEvent
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.voice import realtime
+from happyclaw.infra.voice.manager import VoiceManager
+from happyclaw.infra.voice.realtime import RealtimeEvent
 from tests.support.app import octop_client
 from tests.support.auth import auth_header, bootstrap_admin
 from tests.support.http import ws_connect, ws_token
@@ -64,7 +64,7 @@ class FakeSession:
         self,
         frames: list[RealtimeEvent],
         *,
-        connect_error: OctopError | None = None,
+        connect_error: HappyclawError | None = None,
     ) -> None:
         self._frames = frames
         self._connect_error = connect_error
@@ -96,7 +96,7 @@ def _install_fake_session(
     monkeypatch: pytest.MonkeyPatch,
     frames: list[RealtimeEvent],
     *,
-    connect_error: OctopError | None = None,
+    connect_error: HappyclawError | None = None,
 ) -> FakeSession:
     session = FakeSession(frames, connect_error=connect_error)
     monkeypatch.setattr(realtime, "open_session", lambda _config: session)
@@ -165,7 +165,7 @@ async def test_upstream_handshake_failure_is_reported(
     _install_fake_session(
         monkeypatch,
         [],
-        connect_error=OctopError(
+        connect_error=HappyclawError(
             ErrorCode.VOICE_REALTIME_UNAVAILABLE,
             "handshake failed",
             details={"tencent_code": 4003},

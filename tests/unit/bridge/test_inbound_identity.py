@@ -9,12 +9,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.infra.bridge.ids import PROTOCOL_VERSION
-from octop.infra.bridge.manager import BridgeManager, observe_ws_client_host
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.bridge_connections import BridgeConnectionRepo
-from octop.infra.db.repos.users import UserRepo
+from happyclaw.infra.bridge.ids import PROTOCOL_VERSION
+from happyclaw.infra.bridge.manager import BridgeManager, observe_ws_client_host
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRepo
+from happyclaw.infra.db.repos.users import UserRepo
 
 
 class _HoldSocket:

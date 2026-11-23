@@ -23,13 +23,13 @@ const DASHBOARD_ROOT = resolve(sep, "root", "dashboard");
 
 test("resolveOctopHome prefers inherited non-empty value", () => {
   assert.equal(
-    resolveOctopHome({ OCTOP_HOME: " /data/octop " }, {}, "/home/u"),
+    resolveOctopHome({ HAPPYCLAW_HOME: " /data/octop " }, {}, "/home/u"),
     "/data/octop",
   );
 });
 
 test("resolveOctopHome falls back to login shell then ~/.octop", () => {
-  assert.equal(resolveOctopHome({}, { OCTOP_HOME: "/from/shell" }, "/home/u"), "/from/shell");
+  assert.equal(resolveOctopHome({}, { HAPPYCLAW_HOME: "/from/shell" }, "/home/u"), "/from/shell");
   assert.equal(resolveOctopHome({}, {}, "/home/u"), join("/home/u", ".octop"));
 });
 

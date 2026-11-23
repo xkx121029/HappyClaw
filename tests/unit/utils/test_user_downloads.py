@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.infra.utils.user_downloads import (
+from happyclaw.infra.utils.user_downloads import (
     is_local_dashboard_request,
     request_hostname,
     sanitize_download_filename,

@@ -10,7 +10,7 @@ from happyclaw_gateway.models import (
     TextContent,
 )
 
-from octop.infra.gateway.process.harness_request import build_content_from_message
+from happyclaw.infra.gateway.process.harness_request import build_content_from_message
 
 
 @pytest.mark.asyncio

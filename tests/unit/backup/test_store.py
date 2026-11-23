@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.backup.store import (
+from happyclaw.infra.backup.store import (
     BackupContentFlags,
     delete_backup_file,
     is_auto_backup_filename,
@@ -18,8 +18,8 @@ from octop.infra.backup.store import (
     read_backup_file,
     write_backup_file,
 )
-from octop.infra.errors import OctopError
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.errors import HappyclawError
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def test_backups_dir_paths(tmp_path: Path) -> None:
@@ -42,9 +42,9 @@ def test_store_roundtrip(tmp_path: Path) -> None:
 
 
 def test_reject_unsafe_filename() -> None:
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         normalize_backup_filename("../escape.tar.gz")
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         normalize_backup_filename("bad.zip")
 
 
@@ -116,10 +116,10 @@ def test_prune_auto_backups_keep_zero_deletes_all_auto(tmp_path: Path) -> None:
 
 
 def test_peek_backup_contents_reads_manifest(tmp_path: Path) -> None:
-    from octop.config import DatabaseConfig
-    from octop.infra.backup.system_archive import create_system_backup
-    from octop.infra.db.migrate import run_migrations
-    from octop.infra.db.pool import SqlitePool
+    from happyclaw.config import DatabaseConfig
+    from happyclaw.infra.backup.system_archive import create_system_backup
+    from happyclaw.infra.db.migrate import run_migrations
+    from happyclaw.infra.db.pool import SqlitePool
 
     layout = PathLayout(tmp_path / ".octop")
     layout.root.mkdir()

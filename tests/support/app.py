@@ -1,4 +1,4 @@
-"""OctopServer + ASGI client lifecycle for integration tests."""
+"""HappyclawServer + ASGI client lifecycle for integration tests."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ from typing import Any
 
 import httpx
 
-from octop.api.app import build_app
-from octop.config import DatabaseConfig, load_config
-from octop.infra.db.rebind import persist_database_config
-from octop.infra.server import OctopServer
+from happyclaw.api.app import build_app
+from happyclaw.config import DatabaseConfig, load_config
+from happyclaw.infra.db.rebind import persist_database_config
+from happyclaw.infra.server import HappyclawServer
 from tests.support.harness import patch_harness
 
 
@@ -41,7 +41,7 @@ def write_octop_config(home: Path, **overrides: object) -> None:
     cfg_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-async def ensure_control_plane_bound(srv: OctopServer) -> None:
+async def ensure_control_plane_bound(srv: HappyclawServer) -> None:
     """Bind default SQLite when greenfield start deferred the control-plane DB."""
     if srv.database_bound:
         return
@@ -56,8 +56,8 @@ async def octop_client(
     fake_agent: Any | None = None,
     patch_llm: bool = True,
     bind_database: bool = True,
-) -> AsyncIterator[tuple[httpx.AsyncClient, OctopServer]]:
-    """Start OctopServer, yield ``(httpx client, server)``, then stop.
+) -> AsyncIterator[tuple[httpx.AsyncClient, HappyclawServer]]:
+    """Start HappyclawServer, yield ``(httpx client, server)``, then stop.
 
     Greenfield starts defer the control-plane DB until ``/setup/database``.
     Most tests set ``bind_database=True`` (default) to bind SQLite immediately.
@@ -66,7 +66,7 @@ async def octop_client(
     ctx = patch_harness(fake_agent) if patch_llm else nullcontext(fake_agent)
     with ctx:
         seed_cached_general_assistant(home)
-        srv = OctopServer(home=home)
+        srv = HappyclawServer(home=home)
         await srv.start()
         if bind_database and not srv.database_bound:
             await ensure_control_plane_bound(srv)

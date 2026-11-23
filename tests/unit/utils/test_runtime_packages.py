@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-from octop.infra.utils import runtime_packages as mod
+from happyclaw.infra.utils import runtime_packages as mod
 
 
 def test_find_uv_binary_from_path(monkeypatch) -> None:

@@ -8,13 +8,13 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.backup.snapshot import (
+from happyclaw.infra.backup.snapshot import (
     capture_jwt_secret_from_pool,
     restore_jwt_secret_into_pool,
     snapshot_sqlite_file,
 )
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Windows disallows '?' in path names")

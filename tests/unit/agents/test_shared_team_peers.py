@@ -12,7 +12,7 @@ import pytest
 from happyclaw_harness.config import HarnessAgentConfig, ModelConfig, ProviderConfig
 from happyclaw_harness.manager import HarnessAgentManager
 
-from octop.infra.agents.teams.team_manager import wire_shared_member_peers
+from happyclaw.infra.agents.teams.team_manager import wire_shared_member_peers
 
 
 def _config(

@@ -4,7 +4,7 @@ import logging
 
 from langchain_core.messages import ToolMessage
 
-from octop.infra.utils.turn_failure import (
+from happyclaw.infra.utils.turn_failure import (
     current_turn_model,
     iter_failed_tool_results,
     log_failed_tool_results,
@@ -14,7 +14,7 @@ from octop.infra.utils.turn_failure import (
 
 
 def test_log_turn_failure_includes_kind_and_ids(caplog: logging.LogCaptureFixture) -> None:
-    with caplog.at_level(logging.ERROR, logger="octop.infra.utils.turn_failure"):
+    with caplog.at_level(logging.ERROR, logger="happyclaw.infra.utils.turn_failure"):
         log_turn_failure(
             "model_retry",
             detail="Error code: 422 Check open ai req parameter error",
@@ -68,7 +68,7 @@ def test_log_failed_tool_results_is_warning(caplog: logging.LogCaptureFixture) -
         "type": "tool_result",
         "messages": [{"name": "ls", "status": "error", "content": "permission denied"}],
     }
-    with caplog.at_level(logging.WARNING, logger="octop.infra.utils.turn_failure"):
+    with caplog.at_level(logging.WARNING, logger="happyclaw.infra.utils.turn_failure"):
         log_failed_tool_results(chunk, agent_id="ag_2", thread_id="th_3")
     assert "turn failure kind=tool" in caplog.text
     assert "agent=ag_2" in caplog.text
@@ -92,7 +92,7 @@ def test_log_failed_tool_results_skips_replay_and_history(
         ],
     }
     seen: set[str] = set()
-    with caplog.at_level(logging.WARNING, logger="octop.infra.utils.turn_failure"):
+    with caplog.at_level(logging.WARNING, logger="happyclaw.infra.utils.turn_failure"):
         log_failed_tool_results(chunk, agent_id="ag", seen=seen, live=False)
         log_failed_tool_results(chunk, agent_id="ag", seen=seen, live=True)
         log_failed_tool_results(chunk, agent_id="ag", seen=seen, live=True)

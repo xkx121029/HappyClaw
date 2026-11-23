@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from octop.infra.db.migrate import (
+from happyclaw.infra.db.migrate import (
     _NAV_PAGE_PERMISSIONS_FLAG,
     _PERSONALIZATION_TAB_PERMISSIONS,
     _PERSONALIZATION_TAB_PERMISSIONS_FLAG,
@@ -13,7 +13,7 @@ from octop.infra.db.migrate import (
     _grant_personalization_tab_permissions,
     run_migrations,
 )
-from octop.infra.db.pool import SqlitePool
+from happyclaw.infra.db.pool import SqlitePool
 
 
 def _perms(pool: SqlitePool, sql: str, params: tuple[object, ...]) -> list[str]:

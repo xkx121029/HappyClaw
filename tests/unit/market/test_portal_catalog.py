@@ -14,8 +14,8 @@ from urllib.error import HTTPError, URLError
 
 import pytest
 
-import octop.infra.market.http as market_http
-from octop.infra.market import (
+import happyclaw.infra.market.http as market_http
+from happyclaw.infra.market import (
     PortalMarketError,
     clear_market_cache,
     get_market_expert,

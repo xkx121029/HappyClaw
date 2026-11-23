@@ -4,17 +4,17 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import DatabaseConfig, OctopConfig
-from octop.infra.agents.memory.backend import memory_backend_from_agent_config, open_memory_kwargs
-from octop.infra.errors import OctopError
+from happyclaw.config import DatabaseConfig, HappyclawConfig
+from happyclaw.infra.agents.memory.backend import memory_backend_from_agent_config, open_memory_kwargs
+from happyclaw.infra.errors import HappyclawError
 
 
 def test_default_memory_backend_empty_on_sqlite_control_plane() -> None:
-    assert memory_backend_from_agent_config({}, octop_config=OctopConfig()) == {}
+    assert memory_backend_from_agent_config({}, octop_config=HappyclawConfig()) == {}
 
 
 def test_default_memory_backend_follows_postgresql_control_plane() -> None:
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         database=DatabaseConfig(
             driver="postgresql",
             host="127.0.0.1",
@@ -32,7 +32,7 @@ def test_default_memory_backend_follows_postgresql_control_plane() -> None:
 
 
 def test_explicit_sqlite_overrides_postgresql_control_plane() -> None:
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         database=DatabaseConfig(
             driver="postgresql",
             host="127.0.0.1",
@@ -55,7 +55,7 @@ def test_explicit_sqlite_overrides_postgresql_control_plane() -> None:
 def test_sqlite_explicit_uses_system_files_path(tmp_path: Path) -> None:
     out = memory_backend_from_agent_config(
         {"memory": {"backend": {"type": "sqlite"}}, "system_files_path": ".octop"},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
         workspace_dir=tmp_path,
     )
     assert Path(out["memory_backend"]["db_path"]) == tmp_path / ".octop" / "memory.sqlite"
@@ -64,13 +64,13 @@ def test_sqlite_explicit_uses_system_files_path(tmp_path: Path) -> None:
 def test_postgres_explicit_dsn() -> None:
     out = memory_backend_from_agent_config(
         {"memory": {"backend": {"type": "postgres", "dsn": "postgresql://a@b/c"}}},
-        octop_config=OctopConfig(),
+        octop_config=HappyclawConfig(),
     )
     assert out["memory_backend"] == {"type": "postgres", "dsn": "postgresql://a@b/c"}
 
 
 def test_postgres_use_control_plane_dsn() -> None:
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         database=DatabaseConfig(
             driver="postgresql",
             host="127.0.0.1",
@@ -89,15 +89,15 @@ def test_postgres_use_control_plane_dsn() -> None:
 
 
 def test_use_control_plane_dsn_requires_postgresql() -> None:
-    with pytest.raises(OctopError, match="control plane"):
+    with pytest.raises(HappyclawError, match="control plane"):
         memory_backend_from_agent_config(
             {"memory": {"backend": {"type": "postgres", "use_control_plane_dsn": True}}},
-            octop_config=OctopConfig(),
+            octop_config=HappyclawConfig(),
         )
 
 
 def test_open_memory_kwargs_follows_postgresql_control_plane(tmp_path: Path) -> None:
-    cfg = OctopConfig(
+    cfg = HappyclawConfig(
         database=DatabaseConfig(
             driver="postgresql",
             host="127.0.0.1",
@@ -119,7 +119,7 @@ def test_open_memory_kwargs_follows_postgresql_control_plane(tmp_path: Path) -> 
 
 
 def test_memory_db_path_prefers_existing_nested(tmp_path: Path) -> None:
-    from octop.api.common.memory_client import memory_db_path
+    from happyclaw.api.common.memory_client import memory_db_path
 
     nested = tmp_path / ".octop" / "memory.sqlite"
     nested.parent.mkdir(parents=True)
@@ -128,7 +128,7 @@ def test_memory_db_path_prefers_existing_nested(tmp_path: Path) -> None:
 
 
 def test_memory_db_path_legacy_when_only_root_exists(tmp_path: Path) -> None:
-    from octop.api.common.memory_client import memory_db_path
+    from happyclaw.api.common.memory_client import memory_db_path
 
     root = tmp_path / "memory.sqlite"
     root.write_text("", encoding="utf-8")
@@ -136,14 +136,14 @@ def test_memory_db_path_legacy_when_only_root_exists(tmp_path: Path) -> None:
 
 
 def test_memory_db_path_new_layout_signal_without_sqlite_yet(tmp_path: Path) -> None:
-    from octop.api.common.memory_client import memory_db_path
+    from happyclaw.api.common.memory_client import memory_db_path
 
     (tmp_path / ".octop" / "_builtin_skills").mkdir(parents=True)
     assert memory_db_path(tmp_path) == tmp_path / ".octop" / "memory.sqlite"
 
 
 def test_memory_db_path_empty_octop_dir_stays_legacy(tmp_path: Path) -> None:
-    from octop.api.common.memory_client import memory_db_path
+    from happyclaw.api.common.memory_client import memory_db_path
 
     (tmp_path / ".octop").mkdir()
     assert memory_db_path(tmp_path) == tmp_path / "memory.sqlite"

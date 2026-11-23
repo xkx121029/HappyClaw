@@ -85,7 +85,7 @@ async function fixture() {
     bin,
     "getent",
     `#!/bin/sh
-db="\${OCTOP_FAKE_PASSWD:?}"
+db="\${HAPPYCLAW_FAKE_PASSWD:?}"
 [ "$1" = "passwd" ] || exit 1
 if [ -n "$2" ]; then
   awk -F: -v name="$2" '$1 == name { print; found=1; exit } END { exit !found }' "$db"
@@ -113,7 +113,7 @@ awk -F: -v mode="$mode" -v key="$1" '
   mode == "u" && $1 == key { finish($3) }
   mode == "gn" && $1 == key { finish($1) }
   END { exit found ? 0 : 1 }
-' "$OCTOP_FAKE_PASSWD"
+' "$HAPPYCLAW_FAKE_PASSWD"
 `,
   );
   writeExe(
@@ -139,8 +139,8 @@ exec "$@"
     bin,
     "logname",
     `#!/bin/sh
-if [ -n "$OCTOP_FAKE_LOGNAME" ]; then
-  printf '%s\\n' "$OCTOP_FAKE_LOGNAME"
+if [ -n "$HAPPYCLAW_FAKE_LOGNAME" ]; then
+  printf '%s\\n' "$HAPPYCLAW_FAKE_LOGNAME"
   exit 0
 fi
 exit 1
@@ -150,7 +150,7 @@ exit 1
     bin,
     "gio",
     `#!/bin/sh
-printf '%s\\n' "$*" >> "$OCTOP_FAKE_GIO_LOG"
+printf '%s\\n' "$*" >> "$HAPPYCLAW_FAKE_GIO_LOG"
 exit 0
 `,
   );
@@ -184,10 +184,10 @@ function run(fx, body, env = {}) {
       HOME: fx.root,
       TMPDIR: process.env.TMPDIR ?? "/tmp",
       LANG: "C.UTF-8",
-      OCTOP_FAKE_PASSWD: fx.passwd,
-      OCTOP_FAKE_GIO_LOG: fx.gioLog,
-      OCTOP_SHORTCUT_LIB: libPath,
-      OCTOP_ENTRY: fx.entry,
+      HAPPYCLAW_FAKE_PASSWD: fx.passwd,
+      HAPPYCLAW_FAKE_GIO_LOG: fx.gioLog,
+      HAPPYCLAW_SHORTCUT_LIB: libPath,
+      HAPPYCLAW_ENTRY: fx.entry,
       ...env,
     },
     encoding: "utf8",
@@ -197,13 +197,13 @@ function run(fx, body, env = {}) {
 
 const place = `
 set -eu
-. "$OCTOP_SHORTCUT_LIB"
-octop_sync_desktop_shortcut "$OCTOP_ENTRY" octop.desktop
+. "$HAPPYCLAW_SHORTCUT_LIB"
+octop_sync_desktop_shortcut "$HAPPYCLAW_ENTRY" octop.desktop
 `;
 
 const removeIcons = `
 set -eu
-. "$OCTOP_SHORTCUT_LIB"
+. "$HAPPYCLAW_SHORTCUT_LIB"
 octop_remove_desktop_shortcut octop.desktop
 `;
 
@@ -270,12 +270,12 @@ test("Chinese desktop dir and xdg-user-dir are honored", { skip: !bashOk }, asyn
       "xdg-user-dir",
       `#!/bin/sh
 [ "$1" = "DESKTOP" ] || exit 1
-printf '%s\\n' "$OCTOP_FAKE_XDG_DESKTOP"
+printf '%s\\n' "$HAPPYCLAW_FAKE_XDG_DESKTOP"
 `,
     );
     await rm(join(home, ".local/share/octop/desktop-shortcut-created"));
     await rm(join(desk, "octop.desktop"));
-    run(fx, place, { SUDO_USER: "li", OCTOP_FAKE_XDG_DESKTOP: custom });
+    run(fx, place, { SUDO_USER: "li", HAPPYCLAW_FAKE_XDG_DESKTOP: custom });
     assert.equal(statSync(join(custom, "octop.desktop")).isFile(), true);
   } finally {
     await fx.cleanup();
@@ -296,7 +296,7 @@ test("root install without sudo user covers ordinary accounts only", { skip: !ba
       fx.passwd,
       account(alice, "alice", 1000) + account(bob, "bob", 1001) + account(svc, "svc", 999),
     );
-    run(fx, place, { SUDO_USER: "root", PKEXEC_UID: "", OCTOP_FAKE_LOGNAME: "" });
+    run(fx, place, { SUDO_USER: "root", PKEXEC_UID: "", HAPPYCLAW_FAKE_LOGNAME: "" });
     assert.equal(statSync(join(alice, "Desktop/octop.desktop")).isFile(), true);
     assert.equal(statSync(join(bob, "Desktop/octop.desktop")).isFile(), true);
     assert.equal(statSync(join(svc, "Desktop/octop.desktop"), { throwIfNoEntry: false }), undefined);
@@ -321,7 +321,7 @@ test("pkexec uid and logname select one account", { skip: !bashOk }, async () =>
 
     await rm(join(alice, "Desktop/octop.desktop"));
     await rm(join(alice, ".local/share/octop/desktop-shortcut-created"));
-    run(fx, place, { OCTOP_FAKE_LOGNAME: "bob" });
+    run(fx, place, { HAPPYCLAW_FAKE_LOGNAME: "bob" });
     assert.equal(statSync(join(bob, "Desktop/octop.desktop")).isFile(), true);
     assert.equal(statSync(join(alice, "Desktop/octop.desktop"), { throwIfNoEntry: false }), undefined);
   } finally {

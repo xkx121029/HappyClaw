@@ -123,7 +123,7 @@ $required = @(
     "LICENSE",
     "pyproject.toml",
     "uv.lock",
-    "src/octop/__init__.py",
+    "src/happyclaw/__init__.py",
     "docker/docker-compose.yml",
     "scripts/install.ps1",
     "scripts/install.sh",
@@ -196,7 +196,7 @@ catch {
 # ---------------------------------------------------------------------------
 # 5. 数据目录可写
 # ---------------------------------------------------------------------------
-$octopHome = $env:OCTOP_HOME
+$octopHome = $env:HAPPYCLAW_HOME
 if (-not $octopHome) { $octopHome = Join-Path $HOME ".octop" }
 if (Test-Path $octopHome) {
     try {

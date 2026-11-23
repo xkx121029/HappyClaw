@@ -13,8 +13,8 @@ import pytest
 from langchain_core.messages import HumanMessage
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
 
-from octop.api.routers.chat import history as history_mod
-from octop.api.routers.chat.serialize import (
+from happyclaw.api.routers.chat import history as history_mod
+from happyclaw.api.routers.chat.serialize import (
     HISTORY_DEFAULT_LIMIT,
     HISTORY_MAX_LIMIT,
     _clamp_history_limit,
@@ -22,14 +22,14 @@ from octop.api.routers.chat.serialize import (
     _load_checkpoint_messages,
     _slice_message_page,
 )
-from octop.infra.db.repos.thread_messages import (
+from happyclaw.infra.db.repos.thread_messages import (
     ThreadProjectionCandidate,
     ThreadProjectionSummary,
 )
-from octop.infra.db.repos.threads import ThreadRow
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.gateway.threads import thread_row_has_messages
-from octop.infra.gateway.ws import WS_CHANNEL_ID, WebSocketChannel, WebSocketHub
+from happyclaw.infra.db.repos.threads import ThreadRow
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.gateway.threads import thread_row_has_messages
+from happyclaw.infra.gateway.ws import WS_CHANNEL_ID, WebSocketChannel, WebSocketHub
 
 
 def test_clamp_history_limit() -> None:
@@ -537,7 +537,7 @@ async def test_delete_thread_rejects_active_turn() -> None:
     hub.mark_turn_active("thr_1")
     server, user = _delete_server(hub)
 
-    with pytest.raises(OctopError) as raised:
+    with pytest.raises(HappyclawError) as raised:
         await history_mod.delete_thread("agt_1", "thr_1", compact=None, user=user, server=server)
 
     assert raised.value.code is ErrorCode.THREAD_TURN_ACTIVE
@@ -621,7 +621,7 @@ async def test_turn_exception_clears_flag_so_delete_is_not_stuck() -> None:
 async def test_non_owner_cannot_change_shared_thread_settings(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.api.routers.chat.models import RenameThreadBody
+    from happyclaw.api.routers.chat.models import RenameThreadBody
 
     monkeypatch.setattr(history_mod, "require_agent_row", lambda *_a, **_k: MagicMock())
     server = MagicMock()
@@ -632,7 +632,7 @@ async def test_non_owner_cannot_change_shared_thread_settings(
     )
     body = RenameThreadBody(model_ref="prov/model")
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await history_mod.patch_thread(
             "agt_1",
             "thr",
@@ -676,8 +676,8 @@ def test_history_authors_keep_the_sender() -> None:
 async def test_shared_thread_hitl_resume_skips_user_filter(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.api.routers.chat import routes as routes_mod
-    from octop.api.routers.chat.models import HitlResumeBody
+    from happyclaw.api.routers.chat import routes as routes_mod
+    from happyclaw.api.routers.chat.models import HitlResumeBody
 
     row = MagicMock(contributed=True, user_id=1)
     monkeypatch.setattr(history_mod, "_require_thread", lambda *_a, **_k: row)

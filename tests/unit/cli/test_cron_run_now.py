@@ -10,22 +10,22 @@ from unittest.mock import MagicMock
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
-from octop.cli.support import embedded_ops, offline_ops
-from octop.config import OctopConfig
-from octop.infra.cron.manager import CronManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.utils.paths import PathLayout
+from happyclaw.cli.main import cli
+from happyclaw.cli.support import embedded_ops, offline_ops
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.cron.manager import CronManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.utils.paths import PathLayout
 
 
 @pytest.fixture
 def cron_runtime(tmp_path, monkeypatch):
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    services = build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
     repos = services.repos
     uid = repos.user_repo.create(username="owner", password_hash="x", role="user")
     repos.agent_repo.create(agent_id="agent-1", user_id=uid, name="test-agent")
@@ -64,7 +64,7 @@ def cron_runtime(tmp_path, monkeypatch):
     [
         None,
         RuntimeError("delivery failed"),
-        OctopError(ErrorCode.AGENT_NOT_RUNNING, "agent stopped"),
+        HappyclawError(ErrorCode.AGENT_NOT_RUNNING, "agent stopped"),
     ],
 )
 def test_cli_waits_for_delivery_and_bookkeeping(cron_runtime, error):

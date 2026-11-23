@@ -8,7 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from octop.infra.utils import process_resources
+from happyclaw.infra.utils import process_resources
 
 
 @pytest.mark.parametrize(

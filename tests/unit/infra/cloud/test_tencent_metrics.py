@@ -7,8 +7,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from octop.infra.cloud import tencent
-from octop.infra.cloud.tencent import CloudCredential, query_metrics
+from happyclaw.infra.cloud import tencent
+from happyclaw.infra.cloud.tencent import CloudCredential, query_metrics
 
 CST = timezone(timedelta(hours=8))
 

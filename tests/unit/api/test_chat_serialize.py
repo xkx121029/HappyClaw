@@ -6,8 +6,8 @@ import json
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
-from octop.api.routers.chat.serialize import _serialize_history_message
-from octop.api.routers.chat.sse import json_chunk_default
+from happyclaw.api.routers.chat.serialize import _serialize_history_message
+from happyclaw.api.routers.chat.sse import json_chunk_default
 
 
 def test_json_chunk_default_serializes_langchain_messages() -> None:

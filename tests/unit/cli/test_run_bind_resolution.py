@@ -9,8 +9,8 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.commands.run import _save_configfile_overrides, resolve_bind, run
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.cli.commands.run import _save_configfile_overrides, resolve_bind, run
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 @pytest.fixture
@@ -89,7 +89,7 @@ def _corrupt(text: str) -> str:
 
 def test_corrupt_config_raises_instead_of_silently_using_defaults(octop_home: Path) -> None:
     (octop_home / "config.json").write_text('{"bind_host": "0.0.0.0",}', encoding="utf-8")
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         resolve_bind(None, None)
     assert excinfo.value.code is ErrorCode.CONFIG_FILE_CORRUPT
 
@@ -100,7 +100,7 @@ def test_save_overrides_on_corrupt_config_preserves_bytes(octop_home: Path) -> N
         json.dumps({"bind_host": "0.0.0.0", "database": {"driver": "postgresql"}}, indent=2)
     )
     cfg.write_text(corrupt, encoding="utf-8")
-    with pytest.raises(OctopError) as excinfo:
+    with pytest.raises(HappyclawError) as excinfo:
         _save_configfile_overrides(None, 8088)
     assert excinfo.value.code is ErrorCode.CONFIG_FILE_CORRUPT
     assert cfg.read_text(encoding="utf-8") == corrupt
@@ -142,7 +142,7 @@ def test_run_cli_on_corrupt_config_refuses_and_preserves_file(octop_home: Path) 
     corrupt = _corrupt(cfg.read_text(encoding="utf-8"))
     cfg.write_text(corrupt, encoding="utf-8")
 
-    with patch("octop.cli.commands.run._run_uvicorn") as mocked:
+    with patch("happyclaw.cli.commands.run._run_uvicorn") as mocked:
         result = CliRunner().invoke(run, ["--port", "8088"])
 
     assert result.exit_code != 0

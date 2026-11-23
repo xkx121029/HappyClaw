@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.infra.setup.tls.challenge import ChallengeStore
+from happyclaw.infra.setup.tls.challenge import ChallengeStore
 
 
 def test_challenge_store_roundtrip():

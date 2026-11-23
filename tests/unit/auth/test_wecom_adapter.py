@@ -8,15 +8,15 @@ import httpx
 import jwt
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.auth.sso.crypto import encrypt_secret
-from octop.infra.auth.sso.providers.wecom import WeComAdapter
-from octop.infra.auth.sso.service import SsoService
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.users.manager import UserManager
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.auth.sso.crypto import encrypt_secret
+from happyclaw.infra.auth.sso.providers.wecom import WeComAdapter
+from happyclaw.infra.auth.sso.service import SsoService
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.users.manager import UserManager
+from happyclaw.infra.utils.paths import PathLayout
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def service(tmp_path):
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     return SsoService(services, UserManager(services))
 
 
@@ -102,7 +102,7 @@ def test_wecom_complete_login_reads_userid(service: SsoService) -> None:
         return real_client(*args, transport=httpx.MockTransport(handler), **kwargs)
 
     login_state = type("State", (), {})()
-    with patch("octop.infra.auth.sso.service.httpx.Client", side_effect=factory):
+    with patch("happyclaw.infra.auth.sso.service.httpx.Client", side_effect=factory):
         subject, claims = adapter.complete_login(
             "auth-code",
             row=row,
@@ -132,7 +132,7 @@ def test_wecom_missing_userid_is_invalid_token(service: SsoService) -> None:
 
     login_state = type("State", (), {})()
     with (
-        patch("octop.infra.auth.sso.service.httpx.Client", side_effect=factory),
+        patch("happyclaw.infra.auth.sso.service.httpx.Client", side_effect=factory),
         pytest.raises(jwt.InvalidTokenError),
     ):
         adapter.complete_login(

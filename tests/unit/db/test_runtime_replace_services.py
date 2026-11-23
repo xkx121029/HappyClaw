@@ -4,19 +4,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.cron.delivery import CronDeliveryService
-from octop.infra.cron.manager import CronManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.gateway.gateway import Gateway
-from octop.infra.proactive.scheduler import ProactiveCareScheduler
-from octop.infra.proactive.service import ProactiveCareService
-from octop.infra.server import AppRuntime
-from octop.infra.users.manager import UserManager
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.cron.delivery import CronDeliveryService
+from happyclaw.infra.cron.manager import CronManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.gateway.gateway import Gateway
+from happyclaw.infra.proactive.scheduler import ProactiveCareScheduler
+from happyclaw.infra.proactive.service import ProactiveCareService
+from happyclaw.infra.server import AppRuntime
+from happyclaw.infra.users.manager import UserManager
+from happyclaw.infra.utils.paths import PathLayout
 
 
 def _services(tmp_path: Path, name: str):
@@ -24,7 +24,7 @@ def _services(tmp_path: Path, name: str):
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    cfg = OctopConfig()
+    cfg = HappyclawConfig()
     return build_shared_services(db=db, paths=paths, config=cfg), cfg, paths
 
 
@@ -75,7 +75,7 @@ def test_replace_services_retargets_user_and_provider_repos(tmp_path: Path) -> N
 
 def test_rebind_module_delegates_retarget_to_app_runtime() -> None:
     """db.rebind must not own runtime private-field surgery."""
-    src = Path(__file__).resolve().parents[3] / "src/octop/infra/db/rebind.py"
+    src = Path(__file__).resolve().parents[3] / "src/happyclaw/infra/db/rebind.py"
     text = src.read_text(encoding="utf-8")
     assert "replace_services" in text
     assert "_retarget_runtime" not in text

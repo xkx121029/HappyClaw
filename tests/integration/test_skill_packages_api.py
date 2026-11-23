@@ -369,7 +369,7 @@ async def test_regular_user_cannot_push_to_another_users_package(
 
 
 async def test_import_skill_url_into_package(env: Any, monkeypatch: pytest.MonkeyPatch) -> None:
-    from octop.infra.skills import skills_hub
+    from happyclaw.infra.skills import skills_hub
 
     client, _server, auth = env
     package_id = (
@@ -439,9 +439,9 @@ async def test_delete_package_strips_agent_mounts(env_with_main_agent: Any) -> N
 async def test_create_package_from_skillhub_returns_skills_and_rejects_duplicate_name(
     env: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.api.routers import skill_packages
-    from octop.infra.agents.experts.skillhub_market import SkillHubSkillset
-    from octop.infra.skills.skill_package_from_skillhub import (
+    from happyclaw.api.routers import skill_packages
+    from happyclaw.infra.agents.experts.skillhub_market import SkillHubSkillset
+    from happyclaw.infra.skills.skill_package_from_skillhub import (
         create_package_from_skillhub as real_create,
     )
 
@@ -492,8 +492,8 @@ async def test_create_package_from_skillhub_returns_skills_and_rejects_duplicate
 async def test_create_package_from_skillhub_maps_skill_download_error(
     env: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.api.routers import skill_packages
-    from octop.infra.skills.skillhub_market import SkillHubMarketError
+    from happyclaw.api.routers import skill_packages
+    from happyclaw.infra.skills.skillhub_market import SkillHubMarketError
 
     client, _server, auth = env
 
@@ -541,7 +541,7 @@ async def test_create_package_skill_from_files_payload(env: Any) -> None:
     assert created.status_code == 200, created.text
     assert created.json()["slug"] == "zip-demo"
 
-    from octop.infra.skills.skill_package_store import SkillPackageStore
+    from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 
     store = SkillPackageStore(
         repo=server.services.skill_package_repo,
@@ -649,7 +649,7 @@ async def test_package_skill_tree_file_and_content_only_update(env: Any) -> None
     )
     assert updated.status_code == 200, updated.text
 
-    from octop.infra.skills.skill_package_store import SkillPackageStore
+    from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 
     skill_dir = (
         SkillPackageStore(
@@ -700,7 +700,7 @@ async def test_create_package_skill_files_overwrite_replaces_stale_siblings(env:
     )
     assert second.status_code == 200, second.text
 
-    from octop.infra.skills.skill_package_store import SkillPackageStore
+    from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 
     skill_dir = (
         SkillPackageStore(

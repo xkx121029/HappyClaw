@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.dsh.prompts import (
+from happyclaw.infra.dsh.prompts import (
     DuplicateSectionError,
     MalformedPromptVariableError,
     MultipleCompleteSectionsError,

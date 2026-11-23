@@ -37,6 +37,7 @@ jobs:
 
       - name: Upstream reference check
         run: make check-upstream
+        make check-env-compat
 
       - name: Type check
         run: make typecheck

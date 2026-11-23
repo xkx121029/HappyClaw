@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager, suppress
 from typing import Any
 from urllib.parse import urlencode
 
-from octop.api.routers.chat import trajectory as trajectory_mod
+from happyclaw.api.routers.chat import trajectory as trajectory_mod
 
 
 def _url(agent_id: str, thread_id: str, suffix: str = "") -> str:

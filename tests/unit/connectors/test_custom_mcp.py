@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.connectors.builder import build_mcp_server_configs_for_user, mcp_server_name
-from octop.infra.connectors.custom_mcp import (
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.connectors.builder import build_mcp_server_configs_for_user, mcp_server_name
+from happyclaw.infra.connectors.custom_mcp import (
     CUSTOM_MCP_KIND,
     enabled_harness_configs,
     extract_servers,
@@ -16,13 +16,13 @@ from octop.infra.connectors.custom_mcp import (
     normalize_server_spec,
     validate_servers_map,
 )
-from octop.infra.connectors.service import ConnectorService
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.connectors import ConnectorRepo
-from octop.infra.db.repos.secrets import SecretRepo
-from octop.infra.db.repos.settings import SettingsRepo
-from octop.infra.utils.ulid import new_ulid
+from happyclaw.infra.connectors.service import ConnectorService
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.connectors import ConnectorRepo
+from happyclaw.infra.db.repos.secrets import SecretRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.utils.ulid import new_ulid
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def svc(db: SqlitePool) -> ConnectorService:
         repo=ConnectorRepo(db),
         secret_repo=SecretRepo(db),
         settings_repo=SettingsRepo(db),
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
 
 
@@ -260,9 +260,9 @@ def test_shared_custom_name_collision_keeps_viewer_server_distinct(
 
 
 def test_rejects_public_http_and_allows_lan():
-    from octop.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
-    with pytest.raises(OctopError) as http_exc:
+    with pytest.raises(HappyclawError) as http_exc:
         normalize_server_spec(
             "bad",
             {"transport": "streamable_http", "url": "http://example.com/mcp"},
@@ -302,10 +302,10 @@ def test_allows_loopback_http_and_https():
 
 
 def test_mcp_url_invalid_error_code():
-    from octop.infra.connectors.custom_mcp import validate_mcp_http_url
-    from octop.infra.errors import ErrorCode, OctopError
+    from happyclaw.infra.connectors.custom_mcp import validate_mcp_http_url
+    from happyclaw.infra.errors import ErrorCode, HappyclawError
 
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         validate_mcp_http_url("ftp://example.com/mcp")
     assert exc.value.code is ErrorCode.CONNECTOR_MCP_URL_INVALID
     assert exc.value.details.get("reason") == "url must be http or https"
@@ -459,7 +459,7 @@ def test_build_mcp_configs_merges_enabled_custom(svc: ConnectorService, db: Sqli
         user_id=uid,
         agent_id="agent-1",
         agent_user_id=uid,
-        config=OctopConfig(),
+        config=HappyclawConfig(),
         log=False,
     )
     assert set(configs) == {"a"}
@@ -537,7 +537,7 @@ def test_list_default_open_mcp_server_names(svc: ConnectorService, db: SqlitePoo
         mcp_server_name=mcp_server_name("tencent-docs", iid),
         config_json='{"default_open": true}',
     )
-    from octop.infra.connectors.crypto import encrypt_credentials
+    from happyclaw.infra.connectors.crypto import encrypt_credentials
 
     blob = encrypt_credentials(svc._secret_repo, {"token": "t", "instance_id": iid})
     svc._repo.upsert_credentials(instance_id=iid, blob=blob)
@@ -594,7 +594,7 @@ async def test_ensure_fresh_custom_servers_marks_reauth_when_refresh_fails_expir
         resource="https://example.com/mcp",
     )
     with patch(
-        "octop.infra.connectors.service.refresh_custom_mcp_oauth",
+        "happyclaw.infra.connectors.service.refresh_custom_mcp_oauth",
         new_callable=AsyncMock,
         side_effect=ValueError("refresh failed"),
     ):
@@ -638,7 +638,7 @@ async def test_ensure_fresh_custom_servers_keeps_valid_token_when_refresh_fails(
         resource="https://example.com/mcp",
     )
     with patch(
-        "octop.infra.connectors.service.refresh_custom_mcp_oauth",
+        "happyclaw.infra.connectors.service.refresh_custom_mcp_oauth",
         new_callable=AsyncMock,
         side_effect=ValueError("refresh failed"),
     ):

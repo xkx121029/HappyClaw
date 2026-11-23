@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.auth.ldap.client import LdapIdentity, rdn_value
-from octop.infra.auth.ldap.config import (
+from happyclaw.infra.auth.ldap.client import LdapIdentity, rdn_value
+from happyclaw.infra.auth.ldap.config import (
     DEFAULT_DISPLAY_NAME_ATTRIBUTE,
     DEFAULT_EMAIL_ATTRIBUTE,
     DEFAULT_GROUP_ATTRIBUTE,
@@ -16,7 +16,7 @@ from octop.infra.auth.ldap.config import (
     config_from_row,
     merge_config,
 )
-from octop.infra.db.repos.sso import SsoProviderRow
+from happyclaw.infra.db.repos.sso import SsoProviderRow
 
 SECURE_URL = "ldaps://directory.example.org"
 PLAIN_URL = "ldap://directory.example.org"

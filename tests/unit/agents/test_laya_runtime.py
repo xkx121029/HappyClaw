@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.agents.settings.laya_runtime import (
+from happyclaw.infra.agents.settings.laya_runtime import (
     LAYA_ENDPOINT,
     LAYA_VERSION,
     LayaRuntime,
@@ -158,7 +158,7 @@ async def test_install_explains_missing_python(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
-        "octop.infra.agents.settings.laya_runtime.compatible_python",
+        "happyclaw.infra.agents.settings.laya_runtime.compatible_python",
         lambda: None,
     )
     runtime = LayaRuntime(

@@ -53,13 +53,13 @@ octop_wait_pids_gone() {
     return 1
 }
 
-# bin/octop 会 exec 成 python -m octop.cli.main run，命令行不再含启动器路径。
-# 用安装时写入的 OCTOP_INSTALL_MODE=fpk-native 识别本包服务进程。
+# bin/octop 会 exec 成 python -m happyclaw.cli.main run，命令行不再含启动器路径。
+# 用安装时写入的 HAPPYCLAW_INSTALL_MODE=fpk-native 识别本包服务进程。
 octop_fpk_native_run_pids() {
     local pid
-    for pid in $(pgrep -f -- 'octop.cli.main run' 2>/dev/null || true); do
+    for pid in $(pgrep -f -- 'happyclaw.cli.main run' 2>/dev/null || true); do
         [ -n "$pid" ] || continue
-        if tr '\0' '\n' < "/proc/${pid}/environ" 2>/dev/null | grep -qx 'OCTOP_INSTALL_MODE=fpk-native'; then
+        if tr '\0' '\n' < "/proc/${pid}/environ" 2>/dev/null | grep -qx 'HAPPYCLAW_INSTALL_MODE=fpk-native'; then
             printf '%s\n' "$pid"
         fi
     done
@@ -79,7 +79,7 @@ octop_signal_pids() {
 # 无参数：8088=Docker 版 + 8089=本地版（安装/卸载用）。
 # 有参数：只释放指定端口（本地版 stop 只清 8089，避免误伤 Docker 版）。
 # 仅清理：(1) 占用这些端口的进程；(2) 本安装目录下尚未 exec 的启动器；
-# (3) 带 OCTOP_INSTALL_MODE=fpk-native 的 `octop.cli.main run`（仅当本次
+# (3) 带 HAPPYCLAW_INSTALL_MODE=fpk-native 的 `happyclaw.cli.main run`（仅当本次
 # 要释放 8089 时）。不使用宽泛的 `pgrep -f octop`。
 # ---------------------------------------------------------------------------
 free_octop_ports() {
@@ -176,11 +176,11 @@ fix_ownership_and_perms() {
 # ---------------------------------------------------------------------------
 # 本地版 FPK 架构：build-fpk.sh 写入 cmd/fpk-arch（amd64 / arm64）。
 # 旧包没有该文件则跳过，避免升级路径误伤。
-# 测试可设 OCTOP_FPK_ARCH_FILE / OCTOP_FPK_HOST_ARCH。
+# 测试可设 HAPPYCLAW_FPK_ARCH_FILE / HAPPYCLAW_FPK_HOST_ARCH。
 # ---------------------------------------------------------------------------
 octop_host_fpk_arch() {
-    if [ -n "${OCTOP_FPK_HOST_ARCH:-}" ]; then
-        printf '%s' "$OCTOP_FPK_HOST_ARCH"
+    if [ -n "${HAPPYCLAW_FPK_HOST_ARCH:-}" ]; then
+        printf '%s' "$HAPPYCLAW_FPK_HOST_ARCH"
         return 0
     fi
     case "$(uname -m)" in
@@ -192,9 +192,9 @@ octop_host_fpk_arch() {
 
 octop_packed_fpk_arch() {
     local f here
-    if [ -n "${OCTOP_FPK_ARCH_FILE:-}" ]; then
-        [ -f "$OCTOP_FPK_ARCH_FILE" ] || return 1
-        tr -d '[:space:]' < "$OCTOP_FPK_ARCH_FILE"
+    if [ -n "${HAPPYCLAW_FPK_ARCH_FILE:-}" ]; then
+        [ -f "$HAPPYCLAW_FPK_ARCH_FILE" ] || return 1
+        tr -d '[:space:]' < "$HAPPYCLAW_FPK_ARCH_FILE"
         return 0
     fi
     here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -244,14 +244,14 @@ find_python312() {
 # ---------------------------------------------------------------------------
 # 复用飞牛已装的 Node.js（开发工具），供专家 shell / 技能 / npx 使用。
 # 不强制安装：找不到就保持 PATH 不变。已在 PATH 上则不改。
-# 测试可设 OCTOP_FNOS_NODE_BIN_DIRS（冒号分隔）。
+# 测试可设 HAPPYCLAW_FNOS_NODE_BIN_DIRS（冒号分隔）。
 # ---------------------------------------------------------------------------
 octop_fnos_node_candidate_dirs() {
     local d oldifs
-    if [ -n "${OCTOP_FNOS_NODE_BIN_DIRS:-}" ]; then
+    if [ -n "${HAPPYCLAW_FNOS_NODE_BIN_DIRS:-}" ]; then
         oldifs="$IFS"
         IFS=':'
-        for d in $OCTOP_FNOS_NODE_BIN_DIRS; do
+        for d in $HAPPYCLAW_FNOS_NODE_BIN_DIRS; do
             [ -n "$d" ] && printf '%s\n' "$d"
         done
         IFS="$oldifs"
@@ -493,7 +493,7 @@ octop_prepare_docker_persist() {
     mkdir -p "${data_dir}/.octop"
     octop_migrate_legacy_docker_data "$data_dir"
     octop_env_set "$env_file" TRIM_DATA_SHARE_PATHS "$data_dir"
-    octop_env_set "$env_file" OCTOP_DATA "$data_dir"
+    octop_env_set "$env_file" HAPPYCLAW_DATA "$data_dir"
     octop_persist_docker_env "$env_file"
     compose="$(dirname "$env_file")/docker-compose.yaml"
     octop_sync_fnos_compose "$compose" "$data_dir" "$env_file"

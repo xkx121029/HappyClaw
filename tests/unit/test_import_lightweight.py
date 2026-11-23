@@ -15,7 +15,7 @@ _HEAVY = ("langchain_core", "happyclaw_harness", "cryptography", "deepagents")
 # Cron manager legitimately imports ``cryptography`` (credential decryption), but
 # must never drag in the agent stack that binds /api/agents during boot.
 _AGENT_STACK = ("langchain_core", "happyclaw_harness", "deepagents")
-# ``octop.api.app`` (the boot-time app factory) must not pull the JWT stack;
+# ``happyclaw.api.app`` (the boot-time app factory) must not pull the JWT stack;
 # tokens defer ``jwt`` to first sign/decode call.
 _JWT_STACK = ("jwt", "cryptography")
 
@@ -59,30 +59,30 @@ def _environ_with_src() -> dict[str, str]:
 
 
 def test_gateway_package_import_is_lightweight() -> None:
-    heavy = _imports_heavy("import octop.infra.connectors.gateway")
+    heavy = _imports_heavy("import happyclaw.infra.connectors.gateway")
     assert heavy == [], f"gateway package pulled heavy modules at import: {heavy}"
 
 
 def test_wecom_creds_import_is_lightweight() -> None:
-    heavy = _imports_heavy("import octop.infra.connectors.gateway.wecom_creds")
+    heavy = _imports_heavy("import happyclaw.infra.connectors.gateway.wecom_creds")
     assert heavy == [], f"wecom_creds pulled heavy modules at import: {heavy}"
 
 
 def test_cron_manager_import_is_lightweight() -> None:
     """``_prepare_runtime`` imports CronManager; that must not pull the agent stack."""
-    heavy = _imports_heavy("import octop.infra.cron.manager", _AGENT_STACK)
+    heavy = _imports_heavy("import happyclaw.infra.cron.manager", _AGENT_STACK)
     assert heavy == [], f"cron manager pulled heavy modules at import: {heavy}"
 
 
 def test_cron_delivery_heavy_symbols_still_resolve() -> None:
     """Laziness must not break the symbols delivery uses at runtime."""
     code = """
-from octop.infra.cron.delivery import (
+from happyclaw.infra.cron.delivery import (
     CronDeliveryCommand,
     CronDeliveryService,
     command_from_row,
 )
-from octop.infra.cron.manager import CronCreateSpec, CronManager
+from happyclaw.infra.cron.manager import CronCreateSpec, CronManager
 assert callable(CronDeliveryService.deliver)
 assert callable(command_from_row)
 assert CronCreateSpec is not None and CronManager is not None
@@ -103,7 +103,7 @@ print("OK")
 def test_gateway_lazy_exports_still_resolve() -> None:
     """Laziness must not break the public API used by builder/service/server."""
     code = """
-from octop.infra.connectors.gateway import (
+from happyclaw.infra.connectors.gateway import (
     build_gateway_langchain_tools,
     handle_mcp_request,
     mcp_tools_for_kind,
@@ -129,15 +129,15 @@ print("OK")
 
 def test_api_app_import_is_jwt_free() -> None:
     """The boot-time app factory must not pull the JWT/cryptography stack."""
-    heavy = _imports_heavy("import octop.api.app", _JWT_STACK)
-    assert heavy == [], f"octop.api.app pulled jwt stack at import: {heavy}"
+    heavy = _imports_heavy("import happyclaw.api.app", _JWT_STACK)
+    assert heavy == [], f"happyclaw.api.app pulled jwt stack at import: {heavy}"
 
 
 def test_auth_tokens_lazy_jwt_still_roundtrips() -> None:
     """Deferral must not break sign/decode; ``jwt`` loads on first use."""
     code = """
 import sys
-from octop.infra.auth.tokens import sign_token, decode_token, InvalidToken, TokenExpired
+from happyclaw.infra.auth.tokens import sign_token, decode_token, InvalidToken, TokenExpired
 secret = b"k" * 32
 token = sign_token(secret, sub=1, uname="u", role="owner", purpose="access")
 payload = decode_token(secret, token)

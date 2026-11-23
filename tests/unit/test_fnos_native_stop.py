@@ -114,8 +114,8 @@ def test_native_main_stop_releases_listen_port() -> None:
     helpers = COMMON_SH.read_text(encoding="utf-8")
     assert "pgrep -P" in helpers
     assert "ss -ltnp" in helpers
-    assert "pgrep -f -- 'octop.cli.main run'" in helpers
-    assert "OCTOP_INSTALL_MODE=fpk-native" in helpers
+    assert "pgrep -f -- 'happyclaw.cli.main run'" in helpers
+    assert "HAPPYCLAW_INSTALL_MODE=fpk-native" in helpers
 
 
 def test_native_manifest_does_not_block_start_on_stale_port() -> None:
@@ -252,8 +252,8 @@ def test_native_main_stop_frees_port_after_wrapper_start(tmp_path: Path) -> None
         "TRIM_PKGVAR": str(pkgvar),
         "TRIM_DATA_SHARE_PATHS": str(data),
         "TRIM_TEMP_LOGFILE": str(pkgvar / "appcenter.log"),
-        "OCTOP_PORT": str(port),
-        "OCTOP_START_WAIT_SECS": "10",
+        "HAPPYCLAW_PORT": str(port),
+        "HAPPYCLAW_START_WAIT_SECS": "10",
     }
     start = subprocess.run(
         ["bash", str(cmd / "main"), "start"],
@@ -373,9 +373,9 @@ def test_native_main_start_term_cleans_unready_child(tmp_path: Path) -> None:
 
 @posix_only
 def test_octop_fpk_native_run_pids_and_sweep(tmp_path: Path) -> None:
-    env = {**os.environ, "OCTOP_INSTALL_MODE": "fpk-native"}
+    env = {**os.environ, "HAPPYCLAW_INSTALL_MODE": "fpk-native"}
     proc = subprocess.Popen(
-        ["python3", "-c", "import time; time.sleep(120)  # octop.cli.main run"],
+        ["python3", "-c", "import time; time.sleep(120)  # happyclaw.cli.main run"],
         env=env,
     )
     try:

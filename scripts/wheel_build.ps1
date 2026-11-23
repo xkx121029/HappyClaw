@@ -16,10 +16,10 @@ Pop-Location
 
 $indexHtml = Join-Path $DashboardDest "index.html"
 if (-not (Test-Path $indexHtml)) {
-    throw "Dashboard build did not produce src/octop/dashboard/index.html"
+    throw "Dashboard build did not produce src/happyclaw/dashboard/index.html"
 }
 
-Write-Host "[wheel_build] Dashboard ready at src/octop/dashboard/"
+Write-Host "[wheel_build] Dashboard ready at src/happyclaw/dashboard/"
 
 Write-Host "[wheel_build] Building wheel + sdist..."
 python -m pip install --quiet build

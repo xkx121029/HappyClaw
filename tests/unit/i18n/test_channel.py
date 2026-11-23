@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.i18n import channel_tool_hint_end, channel_tool_hint_start
+from happyclaw.i18n import channel_tool_hint_end, channel_tool_hint_start
 
 
 def test_channel_tool_hint_start_zh():

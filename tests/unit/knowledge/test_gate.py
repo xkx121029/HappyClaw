@@ -6,7 +6,7 @@ import logging
 
 import pytest
 
-from octop.infra.knowledge import gate
+from happyclaw.infra.knowledge import gate
 
 
 def test_capability_is_disabled_by_default(monkeypatch: pytest.MonkeyPatch) -> None:

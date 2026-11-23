@@ -227,7 +227,7 @@ jobs:
           NODE_ENV=production NODE_OPTIONS="--max-old-space-size=4096" npm run build
           cd ..
           echo "=== frontend output ==="
-          ls -la src/octop/dashboard | head -20
+          ls -la src/happyclaw/dashboard | head -20
           echo "=== build wheel ==="
           python3 -m pip install --quiet build
           python3 -m build --wheel
@@ -348,7 +348,7 @@ jobs:
           NODE_ENV=production NODE_OPTIONS="--max-old-space-size=4096" npm run build
           cd ..
           echo "=== frontend output ==="
-          ls -la src/octop/dashboard | head -20
+          ls -la src/happyclaw/dashboard | head -20
           echo "=== build wheel ==="
           python3 -m pip install --quiet build
           python3 -m build --wheel

@@ -6,15 +6,15 @@ import json
 
 import pytest
 
-from octop.infra.auth.mfa.service import MfaService
-from octop.infra.auth.mfa.settings import (
+from happyclaw.infra.auth.mfa.service import MfaService
+from happyclaw.infra.auth.mfa.settings import (
     SETTINGS_KEY,
     load_view,
     passkey_block_reason,
     passwordless_login_enabled,
     save_settings,
 )
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 class _Settings:
@@ -94,10 +94,10 @@ def test_passwordless_login_is_rejected_until_enabled() -> None:
         settings_repo = _Settings(None)
 
     svc = MfaService(_Services())  # type: ignore[arg-type]
-    with pytest.raises(OctopError) as options_exc:
+    with pytest.raises(HappyclawError) as options_exc:
         svc.passkey_login_options(origin="http://localhost:8080")
     assert options_exc.value.code is ErrorCode.WEBAUTHN_LOGIN_DISABLED
-    with pytest.raises(OctopError) as verify_exc:
+    with pytest.raises(HappyclawError) as verify_exc:
         svc.passkey_login_verify(
             credential={},
             origin="http://localhost:8080",

@@ -29,7 +29,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 访问 `http://localhost:8088`。单人模式不需要预置管理员密码，也不需要走设置向导：首次启动会初始化数据库并自动绑定本机使用者，打开页面直接进入工作台。
 
-> **从旧镜像升级：** 容器不再读取 `OCTOP_DEFAULT_PASSWORD`、`OCTOP_ADMIN_USERNAME`、`OCTOP_ADMIN_DISPLAY_NAME`，首次启动也不创建账号：只执行 `octop init --yes`（建目录 + 跑迁移），账号由服务启动时自动绑定的本机使用者承担。旧数据卷里的用户行全部保留，打开控制台就是该使用者。`credential.txt` 与 `octop-login.txt` 不再生成，旧镜像留下的这两个文件无害，可以删掉。
+> **从旧镜像升级：** 容器不再读取 `HAPPYCLAW_DEFAULT_PASSWORD`、`HAPPYCLAW_ADMIN_USERNAME`、`HAPPYCLAW_ADMIN_DISPLAY_NAME`，首次启动也不创建账号：只执行 `happyclaw init --yes`（建目录 + 跑迁移），账号由服务启动时自动绑定的本机使用者承担。旧数据卷里的用户行全部保留，打开控制台就是该使用者。`credential.txt` 与 `octop-login.txt` 不再生成，旧镜像留下的这两个文件无害，可以删掉。
 
 Compose 将多 agent 服务的文件描述符限制设为 65535。服务启动时也会在继承的 hard limit 内将 soft limit 提升至最多 65535，并记录实际限额。已有容器需重新创建才能应用 Compose 限额变化；仅重启不会改变容器的 hard limit。
 
@@ -46,7 +46,7 @@ docker run -d \
   octop:latest
 ```
 
-已发布标签：`ghcr.io/xkx121029/happyclaw:<version>` 和 `:latest` 是精简版。`:<version>-full` 和 `:full` 才带桌面、OCR 和本地向量。本地构建默认是完整版，精简版要加 `--build-arg OCTOP_IMAGE_VARIANT=lite`。镜像名取自运行 `docker-publish` 的仓库，因此要等该 workflow 在本仓跑完第一次，标签才可拉取；在那之前请本地构建。
+已发布标签：`ghcr.io/xkx121029/happyclaw:<version>` 和 `:latest` 是精简版。`:<version>-full` 和 `:full` 才带桌面、OCR 和本地向量。本地构建默认是完整版，精简版要加 `--build-arg HAPPYCLAW_IMAGE_VARIANT=lite`。镜像名取自运行 `docker-publish` 的仓库，因此要等该 workflow 在本仓跑完第一次，标签才可拉取；在那之前请本地构建。
 
 ### 国内镜像加速
 
@@ -65,10 +65,10 @@ bash docker/docker_build.sh
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `HOME` | `/data` | 必须为 `/data`，数据目录映射到 `~/.happyclaw` |
-| `OCTOP_PORT` | `8088` | HTTP 服务端口 |
-| `OCTOP_DATA` | `~/.happyclaw` | 宿主机数据目录（Compose 挂载到 `/data/.octop`） |
-| `OCTOP_DATABASE_URL` | — | PostgreSQL DSN（或其他 `OCTOP_DATABASE_*`，见 [configuration.md](../docs/configuration.md)） |
-| `OCTOP_DATABASE_DRIVER` | — | 通过环境变量覆盖时：`sqlite` \| `postgresql` |
+| `HAPPYCLAW_PORT` | `8088` | HTTP 服务端口 |
+| `HAPPYCLAW_DATA` | `~/.happyclaw` | 宿主机数据目录（Compose 挂载到 `/data/.octop`） |
+| `HAPPYCLAW_DATABASE_URL` | — | PostgreSQL DSN（或其他 `HAPPYCLAW_DATABASE_*`，见 [configuration.md](../docs/configuration.md)） |
+| `HAPPYCLAW_DATABASE_DRIVER` | — | 通过环境变量覆盖时：`sqlite` \| `postgresql` |
 | `OPENAI_API_KEY` | — | OpenAI 兼容 API Key |
 | `DASHSCOPE_API_KEY` | — | 阿里云通义千问 API Key |
 
@@ -95,7 +95,7 @@ Compose 可在 `docker/.env` 中配置上述变量。注意：`.env` 只参与 C
 - `docker run` 示例使用命名卷 `octop-data`
 - 首次启动：初始化运行目录与数据库，自动创建本机使用者；不需要密码、向导或 `credential.txt`
 - 升级：保留数据卷、重新构建镜像即可，数据库结构在启动时迁移
-- 备份：`docker exec -it octop octop backup create --include-chats`，归档保存在容器内，需 `docker cp` 取出
+- 备份：`docker exec -it octop happyclaw backup create --include-chats`，归档保存在容器内，需 `docker cp` 取出
 
 ### 健康检查
 
@@ -109,7 +109,7 @@ curl http://localhost:8088/api/health
 
 ```bash
 docker logs -f octop
-docker exec -it octop octop --version
+docker exec -it octop happyclaw --version
 docker compose -f docker/docker-compose.yml down
 docker compose -f docker/docker-compose.yml up -d --build
 ```

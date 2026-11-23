@@ -6,11 +6,11 @@
  * self-hosted build had no way to point the shell anywhere else. Both are now
  * configuration:
  *
- * - ``OCTOP_UPDATE_ENDPOINT``: catalog URL. Two response shapes are understood.
+ * - ``HAPPYCLAW_UPDATE_ENDPOINT``: catalog URL. Two response shapes are understood.
  *   A GitHub Releases API URL (``api.github.com/repos/<owner>/<repo>/releases``)
  *   is read as releases; anything else must answer the Octop ``/api/downloads``
  *   envelope.
- * - ``OCTOP_UPDATE_DOWNLOAD_ORIGINS``: comma-separated https URL prefixes an
+ * - ``HAPPYCLAW_UPDATE_DOWNLOAD_ORIGINS``: comma-separated https URL prefixes an
  *   installer may be downloaded from. Unset means "whatever the catalog address
  *   implies": the project's own release downloads, or the same ``owner/repo``
  *   when the endpoint names another repository.
@@ -23,8 +23,8 @@
 import { compareVersions, parseVersion } from "../supervisor/version";
 import type { ChannelRelease, DownloadManifest, PlatformKey } from "./update-coordinator";
 
-export const UPDATE_ENDPOINT_ENV = "OCTOP_UPDATE_ENDPOINT";
-export const UPDATE_DOWNLOAD_ORIGINS_ENV = "OCTOP_UPDATE_DOWNLOAD_ORIGINS";
+export const UPDATE_ENDPOINT_ENV = "HAPPYCLAW_UPDATE_ENDPOINT";
+export const UPDATE_DOWNLOAD_ORIGINS_ENV = "HAPPYCLAW_UPDATE_DOWNLOAD_ORIGINS";
 
 export const PROJECT_REPO = "xkx121029/HappyClaw";
 export const DEFAULT_UPDATE_ENDPOINT =
@@ -64,7 +64,7 @@ function githubRepo(parsed: URL): string | null {
 }
 
 /**
- * Download prefixes from ``OCTOP_UPDATE_DOWNLOAD_ORIGINS``. Each entry is
+ * Download prefixes from ``HAPPYCLAW_UPDATE_DOWNLOAD_ORIGINS``. Each entry is
  * normalised to end in ``/`` so a prefix can never match a look-alike host
  * (``https://dl.example.com`` must not admit ``https://dl.example.com.evil``).
  * Non-https and unparsable entries are dropped: an empty result means every

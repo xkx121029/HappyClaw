@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.control_files import ControlFileRepo, safe_relative_path
-from octop.infra.db.repos.profile_avatars import ProfileAvatarRepo
-from octop.infra.users.profile_avatar import KIND_USER
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.control_files import ControlFileRepo, safe_relative_path
+from happyclaw.infra.db.repos.profile_avatars import ProfileAvatarRepo
+from happyclaw.infra.users.profile_avatar import KIND_USER
 
 _PNG = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"

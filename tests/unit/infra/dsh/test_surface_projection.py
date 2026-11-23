@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.infra.dsh.session import EventType, LogRecord, project, surface_json
+from happyclaw.infra.dsh.session import EventType, LogRecord, project, surface_json
 
 
 def _records() -> list[LogRecord]:

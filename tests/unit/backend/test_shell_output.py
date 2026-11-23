@@ -9,7 +9,7 @@ from pathlib import Path
 
 from happyclaw_harness.backends.local_shell import HarnessLocalShellBackend
 
-from octop.infra.backend.shell_output import (
+from happyclaw.infra.backend.shell_output import (
     _ShellSubprocess,
     decode_child_output,
     install_shell_output_decoding,
@@ -141,7 +141,7 @@ def test_bwrap_module_run_uses_the_same_decoder() -> None:
 def test_skips_install_when_harness_already_decodes(monkeypatch) -> None:
     import happyclaw_harness.backends.local_shell as local_shell
 
-    import octop.infra.backend.shell_output as shell_output
+    import happyclaw.infra.backend.shell_output as shell_output
 
     monkeypatch.setattr(shell_output, "_INSTALLED", False)
     monkeypatch.setattr(local_shell, "decode_child_output", lambda data: data, raising=False)

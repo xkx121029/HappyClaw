@@ -10,8 +10,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langgraph.config import var_child_runnable_config
 
-from octop.config import CapabilitiesConfig, MobileCapabilities, OctopConfig
-from octop.infra.control.mobile.tools import build_mobile_tools
+from happyclaw.config import CapabilitiesConfig, MobileCapabilities, HappyclawConfig
+from happyclaw.infra.control.mobile.tools import build_mobile_tools
 
 _PNG_BYTES = b"\x89PNG\r\n\x1a\nfake-png-payload"
 
@@ -25,8 +25,8 @@ def _configurable(**kwargs: object):
         var_child_runnable_config.reset(token)
 
 
-def _enabled_config() -> OctopConfig:
-    return OctopConfig(
+def _enabled_config() -> HappyclawConfig:
+    return HappyclawConfig(
         capabilities=CapabilitiesConfig(
             mobile=MobileCapabilities(
                 enabled=True,
@@ -45,14 +45,14 @@ def _tool_by_name(tools: list, name: str):
 
 
 def test_build_mobile_tools_empty_when_disabled() -> None:
-    cfg = OctopConfig()
+    cfg = HappyclawConfig()
     tools = build_mobile_tools(cfg, user_repo=MagicMock())
     assert tools == []
 
 
 def test_build_mobile_tools_registers_when_adb_present() -> None:
     user_repo = MagicMock()
-    with patch("octop.infra.control.mobile.tools.find_adb", return_value="/adb"):
+    with patch("happyclaw.infra.control.mobile.tools.find_adb", return_value="/adb"):
         tools = build_mobile_tools(_enabled_config(), user_repo=user_repo)
     names = {t.name for t in tools}
     assert "mobile_screenshot" in names
@@ -64,12 +64,12 @@ def test_build_mobile_tools_registers_when_adb_present() -> None:
 async def test_mobile_tap_requires_permission() -> None:
     user_repo = MagicMock()
     user_repo.get.return_value = SimpleNamespace(is_admin=False, permissions=["browser"])
-    with patch("octop.infra.control.mobile.tools.find_adb", return_value="/adb"):
+    with patch("happyclaw.infra.control.mobile.tools.find_adb", return_value="/adb"):
         tools = build_mobile_tools(_enabled_config(), user_repo=user_repo)
     tap_tool = _tool_by_name(tools, "mobile_tap")
     with (
         _configurable(user="1", user_is_admin=False, locale="en"),
-        patch("octop.infra.control.mobile.tools.mobile_status") as status,
+        patch("happyclaw.infra.control.mobile.tools.mobile_status") as status,
     ):
         status.return_value = MagicMock(setup_state="ready", ok=True)
         out = await tap_tool.ainvoke({"x": 10, "y": 20})
@@ -80,20 +80,20 @@ async def test_mobile_tap_requires_permission() -> None:
 
 @pytest.mark.asyncio
 async def test_mobile_tap_success() -> None:
-    from octop.infra.control.mobile.agent_control import set_mobile_agent_control
+    from happyclaw.infra.control.mobile.agent_control import set_mobile_agent_control
 
     set_mobile_agent_control(enabled=True, device="emulator-5554")
     user_repo = MagicMock()
     user_repo.get.return_value = SimpleNamespace(is_admin=False, permissions=["mobile"])
-    with patch("octop.infra.control.mobile.tools.find_adb", return_value="/adb"):
+    with patch("happyclaw.infra.control.mobile.tools.find_adb", return_value="/adb"):
         tools = build_mobile_tools(_enabled_config(), user_repo=user_repo)
     tap_tool = _tool_by_name(tools, "mobile_tap")
     try:
         with (
             _configurable(user="1", user_is_admin=False, locale="en", agent_id="agent1"),
-            patch("octop.infra.control.mobile.tools.mobile_status") as status,
-            patch("octop.infra.control.mobile.tools.list_devices", return_value=["emulator-5554"]),
-            patch("octop.infra.control.mobile.tools.tap", return_value=True) as tap_fn,
+            patch("happyclaw.infra.control.mobile.tools.mobile_status") as status,
+            patch("happyclaw.infra.control.mobile.tools.list_devices", return_value=["emulator-5554"]),
+            patch("happyclaw.infra.control.mobile.tools.tap", return_value=True) as tap_fn,
         ):
             status.return_value = MagicMock(setup_state="ready", ok=True)
             out = await tap_tool.ainvoke({"x": 100, "y": 200})
@@ -107,7 +107,7 @@ async def test_mobile_tap_success() -> None:
 @pytest.mark.asyncio
 async def test_mobile_handoff_admin_bypass() -> None:
     user_repo = MagicMock()
-    with patch("octop.infra.control.mobile.tools.find_adb", return_value="/adb"):
+    with patch("happyclaw.infra.control.mobile.tools.find_adb", return_value="/adb"):
         tools = build_mobile_tools(_enabled_config(), user_repo=user_repo)
     handoff = _tool_by_name(tools, "mobile_handoff_to_user")
     with _configurable(user="1", user_is_admin=True, locale="en"):
@@ -121,7 +121,7 @@ def _local_workspace(tmp_path):
     from happyclaw_harness.backends import resolve_backend
     from happyclaw_harness.backends.workspace import BackendWorkspace
 
-    from octop.infra.backend.compat import adapt_backend_protocol
+    from happyclaw.infra.backend.compat import adapt_backend_protocol
 
     ws_root = tmp_path / "ws"
     ws_root.mkdir()
@@ -133,7 +133,7 @@ def _local_workspace(tmp_path):
 
 async def _screenshot_tool(workspace_for):
     user_repo = MagicMock()
-    with patch("octop.infra.control.mobile.tools.find_adb", return_value="/adb"):
+    with patch("happyclaw.infra.control.mobile.tools.find_adb", return_value="/adb"):
         tools = build_mobile_tools(
             _enabled_config(), user_repo=user_repo, workspace_for=workspace_for
         )
@@ -141,15 +141,15 @@ async def _screenshot_tool(workspace_for):
 
 
 async def _invoke_screenshot(tool: object) -> dict:
-    from octop.infra.control.mobile.agent_control import set_mobile_agent_control
+    from happyclaw.infra.control.mobile.agent_control import set_mobile_agent_control
 
     set_mobile_agent_control(enabled=True, device="emulator-5554")
     try:
         with (
             _configurable(user="1", user_is_admin=True, locale="en", agent_id="agent1"),
-            patch("octop.infra.control.mobile.tools.mobile_status") as status,
-            patch("octop.infra.control.mobile.tools.list_devices", return_value=["emulator-5554"]),
-            patch("octop.infra.control.mobile.tools.screencap_png", return_value=_PNG_BYTES),
+            patch("happyclaw.infra.control.mobile.tools.mobile_status") as status,
+            patch("happyclaw.infra.control.mobile.tools.list_devices", return_value=["emulator-5554"]),
+            patch("happyclaw.infra.control.mobile.tools.screencap_png", return_value=_PNG_BYTES),
         ):
             status.return_value = MagicMock(setup_state="ready", ok=True)
             return json.loads(await tool.ainvoke({}))
@@ -161,7 +161,7 @@ async def _invoke_screenshot(tool: object) -> dict:
 async def test_mobile_screenshot_lands_in_agent_workspace(tmp_path, monkeypatch) -> None:
     """Regression for #2334: the PNG must land in the agent's real workspace,
     never in the default ``{OCTOP_HOME}/agents/<id>/`` host dir."""
-    from octop.infra.utils.paths import PathLayout
+    from happyclaw.infra.utils.paths import PathLayout
 
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path / "home"))
     workspace = _local_workspace(tmp_path)

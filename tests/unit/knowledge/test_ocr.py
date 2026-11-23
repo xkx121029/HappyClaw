@@ -9,8 +9,8 @@ from types import SimpleNamespace
 import pytest
 from pypdf import PdfWriter
 
-from octop.infra.knowledge import ocr
-from octop.infra.knowledge.parse import parse_document
+from happyclaw.infra.knowledge import ocr
+from happyclaw.infra.knowledge.parse import parse_document
 
 
 def test_warns_when_enabled_local_ocr_deps_are_missing(

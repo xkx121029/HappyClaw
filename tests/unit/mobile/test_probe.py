@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from octop.infra.control.mobile.probe import probe_host_capability
+from happyclaw.infra.control.mobile.probe import probe_host_capability
 
 
 @pytest.mark.parametrize(
@@ -27,9 +27,9 @@ def test_probe_host_matrix(
     backend: str,
 ) -> None:
     with (
-        patch("octop.infra.control.mobile.probe.platform.system", return_value=system),
-        patch("octop.infra.control.mobile.probe.linux_binder_available", return_value=binder),
-        patch("octop.infra.control.mobile.probe.kvm_available", return_value=kvm),
+        patch("happyclaw.infra.control.mobile.probe.platform.system", return_value=system),
+        patch("happyclaw.infra.control.mobile.probe.linux_binder_available", return_value=binder),
+        patch("happyclaw.infra.control.mobile.probe.kvm_available", return_value=kvm),
     ):
         result = probe_host_capability(probed_at="2026-01-01T00:00:00Z")
     assert result.enabled is enabled

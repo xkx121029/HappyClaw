@@ -11,10 +11,10 @@ import pytest
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from tests.support.fakes import fake_bin_path
 
-from octop.infra.connectors.builder import validate_create_credentials
-from octop.infra.connectors.catalog import get_catalog_entry
-from octop.infra.connectors.gateway.adapters import feishu_cli, wecom_cli
-from octop.infra.connectors.gateway.wecom_creds import materialize_wecom_bot_config
+from happyclaw.infra.connectors.builder import validate_create_credentials
+from happyclaw.infra.connectors.catalog import get_catalog_entry
+from happyclaw.infra.connectors.gateway.adapters import feishu_cli, wecom_cli
+from happyclaw.infra.connectors.gateway.wecom_creds import materialize_wecom_bot_config
 
 
 def test_catalog_entries_registered() -> None:
@@ -70,7 +70,7 @@ def test_wecom_materialize_roundtrip(tmp_path: Path, monkeypatch: pytest.MonkeyP
         return items
 
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.wecom_creds._fetch_mcp_config",
+        "happyclaw.infra.connectors.gateway.wecom_creds._fetch_mcp_config",
         _fake_fetch,
     )
     materialize_wecom_bot_config(tmp_path, bot_id="bid", bot_secret="bsec")
@@ -94,11 +94,11 @@ def test_feishu_prepare_avoids_external_env(
     monkeypatch.setenv("LARKSUITE_CLI_APP_ID", "should-be-cleared")
     monkeypatch.setenv("LARKSUITE_CLI_APP_SECRET", "should-be-cleared")
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.resolve_binary",
+        "happyclaw.infra.connectors.gateway.feishu_creds.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     calls: list[dict[str, Any]] = []
@@ -126,11 +126,11 @@ def test_feishu_prepare_avoids_external_env(
         (config_dir / "config.json").write_text("{}", encoding="utf-8")
 
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
+        "happyclaw.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
         _fake_ensure,
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.resolve_binary",
+        "happyclaw.infra.connectors.gateway.feishu_creds.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
 
@@ -150,11 +150,11 @@ def test_wecom_doc_invokes_cli(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) 
 
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.wecom_cli.resolve_binary",
+        "happyclaw.infra.connectors.gateway.adapters.wecom_cli.resolve_binary",
         lambda _name: fake_bin_path("wecom-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.wecom_creds._fetch_mcp_config",
+        "happyclaw.infra.connectors.gateway.wecom_creds._fetch_mcp_config",
         lambda **_kwargs: [
             {
                 "url": "https://example.com/mcp/doc",
@@ -178,7 +178,7 @@ def test_wecom_doc_invokes_cli(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) 
         return '{"ok":true}'
 
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.wecom_cli.run_cli",
+        "happyclaw.infra.connectors.gateway.adapters.wecom_cli.run_cli",
         _fake_run,
     )
     out = wecom_cli.call_tool(
@@ -200,15 +200,15 @@ def test_feishu_calendar_shortcut_flags(monkeypatch: pytest.MonkeyPatch, tmp_pat
     captured: dict[str, Any] = {}
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.resolve_binary",
+        "happyclaw.infra.connectors.gateway.feishu_creds.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
+        "happyclaw.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
         lambda *a, **k: None,
     )
 
@@ -226,7 +226,7 @@ def test_feishu_calendar_shortcut_flags(monkeypatch: pytest.MonkeyPatch, tmp_pat
         return '{"ok":true}'
 
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.run_cli",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.run_cli",
         _fake_run,
     )
     feishu_cli.call_tool(
@@ -254,15 +254,15 @@ def test_probe_requires_bot_even_when_default_as_user(
 ) -> None:
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.resolve_binary",
+        "happyclaw.infra.connectors.gateway.feishu_creds.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
+        "happyclaw.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
         lambda *a, **k: None,
     )
 
@@ -287,7 +287,7 @@ def test_probe_requires_bot_even_when_default_as_user(
         )
 
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.run_cli",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.run_cli",
         _fake_run,
     )
     with pytest.raises(ValueError, match="App ID / App Secret"):
@@ -322,15 +322,15 @@ def test_docs_search_requires_user_auth_without_shell_hint(
 ) -> None:
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.resolve_binary",
+        "happyclaw.infra.connectors.gateway.feishu_creds.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
+        "happyclaw.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
         lambda *a, **k: None,
     )
     called = False
@@ -341,7 +341,7 @@ def test_docs_search_requires_user_auth_without_shell_hint(
         raise AssertionError("should not invoke CLI before user auth")
 
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.run_cli",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.run_cli",
         _fake_run,
     )
     with pytest.raises(ValueError, match="连接器") as ei:
@@ -359,15 +359,15 @@ def test_docs_search_uses_as_user(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
     captured: dict[str, Any] = {}
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.resolve_binary",
+        "happyclaw.infra.connectors.gateway.feishu_creds.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
+        "happyclaw.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
         lambda *a, **k: None,
     )
 
@@ -387,7 +387,7 @@ def test_docs_search_uses_as_user(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
         return '{"ok":true}'
 
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.run_cli",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.run_cli",
         _fake_run,
     )
     feishu_cli.call_tool(
@@ -409,15 +409,15 @@ def test_docs_search_uses_as_user(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
 def test_docs_search_missing_scope_message(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("OCTOP_HOME", str(tmp_path))
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.resolve_binary",
+        "happyclaw.infra.connectors.gateway.feishu_creds.resolve_binary",
         lambda _name: fake_bin_path("lark-cli"),
     )
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
+        "happyclaw.infra.connectors.gateway.feishu_creds.ensure_feishu_cli_config",
         lambda *a, **k: None,
     )
 
@@ -435,7 +435,7 @@ def test_docs_search_missing_scope_message(monkeypatch: pytest.MonkeyPatch, tmp_
         raise AssertionError(argv)
 
     monkeypatch.setattr(
-        "octop.infra.connectors.gateway.adapters.feishu_cli.run_cli",
+        "happyclaw.infra.connectors.gateway.adapters.feishu_cli.run_cli",
         _fake_run,
     )
     with pytest.raises(ValueError, match="登录授权") as ei:

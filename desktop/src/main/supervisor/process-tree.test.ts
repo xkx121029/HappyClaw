@@ -12,27 +12,27 @@ import { buildSidecarEnv } from "./process-tree";
 
 function env(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   return buildSidecarEnv(
-    { PATH: "/usr/bin", OCTOP_PORT: "1", OCTOP_REQUIRE_SETUP_PASSWORD: "1", ...overrides },
+    { PATH: "/usr/bin", HAPPYCLAW_PORT: "1", HAPPYCLAW_REQUIRE_SETUP_PASSWORD: "1", ...overrides },
     { octopHome: "/tmp/home", portableDir: "/tmp/portable", port: 51234, bindHost: "127.0.0.1" },
   );
 }
 
 test("buildSidecarEnv disables the wizard password gate", () => {
-  assert.equal(env().OCTOP_REQUIRE_SETUP_PASSWORD, "0");
+  assert.equal(env().HAPPYCLAW_REQUIRE_SETUP_PASSWORD, "0");
 });
 
 test("buildSidecarEnv leaves the access token TTL to the server", () => {
-  assert.equal(env().OCTOP_ACCESS_TOKEN_TTL, undefined);
+  assert.equal(env().HAPPYCLAW_ACCESS_TOKEN_TTL, undefined);
 });
 
 test("buildSidecarEnv keeps the identity and loopback pins", () => {
   const built = env();
-  assert.equal(built.OCTOP_DESKTOP_SHELL, "1");
-  assert.equal(built.OCTOP_HOME, "/tmp/home");
+  assert.equal(built.HAPPYCLAW_DESKTOP_SHELL, "1");
+  assert.equal(built.HAPPYCLAW_HOME, "/tmp/home");
   // Built with node:path, so the separator follows the host.
-  assert.equal(built.OCTOP_GREEN_PACKAGES, join("/tmp/portable", "packages"));
-  assert.equal(built.OCTOP_BIND_HOST, "127.0.0.1");
-  assert.equal(built.OCTOP_PORT, "51234");
+  assert.equal(built.HAPPYCLAW_GREEN_PACKAGES, join("/tmp/portable", "packages"));
+  assert.equal(built.HAPPYCLAW_BIND_HOST, "127.0.0.1");
+  assert.equal(built.HAPPYCLAW_PORT, "51234");
   assert.equal(built.PYTHONNOUSERSITE, "1");
   assert.equal(built.PYTHONPYCACHEPREFIX, join("/tmp/home", "pyc"));
   assert.equal(built.PATH, "/usr/bin");

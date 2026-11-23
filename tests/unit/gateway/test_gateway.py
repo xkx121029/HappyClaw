@@ -8,23 +8,23 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.db.services import build_shared_services
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.gateway.gateway import ChannelCreateSpec, Gateway
-from octop.infra.utils.paths import PathLayout
-from octop.infra.utils.ulid import new_ulid
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.agents.manager import AgentManager
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.gateway.gateway import ChannelCreateSpec, Gateway
+from happyclaw.infra.utils.paths import PathLayout
+from happyclaw.infra.utils.ulid import new_ulid
 
 
 def _make_services(tmp_path: Path):
     db = SqlitePool(tmp_path / "octop.db")
     run_migrations(db)
-    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=OctopConfig())
+    return build_shared_services(db=db, paths=PathLayout(tmp_path), config=HappyclawConfig())
 
 
 def _seed_agent(services, tmp_path: Path) -> tuple[str, int]:
@@ -37,7 +37,7 @@ def _seed_agent(services, tmp_path: Path) -> tuple[str, int]:
 @pytest.mark.asyncio
 async def test_gateway_boot_and_shutdown(tmp_path: Path) -> None:
     services = _make_services(tmp_path)
-    with patch("octop.infra.agents.manager.HarnessAgentManager") as mock_hm_cls:
+    with patch("happyclaw.infra.agents.manager.HarnessAgentManager") as mock_hm_cls:
         mock_hm_cls.return_value = MagicMock()
 
         registry = AgentManager(
@@ -126,7 +126,7 @@ async def test_create_channel_rejects_name_taken_by_other_kind(tmp_path: Path) -
             config={},
         )
     )
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await gw.create_channel(
             ChannelCreateSpec(
                 channel_id=new_ulid(),

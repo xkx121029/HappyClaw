@@ -26,7 +26,7 @@ class ASGIWebSocketSession:
     """Drive an ASGI websocket endpoint on the caller's event loop.
 
     starlette's sync ``TestClient`` runs the app on its own anyio portal loop.
-    That gives the process two loops over one ``OctopServer``, and loop-bound
+    That gives the process two loops over one ``HappyclawServer``, and loop-bound
     primitives shared by both (``AgentManager._lock``) then deadlock or raise
     "bound to a different event loop". Speaking ASGI directly keeps the
     handler, the gateway workers and the test on the same loop, exactly like

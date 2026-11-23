@@ -7,13 +7,13 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from tests.support.app import ensure_control_plane_bound, write_octop_config
 
-from octop.api.app import build_app
-from octop.infra.server import OctopServer
+from happyclaw.api.app import build_app
+from happyclaw.infra.server import HappyclawServer
 
 
 async def test_openapi_has_bearer_security_and_descriptions(tmp_octop_home: Path) -> None:
     write_octop_config(tmp_octop_home, enable_api_docs=True)
-    srv = OctopServer(home=tmp_octop_home)
+    srv = HappyclawServer(home=tmp_octop_home)
     await srv.start()
     await ensure_control_plane_bound(srv)
     try:

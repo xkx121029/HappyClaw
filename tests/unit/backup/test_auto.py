@@ -7,15 +7,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from octop.config import BackupConfig, load_config
-from octop.infra.backup.auto import (
+from happyclaw.config import BackupConfig, load_config
+from happyclaw.infra.backup.auto import (
     AUTO_BACKUP_JOB_ID,
     apply_auto_backup_schedule,
     backup_config_from_payload,
     persist_backup_config,
     to_auto_backup_filename,
 )
-from octop.infra.errors import OctopError
+from happyclaw.infra.errors import HappyclawError
 
 
 def test_to_auto_backup_filename() -> None:
@@ -30,12 +30,12 @@ def test_to_auto_backup_filename() -> None:
 
 
 def test_backup_config_from_payload_rejects_bad_schedule() -> None:
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         backup_config_from_payload({"schedule": "not-a-trigger", "retention_count": 3})
 
 
 def test_backup_config_from_payload_rejects_bad_retention() -> None:
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         backup_config_from_payload({"schedule": "cron:0 4 * * *", "retention_count": 0})
 
 

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from octop.api.bridge_peer import prepare_peer_dashboard_turn
-from octop.api.routers.chat.models import UserTurnWsFrame
-from octop.infra.bridge.manager import _bridge_turn_ws_payload
-from octop.infra.bridge.peer_turn import (
+from happyclaw.api.bridge_peer import prepare_peer_dashboard_turn
+from happyclaw.api.routers.chat.models import UserTurnWsFrame
+from happyclaw.infra.bridge.manager import _bridge_turn_ws_payload
+from happyclaw.infra.bridge.peer_turn import (
     USER_TURN_WS_KEYS,
     PeerTurnRejected,
     peer_turn_relay_finished,
@@ -80,8 +80,8 @@ async def test_empty_peer_turn_is_rejected() -> None:
 async def test_prepare_peer_turn_admits_steer_when_busy(monkeypatch: pytest.MonkeyPatch) -> None:
     from unittest.mock import MagicMock
 
-    from octop.api.routers.chat.turn import PreparedDashboardTurn
-    from octop.infra.gateway.steer import SteerCoordinator
+    from happyclaw.api.routers.chat.turn import PreparedDashboardTurn
+    from happyclaw.infra.gateway.steer import SteerCoordinator
 
     steer = SteerCoordinator()
     steer.begin_turn("thr-1")
@@ -116,9 +116,9 @@ async def test_prepare_peer_turn_admits_steer_when_busy(monkeypatch: pytest.Monk
             inbound_attachments=[],
         )
 
-    monkeypatch.setattr("octop.api.bridge_peer.prepare_dashboard_turn", _fake_prepare)
+    monkeypatch.setattr("happyclaw.api.bridge_peer.prepare_dashboard_turn", _fake_prepare)
     build = MagicMock()
-    monkeypatch.setattr("octop.api.bridge_peer.build_dashboard_inbound", build)
+    monkeypatch.setattr("happyclaw.api.bridge_peer.build_dashboard_inbound", build)
 
     class _User:
         id = 1
@@ -150,8 +150,8 @@ async def test_prepare_peer_turn_enqueues_when_hub_turn_is_idle(
 ) -> None:
     from unittest.mock import MagicMock
 
-    from octop.api.routers.chat.turn import PreparedDashboardTurn
-    from octop.infra.gateway.steer import SteerCoordinator
+    from happyclaw.api.routers.chat.turn import PreparedDashboardTurn
+    from happyclaw.infra.gateway.steer import SteerCoordinator
 
     steer = SteerCoordinator()
     steer.begin_turn("thr-1")
@@ -184,10 +184,10 @@ async def test_prepare_peer_turn_enqueues_when_hub_turn_is_idle(
             inbound_attachments=[],
         )
 
-    monkeypatch.setattr("octop.api.bridge_peer.prepare_dashboard_turn", _fake_prepare)
+    monkeypatch.setattr("happyclaw.api.bridge_peer.prepare_dashboard_turn", _fake_prepare)
     inbound = object()
     monkeypatch.setattr(
-        "octop.api.bridge_peer.build_dashboard_inbound",
+        "happyclaw.api.bridge_peer.build_dashboard_inbound",
         MagicMock(return_value=inbound),
     )
 
@@ -209,9 +209,9 @@ async def test_prepare_peer_turn_enqueues_when_hub_turn_is_idle(
 async def test_execute_peer_turn_skips_enqueue_when_steered() -> None:
     from unittest.mock import AsyncMock, MagicMock
 
-    from octop.api.bridge_peer import PreparedPeerTurn
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.bridge.transport import BridgeSession
+    from happyclaw.api.bridge_peer import PreparedPeerTurn
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.bridge.transport import BridgeSession
 
     sent: list[dict[str, object]] = []
 
@@ -260,8 +260,8 @@ async def test_execute_peer_turn_skips_enqueue_when_steered() -> None:
 async def test_execute_peer_cancel_stops_host_stream() -> None:
     from unittest.mock import AsyncMock, MagicMock
 
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.bridge.transport import BridgeSession
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.bridge.transport import BridgeSession
 
     thread = MagicMock()
     thread.agent_id = "agent"
@@ -321,10 +321,10 @@ async def test_execute_peer_turn_holds_room_until_unlisten() -> None:
     import asyncio
     from unittest.mock import AsyncMock, MagicMock
 
-    from octop.api.bridge_peer import PreparedPeerTurn
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.bridge.transport import BridgeSession
-    from octop.infra.gateway.ws.ws_hub import WebSocketHub
+    from happyclaw.api.bridge_peer import PreparedPeerTurn
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.bridge.transport import BridgeSession
+    from happyclaw.infra.gateway.ws.ws_hub import WebSocketHub
 
     sent: list[dict[str, object]] = []
 

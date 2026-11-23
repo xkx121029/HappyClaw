@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from octop.infra.gateway.steer.coordinator import DiscardBundle, DrainBundle, SteerCoordinator
-from octop.infra.gateway.steer.types import SteerAdmitOk, SteerAdmitReject
+from happyclaw.infra.gateway.steer.coordinator import DiscardBundle, DrainBundle, SteerCoordinator
+from happyclaw.infra.gateway.steer.types import SteerAdmitOk, SteerAdmitReject
 
 
 def test_idle_auto_returns_none() -> None:

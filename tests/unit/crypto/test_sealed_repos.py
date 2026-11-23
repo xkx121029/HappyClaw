@@ -6,13 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.crypto.sealed_repos import SealedBackendRepo, SealedProviderRepo
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.backends import BackendRepo
-from octop.infra.db.repos.providers import ProviderRepo
-from octop.infra.db.repos.secrets import SecretRepo
-from octop.infra.db.services import RepoBundle
+from happyclaw.infra.crypto.sealed_repos import SealedBackendRepo, SealedProviderRepo
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.backends import BackendRepo
+from happyclaw.infra.db.repos.providers import ProviderRepo
+from happyclaw.infra.db.repos.secrets import SecretRepo
+from happyclaw.infra.db.services import RepoBundle
 
 
 @pytest.fixture

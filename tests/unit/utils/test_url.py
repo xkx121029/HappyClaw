@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from octop.infra.utils.url import normalize_nav_url
+from happyclaw.infra.utils.url import normalize_nav_url
 
 
 def test_empty_and_blank() -> None:

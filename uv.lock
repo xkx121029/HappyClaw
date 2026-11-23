@@ -1364,6 +1364,182 @@ wheels = [
 ]
 
 [[package]]
+name = "happyclaw"
+version = "1.0.3b6"
+source = { editable = "." }
+dependencies = [
+    { name = "acme" },
+    { name = "apscheduler" },
+    { name = "argon2-cffi" },
+    { name = "boto3" },
+    { name = "click" },
+    { name = "cryptography" },
+    { name = "edge-tts" },
+    { name = "fastapi" },
+    { name = "firecrawl-anydoc" },
+    { name = "google-api-python-client" },
+    { name = "happyclaw-browser" },
+    { name = "happyclaw-gateway" },
+    { name = "happyclaw-harness", extra = ["all"] },
+    { name = "happyclaw-memory" },
+    { name = "josepy" },
+    { name = "langchain-core" },
+    { name = "langgraph-checkpoint-postgres" },
+    { name = "lark-oapi" },
+    { name = "ldap3" },
+    { name = "mcp" },
+    { name = "openpyxl" },
+    { name = "pillow" },
+    { name = "playwright" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyjwt" },
+    { name = "pyotp" },
+    { name = "pypdf" },
+    { name = "pypinyin" },
+    { name = "python-docx" },
+    { name = "python-pptx" },
+    { name = "python-socks" },
+    { name = "questionary" },
+    { name = "rich" },
+    { name = "scalar-fastapi" },
+    { name = "segno" },
+    { name = "tencentcloud-sdk-python" },
+    { name = "uvicorn", extra = ["standard"] },
+    { name = "webauthn" },
+    { name = "websockets" },
+    { name = "xlrd" },
+]
+
+[package.optional-dependencies]
+browser = [
+    { name = "playwright" },
+]
+desktop = [
+    { name = "mss" },
+    { name = "pynput" },
+]
+dev = [
+    { name = "build" },
+    { name = "httpx" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-testmon" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+    { name = "xlwt" },
+]
+knowledge-ocr = [
+    { name = "onnxruntime" },
+    { name = "pymupdf" },
+    { name = "rapidocr" },
+    { name = "shapely" },
+]
+local-embedding = [
+    { name = "fastembed" },
+    { name = "huggingface-hub" },
+]
+tos = [
+    { name = "tos" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "build" },
+    { name = "httpx" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-testmon" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+    { name = "xlwt" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "acme", specifier = ">=5.6.0" },
+    { name = "apscheduler", specifier = ">=3.10,<4" },
+    { name = "argon2-cffi", specifier = ">=23.1" },
+    { name = "boto3", specifier = ">=1.40.61" },
+    { name = "build", marker = "extra == 'dev'", specifier = ">=1.0" },
+    { name = "click", specifier = ">=8.1" },
+    { name = "cryptography", specifier = ">=41" },
+    { name = "edge-tts", specifier = ">=6.1" },
+    { name = "fastapi", specifier = ">=0.110" },
+    { name = "fastembed", marker = "extra == 'local-embedding'", specifier = ">=0.4" },
+    { name = "firecrawl-anydoc", specifier = ">=0.2.4" },
+    { name = "google-api-python-client", specifier = ">=2.100" },
+    { name = "happyclaw-browser", path = "vendor/happyclaw-libs/happyclaw_browser-1.0.2-py3-none-any.whl" },
+    { name = "happyclaw-gateway", path = "vendor/happyclaw-libs/happyclaw_gateway-1.0.6-py3-none-any.whl" },
+    { name = "happyclaw-harness", extras = ["all"], path = "vendor/happyclaw-libs/happyclaw_harness-1.0.14-py3-none-any.whl" },
+    { name = "happyclaw-memory", path = "vendor/happyclaw-libs/happyclaw_memory-1.0.7-py3-none-any.whl" },
+    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
+    { name = "huggingface-hub", marker = "extra == 'local-embedding'", specifier = ">=0.20" },
+    { name = "josepy", specifier = ">=2.2.0" },
+    { name = "langchain-core", specifier = ">=1.4.8" },
+    { name = "langgraph-checkpoint-postgres", specifier = ">=2.0" },
+    { name = "lark-oapi", specifier = ">=1.7.3" },
+    { name = "ldap3", specifier = ">=2.9.1" },
+    { name = "mcp", specifier = ">=1.9,<2" },
+    { name = "mss", marker = "extra == 'desktop'", specifier = ">=9.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
+    { name = "onnxruntime", marker = "extra == 'knowledge-ocr'", specifier = ">=1.17" },
+    { name = "openpyxl", specifier = ">=3.1" },
+    { name = "pillow", specifier = ">=13.0.0" },
+    { name = "playwright", specifier = ">=1.40" },
+    { name = "playwright", marker = "extra == 'browser'", specifier = ">=1.40" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
+    { name = "pydantic", specifier = ">=2.6,<2.14" },
+    { name = "pyjwt", specifier = ">=2.8" },
+    { name = "pymupdf", marker = "extra == 'knowledge-ocr'", specifier = ">=1.24" },
+    { name = "pynput", marker = "extra == 'desktop'", specifier = ">=1.7" },
+    { name = "pyotp", specifier = ">=2.10.0" },
+    { name = "pypdf", specifier = ">=5.0" },
+    { name = "pypinyin", specifier = ">=0.53" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1" },
+    { name = "pytest-testmon", marker = "extra == 'dev'", specifier = ">=2.0" },
+    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6" },
+    { name = "python-docx", specifier = ">=1.2.0" },
+    { name = "python-pptx", specifier = ">=1.0" },
+    { name = "python-socks", specifier = ">=2.4" },
+    { name = "questionary", specifier = ">=2.0" },
+    { name = "rapidocr", marker = "extra == 'knowledge-ocr'", specifier = ">=3.4,<4" },
+    { name = "rich", specifier = ">=13.7" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
+    { name = "scalar-fastapi", specifier = ">=1.0" },
+    { name = "segno", specifier = ">=1.6" },
+    { name = "shapely", marker = "extra == 'knowledge-ocr'", specifier = ">=2.2.0" },
+    { name = "tencentcloud-sdk-python", specifier = ">=3.1.166" },
+    { name = "tos", marker = "extra == 'tos'", specifier = ">=2.9,<3" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.27" },
+    { name = "webauthn", specifier = ">=3.0.1" },
+    { name = "websockets", specifier = ">=13.0" },
+    { name = "xlrd", specifier = ">=2.0.1" },
+    { name = "xlwt", marker = "extra == 'dev'", specifier = ">=1.3" },
+]
+provides-extras = ["dev", "browser", "tos", "desktop", "local-embedding", "knowledge-ocr"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "build", specifier = ">=1.0" },
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "mypy", specifier = ">=1.10" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23" },
+    { name = "pytest-cov", specifier = ">=4.1" },
+    { name = "pytest-testmon", specifier = ">=2.0" },
+    { name = "pytest-xdist", specifier = ">=3.6" },
+    { name = "ruff", specifier = ">=0.4" },
+    { name = "xlwt", specifier = ">=1.3" },
+]
+
+[[package]]
 name = "happyclaw-browser"
 version = "1.0.2"
 source = { path = "vendor/happyclaw-libs/happyclaw_browser-1.0.2-py3-none-any.whl" }
@@ -2747,182 +2923,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/94/a8/f98e50356cf167df656c526c2dfeec2d7dde182f2a3da4b458a5938e2776/numpy-2.5.1-cp314-cp314t-win32.whl", hash = "sha256:6eab239876581b2b3c5a242281b6007bbdbcd1c7085d7709bb57c5929b11e6bf", size = 6263298, upload-time = "2026-07-04T17:07:53.445Z" },
     { url = "https://files.pythonhosted.org/packages/72/ac/96ae880cdecad0b3275d9359fcec72667b49a4863c9f12942e43679dda02/numpy-2.5.1-cp314-cp314t-win_amd64.whl", hash = "sha256:83ce9c80d5b521b0d77ddcbe5447c218d247929b6cc056ca5351342accfff0af", size = 12748623, upload-time = "2026-07-04T17:07:55.384Z" },
     { url = "https://files.pythonhosted.org/packages/a1/5a/4d2b1601df3602dba7a14f3348ba9bfe94a18adb428e693df6154c293831/numpy-2.5.1-cp314-cp314t-win_arm64.whl", hash = "sha256:5a6db61f9aaa57e369905c67d852045d3c4f7126405b29d09b19dec118e9c9cb", size = 10697674, upload-time = "2026-07-04T17:07:58.506Z" },
-]
-
-[[package]]
-name = "octop"
-version = "1.0.3b6"
-source = { editable = "." }
-dependencies = [
-    { name = "acme" },
-    { name = "apscheduler" },
-    { name = "argon2-cffi" },
-    { name = "boto3" },
-    { name = "click" },
-    { name = "cryptography" },
-    { name = "edge-tts" },
-    { name = "fastapi" },
-    { name = "firecrawl-anydoc" },
-    { name = "google-api-python-client" },
-    { name = "happyclaw-browser" },
-    { name = "happyclaw-gateway" },
-    { name = "happyclaw-harness", extra = ["all"] },
-    { name = "happyclaw-memory" },
-    { name = "josepy" },
-    { name = "langchain-core" },
-    { name = "langgraph-checkpoint-postgres" },
-    { name = "lark-oapi" },
-    { name = "ldap3" },
-    { name = "mcp" },
-    { name = "openpyxl" },
-    { name = "pillow" },
-    { name = "playwright" },
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyjwt" },
-    { name = "pyotp" },
-    { name = "pypdf" },
-    { name = "pypinyin" },
-    { name = "python-docx" },
-    { name = "python-pptx" },
-    { name = "python-socks" },
-    { name = "questionary" },
-    { name = "rich" },
-    { name = "scalar-fastapi" },
-    { name = "segno" },
-    { name = "tencentcloud-sdk-python" },
-    { name = "uvicorn", extra = ["standard"] },
-    { name = "webauthn" },
-    { name = "websockets" },
-    { name = "xlrd" },
-]
-
-[package.optional-dependencies]
-browser = [
-    { name = "playwright" },
-]
-desktop = [
-    { name = "mss" },
-    { name = "pynput" },
-]
-dev = [
-    { name = "build" },
-    { name = "httpx" },
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-testmon" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-    { name = "xlwt" },
-]
-knowledge-ocr = [
-    { name = "onnxruntime" },
-    { name = "pymupdf" },
-    { name = "rapidocr" },
-    { name = "shapely" },
-]
-local-embedding = [
-    { name = "fastembed" },
-    { name = "huggingface-hub" },
-]
-tos = [
-    { name = "tos" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "build" },
-    { name = "httpx" },
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-testmon" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-    { name = "xlwt" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "acme", specifier = ">=5.6.0" },
-    { name = "apscheduler", specifier = ">=3.10,<4" },
-    { name = "argon2-cffi", specifier = ">=23.1" },
-    { name = "boto3", specifier = ">=1.40.61" },
-    { name = "build", marker = "extra == 'dev'", specifier = ">=1.0" },
-    { name = "click", specifier = ">=8.1" },
-    { name = "cryptography", specifier = ">=41" },
-    { name = "edge-tts", specifier = ">=6.1" },
-    { name = "fastapi", specifier = ">=0.110" },
-    { name = "fastembed", marker = "extra == 'local-embedding'", specifier = ">=0.4" },
-    { name = "firecrawl-anydoc", specifier = ">=0.2.4" },
-    { name = "google-api-python-client", specifier = ">=2.100" },
-    { name = "happyclaw-browser", path = "vendor/happyclaw-libs/happyclaw_browser-1.0.2-py3-none-any.whl" },
-    { name = "happyclaw-gateway", path = "vendor/happyclaw-libs/happyclaw_gateway-1.0.6-py3-none-any.whl" },
-    { name = "happyclaw-harness", extras = ["all"], path = "vendor/happyclaw-libs/happyclaw_harness-1.0.14-py3-none-any.whl" },
-    { name = "happyclaw-memory", path = "vendor/happyclaw-libs/happyclaw_memory-1.0.7-py3-none-any.whl" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
-    { name = "huggingface-hub", marker = "extra == 'local-embedding'", specifier = ">=0.20" },
-    { name = "josepy", specifier = ">=2.2.0" },
-    { name = "langchain-core", specifier = ">=1.4.8" },
-    { name = "langgraph-checkpoint-postgres", specifier = ">=2.0" },
-    { name = "lark-oapi", specifier = ">=1.7.3" },
-    { name = "ldap3", specifier = ">=2.9.1" },
-    { name = "mcp", specifier = ">=1.9,<2" },
-    { name = "mss", marker = "extra == 'desktop'", specifier = ">=9.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
-    { name = "onnxruntime", marker = "extra == 'knowledge-ocr'", specifier = ">=1.17" },
-    { name = "openpyxl", specifier = ">=3.1" },
-    { name = "pillow", specifier = ">=13.0.0" },
-    { name = "playwright", specifier = ">=1.40" },
-    { name = "playwright", marker = "extra == 'browser'", specifier = ">=1.40" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
-    { name = "pydantic", specifier = ">=2.6,<2.14" },
-    { name = "pyjwt", specifier = ">=2.8" },
-    { name = "pymupdf", marker = "extra == 'knowledge-ocr'", specifier = ">=1.24" },
-    { name = "pynput", marker = "extra == 'desktop'", specifier = ">=1.7" },
-    { name = "pyotp", specifier = ">=2.10.0" },
-    { name = "pypdf", specifier = ">=5.0" },
-    { name = "pypinyin", specifier = ">=0.53" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1" },
-    { name = "pytest-testmon", marker = "extra == 'dev'", specifier = ">=2.0" },
-    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6" },
-    { name = "python-docx", specifier = ">=1.2.0" },
-    { name = "python-pptx", specifier = ">=1.0" },
-    { name = "python-socks", specifier = ">=2.4" },
-    { name = "questionary", specifier = ">=2.0" },
-    { name = "rapidocr", marker = "extra == 'knowledge-ocr'", specifier = ">=3.4,<4" },
-    { name = "rich", specifier = ">=13.7" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
-    { name = "scalar-fastapi", specifier = ">=1.0" },
-    { name = "segno", specifier = ">=1.6" },
-    { name = "shapely", marker = "extra == 'knowledge-ocr'", specifier = ">=2.2.0" },
-    { name = "tencentcloud-sdk-python", specifier = ">=3.1.166" },
-    { name = "tos", marker = "extra == 'tos'", specifier = ">=2.9,<3" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.27" },
-    { name = "webauthn", specifier = ">=3.0.1" },
-    { name = "websockets", specifier = ">=13.0" },
-    { name = "xlrd", specifier = ">=2.0.1" },
-    { name = "xlwt", marker = "extra == 'dev'", specifier = ">=1.3" },
-]
-provides-extras = ["dev", "browser", "tos", "desktop", "local-embedding", "knowledge-ocr"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "build", specifier = ">=1.0" },
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "mypy", specifier = ">=1.10" },
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "pytest-asyncio", specifier = ">=0.23" },
-    { name = "pytest-cov", specifier = ">=4.1" },
-    { name = "pytest-testmon", specifier = ">=2.0" },
-    { name = "pytest-xdist", specifier = ">=3.6" },
-    { name = "ruff", specifier = ">=0.4" },
-    { name = "xlwt", specifier = ">=1.3" },
 ]
 
 [[package]]

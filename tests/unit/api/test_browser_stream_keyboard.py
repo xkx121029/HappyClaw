@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from octop.api.routers.browser.stream import _handle_client_event
+from happyclaw.api.routers.browser.stream import _handle_client_event
 
 
 def _session() -> SimpleNamespace:

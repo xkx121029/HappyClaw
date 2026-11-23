@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.knowledge.parse import parse_document
+from happyclaw.infra.knowledge.parse import parse_document
 
 _DOCX_NAMESPACES = (
     'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
@@ -240,7 +240,7 @@ def test_parse_wps_routes_to_anydoc(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     path = tmp_path / "note.wps"
     path.write_bytes(b"not-a-real-ole-document")
     monkeypatch.setattr(
-        "octop.infra.utils.anydoc_convert.extract_markdown_file",
+        "happyclaw.infra.utils.anydoc_convert.extract_markdown_file",
         lambda _path: "# Title\n\nbody from anydoc",
     )
     assert parse_document(path) == "# Title\n\nbody from anydoc"
@@ -252,7 +252,7 @@ def test_parse_wps_raises_when_anydoc_returns_empty(
     path = tmp_path / "empty.wps"
     path.write_bytes(b"not-a-real-ole-document")
     monkeypatch.setattr(
-        "octop.infra.utils.anydoc_convert.extract_markdown_file",
+        "happyclaw.infra.utils.anydoc_convert.extract_markdown_file",
         lambda _path: "   ",
     )
     with pytest.raises(ValueError, match="failed to extract"):

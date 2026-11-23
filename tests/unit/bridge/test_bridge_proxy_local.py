@@ -6,12 +6,12 @@ import json
 
 import pytest
 
-from octop.api.middleware.bridge_proxy import (
+from happyclaw.api.middleware.bridge_proxy import (
     _is_websocket_upgrade,
     _local_bridge_shadow_response,
     resolve_tunnel_target,
 )
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 def test_history_migration_status_is_idle() -> None:
@@ -26,7 +26,7 @@ def test_history_migration_status_is_idle() -> None:
 
 
 def test_history_migration_start_rejected() -> None:
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         _local_bridge_shadow_response(
             method="POST",
             rest="/history-migration/start",
@@ -136,7 +136,7 @@ async def test_proxy_still_tunnels_when_connection_upgrade_is_not_websocket() ->
     from fastapi import FastAPI
     from fastapi.responses import JSONResponse
 
-    from octop.api.middleware.bridge_proxy import install
+    from happyclaw.api.middleware.bridge_proxy import install
 
     app = FastAPI()
     seen: dict[str, object] = {}

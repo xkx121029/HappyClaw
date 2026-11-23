@@ -141,7 +141,7 @@ ui:
   manifest: ui/dist/manifest.json
 ```
 
-`entry` 指向的文件不存在时，插件就只当后端用。Dashboard 通过 `GET /api/plugins/<id>/ui/…` 加载 `entry`。脚本是自包含 ESM，在 `setup(host)` 里注册渲染器。React 由页面提供，挂在 `window.__OCTOP_REACT__` 和 `window.__OCTOP_JSX__` 上。
+`entry` 指向的文件不存在时，插件就只当后端用。Dashboard 通过 `GET /api/plugins/<id>/ui/…` 加载 `entry`。脚本是自包含 ESM，在 `setup(host)` 里注册渲染器。React 由页面提供，挂在 `window.__HAPPYCLAW_REACT__` 和 `window.__HAPPYCLAW_JSX__` 上。
 
 工具若要走这块界面，返回 JSON 字符串，并带上渲染器名字：
 
@@ -164,6 +164,6 @@ zip -r weather-0.1.0.zip weather
 本地安装目录或 ZIP：
 
 ```bash
-octop plugin install ./weather
-octop plugin install ./weather-0.1.0.zip
+happyclaw plugin install ./weather
+happyclaw plugin install ./weather-0.1.0.zip
 ```

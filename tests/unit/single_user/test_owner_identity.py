@@ -7,11 +7,11 @@ from typing import Any
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.users.owner import OWNER_USERNAME, OwnerIdentityService
-from octop.infra.users.permissions import PERMISSIONS
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.users.owner import OWNER_USERNAME, OwnerIdentityService
+from happyclaw.infra.users.permissions import PERMISSIONS
 
 
 class _StubServices:

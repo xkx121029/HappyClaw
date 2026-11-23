@@ -11,9 +11,9 @@ set -euo pipefail
 # 共享函数库（find_python312 / fix_ownership_and_perms / free_octop_ports /
 # octop_prepare_docker_persist / octop_render_config_wizard 等）
 # 打包时由 scripts/build-fpk.sh 注入；仓库内运行无此文件时跳过（函数缺失时再报错）。
-_OCTOP_COMMON="$(dirname "$0")/common.sh"
-[ -f "$_OCTOP_COMMON" ] || _OCTOP_COMMON="/var/apps/octop/cmd/common.sh"
-[ -f "$_OCTOP_COMMON" ] && source "$_OCTOP_COMMON"
+_HAPPYCLAW_COMMON="$(dirname "$0")/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] || _HAPPYCLAW_COMMON="/var/apps/octop/cmd/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] && source "$_HAPPYCLAW_COMMON"
 
 # 释放 Octop 端口（8088=Docker 版，8089=本地版），杀掉残留/孤儿进程，避免重装端口冲突。
 free_octop_ports
@@ -26,11 +26,11 @@ DATA_DIR="$(octop_prepare_docker_persist "$ENV_FILE")"
 mkdir -p "$DATA_DIR"
 
 {
-    echo "OCTOP_PORT=8088"
-    echo "OCTOP_BIND_HOST=0.0.0.0"
-    echo "OCTOP_LOG_LEVEL=info"
+    echo "HAPPYCLAW_PORT=8088"
+    echo "HAPPYCLAW_BIND_HOST=0.0.0.0"
+    echo "HAPPYCLAW_LOG_LEVEL=info"
     echo "TRIM_DATA_SHARE_PATHS=${DATA_DIR}"
-    echo "OCTOP_DATA=${DATA_DIR}"
+    echo "HAPPYCLAW_DATA=${DATA_DIR}"
 } > "$ENV_FILE"
 
 chmod 600 "$ENV_FILE"

@@ -8,7 +8,7 @@
 
 ## 0. 先记住三条
 
-1. **恢复会覆盖**当前数据库与专家工作区，执行前必须先停 `octop run`。
+1. **恢复会覆盖**当前数据库与专家工作区，执行前必须先停 `happyclaw run`。
 2. 迁移用 `--include-chats`，否则对话记录不进归档。
 3. 恢复前先在**目标机**做一次现场备份，失败时才有退路。
 
@@ -23,7 +23,7 @@
 if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } else { "$env:USERPROFILE\.octop" }
 ```
 
-`octop backup create` 打进去和打不进去的内容：
+`happyclaw backup create` 打进去和打不进去的内容：
 
 | 路径 | 内容 | 是否进归档 |
 |------|------|-----------|
@@ -47,7 +47,7 @@ if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } else { "$env:USERPROFILE\.octop
 
 > 归档里还会带一个 `manifest.json`，记录版本、数据库引擎、schema 版本，以及各可选目录是否包含。
 
-需要连 `security/`、`ssl/`、`avatars/` 一起搬时，用第 3 节的「整目录冷备」，不要指望 `octop backup`。
+需要连 `security/`、`ssl/`、`avatars/` 一起搬时，用第 3 节的「整目录冷备」，不要指望 `happyclaw backup`。
 
 ---
 
@@ -57,10 +57,10 @@ if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } else { "$env:USERPROFILE\.octop
 
 ```powershell
 # 默认：数据库 + 工作区 + 配置 + 技能包 + 插件 + 知识库，不含聊天
-octop backup create
+happyclaw backup create
 
 # 迁移 / 完整留档：加上聊天历史
-octop backup create --include-chats
+happyclaw backup create --include-chats
 ```
 
 输出形如：
@@ -74,13 +74,13 @@ wrote C:\Users\you\.octop\backups\octop-backup-20261111T120000Z.tar.gz (18342011
 - 指定位置（建议放另一块盘）：
 
 ```powershell
-octop backup create --include-chats -o D:\backup\happyclaw-full.tar.gz
+happyclaw backup create --include-chats -o D:\backup\happyclaw-full.tar.gz
 ```
 
 macOS / Linux 相同：
 
 ```bash
-octop backup create --include-chats -o ~/backup/happyclaw-full.tar.gz
+happyclaw backup create --include-chats -o ~/backup/happyclaw-full.tar.gz
 ```
 
 ### 2.2 自动备份
@@ -88,7 +88,7 @@ octop backup create --include-chats -o ~/backup/happyclaw-full.tar.gz
 默认**关闭**。确认当前值：
 
 ```powershell
-octop backup auto status
+happyclaw backup auto status
 ```
 
 ```
@@ -97,10 +97,10 @@ schedule: cron:0 4 * * *
 retention_count: 7
 ```
 
-开启后由 `octop run` 进程内的调度器执行（关掉服务就不再跑）；自动归档前缀 `octop-auto-backup-`，只清理这类旧归档，手动备份不会被删。手动触发一次：
+开启后由 `happyclaw run` 进程内的调度器执行（关掉服务就不再跑）；自动归档前缀 `octop-auto-backup-`，只清理这类旧归档，手动备份不会被删。手动触发一次：
 
 ```powershell
-octop backup auto run
+happyclaw backup auto run
 ```
 
 ### 2.3 整目录冷备（连证书、护栏规则、头像一起搬）
@@ -160,7 +160,7 @@ Get-FileHash D:\backup\happyclaw-full.tar.gz -Algorithm SHA256
 **第 1 步：旧机出包**
 
 ```powershell
-octop backup create --include-chats -o D:\backup\happyclaw-full.tar.gz
+happyclaw backup create --include-chats -o D:\backup\happyclaw-full.tar.gz
 Get-FileHash D:\backup\happyclaw-full.tar.gz -Algorithm SHA256
 ```
 
@@ -169,13 +169,13 @@ Get-FileHash D:\backup\happyclaw-full.tar.gz -Algorithm SHA256
 **第 2 步：新机装同版本或更新版本**
 
 ```powershell
-if (-not $env:OCTOP_INSTALL_BASE) { $env:OCTOP_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:OCTOP_INSTALL_BASE/scripts/install.ps1" | iex
+if (-not $env:HAPPYCLAW_INSTALL_BASE) { $env:HAPPYCLAW_INSTALL_BASE = 'https://raw.githubusercontent.com/xkx121029/HappyClaw/main' }; irm "$env:HAPPYCLAW_INSTALL_BASE/scripts/install.ps1" | iex
 ```
 
 重开一个 PowerShell：
 
 ```powershell
-octop --version
+happyclaw --version
 ```
 
 > 新机版本必须 **不低于** 旧机。归档 schema 比运行时新时，恢复会被拒绝。
@@ -191,10 +191,10 @@ octop --version
 
 ```powershell
 # 保留新机自己的端口 / 数据库设置（推荐；新机默认 sqlite 时用它）
-octop backup restore D:\backup\happyclaw-full.tar.gz --no-config --yes
+happyclaw backup restore D:\backup\happyclaw-full.tar.gz --no-config --yes
 
 # 想连旧机的端口、TLS、数据库设置一起搬过来
-octop backup restore D:\backup\happyclaw-full.tar.gz --yes
+happyclaw backup restore D:\backup\happyclaw-full.tar.gz --yes
 ```
 
 输出示例：
@@ -206,7 +206,7 @@ restored: {'schema_version': 42, 'octop_version': '1.0.3b5', 'agents': 3, 'works
 **第 5 步：启动并验证**
 
 ```powershell
-octop run
+happyclaw run
 ```
 
 另开窗口：
@@ -221,13 +221,13 @@ Invoke-RestMethod http://127.0.0.1:8088/api/health
 
 ```powershell
 [Environment]::SetEnvironmentVariable("HAPPYCLAW_HOME", "E:\octop-data", "User")
-# 重开终端后再执行 octop backup restore / octop run
+# 重开终端后再执行 happyclaw backup restore / happyclaw run
 ```
 
 **Docker 迁移：** 宿主机数据卷挂的是 `/data/.octop`。把归档拷进容器可访问的目录，进容器执行：
 
 ```bash
-docker compose -f docker/docker-compose.yml exec -T octop octop backup restore /data/backup/happyclaw-full.tar.gz --no-config --yes
+docker compose -f docker/docker-compose.yml exec -T octop happyclaw backup restore /data/backup/happyclaw-full.tar.gz --no-config --yes
 ```
 
 容器名以 `docker compose ps` 实际输出为准。
@@ -245,12 +245,12 @@ docker compose -f docker/docker-compose.yml exec -T octop octop backup restore /
 | 技能包 / 插件 / 知识库 | 归档 `manifest` 标记为包含时，对应目录整体替换；未包含则保留目标机现状 |
 | 不碰的目录 | `secrets/`、`security/`、`ssl/`、`logs/`、`avatars/`、`users/`、`backups/`、`venv/`、`bin/` |
 | 数据库引擎 | 归档 `database_driver` 必须与当前运行时一致，跨引擎直接拒绝 |
-| schema 版本 | 归档版本高于运行时支持的最大版本时拒绝，需要先 `octop update` |
+| schema 版本 | 归档版本高于运行时支持的最大版本时拒绝，需要先 `happyclaw update` |
 
 恢复命令的全部参数：
 
 ```powershell
-octop backup restore <归档> --yes --no-config --owner-user-id <id> --home <目录>
+happyclaw backup restore <归档> --yes --no-config --owner-user-id <id> --home <目录>
 ```
 
 - `--yes`：跳过确认提示。
@@ -265,7 +265,7 @@ octop backup restore <归档> --yes --no-config --owner-user-id <id> --home <目
 ### 6.1 先做现场备份（最重要）
 
 ```powershell
-octop backup create --include-chats -o D:\backup\before-restore.tar.gz
+happyclaw backup create --include-chats -o D:\backup\before-restore.tar.gz
 ```
 
 带 `--include-chats` 才能把「恢复前一刻的会话」原样退回；不带时，恢复过程中会把当前会话临时保存再写回，行为和预期可能不同。
@@ -275,8 +275,8 @@ octop backup create --include-chats -o D:\backup\before-restore.tar.gz
 停服务后，把现场备份再恢复回去：
 
 ```powershell
-octop backup restore D:\backup\before-restore.tar.gz --yes
-octop run
+happyclaw backup restore D:\backup\before-restore.tar.gz --yes
+happyclaw run
 ```
 
 ### 6.3 只回退数据库
@@ -296,7 +296,7 @@ Remove-Item "$env:USERPROFILE\.octop\octop.db-wal","$env:USERPROFILE\.octop\octo
 Copy-Item "$tmp\db\octop.db" "$env:USERPROFILE\.octop\octop.db" -Force
 
 # 4) 启动
-octop run
+happyclaw run
 ```
 
 macOS / Linux 把 `Copy-Item` 换成 `cp`，`$env:USERPROFILE` 换成 `~`。
@@ -316,8 +316,8 @@ Copy-Item $env:TEMP\config.json $env:USERPROFILE\.octop\config.json -Force
 
 ### 6.5 不要做的事
 
-- 不要用 `octop clean --all` 来「重来一次」：它会删掉 `~/.happyclaw/` 下的数据，包括你还没来得及回退的现场状态。
-- 不要在 `octop run` 还开着的时候替换 `octop.db`：Windows 上文件被占用，SQLite 也可能读到半截状态。
+- 不要用 `happyclaw clean --all` 来「重来一次」：它会删掉 `~/.happyclaw/` 下的数据，包括你还没来得及回退的现场状态。
+- 不要在 `happyclaw run` 还开着的时候替换 `octop.db`：Windows 上文件被占用，SQLite 也可能读到半截状态。
 - 不要把 SQLite 归档恢复到 PostgreSQL 实例（或反向），引擎检查会直接拒绝。
 
 ---
@@ -335,10 +335,10 @@ pg_restore --version
 
 迁移顺序固定：
 
-1. 新机把 `config.json` 的 `database.driver` 改成 `postgresql`，填好连接信息；或者用 `OCTOP_DATABASE_URL`。
+1. 新机把 `config.json` 的 `database.driver` 改成 `postgresql`，填好连接信息；或者用 `HAPPYCLAW_DATABASE_URL`。
 2. 确认新库可连、为空库（不要指向已有业务库）。
-3. 停服后 `octop backup restore <归档> --no-config --yes`。
-4. 恢复完成后 `octop run`，看 `/api/health` 的 `db : True`。
+3. 停服后 `happyclaw backup restore <归档> --no-config --yes`。
+4. 恢复完成后 `happyclaw run`，看 `/api/health` 的 `db : True`。
 
 SQLite 与 PostgreSQL 之间没有转换工具，只能在同一引擎内搬。
 
@@ -349,12 +349,12 @@ SQLite 与 PostgreSQL 之间没有转换工具，只能在同一引擎内搬。
 | 报错 / 现象 | 原因 | 处理 |
 |-------------|------|------|
 | `... does not match runtime dialect ... cross-engine restore is refused` | 归档引擎与当前配置不一致 | 改 `config.json` 的数据库配置，或换成同引擎的归档 |
-| `backup schema version N is newer than the maximum supported version M` | 程序版本比归档旧 | `octop update` 后重试 |
+| `backup schema version N is newer than the maximum supported version M` | 程序版本比归档旧 | `happyclaw update` 后重试 |
 | `backup archive missing database file` | 归档损坏或没传完 | 重算 SHA256，重新拷贝 |
-| `Migrate the existing history v2 archive before restoring a backup` | 本机还有旧版历史待迁移 | 先 `octop run` 启动一次，等启动完成后 `Ctrl+C` 停掉，再重试恢复 |
-| `database is locked` / 文件被占用 | 服务还在跑 | 停掉 `octop run` 或系统服务再试 |
+| `Migrate the existing history v2 archive before restoring a backup` | 本机还有旧版历史待迁移 | 先 `happyclaw run` 启动一次，等启动完成后 `Ctrl+C` 停掉，再重试恢复 |
+| `database is locked` / 文件被占用 | 服务还在跑 | 停掉 `happyclaw run` 或系统服务再试 |
 | `pg_dump not found on PATH` | 没装 PostgreSQL 客户端 | 安装客户端并加入 PATH |
-| 恢复成功但页面 404 / 空白 | 用旧归档覆盖了配置，或前端资源版本不匹配 | 用 `--no-config` 重新恢复；必要时 `octop update` |
+| 恢复成功但页面 404 / 空白 | 用旧归档覆盖了配置，或前端资源版本不匹配 | 用 `--no-config` 重新恢复；必要时 `happyclaw update` |
 | 恢复后没有头像 / TLS / 护栏规则 | 这些目录本就不在归档里 | 用 2.3 的整目录包单独搬 |
 
 ---
@@ -363,16 +363,16 @@ SQLite 与 PostgreSQL 之间没有转换工具，只能在同一引擎内搬。
 
 迁移前（旧机）：
 
-- [ ] `octop backup create --include-chats -o ...` 成功，输出有 `wrote ...`
+- [ ] `happyclaw backup create --include-chats -o ...` 成功，输出有 `wrote ...`
 - [ ] `tar -tzf` 能看到 `manifest.json`、`db/`、`workspaces/`
 - [ ] 记录了 SHA256
 - [ ] 需要证书 / 头像时，另打了整目录包
 
 迁移后（新机）：
 
-- [ ] `octop --version` 不低于旧机
-- [ ] `octop backup restore ... --yes` 输出 `restored: {...}`
-- [ ] `octop run` 无报错
+- [ ] `happyclaw --version` 不低于旧机
+- [ ] `happyclaw backup restore ... --yes` 输出 `restored: {...}`
+- [ ] `happyclaw run` 无报错
 - [ ] `Invoke-RestMethod http://127.0.0.1:8088/api/health` 返回 `ok : True`
 - [ ] 专家数量与旧机一致
 - [ ] 打开一个历史会话，消息完整

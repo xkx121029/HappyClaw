@@ -9,9 +9,9 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from click.testing import CliRunner
 
-from octop.cli.main import cli
-from octop.infra.db.repos.agents import AgentRepo
-from octop.infra.db.repos.users import UserRepo
+from happyclaw.cli.main import cli
+from happyclaw.infra.db.repos.agents import AgentRepo
+from happyclaw.infra.db.repos.users import UserRepo
 
 
 def _bootstrap() -> None:
@@ -24,8 +24,8 @@ def _bootstrap() -> None:
 
 
 def test_set_skill_enabled_persists_disabled_list(tmp_octop_home: Path) -> None:
-    from octop.cli.support.db import open_cli_services
-    from octop.cli.support.skills import set_skill_enabled
+    from happyclaw.cli.support.db import open_cli_services
+    from happyclaw.cli.support.skills import set_skill_enabled
 
     _bootstrap()
     with open_cli_services(home=tmp_octop_home) as svc:
@@ -48,7 +48,7 @@ def test_set_skill_enabled_persists_disabled_list(tmp_octop_home: Path) -> None:
 
 
 def test_list_skills_offline_delegates_to_embedded_server() -> None:
-    from octop.cli.support import skills as skills_mod
+    from happyclaw.cli.support import skills as skills_mod
 
     sample = [{"slug": "docx", "name": "docx", "enabled": True, "kind": "workspace"}]
 
@@ -63,7 +63,7 @@ def test_list_skills_offline_delegates_to_embedded_server() -> None:
 
 def test_skills_list_cli_no_login(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "octop.cli.support.skills.list_skills_offline",
+        "happyclaw.cli.support.skills.list_skills_offline",
         lambda _aid: [{"slug": "docx", "name": "docx", "enabled": True, "kind": "workspace"}],
     )
     runner = CliRunner()

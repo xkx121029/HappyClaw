@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.text_assist import ASSIST_KINDS, run_text_assist
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.text_assist import ASSIST_KINDS, run_text_assist
 
 
 def _models(result: str = "polished") -> Any:
@@ -23,7 +23,7 @@ def _models(result: str = "polished") -> Any:
 @pytest.mark.asyncio
 async def test_chat_prompt_requires_text() -> None:
     models = _models()
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await run_text_assist(models=models, kind="chat.prompt", text="  ")
     assert exc.value.code == ErrorCode.SLASH_BAD_ARGS
     models.get.assert_not_called()
@@ -32,7 +32,7 @@ async def test_chat_prompt_requires_text() -> None:
 @pytest.mark.asyncio
 async def test_form_kind_requires_name() -> None:
     models = _models()
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await run_text_assist(
             models=models,
             kind="expert.description",
@@ -46,7 +46,7 @@ async def test_form_kind_requires_name() -> None:
 @pytest.mark.asyncio
 async def test_unknown_kind_rejected() -> None:
     models = _models()
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         await run_text_assist(models=models, kind="nope.kind", text="x")  # type: ignore[arg-type]
     assert exc.value.code == ErrorCode.SLASH_BAD_ARGS
     models.get.assert_not_called()

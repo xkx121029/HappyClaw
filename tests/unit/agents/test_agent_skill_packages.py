@@ -7,13 +7,13 @@ from pathlib import Path
 
 import pytest
 
-from octop.config import OctopConfig
-from octop.infra.agents.manager import AgentManager, skill_package_ids_list
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import build_shared_services
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.utils.paths import PathLayout
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.agents.manager import AgentManager, skill_package_ids_list
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import build_shared_services
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.utils.paths import PathLayout
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def manager(tmp_path: Path) -> AgentManager:
     paths.ensure_root()
     db = SqlitePool(paths.db)
     run_migrations(db)
-    services = build_shared_services(db=db, paths=paths, config=OctopConfig())
+    services = build_shared_services(db=db, paths=paths, config=HappyclawConfig())
     return AgentManager(repos=services.repos, paths=services.paths)
 
 
@@ -81,7 +81,7 @@ async def test_persist_skill_package_ids_rejects_non_host_root_backend(
     )
     manager._repos.skill_package_repo.create(id=package_id, name="Package", created_by="1")
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         await manager.persist_skill_package_ids(agent_id, [package_id])
 
     assert exc_info.value.code is ErrorCode.SKILL_PACKAGE_BACKEND_UNSUPPORTED
@@ -90,7 +90,7 @@ async def test_persist_skill_package_ids_rejects_non_host_root_backend(
 def test_assert_backend_supports_skill_packages_rejects_non_host_root(
     manager: AgentManager,
 ) -> None:
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         manager.assert_backend_supports_skill_packages(
             {"type": "local_shell", "root_dir": "/tmp/octop", "virtual_mode": True}
         )
@@ -250,7 +250,7 @@ async def test_persist_skill_package_ids_rejects_unknown_package(
 ) -> None:
     manager._repos.agent_repo.create(agent_id="AGENT01", user_id=None, name="agent")
 
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         await manager.persist_skill_package_ids("AGENT01", ["MISSING"])
 
     assert exc_info.value.code is ErrorCode.SKILL_PACKAGE_NOT_FOUND
@@ -363,7 +363,7 @@ async def test_list_skill_summaries_relabels_mounted_package_skills(
     """Harness lists package dirs as workspace; Octop marks mounted package slugs."""
     from unittest.mock import AsyncMock, MagicMock
 
-    from octop.infra.skills.skill_package_store import SkillPackageStore
+    from happyclaw.infra.skills.skill_package_store import SkillPackageStore
 
     agent_id = "AGENT01"
     package_id = "PACK01"

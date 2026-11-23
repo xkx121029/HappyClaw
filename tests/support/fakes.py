@@ -156,7 +156,7 @@ description: General-purpose agent
         )
 
     async def list_subagent_summaries(self) -> list[dict[str, Any]]:
-        from octop.infra.utils.frontmatter import parse_frontmatter
+        from happyclaw.infra.utils.frontmatter import parse_frontmatter
 
         paths: set[str] = set()
         for root in ("agents", ".octop/agents"):
@@ -220,8 +220,8 @@ description: General-purpose agent
         tests, or the real disk-backed backend). Enumerate from whichever store holds
         them so the listed summaries match what the routers persisted.
         """
-        from octop.infra.skills.presentation import apply_skill_presentation
-        from octop.infra.utils.frontmatter import parse_frontmatter
+        from happyclaw.infra.skills.presentation import apply_skill_presentation
+        from happyclaw.infra.utils.frontmatter import parse_frontmatter
 
         collected: dict[str, str] = {}
 

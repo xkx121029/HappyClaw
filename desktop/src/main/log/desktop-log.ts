@@ -4,12 +4,12 @@ import { gzipSync } from "node:zlib";
 
 /**
  * Shell diagnostic log. It lives in its own directory next to the Python log:
- * ``<OCTOP_HOME>/logs/desktop/desktop.log``.
+ * ``<HAPPYCLAW_HOME>/logs/desktop/desktop.log``.
  *
  * Rotation matches ``octop.log``: roll at local midnight and at 100 MiB,
  * keep ``desktop.YYYY-MM-DD.log`` (``.001`` when the same day rolls again),
  * gzip older rotated files on the next cycle, and delete files older than 14 days.
- * ``OCTOP_LOG_MAX_BYTES``, ``OCTOP_LOG_RETENTION_DAYS``, and ``OCTOP_LOG_COMPRESS``
+ * ``HAPPYCLAW_LOG_MAX_BYTES``, ``HAPPYCLAW_LOG_RETENTION_DAYS``, and ``HAPPYCLAW_LOG_COMPRESS``
  * apply the same way as the Python log.
  *
  * Python keeps its own ``octop.log``. This file is only the Electron shell.
@@ -213,9 +213,9 @@ function migrateLegacyDesktopLog(octopHome: string): void {
 
 function desktopLogOptionsFromEnv(): DesktopLogOptions {
   return {
-    maxBytes: parseMaxBytes(process.env.OCTOP_LOG_MAX_BYTES),
-    retentionDays: parseRetentionDays(process.env.OCTOP_LOG_RETENTION_DAYS),
-    compressRotated: parseCompress(process.env.OCTOP_LOG_COMPRESS),
+    maxBytes: parseMaxBytes(process.env.HAPPYCLAW_LOG_MAX_BYTES),
+    retentionDays: parseRetentionDays(process.env.HAPPYCLAW_LOG_RETENTION_DAYS),
+    compressRotated: parseCompress(process.env.HAPPYCLAW_LOG_COMPRESS),
   };
 }
 

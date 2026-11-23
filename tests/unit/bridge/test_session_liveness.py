@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from octop.infra.bridge.transport import BridgeSession
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.infra.bridge.transport import BridgeSession
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 
 @pytest.mark.asyncio
@@ -128,7 +128,7 @@ async def test_next_queue_item_aborts_when_session_closes() -> None:
 
 @pytest.mark.asyncio
 async def test_require_live_session_drops_stale_immediately() -> None:
-    from octop.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.bridge.manager import BridgeManager
 
     mgr = BridgeManager(
         bridge_repo=MagicMock(),
@@ -141,7 +141,7 @@ async def test_require_live_session_drops_stale_immediately() -> None:
     stale._last_recv = 0.0  # noqa: SLF001
     mgr._sessions["cid1"] = stale
 
-    with pytest.raises(OctopError) as ei:
+    with pytest.raises(HappyclawError) as ei:
         await mgr._require_live_session("cid1")
     assert ei.value.code == ErrorCode.BRIDGE_NOT_CONNECTED
     assert stale.closed is True
@@ -150,7 +150,7 @@ async def test_require_live_session_drops_stale_immediately() -> None:
 
 @pytest.mark.asyncio
 async def test_require_live_session_waits_for_outbound_supervisor() -> None:
-    from octop.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.bridge.manager import BridgeManager
 
     mgr = BridgeManager(
         bridge_repo=MagicMock(),
@@ -176,8 +176,8 @@ async def test_require_live_session_waits_for_outbound_supervisor() -> None:
 
 @pytest.mark.asyncio
 async def test_relay_user_turn_closes_generating_when_peer_stops_at_done() -> None:
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.db.repos.bridge_connections import BridgeConnectionRow
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRow
 
     row = BridgeConnectionRow(
         pk=1,
@@ -247,8 +247,8 @@ async def test_relay_user_turn_closes_generating_when_peer_stops_at_done() -> No
 
 @pytest.mark.asyncio
 async def test_relay_user_turn_unlistens_when_cancelled() -> None:
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.db.repos.bridge_connections import BridgeConnectionRow
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRow
 
     row = BridgeConnectionRow(
         pk=1,
@@ -329,8 +329,8 @@ async def test_relay_user_turn_unlistens_when_cancelled() -> None:
 
 @pytest.mark.asyncio
 async def test_relay_user_listen_forwards_member_frames_until_unlisten() -> None:
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.db.repos.bridge_connections import BridgeConnectionRow
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRow
 
     row = BridgeConnectionRow(
         pk=1,
@@ -424,8 +424,8 @@ async def test_relay_user_listen_forwards_member_frames_until_unlisten() -> None
 
 @pytest.mark.asyncio
 async def test_relay_user_turn_fails_fast_when_session_closes() -> None:
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.db.repos.bridge_connections import BridgeConnectionRow
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRow
 
     row = BridgeConnectionRow(
         pk=1,
@@ -462,7 +462,7 @@ async def test_relay_user_turn_fails_fast_when_session_closes() -> None:
 
     asyncio.create_task(killer())
     frames: list[dict[str, Any]] = []
-    with pytest.raises(OctopError) as exc_info:
+    with pytest.raises(HappyclawError) as exc_info:
         await mgr.relay_user_turn(
             connection_id="cid1",
             owner_user_id=1,
@@ -474,7 +474,7 @@ async def test_relay_user_turn_fails_fast_when_session_closes() -> None:
 
 
 def _bridge_row() -> Any:
-    from octop.infra.db.repos.bridge_connections import BridgeConnectionRow
+    from happyclaw.infra.db.repos.bridge_connections import BridgeConnectionRow
 
     return BridgeConnectionRow(
         pk=1,
@@ -499,8 +499,8 @@ def _bridge_row() -> Any:
 
 @pytest.mark.asyncio
 async def test_relay_turn_cancel_sends_control_and_forwards_end() -> None:
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.bridge.transport import FEATURE_TURN_CONTROL
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.bridge.transport import FEATURE_TURN_CONTROL
 
     mgr = BridgeManager(
         bridge_repo=MagicMock(),
@@ -542,8 +542,8 @@ async def test_relay_turn_cancel_sends_control_and_forwards_end() -> None:
 
 @pytest.mark.asyncio
 async def test_relay_turn_steer_remove_forwards_ack() -> None:
-    from octop.infra.bridge.manager import BridgeManager
-    from octop.infra.bridge.transport import FEATURE_TURN_CONTROL
+    from happyclaw.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.bridge.transport import FEATURE_TURN_CONTROL
 
     mgr = BridgeManager(
         bridge_repo=MagicMock(),
@@ -602,7 +602,7 @@ async def test_relay_turn_steer_remove_forwards_ack() -> None:
 
 @pytest.mark.asyncio
 async def test_relay_turn_cancel_fails_fast_without_peer_feature() -> None:
-    from octop.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.bridge.manager import BridgeManager
 
     mgr = BridgeManager(
         bridge_repo=MagicMock(),
@@ -634,8 +634,8 @@ async def test_relay_turn_cancel_fails_fast_without_peer_feature() -> None:
 @pytest.mark.asyncio
 async def test_outbound_dial_disables_protocol_ping(monkeypatch: pytest.MonkeyPatch) -> None:
     """A late protocol pong must not drop the link; app heartbeats keep it up."""
-    from octop.infra.bridge.ids import PROTOCOL_VERSION
-    from octop.infra.bridge.manager import BridgeManager
+    from happyclaw.infra.bridge.ids import PROTOCOL_VERSION
+    from happyclaw.infra.bridge.manager import BridgeManager
 
     captured: dict[str, Any] = {}
 
@@ -678,7 +678,7 @@ async def test_outbound_dial_disables_protocol_ping(monkeypatch: pytest.MonkeyPa
         advertise_base_url="http://local.test",
     )
     mgr._repo.get.return_value = None
-    monkeypatch.setattr("octop.infra.bridge.manager.websockets.connect", _FakeConnect)
+    monkeypatch.setattr("happyclaw.infra.bridge.manager.websockets.connect", _FakeConnect)
 
     await mgr._run_outbound_client("cid1", "https://demo.octop.chat", "tok")
 

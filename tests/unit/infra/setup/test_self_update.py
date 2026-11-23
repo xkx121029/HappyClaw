@@ -1,4 +1,4 @@
-"""Tests for octop.infra.setup.self_update."""
+"""Tests for happyclaw.infra.setup.self_update."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.setup.self_update import (
+from happyclaw.infra.setup.self_update import (
     UpgradeResult,
     _all_mirrors_failed,
     build_upgrade_command,
@@ -125,7 +125,7 @@ def test_fetch_pypi_info_loads_prerelease_description(
             return _JsonResp(beta)
         raise AssertionError(url)
 
-    monkeypatch.setattr("octop.infra.setup.self_update.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update.urllib.request.urlopen", fake_urlopen)
     info = fetch_pypi_info()
     assert info is not None
     assert info.version == "1.0.2b5"
@@ -151,7 +151,7 @@ def test_fetch_pypi_info_skips_versioned_fetch_when_stable_is_latest(
             return _JsonResp(catalog)
         raise AssertionError(url)
 
-    monkeypatch.setattr("octop.infra.setup.self_update.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update.urllib.request.urlopen", fake_urlopen)
     info = fetch_pypi_info()
     assert info is not None
     assert info.version == "1.0.1"
@@ -168,7 +168,7 @@ def test_build_upgrade_command_prerelease_flags(
     assert uv_cmd is not None
     assert uv_cmd[uv_cmd.index("--prerelease") + 1] == "allow"
     assert "octop==0.9.34b1" in uv_cmd
-    monkeypatch.setattr("octop.infra.setup.self_update.has_pip", lambda _: True)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update.has_pip", lambda _: True)
     pip_cmd = build_upgrade_command("pip", python, allow_prerelease=True, version="0.9.34b1")
     assert pip_cmd is not None
     assert "--pre" in pip_cmd
@@ -178,7 +178,7 @@ def test_build_upgrade_command_prerelease_flags(
 def test_portable_upgrade_prefers_bundled_uv(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     packages = tmp_path / "packages"
     executable = packages / "bin" / ("uv.exe" if os.name == "nt" else "uv")
@@ -199,7 +199,7 @@ def test_portable_upgrade_prefers_bundled_uv(
 def test_portable_without_bundled_uv_keeps_pip_fallback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path / "packages"))
     monkeypatch.setattr(self_update.shutil, "which", lambda _: None)
@@ -215,7 +215,7 @@ def test_build_upgrade_command_pins_stable_without_pre(
     assert uv_cmd is not None
     assert "octop==0.9.33" in uv_cmd
     assert "--prerelease" not in uv_cmd
-    monkeypatch.setattr("octop.infra.setup.self_update.has_pip", lambda _: True)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update.has_pip", lambda _: True)
     pip_cmd = build_upgrade_command("pip", python, version="0.9.33")
     assert pip_cmd is not None
     assert "octop==0.9.33" in pip_cmd
@@ -236,7 +236,7 @@ def test_stash_console_scripts_is_noop_off_windows(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("octop.infra.setup.self_update._is_windows", lambda: False)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update._is_windows", lambda: False)
     script_dir = _fake_windows_scripts(tmp_path)
     assert stash_console_scripts(str(script_dir / "python.exe")) == []
     assert (script_dir / "octop.exe").exists()
@@ -246,7 +246,7 @@ def test_stash_console_scripts_moves_launcher_and_purges_leftovers(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("octop.infra.setup.self_update._is_windows", lambda: True)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update._is_windows", lambda: True)
     script_dir = _fake_windows_scripts(tmp_path)
 
     moved = stash_console_scripts(str(script_dir / "python.exe"))
@@ -262,7 +262,7 @@ def test_restore_console_scripts_puts_launcher_back(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("octop.infra.setup.self_update._is_windows", lambda: True)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update._is_windows", lambda: True)
     script_dir = _fake_windows_scripts(tmp_path)
     moved = stash_console_scripts(str(script_dir / "python.exe"))
 
@@ -278,11 +278,11 @@ def test_run_upgrade_restores_launcher_only_on_failure(
     monkeypatch: pytest.MonkeyPatch,
     success: bool,
 ) -> None:
-    monkeypatch.setattr("octop.infra.setup.self_update._is_windows", lambda: True)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update._is_windows", lambda: True)
     monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
     script_dir = _fake_windows_scripts(tmp_path)
     monkeypatch.setattr(
-        "octop.infra.setup.self_update.resolve_venv_python",
+        "happyclaw.infra.setup.self_update.resolve_venv_python",
         lambda: str(script_dir / "python.exe"),
     )
 
@@ -294,7 +294,7 @@ def test_run_upgrade_restores_launcher_only_on_failure(
             return UpgradeResult(success=True, installed_version="1.0.1")
         return UpgradeResult(success=False, error="upgrade failed on all mirrors")
 
-    monkeypatch.setattr("octop.infra.setup.self_update._run_managed_upgrade", fake_upgrade)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update._run_managed_upgrade", fake_upgrade)
 
     result = run_upgrade()
 
@@ -342,7 +342,7 @@ def test_probe_index_classifies_missing_and_unreachable(
             return b'<a href="octop-0.9.0-py3-none-any.whl">x</a>'
 
     monkeypatch.setattr(
-        "octop.infra.setup.self_update.urllib.request.urlopen",
+        "happyclaw.infra.setup.self_update.urllib.request.urlopen",
         lambda *_a, **_k: _Resp(),
     )
     missing = probe_index("https://mirrors.example/simple", version="1.0.1", timeout=1)
@@ -352,7 +352,7 @@ def test_probe_index_classifies_missing_and_unreachable(
     def _boom(*_a: object, **_k: object) -> None:
         raise TimeoutError("timed out")
 
-    monkeypatch.setattr("octop.infra.setup.self_update.urllib.request.urlopen", _boom)
+    monkeypatch.setattr("happyclaw.infra.setup.self_update.urllib.request.urlopen", _boom)
     bad = probe_index("https://down.example/simple", version="1.0.1", timeout=1)
     assert bad.status == "unreachable"
     assert bad.detail.startswith("timeout:")
@@ -361,7 +361,7 @@ def test_probe_index_classifies_missing_and_unreachable(
 def test_rank_install_indexes_skips_missing_prefers_fast_hit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     def fake_probe(
         index_url: str,
@@ -411,7 +411,7 @@ def test_all_mirrors_failed_enriches_error_with_install_detail() -> None:
 def test_run_managed_upgrade_uses_ranked_indexes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
     monkeypatch.setattr(self_update, "detect_installer", lambda: "uv")
@@ -463,7 +463,7 @@ def test_run_managed_upgrade_uses_ranked_indexes(
 
 @pytest.mark.parametrize("has_metadata", [True, False])
 def test_get_version_in_dir_does_not_use_other_installs(tmp_path: Path, has_metadata: bool) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     if has_metadata:
         metadata = tmp_path / "octop-1.0.2b4.dist-info" / "METADATA"
@@ -479,7 +479,7 @@ def test_get_local_version_falls_back_to_editable_install(
     """Desktop dev runtime: green target exists but is empty, venv provides octop."""
     from importlib.metadata import version as dist_version
 
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
@@ -493,7 +493,7 @@ def test_get_local_version_stays_zero_for_broken_green_target(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A green install with an empty target and no editable metadata is unknown."""
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
@@ -515,7 +515,7 @@ def test_get_local_version_stays_zero_for_broken_green_target(
 def test_target_versions_load_package_despite_stale_metadata(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, target_env: str, versions: list[str]
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.delenv("OCTOP_GREEN_PACKAGES", raising=False)
     monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
@@ -557,7 +557,7 @@ def _write_upgrade_wheel(directory: Path, metadata: str | None = None) -> Path:
 
 @pytest.mark.parametrize("check_cli", [False, True])
 def test_target_probe_ignores_import_and_pth_output(tmp_path: Path, check_cli: bool) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     _write_octop_package(tmp_path, "1.0.2b5")
     (tmp_path / "noise.pth").write_text("import sys; print('pth output')\n", encoding="utf-8")
@@ -573,7 +573,7 @@ def test_target_probe_ignores_import_and_pth_output(tmp_path: Path, check_cli: b
 def test_new_metadata_cannot_hide_old_or_broken_package(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, broken_import: bool
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
@@ -589,7 +589,7 @@ def test_new_metadata_cannot_hide_old_or_broken_package(
 
 
 def test_target_version_loads_pth_dependencies(tmp_path: Path) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     dependency = tmp_path / "dependencies"
     dependency.mkdir()
@@ -605,10 +605,10 @@ def test_target_version_loads_pth_dependencies(tmp_path: Path) -> None:
 def test_target_version_prevents_downgrade_before_service_restart(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import octop
-    from octop.infra.setup import self_update
+    import happyclaw
+    from happyclaw.infra.setup import self_update
 
-    monkeypatch.setattr(octop, "__version__", "1.0.2b4")
+    monkeypatch.setattr(happyclaw, "__version__", "1.0.2b4")
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
     _write_octop_package(tmp_path, "1.0.2b6")
     assert self_update.get_local_version() == "1.0.2b6"
@@ -620,7 +620,7 @@ def test_target_version_prevents_downgrade_before_service_restart(
 def test_target_verification_exercises_cli_instead_of_accepting_import_alone(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
@@ -651,7 +651,7 @@ def test_target_verification_exercises_cli_instead_of_accepting_import_alone(
 def test_application_only_checks_target_dependency_closure(
     tmp_path: Path, scenario: str, expected: bool
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     def metadata(name: str, version: str, requires: list[str]) -> Path:
         path = tmp_path / f"{name}-{version}.dist-info" / "METADATA"
@@ -703,7 +703,7 @@ def test_application_only_checks_target_dependency_closure(
     ],
 )
 def test_preflight_rejects_wrong_or_ambiguous_release(tmp_path: Path, metadata: str) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     wheel = _write_upgrade_wheel(tmp_path, metadata)
     assert not self_update._target_dependencies_satisfied(tmp_path, wheel, version="1.0.2b5")
@@ -711,7 +711,7 @@ def test_preflight_rejects_wrong_or_ambiguous_release(tmp_path: Path, metadata: 
 
 @pytest.mark.parametrize("broken", ["invalid-zip", "missing-metadata", "duplicate-metadata"])
 def test_preflight_rejects_unreadable_wheel(tmp_path: Path, broken: str) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     wheel = _write_upgrade_wheel(tmp_path)
     if broken == "invalid-zip":
@@ -733,7 +733,7 @@ def test_legacy_pip_fast_path_falls_back_and_verifies_full_install(
     failure: str,
     full_install_success: bool,
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update, "detect_installer", lambda: "pip")
@@ -813,7 +813,7 @@ def test_verify_upgrade_requires_newer_requested_version(
     requested: str | None,
     success: bool,
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.delenv("OCTOP_GREEN_PACKAGES", raising=False)
     monkeypatch.setattr(self_update, "get_installed_version", lambda _: actual)
@@ -831,8 +831,8 @@ def test_verify_upgrade_requires_newer_requested_version(
 def test_verify_green_upgrade_reads_only_target(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, locale: str
 ) -> None:
-    from octop.i18n import tr
-    from octop.infra.setup import self_update
+    from happyclaw.i18n import tr
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
@@ -867,7 +867,7 @@ def test_verify_green_upgrade_reads_only_target(
 def test_pip_target_upgrade_with_stale_metadata_succeeds_without_retry(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.delenv("OCTOP_FPK_SITE_PACKAGES", raising=False)
@@ -920,7 +920,7 @@ def test_pip_target_upgrade_with_stale_metadata_succeeds_without_retry(
 def test_application_download_failure_retries_without_modifying_target(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update, "detect_installer", lambda: "pip")
@@ -954,7 +954,7 @@ def test_application_download_failure_retries_without_modifying_target(
 def test_legacy_pip_fallback_window_is_shared_across_mirrors(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, exhaust_during_download: bool
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path))
     monkeypatch.setattr(self_update, "detect_installer", lambda: "pip")
@@ -1016,8 +1016,8 @@ def test_legacy_pip_fallback_window_is_shared_across_mirrors(
 def test_fpk_verification_uses_target_and_rejects_missing_or_wrong_versions(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, locale: str, actual: str | None
 ) -> None:
-    from octop.i18n import tr
-    from octop.infra.setup import self_update
+    from happyclaw.i18n import tr
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setattr(self_update.time, "sleep", lambda _: None)
     if actual:
@@ -1046,15 +1046,15 @@ def test_fpk_verification_uses_target_and_rejects_missing_or_wrong_versions(
 def test_upgrade_keeps_locale_bundle_when_installer_replaces_resources(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, locale: str, fpk: bool, actual: str
 ) -> None:
-    from octop.i18n import loader
-    from octop.infra.setup import self_update
+    from happyclaw.i18n import loader
+    from happyclaw.infra.setup import self_update
 
     bundles = tmp_path / "i18n"
     bundles.mkdir()
     original = {}
     for language in ("en", "zh"):
         content = (
-            loader.resources.files("octop.i18n")
+            loader.resources.files("happyclaw.i18n")
             .joinpath(f"{language}.json")
             .read_text(encoding="utf-8")
         )
@@ -1108,8 +1108,8 @@ def test_upgrade_keeps_locale_bundle_when_installer_replaces_resources(
 def test_run_upgrade_rejects_non_newer_target_before_changes(
     monkeypatch: pytest.MonkeyPatch, locale: str, target: str, fpk: bool
 ) -> None:
-    from octop.i18n import tr
-    from octop.infra.setup import self_update
+    from happyclaw.i18n import tr
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_FPK_SITE_PACKAGES", "fpk-target" if fpk else "")
     monkeypatch.setattr(self_update, "get_local_version", lambda: "1.0.2b4")
@@ -1130,7 +1130,7 @@ def test_run_upgrade_rejects_non_newer_target_before_changes(
 def test_run_managed_upgrade_retries_after_failed_verification(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.delenv("OCTOP_GREEN_PACKAGES", raising=False)
     monkeypatch.setattr(self_update, "detect_installer", lambda: "uv")
@@ -1164,7 +1164,7 @@ def test_run_managed_upgrade_retries_after_failed_verification(
 def test_cold_target_install_budget_preserves_regular_timeout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, portable: bool, installer: str
 ) -> None:
-    from octop.infra.setup import self_update
+    from happyclaw.infra.setup import self_update
 
     monkeypatch.setenv("OCTOP_GREEN_PACKAGES", str(tmp_path) if portable else "")
     monkeypatch.setattr(self_update, "detect_installer", lambda: installer)

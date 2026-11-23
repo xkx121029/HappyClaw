@@ -2,7 +2,7 @@
 #
 # octop — 飞牛本地版「官方 CLI」包装
 #
-# 复刻 octop 运行环境后调用 `python -m octop.cli.main`，因此可使用全部官方子命令：
+# 复刻 octop 运行环境后调用 `python -m happyclaw.cli.main`，因此可使用全部官方子命令：
 #   octop --help
 #   octop version
 #   octop provider list
@@ -24,9 +24,9 @@ set -euo pipefail
 # 注意：FPK 解包后 cmd/ 落在 /var/apps/octop-native/cmd（管理目录），而本文件位于
 # 负载目录 $TRIM_APPDEST/bin，`$0/../cmd` 指向载荷内不存在的位置，故需回退到
 # 外层 cmd 的实际落点。
-_OCTOP_COMMON="$(dirname "$0")/../cmd/common.sh"
-[ -f "$_OCTOP_COMMON" ] || _OCTOP_COMMON="/var/apps/octop-native/cmd/common.sh"
-[ -f "$_OCTOP_COMMON" ] && source "$_OCTOP_COMMON"
+_HAPPYCLAW_COMMON="$(dirname "$0")/../cmd/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] || _HAPPYCLAW_COMMON="/var/apps/octop-native/cmd/common.sh"
+[ -f "$_HAPPYCLAW_COMMON" ] && source "$_HAPPYCLAW_COMMON"
 
 APPDEST="${TRIM_APPDEST:-/var/apps/octop-native}"
 PKGVAR="${TRIM_PKGVAR:-/var/apps/octop-native/var}"
@@ -40,7 +40,7 @@ fi
 
 mkdir -p "$DATA_DIR" "$PKGVAR"
 
-# 加载安装向导写入的配置（OCTOP_PORT / 管理员账号 等）
+# 加载安装向导写入的配置（HAPPYCLAW_PORT / 管理员账号 等）
 if [ -f "$PKGVAR/.env" ]; then
     set -a; . "$PKGVAR/.env"; set +a
 fi
@@ -67,8 +67,8 @@ PY="$(find_python312)" || {
 SITE_PACKAGES="$APPDEST/site-packages"
 export PYTHONPATH="${SITE_PACKAGES}${PYTHONPATH:+:$PYTHONPATH}"
 export HOME="$DATA_DIR"
-export OCTOP_HOME="$DATA_DIR/.octop"
-export OCTOP_DATA_DIR="$DATA_DIR"
+export HAPPYCLAW_HOME="$DATA_DIR/.octop"
+export HAPPYCLAW_DATA_DIR="$DATA_DIR"
 
 # 内置在线升级优先使用 uv（pip 对 happyclaw-harness[all] 依赖树解析会卡死）。
 # 系统无 uv 且当前为 root 时自动安装一次（装到系统 Python bin，软链到 /usr/local/bin）。
@@ -81,9 +81,9 @@ fi
 
 # 飞牛 FPK 部署标识 + 打包 site-packages 路径：内置在线升级安装到此目录
 # （launcher 实际加载的位置），重启服务后即加载新版，升级真正生效
-# （见 src/octop/infra/setup/self_update.py 的 _run_fpk_upgrade）。
-export OCTOP_INSTALL_MODE="fpk-native"
-export OCTOP_FPK_SITE_PACKAGES="$SITE_PACKAGES"
+# （见 src/happyclaw/infra/setup/self_update.py 的 _run_fpk_upgrade）。
+export HAPPYCLAW_INSTALL_MODE="fpk-native"
+export HAPPYCLAW_FPK_SITE_PACKAGES="$SITE_PACKAGES"
 
 # 兜底：若包内 octop 未就绪，用内置核心 whl 离线安装（避免联网）
 if ! "$PY" -c "import octop" >/dev/null 2>&1; then
@@ -99,11 +99,11 @@ if id octop-native >/dev/null 2>&1 && command -v sudo >/dev/null 2>&1; then
     exec sudo -u octop-native \
         PYTHONPATH="$PYTHONPATH" \
         HOME="$HOME" \
-        OCTOP_HOME="$OCTOP_HOME" \
-        OCTOP_DATA_DIR="$OCTOP_DATA_DIR" \
-        OCTOP_INSTALL_MODE="$OCTOP_INSTALL_MODE" \
-        OCTOP_FPK_SITE_PACKAGES="$OCTOP_FPK_SITE_PACKAGES" \
-        "$PY" -m octop.cli.main "$@"
+        HAPPYCLAW_HOME="$HAPPYCLAW_HOME" \
+        HAPPYCLAW_DATA_DIR="$HAPPYCLAW_DATA_DIR" \
+        HAPPYCLAW_INSTALL_MODE="$HAPPYCLAW_INSTALL_MODE" \
+        HAPPYCLAW_FPK_SITE_PACKAGES="$HAPPYCLAW_FPK_SITE_PACKAGES" \
+        "$PY" -m happyclaw.cli.main "$@"
 else
-    exec "$PY" -m octop.cli.main "$@"
+    exec "$PY" -m happyclaw.cli.main "$@"
 fi

@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from octop.infra.dsh.llm import (
+from happyclaw.infra.dsh.llm import (
     AssistantTurnBuilder,
     CancellationToken,
     FailureCode,

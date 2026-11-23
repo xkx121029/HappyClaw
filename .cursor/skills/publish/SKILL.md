@@ -24,7 +24,7 @@ disable-model-invocation: true
 | `VERSION_FILE` | `pyproject.toml` | 包含版本号的文件 |
 | `VERSION_PATTERN` | `^\s*version\s*=\s*"[^"]+"` | 匹配版本行的正则表达式 |
 | `README_GLOB` | `README*.md` | 含 shields.io 版本徽标的 README（含多语言变体，如 `README.md`、`README_CN.md`）；全部同步升级 |
-| `INIT_VERSION_FILE` | `src/octop/__init__.py` | 含运行时常量 `__version__` 的文件（缺失则跳过并提示） |
+| `INIT_VERSION_FILE` | `src/happyclaw/__init__.py` | 含运行时常量 `__version__` 的文件（缺失则跳过并提示） |
 | `TAG_PREFIX` | `v` | Git tag 前缀；工作流监听 `v*`，生成 `v0.1.14` 风格标签 |
 | `REMOTE` | `origin` | Git 远程仓库名 |
 | `INTEGRATION_BRANCH` | `develop` | 日常集成分支；release 必须从最新 tip 切出 |
@@ -194,9 +194,9 @@ git checkout -B {RELEASE_BRANCH_PREFIX}{version} {REMOTE}/{INTEGRATION_BRANCH}
    # `version-X.Y.Z-orange` → `version-A.B.C-orange`
    ```
    当前仓库至少包括 `README.md` 与 `README_CN.md`。全部未命中则提示并继续。
-3. `INIT_VERSION_FILE`（`src/octop/__init__.py`）— 运行时常量 `__version__`：
+3. `INIT_VERSION_FILE`（`src/happyclaw/__init__.py`）— 运行时常量 `__version__`：
    ```bash
-   grep -n '__version__' src/octop/__init__.py
+   grep -n '__version__' src/happyclaw/__init__.py
    # `__version__ = "X.Y.Z"` → `"A.B.C"`
    ```
 4. `uv.lock` 里可编辑包 `octop` 的版本（漏改会导致 lock 与 pyproject 不一致）：
@@ -228,7 +228,7 @@ git grep -n --fixed-strings "X.Y.Z"
 
 ```bash
 git grep -n --fixed-strings "X.Y.Z" -- \
-  pyproject.toml src/octop/__init__.py \
+  pyproject.toml src/happyclaw/__init__.py \
   README.md README_CN.md \
   uv.lock
 ```

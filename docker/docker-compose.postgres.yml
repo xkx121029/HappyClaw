@@ -9,8 +9,8 @@
 #   postgresql://octop:octop@127.0.0.1:5432/octop
 #
 # For pytest / HappyClaw:
-#   export OCTOP_TEST_DATABASE_URL='postgresql://octop:octop@127.0.0.1:5432/octop'
-#   export OCTOP_DATABASE_URL='postgresql://octop:octop@127.0.0.1:5432/octop'
+#   export HAPPYCLAW_TEST_DATABASE_URL='postgresql://octop:octop@127.0.0.1:5432/octop'
+#   export HAPPYCLAW_DATABASE_URL='postgresql://octop:octop@127.0.0.1:5432/octop'
 #
 # Init layers (ADR 002):
 #   - Control-plane schema → HappyClaw migrate (NNN_*.pg.sql), not this compose
@@ -24,11 +24,11 @@ services:
     container_name: octop-postgres
     restart: unless-stopped
     ports:
-      - "${OCTOP_PG_PORT:-5432}:5432"
+      - "${HAPPYCLAW_PG_PORT:-5432}:5432"
     environment:
-      POSTGRES_USER: ${OCTOP_PG_USER:-octop}
-      POSTGRES_PASSWORD: ${OCTOP_PG_PASSWORD:-octop}
-      POSTGRES_DB: ${OCTOP_PG_DB:-octop}
+      POSTGRES_USER: ${HAPPYCLAW_PG_USER:-octop}
+      POSTGRES_PASSWORD: ${HAPPYCLAW_PG_PASSWORD:-octop}
+      POSTGRES_DB: ${HAPPYCLAW_PG_DB:-octop}
     volumes:
       - octop_pgdata:/var/lib/postgresql/data
       - ./postgres/init-vector.sql:/docker-entrypoint-initdb.d/01-vector.sql:ro

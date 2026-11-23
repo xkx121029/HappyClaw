@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db import migrate
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.users import UserRepo
+from happyclaw.infra.db import migrate
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.users import UserRepo
 
 
 def _owner_rows(db: SqlitePool) -> list[int]:

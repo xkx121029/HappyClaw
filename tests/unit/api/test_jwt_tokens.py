@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from octop.infra.auth.tokens import (
+from happyclaw.infra.auth.tokens import (
     PURPOSE_ACCESS,
     PURPOSE_MFA,
     InvalidToken,

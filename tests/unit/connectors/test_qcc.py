@@ -7,27 +7,27 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from octop.api.routers.connectors import _credentials_preview, _merge_credentials
-from octop.config import OctopConfig
-from octop.infra.connectors.builder import (
+from happyclaw.api.routers.connectors import _credentials_preview, _merge_credentials
+from happyclaw.config import HappyclawConfig
+from happyclaw.infra.connectors.builder import (
     build_http_mcp_spec,
     build_mcp_server_configs_for_user,
     gateway_mcp_server_names,
     validate_create_credentials,
 )
-from octop.infra.connectors.catalog import (
+from happyclaw.infra.connectors.catalog import (
     get_catalog_entry,
     get_mcp_oauth_remote,
     is_inprocess_gateway,
     uses_internal_http_mcp,
 )
-from octop.infra.connectors.probe import probe_connector
-from octop.infra.connectors.service import ConnectorService
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.connectors import ConnectorRepo
-from octop.infra.db.repos.secrets import SecretRepo
-from octop.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.connectors.probe import probe_connector
+from happyclaw.infra.connectors.service import ConnectorService
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.connectors import ConnectorRepo
+from happyclaw.infra.db.repos.secrets import SecretRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
 
 
 @pytest.mark.asyncio
@@ -45,14 +45,14 @@ async def test_qcc_credentials_build_and_probe(monkeypatch: pytest.MonkeyPatch) 
     assert creds["internal_token"]
     creds["internal_token"] = "local-gateway-token"
     spec = build_http_mcp_spec(
-        entry=entry, instance_id="qcc-test", creds=creds, config=OctopConfig()
+        entry=entry, instance_id="qcc-test", creds=creds, config=HappyclawConfig()
     )
     assert spec["transport"] == "http"
     assert "/api/internal/mcp/qcc/qcc-test?token=local-gateway-token" in spec["url"]
     assert "test-qcc-token" not in str(spec)
     probe = AsyncMock(return_value={"ok": True, "tools": []})
-    monkeypatch.setattr("octop.infra.connectors.qcc.probe", probe)
-    result = await probe_connector(entry, creds, instance_id="qcc-test", config=OctopConfig())
+    monkeypatch.setattr("happyclaw.infra.connectors.qcc.probe", probe)
+    result = await probe_connector(entry, creds, instance_id="qcc-test", config=HappyclawConfig())
     assert result["ok"] is True
     probe.assert_awaited_once_with("test-qcc-token")
 
@@ -110,7 +110,7 @@ def test_qcc_harness_config_uses_http_not_inprocess_gateway(tmp_path: Path, payl
         repo=repo,
         secret_repo=SecretRepo(pool),
         settings_repo=SettingsRepo(pool),
-        config=OctopConfig(),
+        config=HappyclawConfig(),
     )
     svc.encrypt_and_store(instance_id="qcc1", payload={**payload, "internal_token": "tok"})
     configs = build_mcp_server_configs_for_user(
@@ -119,7 +119,7 @@ def test_qcc_harness_config_uses_http_not_inprocess_gateway(tmp_path: Path, payl
         user_id=1,
         agent_id="agent",
         agent_user_id=1,
-        config=OctopConfig(),
+        config=HappyclawConfig(),
         log=False,
     )
     spec = configs["qcc__qcc1"]

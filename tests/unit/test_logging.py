@@ -1,6 +1,6 @@
 """tests/unit/test_logging.py
 
-Covers the daily-rotation + retention logging strategy in ``octop.infra.server``:
+Covers the daily-rotation + retention logging strategy in ``happyclaw.infra.server``:
 the log path lives under ``~/.octop/logs`` and stale rotated files are purged.
 """
 
@@ -16,9 +16,9 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.server import (
+from happyclaw.infra.server import (
     DEFAULT_LOG_MAX_BYTES,
-    OctopServer,
+    HappyclawServer,
     SizeTimedRotatingFileHandler,
     _attach_log_handler,
     _build_log_handler,
@@ -114,7 +114,7 @@ def test_attach_log_handler_is_idempotent(tmp_path: Path):
 def test_setup_logging_creates_logs_dir_and_file(tmp_path: Path, monkeypatch):
     monkeypatch.delenv("OCTOP_LOG_LEVEL", raising=False)
     monkeypatch.delenv("OCTOP_LOG_RETENTION_DAYS", raising=False)
-    server = OctopServer(home=tmp_path / ".octop")
+    server = HappyclawServer(home=tmp_path / ".octop")
 
     server._setup_logging()
 
@@ -138,7 +138,7 @@ def test_setup_logging_migrates_legacy_log(tmp_path: Path):
     legacy = home / "octop.log"
     legacy.parent.mkdir(parents=True, exist_ok=True)
     legacy.write_text("legacy content", encoding="utf-8")
-    server = OctopServer(home=home)
+    server = HappyclawServer(home=home)
 
     server._setup_logging()
 
@@ -149,7 +149,7 @@ def test_setup_logging_migrates_legacy_log(tmp_path: Path):
 
 def test_setup_logging_respects_retention_env(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("OCTOP_LOG_RETENTION_DAYS", "3")
-    server = OctopServer(home=tmp_path / ".octop")
+    server = HappyclawServer(home=tmp_path / ".octop")
 
     server._setup_logging()
 
@@ -164,7 +164,7 @@ def test_setup_logging_respects_retention_env(tmp_path: Path, monkeypatch):
 
 def test_setup_logging_respects_level_env(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("OCTOP_LOG_LEVEL", "debug")
-    server = OctopServer(home=tmp_path / ".octop")
+    server = HappyclawServer(home=tmp_path / ".octop")
 
     server._setup_logging()
 
@@ -173,7 +173,7 @@ def test_setup_logging_respects_level_env(tmp_path: Path, monkeypatch):
 
 def test_setup_logging_falls_back_on_invalid_level_env(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("OCTOP_LOG_LEVEL", "not-a-level")
-    server = OctopServer(home=tmp_path / ".octop")
+    server = HappyclawServer(home=tmp_path / ".octop")
 
     server._setup_logging()
 
@@ -182,7 +182,7 @@ def test_setup_logging_falls_back_on_invalid_level_env(tmp_path: Path, monkeypat
 
 def test_setup_logging_falls_back_on_invalid_retention_env(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("OCTOP_LOG_RETENTION_DAYS", "oops")
-    server = OctopServer(home=tmp_path / ".octop")
+    server = HappyclawServer(home=tmp_path / ".octop")
 
     server._setup_logging()
 
@@ -292,7 +292,7 @@ def test_purge_stale_logs_removes_old_gz_files(tmp_path: Path):
 
 def test_setup_logging_respects_max_bytes_env(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("OCTOP_LOG_MAX_BYTES", "8192")
-    server = OctopServer(home=tmp_path / ".octop")
+    server = HappyclawServer(home=tmp_path / ".octop")
     server._setup_logging()
     handler = next(
         h
@@ -377,7 +377,7 @@ def test_setup_logging_renames_legacy_rotated_files(tmp_path: Path):
     log_dir.mkdir(parents=True)
     legacy = log_dir / "octop.log.2026-10-01"
     legacy.write_text("old rotation\n", encoding="utf-8")
-    server = OctopServer(home=home)
+    server = HappyclawServer(home=home)
 
     server._setup_logging()
 

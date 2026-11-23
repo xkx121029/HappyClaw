@@ -9,12 +9,12 @@ from unittest import mock
 
 import pytest
 
-from octop.infra.agents.settings.langfuse import LangfuseSettingsStore, verify_langfuse_credentials
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.secrets import SecretRepo
-from octop.infra.db.repos.settings import SettingsRepo
-from octop.infra.errors import OctopError
+from happyclaw.infra.agents.settings.langfuse import LangfuseSettingsStore, verify_langfuse_credentials
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.secrets import SecretRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.errors import HappyclawError
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ def test_langfuse_settings_roundtrip(store: LangfuseSettingsStore) -> None:
 
 
 def test_langfuse_requires_secret_when_enabling(store: LangfuseSettingsStore) -> None:
-    with pytest.raises(OctopError):
+    with pytest.raises(HappyclawError):
         store.save(enabled=True, public_key="pk", host="http://x")
 
 

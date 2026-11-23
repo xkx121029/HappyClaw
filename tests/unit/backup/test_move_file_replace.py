@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from octop.infra.backup.store import move_file_replace
+from happyclaw.infra.backup.store import move_file_replace
 
 
 def test_move_file_replace_copies_when_rename_fails(tmp_path: Path, monkeypatch) -> None:

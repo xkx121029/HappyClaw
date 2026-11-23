@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.services import RepoBundle
-from octop.infra.errors import ErrorCode, OctopError
-from octop.infra.users.groups import (
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.services import RepoBundle
+from happyclaw.infra.errors import ErrorCode, HappyclawError
+from happyclaw.infra.users.groups import (
     RESOURCE_MODEL,
     RESOURCE_SKILL_PACKAGE,
     GroupAccess,
@@ -129,10 +129,10 @@ def test_grants_narrow_and_owner_admin_bypass(repos: RepoBundle) -> None:
 
 def test_groups_visibility_requires_a_real_group(repos: RepoBundle) -> None:
     access = GroupAccess(repos)
-    with pytest.raises(OctopError) as empty:
+    with pytest.raises(HappyclawError) as empty:
         access.set_visibility(RESOURCE_SKILL_PACKAGE, "pkg", "groups", [])
     assert empty.value.code == ErrorCode.FORBIDDEN
-    with pytest.raises(OctopError) as missing:
+    with pytest.raises(HappyclawError) as missing:
         access.set_visibility(RESOURCE_SKILL_PACKAGE, "pkg", "groups", ["missing"])
     assert missing.value.code == ErrorCode.NOT_FOUND
 
@@ -158,7 +158,7 @@ def test_disabled_group_does_not_grant(repos: RepoBundle) -> None:
         resource_key="openai/gpt",
         is_owner=False,
     )
-    from octop.infra.users.groups import group_visibility_sql
+    from happyclaw.infra.users.groups import group_visibility_sql
 
     clause = group_visibility_sql(RESOURCE_MODEL, "'openai/gpt'")
     with repos.db.connect() as conn:
@@ -167,7 +167,7 @@ def test_disabled_group_does_not_grant(repos: RepoBundle) -> None:
 
 
 def test_connector_visibility_is_per_instance(repos: RepoBundle) -> None:
-    from octop.infra.users.groups import RESOURCE_CONNECTOR
+    from happyclaw.infra.users.groups import RESOURCE_CONNECTOR
 
     owner = _user(repos, "owner")
     member = _user(repos, "member")
@@ -221,7 +221,7 @@ def test_connector_visibility_is_per_instance(repos: RepoBundle) -> None:
 
 
 def test_storage_visibility_is_per_backend(repos: RepoBundle) -> None:
-    from octop.infra.users.groups import RESOURCE_STORAGE_BACKEND
+    from happyclaw.infra.users.groups import RESOURCE_STORAGE_BACKEND
 
     outsider = _user(repos, "outsider")
     member = _user(repos, "member")
@@ -269,7 +269,7 @@ def test_storage_visibility_is_per_backend(repos: RepoBundle) -> None:
 def test_group_access_summary_includes_everyone_and_group_grants(repos: RepoBundle) -> None:
     import json
 
-    from octop.infra.users.groups import (
+    from happyclaw.infra.users.groups import (
         CONNECTOR_FEATURE_KEY,
         RESOURCE_CONNECTOR,
         RESOURCE_KNOWLEDGE_BASE,
@@ -424,7 +424,7 @@ def test_private_shared_flag_reports_owner(repos: RepoBundle) -> None:
 
 def test_validate_visibility_rejects_empty_groups(repos: RepoBundle) -> None:
     access = GroupAccess(repos)
-    with pytest.raises(OctopError) as exc:
+    with pytest.raises(HappyclawError) as exc:
         access.validate_visibility("groups", [])
     assert exc.value.code == ErrorCode.FORBIDDEN
 
@@ -435,7 +435,7 @@ def test_validate_visibility_rejects_empty_groups(repos: RepoBundle) -> None:
 
 
 def test_bridge_list_visible_respects_shared_and_grants(repos: RepoBundle) -> None:
-    from octop.infra.users.groups import RESOURCE_BRIDGE
+    from happyclaw.infra.users.groups import RESOURCE_BRIDGE
 
     owner = _user(repos, "bridge-owner")
     member = _user(repos, "bridge-member")
@@ -498,7 +498,7 @@ def test_bridge_list_visible_respects_shared_and_grants(repos: RepoBundle) -> No
 
 
 def test_shared_expert_list_respects_group_grants(repos: RepoBundle) -> None:
-    from octop.infra.users.groups import RESOURCE_EXPERT, expert_visible_to
+    from happyclaw.infra.users.groups import RESOURCE_EXPERT, expert_visible_to
 
     owner = _user(repos, "expert-owner")
     member = _user(repos, "expert-member")

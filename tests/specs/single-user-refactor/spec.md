@@ -59,7 +59,7 @@
 
 ### 2.1 本机唯一使用者（Owner）
 
-新增 `src/octop/infra/users/owner.py`：
+新增 `src/happyclaw/infra/users/owner.py`：
 
 ```python
 class OwnerIdentityService:
@@ -71,7 +71,7 @@ class OwnerIdentityService:
 
 - 解析顺序：`local_owner.user_id` → `users` 中该行（`disabled=0`）→ 首个 `role=admin` → 最小 `id` → 自动创建 `local-owner`（`password_hash=NULL`、`role=admin`、`desc` 中文显示名「本机使用者」）
 - 返回 `User` 的 `permissions` 为 `list(PERMISSIONS)`，`role="admin"`，保证 dashboard `userCan` 全量放行
-- 解析失败：日志英文原文，向上抛出中文 `OctopError`（`INTERNAL_ERROR`，message 中文「单人模式初始化失败，已保留原有数据，请查看日志」）
+- 解析失败：日志英文原文，向上抛出中文 `HappyclawError`（`INTERNAL_ERROR`，message 中文「单人模式初始化失败，已保留原有数据，请查看日志」）
 
 ### 2.2 拆除认证判定（保留路径与返回结构）
 

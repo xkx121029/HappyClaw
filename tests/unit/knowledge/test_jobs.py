@@ -9,14 +9,14 @@ from types import SimpleNamespace
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.knowledge import KnowledgeRepo
-from octop.infra.db.repos.settings import SettingsRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.knowledge import jobs
-from octop.infra.knowledge.files import write_document
-from octop.infra.knowledge.index import KnowledgeIndex
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.knowledge import KnowledgeRepo
+from happyclaw.infra.db.repos.settings import SettingsRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.knowledge import jobs
+from happyclaw.infra.knowledge.files import write_document
+from happyclaw.infra.knowledge.index import KnowledgeIndex
 
 
 def test_enqueue_index_document_limits_concurrency(monkeypatch: pytest.MonkeyPatch) -> None:

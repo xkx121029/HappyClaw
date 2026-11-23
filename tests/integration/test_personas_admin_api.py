@@ -15,7 +15,7 @@ from typing import Any
 
 import pytest
 
-from octop.api.routers.admin import AUDIT_LOG_MAX_LIMIT
+from happyclaw.api.routers.admin import AUDIT_LOG_MAX_LIMIT
 from tests.support.auth import create_agent
 
 

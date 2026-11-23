@@ -10,7 +10,7 @@ import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from octop.infra.auth.sso.id_token import verify_id_token
+from happyclaw.infra.auth.sso.id_token import verify_id_token
 
 
 @pytest.fixture

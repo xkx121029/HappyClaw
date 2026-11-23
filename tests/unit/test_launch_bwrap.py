@@ -7,7 +7,7 @@ import threading
 
 import pytest
 
-from octop import launch
+from happyclaw import launch
 
 
 @pytest.mark.parametrize("platform", ["darwin", "win32"])
@@ -74,7 +74,7 @@ def test_background_ensure_swallows_failures(monkeypatch: pytest.MonkeyPatch) ->
     def fail() -> dict[str, str]:
         raise RuntimeError("boom")
 
-    monkeypatch.setattr("octop.infra.utils.bwrap.ensure_bubblewrap", fail)
+    monkeypatch.setattr("happyclaw.infra.utils.bwrap.ensure_bubblewrap", fail)
     launch._ensure_linux_bubblewrap()
 
 

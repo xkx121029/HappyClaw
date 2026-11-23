@@ -1,6 +1,6 @@
 """Unit tests for the terminal session machinery and WS handler.
 
-These run without the full ``OctopServer`` / ``happyclaw_gateway`` stack:
+These run without the full ``HappyclawServer`` / ``happyclaw_gateway`` stack:
 the ``terminal`` router module imports cleanly on its own, so we drive
 it with lightweight fakes for the server, the WebSocket and the PTY
 spawn. Pure-logic cases run on any platform; PTY-path cases are gated
@@ -20,8 +20,8 @@ import pytest
 from fastapi import WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
-from octop.api.routers import terminal
-from octop.infra.errors import ErrorCode, OctopError
+from happyclaw.api.routers import terminal
+from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 posix_only = pytest.mark.skipif(os.name != "posix", reason="POSIX terminal required")
 
@@ -167,7 +167,7 @@ async def test_pump_pty_drains_fans_out_and_reaps() -> None:
 
 
 # ---------------------------------------------------------------------------
-# WS handler driven with fakes (no real PTY, no OctopServer)
+# WS handler driven with fakes (no real PTY, no HappyclawServer)
 # ---------------------------------------------------------------------------
 
 
@@ -254,7 +254,7 @@ async def test_ws_bad_token_closes_4001(monkeypatch) -> None:
     server, _ = _make_server()
 
     def _bad(_server, _token):
-        raise OctopError(ErrorCode.AUTH_FAILED, "nope")
+        raise HappyclawError(ErrorCode.AUTH_FAILED, "nope")
 
     monkeypatch.setattr(terminal, "resolve_user_from_token", _bad)
     ws = _FakeWS(server)

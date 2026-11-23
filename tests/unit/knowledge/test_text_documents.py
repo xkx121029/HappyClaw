@@ -8,13 +8,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.knowledge import KnowledgeRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.knowledge.files import document_path
-from octop.infra.knowledge.service import KnowledgeService
-from octop.infra.utils.paths import PathLayout
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.knowledge import KnowledgeRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.knowledge.files import document_path
+from happyclaw.infra.knowledge.service import KnowledgeService
+from happyclaw.infra.utils.paths import PathLayout
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ def test_create_and_update_text_document(
     services: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
-        "octop.infra.knowledge.service.assert_knowledge_usable",
+        "happyclaw.infra.knowledge.service.assert_knowledge_usable",
         lambda *_a, **_k: None,
     )
     svc = KnowledgeService(services)
@@ -77,7 +77,7 @@ def test_upload_spreadsheet_documents(
     services: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
-        "octop.infra.knowledge.service.assert_knowledge_usable",
+        "happyclaw.infra.knowledge.service.assert_knowledge_usable",
         lambda *_a, **_k: None,
     )
     svc = KnowledgeService(services)
@@ -138,7 +138,7 @@ def test_image_upload_requires_ocr(
     services: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
-        "octop.infra.knowledge.service.assert_knowledge_usable",
+        "happyclaw.infra.knowledge.service.assert_knowledge_usable",
         lambda *_a, **_k: None,
     )
     svc = KnowledgeService(services)

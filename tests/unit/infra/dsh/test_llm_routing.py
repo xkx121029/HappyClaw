@@ -13,9 +13,9 @@ from happyclaw_harness.config import ModelConfig, ProviderConfig
 from happyclaw_harness.llm.factory import ChatModelFactory
 from happyclaw_harness.manager import HarnessAgentManager
 
-from octop.infra.dsh.llm import factory as factory_module
-from octop.infra.dsh.llm.factory import DshModelFactory, install_dsh_model_factory
-from octop.infra.dsh.llm.langchain_model import (
+from happyclaw.infra.dsh.llm import factory as factory_module
+from happyclaw.infra.dsh.llm.factory import DshModelFactory, install_dsh_model_factory
+from happyclaw.infra.dsh.llm.langchain_model import (
     REQUIRED_HARNESS_VERSION,
     DshChatModel,
     DshModelError,
@@ -288,7 +288,7 @@ def test_version_mismatch_warns_and_is_reported(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     assert harness_version_warning() is None  # installed harness is the verified one
-    monkeypatch.setattr("octop.infra.dsh.llm.langchain_model.version", lambda _name: "9.9.9")
+    monkeypatch.setattr("happyclaw.infra.dsh.llm.langchain_model.version", lambda _name: "9.9.9")
     warning = harness_version_warning()
     assert warning is not None and "9.9.9" in warning and REQUIRED_HARNESS_VERSION in warning
 

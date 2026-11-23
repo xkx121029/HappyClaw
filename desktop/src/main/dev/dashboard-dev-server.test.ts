@@ -13,37 +13,37 @@ import {
 
 test("开发模式没打开时不启动 Vite", () => {
   assert.equal(readDashboardDev({}), null);
-  assert.equal(readDashboardDev({ OCTOP_DASHBOARD_DEV: "0" }), null);
+  assert.equal(readDashboardDev({ HAPPYCLAW_DASHBOARD_DEV: "0" }), null);
 });
 
 test("开发模式要求仪表盘源码目录和合法端口", () => {
   assert.throws(
-    () => readDashboardDev({ OCTOP_DASHBOARD_DEV: "1" }),
-    /OCTOP_DASHBOARD_SOURCE/,
+    () => readDashboardDev({ HAPPYCLAW_DASHBOARD_DEV: "1" }),
+    /HAPPYCLAW_DASHBOARD_SOURCE/,
   );
   assert.deepEqual(
     readDashboardDev({
-      OCTOP_DASHBOARD_DEV: "1",
-      OCTOP_DASHBOARD_SOURCE: "/repo/dashboard",
+      HAPPYCLAW_DASHBOARD_DEV: "1",
+      HAPPYCLAW_DASHBOARD_SOURCE: "/repo/dashboard",
     }),
     { sourceDir: "/repo/dashboard", port: 5173 },
   );
   assert.equal(
     readDashboardDev({
-      OCTOP_DASHBOARD_DEV: "1",
-      OCTOP_DASHBOARD_SOURCE: "/repo/dashboard",
-      OCTOP_DASHBOARD_DEV_PORT: "5174",
+      HAPPYCLAW_DASHBOARD_DEV: "1",
+      HAPPYCLAW_DASHBOARD_SOURCE: "/repo/dashboard",
+      HAPPYCLAW_DASHBOARD_DEV_PORT: "5174",
     })?.port,
     5174,
   );
   assert.throws(
     () =>
       readDashboardDev({
-        OCTOP_DASHBOARD_DEV: "1",
-        OCTOP_DASHBOARD_SOURCE: "/repo/dashboard",
-        OCTOP_DASHBOARD_DEV_PORT: "nope",
+        HAPPYCLAW_DASHBOARD_DEV: "1",
+        HAPPYCLAW_DASHBOARD_SOURCE: "/repo/dashboard",
+        HAPPYCLAW_DASHBOARD_DEV_PORT: "nope",
       }),
-    /OCTOP_DASHBOARD_DEV_PORT/,
+    /HAPPYCLAW_DASHBOARD_DEV_PORT/,
   );
 });
 

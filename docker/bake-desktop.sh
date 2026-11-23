@@ -7,7 +7,7 @@
 # The Android container is a separate multi-gigabyte image and is not included.
 set -euo pipefail
 
-SCRIPT="/app/src/octop/infra/control/desktop/scripts/linux/v1.0/install.sh"
+SCRIPT="/app/src/happyclaw/infra/control/desktop/scripts/linux/v1.0/install.sh"
 if [ ! -f "$SCRIPT" ]; then
     echo "desktop install script missing: $SCRIPT" >&2
     exit 1

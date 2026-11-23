@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from octop.infra.auth.mfa import recovery as recovery_mod
-from octop.infra.db.migrate import run_migrations
-from octop.infra.db.pool import SqlitePool
-from octop.infra.db.repos.user_recovery_codes import UserRecoveryCodeRepo
-from octop.infra.db.repos.users import UserRepo
-from octop.infra.users.password import hash_password
+from happyclaw.infra.auth.mfa import recovery as recovery_mod
+from happyclaw.infra.db.migrate import run_migrations
+from happyclaw.infra.db.pool import SqlitePool
+from happyclaw.infra.db.repos.user_recovery_codes import UserRecoveryCodeRepo
+from happyclaw.infra.db.repos.users import UserRepo
+from happyclaw.infra.users.password import hash_password
 
 
 @pytest.fixture()
