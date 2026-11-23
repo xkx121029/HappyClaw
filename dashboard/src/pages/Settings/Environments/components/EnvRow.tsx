@@ -43,14 +43,15 @@ export function EnvRow({
         checked={checked}
         onChange={() => onToggle(idx)}
         className={styles.rowCheckbox}
+        aria-label={t("environments.selectVariable")}
       />
 
       <div className={styles.fieldsWrap}>
         <div className={cx(styles.inputGroup, error && styles.inputGroupError)}>
-          <span className={styles.inputLabel}>Key</span>
+          <span className={styles.inputLabel}>{t("environments.key")}</span>
           <Input
             value={row.key}
-            placeholder="Variable Name"
+            placeholder={t("environments.variableNamePlaceholder")}
             disabled={!row.isNew}
             onChange={(e) => onChange(idx, "key", e.target.value)}
             className={styles.inputField}
@@ -59,20 +60,26 @@ export function EnvRow({
         </div>
 
         <div className={styles.inputGroup}>
-          <span className={styles.inputLabel}>Value</span>
+          <span className={styles.inputLabel}>{t("environments.value")}</span>
           <div className={styles.valueInputWrapper}>
             <Input
               value={row.value}
-              placeholder="Value"
+              placeholder={t("environments.valuePlaceholder")}
               onChange={(e) => onChange(idx, "value", e.target.value)}
               className={styles.inputField}
               type={isSensitive && !isValueVisible ? "password" : "text"}
             />
             {isSensitive && (
               <button
+                type="button"
                 className={styles.valueToggleBtn}
                 onClick={() => setIsValueVisible(!isValueVisible)}
                 title={
+                  isValueVisible
+                    ? t("environments.hideValue")
+                    : t("environments.showValue")
+                }
+                aria-label={
                   isValueVisible
                     ? t("environments.hideValue")
                     : t("environments.showValue")
@@ -87,16 +94,20 @@ export function EnvRow({
 
       <div className={styles.rowActions}>
         <button
+          type="button"
           className={styles.rowIconBtn}
           onClick={() => onInsert(idx)}
           title={t("environments.insertRowBelow")}
+          aria-label={t("environments.insertRowBelow")}
         >
           <Plus size={16} />
         </button>
         <button
+          type="button"
           className={cx(styles.rowIconBtn, styles.rowIconBtnDanger)}
           onClick={() => onRemove(idx)}
           title={t("environments.deleteRow")}
+          aria-label={t("environments.deleteRow")}
         >
           <Trash2 size={16} />
         </button>

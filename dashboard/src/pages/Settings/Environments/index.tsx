@@ -169,7 +169,7 @@ function EnvironmentsPage() {
     const label =
       names.length <= 3
         ? names.map((n) => `"${n}"`).join(", ")
-        : `${names.length} variables`;
+        : t("environments.variablesCount", { count: names.length });
 
     modal.confirm({
       title: t("environments.deleteSelected"),
@@ -244,7 +244,9 @@ function EnvironmentsPage() {
         </div>
       ) : error ? (
         <div className={styles.centerState}>
-          <span className={styles.stateTextError}>{error}</span>
+          <span className={styles.stateTextError}>
+            {error || t("environments.loadFailed")}
+          </span>
           <Button size="small" onClick={fetchAll} style={{ marginTop: 12 }}>
             {t("environments.retry")}
           </Button>

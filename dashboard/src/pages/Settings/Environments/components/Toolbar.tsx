@@ -47,9 +47,10 @@ export function Toolbar({
         )}
         <span className={styles.toolbarCount}>
           {someSelected
-            ? `${selectedSize} ${t("environments.of")} ${workingRowsLength} ${t(
-                "environments.selected",
-              )}`
+            ? t("environments.selectionSummary", {
+                selected: selectedSize,
+                total: workingRowsLength,
+              })
             : `${workingRowsLength} ${
                 workingRowsLength !== 1
                   ? t("environments.variables")

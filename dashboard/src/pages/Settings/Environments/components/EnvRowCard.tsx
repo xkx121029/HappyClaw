@@ -38,7 +38,11 @@ export function EnvRowCard({
       className={cx(styles.envRowCard, checked && styles.envRowCardSelected)}
     >
       <div className={styles.envRowCardHeader}>
-        <Checkbox checked={checked} onChange={() => onToggle(idx)} />
+        <Checkbox
+          checked={checked}
+          onChange={() => onToggle(idx)}
+          aria-label={t("environments.selectVariable")}
+        />
         <div className={styles.envRowCardActions}>
           <button
             type="button"
@@ -62,10 +66,12 @@ export function EnvRowCard({
       </div>
 
       <div className={styles.envRowCardField}>
-        <label className={styles.envRowCardLabel}>Key</label>
+        <label className={styles.envRowCardLabel}>
+          {t("environments.key")}
+        </label>
         <Input
           value={row.key}
-          placeholder="Variable Name"
+          placeholder={t("environments.variableNamePlaceholder")}
           disabled={!row.isNew}
           onChange={(e) => onChange(idx, "key", e.target.value)}
           status={error ? "error" : undefined}
@@ -74,11 +80,13 @@ export function EnvRowCard({
       </div>
 
       <div className={styles.envRowCardField}>
-        <label className={styles.envRowCardLabel}>Value</label>
+        <label className={styles.envRowCardLabel}>
+          {t("environments.value")}
+        </label>
         <div className={styles.envRowCardValueWrap}>
           <Input
             value={row.value}
-            placeholder="Value"
+            placeholder={t("environments.valuePlaceholder")}
             onChange={(e) => onChange(idx, "value", e.target.value)}
             type={isSensitive && !isValueVisible ? "password" : "text"}
           />
