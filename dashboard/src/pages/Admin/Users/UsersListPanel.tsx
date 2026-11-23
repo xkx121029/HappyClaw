@@ -20,15 +20,12 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Modal,
   Form,
-  Input,
   Switch,
   Typography,
 } from "antd";
 import { message } from "@/utils/antdMessage";
 
 import {
-  Lock,
-  LockOpen,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { request } from "../../../api/request";
@@ -76,6 +73,7 @@ import { UsersBatchBar, UsersToolbar } from "./UsersToolbar";
 import { UserAgentsDrawer } from "./UserAgentsDrawer";
 import { UserCreateDrawer } from "./UserCreateDrawer";
 import { UserEditDrawer } from "./UserEditDrawer";
+import { UserResetPasswordModal } from "./UserResetPasswordModal";
 
 const { Text } = Typography;
 
@@ -122,6 +120,7 @@ export { UsersBatchBar, UsersToolbar } from "./UsersToolbar";
 export { UserAgentsDrawer } from "./UserAgentsDrawer";
 export { UserCreateDrawer } from "./UserCreateDrawer";
 export { UserEditDrawer } from "./UserEditDrawer";
+export { UserResetPasswordModal } from "./UserResetPasswordModal";
 
 export default function UsersListPanel() {
   const { t, i18n } = useTranslation();
@@ -963,76 +962,17 @@ export default function UsersListPanel() {
         onRemoveAvatar={onEditAvatarRemove}
       />
 
-      <Modal
-        title={
-          resetTarget
-            ? t("adminUsers.modalResetTitle", {
-                username: resetTarget.username,
-              })
-            : ""
-        }
+      <UserResetPasswordModal
+        username={resetTarget?.username ?? null}
         open={resetTarget !== null}
         onCancel={() => {
           setResetTarget(null);
           resetForm.resetFields();
         }}
-        onOk={() => resetForm.submit()}
-        okText={t("common.reset")}
-        cancelText={t("common.cancel")}
-        confirmLoading={resetSubmitting}
-      >
-        <Text type="secondary" style={{ display: "block", marginBottom: 8 }}>
-          {t("adminUsers.resetHint")}
-        </Text>
-        <Form<ResetValues>
-          form={resetForm}
-          layout="vertical"
-          onFinish={onResetSubmit}
-        >
-          <Form.Item
-            label={t("adminUsers.newPassword")}
-            name="password"
-            rules={[
-              { required: true, message: t("adminUsers.newPasswordRequired") },
-            ]}
-          >
-            <Input.Password
-              autoComplete="new-password"
-              prefix={
-                <Lock size={14} style={{ color: "var(--fn-text-tertiary)" }} />
-              }
-            />
-          </Form.Item>
-          <Form.Item
-            label={t("adminUsers.formPasswordConfirm")}
-            name="confirm"
-            dependencies={["password"]}
-            rules={[
-              { required: true, message: t("adminUsers.formPasswordConfirm") },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue("password") === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(
-                    new Error(t("wizard.admin.passwordMismatch")),
-                  );
-                },
-              }),
-            ]}
-          >
-            <Input.Password
-              autoComplete="new-password"
-              prefix={
-                <LockOpen
-                  size={14}
-                  style={{ color: "var(--fn-text-tertiary)" }}
-                />
-              }
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+        form={resetForm}
+        submitting={resetSubmitting}
+        onSubmit={onResetSubmit}
+      />
 
       <Modal
         title={t("adminUsers.batchSetTokenTitle", {
