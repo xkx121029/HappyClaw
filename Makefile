@@ -110,6 +110,7 @@ build-frontend:
 	@echo "[build-frontend] Building dashboard (output: $(DASHBOARD_DEST))..."
 	# Render peaks above 2GB (Full GC, then OOM at 2048 on GitHub runners).
 	cd $(DASHBOARD_DIR) && NODE_ENV=production NODE_OPTIONS="--max-old-space-size=4096" npm run build
+	@test -f $(DASHBOARD_DEST)/index.html || { echo "[build-frontend] ERROR: no dashboard build at $(DASHBOARD_DEST)/index.html — check outDir in dashboard/vite.config.ts" >&2; exit 1; }
 	@echo "[build-frontend] Done."
 
 # Byte-compile the backend so a directory-copy deployment (desktop shell, installer
@@ -121,7 +122,7 @@ build-frontend:
 .PHONY: precompile
 precompile:
 	@echo "[precompile] Compiling src/happyclaw (-q -j 0)..."
-	$(PYTHON) -m compileall -q -j 0 $(REPO_ROOT)/src/octop
+	$(PYTHON) -m compileall -q -j 0 $(REPO_ROOT)/src/happyclaw
 	@echo "[precompile] Done."
 
 # Standalone backend: one directory you can copy to a machine without Python.

@@ -70,7 +70,7 @@ export default defineConfig(({ mode }) => {
   return {
     base: viteBase,
     build: {
-      outDir: path.resolve(__dirname, "../src/octop/dashboard"),
+      outDir: path.resolve(__dirname, "../src/happyclaw/dashboard"),
       emptyOutDir: true,
       chunkSizeWarningLimit: 1600,
       // Limit Rollup worker concurrency to prevent OOM on memory-constrained hosts.
