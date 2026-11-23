@@ -5,6 +5,9 @@
  * Components subscribe to updates and get the latest snapshot on mount.
  * When the user navigates away and comes back, the messages (including
  * any in-flight streaming content) are still available.
+ *
+ * The implementation lives in the sibling `chatStore*.ts` modules; this file
+ * is the facade that keeps the original import surface intact.
  */
 
 import { getApiUrl } from "../../../api/config";
@@ -32,7 +35,9 @@ import { isChatStreamError } from "../../../utils/chatStreamError";
 import { parseToolExecutionFeedback } from "../../../utils/toolMediaBlocks";
 import { buildUserMessageContent } from "../utils/chatAttachments";
 import { hasPendingHitl } from "../utils/pendingHitl";
-import { sealPriorStreamingAssistants as sealPriorStreamingAssistantsMessages } from "./sealPriorStreamingAssistants";
+import {
+  sealPriorStreamingAssistants as sealPriorStreamingAssistantsMessages,
+} from "./sealPriorStreamingAssistants";
 import {
   findSpeakerTextToContinue,
   isRoomHostSpeaker,
@@ -40,7 +45,9 @@ import {
   speakerTurnWasInterrupted,
 } from "../utils/messageGrouping";
 import { turnStatusAction } from "./turnStatusGate";
-import { mergePatchedToolOutput } from "../../../plugins/toolRenderers/parseToolOutput";
+import {
+  mergePatchedToolOutput,
+} from "../../../plugins/toolRenderers/parseToolOutput";
 import {
   isAskHitl,
   normalizeHitlRequest,
@@ -66,6 +73,19 @@ import {
   shouldForceSealStream,
   shouldResumeStreamAfterClose,
 } from "./wsResumeGate";
+import type {
+  LiveSocket,
+  SessionEvent,
+  SessionEventListener,
+  SharedTurnBusyEvent,
+  SlashActionEvent,
+  SlashActionListener,
+  SteerRestoreEvent,
+  StreamEvent,
+  StreamEventListener,
+  ToolEvent,
+  ToolEventListener,
+} from "./chatStoreTypes";
 
 function speakerMatchesFinalize(
   messageSpeaker: string | undefined,
@@ -218,20 +238,6 @@ export function consumePendingPrefillAttachments(): ChatAttachment[] {
   return val.map((attachment) => ({ ...attachment }));
 }
 
-// 输入框草稿改由 utils/composerDraft.ts 以 localStorage 持久化（含附件）。
-
-// ── Re-export types so external consumers don't need changes ──────────────
-export type {
-  ChatAttachment,
-  ChatMessage,
-  HitlActionRequest,
-  HitlRequestData,
-  SessionSnapshot,
-  SessionStreamState,
-  ToolCallData,
-  UserComposerContext,
-} from "./sseHelpers";
-
 /** Default snapshot for sessions that don't exist yet. Stable reference. */
 const EMPTY_SNAPSHOT: SessionSnapshot = Object.freeze({
   messages: [],
@@ -249,6 +255,7 @@ const EMPTY_SNAPSHOT: SessionSnapshot = Object.freeze({
 });
 
 const sessionStates = new Map<string, SessionStreamState>();
+
 let nextHistoryEpoch = 0;
 
 function flushLiveInflight(): void {
@@ -269,36 +276,17 @@ if (typeof window !== "undefined") {
     if (document.visibilityState === "hidden") flushLiveInflight();
   });
 }
+
 /** Per-call samples let reconnects replace replayed usage instead of double-counting. */
 const usageSamplesByState = new WeakMap<
   SessionStreamState,
   Map<string, UsageChunk["usage"]>
 >();
 
-// ── Tool / stream event hooks (for cross-module bridging) ──
-export type ToolEventKind = "toolStart" | "toolDone";
-export interface ToolEvent {
-  kind: ToolEventKind;
-  sessionId: string;
-  toolName: string;
-  toolId: string;
-}
-export type StreamEventKind = "streamStart" | "streamEnd" | "streamResume";
-export interface StreamEvent {
-  kind: StreamEventKind;
-  sessionId: string;
-}
-export type SlashActionEvent = {
-  action: string;
-  agent_id?: string;
-  sessionId?: string;
-  mode?: string;
-};
-type ToolEventListener = (event: ToolEvent) => void;
-type StreamEventListener = (event: StreamEvent) => void;
-type SlashActionListener = (event: SlashActionEvent) => void;
 const toolEventListeners = new Set<ToolEventListener>();
+
 const streamEventListeners = new Set<StreamEventListener>();
+
 const slashActionListeners = new Set<SlashActionListener>();
 
 /** Register a listener for tool call start/done events. Returns unsubscribe fn. */
@@ -355,22 +343,6 @@ function emitSlashAction(event: SlashActionEvent) {
   }
 }
 
-// Session lifecycle events (e.g. deletion) for cross-module bridging.
-export type SessionEventKind =
-  | "sessionDeleted"
-  | "sessionsChanged"
-  | "sessionRenamed";
-export interface SessionEvent {
-  kind: SessionEventKind;
-  sessionId: string;
-  /** Owning agent, when the event comes from a server push. */
-  agentId?: string;
-  /** New thread title from a ``thread_title`` frame. */
-  title?: string;
-  /** Local clipped question shown until the server title arrives. */
-  provisional?: boolean;
-}
-type SessionEventListener = (event: SessionEvent) => void;
 const sessionEventListeners = new Set<SessionEventListener>();
 
 /** Register a listener for session lifecycle events. Returns unsubscribe fn. */
@@ -652,25 +624,6 @@ function clearStreamingFlags(
 
 const CHAT_WS_PING_MS = 25_000;
 
-type LiveSocket = {
-  ws: WebSocket;
-  agentId: string;
-  threadId: string;
-  /**
-   * Socket was closed on purpose (replace / done / user stop). Unexpected drop
-   * is false so auto-resume can re-subscribe.
-   */
-  intentionalClose: boolean;
-  /**
-   * User hit stop (or cancelStream). Distinct from intentional socket *replace*
-   * while the server turn should keep running.
-   */
-  userCancelled: boolean;
-  /** Subscribe-only socket — replacing it must not send `cancel` to the host. */
-  listenOnly?: boolean;
-  pingTimer?: ReturnType<typeof setInterval>;
-};
-
 function startSocketPing(live: LiveSocket): void {
   if (live.pingTimer != null) return;
   live.pingTimer = setInterval(() => {
@@ -693,6 +646,7 @@ const liveSockets = new Map<string, LiveSocket>();
 
 /** Last stream-related activity (chunk / open / status) for sticky seals. */
 const streamActivityAt = new Map<string, number>();
+
 const streamWatchdogs = new Map<string, ReturnType<typeof setTimeout>>();
 
 function isLiveSocketOpen(sessionId: string): boolean {
@@ -3774,21 +3728,7 @@ function attachmentsFromSteerFrame(raw: unknown): ChatAttachment[] | undefined {
   return attachments.length > 0 ? attachments : undefined;
 }
 
-export interface SteerRestoreEvent {
-  sessionId: string;
-  text: string;
-  attachments?: ChatAttachment[];
-  reason: string;
-  /** False announces the outcome without putting the draft back. */
-  applyToComposer?: boolean;
-}
-
 const steerRestoreListeners = new Set<(event: SteerRestoreEvent) => void>();
-
-export interface SharedTurnBusyEvent {
-  sessionId: string;
-  messageId: string;
-}
 
 const sharedTurnBusyListeners = new Set<(event: SharedTurnBusyEvent) => void>();
 
@@ -4390,3 +4330,16 @@ export function withdrawCommittedSteer(
 export function getActiveTurnId(sessionId: string): string | null {
   return getOrCreate(sessionId).activeTurnId ?? null;
 }
+
+export type {
+  ChatAttachment,
+  ChatMessage,
+  HitlActionRequest,
+  HitlRequestData,
+  SessionSnapshot,
+  SessionStreamState,
+  ToolCallData,
+  UserComposerContext,
+} from "./sseHelpers";
+
+export type { ToolEventKind, ToolEvent, StreamEventKind, StreamEvent, SlashActionEvent, SessionEventKind, SessionEvent, SteerRestoreEvent, SharedTurnBusyEvent } from "./chatStoreTypes";
