@@ -20,8 +20,6 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Modal,
   Form,
-  Switch,
-  Typography,
 } from "antd";
 import { message } from "@/utils/antdMessage";
 
@@ -64,7 +62,6 @@ import {
 } from "./usersListTypes";
 import { policyFieldsFromRole, policyPayload } from "./policyForm";
 import { lockRemainingSeconds, useNowSeconds } from "./userTime";
-import { MaxAgentsInput, TokenQuotaInput } from "./QuotaInputs";
 import {
 } from "./PermissionFields";
 import { UserCardGrid } from "./UserCardGrid";
@@ -74,8 +71,8 @@ import { UserAgentsDrawer } from "./UserAgentsDrawer";
 import { UserCreateDrawer } from "./UserCreateDrawer";
 import { UserEditDrawer } from "./UserEditDrawer";
 import { UserResetPasswordModal } from "./UserResetPasswordModal";
+import { BatchMaxAgentsModal, BatchTokenQuotaModal } from "./BatchQuotaModals";
 
-const { Text } = Typography;
 
 export {
   DEFAULT_EXPERT_TEMPLATE_ID,
@@ -121,6 +118,7 @@ export { UserAgentsDrawer } from "./UserAgentsDrawer";
 export { UserCreateDrawer } from "./UserCreateDrawer";
 export { UserEditDrawer } from "./UserEditDrawer";
 export { UserResetPasswordModal } from "./UserResetPasswordModal";
+export { BatchMaxAgentsModal, BatchTokenQuotaModal } from "./BatchQuotaModals";
 
 export default function UsersListPanel() {
   const { t, i18n } = useTranslation();
@@ -974,117 +972,29 @@ export default function UsersListPanel() {
         onSubmit={onResetSubmit}
       />
 
-      <Modal
-        title={t("adminUsers.batchSetTokenTitle", {
-          count: selectedIds.length,
-        })}
+      <BatchTokenQuotaModal
         open={batchTokenOpen}
+        count={selectedIds.length}
+        submitting={batchSubmitting}
         onCancel={() => {
           setBatchTokenOpen(false);
           batchTokenForm.resetFields();
         }}
-        onOk={() => batchTokenForm.submit()}
-        okText={t("common.confirm")}
-        cancelText={t("common.cancel")}
-        confirmLoading={batchSubmitting}
-        destroyOnHidden
-      >
-        <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-          {t("adminUsers.batchSetTokenHint")}
-        </Text>
-        <Form<BatchTokenFormValues>
-          form={batchTokenForm}
-          layout="vertical"
-          onFinish={(values) => void submitBatchToken(values)}
-        >
-          <Form.Item
-            label={t("adminUsers.policyTokenQuota")}
-            extra={t("adminUsers.policyTokenQuotaHint")}
-          >
-            <Form.Item name="limit_token_quota" valuePropName="checked" noStyle>
-              <Switch />
-            </Form.Item>
-          </Form.Item>
-          <Form.Item
-            noStyle
-            shouldUpdate={(prev, cur) =>
-              prev.limit_token_quota !== cur.limit_token_quota
-            }
-          >
-            {({ getFieldValue }) =>
-              getFieldValue("limit_token_quota") ? (
-                <Form.Item
-                  name="token_quota"
-                  rules={[
-                    {
-                      required: true,
-                      message: t("adminUsers.policyTokenQuotaRequired"),
-                    },
-                  ]}
-                >
-                  <TokenQuotaInput />
-                </Form.Item>
-              ) : null
-            }
-          </Form.Item>
-        </Form>
-      </Modal>
+        form={batchTokenForm}
+        onSubmit={submitBatchToken}
+      />
 
-      <Modal
-        title={t("adminUsers.batchSetMaxAgentsTitle", {
-          count: selectedIds.length,
-        })}
+      <BatchMaxAgentsModal
         open={batchMaxAgentsOpen}
+        count={selectedIds.length}
+        submitting={batchSubmitting}
         onCancel={() => {
           setBatchMaxAgentsOpen(false);
           batchMaxAgentsForm.resetFields();
         }}
-        onOk={() => batchMaxAgentsForm.submit()}
-        okText={t("common.confirm")}
-        cancelText={t("common.cancel")}
-        confirmLoading={batchSubmitting}
-        destroyOnHidden
-      >
-        <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-          {t("adminUsers.batchSetMaxAgentsHint")}
-        </Text>
-        <Form<BatchMaxAgentsFormValues>
-          form={batchMaxAgentsForm}
-          layout="vertical"
-          onFinish={(values) => void submitBatchMaxAgents(values)}
-        >
-          <Form.Item
-            label={t("adminUsers.policyMaxAgents")}
-            extra={t("adminUsers.policyMaxAgentsHint")}
-          >
-            <Form.Item name="limit_max_agents" valuePropName="checked" noStyle>
-              <Switch />
-            </Form.Item>
-          </Form.Item>
-          <Form.Item
-            noStyle
-            shouldUpdate={(prev, cur) =>
-              prev.limit_max_agents !== cur.limit_max_agents
-            }
-          >
-            {({ getFieldValue }) =>
-              getFieldValue("limit_max_agents") ? (
-                <Form.Item
-                  name="max_agents"
-                  rules={[
-                    {
-                      required: true,
-                      message: t("adminUsers.policyMaxAgentsRequired"),
-                    },
-                  ]}
-                >
-                  <MaxAgentsInput />
-                </Form.Item>
-              ) : null
-            }
-          </Form.Item>
-        </Form>
-      </Modal>
+        form={batchMaxAgentsForm}
+        onSubmit={submitBatchMaxAgents}
+      />
     </>
   );
 }
