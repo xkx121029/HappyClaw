@@ -84,6 +84,7 @@ import {
   visibilityFields,
   visibilityFromDetail,
 } from "./connectorFormValues";
+import { isHostCliConnector } from "./connectorHostCli";
 import { notifyConnectorsChanged } from "./customMcpUtils";
 import {
   extractHttpUrl,
@@ -104,16 +105,6 @@ import {
   type ResourceAudience,
 } from "../../../utils/resourceAudience";
 import styles from "./index.module.less";
-
-function isHostCliConnector(kind: string): boolean {
-  return [
-    "feishu-cli",
-    "wecom-cli",
-    "agently-cli",
-    "obsidian-cli",
-    "dingtalk-cli",
-  ].includes(kind);
-}
 
 function ConnectorConfigDrawer({
   open,
