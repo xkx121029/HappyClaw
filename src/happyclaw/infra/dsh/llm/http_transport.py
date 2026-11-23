@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncGenerator, AsyncIterator, Mapping
 from typing import Any
 
 import httpx
@@ -163,7 +163,7 @@ class _HttpStream:
         self._timeout = timeout
         self._trust_env = trust_env
         self._protocol = protocol
-        self._generator = self._run()
+        self._generator: AsyncGenerator[Mapping[str, Any], None] = self._run()
         self._closed = False
 
     @property
@@ -182,7 +182,7 @@ class _HttpStream:
         self._closed = True
         await self._generator.aclose()
 
-    async def _run(self) -> AsyncIterator[Mapping[str, Any]]:
+    async def _run(self) -> AsyncGenerator[Mapping[str, Any], None]:
         try:
             # Loopback gets an explicit transport with retries=0 and
             # trust_env=False, so a machine-wide proxy cannot intercept it.

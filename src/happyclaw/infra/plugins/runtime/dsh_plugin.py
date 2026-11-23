@@ -66,7 +66,7 @@ _DEFAULT_PATCH = "cordis.patch.yml"
 _DEFAULT_NODE_ENGINE = ">=24.9.0"
 
 
-class _DshYamlLoader(yaml.SafeLoader):
+class _DshYamlLoader(yaml.SafeLoader):  # type: ignore[misc]  # PyYAML ships no stubs
     """Safe loader that keeps ``!!js`` expressions as data."""
 
 
@@ -221,6 +221,7 @@ def _parse_patch(patch_path: Path) -> tuple[list[_BundleRow], dict[str, dict[str
                     details={"path": str(patch_path)},
                 )
             inject = row.get("inject") or []
+            inject_values: tuple[str, ...]
             if isinstance(inject, str):
                 inject_values = (inject,)
             elif isinstance(inject, list):
