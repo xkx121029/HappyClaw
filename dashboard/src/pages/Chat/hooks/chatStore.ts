@@ -82,6 +82,21 @@ import {
   emitStreamEvent,
   emitToolEvent,
 } from "./chatStoreEvents";
+import {
+  EMPTY_SNAPSHOT,
+  buildSnapshot,
+  bumpHistoryEpoch,
+  clearAllLiveSpeakers,
+  clearSpeakerLive,
+  clearStreamingFlags,
+  getOrCreate,
+  hasStreamingMessages,
+  markSpeakerLive,
+  pruneIdleLiveSpeakers,
+  sealInFlightAssistantMessages,
+  sessionStates,
+  usageSamplesByState,
+} from "./chatStoreState";
 
 function speakerMatchesFinalize(
   messageSpeaker: string | undefined,
@@ -191,13 +206,6 @@ function tryOpenDashboardWs(agentId: string): WebSocket | null {
   }
 }
 
-function sealInFlightAssistantMessages(state: SessionStreamState): void {
-  state.messages = state.messages.map((m) =>
-    m.status === "streaming" ? { ...m, status: "done" as const } : m,
-  );
-  clearAllLiveSpeakers(state);
-}
-
 // ── Pending prefill text ──────────────────────────────────────────────────
 // Set by external pages (e.g. cron-jobs suggestions) before navigating to
 // /chat so the Chat input can be pre-populated reliably without relying on
@@ -233,51 +241,6 @@ export function consumePendingPrefillAttachments(): ChatAttachment[] {
   _pendingPrefillAttachments = [];
   return val.map((attachment) => ({ ...attachment }));
 }
-
-/** Default snapshot for sessions that don't exist yet. Stable reference. */
-const EMPTY_SNAPSHOT: SessionSnapshot = Object.freeze({
-  messages: [],
-  isStreaming: false,
-  thinkingStartedAt: null,
-  runUsage: null,
-  contextUsage: null,
-  historyHasMore: false,
-  historyLoadingMore: false,
-  historyNextOffset: 0,
-  historyHydrated: false,
-  pendingPlanPath: null,
-  liveSpeakers: [] as string[],
-  activeTurnId: null,
-});
-
-const sessionStates = new Map<string, SessionStreamState>();
-
-let nextHistoryEpoch = 0;
-
-function flushLiveInflight(): void {
-  for (const [sessionId, state] of sessionStates) {
-    const live =
-      state.isStreaming ||
-      state.liveSpeakers.size > 0 ||
-      state.messages.some((message) => message.status === "streaming") ||
-      state.messages.some((m) => m.localPending);
-    if (!live) continue;
-    flushInflightTail(sessionId, inFlightTail(state.messages));
-  }
-}
-
-if (typeof window !== "undefined") {
-  window.addEventListener("pagehide", flushLiveInflight);
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") flushLiveInflight();
-  });
-}
-
-/** Per-call samples let reconnects replace replayed usage instead of double-counting. */
-const usageSamplesByState = new WeakMap<
-  SessionStreamState,
-  Map<string, UsageChunk["usage"]>
->();
 
 function applyThreadTitleFrame(data: Record<string, unknown>): boolean {
   if (data.type !== "thread_title") return false;
@@ -322,118 +285,6 @@ function settleGeneratedTitle(agentId: string, threadId: string): void {
       }
     }
   })();
-}
-
-function buildSnapshot(state: SessionStreamState): SessionSnapshot {
-  return {
-    messages: state.messages,
-    isStreaming: state.isStreaming,
-    thinkingStartedAt: state.thinkingStartedAt,
-    runUsage: state.runUsage,
-    contextUsage: state.contextUsage,
-    historyHasMore: state.historyHasMore,
-    historyLoadingMore: state.historyLoadingMore,
-    historyNextOffset: state.historyNextOffset,
-    historyNextCursor: state.historyNextCursor,
-    historyHydrated: state.historyHydrated,
-    pendingPlanPath: state.pendingPlanPath ?? null,
-    liveSpeakers: [...state.liveSpeakers].sort(),
-    activeTurnId: state.activeTurnId ?? null,
-  };
-}
-
-function speakerLiveKey(speaker?: string): string {
-  return (speaker || "").trim();
-}
-
-/** Mark a speaker as still generating (survives tool gaps until ``done``). */
-function markSpeakerLive(state: SessionStreamState, speaker?: string): void {
-  const key = speakerLiveKey(speaker);
-  state.liveSpeakers.add(key);
-  // Unlabeled host frames also light up the room id so stamped host groups match.
-  if (!key) {
-    const host = state.roomAgentId?.trim();
-    if (host) state.liveSpeakers.add(host);
-  }
-}
-
-function clearSpeakerLive(state: SessionStreamState, speaker?: string): void {
-  const key = speakerLiveKey(speaker);
-  state.liveSpeakers.delete(key);
-  const host = state.roomAgentId?.trim();
-  // Unlabeled and stamped host share one live bit — clear both together.
-  if (!key) {
-    if (host) state.liveSpeakers.delete(host);
-  } else if (host && key === host) {
-    state.liveSpeakers.delete("");
-  }
-}
-
-function clearAllLiveSpeakers(state: SessionStreamState): void {
-  state.liveSpeakers.clear();
-}
-
-/** Drop live speakers with no streaming text and no in-flight tools. */
-function pruneIdleLiveSpeakers(state: SessionStreamState): void {
-  if (state.liveSpeakers.size === 0) return;
-  const busy = new Set<string>();
-  const host = state.roomAgentId?.trim();
-  for (const message of state.messages) {
-    if (message.role !== "assistant") continue;
-    const key = speakerLiveKey(message.speakerAgentId);
-    const inFlightTool = Boolean(
-      message.toolData &&
-        message.toolData.output === undefined &&
-        !isPausedAskTool(message),
-    );
-    if (message.status !== "streaming" && !inFlightTool) continue;
-    busy.add(key);
-    if (!key && host) busy.add(host);
-    if (key && host && key === host) busy.add("");
-  }
-  for (const key of [...state.liveSpeakers]) {
-    if (!busy.has(key)) state.liveSpeakers.delete(key);
-  }
-}
-
-function getOrCreate(sessionId: string): SessionStreamState {
-  let state = sessionStates.get(sessionId);
-  if (!state) {
-    state = {
-      sessionKey: sessionId,
-      messages: [],
-      historyEpoch: ++nextHistoryEpoch,
-      isStreaming: false,
-      thinkingStartedAt: null,
-      runUsage: null,
-      contextUsage: null,
-      abortController: null,
-      streamMsg: "",
-      streamId: "",
-      streamBlockType: "",
-      toolCallIdIndex: {},
-      historyHasMore: false,
-      historyNextOffset: 0,
-      historyLoadingMore: false,
-      historyHydrated: false,
-      historyStale: false,
-      pendingPlanPath: null,
-      listeners: new Set(),
-      _snapshot: EMPTY_SNAPSHOT,
-      roomAgentId: undefined,
-      isTeamRoom: false,
-      liveSpeakers: new Set(),
-      activeTurnId: null,
-      activeTurnUserId: null,
-      pendingSteers: [],
-    };
-    sessionStates.set(sessionId, state);
-  }
-  if (!state.sessionKey || !sessionId.startsWith("__")) {
-    state.sessionKey = sessionId;
-  }
-  if (!state.pendingSteers) state.pendingSteers = [];
-  return state;
 }
 
 /**
@@ -519,21 +370,6 @@ function beginStream(state: SessionStreamState, sessionId: string): void {
   state.thinkingStartedAt = Date.now();
   state.isStreaming = true;
   touchStreamActivity(sessionId);
-}
-
-function clearStreamingFlags(
-  state: SessionStreamState,
-  opts?: { keepSteer?: boolean },
-): void {
-  // Do not clear liveSpeakers — team members may keep generating after the
-  // host turn unlocks the composer; process panels key off liveSpeakers.
-  state.isStreaming = false;
-  state.thinkingStartedAt = null;
-  if (opts?.keepSteer) return;
-  state.activeTurnId = null;
-  // Team members and the host wrap-up keep talking after the host turn ends.
-  if (!state.isTeamRoom) state.activeTurnUserId = null;
-  state.pendingSteers = [];
 }
 
 // ── Live WebSocket bookkeeping (used by cancel / attach / send) ────────────
@@ -807,7 +643,7 @@ export function truncateAndReplaceUserMessage(
 
   const original = state.messages[idx];
   const replacementId = generateId();
-  state.historyEpoch = ++nextHistoryEpoch;
+  state.historyEpoch = bumpHistoryEpoch();
   clearInflightTail(sessionId);
   state.messages = [
     ...state.messages.slice(0, idx),
@@ -855,7 +691,7 @@ export function clearMessages(sessionId: string) {
   // the socket keeps streaming into this state and the UI needs it on return.
   // An idle listen socket (team follow-ups) must not block a clear.
   if (state.isStreaming) return;
-  state.historyEpoch = ++nextHistoryEpoch;
+  state.historyEpoch = bumpHistoryEpoch();
   const alreadyEmpty =
     state.messages.length === 0 &&
     !state.isStreaming &&
@@ -1234,10 +1070,6 @@ function chunkSpeakerId(
   hostAgentId?: string,
 ): string | undefined {
   return rewritePeerSpeakerId(hostAgentId, streamSpeakerId(chunk));
-}
-
-function hasStreamingMessages(state: SessionStreamState): boolean {
-  return state.messages.some((m) => m.status === "streaming");
 }
 
 function isHostTurnTerminal(
