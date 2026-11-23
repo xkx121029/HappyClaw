@@ -25,8 +25,6 @@ import {
   Switch,
   Typography,
   Drawer,
-  Empty,
-  Spin,
 } from "antd";
 import { message } from "@/utils/antdMessage";
 
@@ -54,12 +52,10 @@ import { useIsMobile } from "../../../hooks/useIsMobile";
 import { useServerTimezone } from "../../../hooks/useServerTimezone";
 import { apiErrorMessage } from "../../../utils/apiError";
 import type { OctopAgent } from "../../../context/AgentContext";
-import { AgentCard } from "../../Experts/components/AgentCard";
 import EditAgentDrawer from "../../Experts/components/EditAgentDrawer";
 import InviteDrawer from "./InviteDrawer";
 import { fetchFilesystemDefaults } from "../../Experts/components/agentBackendForm";
 import { HOST_FS_ROOT } from "../../Experts/components/rootDirTree";
-import expertStyles from "../../Experts/index.module.less";
 import styles from "./index.module.less";
 import {
   deleteUserAvatar,
@@ -93,6 +89,7 @@ import {
 import { UserCardGrid } from "./UserCardGrid";
 import { UsersTable } from "./UsersTable";
 import { UsersBatchBar, UsersToolbar } from "./UsersToolbar";
+import { UserAgentsDrawer } from "./UserAgentsDrawer";
 
 const { Text } = Typography;
 
@@ -136,6 +133,7 @@ export {
 export { UserCardGrid, type UserCardGridProps } from "./UserCardGrid";
 export { UsersTable } from "./UsersTable";
 export { UsersBatchBar, UsersToolbar } from "./UsersToolbar";
+export { UserAgentsDrawer } from "./UserAgentsDrawer";
 
 export default function UsersListPanel() {
   const { t, i18n } = useTranslation();
@@ -871,51 +869,16 @@ export default function UsersListPanel() {
         />
       )}
 
-      <Drawer
-        title={
-          agentDrawerUser
-            ? t("adminUsers.agentsDrawerTitle", {
-                username: agentDrawerUser.username,
-              })
-            : ""
-        }
-        open={agentDrawerUser !== null}
+      <UserAgentsDrawer
+        user={agentDrawerUser}
+        agents={drawerAgents}
+        loading={agentsLoading}
         onClose={() => setAgentDrawerUser(null)}
-        width={400}
-        destroyOnHidden
-      >
-        <Spin spinning={agentsLoading}>
-          {drawerAgents.length === 0 ? (
-            <Empty description={t("adminUsers.noAgents")} />
-          ) : (
-            <div
-              className={expertStyles.cardGrid}
-              style={{
-                gridTemplateColumns: "1fr",
-                padding: "8px 0 24px",
-              }}
-            >
-              {drawerAgents.map((agent) => (
-                <AgentCard
-                  key={agent.agent_id}
-                  agent={agent}
-                  iconName={agent.icon_name}
-                  iconUrl={agent.icon_url}
-                  accentColor={agent.color}
-                  onEdit={(id) =>
-                    setEditAgent(
-                      drawerAgents.find((a) => a.agent_id === id) ?? null,
-                    )
-                  }
-                  onDeleted={handleDrawerDeleted}
-                  onStateChange={handleDrawerStateChange}
-                  onPollSettled={() => void refreshAgents()}
-                />
-              ))}
-            </div>
-          )}
-        </Spin>
-      </Drawer>
+        onEditAgent={setEditAgent}
+        onDeleted={handleDrawerDeleted}
+        onStateChange={handleDrawerStateChange}
+        onRefreshAgents={() => void refreshAgents()}
+      />
 
       <EditAgentDrawer
         open={editAgent !== null}
