@@ -191,7 +191,7 @@ octop_prepare_docker_persist "{env_file}"
     assert (dest / ".octop" / "config.json").read_text(encoding="utf-8") == "{}"
     env_text = env_file.read_text(encoding="utf-8")
     assert f"TRIM_DATA_SHARE_PATHS={dest}" in env_text
-    assert f"OCTOP_DATA={dest}" in env_text
+    assert f"HAPPYCLAW_DATA={dest}" in env_text
     assert (pkgvar / "docker.env").read_text(encoding="utf-8") == env_text
 
 
@@ -233,7 +233,7 @@ def test_octop_sync_fnos_compose_bakes_absolute_bind(tmp_path: Path) -> None:
     env_file = tmp_path / "docker" / ".env"
     env_file.parent.mkdir()
     env_file.write_text(
-        "OCTOP_PORT=8088\nOCTOP_LOG_LEVEL=info\n",
+        "HAPPYCLAW_PORT=8088\nHAPPYCLAW_LOG_LEVEL=info\n",
         encoding="utf-8",
     )
     script = f"""
@@ -255,7 +255,7 @@ def test_octop_distribute_docker_env_copies_to_compose_dirs(tmp_path: Path) -> N
     src = tmp_path / "target" / "docker" / ".env"
     src.parent.mkdir(parents=True)
     src.write_text(
-        "OCTOP_DEFAULT_PASSWORD=Abcdefg1\nTRIM_DATA_SHARE_PATHS=/data\n", encoding="utf-8"
+        "HAPPYCLAW_DEFAULT_PASSWORD=Abcdefg1\nTRIM_DATA_SHARE_PATHS=/data\n", encoding="utf-8"
     )
     runtime = tmp_path / "appcenter" / "octop" / "docker"
     runtime.mkdir(parents=True)
@@ -282,7 +282,7 @@ octop_distribute_docker_env "{src}" "{tmp_path / "share"}"
 def test_octop_restore_docker_env_from_pkgvar(tmp_path: Path) -> None:
     pkgvar = tmp_path / "pkgvar"
     pkgvar.mkdir()
-    (pkgvar / "docker.env").write_text("OCTOP_PORT=8088\n", encoding="utf-8")
+    (pkgvar / "docker.env").write_text("HAPPYCLAW_PORT=8088\n", encoding="utf-8")
     env_file = tmp_path / "target" / "docker" / ".env"
     script = f"""
 set -euo pipefail
@@ -291,7 +291,7 @@ export TRIM_PKGVAR="{pkgvar}"
 octop_restore_docker_env "{env_file}"
 """
     subprocess.check_call(["bash", "-c", script])
-    assert env_file.read_text(encoding="utf-8") == "OCTOP_PORT=8088\n"
+    assert env_file.read_text(encoding="utf-8") == "HAPPYCLAW_PORT=8088\n"
 
 
 @posix_only
@@ -328,7 +328,7 @@ def test_fnos_native_start_reports_failure() -> None:
     install = (FNOS_NATIVE / "cmd" / "install_callback").read_text(encoding="utf-8")
     assert "fail_start" in main
     assert "octop-start-error.txt" in main
-    assert "OCTOP_START_WAIT_SECS" in main
+    assert "HAPPYCLAW_START_WAIT_SECS" in main
     assert "return 0" in main
     assert "--prepare" in launcher
     assert "PREPARE_ONLY" in launcher
@@ -416,7 +416,7 @@ def test_fnos_packages_do_not_collect_admin_accounts() -> None:
         for needle in (
             "wizard_admin_username",
             "wizard_admin_password",
-            "OCTOP_DEFAULT_PASSWORD",
+            "HAPPYCLAW_DEFAULT_PASSWORD",
             "fnos-admin.env",
             "fnos-boot.sh",
             "octop-login.txt",
@@ -433,15 +433,15 @@ def test_octop_assert_native_arch_rejects_mismatch(tmp_path: Path) -> None:
     script = f"""
 set -euo pipefail
 source "{COMMON_SH}"
-export OCTOP_FPK_ARCH_FILE="{marker}"
-export OCTOP_FPK_HOST_ARCH=x86_64
+export HAPPYCLAW_FPK_ARCH_FILE="{marker}"
+export HAPPYCLAW_FPK_HOST_ARCH=x86_64
 octop_assert_native_arch && exit 10
-export OCTOP_FPK_HOST_ARCH=arm64
+export HAPPYCLAW_FPK_HOST_ARCH=arm64
 octop_assert_native_arch || exit 11
 printf '%s\n' amd64 > "{marker}"
-export OCTOP_FPK_HOST_ARCH=amd64
+export HAPPYCLAW_FPK_HOST_ARCH=amd64
 octop_assert_native_arch || exit 13
-unset OCTOP_FPK_ARCH_FILE
+unset HAPPYCLAW_FPK_ARCH_FILE
 octop_assert_native_arch || exit 12
 """
     subprocess.check_call(["bash", "-c", script])
@@ -460,7 +460,7 @@ def test_octop_prepend_fnos_node_path_when_missing(tmp_path: Path) -> None:
 set -euo pipefail
 source "{COMMON_SH}"
 export PATH="{empty}"
-export OCTOP_FNOS_NODE_BIN_DIRS="{bindir}"
+export HAPPYCLAW_FNOS_NODE_BIN_DIRS="{bindir}"
 octop_prepend_fnos_node_path
 found="$(command -v node)"
 test "$found" = "{node}"
@@ -484,7 +484,7 @@ def test_octop_prepend_fnos_node_path_keeps_existing(tmp_path: Path) -> None:
 set -euo pipefail
 source "{COMMON_SH}"
 export PATH="{existing}"
-export OCTOP_FNOS_NODE_BIN_DIRS="{other}"
+export HAPPYCLAW_FNOS_NODE_BIN_DIRS="{other}"
 octop_prepend_fnos_node_path
 found="$(command -v node)"
 test "$found" = "{node}"

@@ -8,6 +8,7 @@ there (nothing is moved or deleted).
 
 from __future__ import annotations
 
+import os
 import pathlib
 
 import pytest
@@ -102,21 +103,34 @@ def test_legacy_home_variable_still_honoured(
     assert paths.PathLayout.from_env().root == tmp_path / "h-old"
 
 
-def test_env_alias_mirrors_new_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_env_alias_mirrors_the_legacy_prefix() -> None:
     from happyclaw.infra.utils import env_alias
 
-    env = {"HAPPYCLAW_PORT": "8080", "HAPPYCLAW_": "ignored", "PATH": "/usr/bin"}
+    env = {"OCTOP_PORT": "8080", "OCTOP_": "ignored", "PATH": "/usr/bin"}
     aliased = env_alias.alias_legacy_env(env)
 
-    assert env["OCTOP_PORT"] == "8080"
-    assert "OCTOP_" not in env
-    assert aliased == ["OCTOP_PORT"]
+    assert env["HAPPYCLAW_PORT"] == "8080"
+    # The bare prefix maps to nothing and must not create a "HAPPYCLAW_" variable.
+    assert "HAPPYCLAW_" not in env
+    assert aliased == ["HAPPYCLAW_PORT"]
 
 
-def test_env_alias_never_overrides_an_explicit_legacy_value() -> None:
+def test_env_alias_never_overrides_an_explicit_new_value() -> None:
     from happyclaw.infra.utils import env_alias
 
-    env = {"HAPPYCLAW_PORT": "8080", "OCTOP_PORT": "9090"}
+    env = {"OCTOP_PORT": "8080", "HAPPYCLAW_PORT": "9090"}
     env_alias.alias_legacy_env(env)
 
-    assert env["OCTOP_PORT"] == "9090"
+    assert env["HAPPYCLAW_PORT"] == "9090"
+
+
+def test_env_get_prefers_the_new_name_and_falls_back() -> None:
+    from happyclaw.infra.utils import env_alias
+
+    env = {"OCTOP_PORT": "8080"}
+    os.environ.update(env)
+    try:
+        assert env_alias.env_get("PORT") == "8080"
+        assert env_alias.env_has("PORT") is True
+    finally:
+        os.environ.pop("OCTOP_PORT", None)

@@ -46,7 +46,7 @@ def test_should_not_defer_when_database_env_set(tmp_path: Path, monkeypatch: pyt
     root = tmp_path / ".octop"
     root.mkdir()
     (root / "config.json").write_text(json.dumps({"port": 8088}))
-    monkeypatch.setenv("OCTOP_DATABASE_SQLITE_PATH", str(root / "env.db"))
+    monkeypatch.setenv("HAPPYCLAW_DATABASE_SQLITE_PATH", str(root / "env.db"))
     paths = PathLayout(root)
     cfg = load_config(paths.config)
     assert should_defer_control_plane_db(cfg, paths) is False
@@ -107,7 +107,7 @@ def test_env_sqlite_path_without_database_section(tmp_path: Path, monkeypatch: p
     root = tmp_path / ".octop"
     root.mkdir()
     (root / "config.json").write_text(json.dumps({"port": 8088}))
-    monkeypatch.setenv("OCTOP_DATABASE_SQLITE_PATH", "/tmp/custom-octop.db")
+    monkeypatch.setenv("HAPPYCLAW_DATABASE_SQLITE_PATH", "/tmp/custom-octop.db")
     paths = PathLayout(root)
     cfg = load_config(paths.config)
     assert cfg.database_in_file is False

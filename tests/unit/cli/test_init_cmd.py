@@ -19,7 +19,7 @@ def fake_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("HAPPYCLAW_HOME", str(happyclaw_home))
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
     for key in list(os.environ):
-        if key.startswith("OCTOP_DATABASE_"):
+        if key.startswith("HAPPYCLAW_DATABASE_"):
             monkeypatch.delenv(key, raising=False)
     return tmp_path
 
@@ -239,8 +239,8 @@ def test_init_rerun_skips_existing_admin_without_local_db(
     """
     external = fake_home / "external"
     external.mkdir()
-    monkeypatch.setenv("OCTOP_DATABASE_DRIVER", "sqlite")
-    monkeypatch.setenv("OCTOP_DATABASE_SQLITE_PATH", str(external / "control.db"))
+    monkeypatch.setenv("HAPPYCLAW_DATABASE_DRIVER", "sqlite")
+    monkeypatch.setenv("HAPPYCLAW_DATABASE_SQLITE_PATH", str(external / "control.db"))
     runner = CliRunner()
     args = [
         "init",
@@ -275,8 +275,8 @@ def test_init_password_too_short_rejects(fake_home: Path) -> None:
 
 
 def test_init_env_vars_supply_credentials(fake_home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OCTOP_ADMIN_USERNAME", "fromenv")
-    monkeypatch.setenv("OCTOP_ADMIN_PASSWORD", "EnvPass12")
+    monkeypatch.setenv("HAPPYCLAW_ADMIN_USERNAME", "fromenv")
+    monkeypatch.setenv("HAPPYCLAW_ADMIN_PASSWORD", "EnvPass12")
     runner = CliRunner()
     result = runner.invoke(cli, ["init", "--yes"])
     assert result.exit_code == 0, result.output

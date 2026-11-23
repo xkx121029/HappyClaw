@@ -22,7 +22,7 @@ def test_docker_syncs_retain_knowledge_extras() -> None:
         assert {"browser", "desktop", "local-embedding", "knowledge-ocr"} <= extras
         assert "--frozen" in command
         assert "--no-dev" in command
-    assert '[ "$OCTOP_IMAGE_VARIANT" = "lite" ]' in dockerfile
+    assert '[ "$HAPPYCLAW_IMAGE_VARIANT" = "lite" ]' in dockerfile
     assert _desktop_smoke_import(dockerfile)
 
 
@@ -60,7 +60,7 @@ def test_variant_is_validated_and_compiler_is_purged_in_the_install_layer() -> N
         ("fnos/docker/Dockerfile", "uv pip install "),
     ):
         text = (repo / rel).read_text(encoding="utf-8")
-        assert "OCTOP_IMAGE_VARIANT must be full or lite" in text
+        assert "HAPPYCLAW_IMAGE_VARIANT must be full or lite" in text
         layers = text.split("\nRUN ")
         runtime = next(
             layer for layer in layers if "libgl1" in layer and install_marker not in layer
