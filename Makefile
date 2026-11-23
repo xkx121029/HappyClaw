@@ -257,6 +257,11 @@ lint:
 	@echo "[lint] Ruff format check..."
 	$(RUN) ruff format --check src tests
 
+.PHONY: check-env-compat
+check-env-compat:
+	@echo "[check-env-compat] Every HAPPYCLAW_* read goes through env_get/env_has..."
+	$(RUN) python scripts/check_env_compat.py
+
 .PHONY: check-upstream
 check-upstream:
 	@echo "[check-upstream] No links or domains pointing at the pre-migration upstream project..."

@@ -70,6 +70,18 @@ def _init_marker(tmp_path: Path) -> Path:
     return tmp_path / "data" / ".happyclaw" / ".initialized"
 
 
+def _posix_path(path: Path) -> str:
+    """MSYS spelling of a Windows path (drive letter to /c form)."""
+    text = path.resolve().as_posix()
+    return "/" + text[0].lower() + text[2:]
+
+
+def _posix_path_list(value: str) -> str:
+    """Rewrite every Windows entry of a PATH into the MSYS form."""
+    parts = [part for part in value.split(";") if part.strip()]
+    return ":".join(_posix_path(Path(part)) if "\\" in part or ":" in part[:2] else part for part in parts)
+
+
 def _run_entrypoint(
     tmp_path: Path,
     *,
@@ -92,7 +104,9 @@ def _run_entrypoint(
         {
             "HOME": str(home),
             "HAPPYCLAW_HOME": str(home / ".happyclaw"),
-            "PATH": str(stub_dir) + os.pathsep + env.get("PATH", ""),
+            # MSYS resolves POSIX-style PATH entries; a Windows path here leaves the
+            # stub unreachable and the entrypoint reports "command not found".
+            "PATH": _posix_path(stub_dir) + ":" + _posix_path_list(env.get("PATH", "")),
             "OCTOP_STUB_LOG": str(log),
             "OCTOP_PORT": "8088",
         }
