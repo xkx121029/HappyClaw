@@ -22,7 +22,7 @@ dependencies = [
     "argon2-cffi>=23.1",
     "pyjwt>=2.8",
     "happyclaw-harness[all]>=1.0.14",
-    "happyclaw-memory>=1.0.7",
+    "happyclaw-memory>=1.0.9",
     "lark-oapi>=1.7.3",
     "happyclaw-gateway>=1.0.6",
     "cryptography>=41",
@@ -249,6 +249,6 @@ filterwarnings = [
 # vendor/happyclaw-libs/ so `uv sync --frozen` needs no index or network for them.
 # Rebuild a wheel from the library repo's release tag and replace the file here.
 happyclaw-harness = { path = "vendor/happyclaw-libs/happyclaw_harness-1.0.14-py3-none-any.whl" }
-happyclaw-memory = { path = "vendor/happyclaw-libs/happyclaw_memory-1.0.7-py3-none-any.whl" }
+happyclaw-memory = { path = "vendor/happyclaw-libs/happyclaw_memory-1.0.9-py3-none-any.whl" }
 happyclaw-gateway = { path = "vendor/happyclaw-libs/happyclaw_gateway-1.0.6-py3-none-any.whl" }
 happyclaw-browser = { path = "vendor/happyclaw-libs/happyclaw_browser-1.0.2-py3-none-any.whl" }
