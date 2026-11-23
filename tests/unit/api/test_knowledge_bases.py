@@ -27,6 +27,23 @@ def _services(**extra: object) -> SimpleNamespace:
     )
 
 
+def _patch_kb(monkeypatch: pytest.MonkeyPatch, name: str, value: object) -> None:
+    """Patch ``name`` in every knowledge-base module that resolves it.
+
+    The routes moved from one module into the package ``knowledge_bases``, so
+    each name is looked up in the module that uses it; patching all of them
+    keeps these tests' intent without pinning the split's file layout.
+    """
+    from happyclaw.api.routers.knowledge_bases import bases, common, documents, feature
+
+    patched = False
+    for module in (common, feature, bases, documents):
+        if hasattr(module, name):
+            monkeypatch.setattr(module, name, value)
+            patched = True
+    assert patched, f"{name} is not resolved by any knowledge-base module"
+
+
 @dataclass
 class _Base:
     id: str = "kb-1"
@@ -75,7 +92,7 @@ async def test_enabling_without_model_maps_prerequisite_error(
     def fail(*_args: object, **_kwargs: object) -> None:
         raise ValueError("enabling knowledge bases requires an embedding model")
 
-    monkeypatch.setattr(knowledge_bases, "set_feature_enabled", fail)
+    _patch_kb(monkeypatch, "set_feature_enabled", fail)
 
     with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.put_feature(
@@ -122,7 +139,7 @@ async def test_enabling_reindexes_documents_when_model_changes(
         assert model == "new-model"
         settings_set("knowledge_embedding_model", model)
 
-    monkeypatch.setattr(knowledge_bases, "set_feature_enabled", set_feature)
+    _patch_kb(monkeypatch, "set_feature_enabled", set_feature)
     monkeypatch.setattr(
         knowledge_bases,
         "reindex_all_documents",
@@ -159,7 +176,7 @@ async def test_create_base_maps_disabled_feature_error(monkeypatch: pytest.Monke
     def fail(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("knowledge feature is disabled")
 
-    monkeypatch.setattr(knowledge_bases, "assert_knowledge_usable", fail)
+    _patch_kb(monkeypatch, "assert_knowledge_usable", fail)
 
     with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.create_base(
@@ -184,8 +201,8 @@ async def test_create_base_uses_selected_model_when_usable(
     )
     server = SimpleNamespace(services=_services())
     user = SimpleNamespace(id=1, is_admin=False)
-    monkeypatch.setattr(knowledge_bases, "assert_knowledge_usable", lambda *_a, **_k: None)
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _server: service)
+    _patch_kb(monkeypatch, "assert_knowledge_usable", lambda *_a, **_k: None)
+    _patch_kb(monkeypatch, "_knowledge_service", lambda _server: service)
 
     response = await knowledge_bases.create_base(
         knowledge_bases.CreateBaseBody(name="Docs"),
@@ -222,8 +239,8 @@ async def test_upload_enqueues_document_indexing(monkeypatch: pytest.MonkeyPatch
         filename="readme.md",
         headers=Headers({"content-type": "text/markdown"}),
     )
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _server: service)
-    monkeypatch.setattr(knowledge_bases, "assert_knowledge_usable", lambda *_a, **_k: None)
+    _patch_kb(monkeypatch, "_knowledge_service", lambda _server: service)
+    _patch_kb(monkeypatch, "assert_knowledge_usable", lambda *_a, **_k: None)
     monkeypatch.setattr(
         knowledge_bases,
         "enqueue_index_document",
@@ -269,7 +286,7 @@ async def test_preview_document_returns_extracted_text(
     )
     server = SimpleNamespace(services=_services())
     user = SimpleNamespace(id=1, is_admin=False)
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _server: service)
+    _patch_kb(monkeypatch, "_knowledge_service", lambda _server: service)
 
     response = await knowledge_bases.preview_document(
         "kb-1", "doc-1", request=_request(), server=server, user=user
@@ -295,7 +312,7 @@ async def test_download_document_file_returns_original_bytes(
     )
     server = SimpleNamespace(services=_services())
     user = SimpleNamespace(id=1, is_admin=False)
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _server: service)
+    _patch_kb(monkeypatch, "_knowledge_service", lambda _server: service)
 
     response = await knowledge_bases.download_document_file(
         "kb-1",
@@ -324,7 +341,7 @@ async def test_download_document_file_missing_maps_not_found(
     service = SimpleNamespace(resolve_document_file=missing)
     server = SimpleNamespace(services=_services())
     user = SimpleNamespace(id=1, is_admin=False)
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _server: service)
+    _patch_kb(monkeypatch, "_knowledge_service", lambda _server: service)
 
     with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.download_document_file(
@@ -486,8 +503,8 @@ async def test_reindex_document_enqueues_job(
     )
     server = SimpleNamespace(services=_services())
     user = SimpleNamespace(id=1, is_admin=False)
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _server: service)
-    monkeypatch.setattr(knowledge_bases, "_require_usable", lambda *_a, **_k: None)
+    _patch_kb(monkeypatch, "_knowledge_service", lambda _server: service)
+    _patch_kb(monkeypatch, "_require_usable", lambda *_a, **_k: None)
     monkeypatch.setattr(
         knowledge_bases,
         "enqueue_index_document",
@@ -542,9 +559,9 @@ async def test_onnx_activate_enables_downloaded_service(
     async def ready(**_kwargs: object) -> str:
         return "ready"
 
-    monkeypatch.setattr(knowledge_bases, "ensure_local_embedding_deps_async", ready)
-    monkeypatch.setattr(knowledge_bases, "assert_catalog_model", lambda model: model)
-    monkeypatch.setattr(knowledge_bases, "is_model_downloaded", lambda _model: True)
+    _patch_kb(monkeypatch, "ensure_local_embedding_deps_async", ready)
+    _patch_kb(monkeypatch, "assert_catalog_model", lambda model: model)
+    _patch_kb(monkeypatch, "is_model_downloaded", lambda _model: True)
     monkeypatch.setattr(
         knowledge_bases,
         "save_config",
@@ -581,7 +598,7 @@ async def test_rename_document_returns_row_payload(
         def rename_document(self, *_args: object, **_kwargs: object) -> _Document:
             return renamed
 
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _server: _FakeService())
+    _patch_kb(monkeypatch, "_knowledge_service", lambda _server: _FakeService())
 
     result = await knowledge_bases.rename_document(
         kb_id="kb-1",
@@ -611,7 +628,7 @@ async def test_move_document_passes_the_target_and_returns_the_row(
             calls.append({"kb_id": kb_id, "doc_id": doc_id, **kwargs})
             return moved
 
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _server: _FakeService())
+    _patch_kb(monkeypatch, "_knowledge_service", lambda _server: _FakeService())
 
     result = await knowledge_bases.move_document(
         kb_id="kb-1",
@@ -654,7 +671,7 @@ async def test_move_document_maps_errors(
     def fail(*_args: object, **_kwargs: object) -> None:
         raise error
 
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", fail)
+    _patch_kb(monkeypatch, "_knowledge_service", fail)
 
     with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.move_document(
@@ -678,7 +695,7 @@ async def test_rename_document_maps_not_found(
     def fail(*_args: object, **_kwargs: object) -> None:
         raise LookupError("knowledge document not found")
 
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", fail)
+    _patch_kb(monkeypatch, "_knowledge_service", fail)
 
     with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.rename_document(
@@ -702,7 +719,7 @@ async def test_rename_document_maps_name_taken(
     def fail(*_args: object, **_kwargs: object) -> None:
         raise ValueError("a knowledge document with this name already exists")
 
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", fail)
+    _patch_kb(monkeypatch, "_knowledge_service", fail)
 
     with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.rename_document(
@@ -726,7 +743,7 @@ async def test_rename_document_maps_invalid_name(
     def fail(*_args: object, **_kwargs: object) -> None:
         raise ValueError("invalid knowledge document name")
 
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", fail)
+    _patch_kb(monkeypatch, "_knowledge_service", fail)
 
     with pytest.raises(HappyclawError) as raised:
         await knowledge_bases.rename_document(
@@ -752,7 +769,7 @@ async def test_update_base_accepts_max_documents(monkeypatch: pytest.MonkeyPatch
             received.update(kw)
             return _Base(max_documents=42)
 
-    monkeypatch.setattr(knowledge_bases, "_knowledge_service", lambda _s: _StubSvc())
+    _patch_kb(monkeypatch, "_knowledge_service", lambda _s: _StubSvc())
 
     response = await knowledge_bases.update_base(
         kb_id="kb-1",
