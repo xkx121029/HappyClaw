@@ -72,7 +72,6 @@ import cx from "classnames";
 
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { userCan } from "../../utils/permissions";
-import type { OctopUser } from "../../api/modules/auth";
 import {
   DEFAULT_KNOWLEDGE_LIMITS,
   knowledgeBasesApi,
@@ -139,6 +138,19 @@ import {
   isKnowledgeDocumentLimitReached,
   knowledgeDocumentCap,
 } from "./knowledgeLimits";
+import { DOCS_VIEW_STORAGE_KEY, loadDocsViewMode } from "./knowledgeDocsView";
+import {
+  BASE_DOCUMENT_TYPES,
+  OCR_DOCUMENT_TYPES,
+  documentStatusColor,
+  fileExtensionLabel,
+  fileMatchesAccept,
+} from "./knowledgeFileTypes";
+import {
+  canManageKnowledgeBase,
+  formatKnowledgeOwner,
+  isKnowledgeOwner,
+} from "./knowledgePermissions";
 import {
   canDownloadKnowledgeOriginal,
   canPreviewKnowledgeDocument,
@@ -158,72 +170,6 @@ type BaseFormValues = {
   icon_url?: string;
   max_documents?: number;
 };
-
-type DocsViewMode = "card" | "table";
-const DOCS_VIEW_STORAGE_KEY = "octop:knowledge-bases-docs-view";
-
-const BASE_DOCUMENT_TYPES =
-  ".md,.markdown,.txt,.rst,.html,.htm,.json,.jsonl,.yaml,.yml,.csv,.tsv,.pdf,.doc,.wps,.docx,.pptx,.xls,.xlsx,.xlsm";
-const OCR_DOCUMENT_TYPES = ".png,.jpg,.jpeg,.webp";
-
-function loadDocsViewMode(): DocsViewMode {
-  const stored = localStorage.getItem(DOCS_VIEW_STORAGE_KEY);
-  return stored === "table" ? "table" : "card";
-}
-
-function documentStatusColor(status: KnowledgeDocument["status"]) {
-  if (status === "ready") return "success";
-  if (status === "failed") return "error";
-  if (status === "processing") return "processing";
-  return "default";
-}
-
-function fileExtensionLabel(filename: string): string {
-  const ext = filename.includes(".")
-    ? filename.slice(filename.lastIndexOf(".") + 1)
-    : "";
-  return ext.trim().toUpperCase().slice(0, 5);
-}
-
-/** Match ``<input accept>`` extension tokens (e.g. ``.pdf,.docx``). */
-function fileMatchesAccept(file: File, acceptCsv: string): boolean {
-  const tokens = acceptCsv
-    .split(",")
-    .map((token) => token.trim().toLowerCase())
-    .filter(Boolean);
-  if (tokens.length === 0) return true;
-  const name = file.name.toLowerCase();
-  return tokens.some((token) =>
-    token.startsWith(".") ? name.endsWith(token) : false,
-  );
-}
-
-function canManageKnowledgeBase(
-  base: Pick<KnowledgeBase, "owner_user_id">,
-  user: OctopUser | null,
-): boolean {
-  return Boolean(
-    user && (user.role === "admin" || base.owner_user_id === user.id),
-  );
-}
-
-function isKnowledgeOwner(
-  base: Pick<KnowledgeBase, "owner_user_id">,
-  user: OctopUser | null,
-): boolean {
-  return Boolean(user && base.owner_user_id === user.id);
-}
-
-function formatKnowledgeOwner(
-  base: Pick<
-    KnowledgeBase,
-    "owner_display_name" | "owner_username" | "owner_user_id"
-  >,
-): string {
-  const displayName = base.owner_display_name?.trim() || "";
-  const username = base.owner_username?.trim() || "";
-  return displayName || username || String(base.owner_user_id);
-}
 
 const FOLDER_ICON_COLOR = "#d97706";
 
