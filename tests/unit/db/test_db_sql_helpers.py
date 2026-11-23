@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.db.repos._base import insert_returning_id, sql_in_placeholders, sql_unix_day_bucket
+from happyclaw.infra.db.repos._base import (
+    insert_returning_id,
+    sql_in_placeholders,
+    sql_unix_day_bucket,
+)
 
 
 def test_sql_in_placeholders():
