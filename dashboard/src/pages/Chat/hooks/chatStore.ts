@@ -21,7 +21,6 @@ import {
   parseDecisionNotice,
   type ChatAttachment,
   type ChatMessage,
-  type SessionSnapshot,
   type SessionStreamState,
 } from "./sseHelpers";
 import {
@@ -64,7 +63,6 @@ import {
   clearInflightTail,
   flushInflightTail,
   moveInflightTail,
-  scheduleInflightTail,
 } from "../utils/inflightTranscriptCache";
 import {
   MAX_STREAM_RESUME_ATTEMPTS,
@@ -83,8 +81,6 @@ import {
   emitToolEvent,
 } from "./chatStoreEvents";
 import {
-  EMPTY_SNAPSHOT,
-  buildSnapshot,
   bumpHistoryEpoch,
   clearAllLiveSpeakers,
   clearSpeakerLive,
@@ -97,6 +93,12 @@ import {
   sessionStates,
   usageSamplesByState,
 } from "./chatStoreState";
+import {
+  cancelStreamPaint,
+  chunkPaintsImmediately,
+  notify,
+  notifyStreamingPaint,
+} from "./chatStorePublish";
 
 function speakerMatchesFinalize(
   messageSpeaker: string | undefined,
@@ -287,84 +289,6 @@ function settleGeneratedTitle(agentId: string, threadId: string): void {
   })();
 }
 
-/**
- * Token / reasoning paints. A fast stream used to call React on every
- * fragment and starve in-flight fetches (expert profile, context usage).
- * The snapshot stays current immediately; listeners flush on this interval.
- */
-const STREAM_PAINT_MS = 50;
-
-const streamPaintTimers = new Map<
-  SessionStreamState,
-  ReturnType<typeof setTimeout>
->();
-
-function cancelStreamPaint(state: SessionStreamState): void {
-  const timer = streamPaintTimers.get(state);
-  if (timer === undefined) return;
-  clearTimeout(timer);
-  streamPaintTimers.delete(state);
-}
-
-function publish(state: SessionStreamState): void {
-  for (const fn of state.listeners) {
-    try {
-      fn();
-    } catch {
-      /* ignore */
-    }
-  }
-}
-
-function rememberInflight(state: SessionStreamState): void {
-  const sessionId = state.sessionKey || "";
-  if (!sessionId || sessionId.startsWith("__")) return;
-  const live =
-    state.isStreaming ||
-    state.liveSpeakers.size > 0 ||
-    state.messages.some((message) => message.status === "streaming");
-  const tail = inFlightTail(state.messages);
-  if (live) {
-    scheduleInflightTail(sessionId, tail);
-    return;
-  }
-  if (state.messages.some((m) => m.localPending)) {
-    flushInflightTail(sessionId, tail);
-  }
-}
-
-function notify(state: SessionStreamState) {
-  // Rebuild the snapshot reference so useSyncExternalStore sees the change.
-  cancelStreamPaint(state);
-  state._snapshot = buildSnapshot(state);
-  rememberInflight(state);
-  publish(state);
-}
-
-/** Coalesce high-frequency stream fragments onto one paint. */
-function notifyStreamingPaint(state: SessionStreamState): void {
-  state._snapshot = buildSnapshot(state);
-  rememberInflight(state);
-  if (streamPaintTimers.has(state)) return;
-  streamPaintTimers.set(
-    state,
-    setTimeout(() => {
-      streamPaintTimers.delete(state);
-      publish(state);
-    }, STREAM_PAINT_MS),
-  );
-}
-
-function chunkPaintsImmediately(type: string): boolean {
-  return (
-    type !== "token" &&
-    type !== "reasoning" &&
-    type !== "usage" &&
-    type !== "state_update" &&
-    type !== "state_snapshot"
-  );
-}
-
 function beginStream(state: SessionStreamState, sessionId: string): void {
   clearAllLiveSpeakers(state);
   state.thinkingStartedAt = Date.now();
@@ -479,36 +403,6 @@ function armStreamWatchdog(sessionId: string): void {
       emitStreamEvent({ kind: "streamEnd", sessionId });
     }, STREAM_STALE_WITHOUT_SOCKET_MS),
   );
-}
-
-// ── Public API ────────────────────────────────────────────────────────────
-
-/** Subscribe to state changes for a session. Returns unsubscribe fn. */
-export function subscribe(sessionId: string, listener: () => void): () => void {
-  const state = getOrCreate(sessionId);
-  state.listeners.add(listener);
-  return () => {
-    state.listeners.delete(listener);
-  };
-}
-
-/** Capture the session revision before an asynchronous history read. */
-export function beginHistoryRead(sessionId: string): number {
-  return getOrCreate(sessionId).historyEpoch ?? 0;
-}
-
-export function isHistoryReadCurrent(
-  sessionId: string,
-  epoch: number,
-): boolean {
-  return sessionStates.get(sessionId)?.historyEpoch === epoch;
-}
-
-/** Get a read-only snapshot of the session state (referentially stable). */
-export function getSnapshot(sessionId: string): SessionSnapshot {
-  const state = sessionStates.get(sessionId);
-  if (!state) return EMPTY_SNAPSHOT;
-  return state._snapshot;
 }
 
 /** Remember or clear the pending plan file for the PlanReady card. */
@@ -4037,3 +3931,4 @@ export type {
 
 export type { ToolEventKind, ToolEvent, StreamEventKind, StreamEvent, SlashActionEvent, SessionEventKind, SessionEvent, SteerRestoreEvent, SharedTurnBusyEvent } from "./chatStoreTypes";
 export { onToolEvent, emitToolEvent, onStreamEvent, onSlashAction, onSessionEvent, emitSessionEvent, onSteerRestore, onSharedTurnBusy } from "./chatStoreEvents";
+export { subscribe, getSnapshot, beginHistoryRead, isHistoryReadCurrent } from "./chatStorePublish";
