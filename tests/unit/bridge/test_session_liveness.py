@@ -678,7 +678,7 @@ async def test_outbound_dial_disables_protocol_ping(monkeypatch: pytest.MonkeyPa
         advertise_base_url="http://local.test",
     )
     mgr._repo.get.return_value = None
-    monkeypatch.setattr("happyclaw.infra.bridge.manager.websockets.connect", _FakeConnect)
+    monkeypatch.setattr("happyclaw.infra.bridge.manager_transport.websockets.connect", _FakeConnect)
 
     await mgr._run_outbound_client("cid1", "https://demo.octop.chat", "tok")
 
