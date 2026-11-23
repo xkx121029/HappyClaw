@@ -27,31 +27,17 @@ import {
   Drawer,
   Empty,
   Spin,
-  Segmented,
-  Checkbox,
 } from "antd";
 import { message } from "@/utils/antdMessage";
 
 import {
-  Bot,
   CircleHelp,
-  Coins,
   IdCard,
-  LayoutGrid,
-  Link2,
-  List,
   Lock,
   LockOpen,
-  Plus,
-  Power,
-  PowerOff,
-  RefreshCw,
-  Search,
   ShieldCheck,
-  Trash2,
   User,
   Mail,
-  X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import cx from "classnames";
@@ -106,6 +92,7 @@ import {
 } from "./PermissionFields";
 import { UserCardGrid } from "./UserCardGrid";
 import { UsersTable } from "./UsersTable";
+import { UsersBatchBar, UsersToolbar } from "./UsersToolbar";
 
 const { Text } = Typography;
 
@@ -148,6 +135,7 @@ export {
 } from "./PermissionFields";
 export { UserCardGrid, type UserCardGridProps } from "./UserCardGrid";
 export { UsersTable } from "./UsersTable";
+export { UsersBatchBar, UsersToolbar } from "./UsersToolbar";
 
 export default function UsersListPanel() {
   const { t, i18n } = useTranslation();
@@ -806,142 +794,31 @@ export default function UsersListPanel() {
 
   return (
     <>
-      <div className={styles.pageTop}>
-        <RoleLegend />
-        <div className={expertStyles.gridToolbar}>
-          <div className={styles.userSearchRow}>
-            {showCardView ? (
-              <Checkbox
-                checked={
-                  filteredRows.length > 0 &&
-                  selectedVisibleCount === filteredRows.length
-                }
-                indeterminate={
-                  selectedVisibleCount > 0 &&
-                  selectedVisibleCount < filteredRows.length
-                }
-                disabled={filteredRows.length === 0}
-                onChange={(e) => setSelectAllVisible(e.target.checked)}
-              >
-                {t("adminUsers.batchSelectAll")}
-              </Checkbox>
-            ) : null}
-            <Input
-              allowClear
-              prefix={<Search size={14} />}
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder={t("adminUsers.searchPlaceholder")}
-              className={styles.userSearch}
-            />
-          </div>
-          <div className={expertStyles.gridToolbarRight}>
-            <Segmented
-              size="small"
-              value={viewMode}
-              onChange={(v) => setViewMode(v as "table" | "card")}
-              options={[
-                {
-                  value: "card",
-                  label: (
-                    <span className={expertStyles.viewModeLabel}>
-                      <LayoutGrid size={14} />
-                      {t("adminUsers.viewCard", "卡片")}
-                    </span>
-                  ),
-                },
-                {
-                  value: "table",
-                  label: (
-                    <span className={expertStyles.viewModeLabel}>
-                      <List size={14} />
-                      {t("adminUsers.viewTable", "表格")}
-                    </span>
-                  ),
-                },
-              ]}
-            />
-            <Button
-              icon={<RefreshCw size={14} />}
-              onClick={() => void refreshAll()}
-            >
-              {t("common.refresh")}
-            </Button>
-            <Button
-              icon={<Link2 size={14} />}
-              onClick={() => setInviteOpen(true)}
-            >
-              {t("adminUsers.inviteUsers")}
-            </Button>
-            <Button
-              type="primary"
-              icon={<Plus size={14} />}
-              onClick={openCreate}
-            >
-              {t("adminUsers.newUser")}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <UsersToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        showCardView={showCardView}
+        visibleCount={filteredRows.length}
+        selectedVisibleCount={selectedVisibleCount}
+        onSelectAllVisible={setSelectAllVisible}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onRefresh={() => void refreshAll()}
+        onInvite={() => setInviteOpen(true)}
+        onCreate={openCreate}
+      />
 
       {selectedIds.length > 0 ? (
-        <div className={styles.batchBar} role="toolbar">
-          <span className={styles.batchBarCount}>
-            {t("adminUsers.batchSelected", { count: selectedIds.length })}
-          </span>
-          <div className={styles.batchBarActions}>
-            <Button
-              size="small"
-              icon={<Power size={14} />}
-              loading={batchSubmitting}
-              onClick={() => confirmBatchAction("enable")}
-            >
-              {t("adminUsers.batchEnable")}
-            </Button>
-            <Button
-              size="small"
-              icon={<PowerOff size={14} />}
-              loading={batchSubmitting}
-              onClick={() => confirmBatchAction("disable")}
-            >
-              {t("adminUsers.batchDisable")}
-            </Button>
-            <Button
-              size="small"
-              icon={<Coins size={14} />}
-              loading={batchSubmitting}
-              onClick={openBatchToken}
-            >
-              {t("adminUsers.batchSetToken")}
-            </Button>
-            <Button
-              size="small"
-              icon={<Bot size={14} />}
-              loading={batchSubmitting}
-              onClick={openBatchMaxAgents}
-            >
-              {t("adminUsers.batchSetMaxAgents")}
-            </Button>
-            <Button
-              size="small"
-              danger
-              icon={<Trash2 size={14} />}
-              loading={batchSubmitting}
-              onClick={() => confirmBatchAction("delete")}
-            >
-              {t("common.delete")}
-            </Button>
-            <Button
-              size="small"
-              type="text"
-              icon={<X size={14} />}
-              onClick={clearSelection}
-              aria-label={t("adminUsers.batchClear")}
-            >
-              {t("adminUsers.batchClear")}
-            </Button>
-          </div>
-        </div>
+        <UsersBatchBar
+          count={selectedIds.length}
+          submitting={batchSubmitting}
+          onEnable={() => confirmBatchAction("enable")}
+          onDisable={() => confirmBatchAction("disable")}
+          onOpenToken={openBatchToken}
+          onOpenMaxAgents={openBatchMaxAgents}
+          onDelete={() => confirmBatchAction("delete")}
+          onClear={clearSelection}
+        />
       ) : null}
 
       {showCardView ? (
