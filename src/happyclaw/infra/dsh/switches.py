@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import os
 
+from happyclaw.infra.utils.env_alias import CURRENT_PREFIX, env_get
+
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 _MASTER = "HAPPYCLAW_DSH_RUNTIME"
 _STAGE_PREFIX = "HAPPYCLAW_DSH_"
@@ -20,7 +22,8 @@ _LLM_REFS = "HAPPYCLAW_DSH_LLM_REFS"
 
 
 def _flag(name: str) -> bool:
-    return os.environ.get(name, "").strip().lower() in _TRUTHY
+    suffix = name[len(CURRENT_PREFIX):] if name.startswith(CURRENT_PREFIX) else name
+    return (env_get(suffix) or "").strip().lower() in _TRUTHY
 
 
 def runtime_enabled() -> bool:
@@ -47,7 +50,7 @@ def shadow_enabled() -> bool:
     the master switch does not change existing behaviour. Once the master
     variable is present, it gates the stage like every other switch.
     """
-    if os.environ.get(_MASTER, "").strip() == "":
+    if (env_get("DSH_RUNTIME") or "").strip() == "":
         return _flag(f"{_STAGE_PREFIX}SHADOW")
     return stage_enabled("shadow")
 
