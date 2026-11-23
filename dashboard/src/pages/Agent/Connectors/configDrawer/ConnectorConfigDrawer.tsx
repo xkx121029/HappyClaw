@@ -40,6 +40,7 @@ import {
   type FeishuUserAuthStartResult,
 } from "../../../../api/modules/connectors";
 import { AgentlyAuth } from "../AgentlyAuth";
+import { ConnectorProbeResult } from "./ConnectorProbeResult";
 import { authCodeGuideLabel, openAuthorizeLabel } from "../connectorAuthLabels";
 import {
   buildCredentials,
@@ -2011,48 +2012,7 @@ export function ConnectorConfigDrawer({
         </Form>
 
         {probeResult !== null && (
-          <div className={styles.probeResult}>
-            <div className={styles.probeResultHeader}>
-              <CheckCircle2
-                size={18}
-                className={styles.probeResultIcon}
-                aria-hidden
-              />
-              <div className={styles.probeResultMeta}>
-                <div className={styles.probeResultTitle}>
-                  {t("connectors.probeToolsTitle", "探测成功")}
-                </div>
-                <div className={styles.probeResultSubtitle}>
-                  {probeResult.length > 0
-                    ? t("connectors.probeToolsHint", {
-                        count: probeResult.length,
-                        defaultValue: `连接正常，获取以下工具列表（共 ${probeResult.length} 个）`,
-                      })
-                    : t(
-                        "connectors.probeToolsEmpty",
-                        "连接正常，但未发现可用工具",
-                      )}
-                </div>
-              </div>
-            </div>
-            {probeResult.length > 0 && (
-              <ul className={styles.probeToolList}>
-                {probeResult.map((tool, index) => (
-                  <li key={tool.name} className={styles.probeToolItem}>
-                    <span className={styles.probeToolIndex}>{index + 1}</span>
-                    <div className={styles.probeToolBody}>
-                      <div className={styles.probeToolName}>{tool.name}</div>
-                      {tool.description ? (
-                        <div className={styles.probeToolDesc}>
-                          {tool.description}
-                        </div>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <ConnectorProbeResult tools={probeResult} />
         )}
       </div>
     </Drawer>
