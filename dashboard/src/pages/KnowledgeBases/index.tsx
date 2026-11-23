@@ -110,7 +110,6 @@ import { createDetailRequestGate } from "../../utils/detailRequestGate";
 import { getDocKind, type DocKind } from "../../utils/docKind";
 import { isImeComposing } from "../../utils/ime";
 import { formatBytes, formatSizeGb } from "../../utils/embeddingDownload";
-import { fileTreeIconSpec } from "../../utils/fileTreeIcon";
 import { formatServerDateTime } from "../../utils/formatMessageTime";
 import { stripFrontmatter } from "../../utils/markdown";
 import {
@@ -162,6 +161,7 @@ import TextDocumentEditorModal, {
   type TextDocumentFormat,
 } from "./TextDocumentEditorModal";
 import styles from "./index.module.less";
+import { DocumentFormatIcon } from "./components/DocumentFormatIcon";
 
 type BaseFormValues = {
   name: string;
@@ -171,34 +171,7 @@ type BaseFormValues = {
   max_documents?: number;
 };
 
-const FOLDER_ICON_COLOR = "#d97706";
-
 type DocTreeNode = TreeDataNode & { path: string; isDir: boolean };
-
-function DocumentFormatIcon({
-  filename,
-  size = 14,
-  className,
-  isDir = false,
-}: {
-  filename: string;
-  size?: number;
-  className?: string;
-  isDir?: boolean;
-}) {
-  const { Icon, color } = isDir
-    ? { Icon: Folder, color: FOLDER_ICON_COLOR }
-    : fileTreeIconSpec(filename);
-  return (
-    <span
-      className={className ?? styles.docFormatIcon}
-      style={{ color, background: `${color}14` }}
-      aria-hidden
-    >
-      <Icon size={size} strokeWidth={2} />
-    </span>
-  );
-}
 
 function ReadinessRow({
   label,
