@@ -26,6 +26,7 @@ from happyclaw.i18n.domains.agents import (
     AGENT_START_TIMEOUT,
     format_agent_start_error,
 )
+from happyclaw.infra.agents.manager.base import AgentManagerBase
 from happyclaw.infra.agents.memory.backend import memory_backend_from_agent_config
 from happyclaw.infra.agents.memory.slim import MemorySlimCoordinator
 from happyclaw.infra.agents.providers import HostModelFactory, ProviderStore, sync_providers_to_harness
@@ -512,7 +513,7 @@ def _bind_custom_mcp_tools(
 # ---------------------------------------------------------------------------
 
 
-class AgentManager:
+class AgentManager(AgentManagerBase):
     """Process-wide singleton: owns harness HarnessAgentManager + all HarnessAgent instances.
 
     On boot, loads all enabled agents from the DB and registers them with the
