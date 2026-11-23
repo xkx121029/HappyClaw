@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from octop_harness import HarnessAgent, HarnessAgentConfig, HarnessAgentManager
 
     from octop.config import OctopConfig
+    from octop.infra.agents.memory.slim import MemorySlimCoordinator
     from octop.infra.agents.plugins.manager import PluginManager
     from octop.infra.agents.providers import HostModelFactory, ProviderStore
     from octop.infra.agents.providers.health import ModelHealthRegistry
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
     from octop.infra.cron.manager import CronManager
     from octop.infra.db.repos.agents import AgentRow
     from octop.infra.db.services import RepoBundle
+    from octop.infra.errors import OctopError
     from octop.infra.utils.paths import PathLayout
 
 
@@ -57,6 +59,7 @@ class AgentManagerBase:
     _pool_workspaces: dict[str, str]
     _pool_last_used: dict[str, float]
     _session_workspace_mw: dict[str, Any]
+    memory_slim: MemorySlimCoordinator
 
     # Background hot-reload state.
     _reload_dirty: set[str]
@@ -173,6 +176,12 @@ class AgentManagerBase:
         raise NotImplementedError
 
     def _quiesce_octop_memory(self, agent_id: str) -> None:
+        raise NotImplementedError
+
+    def _unavailable_error(self, agent_id: str) -> OctopError:
+        raise NotImplementedError
+
+    def workspace_for_agent(self, agent_id: str) -> Any | None:
         raise NotImplementedError
 
     async def _release_pool_for_agent(self, agent_id: str) -> None:
