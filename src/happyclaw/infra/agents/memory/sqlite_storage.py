@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import env_get, env_has
+
 import logging
 import os
 import sqlite3
@@ -98,7 +100,7 @@ def _checkpoint_policy(reclaimable_bytes: int) -> dict[str, Any]:
     if not _env_flag("HAPPYCLAW_CHECKPOINT_RETENTION", True):
         keep_last = None
         keep_days = None
-    elif "HAPPYCLAW_CHECKPOINT_KEEP_LAST" not in os.environ:
+    elif not env_has("CHECKPOINT_KEEP_LAST"):
         keep_last = 20
     backup_mode, backup_keep_days = _checkpoint_backup_policy_from_env()
     return {

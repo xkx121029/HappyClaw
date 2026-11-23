@@ -45,7 +45,7 @@ def portal_base() -> str:
     unavailable". Only the origin is kept, so a pasted path does not change the
     catalog endpoints.
     """
-    if "HAPPYCLAW_PORTAL_ORIGIN" not in os.environ:
+    if not env_has("PORTAL_ORIGIN"):
         return DEFAULT_PORTAL_BASE
     raw = env_get("PORTAL_ORIGIN", "").strip()
     if not raw:
