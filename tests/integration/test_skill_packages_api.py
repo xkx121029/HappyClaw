@@ -439,7 +439,7 @@ async def test_delete_package_strips_agent_mounts(env_with_main_agent: Any) -> N
 async def test_create_package_from_skillhub_returns_skills_and_rejects_duplicate_name(
     env: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from happyclaw.api.routers import skill_packages
+    from happyclaw.api.routers.skill_packages import crud as skill_package_routes
     from happyclaw.infra.agents.experts.skillhub_market import SkillHubSkillset
     from happyclaw.infra.skills.skill_package_from_skillhub import (
         create_package_from_skillhub as real_create,
@@ -461,7 +461,7 @@ async def test_create_package_from_skillhub_returns_skills_and_rejects_duplicate
         )
 
     monkeypatch.setattr(
-        skill_packages,
+        skill_package_routes,
         "create_package_from_skillhub",
         _fake_create,
         raising=False,
@@ -492,7 +492,7 @@ async def test_create_package_from_skillhub_returns_skills_and_rejects_duplicate
 async def test_create_package_from_skillhub_maps_skill_download_error(
     env: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from happyclaw.api.routers import skill_packages
+    from happyclaw.api.routers.skill_packages import crud as skill_package_routes
     from happyclaw.infra.skills.skillhub_market import SkillHubMarketError
 
     client, _server, auth = env
@@ -500,7 +500,7 @@ async def test_create_package_from_skillhub_maps_skill_download_error(
     def _raise_download_error(*_args: Any, **_kwargs: Any) -> None:
         raise SkillHubMarketError("SkillHub download failed")
 
-    monkeypatch.setattr(skill_packages, "create_package_from_skillhub", _raise_download_error)
+    monkeypatch.setattr(skill_package_routes, "create_package_from_skillhub", _raise_download_error)
 
     response = await client.post(
         "/api/skill-packages/from-skillhub",
