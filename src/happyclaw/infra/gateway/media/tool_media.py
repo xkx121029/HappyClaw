@@ -614,6 +614,11 @@ def _plain_text_image_path(text: str) -> str | None:
     match = _PLAIN_IMAGE_PATH_RE.search(text)
     if match:
         return match.group(1)
+    # The outbound pattern cannot match without this literal, and most tool
+    # output never carries it. Scanning a 46 KB result costs ~4 ms; the literal
+    # check costs nothing when it is absent, so history pages skip that scan.
+    if "/outbound/" not in text:
+        return None
     match = _OUTBOUND_IMAGE_PATH_RE.search(text)
     if match:
         return match.group(1)

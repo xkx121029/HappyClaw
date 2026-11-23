@@ -1389,6 +1389,7 @@ dependencies = [
     { name = "ldap3" },
     { name = "mcp" },
     { name = "openpyxl" },
+    { name = "orjson" },
     { name = "pillow" },
     { name = "playwright" },
     { name = "psycopg", extra = ["binary"] },
@@ -1476,7 +1477,7 @@ requires-dist = [
     { name = "happyclaw-browser", path = "vendor/happyclaw-libs/happyclaw_browser-1.0.2-py3-none-any.whl" },
     { name = "happyclaw-gateway", path = "vendor/happyclaw-libs/happyclaw_gateway-1.0.6-py3-none-any.whl" },
     { name = "happyclaw-harness", extras = ["all"], path = "vendor/happyclaw-libs/happyclaw_harness-1.0.14-py3-none-any.whl" },
-    { name = "happyclaw-memory", path = "vendor/happyclaw-libs/happyclaw_memory-1.0.7-py3-none-any.whl" },
+    { name = "happyclaw-memory", path = "vendor/happyclaw-libs/happyclaw_memory-1.0.9-py3-none-any.whl" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
     { name = "huggingface-hub", marker = "extra == 'local-embedding'", specifier = ">=0.20" },
     { name = "josepy", specifier = ">=2.2.0" },
@@ -1489,6 +1490,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
     { name = "onnxruntime", marker = "extra == 'knowledge-ocr'", specifier = ">=1.17" },
     { name = "openpyxl", specifier = ">=3.1" },
+    { name = "orjson", specifier = ">=3.10" },
     { name = "pillow", specifier = ">=13.0.0" },
     { name = "playwright", specifier = ">=1.40" },
     { name = "playwright", marker = "extra == 'browser'", specifier = ">=1.40" },
@@ -1724,10 +1726,10 @@ provides-extras = ["acp", "all", "bedrock", "cli", "desktop", "docker", "object-
 
 [[package]]
 name = "happyclaw-memory"
-version = "1.0.7"
-source = { path = "vendor/happyclaw-libs/happyclaw_memory-1.0.7-py3-none-any.whl" }
+version = "1.0.9"
+source = { path = "vendor/happyclaw-libs/happyclaw_memory-1.0.9-py3-none-any.whl" }
 wheels = [
-    { filename = "happyclaw_memory-1.0.7-py3-none-any.whl", hash = "sha256:93e1bccd7cfd6885f191f1256fa66bf500ae6c37d095036657799a6ddcf4d332" },
+    { filename = "happyclaw_memory-1.0.9-py3-none-any.whl", hash = "sha256:71a69c29eb51f48e5863249d437a86ed8fc8f549f6e1fe65af3208654f8174a7" },
 ]
 
 [package.metadata]
