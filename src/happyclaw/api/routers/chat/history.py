@@ -14,6 +14,19 @@ from happyclaw.api.common.agent import agent_is_shared, require_agent_row
 from happyclaw.api.common.agent_workspace import resolve_agent_workspace_dir
 from happyclaw.api.deps import current_user, get_server
 from happyclaw.api.routers.chat.models import ForkThreadBody, RebindSessionBody, RenameThreadBody
+from happyclaw.api.routers.chat.responses import (
+    HistoryMigrationStartOut,
+    HistoryMigrationStatusOut,
+    SessionReboundOut,
+    ThreadContextUsageOut,
+    ThreadCreatedOut,
+    ThreadDeletedOut,
+    ThreadForkOut,
+    ThreadHistoryOut,
+    ThreadSummaryOut,
+    ThreadTurnCancelledOut,
+    ThreadUpdatedOut,
+)
 from happyclaw.api.routers.chat.serialize import (
     HISTORY_DEFAULT_LIMIT,
     _backfill_thread_projection,
@@ -28,7 +41,11 @@ from happyclaw.infra.agents.threads.fork import fork_dashboard_thread
 from happyclaw.infra.agents.workspace.dir import agent_facing_workspace_dir_from_config
 from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.hitl.coordinator import pending_hitl_payload
-from happyclaw.infra.gateway.threads import ThreadRegistry, thread_row_has_messages, thread_visible_to
+from happyclaw.infra.gateway.threads import (
+    ThreadRegistry,
+    thread_row_has_messages,
+    thread_visible_to,
+)
 from happyclaw.infra.history.trajectory.service import TrajectoryService
 from happyclaw.infra.utils.locale import resolve_request_locale
 
@@ -167,7 +184,11 @@ def _require_thread(
     return row
 
 
-@router.get("/agents/{agent_id}/threads", summary="List threads")
+@router.get(
+    "/agents/{agent_id}/threads",
+    summary="List threads",
+    response_model=list[ThreadSummaryOut],
+)
 async def list_threads(
     agent_id: str,
     request: Request,
@@ -251,6 +272,7 @@ async def list_threads(
 @router.get(
     "/agents/{agent_id}/history-migration/status",
     summary="Legacy history migration status",
+    response_model=HistoryMigrationStatusOut,
 )
 async def get_history_migration_status(
     agent_id: str,
@@ -267,6 +289,7 @@ async def get_history_migration_status(
 @router.post(
     "/agents/{agent_id}/history-migration/start",
     summary="Start legacy history migration",
+    response_model=HistoryMigrationStartOut,
 )
 async def start_history_migration(
     agent_id: str,
@@ -316,7 +339,12 @@ async def start_history_migration(
     }
 
 
-@router.post("/agents/{agent_id}/threads", status_code=201, summary="New thread")
+@router.post(
+    "/agents/{agent_id}/threads",
+    status_code=201,
+    summary="New thread",
+    response_model=ThreadCreatedOut,
+)
 async def create_thread(
     agent_id: str,
     as_user: int | None = None,
@@ -361,6 +389,7 @@ def _parse_csv_query(raw: str | None) -> list[str] | None:
 @router.get(
     "/agents/{agent_id}/threads/{thread_id}/context-usage",
     summary="Context window usage breakdown",
+    response_model=ThreadContextUsageOut,
 )
 async def get_thread_context_usage(
     agent_id: str,
@@ -399,7 +428,11 @@ async def get_thread_context_usage(
     }
 
 
-@router.get("/agents/{agent_id}/threads/{thread_id}/history", summary="Thread history")
+@router.get(
+    "/agents/{agent_id}/threads/{thread_id}/history",
+    summary="Thread history",
+    response_model=ThreadHistoryOut,
+)
 async def get_thread_history(
     agent_id: str,
     thread_id: str,
@@ -509,6 +542,7 @@ async def mark_thread_read(
 @router.post(
     "/agents/{agent_id}/threads/{thread_id}/cancel",
     summary="Cancel the running turn",
+    response_model=ThreadTurnCancelledOut,
 )
 async def cancel_thread_turn(
     agent_id: str,
@@ -542,6 +576,7 @@ async def cancel_thread_turn(
     "/agents/{agent_id}/threads/{thread_id}/fork",
     status_code=201,
     summary="Fork thread from an assistant message",
+    response_model=ThreadForkOut,
 )
 async def fork_thread(
     agent_id: str,
@@ -578,7 +613,11 @@ async def fork_thread(
     )
 
 
-@router.patch("/agents/{agent_id}/session", summary="Rebind dashboard session")
+@router.patch(
+    "/agents/{agent_id}/session",
+    summary="Rebind dashboard session",
+    response_model=SessionReboundOut,
+)
 async def rebind_session(
     agent_id: str,
     body: RebindSessionBody,
@@ -597,7 +636,11 @@ async def rebind_session(
     return {"session_key": sk, "thread_id": body.thread_id}
 
 
-@router.patch("/agents/{agent_id}/threads/{thread_id}", summary="Update thread")
+@router.patch(
+    "/agents/{agent_id}/threads/{thread_id}",
+    summary="Update thread",
+    response_model=ThreadUpdatedOut,
+)
 async def patch_thread(
     agent_id: str,
     thread_id: str,
@@ -714,7 +757,21 @@ async def patch_thread(
     }
 
 
-@router.delete("/agents/{agent_id}/threads/{thread_id}", status_code=204, summary="Delete thread")
+@router.delete(
+    "/agents/{agent_id}/threads/{thread_id}",
+    status_code=204,
+    summary="Delete thread",
+    responses={
+        200: {
+            "model": ThreadDeletedOut,
+            "description": (
+                "Returned (instead of the default 204) when the `compact` query "
+                "parameter is present, so the caller learns whether the database "
+                "was rebuilt now or scheduled for later."
+            ),
+        }
+    },
+)
 async def delete_thread(
     agent_id: str,
     thread_id: str,

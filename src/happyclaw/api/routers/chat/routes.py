@@ -12,6 +12,7 @@ from fastapi.responses import StreamingResponse
 from happyclaw.api.common.agent import assert_agent_access
 from happyclaw.api.deps import current_user, get_server
 from happyclaw.api.routers.chat.models import HitlResumeBody, PolishBody
+from happyclaw.api.routers.chat.responses import ChatPolishOut, ChatWelcomeOut
 from happyclaw.api.routers.chat.sse import format_sse
 from happyclaw.i18n.domains.stream import format_stream_error
 from happyclaw.infra.agents.experts.catalog import (
@@ -39,7 +40,11 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/agents/{agent_id}/chat/welcome", summary="Chat welcome quick cards")
+@router.get(
+    "/agents/{agent_id}/chat/welcome",
+    summary="Chat welcome quick cards",
+    response_model=ChatWelcomeOut,
+)
 async def get_chat_welcome(
     agent_id: str,
     user: Any = Depends(current_user),
@@ -224,7 +229,24 @@ def _dashboard_hitl_stream_context(
     return f"{agent_id}:dashboard:{user_id}:dm", "dashboard"
 
 
-@router.post("/agents/{agent_id}/chat/hitl/resume", summary="Resume HITL approval (SSE)")
+@router.post(
+    "/agents/{agent_id}/chat/hitl/resume",
+    summary="Resume HITL approval (SSE)",
+    responses={
+        200: {
+"description": (
+                "Server-sent events. Each frame is `event: chunk` followed by one "
+                "JSON `ChatStreamChunk` payload (`data: {...}`), ending with a "
+                "`done` or `error` chunk."
+            ),
+            "content": {
+                "text/event-stream": {
+                    "schema": {"$ref": "#/components/schemas/ChatStreamChunk"}
+                }
+            },
+        }
+    },
+)
 async def resume_hitl(
     agent_id: str,
     body: HitlResumeBody,
@@ -297,6 +319,7 @@ async def resume_hitl(
     "/agents/{agent_id}/chat/polish",
     summary="Polish prompt (compat)",
     deprecated=True,
+    response_model=ChatPolishOut,
 )
 async def polish_prompt(
     agent_id: str,

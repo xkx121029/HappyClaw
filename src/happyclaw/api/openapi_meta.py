@@ -55,6 +55,12 @@ Text-type dashboard pushes (cron reminders, proactive care) also emit
 SPA can show a toast even when the chat socket is not subscribed.
 
 HITL resume still uses `POST /api/agents/{agent_id}/chat/hitl/resume` (SSE).
+
+Frame payloads are published as schemas so clients can type the stream: every
+harness chunk (`token`, `tool_call_chunk`, `done`, `error`, `hitl_required`, …)
+matches `ChatStreamChunk`, and anything the chat socket can push — chunks plus
+turn lifecycle, steer-queue, and control frames — matches `ChatWsServerFrame`.
+OpenAPI has no WebSocket operations, so these live in `components/schemas` only.
 """
 
 OPENAPI_TAGS: list[dict[str, str]] = [
@@ -207,6 +213,20 @@ def configure_openapi(app: FastAPI) -> None:
         )
         components = schema.setdefault("components", {})
         components.setdefault("securitySchemes", {})["BearerAuth"] = _BEARER_SCHEME
+        # Chat payload mirrors hide their fields from FastAPI's serialization
+        # pass, and WebSocket/SSE frames have no operation of their own; publish
+        # their schemas so generated clients can type chat and its stream.
+        from happyclaw.api.routers.chat.events import (  # noqa: PLC0415
+            stream_event_schemas,
+        )
+        from happyclaw.api.routers.chat.responses import (  # noqa: PLC0415
+            RESPONSE_MODELS,
+            model_schemas,
+        )
+
+        schemas = components.setdefault("schemas", {})
+        schemas.update(model_schemas(RESPONSE_MODELS))
+        schemas.update(stream_event_schemas())
 
         for path, path_item in schema.get("paths", {}).items():
             if not path.startswith("/api/") or is_jwt_exempt_path(path):
