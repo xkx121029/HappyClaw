@@ -98,6 +98,12 @@ import {
   notify,
   notifyStreamingPaint,
 } from "./chatStorePublish";
+import {
+  assignFocusedChatSession,
+  focusedChatSessionId,
+  getFocusedChatSession,
+  isSessionFocused,
+} from "./chatStoreFocus";
 
 function speakerMatchesFinalize(
   messageSpeaker: string | undefined,
@@ -126,15 +132,11 @@ function continueTokenOpts(state: SessionStreamState): {
     : { teamRoom };
 }
 
-// ── Focused chat session (reconnect thrash only for the visible tab) ──────
-
-let focusedChatSessionId: string | null = null;
-
 /** Tell the store which chat thread the UI is currently showing. */
 export function setFocusedChatSession(sessionId: string | null): void {
   const next = sessionId && sessionId !== "__empty__" ? sessionId : null;
   const prev = focusedChatSessionId;
-  focusedChatSessionId = next;
+  assignFocusedChatSession(next);
   if (prev && prev !== next) {
     const prevState = sessionStates.get(prev);
     if (
@@ -154,16 +156,6 @@ export function setFocusedChatSession(sessionId: string | null): void {
   if (next && next !== prev) {
     void rebindFocusedSessionIfNeeded(next);
   }
-}
-
-export function getFocusedChatSession(): string | null {
-  return focusedChatSessionId;
-}
-
-function isSessionFocused(sessionId: string): boolean {
-  // Unset focus (unit tests / before first paint) → treat as focused.
-  if (focusedChatSessionId == null) return true;
-  return focusedChatSessionId === sessionId;
 }
 
 async function rebindFocusedSessionIfNeeded(sessionId: string): Promise<void> {
@@ -205,42 +197,6 @@ function tryOpenDashboardWs(agentId: string): WebSocket | null {
   } catch {
     return null;
   }
-}
-
-// ── Pending prefill text ──────────────────────────────────────────────────
-// Set by external pages (e.g. cron-jobs suggestions) before navigating to
-// /chat so the Chat input can be pre-populated reliably without relying on
-// React Router location.state, which can be unreliable across mounts.
-let _pendingPrefillText = "";
-
-/** Enqueue a text to be pre-filled into the chat input on the next Chat mount. */
-export function setPendingPrefillText(text: string): void {
-  _pendingPrefillText = text;
-}
-
-/** Consume the pending prefill text (clears it after reading). */
-export function consumePendingPrefillText(): string {
-  const val = _pendingPrefillText;
-  _pendingPrefillText = "";
-  return val;
-}
-
-let _pendingPrefillAttachments: ChatAttachment[] = [];
-
-/** Enqueue attachments to restore in the composer on the next Chat mount / thread switch. */
-export function setPendingPrefillAttachments(
-  attachments: ChatAttachment[],
-): void {
-  _pendingPrefillAttachments = attachments.map((attachment) => ({
-    ...attachment,
-  }));
-}
-
-/** Consume pending prefill attachments (clears after reading). */
-export function consumePendingPrefillAttachments(): ChatAttachment[] {
-  const val = _pendingPrefillAttachments;
-  _pendingPrefillAttachments = [];
-  return val.map((attachment) => ({ ...attachment }));
 }
 
 function applyThreadTitleFrame(data: Record<string, unknown>): boolean {
@@ -565,8 +521,8 @@ export function renameSessionKey(oldId: string, newId: string) {
       streamWatchdogs.delete(oldId);
       streamWatchdogs.set(newId, wd);
     }
-    if (focusedChatSessionId === oldId) {
-      focusedChatSessionId = newId;
+    if (getFocusedChatSession() === oldId) {
+      assignFocusedChatSession(newId);
     }
     state.sessionKey = newId;
     moveInflightTail(oldId, newId);
@@ -3725,3 +3681,4 @@ export type { ToolEventKind, ToolEvent, StreamEventKind, StreamEvent, SlashActio
 export { onToolEvent, emitToolEvent, onStreamEvent, onSlashAction, onSessionEvent, emitSessionEvent, onSteerRestore, onSharedTurnBusy } from "./chatStoreEvents";
 export { subscribe, getSnapshot, beginHistoryRead, isHistoryReadCurrent } from "./chatStorePublish";
 export { setPendingPlanPath, setMessages, setHistoryPage, restoreInflightTail, invalidateHistory, isHistoryStale, prependHistoryMessages, setHistoryLoadingMore, appendUserMessage, truncateAndReplaceUserMessage, appendPushMessage, clearMessages } from "./chatStoreHistory";
+export { getFocusedChatSession, setPendingPrefillText, consumePendingPrefillText, setPendingPrefillAttachments, consumePendingPrefillAttachments } from "./chatStoreFocus";
