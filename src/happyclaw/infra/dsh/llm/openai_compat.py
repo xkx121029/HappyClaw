@@ -97,12 +97,12 @@ def _message_payload(message: Message) -> list[dict[str, Any]]:
         payloads: list[dict[str, Any]] = []
         for block in message.content:
             if isinstance(block, ToolResultBlock):
-                payload: dict[str, Any] = {
+                tool_payload: dict[str, Any] = {
                     "role": "tool",
                     "tool_call_id": block.tool_call_id,
                     "content": block.content,
                 }
-                payloads.append(payload)
+                payloads.append(tool_payload)
         return payloads
 
     text = "".join(

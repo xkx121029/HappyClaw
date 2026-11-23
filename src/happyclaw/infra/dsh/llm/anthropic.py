@@ -22,6 +22,7 @@ from happyclaw.infra.dsh.llm.types import (
     BlockEnd,
     BlockKind,
     BlockStart,
+    ContentBlock,
     FinishChunk,
     FinishReason,
     LlmRequest,
@@ -334,6 +335,7 @@ class AnthropicAdapter:
             return []
         state.open_blocks.discard(index)
         text = "".join(current.parts)
+        block: ContentBlock
         if current.kind is BlockKind.TOOL_CALL:
             block = ToolCallBlock(current.call_id, current.name, text)
         elif current.kind is BlockKind.REASONING:

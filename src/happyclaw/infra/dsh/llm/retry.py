@@ -103,7 +103,7 @@ def backoff_delay(
     """
     if failed_attempt < 1:
         raise ValueError("failed_attempt must be at least 1")
-    base = policy.initial_delay_s * (2 ** (failed_attempt - 1))
+    base = policy.initial_delay_s * (2.0 ** (failed_attempt - 1))
     if retry_after_s is not None and retry_after_s > base:
         base = retry_after_s
     delay = min(base, policy.max_delay_s)
