@@ -2918,6 +2918,7 @@
     "adb_devices": "列出 adb 设备",
     "adb_shell": "adb 执行 shell",
     "adb_install": "adb 安装应用",
+    "adb_uninstall": "adb 卸载应用",
     "adb_screenshot": "adb 截屏",
     "adb_tap": "adb 点击屏幕",
     "adb_swipe": "adb 滑动屏幕",
@@ -4259,8 +4260,7 @@
       "adjust_request": "请修正参数，然后最多重试一次。",
       "retry_download": "不要重新生成；请稍后重试下载已有结果。",
       "check_task_status": "不要重复提交视频；请稍后检查已有的服务商任务。",
-      "retry_with_loaded_schema": "工具参数已加载，智能体可以使用正确参数重试一次。",
-      "contact_administrator": "请联系管理员为当前智能体启用此工具。"
+      "retry_with_loaded_schema": "工具参数已加载，智能体可以使用正确参数重试一次。"
     }
   },
   "tls": {
@@ -5406,8 +5406,6 @@
     "projectUrl": "项目地址",
     "checkUpdates": "检查更新",
     "username": "用户名",
-    "role": "角色",
-    "roleAdmin": "管理员",
     "roleUser": "普通用户",
     "avatar": "头像",
     "avatarHint": "选择一个默认图标，或上传自己的图片。",
@@ -6058,7 +6056,6 @@
       "reclaimable": "文件内空闲空间",
       "autoVacuum": "增量空间回收",
       "estimateHint": "空闲空间是检查时的统计，不包含去重收益；实际维护效果以结果为准。",
-      "blocked_postgres": "当前为 PostgreSQL 共享存储，可查看检查结果。仅维护当前专家暂不支持，数据库空间回收需由管理员统一安排。下方行数为共享表的估计值。",
       "blocked_shared_sqlite": "多个专家共用该 SQLite 文件，当前页面仅提供检查，避免维护影响其他专家。",
       "blocked_incompatible": "当前运行组件不支持在线维护，请更新记忆运行组件并启动专家。",
       "table": "共享表",
@@ -6898,8 +6895,6 @@
     "controlsTitle": "控制面板",
     "openControls": "控制与快捷操作",
     "mobileHint": "点击画面可操控远程桌面；快捷按钮会发送常用快捷键。",
-    "adminOnlyTitle": "需要管理员权限",
-    "adminOnlyDesc": "远程桌面可操控主机操作系统，仅管理员可用。如需使用，请联系管理员。",
     "adminOnlyBack": "返回对话",
     "streamError": "远程桌面连接失败"
   },
@@ -7047,7 +7042,6 @@
     "myStorage": "我的存储",
     "supportedTypes": "支持存储类型",
     "featureAccessTitle": "谁可以使用存储",
-    "featureAccessHint": "这里管的是整个存储功能，不是某一个后端。选「所有人」时，专家可以选用已配置的存储后端。选「指定用户分组」后，只有这些分组里的人能新选存储后端；已经挂上的专家保持不变。管理员始终可以。专家自带的本机目录和本机 Shell 不受这层限制。",
     "featureAccessSaved": "已更新谁可以使用存储",
     "featureAccessFailed": "更新存储使用范围失败",
     "addBackend": "添加存储后端",

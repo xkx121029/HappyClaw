@@ -2918,6 +2918,7 @@
     "adb_devices": "List adb devices",
     "adb_shell": "Run adb shell",
     "adb_install": "Install APK via adb",
+    "adb_uninstall": "Uninstall app via adb",
     "adb_screenshot": "Take adb screenshot",
     "adb_tap": "Tap via adb",
     "adb_swipe": "Swipe via adb",
@@ -4259,8 +4260,7 @@
       "adjust_request": "Correct the arguments, then retry once.",
       "retry_download": "Do not regenerate; retry downloading the existing result later.",
       "check_task_status": "Do not submit another video; check the existing provider task later.",
-      "retry_with_loaded_schema": "The schema is now loaded. The agent may retry this call once.",
-      "contact_administrator": "Ask an administrator to enable this tool for the agent."
+      "retry_with_loaded_schema": "The schema is now loaded. The agent may retry this call once."
     }
   },
   "tls": {
@@ -5406,8 +5406,6 @@
     "projectUrl": "Project",
     "checkUpdates": "Check for Updates",
     "username": "Username",
-    "role": "Role",
-    "roleAdmin": "Administrator",
     "roleUser": "User",
     "avatar": "Avatar",
     "avatarHint": "Pick a default icon, or upload your own image.",
@@ -6058,7 +6056,6 @@
       "reclaimable": "Unused space in file",
       "autoVacuum": "Incremental space reclamation",
       "estimateHint": "Unused space is a snapshot, excluding potential deduplication savings. The final result shows the actual change.",
-      "blocked_postgres": "This PostgreSQL store uses shared tables. Inspection is available; per-expert maintenance is not. An administrator must arrange database reclamation. Row counts below are shared-table estimates.",
       "blocked_shared_sqlite": "Several experts share this SQLite file. Only inspection is available here to avoid affecting other experts.",
       "blocked_incompatible": "The runtime does not support live maintenance. Update the memory runtime and start the expert.",
       "table": "Shared table",
@@ -6898,8 +6895,6 @@
     "controlsTitle": "Controls",
     "openControls": "Controls & shortcuts",
     "mobileHint": "Tap the view to control the remote desktop; shortcut buttons send common key chords.",
-    "adminOnlyTitle": "Admin access required",
-    "adminOnlyDesc": "Remote desktop controls the host OS and is available to administrators only. Ask an admin if you need access.",
     "adminOnlyBack": "Back to chat",
     "streamError": "Remote desktop connection failed"
   },
@@ -7047,7 +7042,6 @@
     "myStorage": "My Storage",
     "supportedTypes": "Supported storage types",
     "featureAccessTitle": "Who can use storage",
-    "featureAccessHint": "This covers storage as a whole, not one backend. Everyone can attach a configured storage backend to an expert. A user group limits who can newly select one; experts that already use a backend keep it. Admins always pass. The built-in host directory and host shell on an expert are not affected.",
     "featureAccessSaved": "Updated who can use storage",
     "featureAccessFailed": "Could not update who can use storage",
     "addBackend": "Add Storage Backend",
