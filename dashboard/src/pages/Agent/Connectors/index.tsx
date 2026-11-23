@@ -51,7 +51,6 @@ import {
   type ConnectorAuthInfo,
   type ConnectorCatalogEntry,
   type ConnectorCliInstallResult,
-  type ConnectorCredentialsPreview,
   type ConnectorInstance,
   type ConnectorInstanceDetail,
   type FeishuUserAuthStartResult,
@@ -76,6 +75,10 @@ import {
   authCodeGuideLabel,
   openAuthorizeLabel,
 } from "./connectorAuthLabels";
+import {
+  configuredExtra,
+  secretFieldRules,
+} from "./connectorFieldRules";
 import { notifyConnectorsChanged } from "./customMcpUtils";
 import {
   extractHttpUrl,
@@ -175,28 +178,6 @@ function previewToFormValues(
     }
   }
   return values;
-}
-
-function secretFieldRules(required: boolean) {
-  const trimRule = {
-    validator: (_: unknown, value: unknown) => {
-      const text = String(value ?? "").trim();
-      if (required && !text) {
-        return Promise.reject(new Error(""));
-      }
-      return Promise.resolve();
-    },
-  };
-  return required ? [{ required: true, message: "" }, trimRule] : [trimRule];
-}
-
-function configuredExtra(
-  preview: ConnectorCredentialsPreview | undefined,
-  key: string,
-  t: (key: string, fallback: string) => string,
-) {
-  if (!preview?.[key]) return undefined;
-  return t("connectors.secretConfigured", "已配置，留空表示不修改");
 }
 
 function isHostCliConnector(kind: string): boolean {
