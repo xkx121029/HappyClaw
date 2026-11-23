@@ -13,6 +13,8 @@ module lives in ``happyclaw.infra`` and is only imported by ``infra`` / ``cli`` 
 
 from __future__ import annotations
 
+from happyclaw.infra.utils.env_alias import CURRENT_PREFIX, LEGACY_PREFIX, env_get
+
 import os
 
 _DESKTOP_SHELL_ENV = "HAPPYCLAW_DESKTOP_SHELL"
@@ -45,12 +47,13 @@ SHELL_POLICY_ENV_KEYS = frozenset(
 
 def desktop_shell_enabled() -> bool:
     """Return true when this process is the desktop-hosted sidecar."""
-    raw = (os.environ.get(_DESKTOP_SHELL_ENV) or "").strip().lower()
+    raw = (env_get(_DESKTOP_SHELL_ENV[len(CURRENT_PREFIX):]) or "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
 
 
 def shell_owned_env_key(key: str) -> bool:
     """Return true when ``key`` is pinned by the desktop shell for this process."""
-    if key in SHELL_OWNED_ENV_KEYS:
+    current = CURRENT_PREFIX + key[len(LEGACY_PREFIX):] if key.startswith(LEGACY_PREFIX) else key
+    if current in SHELL_OWNED_ENV_KEYS:
         return True
-    return desktop_shell_enabled() and key in SHELL_POLICY_ENV_KEYS
+    return desktop_shell_enabled() and current in SHELL_POLICY_ENV_KEYS

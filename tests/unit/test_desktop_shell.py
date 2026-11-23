@@ -42,7 +42,7 @@ def test_desktop_shell_enabled_detects_flag(monkeypatch: pytest.MonkeyPatch) -> 
 
 
 def test_shell_owned_env_keys_covers_bind_and_identity() -> None:
-    for key in ("OCTOP_DESKTOP_SHELL", "OCTOP_GREEN_PACKAGES", "OCTOP_BIND_HOST", "OCTOP_PORT"):
+    for key in ("HAPPYCLAW_DESKTOP_SHELL", "HAPPYCLAW_GREEN_PACKAGES", "HAPPYCLAW_BIND_HOST", "HAPPYCLAW_PORT"):
         assert key in SHELL_OWNED_ENV_KEYS
 
 
