@@ -84,7 +84,6 @@ import { useSetCurrentUser } from "../../../hooks/useCurrentUser";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { useServerTimezone } from "../../../hooks/useServerTimezone";
 import { apiErrorMessage } from "../../../utils/apiError";
-import { formatServerDateTime } from "../../../utils/formatMessageTime";
 import type { OctopAgent } from "../../../context/AgentContext";
 import { AgentCard } from "../../Experts/components/AgentCard";
 import EditAgentDrawer from "../../Experts/components/EditAgentDrawer";
@@ -118,6 +117,7 @@ import {
   type UserRow,
 } from "./usersListTypes";
 import { policyFieldsFromRole, policyPayload } from "./policyForm";
+import { formatUserTs, lockRemainingSeconds, useNowSeconds } from "./userTime";
 
 const { Text } = Typography;
 
@@ -142,6 +142,11 @@ export {
   policyPayload,
   rolePoliciesFromForm,
 } from "./policyForm";
+export {
+  formatUserTs,
+  lockRemainingSeconds,
+  useNowSeconds,
+} from "./userTime";
 
 function ExpertTemplatePicker({
   value,
@@ -434,29 +439,6 @@ function RoleNameMark({
       ) : null}
     </span>
   );
-}
-
-function useNowSeconds(active: boolean): number {
-  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
-  useEffect(() => {
-    if (!active) return;
-    const id = window.setInterval(
-      () => setNow(Math.floor(Date.now() / 1000)),
-      1000,
-    );
-    return () => window.clearInterval(id);
-  }, [active]);
-  return now;
-}
-
-function lockRemainingSeconds(row: UserRow, nowSec: number): number {
-  if (!row.login_locked || !row.login_locked_until) return 0;
-  return Math.max(0, row.login_locked_until - nowSec);
-}
-
-function formatUserTs(ts: number | undefined, timeZone: string): string {
-  if (!ts) return "—";
-  return formatServerDateTime(ts, timeZone);
 }
 
 interface UserCardGridProps {
