@@ -13,7 +13,6 @@ import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { useIsMobile } from "../../../../hooks/useIsMobile";
 import { PERM, userCanAny } from "../../../../utils/permissions";
 import { apiErrorMessage, probeErrorMessage } from "../../../../utils/apiError";
-import { copyText } from "../../../../utils/copyText";
 import {
   clearFormDraft,
   loadFormDraft,
@@ -23,7 +22,6 @@ import {
   connectorsApi,
   type ConnectorAuthInfo,
   type ConnectorCatalogEntry,
-  type ConnectorCliInstallResult,
   type ConnectorInstance,
   type ConnectorInstanceDetail,
   type FeishuUserAuthStartResult,
@@ -32,6 +30,7 @@ import { AgentlyAuth } from "../AgentlyAuth";
 import { ConnectorSetupHints } from "./ConnectorSetupHints";
 import { ConnectorCredentialFields } from "./ConnectorCredentialFields";
 import { ConnectorCliHints } from "./ConnectorCliHints";
+import { useHostCliInstall } from "./useHostCliInstall";
 import { ConnectorQuickAuthBar } from "./ConnectorQuickAuthBar";
 import { ConnectorFormOptions } from "./ConnectorFormOptions";
 import { ConnectorProbeResult } from "./ConnectorProbeResult";
@@ -50,7 +49,6 @@ import {
   visibilityFields,
   visibilityFromDetail,
 } from "../connectorFormValues";
-import { isHostCliConnector } from "../connectorHostCli";
 import {
   extractHttpUrl,
   isGuidedConnector,
@@ -94,10 +92,6 @@ export function ConnectorConfigDrawer({
     { name: string; description: string }[] | null
   >(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [cliInfo, setCliInfo] = useState<ConnectorCliInstallResult | null>(
-    null,
-  );
-  const [installingCli, setInstallingCli] = useState(false);
   const [detectingLocalWeKnora, setDetectingLocalWeKnora] = useState(false);
   const [feishuUserAuth, setFeishuUserAuth] =
     useState<FeishuUserAuthStartResult | null>(null);
@@ -133,13 +127,19 @@ export function ConnectorConfigDrawer({
     restoringDraftRef.current = false;
   }, [draftScope, form]);
 
+  const {
+    cliInfo,
+    installingCli,
+    handleCopyInstallCommand,
+    handleInstallCli,
+  } = useHostCliInstall({ open, entry });
+
   useEffect(() => {
     if (!open || !entry) return;
     setShowManual(false);
     setAuthInfo(null);
     setInstanceDetail(null);
     setProbeResult(null);
-    setCliInfo(null);
     setFeishuUserAuth(null);
     setFeishuUserReady(false);
     setFeishuAuthNeedsReauth(false);
@@ -166,15 +166,6 @@ export function ConnectorConfigDrawer({
           auth_hint: entry.auth_hint ?? null,
         });
       });
-
-    if (isHostCliConnector(entry.kind)) {
-      void connectorsApi
-        .cliStatus(entry.kind)
-        .then(setCliInfo)
-        .catch(() => {
-          setCliInfo(null);
-        });
-    }
 
     if (instance) {
       setLoadingDetail(true);
@@ -264,83 +255,6 @@ export function ConnectorConfigDrawer({
 
   const handleOpenLogin = () => {
     openUrl(authInfo?.login_url);
-  };
-
-  const handleCopyInstallCommand = async (command: string) => {
-    const ok = await copyText(command);
-    if (ok) {
-      message.success(t("connectors.cliInstallCopied", "安装命令已复制"));
-    } else {
-      message.error(
-        t("connectors.clipboardDenied", "无法读取剪贴板，请手动粘贴"),
-      );
-    }
-  };
-
-  const handleRefreshCliStatus = async () => {
-    if (!entry || !isHostCliConnector(entry.kind)) return;
-    try {
-      const status = await connectorsApi.cliStatus(entry.kind);
-      setCliInfo(status);
-      if (status.installed) {
-        message.success(
-          t("connectors.cliAlreadyInstalled", {
-            binary: status.binary,
-            defaultValue: `${status.binary} 已安装`,
-          }),
-        );
-      }
-    } catch (e) {
-      console.error(e);
-      message.error(
-        apiErrorMessage(
-          e,
-          t("connectors.cliInstallFailed", "主机 CLI 安装失败"),
-          t,
-        ),
-      );
-    }
-  };
-
-  const handleInstallCli = async () => {
-    if (!entry || !isHostCliConnector(entry.kind) || installingCli) return;
-    if (cliInfo?.installed) {
-      await handleRefreshCliStatus();
-      return;
-    }
-    setInstallingCli(true);
-    try {
-      const result = await connectorsApi.installCli(entry.kind);
-      setCliInfo(result);
-      if (result.ok) {
-        message.success(
-          result.already_installed
-            ? t("connectors.cliAlreadyInstalled", {
-                binary: result.binary,
-                defaultValue: `${result.binary} 已安装`,
-              })
-            : t("connectors.cliInstallSuccess", {
-                binary: result.binary,
-                defaultValue: `${result.binary} 安装成功`,
-              }),
-        );
-      } else {
-        message.error(
-          result.error ?? t("connectors.cliInstallFailed", "主机 CLI 安装失败"),
-        );
-      }
-    } catch (e) {
-      console.error(e);
-      message.error(
-        apiErrorMessage(
-          e,
-          t("connectors.cliInstallFailed", "主机 CLI 安装失败"),
-          t,
-        ),
-      );
-    } finally {
-      setInstallingCli(false);
-    }
   };
 
   const handleFeishuUserAuthStart = async () => {
