@@ -290,7 +290,7 @@ class ThreadHistoryOut(PayloadOut):
     hitl_policy: HitlPolicyOut
 
 
-RESPONSE_MODELS: tuple[type[BaseModel], ...] = (
+RESPONSE_MODELS: tuple[type[PayloadOut], ...] = (
     HitlPolicyOut,
     ThreadArtifactRefOut,
     ThreadSummaryOut,
@@ -320,7 +320,7 @@ RESPONSE_MODELS: tuple[type[BaseModel], ...] = (
 
 
 def model_schemas(
-    models: tuple[type[BaseModel], ...], *, open_schema: bool = False
+    models: tuple[type[PayloadOut], ...], *, open_schema: bool = False
 ) -> dict[str, Any]:
     """Component schemas for payload mirrors, nested models included.
 

@@ -47,7 +47,7 @@ import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, NoReturn, TypeGuard
 
 from happyclaw.infra.plugins.sandbox.audit import (
     InMemorySandboxLedger,
@@ -434,7 +434,7 @@ class PluginSandbox:
         return None
 
     @staticmethod
-    def _is_path_value(raw: object) -> bool:
+    def _is_path_value(raw: object) -> TypeGuard[str | Path]:
         if isinstance(raw, Path):
             return True
         return isinstance(raw, str) and bool(raw.strip())

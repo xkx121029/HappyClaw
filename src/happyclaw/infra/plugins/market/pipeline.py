@@ -989,11 +989,12 @@ def _reject_breaking_dependents(plugin_id: str, version: str, dest_root: Path) -
         raise DependencyConstraintError(plugin_id, version, tuple(mismatched))
 
 
-def _config_schema_of(plugin_root: Path, record: Mapping[str, Any]) -> dict[str, Any]:
-    schema = record.get("config_schema")
+def _config_schema_of(plugin_root: Path, record: Mapping[str, Any] | None) -> dict[str, Any]:
+    current = record or {}
+    schema = current.get("config_schema")
     if isinstance(schema, Mapping):
         return dict(schema)
-    envelope_path = plugin_root / str(record.get("slot") or "") / ENVELOPE_FILENAME
+    envelope_path = plugin_root / str(current.get("slot") or "") / ENVELOPE_FILENAME
     if not envelope_path.is_file():
         return {}
     try:

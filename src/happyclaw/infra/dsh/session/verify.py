@@ -21,7 +21,7 @@ import json
 import sqlite3
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
@@ -63,8 +63,8 @@ class ComparisonResult:
     shadow_count: int = 0
     existing_by_kind: Counter[str] | None = None
     shadow_by_kind: Counter[str] | None = None
-    differences: list[dict[str, Any]] | None = None
-    notes: list[str] | None = None
+    differences: list[dict[str, Any]] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
 
     @property
     def consistent(self) -> bool:

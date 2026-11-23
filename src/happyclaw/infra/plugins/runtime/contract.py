@@ -21,7 +21,7 @@ Design notes
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -560,8 +560,18 @@ class PluginLoader(Protocol):
     def kind(self) -> PluginKind:
         """Ecosystem handled by this loader."""
 
-    def discover(self) -> list[PluginEnvelope]:
-        """Return envelopes without activating anything."""
+    def discover(
+        self,
+        roots: Sequence[str | Path] | None = None,
+        *,
+        strict: bool = False,
+    ) -> list[PluginEnvelope]:
+        """Return envelopes without activating anything.
+
+        ``roots`` limits discovery to those directories (``None`` means each
+        loader's own defaults); ``strict`` re-raises manifest errors instead of
+        reporting them through logging.
+        """
 
     def activate(self, envelope: PluginEnvelope, ctx: ActivationContext) -> PluginHandle:
         """Activate one envelope or raise a ``PluginRuntimeError``."""
