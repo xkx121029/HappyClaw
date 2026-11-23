@@ -1,4 +1,4 @@
-import { Form, Input, Select } from "antd";
+import { Button, Form, Input, Select } from "antd";
 import type { FormInstance } from "antd";
 import type { Dispatch, SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
@@ -47,7 +47,7 @@ export function ConnectorCredentialFields({
   selectedMailProvider: ReturnType<typeof mailProviderById>;
   showManual: boolean;
   setShowManual: Dispatch<SetStateAction<boolean>>;
-  hasOAuthPopup: boolean;
+  hasOAuthPopup?: boolean;
   feishuAuthNeedsReauth: boolean;
   feishuUserReady: boolean;
   feishuUserAuth: FeishuUserAuthStartResult | null;

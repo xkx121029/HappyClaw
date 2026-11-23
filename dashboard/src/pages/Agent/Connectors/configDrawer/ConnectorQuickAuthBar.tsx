@@ -54,7 +54,7 @@ export function ConnectorQuickAuthBar({
   handleInstallCli: () => Promise<void>;
   handleCopyInstallCommand: (command: string) => Promise<void>;
   openUrl: (url: string | null | undefined) => void;
-  hasOAuthPopup: boolean;
+  hasOAuthPopup?: boolean;
   authorizing: boolean;
   handleOAuth: () => Promise<void>;
   hasAuthorizeUrl: boolean;
