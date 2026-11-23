@@ -18,31 +18,23 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Button,
   Modal,
   Form,
   Input,
   Switch,
   Typography,
-  Drawer,
 } from "antd";
 import { message } from "@/utils/antdMessage";
 
 import {
-  CircleHelp,
-  IdCard,
   Lock,
   LockOpen,
-  ShieldCheck,
-  Mail,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import cx from "classnames";
 import { request } from "../../../api/request";
 import { authApi } from "../../../api/modules/auth";
 import {
   userRolesApi,
-  userRoleDrift,
   type UserRole,
 } from "../../../api/modules/userRoles";
 import { useCardTableView } from "../../../hooks/useCardTableView";
@@ -55,15 +47,12 @@ import EditAgentDrawer from "../../Experts/components/EditAgentDrawer";
 import InviteDrawer from "./InviteDrawer";
 import { fetchFilesystemDefaults } from "../../Experts/components/agentBackendForm";
 import { HOST_FS_ROOT } from "../../Experts/components/rootDirTree";
-import styles from "./index.module.less";
 import {
   deleteUserAvatar,
-  ProfileAvatarPicker,
   uploadUserAvatar,
 } from "./ProfileAvatar";
 import {
   DEFAULT_EXPERT_TEMPLATE_ID,
-  FIELD_ICON_PROPS,
   permFullLabel,
   type BatchAction,
   type BatchMaxAgentsFormValues,
@@ -79,16 +68,14 @@ import {
 import { policyFieldsFromRole, policyPayload } from "./policyForm";
 import { lockRemainingSeconds, useNowSeconds } from "./userTime";
 import { MaxAgentsInput, TokenQuotaInput } from "./QuotaInputs";
-import { UserRoleField } from "./UserRoleField";
-import { ResourcePolicyFields } from "./ResourcePolicyFields";
 import {
-  CollapsiblePermissionsField,
 } from "./PermissionFields";
 import { UserCardGrid } from "./UserCardGrid";
 import { UsersTable } from "./UsersTable";
 import { UsersBatchBar, UsersToolbar } from "./UsersToolbar";
 import { UserAgentsDrawer } from "./UserAgentsDrawer";
 import { UserCreateDrawer } from "./UserCreateDrawer";
+import { UserEditDrawer } from "./UserEditDrawer";
 
 const { Text } = Typography;
 
@@ -134,6 +121,7 @@ export { UsersTable } from "./UsersTable";
 export { UsersBatchBar, UsersToolbar } from "./UsersToolbar";
 export { UserAgentsDrawer } from "./UserAgentsDrawer";
 export { UserCreateDrawer } from "./UserCreateDrawer";
+export { UserEditDrawer } from "./UserEditDrawer";
 
 export default function UsersListPanel() {
   const { t, i18n } = useTranslation();
@@ -789,6 +777,48 @@ export default function UsersListPanel() {
     }
   };
 
+  const onEditAvatarIcon = async (target: UserRow, icon: string | null) => {
+    try {
+      const updated = await request<UserRow>(`/users/${target.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ avatar_icon: icon }),
+      });
+      setEditTarget({
+        ...target,
+        avatar_url: updated.avatar_url,
+        avatar_icon: updated.avatar_icon,
+      });
+      syncSelfAvatar(target.id, updated);
+      void refreshUsers();
+    } catch (err) {
+      message.error(apiErrorMessage(err, t("experts.avatarUploadFailed"), t));
+      throw err;
+    }
+  };
+
+  const onEditAvatarPick = async (target: UserRow, file: File) => {
+    try {
+      const result = await uploadUserAvatar(target.id, file);
+      setEditTarget({ ...target, avatar_url: result.avatar_url });
+      syncSelfAvatar(target.id, { avatar_url: result.avatar_url });
+      void refreshUsers();
+    } catch (err) {
+      message.error(apiErrorMessage(err, t("experts.avatarUploadFailed"), t));
+      throw err;
+    }
+  };
+
+  const onEditAvatarRemove = async (target: UserRow) => {
+    try {
+      await deleteUserAvatar(target.id);
+      setEditTarget({ ...target, avatar_url: null });
+      syncSelfAvatar(target.id, { avatar_url: null });
+      void refreshUsers();
+    } catch (err) {
+      message.error(apiErrorMessage(err, t("experts.avatarRemoveFailed"), t));
+      throw err;
+    }
+  };
   return (
     <>
       <UsersToolbar
@@ -912,203 +942,26 @@ export default function UsersListPanel() {
         onRemoveAvatar={() => setPendingUserAvatar(null)}
       />
 
-      <Drawer
-        title={
-          editTarget
-            ? t("adminUsers.modalEditTitle", {
-                username: editTarget.username,
-              })
-            : t("common.edit")
-        }
-        placement="right"
+      <UserEditDrawer
         open={editTarget !== null}
+        target={editTarget}
         onClose={() => {
           setEditTarget(null);
           editForm.resetFields();
         }}
-        width={Math.min(
-          520,
-          typeof window !== "undefined" ? window.innerWidth - 24 : 520,
-        )}
-        destroyOnHidden
-        className={styles.createUserDrawer}
-        styles={{ body: { paddingTop: 12, paddingBottom: 24 } }}
-        footer={
-          <div className={styles.createUserFooter}>
-            <Button
-              onClick={() => {
-                setEditTarget(null);
-                editForm.resetFields();
-              }}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              type="primary"
-              loading={editSubmitting}
-              onClick={() => editForm.submit()}
-            >
-              {t("common.save")}
-            </Button>
-          </div>
-        }
-      >
-        <Form<EditValues>
-          form={editForm}
-          layout="vertical"
-          requiredMark={false}
-          onFinish={onEditSubmit}
-          className={styles.createUserForm}
-        >
-          <div className={styles.createSection}>
-            <div className={styles.createSectionTitle}>
-              {t("adminUsers.createSectionAccount")}
-            </div>
-            {editTarget ? (
-              <ProfileAvatarPicker
-                kind="user"
-                avatarUrl={editTarget.avatar_url}
-                icon={editTarget.avatar_icon}
-                onSelectIcon={async (icon) => {
-                  try {
-                    const updated = await request<UserRow>(
-                      `/users/${editTarget.id}`,
-                      {
-                        method: "PATCH",
-                        body: JSON.stringify({ avatar_icon: icon }),
-                      },
-                    );
-                    setEditTarget({
-                      ...editTarget,
-                      avatar_url: updated.avatar_url,
-                      avatar_icon: updated.avatar_icon,
-                    });
-                    syncSelfAvatar(editTarget.id, updated);
-                    void refreshUsers();
-                  } catch (err) {
-                    message.error(
-                      apiErrorMessage(err, t("experts.avatarUploadFailed"), t),
-                    );
-                    throw err;
-                  }
-                }}
-                onPick={async (file) => {
-                  try {
-                    const result = await uploadUserAvatar(editTarget.id, file);
-                    setEditTarget({
-                      ...editTarget,
-                      avatar_url: result.avatar_url,
-                    });
-                    syncSelfAvatar(editTarget.id, {
-                      avatar_url: result.avatar_url,
-                    });
-                    void refreshUsers();
-                  } catch (err) {
-                    message.error(
-                      apiErrorMessage(err, t("experts.avatarUploadFailed"), t),
-                    );
-                    throw err;
-                  }
-                }}
-                onRemove={async () => {
-                  try {
-                    await deleteUserAvatar(editTarget.id);
-                    setEditTarget({ ...editTarget, avatar_url: null });
-                    syncSelfAvatar(editTarget.id, { avatar_url: null });
-                    void refreshUsers();
-                  } catch (err) {
-                    message.error(
-                      apiErrorMessage(err, t("experts.avatarRemoveFailed"), t),
-                    );
-                    throw err;
-                  }
-                }}
-              />
-            ) : null}
-            <Form.Item
-              label={t("adminUsers.formDisplayName")}
-              name="display_name"
-            >
-              <Input prefix={<IdCard {...FIELD_ICON_PROPS} />} />
-            </Form.Item>
-            <Form.Item
-              label={t("adminUsers.formEmail")}
-              name="email"
-              rules={[
-                {
-                  type: "email",
-                  message: t("adminUsers.formEmailInvalid"),
-                },
-              ]}
-            >
-              <Input
-                prefix={<Mail {...FIELD_ICON_PROPS} />}
-                type="email"
-                autoComplete="email"
-              />
-            </Form.Item>
-          </div>
-
-          <div className={styles.createSection}>
-            <div className={styles.createSectionTitle}>
-              {t("adminUsers.createSectionAccess")}
-            </div>
-            <div className={cx(styles.permAdminHint, styles.permSectionHint)}>
-              <CircleHelp size={15} strokeWidth={2} />
-              <span>{t("adminUsers.permEditHint")}</span>
-            </div>
-            <UserRoleField
-              roles={userRoles}
-              workspaceRootAllowed={workspaceRootAllowed}
-              confirmOverwrite
-              actorIsAdmin={actorIsAdmin}
-              disabled={Boolean(editTarget && isSelfAdmin(editTarget))}
-              diverged={
-                Boolean(editTarget) &&
-                userRoleDrift(editTarget as UserRow, userRoles) === "changed"
-              }
-              snapshotName={editTarget?.role_name}
-              staleName={
-                editTarget?.role_name &&
-                !userRoles.some(
-                  (role) =>
-                    role.user_role_id === editTarget.role ||
-                    role.user_role_name === editTarget.role_name,
-                )
-                  ? editTarget.role_name
-                  : null
-              }
-            />
-            {editTarget && isSelfAdmin(editTarget) ? (
-              <div className={styles.permAdminHint}>
-                <span>{t("adminUsers.demoteSelf")}</span>
-              </div>
-            ) : null}
-            <Form.Item
-              noStyle
-              shouldUpdate={(prev, cur) => prev.role !== cur.role}
-            >
-              {({ getFieldValue }) => {
-                const isAdminRole = getFieldValue("role") === "admin";
-                if (isAdminRole) {
-                  return (
-                    <div className={styles.permAdminHint}>
-                      <ShieldCheck size={15} strokeWidth={2} />
-                      <span>{t("adminUsers.permAllHint")}</span>
-                    </div>
-                  );
-                }
-                return <CollapsiblePermissionsField catalog={permCatalog} />;
-              }}
-            </Form.Item>
-          </div>
-
-          <ResourcePolicyFields
-            fsTreeRoots={fsTreeRoots}
-            workspaceRootAllowed={workspaceRootAllowed}
-          />
-        </Form>
-      </Drawer>
+        form={editForm}
+        submitting={editSubmitting}
+        onSubmit={onEditSubmit}
+        userRoles={userRoles}
+        workspaceRootAllowed={workspaceRootAllowed}
+        actorIsAdmin={actorIsAdmin}
+        permCatalog={permCatalog}
+        fsTreeRoots={fsTreeRoots}
+        isSelfAdmin={Boolean(editTarget && isSelfAdmin(editTarget))}
+        onSelectIcon={onEditAvatarIcon}
+        onPickAvatar={onEditAvatarPick}
+        onRemoveAvatar={onEditAvatarRemove}
+      />
 
       <Modal
         title={
