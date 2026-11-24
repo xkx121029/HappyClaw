@@ -8,7 +8,7 @@
 #   `bad option: --experimental-strip-types`, so the repo-wide Node 20 pin
 #   silently breaks this package's tests.
 # - Node 20 went EOL in April 2026; Node 24 is the current Active LTS and is
-#   already what `.github/workflows/octop-desktop.yml` uses for the dashboard.
+#   already what `.github/workflows/happyclaw-desktop.yml` uses for the dashboard.
 # - This pin only affects build/test tooling (electron-vite, electron-builder,
 #   tsc). The shipped app runs on the Node that Electron bundles: Electron
 #   33.x ships Node 20.18.3, so raising this pin does NOT change app runtime

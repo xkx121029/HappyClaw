@@ -39,8 +39,8 @@ class _StubServer:
 
 
 def _build_app() -> FastAPI:
-    octop_home = Path.home() / ".octop"
-    server = _StubServer(_StubServices(_StubPaths(octop_home / "agents")))
+    happyclaw_home = Path.home() / ".happyclaw"
+    server = _StubServer(_StubServices(_StubPaths(happyclaw_home / "agents")))
 
     app = FastAPI()
     app.include_router(memory.router, prefix="/api")

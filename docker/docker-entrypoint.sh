@@ -27,9 +27,9 @@ INIT_MARKER="${HAPPYCLAW_HOME}/.initialized"
 PORT="${HAPPYCLAW_PORT:-8088}"
 
 # Docker 默认 /dev/shm 为 64MB。桌面已打进镜像时，太小的话用户一点启用，Xvnc 就会失败。
-# 只提示，不阻止 HappyClaw 本身启动。conf_dir 默认 /etc/octop-desktop，测试可传入临时目录。
+# 只提示，不阻止 HappyClaw 本身启动。conf_dir 默认 /etc/happyclaw-desktop，测试可传入临时目录。
 octop_warn_small_shm() {
-    local conf_dir="${1:-/etc/octop-desktop}"
+    local conf_dir="${1:-/etc/happyclaw-desktop}"
     local bytes
     [ -d "$conf_dir" ] || return 0
     bytes="$(df -B1 --output=size /dev/shm 2>/dev/null | awk 'NR==2 {print $1}')"

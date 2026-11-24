@@ -6,20 +6,20 @@ import { gzipSync } from "node:zlib";
  * Shell diagnostic log. It lives in its own directory next to the Python log:
  * ``<HAPPYCLAW_HOME>/logs/desktop/desktop.log``.
  *
- * Rotation matches ``octop.log``: roll at local midnight and at 100 MiB,
+ * Rotation matches ``happyclaw.log``: roll at local midnight and at 100 MiB,
  * keep ``desktop.YYYY-MM-DD.log`` (``.001`` when the same day rolls again),
  * gzip older rotated files on the next cycle, and delete files older than 14 days.
  * ``HAPPYCLAW_LOG_MAX_BYTES``, ``HAPPYCLAW_LOG_RETENTION_DAYS``, and ``HAPPYCLAW_LOG_COMPRESS``
  * apply the same way as the Python log.
  *
- * Python keeps its own ``octop.log``. This file is only the Electron shell.
+ * Python keeps its own ``happyclaw.log``. This file is only the Electron shell.
  */
 
 const DEFAULT_MAX_BYTES = 100 * 1024 * 1024;
 const DEFAULT_RETENTION_DAYS = 14;
 
-export function desktopLogPath(octopHome: string): string {
-  return join(octopHome, "logs", "desktop", "desktop.log");
+export function desktopLogPath(happyclawHome: string): string {
+  return join(happyclawHome, "logs", "desktop", "desktop.log");
 }
 
 export interface DesktopLogOptions {
@@ -192,8 +192,8 @@ function exists(path: string): boolean {
 }
 
 /** Move ``logs/desktop.log`` from before the ``logs/desktop/`` directory existed. */
-function migrateLegacyDesktopLog(octopHome: string): void {
-  const logsDir = join(octopHome, "logs");
+function migrateLegacyDesktopLog(happyclawHome: string): void {
+  const logsDir = join(happyclawHome, "logs");
   const legacy = join(logsDir, "desktop.log");
   const legacyBackup = join(logsDir, "desktop.log.1");
   if (!exists(legacy) && !exists(legacyBackup)) return;
@@ -256,10 +256,10 @@ const consoleLog: DesktopLog = {
 
 let active: DesktopLog = consoleLog;
 
-/** Open ``<octopHome>/logs/desktop/desktop.log`` and send later ``desktopLog()`` calls there. */
-export function installDesktopLog(octopHome: string): DesktopLog {
-  migrateLegacyDesktopLog(octopHome);
-  active = openDesktopLog(desktopLogPath(octopHome), desktopLogOptionsFromEnv());
+/** Open ``<happyclawHome>/logs/desktop/desktop.log`` and send later ``desktopLog()`` calls there. */
+export function installDesktopLog(happyclawHome: string): DesktopLog {
+  migrateLegacyDesktopLog(happyclawHome);
+  active = openDesktopLog(desktopLogPath(happyclawHome), desktopLogOptionsFromEnv());
   return active;
 }
 

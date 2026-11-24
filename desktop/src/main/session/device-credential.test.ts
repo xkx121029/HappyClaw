@@ -44,7 +44,7 @@ function missingCipher(): CredentialCipher {
 }
 
 async function tempHome(): Promise<string> {
-  return fs.mkdtemp(join(tmpdir(), "octop-credential-"));
+  return fs.mkdtemp(join(tmpdir(), "happyclaw-credential-"));
 }
 
 test("getOrCreate mints a secret once and reuses it afterwards", async () => {

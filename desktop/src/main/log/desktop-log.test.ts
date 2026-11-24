@@ -9,13 +9,13 @@ import { desktopLogPath, installDesktopLog, openDesktopLog } from "./desktop-log
 
 test("desktopLogPath sits in logs/desktop beside the Python log", () => {
   assert.equal(
-    desktopLogPath(join("home", ".octop")),
-    join("home", ".octop", "logs", "desktop", "desktop.log"),
+    desktopLogPath(join("home", ".happyclaw")),
+    join("home", ".happyclaw", "logs", "desktop", "desktop.log"),
   );
 });
 
 test("openDesktopLog appends leveled lines and creates the logs directory", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const dir = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   try {
     const path = desktopLogPath(dir);
     const log = openDesktopLog(path);
@@ -33,7 +33,7 @@ test("openDesktopLog appends leveled lines and creates the logs directory", asyn
 });
 
 test("openDesktopLog rolls the file once it passes the size cap", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const dir = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   try {
     const path = join(dir, "desktop.log");
     const log = openDesktopLog(path, { maxBytes: 80, compressRotated: false });
@@ -56,7 +56,7 @@ test("openDesktopLog rolls the file once it passes the size cap", async () => {
 });
 
 test("openDesktopLog rolls a previous day's file under that day's name", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const dir = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   try {
     const path = join(dir, "desktop.log");
     const yesterday = previousLocalNoon();
@@ -75,7 +75,7 @@ test("openDesktopLog rolls a previous day's file under that day's name", async (
 });
 
 test("openDesktopLog uses a numeric suffix when the day's file already exists", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const dir = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   try {
     const path = join(dir, "desktop.log");
     const today = localDateStamp(new Date());
@@ -92,7 +92,7 @@ test("openDesktopLog uses a numeric suffix when the day's file already exists", 
 });
 
 test("openDesktopLog gzips the previous same-day roll and leaves the newest plain", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const dir = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   try {
     const path = join(dir, "desktop.log");
     const log = openDesktopLog(path, { maxBytes: 20 });
@@ -112,7 +112,7 @@ test("openDesktopLog gzips the previous same-day roll and leaves the newest plai
 });
 
 test("openDesktopLog gzips older rotated files and leaves the newest plain", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const dir = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   try {
     const older = join(dir, "desktop.2026-01-01.log");
     const newer = join(dir, "desktop.2026-01-02.log");
@@ -131,7 +131,7 @@ test("openDesktopLog gzips older rotated files and leaves the newest plain", asy
 });
 
 test("openDesktopLog deletes rotated files older than the retention window", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const dir = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   try {
     const old = join(dir, "desktop.2020-01-01.log");
     const recent = join(dir, "desktop.2026-07-16.log.gz");
@@ -150,7 +150,7 @@ test("openDesktopLog deletes rotated files older than the retention window", asy
 });
 
 test("openDesktopLog ignores a path it cannot create", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const dir = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   try {
     const blocker = join(dir, "not-a-directory");
     await writeFile(blocker, "x");
@@ -162,7 +162,7 @@ test("openDesktopLog ignores a path it cannot create", async () => {
 });
 
 test("installDesktopLog moves the legacy single file into logs/desktop", async () => {
-  const home = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const home = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   await withEnv({ HAPPYCLAW_LOG_COMPRESS: "0", HAPPYCLAW_LOG_RETENTION_DAYS: "14" }, async () => {
     try {
       const logs = join(home, "logs");
@@ -185,7 +185,7 @@ test("installDesktopLog moves the legacy single file into logs/desktop", async (
 });
 
 test("installDesktopLog honors HAPPYCLAW_LOG_MAX_BYTES", async () => {
-  const home = await mkdtemp(join(tmpdir(), "octop-desktop-log-"));
+  const home = await mkdtemp(join(tmpdir(), "happyclaw-desktop-log-"));
   await withEnv(
     { HAPPYCLAW_LOG_MAX_BYTES: "80", HAPPYCLAW_LOG_COMPRESS: "0", HAPPYCLAW_LOG_RETENTION_DAYS: "14" },
     async () => {

@@ -165,7 +165,7 @@ test("a handshake reaches the sidecar with its path and query rewritten", async 
       // The sidecar must see itself, not the relay, or its own origin checks fail.
       assert.equal(seen.headers.host, `127.0.0.1:${upstream.port}`);
       assert.equal(seen.headers.origin, `http://127.0.0.1:${upstream.port}`);
-      assert.equal(seen.headers["x-octop-proxy"], "1");
+      assert.equal(seen.headers["x-happyclaw-proxy"], "1");
       assert.equal(seen.headers["sec-websocket-key"], WS_KEY);
       assert.equal(seen.headers["sec-websocket-version"], "13");
       assert.ok(baseUrl.startsWith("ws://127.0.0.1:"));

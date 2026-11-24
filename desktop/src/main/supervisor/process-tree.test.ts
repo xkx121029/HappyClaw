@@ -13,7 +13,7 @@ import { buildSidecarEnv } from "./process-tree";
 function env(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   return buildSidecarEnv(
     { PATH: "/usr/bin", HAPPYCLAW_PORT: "1", HAPPYCLAW_REQUIRE_SETUP_PASSWORD: "1", ...overrides },
-    { octopHome: "/tmp/home", portableDir: "/tmp/portable", port: 51234, bindHost: "127.0.0.1" },
+    { happyclawHome: "/tmp/home", portableDir: "/tmp/portable", port: 51234, bindHost: "127.0.0.1" },
   );
 }
 

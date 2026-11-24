@@ -1,8 +1,8 @@
-name: Octop Desktop Package
+name: HappyClaw Desktop Package
 
 # 正式发版：Auto Tag 在打 v* 后与 Release / Docker Publish 一并 dispatch。
 # 每个原生 runner 打便携 zip + Electron 安装包，upsert 到同一 GitHub Release，
-# 再上传到 COS octop/release/<version>/。
+# 再上传到 COS octop/release/<version>/（桶内路径沿用旧名，见 DEOCTOP-FINAL 报告）。
 # 手工补包：workflow_dispatch + release_tag（不必跑在 v* ref 上）。
 # attach_from_run 只挂已有 artifact、不重打。
 #
@@ -21,7 +21,7 @@ on:
   pull_request:
     paths:
       - "desktop/**"
-      - ".github/workflows/octop-desktop.yml"
+      - ".github/workflows/happyclaw-desktop.yml"
   workflow_dispatch:
     inputs:
       platforms:
@@ -40,7 +40,7 @@ on:
         default: ""
         type: string
       attach_from_run:
-        description: "Existing workflow run ID — attach its Octop-* artifacts and skip the 6-platform rebuild"
+        description: "Existing workflow run ID — attach its HappyClaw-* artifacts and skip the 6-platform rebuild"
         required: false
         default: ""
         type: string
@@ -197,7 +197,7 @@ jobs:
       - name: Smoke import (native host only)
         run: |
           set -euo pipefail
-          staging="desktop/portable/release/Octop-${{ matrix.plat }}"
+          staging="desktop/portable/release/HappyClaw-${{ matrix.plat }}"
           if [[ -x "${staging}/runtime/bin/python3" ]]; then
             py="${staging}/runtime/bin/python3"
           elif [[ -f "${staging}/runtime/python.exe" ]]; then
@@ -234,7 +234,7 @@ jobs:
       # With archive:false, artifact name is the filename (name: is ignored).
       - uses: actions/upload-artifact@v7
         with:
-          path: desktop/portable/release/Octop-portable-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.zip
+          path: desktop/portable/release/HappyClaw-portable-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.zip
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -243,19 +243,19 @@ jobs:
         run: |
           set -euo pipefail
           plat="${{ matrix.plat }}"
-          zip="desktop/portable/release/Octop-portable-${plat}-${HAPPYCLAW_VERSION}.zip"
+          zip="desktop/portable/release/HappyClaw-portable-${plat}-${HAPPYCLAW_VERSION}.zip"
           rm -rf desktop/src/resources/portable
           mkdir -p desktop/src/resources/portable
           # The shell serves packages/happyclaw/dashboard from this tree. There is
           # no second copy under resources/dashboard.
-          test -f "desktop/portable/release/Octop-${plat}/packages/happyclaw/dashboard/index.html"
+          test -f "desktop/portable/release/HappyClaw-${plat}/packages/happyclaw/dashboard/index.html"
           # Windows keeps one zip; NSIS extracts it with tar.exe. Packing the
           # ~40k files into NSIS is slower. macOS (DMG) and Linux (deb/rpm)
           # copy the tree package.sh already assembled. No zip in those apps.
           if [[ "$plat" == windows-* ]]; then
             cp "$zip" desktop/src/resources/portable/
           else
-            inner="desktop/portable/release/Octop-${plat}"
+            inner="desktop/portable/release/HappyClaw-${plat}"
             if [[ ! -f "$inner/launch.py" ]]; then
               echo "expanded portable tree has no launch.py under ${inner}" >&2
               exit 1
@@ -334,7 +334,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'darwin-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.dmg
+          path: desktop/src/release/HappyClaw-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.dmg
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -342,7 +342,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'darwin-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.zip
+          path: desktop/src/release/HappyClaw-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.zip
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -350,7 +350,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'windows-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.exe
+          path: desktop/src/release/HappyClaw-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.exe
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -358,7 +358,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'linux-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.deb
+          path: desktop/src/release/HappyClaw-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.deb
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -366,7 +366,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: startsWith(matrix.plat, 'linux-')
         with:
-          path: desktop/src/release/Octop-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.rpm
+          path: desktop/src/release/HappyClaw-desktop-${{ matrix.plat }}-${{ env.HAPPYCLAW_VERSION }}.rpm
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -416,7 +416,7 @@ jobs:
       # into directories, so files: release-assets/* would skip them.
       - uses: actions/download-artifact@v8
         with:
-          pattern: Octop-*
+          pattern: HappyClaw-*
           path: release-assets
           merge-multiple: true
           skip-decompress: true
@@ -452,7 +452,7 @@ jobs:
     uses: ./.github/workflows/upload-release-cos.yml
     with:
       tag: ${{ needs.release.outputs.tag }}
-      patterns: "Octop-portable-*,Octop-desktop-*"
+      patterns: "HappyClaw-portable-*,HappyClaw-desktop-*"
     secrets:
       RELEASE_COS_SECRET_ID: ${{ secrets.RELEASE_COS_SECRET_ID }}
       RELEASE_COS_SECRET_KEY: ${{ secrets.RELEASE_COS_SECRET_KEY }}

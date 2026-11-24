@@ -17,12 +17,12 @@ export interface SidecarLaunch {
 export function buildSidecarEnv(
   base: NodeJS.ProcessEnv,
   options: {
-    octopHome: string;
+    happyclawHome: string;
     portableDir: string;
     port: number;
     bindHost: string;
     /**
-     * The backend is a PyInstaller onedir build (`octop.exe` + `_internal`).
+     * The backend is a PyInstaller onedir build (`happyclaw.exe` + `_internal`).
      * It embeds its own interpreter and data files, so the green-pack and
      * bytecode-cache variables would point at paths that do not exist.
      */
@@ -30,7 +30,7 @@ export function buildSidecarEnv(
   },
 ): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...base };
-  env.HAPPYCLAW_HOME = options.octopHome;
+  env.HAPPYCLAW_HOME = options.happyclawHome;
   env.HAPPYCLAW_BIND_HOST = options.bindHost;
   env.HAPPYCLAW_PORT = String(options.port);
   env.HAPPYCLAW_DESKTOP_SHELL = "1";
@@ -39,7 +39,7 @@ export function buildSidecarEnv(
     env.PYTHONNOUSERSITE = "1";
     // Bytecode must not be written next to the sources. On macOS those sources
     // live inside the app bundle; on Windows they live in the install dir.
-    env.PYTHONPYCACHEPREFIX = join(options.octopHome, "pyc");
+    env.PYTHONPYCACHEPREFIX = join(options.happyclawHome, "pyc");
   }
   // Desktop builds have no account system: the wizard password gate is off, so
   // a fresh install never shows the setup password. The frontend reads

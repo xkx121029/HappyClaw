@@ -15,8 +15,8 @@ fail_init() {
     exit 1
 }
 
-if type octop_assert_native_arch >/dev/null 2>&1; then
-    if ! REASON="$(octop_assert_native_arch)"; then
+if type happyclaw_assert_native_arch >/dev/null 2>&1; then
+    if ! REASON="$(happyclaw_assert_native_arch)"; then
         fail_init "$REASON"
     fi
 fi

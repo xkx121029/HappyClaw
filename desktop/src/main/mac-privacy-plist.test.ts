@@ -28,7 +28,7 @@ test("macOS 隐私用途说明覆盖桌面端会触发的系统权限", () => {
 });
 
 test("打包资源目录写入中英文 InfoPlist.strings", () => {
-  const resources = mkdtempSync(join(tmpdir(), "octop-privacy-"));
+  const resources = mkdtempSync(join(tmpdir(), "happyclaw-privacy-"));
   writeMacPrivacyLocalizations(resources);
   const english = readFileSync(join(resources, "en.lproj", "InfoPlist.strings"));
   const chinese = readFileSync(join(resources, "zh-Hans.lproj", "InfoPlist.strings"));

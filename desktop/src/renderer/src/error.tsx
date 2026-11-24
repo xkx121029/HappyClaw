@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import markUrl from "./assets/octop-mark.svg";
+import markUrl from "./assets/happyclaw-mark.svg";
 import { decodeShellError } from "../../shared/shell-error";
 import { LinuxWindowControls } from "./linux-window-controls";
 import { mount } from "./mount";

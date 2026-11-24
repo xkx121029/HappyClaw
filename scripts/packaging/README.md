@@ -5,7 +5,7 @@
 ## 产物
 
 ```
-dist/backend/octop/
+dist/backend/happyclaw/
 ├── happyclaw.exe          # 63.3 MB，含全部纯 Python 模块（PYZ 归档）
 └── _internal/         # 4 423 个文件，约 293 MB：.pyd/.dll、dashboard 静态资源、技能库
 ```
@@ -20,7 +20,7 @@ dist/backend/octop/
 2. 前端构建**失败就中止打包**，不会沿用上一次留在 `src/happyclaw/dashboard` 的旧产物；
 3. 构建成功后在输出目录写 `version.json`（git commit、构建时间、`index.html` 的 sha256），随包进入 `_internal/happyclaw/dashboard/`。
 
-> **只改前端也必须重打后端**。桌面壳重打安装包前不要复用旧的 `dist/backend/octop`；`verify_backend.py` 会把包内 `index.html` 的哈希与本次前端构建输出对比，不一致直接判失败。
+> **只改前端也必须重打后端**。桌面壳重打安装包前不要复用旧的 `dist/backend/happyclaw`；`verify_backend.py` 会把包内 `index.html` 的哈希与本次前端构建输出对比，不一致直接判失败。
 
 运行时确认包里是哪版前端：`GET /api/health` 的 `build` 字段。
 
@@ -98,9 +98,9 @@ dist\backend\octop\happyclaw.exe selfcheck
 
 | 文件 | 作用 |
 | --- | --- |
-| `scripts/packaging/entry_octop.py` | 冻结入口，等价于 console script `octop` |
+| `scripts/packaging/entry_happyclaw.py` | 冻结入口，等价于 console script `happyclaw` |
 | `scripts/packaging/build_dashboard.py` | 打包前强制重建前端，写 `version.json`（commit / 构建时间 / index.html sha256） |
-| `scripts/packaging/octop.spec` | PyInstaller 配置：收集 `octop*` 子模块与数据、排除测试与未用 optional |
+| `scripts/packaging/happyclaw.spec` | PyInstaller 配置：收集 `happyclaw*` 子模块与数据、排除测试与未用 optional |
 | `scripts/packaging/verify_backend.py` | 产物自检（agent 栈 + 上述四项 + 前端版本一致性） |
 | `Makefile` 的 `package-backend` | 先 `package-dashboard` 再构建 + 自检，产物落 `dist/backend/` |
 | `Makefile` 的 `package-dashboard` | 单独重建前端（不打包后端时用） |

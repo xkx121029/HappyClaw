@@ -15,7 +15,7 @@ import {
 } from "./session-restore";
 
 const ORIGIN = "octop://app";
-const FILE = join(mkdtempSync(join(tmpdir(), "octop-session-")), "session.json");
+const FILE = join(mkdtempSync(join(tmpdir(), "happyclaw-session-")), "session.json");
 
 test("a default snapshot exits cleanly and has no url", () => {
   assert.deepEqual(readSessionSnapshot(FILE), { url: null, cleanExit: true, sessionId: null });

@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # 共享函数库（find_python312 / fix_ownership_and_perms / free_octop_ports /
-# octop_prepare_docker_persist / octop_render_config_wizard 等）
+# happyclaw_prepare_docker_persist / happyclaw_render_config_wizard 等）
 # 打包时由 scripts/build-fpk.sh 注入；仓库内运行无此文件时跳过（函数缺失时再报错）。
 _HAPPYCLAW_COMMON="$(dirname "$0")/common.sh"
 [ -f "$_HAPPYCLAW_COMMON" ] || _HAPPYCLAW_COMMON="/var/apps/octop/cmd/common.sh"
@@ -22,7 +22,7 @@ ENV_FILE="${TRIM_APPDEST:-/var/apps/octop/target}/docker/.env"
 mkdir -p "$(dirname "$ENV_FILE")"
 
 # 挂飞牛 data-share（TRIM_DATA_SHARE_PATHS），升级/重启都保留；旧 share/ 路径会迁过来。
-DATA_DIR="$(octop_prepare_docker_persist "$ENV_FILE")"
+DATA_DIR="$(happyclaw_prepare_docker_persist "$ENV_FILE")"
 mkdir -p "$DATA_DIR"
 
 {
@@ -34,8 +34,8 @@ mkdir -p "$DATA_DIR"
 } > "$ENV_FILE"
 
 chmod 600 "$ENV_FILE"
-octop_persist_docker_env "$ENV_FILE"
-octop_distribute_docker_env "$ENV_FILE" "$DATA_DIR"
+happyclaw_persist_docker_env "$ENV_FILE"
+happyclaw_distribute_docker_env "$ENV_FILE" "$DATA_DIR"
 echo "[octop] 已写入配置: $ENV_FILE（data-share=${DATA_DIR}）" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
@@ -44,6 +44,6 @@ echo "[octop] 已写入配置: $ENV_FILE（data-share=${DATA_DIR}）" > "${TRIM_
 WIZARD_TEMPLATE="${TRIM_APPDEST:-/var/apps/octop/target}/wizard/config.template"
 WIZARD_DIR="$(dirname "${TRIM_APPDEST:-/var/apps/octop/target}")/wizard"
 [ -f "$WIZARD_TEMPLATE" ] || WIZARD_TEMPLATE="${TRIM_APPDEST:-/var/apps/octop/target}/../wizard/config"
-octop_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
+happyclaw_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
 
 exit 0

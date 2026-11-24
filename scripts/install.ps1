@@ -5,7 +5,7 @@
 # with a mirror that serves the same scripts/ tree when GitHub is unreachable.
 #    or: .\install.ps1 [-Version X.Y.Z] [-FromSource] [-SourceDir DIR] [-Extras "browser"]
 #
-# Installs HappyClaw into ~/.octop with a uv-managed Python environment.
+# Installs HappyClaw into ~/.happyclaw with a uv-managed Python environment.
 
 & {
 param(
@@ -19,15 +19,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$HappyclawHome     = if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } else { Join-Path $HOME ".octop" }
+$HappyclawHome     = if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } elseif ((Test-Path (Join-Path $HOME ".happyclaw")) -or -not (Test-Path (Join-Path $HOME ".octop"))) { Join-Path $HOME ".happyclaw" } else { Join-Path $HOME ".octop" }
 $HappyclawVenv     = Join-Path $HappyclawHome "venv"
 $HappyclawBin      = Join-Path $HappyclawHome "bin"
 $PythonVersion = "3.12"
 $HappyclawRepo     = if ($env:HAPPYCLAW_REPO) { $env:HAPPYCLAW_REPO } else { "https://github.com/xkx121029/HappyClaw.git" }
 
-function Write-Info { param([string]$Message) Write-Host "[octop] " -ForegroundColor Green  -NoNewline; Write-Host $Message }
-function Write-Warn { param([string]$Message) Write-Host "[octop] " -ForegroundColor Yellow -NoNewline; Write-Host $Message }
-function Stop-WithError { param([string]$Message) Write-Host "[octop] ERROR: $Message" -ForegroundColor Red; exit 1 }
+function Write-Info { param([string]$Message) Write-Host "[happyclaw] " -ForegroundColor Green  -NoNewline; Write-Host $Message }
+function Write-Warn { param([string]$Message) Write-Host "[happyclaw] " -ForegroundColor Yellow -NoNewline; Write-Host $Message }
+function Stop-WithError { param([string]$Message) Write-Host "[happyclaw] ERROR: $Message" -ForegroundColor Red; exit 1 }
 
 if ($Help) {
     @"
@@ -48,13 +48,13 @@ to install it, or install later from the dashboard. If a system Chrome already
 exists, that download is skipped even with -Extras browser.
 
 Environment:
-  HAPPYCLAW_HOME            Installation directory (default: ~/.octop)
+  HAPPYCLAW_HOME            Installation directory (default: ~/.happyclaw)
   HAPPYCLAW_REPO            Git clone URL for -FromSource without -SourceDir
 "@
     exit 0
 }
 
-Write-Host "[octop] Installing HappyClaw into $HappyclawHome" -ForegroundColor Green
+Write-Host "[happyclaw] Installing HappyClaw into $HappyclawHome" -ForegroundColor Green
 
 $policy = Get-ExecutionPolicy
 if ($policy -eq "Restricted") {
@@ -156,7 +156,7 @@ if (-not (Test-Path $VenvPython)) { Stop-WithError "Failed to create virtual env
 $pyVersion = & $VenvPython --version 2>&1
 Write-Info "Python environment ready ($pyVersion)"
 
-# TEMP: mcp 2.x breaks langchain-mcp-adapters; pin until published octop pulls happyclaw-harness>=0.9.18.
+# TEMP: mcp 2.x breaks langchain-mcp-adapters; pin until published happyclaw pulls happyclaw-harness>=0.9.18.
 function Pin-McpCompat {
     Write-Info "Pinning mcp<2 (langchain-mcp-adapters compat; temporary)..."
     uv pip install "mcp>=1.27.1,<2" --python $VenvPython --quiet
@@ -186,7 +186,7 @@ $script:ConsoleAvailable = $false
 
 function Prepare-Console {
     param([string]$RepoDir)
-    $consoleDest = Join-Path $RepoDir "src\octop\dashboard"
+    $consoleDest = Join-Path $RepoDir "src\happyclaw\dashboard"
     if (Test-Path (Join-Path $consoleDest "index.html")) {
         $script:ConsoleAvailable = $true
         return
@@ -215,7 +215,7 @@ function Prepare-Console {
     }
 }
 
-$VenvOctop = Join-Path $HappyclawVenv "Scripts\happyclaw.exe"
+$VenvHappyclaw = Join-Path $HappyclawVenv "Scripts\happyclaw.exe"
 
 if ($FromSource) {
     if ($SourceDir) {
@@ -227,7 +227,7 @@ if ($FromSource) {
         if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
             Stop-WithError "git required for -FromSource. Install from https://git-scm.com/"
         }
-        $cloneDir = Join-Path $env:TEMP "octop-install-$(Get-Random)"
+        $cloneDir = Join-Path $env:TEMP "happyclaw-install-$(Get-Random)"
         try {
             git clone --depth 1 $HappyclawRepo $cloneDir
             Prepare-Console $cloneDir
@@ -238,8 +238,8 @@ if ($FromSource) {
     }
 } else {
     # PEP 508: extras must sit between name and version specifier
-    # (octop[browser]==x.y.z); octop==x.y.z[browser] is an invalid requirement.
-    $package = if ($Version) { "octop${ExtrasSuffix}==$Version" } else { "octop${ExtrasSuffix}" }
+    # (happyclaw[browser]==x.y.z); happyclaw==x.y.z[browser] is an invalid requirement.
+    $package = if ($Version) { "happyclaw${ExtrasSuffix}==$Version" } else { "happyclaw${ExtrasSuffix}" }
     Write-Info "Installing ${package} from PyPI..."
     $installArgs = @("--python", $VenvPython, "--quiet")
     if ($Version -match '(dev|a|b|rc)') { $installArgs += "--prerelease=explicit" }
@@ -249,11 +249,11 @@ if ($FromSource) {
 Pin-McpCompat
 Test-Install
 
-if (-not (Test-Path $VenvOctop)) { Stop-WithError "Installation failed: octop CLI not found in venv" }
+if (-not (Test-Path $VenvHappyclaw)) { Stop-WithError "Installation failed: happyclaw CLI not found in venv" }
 Write-Info "HappyClaw installed successfully"
 
 if (-not $script:ConsoleAvailable) {
-    $check = & $VenvPython -c "import importlib.resources, octop; p=importlib.resources.files('octop')/'dashboard'/'index.html'; print('yes' if p.is_file() else 'no')" 2>&1
+    $check = & $VenvPython -c "import importlib.resources, happyclaw; p=importlib.resources.files('happyclaw')/'dashboard'/'index.html'; print('yes' if p.is_file() else 'no')" 2>&1
     if ($check -eq "yes") { $script:ConsoleAvailable = $true }
 }
 
@@ -309,10 +309,10 @@ if (-not $wantPlaywrightChromium) {
 
 New-Item -ItemType Directory -Path $HappyclawBin -Force | Out-Null
 
-$wrapperPs1 = Join-Path $HappyclawBin "octop.ps1"
+$wrapperPs1 = Join-Path $HappyclawBin "happyclaw.ps1"
 @'
 $ErrorActionPreference = "Stop"
-$HappyclawHome = if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } else { Join-Path $HOME ".octop" }
+$HappyclawHome = if ($env:HAPPYCLAW_HOME) { $env:HAPPYCLAW_HOME } elseif ((Test-Path (Join-Path $HOME ".happyclaw")) -or -not (Test-Path (Join-Path $HOME ".octop"))) { Join-Path $HOME ".happyclaw" } else { Join-Path $HOME ".octop" }
 $RealBin = Join-Path $HappyclawHome "venv\Scripts\happyclaw.exe"
 if (-not (Test-Path $RealBin)) {
     Write-Error "HappyClaw environment not found at $HappyclawHome\venv"
@@ -321,10 +321,12 @@ if (-not (Test-Path $RealBin)) {
 & $RealBin @args
 '@ | Set-Content -Path $wrapperPs1 -Encoding UTF8
 
-$cmdWrapper = Join-Path $HappyclawBin "octop.cmd"
+$cmdWrapper = Join-Path $HappyclawBin "happyclaw.cmd"
 @'
 @echo off
 set "HAPPYCLAW_HOME=%HAPPYCLAW_HOME%"
+if "%HAPPYCLAW_HOME%"=="" if exist "%USERPROFILE%\.happyclaw" set "HAPPYCLAW_HOME=%USERPROFILE%\.happyclaw"
+if "%HAPPYCLAW_HOME%"=="" if not exist "%USERPROFILE%\.octop" set "HAPPYCLAW_HOME=%USERPROFILE%\.happyclaw"
 if "%HAPPYCLAW_HOME%"=="" set "HAPPYCLAW_HOME=%USERPROFILE%\.octop"
 set "REAL_BIN=%HAPPYCLAW_HOME%\venv\Scripts\happyclaw.exe"
 if not exist "%REAL_BIN%" (
@@ -369,7 +371,7 @@ if ($script:ConsoleAvailable) {
     Write-Host "  Web UI:            not available" -ForegroundColor Yellow
 }
 Write-Host ""
-Write-Host "If 'octop' is not found in this session, run:"
+Write-Host "If 'happyclaw' is not found in this session, run:"
 Write-Host "  `$env:Path = `"$targetPath;`$env:Path`"" -ForegroundColor White
 if ($pathSavedForNewSessions) {
     Write-Host "(Saved to User PATH; new terminals pick it up automatically.)"

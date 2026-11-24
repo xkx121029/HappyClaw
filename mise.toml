@@ -2,7 +2,7 @@
 #
 # python 3.12  — CI matrix, Makefile `uv venv --python 3.12`
 # node 20      — docker/Dockerfile, release.yml, fnos-build-fpk.yml,
-#                 octop-desktop.yml, dashboard/ (its lockfile is npm 10)
+#                 happyclaw-desktop.yml, dashboard/ (its lockfile is npm 10)
 #                 desktop/src/ overrides this to Node 24 in its own
 #                 mise.toml — `node --test` type stripping needs >=22.6 there,
 #                 and Node 24 is the only place it is used.

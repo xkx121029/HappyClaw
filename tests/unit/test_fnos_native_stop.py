@@ -73,12 +73,12 @@ def _direct_children(pid: int) -> list[int]:
 # pgrep/ss walk all of /proc; a crowded host (zombies, leftover suites) makes them stall.
 # After sourcing common.sh, override tree-kill to read /proc/<pid>/task/<pid>/children.
 _FAST_KILL_TREE = r"""
-octop_kill_pid_tree() {
+happyclaw_kill_pid_tree() {
   local pid="${1:-}" sig="${2:-TERM}" child
   [ -n "$pid" ] || return 0
   if [ -r "/proc/${pid}/task/${pid}/children" ]; then
     for child in $(cat "/proc/${pid}/task/${pid}/children" 2>/dev/null || true); do
-      octop_kill_pid_tree "$child" "$sig"
+      happyclaw_kill_pid_tree "$child" "$sig"
     done
   fi
   kill -s "$sig" "$pid" 2>/dev/null || true
@@ -86,7 +86,7 @@ octop_kill_pid_tree() {
 """
 
 
-def _octop_native_user_exists() -> bool:
+def _happyclaw_native_user_exists() -> bool:
     return (
         subprocess.call(
             ["id", "octop-native"],
@@ -99,8 +99,8 @@ def _octop_native_user_exists() -> bool:
 
 def test_native_main_stop_releases_listen_port() -> None:
     text = (FNOS_NATIVE / "cmd" / "main").read_text(encoding="utf-8")
-    assert "free_octop_ports" in text
-    assert "octop_kill_pid_tree" in text
+    assert "free_happyclaw_ports" in text
+    assert "happyclaw_kill_pid_tree" in text
     assert "run_as_service_bg" in text
     assert "setsid" in text
     assert "_abort_start" in text
@@ -110,7 +110,7 @@ def test_native_main_stop_releases_listen_port() -> None:
         text.index("_abort_start_and_exit() {") : text.index("trap '_abort_start_and_exit'")
     ]
     assert "exit 1" in abort_fn
-    assert 'printf "%s" "$octop_pid" > "${PID_FILE}"' in text
+    assert 'printf "%s" "$happyclaw_pid" > "${PID_FILE}"' in text
     helpers = COMMON_SH.read_text(encoding="utf-8")
     assert "pgrep -P" in helpers
     assert "ss -ltnp" in helpers
@@ -126,7 +126,7 @@ def test_native_manifest_does_not_block_start_on_stale_port() -> None:
 
 
 @posix_only
-def test_free_octop_ports_kills_listener(tmp_path: Path) -> None:
+def test_free_happyclaw_ports_kills_listener(tmp_path: Path) -> None:
     port = _free_tcp_port()
     proc = subprocess.Popen(["python3", "-c", _listen_script(port)])
     try:
@@ -136,10 +136,10 @@ set -euo pipefail
 source "{COMMON_SH}"
 {_FAST_KILL_TREE}
 export TRIM_APPDEST="{tmp_path / "no-such-octop-app"}"
-export TRIM_TEMP_LOGFILE="{tmp_path / "octop.log"}"
-octop_port_pids() {{ printf '%s' '{proc.pid}'; }}
-octop_fpk_native_run_pids() {{ :; }}
-free_octop_ports {port}
+export TRIM_TEMP_LOGFILE="{tmp_path / "happyclaw.log"}"
+happyclaw_port_pids() {{ printf '%s' '{proc.pid}'; }}
+happyclaw_fpk_native_run_pids() {{ :; }}
+free_happyclaw_ports {port}
 """
         subprocess.run(["bash", "-c", script], check=True, timeout=15)
         assert _wait_until(lambda: not _port_open(port)), f"port {port} still listening"
@@ -151,8 +151,8 @@ free_octop_ports {port}
 
 
 @linux_proc
-def test_free_octop_ports_kills_orphan_child(tmp_path: Path) -> None:
-    """Killing only the wrapper (old stop) leaves the listener; free_octop_ports must catch it."""
+def test_free_happyclaw_ports_kills_orphan_child(tmp_path: Path) -> None:
+    """Killing only the wrapper (old stop) leaves the listener; free_happyclaw_ports must catch it."""
     port = _free_tcp_port()
     wrapper = _start_wrapper_listener(port)
     try:
@@ -168,10 +168,10 @@ set -euo pipefail
 source "{COMMON_SH}"
 {_FAST_KILL_TREE}
 export TRIM_APPDEST="{tmp_path / "no-such-octop-app"}"
-export TRIM_TEMP_LOGFILE="{tmp_path / "octop.log"}"
-octop_port_pids() {{ printf '%s' '{orphan_pid}'; }}
-octop_fpk_native_run_pids() {{ :; }}
-free_octop_ports {port}
+export TRIM_TEMP_LOGFILE="{tmp_path / "happyclaw.log"}"
+happyclaw_port_pids() {{ printf '%s' '{orphan_pid}'; }}
+happyclaw_fpk_native_run_pids() {{ :; }}
+free_happyclaw_ports {port}
 """
         subprocess.run(["bash", "-c", script], check=True, timeout=15)
         assert _wait_until(lambda: not _port_open(port)), f"orphan still listening on {port}"
@@ -182,7 +182,7 @@ free_octop_ports {port}
 
 
 @linux_proc
-def test_octop_kill_pid_tree_stops_child_listener() -> None:
+def test_happyclaw_kill_pid_tree_stops_child_listener() -> None:
     port = _free_tcp_port()
     wrapper = _start_wrapper_listener(port)
     try:
@@ -191,10 +191,10 @@ def test_octop_kill_pid_tree_stops_child_listener() -> None:
 set -euo pipefail
 source "{COMMON_SH}"
 {_FAST_KILL_TREE}
-octop_kill_pid_tree {wrapper.pid} TERM
+happyclaw_kill_pid_tree {wrapper.pid} TERM
 sleep 1
 if kill -0 {wrapper.pid} 2>/dev/null; then
-  octop_kill_pid_tree {wrapper.pid} KILL
+  happyclaw_kill_pid_tree {wrapper.pid} KILL
 fi
 """
         subprocess.run(["bash", "-c", script], check=True, timeout=15)
@@ -210,7 +210,7 @@ fi
 def test_native_main_stop_frees_port_after_wrapper_start(tmp_path: Path) -> None:
     if shutil.which("python3") is None:
         pytest.skip("python3 required")
-    if _octop_native_user_exists() and os.geteuid() != 0:
+    if _happyclaw_native_user_exists() and os.geteuid() != 0:
         pytest.skip("octop-native 存在且当前非 root，runuser 后无法在测试里停掉服务")
     port = _free_tcp_port()
     appdest = tmp_path / "app"
@@ -226,9 +226,9 @@ def test_native_main_stop_frees_port_after_wrapper_start(tmp_path: Path) -> None
     shutil.copy(FNOS_NATIVE / "cmd" / "main", cmd / "main")
     shutil.copy(COMMON_SH, cmd / "common.sh")
     (cmd / "main").chmod(0o755)
-    # stop 末尾的 free_octop_ports 会跑 ss / pgrep -f；本用例只验证 pid 文件杀树后端口释放。
+    # stop 末尾的 free_happyclaw_ports 会跑 ss / pgrep -f；本用例只验证 pid 文件杀树后端口释放。
     with (cmd / "common.sh").open("a", encoding="utf-8") as fh:
-        fh.write("\nfree_octop_ports() { return 0; }\n")
+        fh.write("\nfree_happyclaw_ports() { return 0; }\n")
         fh.write(_FAST_KILL_TREE)
     launcher = bindir / "octop"
     launcher.write_text(
@@ -319,12 +319,12 @@ def test_native_main_start_term_cleans_unready_child(tmp_path: Path) -> None:
         "#!/bin/bash\n"
         "set -uo pipefail\n"
         "sleep 120 &\n"
-        "octop_pid=$!\n"
-        f'printf "%s" "$octop_pid" > "{pid_file}"\n'
+        "happyclaw_pid=$!\n"
+        f'printf "%s" "$happyclaw_pid" > "{pid_file}"\n'
         "_abort_start() {\n"
         "  trap - INT TERM HUP\n"
-        '  kill -TERM "$octop_pid" 2>/dev/null || true\n'
-        '  kill -KILL "$octop_pid" 2>/dev/null || true\n'
+        '  kill -TERM "$happyclaw_pid" 2>/dev/null || true\n'
+        '  kill -KILL "$happyclaw_pid" 2>/dev/null || true\n'
         f'  rm -f "{pid_file}"\n'
         "}\n"
         "_abort_start_and_exit() {\n"
@@ -372,7 +372,7 @@ def test_native_main_start_term_cleans_unready_child(tmp_path: Path) -> None:
 
 
 @posix_only
-def test_octop_fpk_native_run_pids_and_sweep(tmp_path: Path) -> None:
+def test_happyclaw_fpk_native_run_pids_and_sweep(tmp_path: Path) -> None:
     env = {**os.environ, "HAPPYCLAW_INSTALL_MODE": "fpk-native"}
     proc = subprocess.Popen(
         ["python3", "-c", "import time; time.sleep(120)  # happyclaw.cli.main run"],
@@ -384,12 +384,12 @@ set -euo pipefail
 source "{COMMON_SH}"
 {_FAST_KILL_TREE}
 export TRIM_APPDEST="{tmp_path}"
-export TRIM_TEMP_LOGFILE="{tmp_path / "octop.log"}"
-octop_fpk_native_run_pids() {{ printf '%s\\n' '{proc.pid}'; }}
-found="$(octop_fpk_native_run_pids)"
+export TRIM_TEMP_LOGFILE="{tmp_path / "happyclaw.log"}"
+happyclaw_fpk_native_run_pids() {{ printf '%s\\n' '{proc.pid}'; }}
+found="$(happyclaw_fpk_native_run_pids)"
 echo "$found" | grep -qx "{proc.pid}"
-octop_kill_pid_tree {proc.pid} TERM
-octop_wait_pids_gone 15 {proc.pid} || octop_kill_pid_tree {proc.pid} KILL
+happyclaw_kill_pid_tree {proc.pid} TERM
+happyclaw_wait_pids_gone 15 {proc.pid} || happyclaw_kill_pid_tree {proc.pid} KILL
 """
         subprocess.run(["bash", "-c", script], check=True, timeout=15)
         assert _wait_until(lambda: proc.poll() is not None), "fpk-native run was not swept"

@@ -183,7 +183,7 @@ export class WsRelay {
       "Connection: Upgrade",
       "Upgrade: websocket",
       `Origin: http://127.0.0.1:${port}`,
-      "x-octop-proxy: 1",
+      "x-happyclaw-proxy: 1",
     ];
     for (const [header, canonical] of FORWARD_REQUEST_HEADERS) {
       const value = req.headers[header];

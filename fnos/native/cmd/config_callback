@@ -26,7 +26,7 @@ mkdir -p "$DATA_DIR"
 WIZARD_TEMPLATE="$APPDEST/wizard/config.template"
 WIZARD_DIR="$(dirname "$APPDEST")/wizard"
 [ -f "$WIZARD_TEMPLATE" ] || WIZARD_TEMPLATE="${APPDEST}/../wizard/config"
-octop_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
+happyclaw_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
 
 fix_ownership_and_perms "$PKGVAR" "$ENV_FILE"
 exit 0
