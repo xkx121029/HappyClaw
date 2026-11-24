@@ -110,9 +110,13 @@ def _root_unreachable(root: Any, workspace_dir: Path) -> bool:
 def _drive_root(value: Any) -> str:
     """``"c:"`` for a bare drive root (``C:/``, ``C:\\``, ``C:``); else ``""``."""
     text = str(value or "").strip().replace("\\", "/")
-    if len(text) in (2, 3) and text[0].isalpha() and text[1] == ":":
-        if len(text) == 2 or text[2] == "/":
-            return text[:2].lower()
+    if (
+        len(text) in (2, 3)
+        and text[0].isalpha()
+        and text[1] == ":"
+        and (len(text) == 2 or text[2] == "/")
+    ):
+        return text[:2].lower()
     return ""
 
 

@@ -170,9 +170,10 @@ class SessionLog:
     def _resolve_generation(self) -> int:
         manifest_generation = self._read_manifest_generation()
         existing = self._existing_generation_numbers()
-        if manifest_generation is not None:
-            if manifest_generation in existing or not existing:
-                return manifest_generation
+        if manifest_generation is not None and (
+            manifest_generation in existing or not existing
+        ):
+            return manifest_generation
         if existing:
             return max(existing)
         return 0

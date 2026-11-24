@@ -21,6 +21,7 @@ risk, decision, reason); approval channel failures are recorded too.
 
 from __future__ import annotations
 
+import contextlib
 import inspect
 import json
 from collections.abc import Callable, Mapping, Sequence
@@ -704,11 +705,9 @@ class ToolGuardrail:
             sandbox_checked=backing.checked,
             reason=reason,
         )
-        try:
-            self.ledger.append(record)
-        except Exception:
+        with contextlib.suppress(Exception):
             # An audit sink failure must not change the security decision.
-            pass
+            self.ledger.append(record)
 
 
 def _approval_reason(tool_name: str, risk: RiskAssessment) -> str:

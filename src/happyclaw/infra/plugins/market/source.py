@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
@@ -212,10 +213,8 @@ def _flatten_into(source_root: Path, dest: Path) -> Path:
         if target.exists():
             raise PayloadError(f"archive has a duplicate path: {child.name}")
         os.replace(child, target)
-    try:
+    with contextlib.suppress(OSError):
         source_root.rmdir()
-    except OSError:
-        pass
     return dest
 
 

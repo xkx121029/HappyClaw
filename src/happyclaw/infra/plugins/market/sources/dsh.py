@@ -307,9 +307,10 @@ def _artifact(
             raise IndexFormatError("git url must not point at a tarball", path=f"{path}.url")
         if not isinstance(commit, str) or _HEX40_RE.fullmatch(commit) is None:
             raise IndexFormatError("git commit must be a 40-char lowercase sha", path=f"{path}.commit")
-        if sub_path is not None:
-            if not isinstance(sub_path, str) or not _valid_sub_path(sub_path):
-                raise IndexFormatError("git path is not a relative directory", path=f"{path}.path")
+        if sub_path is not None and (
+            not isinstance(sub_path, str) or not _valid_sub_path(sub_path)
+        ):
+            raise IndexFormatError("git path is not a relative directory", path=f"{path}.path")
         return (
             Artifact(url=_git_archive_url(url, commit), media_type="application/zip"),
             {"git_url": url, "git_commit": commit, "git_path": sub_path},

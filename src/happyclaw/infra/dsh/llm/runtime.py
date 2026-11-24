@@ -146,21 +146,25 @@ class LlmRuntime:
                             yield drift
                         continue
 
-                    if isinstance(chunk, FinishChunk):
-                        if chunk.reason in (FinishReason.STOP, FinishReason.TOOL_CALLS):
-                            if not state.emitted:
-                                raise ProviderFailure(
-                                    FailureCode.EMPTY_RESPONSE,
-                                    "provider finished without any content",
-                                )
+                    if isinstance(chunk, FinishChunk) and chunk.reason in (
+                        FinishReason.STOP,
+                        FinishReason.TOOL_CALLS,
+                    ):
+                        if not state.emitted:
+                            raise ProviderFailure(
+                                FailureCode.EMPTY_RESPONSE,
+                                "provider finished without any content",
+                            )
                         yield chunk
                         return
 
-                    if isinstance(chunk, (TextDelta, ReasoningDelta)) and chunk.text:
+                    if (
+                        isinstance(chunk, (TextDelta, ReasoningDelta)) and chunk.text
+                    ) or (
+                        isinstance(chunk, ToolCallDelta)
+                        and (chunk.name or chunk.arguments_delta)
+                    ):
                         state.emitted = True
-                    elif isinstance(chunk, ToolCallDelta):
-                        if chunk.name or chunk.arguments_delta:
-                            state.emitted = True
                     yield chunk
 
             except ProviderFailure as failure:

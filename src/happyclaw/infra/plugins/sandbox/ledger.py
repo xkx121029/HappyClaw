@@ -703,9 +703,7 @@ def _in_window(
         moment = moment.replace(tzinfo=UTC)
     if since is not None and moment < since:
         return False
-    if until is not None and moment > until:
-        return False
-    return True
+    return until is None or moment <= until
 
 
 def _sorted_counts(counts: Mapping[str, int]) -> dict[str, int]:

@@ -521,9 +521,11 @@ def test_ledger_write_failure_keeps_denial_and_original_code(
     ledger = _BrokenLedger()
     sandbox = _sandbox(workspace, permissions={"fs.write"}, ledger=ledger)
 
-    with caplog.at_level(logging.WARNING, logger="happyclaw.infra.plugins.sandbox.gate"):
-        with pytest.raises(SandboxDeniedError) as denied:
-            sandbox.resolve_path("write_note", SandboxCapability.FS_WRITE, "../escape.txt")
+    with (
+        caplog.at_level(logging.WARNING, logger="happyclaw.infra.plugins.sandbox.gate"),
+        pytest.raises(SandboxDeniedError) as denied,
+    ):
+        sandbox.resolve_path("write_note", SandboxCapability.FS_WRITE, "../escape.txt")
 
     assert denied.value.code is SandboxErrorCode.PATH_OUTSIDE_WORKSPACE
     assert ledger.calls == 1

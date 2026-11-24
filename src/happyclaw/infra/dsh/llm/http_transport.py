@@ -197,21 +197,20 @@ class _HttpStream:
                 trust_env=self._trust_env,
                 follow_redirects=False,
             )
-            async with client:
-                async with client.stream(
-                    "POST", self._url, json=self._payload, headers=self._headers
-                ) as response:
-                    if response.status_code >= 400:
-                        body = (await response.aread()).decode("utf-8", "replace")
-                        raise TransportError(
-                            f"{self._protocol} request failed with HTTP {response.status_code}",
-                            status=response.status_code,
-                            retry_after_s=_retry_after(response.headers.get("retry-after")),
-                            request_id=response.headers.get("x-request-id"),
-                            body=body,
-                        )
-                    async for frame in _iter_sse(response):
-                        yield frame
+            async with client, client.stream(
+                "POST", self._url, json=self._payload, headers=self._headers
+            ) as response:
+                if response.status_code >= 400:
+                    body = (await response.aread()).decode("utf-8", "replace")
+                    raise TransportError(
+                        f"{self._protocol} request failed with HTTP {response.status_code}",
+                        status=response.status_code,
+                        retry_after_s=_retry_after(response.headers.get("retry-after")),
+                        request_id=response.headers.get("x-request-id"),
+                        body=body,
+                    )
+                async for frame in _iter_sse(response):
+                    yield frame
         except httpx.TimeoutException as exc:
             phase = (
                 "connect"

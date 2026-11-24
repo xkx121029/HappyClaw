@@ -16,6 +16,7 @@ verification; the live path is the processor hook.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import logging
@@ -346,10 +347,8 @@ def _normalize_tool_calls(raw: Any) -> list[dict[str, Any]]:
         function = function if isinstance(function, dict) else {}
         arguments = call.get("args", call.get("arguments", function.get("arguments")))
         if isinstance(arguments, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 arguments = json.loads(arguments)
-            except json.JSONDecodeError:
-                pass
         normalized.append(
             {
                 "arguments": arguments,
