@@ -101,7 +101,11 @@ jobs:
 
       - name: Test
         run: npx vitest run
-        timeout-minutes: 40
+        # Generous on purpose. On the Windows dev box a single hook test needs
+        # 346s and passes, so the default 5s per-test timeout cascades into a
+        # wall of "Cannot read properties of null" failures that say nothing
+        # about the code. The first CI run is the first trustworthy reading.
+        timeout-minutes: 45
 
   quality:
     name: "Python ${{ matrix.python-version }}"
