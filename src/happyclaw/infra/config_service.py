@@ -48,7 +48,7 @@ class LocalConfigService:
         The file is rewritten via ``HappyclawConfig``'s own serialization so the
         rest of the document stays intact.
         """
-        config = self.load()
+        self.load()  # parse first: a corrupt config.json must fail before we rewrite it
         raw = json.loads(self._path.read_text(encoding="utf-8"))
         raw["backup"] = asdict(backup)
         self._path.write_text(

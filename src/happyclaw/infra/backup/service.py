@@ -143,7 +143,7 @@ class BackupService:
         # ``update_server_backup_config`` needs the server object to reschedule
         # the cron job; the router passes it in via a wrapper.  We only validate
         # and return the new payload here.
-        backup = settings.to_config()
+        settings.to_config()
         return {"ok": True, **self.get_auto_settings()}
 
     # -- create / export --------------------------------------------------
