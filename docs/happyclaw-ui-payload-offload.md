@@ -56,7 +56,7 @@
 
 ### 4.1 新增中间件 `HappyclawUiOffloadMiddleware`
 
-位置：`src/happyclaw/infra/agents/middleware/octop_ui_offload.py`。实现 `awrap_tool_call`（async 版，F1）：
+位置：`src/happyclaw/infra/agents/middleware/happyclaw_ui_offload.py`。实现 `awrap_tool_call`（async 版，F1）：
 
 1. `result = await handler(request)`；非 ToolMessage（含 Command）→ 原样返回；
 2. 剥离条件（全部满足，任一不满足原样返回）：
@@ -127,7 +127,7 @@ F19 已论证：artifact 不进模型请求（F3），fork 只复制 checkpoint 
 ## 6. 测试计划
 
 后端：
-- 中间件单元测试（`tests/unit/agents/test_octop_ui_offload.py`）：剥离 / 小 payload 不动 / 非 JSON 不动 / 无 `octop_ui` 不动 / `data` 为空不动 / 含 `file://` 不动 / 坏 JSON 不动 / Command 结果不动 / 原地修改保留 `id`/`tool_call_id`/`name`/`status` / 异常吞掉并计数；
+- 中间件单元测试（`tests/unit/agents/test_happyclaw_ui_offload.py`）：剥离 / 小 payload 不动 / 非 JSON 不动 / 无 `octop_ui` 不动 / `data` 为空不动 / 含 `file://` 不动 / 坏 JSON 不动 / Command 结果不动 / 原地修改保留 `id`/`tool_call_id`/`name`/`status` / 异常吞掉并计数；
 - `serialize.py` 含 artifact 的序列化用例；
 - 集成：agent stream 含 octop_ui 大 payload → WS 帧 content 已压缩且 artifact 在场；历史 API 返回 artifact；fork 后新线程首调不爆量。
 

@@ -1,4 +1,4 @@
-"""Fake octop backend for launcher smoke test: /api/health with delayed agents."""
+"""Fake happyclaw backend for launcher smoke test: /api/health with delayed agents."""
 import http.server, json, os, time
 
 START = time.monotonic()

@@ -42,7 +42,7 @@ export function normalizeThreadArtifacts(
   return out;
 }
 
-export interface OctopThread {
+export interface HappyclawThread {
   thread_id: string;
   title: string | null;
   channel_type: string;
@@ -73,7 +73,7 @@ export interface OctopThread {
   owned?: boolean;
 }
 
-export interface OctopThreadHistory {
+export interface HappyclawThreadHistory {
   thread_id: string;
   messages: Array<{
     role: string;
@@ -118,7 +118,7 @@ export interface ThreadDeleteResult {
   scheduled?: boolean;
 }
 
-export interface OctopThreadPatch {
+export interface HappyclawThreadPatch {
   title?: string;
   pinned?: boolean;
   contributed?: boolean;
@@ -165,9 +165,9 @@ export interface HistoryMigrationStatus {
 
 export const CHAT_HISTORY_PAGE_SIZE = 25;
 
-export const octopThreadsApi = {
+export const happyclawThreadsApi = {
   list: (agentId: string, limit = 50) =>
-    request<OctopThread[]>(
+    request<HappyclawThread[]>(
       `/agents/${encodeURIComponent(agentId)}/threads?limit=${limit}`,
     ),
 
@@ -197,7 +197,7 @@ export const octopThreadsApi = {
   ) => {
     const limit = params.limit ?? CHAT_HISTORY_PAGE_SIZE;
     const offset = params.offset ?? 0;
-    return request<OctopThreadHistory>(
+    return request<HappyclawThreadHistory>(
       `/agents/${encodeURIComponent(agentId)}/threads/${encodeURIComponent(
         threadId,
       )}/history?limit=${limit}&offset=${offset}${
@@ -238,9 +238,9 @@ export const octopThreadsApi = {
   },
 
   rename: (agentId: string, threadId: string, title: string) =>
-    octopThreadsApi.patch(agentId, threadId, { title }),
+    happyclawThreadsApi.patch(agentId, threadId, { title }),
 
-  patch: (agentId: string, threadId: string, body: OctopThreadPatch) =>
+  patch: (agentId: string, threadId: string, body: HappyclawThreadPatch) =>
     request<{
       thread_id: string;
       title: string | null;

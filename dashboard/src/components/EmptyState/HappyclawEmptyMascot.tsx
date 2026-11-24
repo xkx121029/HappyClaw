@@ -1,9 +1,9 @@
 import cx from "classnames";
 
-import { OCTOP_EMPTY_MASCOT_SRC } from "../../assets/mascot";
+import { HAPPYCLAW_EMPTY_MASCOT_SRC } from "../../assets/mascot";
 import styles from "./EmptyState.module.less";
 
-interface OctopEmptyMascotProps {
+interface HappyclawEmptyMascotProps {
   className?: string;
   /** Square edge in px; default 160. */
   size?: number;
@@ -14,13 +14,13 @@ interface OctopEmptyMascotProps {
  * Use inside custom empty UIs or pass as ``EmptyState`` icon /
  * antd ``Empty`` ``image``.
  */
-export function OctopEmptyMascot({
+export function HappyclawEmptyMascot({
   className,
   size = 160,
-}: OctopEmptyMascotProps) {
+}: HappyclawEmptyMascotProps) {
   return (
     <img
-      src={OCTOP_EMPTY_MASCOT_SRC}
+      src={HAPPYCLAW_EMPTY_MASCOT_SRC}
       alt=""
       draggable={false}
       className={cx(styles.mascot, className)}

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 pub struct Config {
     pub help: bool,
-    /// Backend executable, e.g. `octop` or `path/to/octop.exe`.
+    /// Backend executable, e.g. `happyclaw` or `path/to/happyclaw.exe`.
     pub backend: String,
     /// Extra args forwarded verbatim to the backend (e.g. `run --port 8097`).
     pub backend_args: Vec<String>,
@@ -21,7 +21,7 @@ impl Config {
     /// Parse argv (without the program name).
     ///
     /// Recognised launcher flags (must appear before `--`):
-    ///   - `--backend <exe>`          backend executable (default `octop`)
+    ///   - `--backend <exe>`          backend executable (default `happyclaw`)
     ///   - `--host <host>`            health-check host (default `127.0.0.1`)
     ///   - `--port <port>`            health-check port (default `8097`)
     ///   - `--health-timeout <secs>`  seconds to wait for /api/health; `0` disables
@@ -32,10 +32,10 @@ impl Config {
     ///   - `--`                       everything after is forwarded to the backend
     ///
     /// Anything not recognised before `--` is also forwarded to the backend, so
-    /// `octop-launcher run --port 8097` just works with no leading `--`.
+    /// `happyclaw-launcher run --port 8097` just works with no leading `--`.
     pub fn parse(args: &[String]) -> Result<Self, String> {
         let mut help = false;
-        let mut backend = "octop".to_string();
+        let mut backend = "happyclaw".to_string();
         let mut host = "127.0.0.1".to_string();
         let mut port: u16 = 8097;
         let mut health_timeout_secs: Option<u64> = Some(90);
@@ -128,13 +128,13 @@ impl Config {
     pub fn print_usage() {
         eprintln!(
             "\
-octop-launcher — health-gated process launcher for Octop
+happyclaw-launcher — health-gated process launcher for Octop
 
 USAGE:
-    octop-launcher [LAUNCHER OPTIONS] [--] [BACKEND ARGS...]
+    happyclaw-launcher [LAUNCHER OPTIONS] [--] [BACKEND ARGS...]
 
 LAUNCHER OPTIONS (before `--`):
-    --backend <exe>          Backend executable (default: octop)
+    --backend <exe>          Backend executable (default: happyclaw)
     --host <host>            Health-check host (default: 127.0.0.1)
     --port <port>            Health-check port (default: 8097)
     --health-timeout <secs>  Wait seconds for /api/health; 0 disables (default: 90)
@@ -146,8 +146,8 @@ LAUNCHER OPTIONS (before `--`):
 Everything else is forwarded to the backend verbatim.
 
 EXAMPLE:
-    octop-launcher --port 8097 -- run --port 8097
-    octop-launcher run --port 8097 --host 127.0.0.1"
+    happyclaw-launcher --port 8097 -- run --port 8097
+    happyclaw-launcher run --port 8097 --host 127.0.0.1"
         );
     }
 }
@@ -164,7 +164,7 @@ mod tests {
     fn defaults() {
         let c = Config::parse(&[]).unwrap();
         assert!(!c.help);
-        assert_eq!(c.backend, "octop");
+        assert_eq!(c.backend, "happyclaw");
         assert_eq!(c.health_url(), "http://127.0.0.1:8097/api/health");
         assert_eq!(c.health_timeout_secs, Some(90));
         assert!(c.chat_ready);
@@ -182,18 +182,18 @@ mod tests {
     #[test]
     fn parses_launcher_flags() {
         let c = Config::parse(&a(&[
-            "--backend", "octop.exe",
+            "--backend", "happyclaw.exe",
             "--host", "0.0.0.0",
             "--port", "9000",
             "--health-timeout", "30",
-            "--workdir", "E:/octop",
+            "--workdir", "E:/happyclaw",
         ]))
         .unwrap();
-        assert_eq!(c.backend, "octop.exe");
+        assert_eq!(c.backend, "happyclaw.exe");
         assert_eq!(c.host, "0.0.0.0");
         assert_eq!(c.port, 9000);
         assert_eq!(c.health_timeout_secs, Some(30));
-        assert_eq!(c.workdir, Some(PathBuf::from("E:/octop")));
+        assert_eq!(c.workdir, Some(PathBuf::from("E:/happyclaw")));
         assert_eq!(c.health_url(), "http://0.0.0.0:9000/api/health");
     }
 

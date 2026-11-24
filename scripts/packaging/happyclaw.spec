@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec — standalone (onedir) Octop backend.
+"""PyInstaller spec — standalone (onedir) HappyClaw backend.
 
-Produced by ``make package-backend``; output lands in ``dist/backend/octop/``.
+Produced by ``make package-backend``; output lands in ``dist/backend/happyclaw/``.
 Nothing is written into the source tree: PyInstaller's work directory is
 ``build/pyinstaller`` (both ``build/`` and ``dist/`` are gitignored).
 
@@ -17,9 +17,9 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 REPO_ROOT = Path(SPECPATH).resolve().parents[2]  # type: ignore[name-defined]
 SRC = REPO_ROOT / "src"
-ENTRY = Path(SPECPATH) / "entry_octop.py"  # type: ignore[name-defined]
+ENTRY = Path(SPECPATH) / "entry_happyclaw.py"  # type: ignore[name-defined]
 
-hiddenimports = collect_submodules("octop")
+hiddenimports = collect_submodules("happyclaw")
 # Imported lazily/via plugin registries, so static analysis can miss them.
 hiddenimports += [
     "tiktoken_ext",
@@ -29,7 +29,7 @@ hiddenimports += [
 ]
 
 datas = []
-for package in ("octop", "happyclaw_harness", "happyclaw_browser", "happyclaw_gateway", "happyclaw_memory"):
+for package in ("happyclaw", "happyclaw_harness", "happyclaw_browser", "happyclaw_gateway", "happyclaw_memory"):
     try:
         datas += collect_data_files(package)
     except Exception as exc:  # package missing or ships no data files
@@ -106,7 +106,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="octop",
+    name="happyclaw",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -126,5 +126,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="octop",
+    name="happyclaw",
 )

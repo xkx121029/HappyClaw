@@ -1,6 +1,6 @@
 import { request, requestUpload } from "../request";
 
-export const octopAgentsApi = {
+export const happyclawAgentsApi = {
   markRead: (agentId: string) =>
     request<void>(`/agents/${encodeURIComponent(agentId)}/read`, {
       method: "POST",

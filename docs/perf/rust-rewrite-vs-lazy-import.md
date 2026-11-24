@@ -182,7 +182,7 @@ jwt/cryptography 栈」与「tokens 签名/解码往返 + 篡改拒绝仍正常�
 
 ## 5. 下一步（方案 2）
 
-Rust 启动器 `tools/octop-launcher`：极速起进程 + 健康检查前置 + 后台预热，让 dashboard splash 更早切换，对外感知的「启动时间」进一步缩短。见后续提交。
+Rust 启动器 `tools/happyclaw-launcher`：极速起进程 + 健康检查前置 + 后台预热，让 dashboard splash 更早切换，对外感知的「启动时间」进一步缩短。见后续提交。
 
 ## 6. 复现
 

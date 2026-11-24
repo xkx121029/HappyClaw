@@ -1,7 +1,7 @@
 //! Thin process launcher for Octop.
 //!
 //! Responsibilities (kept deliberately small):
-//!   1. Spawn the real backend (`octop run ...`) as a child process.
+//!   1. Spawn the real backend (`happyclaw run ...`) as a child process.
 //!   2. Poll `GET /api/health` until the backend is ready, then emit a
 //!      machine-readable readiness line to stdout (used by the desktop shell
 //!      / dashboard splash to switch away from the loading screen ASAP).
@@ -25,7 +25,7 @@ fn main() -> ExitCode {
     let cfg = match Config::parse(&args) {
         Ok(c) => c,
         Err(msg) => {
-            eprintln!("octop-launcher: {msg}");
+            eprintln!("happyclaw-launcher: {msg}");
             Config::print_usage();
             return ExitCode::from(2);
         }
@@ -39,7 +39,7 @@ fn main() -> ExitCode {
     match run(cfg) {
         Ok(code) => ExitCode::from(code),
         Err(msg) => {
-            eprintln!("octop-launcher: {msg}");
+            eprintln!("happyclaw-launcher: {msg}");
             ExitCode::from(1)
         }
     }
@@ -61,7 +61,7 @@ fn run(cfg: Config) -> Result<u8, String> {
             }
             Err(_) => {
                 eprintln!(
-                    "octop-launcher: health check timed out after {timeout}s; \
+                    "happyclaw-launcher: health check timed out after {timeout}s; \
                      backend may still be booting (pid={pid})"
                 );
                 // Do not kill the child: a slow boot is not a failed boot.

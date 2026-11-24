@@ -1,9 +1,9 @@
-"""End-to-end smoke test for octop-launcher health gating."""
+"""End-to-end smoke test for happyclaw-launcher health gating."""
 import os, subprocess, sys, time, signal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
-LAUNCHER = os.path.join(HERE, "target", "release", "octop-launcher.exe")
+LAUNCHER = os.path.join(HERE, "target", "release", "happyclaw-launcher.exe")
 FAKE = os.path.join(HERE, "smoke_backend.py")
 PORT = 18097
 
