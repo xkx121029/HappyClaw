@@ -19,7 +19,7 @@ const stable = {
     mac_arm: {
       name: "Octop.dmg",
       ext: "dmg",
-      url: `${RELEASE_ORIGIN}/v1.0.2/Octop-desktop-darwin-arm64-1.0.2.dmg`,
+      url: `${RELEASE_ORIGIN}/v1.0.2/HappyClaw-desktop-darwin-arm64-1.0.2.dmg`,
     },
   },
 };
@@ -30,7 +30,7 @@ const beta = {
     mac_arm: {
       name: "Octop.dmg",
       ext: "dmg",
-      url: `${RELEASE_ORIGIN}/v1.0.3b1/Octop-desktop-darwin-arm64-1.0.3b1.dmg`,
+      url: `${RELEASE_ORIGIN}/v1.0.3b1/HappyClaw-desktop-darwin-arm64-1.0.3b1.dmg`,
     },
   },
 };

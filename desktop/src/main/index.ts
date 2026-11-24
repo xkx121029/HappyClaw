@@ -46,7 +46,7 @@ import { DeviceCredentialStore } from "./session/device-credential";
 import { DeviceSessionClient } from "./session/device-session";
 import { safeStorageCipher, warnIfKeychainUnavailable } from "./session/safe-storage-cipher";
 import { ClientSettingsStore, defaultClientSettingsPath, isOnboardingCompletedFor } from "./storage/client-settings";
-import { readLoginShellEnv, resolveOctopHome } from "./supervisor/shell-env";
+import { readLoginShellEnv, resolveHappyclawHome } from "./supervisor/shell-env";
 import { reserveRandomPort } from "./supervisor/random-port";
 import {
   bundledDashboardDir,
@@ -173,7 +173,7 @@ let dashboardOrigin: string | null = null;
 // restart after a failed install can hand the proxy a new port.
 let backendPort = 0;
 // Single-user data root. Resolved once at boot and shared with the guide.
-let octopHomePath = "";
+let happyclawHomePath = "";
 // The Dashboard window (not the guide). Global shortcuts target it.
 let dashboardWindow: BrowserWindow | null = null;
 let onboardingWindow: BrowserWindow | null = null;
@@ -195,21 +195,21 @@ let backupInFlight = false;
 let wsRelay: WsRelay | null = null;
 // Everything needed to (re)spawn the sidecar for this launch. Two install
 // shapes are supported: a green Python runtime (`launch.py` + `runtime/`) and
-// the PyInstaller onedir build (`octop.exe` + `_internal/`).
+// the PyInstaller onedir build (`happyclaw.exe` + `_internal/`).
 type BackendLaunch =
   | {
       kind: "python";
       interpreter: string;
       launchScript: string;
       cwd: string;
-      octopHome: string;
+      happyclawHome: string;
       portableDir: string;
     }
   | {
       kind: "onedir";
       executable: string;
       cwd: string;
-      octopHome: string;
+      happyclawHome: string;
     };
 let backend: BackendLaunch | null = null;
 
@@ -263,8 +263,8 @@ async function readBundledPortable(): Promise<BundledPortable> {
   return { version: manifest.version, sha256: manifest.sha256 };
 }
 
-async function readLocalRuntime(octopHome: string): Promise<LocalRuntime> {
-  const versionPath = join(octopHome, "portable", "version.json");
+async function readLocalRuntime(happyclawHome: string): Promise<LocalRuntime> {
+  const versionPath = join(happyclawHome, "portable", "version.json");
   let version: string | null = null;
   try {
     const raw = JSON.parse(await fs.readFile(versionPath, "utf8")) as { version?: unknown };
@@ -272,7 +272,7 @@ async function readLocalRuntime(octopHome: string): Promise<LocalRuntime> {
   } catch {
     version = null;
   }
-  const interpreterPath = join(octopHome, "portable", "runtime", process.platform === "win32" ? "python.exe" : "bin/python3");
+  const interpreterPath = join(happyclawHome, "portable", "runtime", process.platform === "win32" ? "python.exe" : "bin/python3");
   let interpreterExists = false;
   try {
     // X_OK, not F_OK. A previous extract could leave `python3` as a mode-0666
@@ -308,8 +308,8 @@ async function resolveProductVersion(): Promise<string> {
   });
 }
 
-async function writeLocalVersion(octopHome: string, version: string): Promise<void> {
-  const dir = join(octopHome, "portable");
+async function writeLocalVersion(happyclawHome: string, version: string): Promise<void> {
+  const dir = join(happyclawHome, "portable");
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(join(dir, "version.json"), JSON.stringify({ version, sha256: "" }, null, 2), "utf8");
 }
@@ -323,7 +323,7 @@ function registerProtocol(staticRootDir: string): void {
       if (apiAdmissionClosed) return new Response("update in progress", { status: 503 });
       const target = toBackendUrl(backendPort, pathname, url.search);
       const headers = sanitizeForwardHeaders(request.headers);
-      headers["x-octop-proxy"] = "1";
+      headers["x-happyclaw-proxy"] = "1";
       return net.fetch(target, {
         method: request.method,
         headers,
@@ -412,7 +412,7 @@ async function showShellError(
 
 /** Temp staging area for installers — never inside HAPPYCLAW_HOME (user data). */
 function updateDownloadDir(): string {
-  return join(app.getPath("temp"), "octop-update");
+  return join(app.getPath("temp"), "happyclaw-update");
 }
 
 async function handOffToInstaller(kind: InstallerKind, path: string): Promise<void> {
@@ -514,18 +514,18 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.clientSettingsGet, (): ClientSettings => {
     const current = settingsStore.load();
     // The guide's completion is per data root, not per Electron profile.
-    return { ...current, onboardingCompleted: isOnboardingCompletedFor(current, octopHomePath) };
+    return { ...current, onboardingCompleted: isOnboardingCompletedFor(current, happyclawHomePath) };
   });
   ipcMain.handle(IPC_CHANNELS.clientSettingsSet, (_e, patch: Partial<ClientSettings>) => {
     const next = { ...patch };
     // Finishing the guide pins it to the home that finished it.
-    if (next.onboardingCompleted === true) next.onboardingHome = octopHomePath;
+    if (next.onboardingCompleted === true) next.onboardingHome = happyclawHomePath;
     const saved = settingsStore.save(next);
     closeBehavior = saved.closeBehavior;
     if (patch && Object.prototype.hasOwnProperty.call(patch, "launchAtLogin")) {
       applyAutoLaunchSetting(saved.launchAtLogin);
     }
-    return { ...saved, onboardingCompleted: isOnboardingCompletedFor(saved, octopHomePath) };
+    return { ...saved, onboardingCompleted: isOnboardingCompletedFor(saved, happyclawHomePath) };
   });
 
   // Synchronous on purpose: the renderer builds WebSocket URLs inside render
@@ -651,8 +651,8 @@ function desktopInfoData(): DesktopInfo {
   return {
     appVersion,
     platform: process.platform as DesktopInfo["platform"],
-    dataDirectory: octopHomePath,
-    backupsDirectory: octopHomePath ? join(octopHomePath, "backups") : "",
+    dataDirectory: happyclawHomePath,
+    backupsDirectory: happyclawHomePath ? join(happyclawHomePath, "backups") : "",
     logFile: desktopLog().path,
     shortcuts: {
       showWindow: shortcutDisplay(SHORTCUT_SHOW_WINDOW),
@@ -663,10 +663,10 @@ function desktopInfoData(): DesktopInfo {
 }
 
 async function openDataDirectory(): Promise<boolean> {
-  if (!octopHomePath) return false;
+  if (!happyclawHomePath) return false;
   try {
-    await fs.mkdir(octopHomePath, { recursive: true });
-    const failure = await shell.openPath(octopHomePath);
+    await fs.mkdir(happyclawHomePath, { recursive: true });
+    const failure = await shell.openPath(happyclawHomePath);
     if (failure) {
       desktopLog().warn(`open data directory failed: ${failure}`);
       return false;
@@ -741,7 +741,7 @@ function openNewSession(): void {
       const chromeTheme = resolveWindowChromeTheme(settingsStore.load().themeBackground);
       current.pathname = "/chat";
       current.hash = "";
-      current.searchParams.set("octopTheme", chromeTheme.scheme ?? chromeTheme.mode);
+      current.searchParams.set("happyclawTheme", chromeTheme.scheme ?? chromeTheme.mode);
       void win.loadURL(current.toString());
       return;
     }
@@ -774,7 +774,7 @@ async function runTrayBackup(): Promise<void> {
       await showShellError(null, "备份失败", result.message ?? "未知错误");
       return;
     }
-    const backupsDir = octopHomePath ? join(octopHomePath, "backups") : null;
+    const backupsDir = happyclawHomePath ? join(happyclawHomePath, "backups") : null;
     const detail = [
       `文件: ${result.name ?? "已生成归档"}`,
       backupsDir ? `位置: ${backupsDir}` : "",
@@ -947,7 +947,7 @@ async function startBackend(): Promise<boolean> {
   const onedir = launch.kind === "onedir";
   const port = await reserveRandomPort();
   const env = buildSidecarEnv(process.env, {
-    octopHome: launch.octopHome,
+    happyclawHome: launch.happyclawHome,
     portableDir: launch.kind === "onedir" ? launch.cwd : launch.portableDir,
     port,
     bindHost: "127.0.0.1",
@@ -1195,7 +1195,7 @@ async function continueInEarlyWindow(early: EarlyWindow, appOrigin: string): Pro
   });
   const settings = settingsStore.load();
   const chromeTheme = resolveWindowChromeTheme(settings.themeBackground);
-  if (!isOnboardingCompletedFor(settings, octopHomePath)) {
+  if (!isOnboardingCompletedFor(settings, happyclawHomePath)) {
     // After the Dashboard has painted, not over the splash. The guide is a
     // separate window, so the main UI is already usable behind it.
     win.webContents.once("did-finish-load", () => showOnboarding());
@@ -1510,15 +1510,15 @@ async function boot(): Promise<void> {
   // inherit it). The extraction dir and the child env must agree on one root.
   const loginShellEnv =
     process.platform === "win32" ? {} : await readLoginShellEnv(process.env.SHELL);
-  const octopHome = resolveOctopHome(process.env, loginShellEnv);
-  octopHomePath = octopHome;
-  installDesktopLog(octopHome);
-  desktopLog().info(`desktop ${appVersion} home=${octopHome}`);
+  const happyclawHome = resolveHappyclawHome(process.env, loginShellEnv);
+  happyclawHomePath = happyclawHome;
+  installDesktopLog(happyclawHome);
+  desktopLog().info(`desktop ${appVersion} home=${happyclawHome}`);
   // The guide used to be remembered only in Electron's userData. Stamp the data
   // root that finished it, so another HAPPYCLAW_HOME replays the guide.
   if (settings.onboardingCompleted && !settings.onboardingHome) {
     try {
-      settingsStore.save({ onboardingHome: octopHome });
+      settingsStore.save({ onboardingHome: happyclawHome });
     } catch (err) {
       desktopLog().warn(`onboarding home migration failed: ${errorMessageOf(err)}`);
     }
@@ -1550,10 +1550,10 @@ async function boot(): Promise<void> {
   // A package that still ships only the zip (not the Win/mac/Linux installers):
   // version guard (§2.3) then atomic extract into HAPPYCLAW_HOME. Must run BEFORE spawning Python.
   if (!portableDir && !onedirDir) {
-    portableDir = join(octopHome, "portable");
+    portableDir = join(happyclawHome, "portable");
     try {
       const bundled = await readBundledPortable();
-      const local = await readLocalRuntime(octopHome);
+      const local = await readLocalRuntime(happyclawHome);
       const decision = classifyRuntime(bundled, local, compareVersions);
 
       desktopLog().info(
@@ -1579,7 +1579,7 @@ async function boot(): Promise<void> {
           return;
         }
         extractPortableZip(zip, portableDir);
-        await writeLocalVersion(octopHome, bundled.version);
+        await writeLocalVersion(happyclawHome, bundled.version);
       }
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
@@ -1595,9 +1595,9 @@ async function boot(): Promise<void> {
   if (onedirDir) {
     backend = {
       kind: "onedir",
-      executable: join(onedirDir, "octop.exe"),
+      executable: join(onedirDir, "happyclaw.exe"),
       cwd: onedirDir,
-      octopHome,
+      happyclawHome,
     };
   } else {
     const interpreter = join(
@@ -1610,7 +1610,7 @@ async function boot(): Promise<void> {
       interpreter,
       launchScript: join(portableDir, "launch.py"),
       cwd: portableDir,
-      octopHome,
+      happyclawHome,
       portableDir,
     };
   }
@@ -1619,7 +1619,7 @@ async function boot(): Promise<void> {
   // database it unlocks, and only the main process ever sees it.
   const cipher = safeStorageCipher();
   await warnIfKeychainUnavailable(cipher);
-  const credentialStore = new DeviceCredentialStore(octopHome, cipher);
+  const credentialStore = new DeviceCredentialStore(happyclawHome, cipher);
   try {
     // v1 could leave a plaintext credential behind; this is the only place that
     // adopts it — re-encrypting when a keychain exists, deleting it otherwise.
@@ -1691,7 +1691,7 @@ async function boot(): Promise<void> {
 }
 
 app.whenReady().then(boot).catch((err) => {
-  desktopLog().error(`octop-desktop boot failed: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`);
+  desktopLog().error(`happyclaw-desktop boot failed: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`);
   app.quit();
 });
 
@@ -1784,7 +1784,7 @@ app.on("before-quit", (event) => {
   })()
     .catch((err) =>
       desktopLog().error(
-        `octop-desktop quit failed: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`,
+        `happyclaw-desktop quit failed: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`,
       ),
     )
     .finally(() => app.quit());
@@ -1830,7 +1830,7 @@ async function shutdownFromSignal(signal: NodeJS.Signals): Promise<void> {
     await supervisor?.stop();
   } catch (err) {
     desktopLog().error(
-      `octop-desktop shutdown failed: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`,
+      `happyclaw-desktop shutdown failed: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`,
     );
   } finally {
     // `app.exit` skips `before-quit`/`will-quit`, so nothing can keep the

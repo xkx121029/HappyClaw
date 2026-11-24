@@ -33,7 +33,7 @@ import cx from "classnames";
 
 import { ResizableTable } from "../../../components/ResizableTable";
 import StreamSetupGuide from "../../../components/StreamSetupGuide/StreamSetupGuide";
-import { OctopEmptyMascot } from "../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../components/EmptyState";
 import type {
   KnowledgeCapability,
   KnowledgeDocument,
@@ -228,7 +228,7 @@ export function KnowledgeDetailsPane({
             className={styles.emptyGuide}
             wide
             plain
-            icon={<OctopEmptyMascot />}
+            icon={<HappyclawEmptyMascot />}
             title={t("knowledgeBases.selectBaseTitle")}
             description={t("knowledgeBases.selectBaseDesc")}
             steps={[
@@ -552,7 +552,7 @@ export function KnowledgeDetailsPane({
                     className={styles.emptyGuide}
                     wide
                     plain
-                    icon={<OctopEmptyMascot />}
+                    icon={<HappyclawEmptyMascot />}
                     title={t("knowledgeBases.emptyDocumentsTitle")}
                     description={
                       canWriteSelected

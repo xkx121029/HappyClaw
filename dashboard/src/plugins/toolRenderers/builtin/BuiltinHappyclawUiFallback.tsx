@@ -19,7 +19,7 @@ const cardStyle: CSSProperties = {
  * Fallback when tool output has ``octop_ui`` but the plugin ESM has not
  * registered (or failed to load). Still shows structured ``data`` visibly.
  */
-export function BuiltinOctopUiFallback({
+export function BuiltinHappyclawUiFallback({
   toolName,
   displayName,
   data,
@@ -47,8 +47,8 @@ export function BuiltinOctopUiFallback({
 
   return (
     <div
-      className="octop-builtin-ui-fallback"
-      data-octop-plugin-ui="builtin-fallback"
+      className="happyclaw-builtin-ui-fallback"
+      data-happyclaw-plugin-ui="builtin-fallback"
       style={{
         ...cardStyle,
         ...(running
@@ -69,7 +69,7 @@ export function BuiltinOctopUiFallback({
       </div>
       {annotateMissingPlugin ? (
         <div
-          data-octop-plugin-ui-note=""
+          data-happyclaw-plugin-ui-note=""
           style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}
         >
           {t("chat.pluginUiNotInstalled")}

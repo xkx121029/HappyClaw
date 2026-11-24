@@ -54,7 +54,7 @@ function sendMonacoFile(
  */
 export function monacoSameOrigin(rootDir: string): Plugin {
   return {
-    name: "octop-monaco-vs",
+    name: "happyclaw-monaco-vs",
     configureServer(server) {
       const vsDir = monacoVsSourceDir(rootDir);
       server.middlewares.use(MONACO_VS_PREFIX, (req, res) => {

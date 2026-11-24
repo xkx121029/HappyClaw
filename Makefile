@@ -52,7 +52,7 @@ help:
 	@echo "  build-frontend   Build React dashboard only → $(DASHBOARD_DEST)"
 	@echo "  build-wheel      Build Python wheel only (assumes frontend built)"
 	@echo "  precompile       Byte-compile src/happyclaw into __pycache__ (ship with the app)"
-	@echo "  package-backend  Standalone backend (PyInstaller onedir) → dist/backend/octop"
+	@echo "  package-backend  Standalone backend (PyInstaller onedir) → dist/backend/happyclaw"
 	@echo ""
 	@echo "Publish targets:"
 	@echo "  publish          Build + upload to PyPI (PYPI_TOKEN or prompt)"
@@ -61,12 +61,12 @@ help:
 	@echo "Development targets:"
 	@echo "  dev              Start frontend + backend dev servers"
 	@echo "  dev-frontend     Start Vite dev server only"
-	@echo "  dev-backend      Start octop run only"
+	@echo "  dev-backend      Start happyclaw run only"
 	@echo ""
 	@echo "Online-deps targets (local Octop source + PyPI harness components):"
 	@echo "  install-online   Create .venv-online: Octop editable + harness-* from PyPI"
 	@echo "  test-online      pytest against .venv-online (not live)"
-	@echo "  run-online       Start octop run from .venv-online"
+	@echo "  run-online       Start happyclaw run from .venv-online"
 	@echo ""
 	@echo "Quality targets (ship bar):"
 	@echo "  all              format-all + lint + typecheck + test (backend lint/typecheck/test)"
@@ -134,16 +134,16 @@ precompile:
 package-backend: package-dashboard
 	@echo "[package-backend] Checking PyInstaller..."
 	@$(PACKAGE_PYTHON) -c "import PyInstaller" 2>/dev/null || $(PACKAGE_PYTHON) -m pip install "pyinstaller>=6.11"
-	@echo "[package-backend] Building onedir bundle → $(PACKAGE_BACKEND_DIR)/octop ..."
+	@echo "[package-backend] Building onedir bundle → $(PACKAGE_BACKEND_DIR)/happyclaw ..."
 	$(PACKAGE_PYTHON) -m PyInstaller --noconfirm --log-level WARN \
 		--distpath "$(PACKAGE_BACKEND_DIR)" \
 		--workpath "$(PACKAGE_WORK_DIR)" \
-		"$(PACKAGE_ROOT)/scripts/packaging/octop.spec"
+		"$(PACKAGE_ROOT)/scripts/packaging/happyclaw.spec"
 	@echo "[package-backend] Verifying the bundle starts and serves ..."
 	$(PACKAGE_PYTHON) "$(PACKAGE_ROOT)/scripts/packaging/verify_backend.py" \
-		--exe "$(PACKAGE_BACKEND_DIR)/octop/octop.exe" \
+		--exe "$(PACKAGE_BACKEND_DIR)/happyclaw/happyclaw.exe" \
 		--dashboard-dir "$(PACKAGE_ROOT)/src/happyclaw/dashboard"
-	@echo "[package-backend] Done: $(PACKAGE_BACKEND_DIR)/octop"
+	@echo "[package-backend] Done: $(PACKAGE_BACKEND_DIR)/happyclaw"
 
 # Always rebuild the dashboard before packaging: the bundle embeds
 # src/happyclaw/dashboard, so a frontend-only change still requires re-packaging.
@@ -211,7 +211,7 @@ dev:
 	@echo "[dev] Starting frontend and backend dev servers (Ctrl-C to stop both)..."
 	@trap 'kill 0' SIGINT; \
 	(cd $(DASHBOARD_DIR) && npm run dev) & \
-	($(RUN) octop run) & \
+	($(RUN) happyclaw run) & \
 	wait
 
 .PHONY: dev-frontend
@@ -220,7 +220,7 @@ dev-frontend:
 
 .PHONY: dev-backend
 dev-backend:
-	$(RUN) octop run
+	$(RUN) happyclaw run
 
 # ─── Online-deps dev (local Octop source + PyPI harness components) ───────────
 # Keeps a dedicated .venv-online alongside .venv. Octop itself is installed
@@ -244,7 +244,7 @@ test-online:
 
 .PHONY: run-online
 run-online:
-	$(PY_ONLINE)/octop run
+	$(PY_ONLINE)/happyclaw run
 
 # ─── Quality (backend) ───────────────────────────────────────────────────────
 

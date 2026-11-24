@@ -24,7 +24,7 @@ export default function DesktopWindowDragBand({
   return (
     <div
       aria-hidden
-      className={`${DESKTOP_DRAG_REGION_CLASS} octop-shell-drag-band`}
+      className={`${DESKTOP_DRAG_REGION_CLASS} happyclaw-shell-drag-band`}
       style={{
         position,
         top: 0,

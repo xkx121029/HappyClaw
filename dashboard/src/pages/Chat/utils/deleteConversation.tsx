@@ -1,9 +1,9 @@
 import { Button } from "antd";
 import type { TFunction } from "i18next";
 import {
-  octopThreadsApi,
+  happyclawThreadsApi,
   type ThreadDeleteResult,
-} from "../../../api/modules/octopThreads";
+} from "../../../api/modules/happyclawThreads";
 import { apiErrorMessage, parseApiError } from "../../../utils/apiError";
 import { message as antMessage } from "../../../utils/antdMessage";
 import { modal } from "../../../utils/antdModal";
@@ -39,7 +39,7 @@ export async function deleteConversation(
     ? antMessage.loading(t("chat.deleteSessionCompacting"), 0)
     : undefined;
   try {
-    const result = await octopThreadsApi.delete(agentId, threadId, compact);
+    const result = await happyclawThreadsApi.delete(agentId, threadId, compact);
     if (typeof closeLoading === "function") closeLoading();
     antMessage.success(deleteResultText(t, compact, result));
     return true;

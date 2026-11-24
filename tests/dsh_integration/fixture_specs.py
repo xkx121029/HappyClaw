@@ -22,7 +22,7 @@ from happyclaw.infra.plugins.runtime import (
 )
 
 PLUGINS_ROOT = Path(__file__).resolve().parent / "fixtures" / "plugins"
-OCTOP_FIXTURE_DIR = PLUGINS_ROOT / "octop_fixture"
+HAPPYCLAW_FIXTURE_DIR = PLUGINS_ROOT / "happyclaw_fixture"
 DSH_FIXTURE_DIR = PLUGINS_ROOT / "dsh_fixture"
 DSH_BARE_FIXTURE_DIR = PLUGINS_ROOT / "dsh_bare_fixture"
 
@@ -51,11 +51,11 @@ class FixtureSpec:
 
 def load_fixture_specs() -> tuple[FixtureSpec, ...]:
     """Load every fixture; raises when a manifest does not fit the contract."""
-    return _octop_spec(), _dsh_spec(DSH_FIXTURE_DIR), _dsh_spec(DSH_BARE_FIXTURE_DIR)
+    return _happyclaw_spec(), _dsh_spec(DSH_FIXTURE_DIR), _dsh_spec(DSH_BARE_FIXTURE_DIR)
 
 
-def _octop_spec() -> FixtureSpec:
-    manifest_path = OCTOP_FIXTURE_DIR / "plugin.yaml"
+def _happyclaw_spec() -> FixtureSpec:
+    manifest_path = HAPPYCLAW_FIXTURE_DIR / "plugin.yaml"
     manifest = _read_scalar_yaml(manifest_path)
     for key in ("id", "version", "entry", "kind"):
         if not manifest.get(key):
@@ -79,7 +79,7 @@ def _octop_spec() -> FixtureSpec:
             "capabilities_source": "manifest" if capabilities_declared else "undeclared",
         },
     )
-    return FixtureSpec(envelope=envelope, root=OCTOP_FIXTURE_DIR, manifest_path=manifest_path)
+    return FixtureSpec(envelope=envelope, root=HAPPYCLAW_FIXTURE_DIR, manifest_path=manifest_path)
 
 
 def _dsh_spec(fixture_dir: Path) -> FixtureSpec:
@@ -149,7 +149,7 @@ __all__ = [
     "DSH_FIXTURE_ID",
     "EXPECTED_IDS",
     "FixtureSpec",
-    "OCTOP_FIXTURE_DIR",
+    "HAPPYCLAW_FIXTURE_DIR",
     "OCTOP_FIXTURE_ID",
     "PLUGINS_ROOT",
     "load_fixture_specs",

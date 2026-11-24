@@ -12,6 +12,10 @@ def test_skill_display_name_known_zh():
     assert skill_display_name("pdf", "zh") == "PDF 处理"
 
 
+def test_skill_display_name_happyclaw_assistant_slug_zh():
+    assert skill_display_name("happyclaw-assistant", "zh") == "HappyClaw 助手"
+
+
 def test_skill_display_name_octop_assistant_slug_zh():
     assert skill_display_name("octop-assistant", "zh") == "HappyClaw 助手"
 
@@ -31,6 +35,7 @@ def test_skill_display_name_empty_passthrough():
 def test_all_skill_labels_includes_pdf():
     labels = all_skill_labels("en")
     assert labels["docx"] == "Word"
+    assert labels["happyclaw-assistant"] == "HappyClaw Assistant"
     assert labels["octop-assistant"] == "HappyClaw Assistant"
 
 

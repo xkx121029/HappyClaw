@@ -4,7 +4,7 @@
 # 仓库唯一来源：scripts/fnos/common.sh
 # 打包时由 scripts/build-fpk.sh 注入到包内 cmd/common.sh；
 # fnos/docker/ 与 fnos/native/ 的 cmd 脚本及 app/bin 脚本统一 source 本文件，
-# 避免 find_python312 / fix_ownership_and_perms / free_octop_ports 重复维护。
+# 避免 find_python312 / fix_ownership_and_perms / free_happyclaw_ports 重复维护。
 #
 set -u
 
@@ -13,16 +13,16 @@ set -u
 # 本地版 start 经 runuser 拉起 bin/octop，PID 文件里往往是外壳，真正
 # 监听 8089 的是 exec 后的 Python 子进程；只杀外壳会留下孤儿占端口。
 # ---------------------------------------------------------------------------
-octop_kill_pid_tree() {
+happyclaw_kill_pid_tree() {
     local pid="${1:-}" sig="${2:-TERM}" child
     [ -n "$pid" ] || return 0
     for child in $(pgrep -P "$pid" 2>/dev/null || true); do
-        octop_kill_pid_tree "$child" "$sig"
+        happyclaw_kill_pid_tree "$child" "$sig"
     done
     kill -s "$sig" "$pid" 2>/dev/null || true
 }
 
-octop_port_pids() {
+happyclaw_port_pids() {
     local port="$1" pids
     pids="$(ss -ltnp 2>/dev/null | grep -E "[:.]${port}([[:space:]]|$)" | sed -n 's/.*pid=\([0-9]*\).*/\1/p' | sort -u)" || true
     if [ -z "$pids" ] && command -v fuser >/dev/null 2>&1; then
@@ -35,7 +35,7 @@ octop_port_pids() {
 }
 
 # 等一组 pid 退出。第一参数是 0.2s 的轮询次数，其余为 pid。
-octop_wait_pids_gone() {
+happyclaw_wait_pids_gone() {
     local rounds="${1:-15}" pid still i
     shift
     for i in $(seq 1 "$rounds"); do
@@ -55,7 +55,7 @@ octop_wait_pids_gone() {
 
 # bin/octop 会 exec 成 python -m happyclaw.cli.main run，命令行不再含启动器路径。
 # 用安装时写入的 HAPPYCLAW_INSTALL_MODE=fpk-native 识别本包服务进程。
-octop_fpk_native_run_pids() {
+happyclaw_fpk_native_run_pids() {
     local pid
     for pid in $(pgrep -f -- 'happyclaw.cli.main run' 2>/dev/null || true); do
         [ -n "$pid" ] || continue
@@ -65,12 +65,12 @@ octop_fpk_native_run_pids() {
     done
 }
 
-octop_signal_pids() {
+happyclaw_signal_pids() {
     local sig="$1" pid
     shift
     for pid in "$@"; do
         [ -n "$pid" ] || continue
-        octop_kill_pid_tree "$pid" "$sig"
+        happyclaw_kill_pid_tree "$pid" "$sig"
     done
 }
 
@@ -82,7 +82,7 @@ octop_signal_pids() {
 # (3) 带 HAPPYCLAW_INSTALL_MODE=fpk-native 的 `happyclaw.cli.main run`（仅当本次
 # 要释放 8089 时）。不使用宽泛的 `pgrep -f octop`。
 # ---------------------------------------------------------------------------
-free_octop_ports() {
+free_happyclaw_ports() {
     local port pid pids pat appdir ports
     if [ "$#" -gt 0 ]; then
         ports="$*"
@@ -90,18 +90,18 @@ free_octop_ports() {
         ports="8088 8089"
     fi
     for port in $ports; do
-        pids="$(octop_port_pids "$port")"
-        octop_signal_pids TERM $pids
+        pids="$(happyclaw_port_pids "$port")"
+        happyclaw_signal_pids TERM $pids
         for pid in $pids; do
             [ -n "$pid" ] || continue
-            echo "[octop] 已发送 TERM 给占用 ${port} 的进程 ${pid}" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true
+            echo "[happyclaw] 已发送 TERM 给占用 ${port} 的进程 ${pid}" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true
         done
-        octop_wait_pids_gone 10 $pids || true
-        octop_signal_pids KILL $pids
+        happyclaw_wait_pids_gone 10 $pids || true
+        happyclaw_signal_pids KILL $pids
         for pid in $pids; do
             [ -n "$pid" ] || continue
             if kill -0 "$pid" 2>/dev/null; then
-                echo "[octop] 已强制 KILL 占用 ${port} 的进程 ${pid}" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true
+                echo "[happyclaw] 已强制 KILL 占用 ${port} 的进程 ${pid}" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true
             fi
         done
     done
@@ -110,20 +110,20 @@ free_octop_ports() {
     for pat in "$appdir/bin/octop" "$appdir/app/bin/octop"; do
         pids="$(pgrep -f -- "$pat" 2>/dev/null | tr '\n' ' ')" || true
         [ -z "$pids" ] && continue
-        echo "[octop] 发现本应用残留服务进程（$pat）: $pids，准备清理" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
-        octop_signal_pids TERM $pids
-        octop_wait_pids_gone 10 $pids || true
-        octop_signal_pids KILL $pids
+        echo "[happyclaw] 发现本应用残留服务进程（$pat）: $pids，准备清理" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
+        happyclaw_signal_pids TERM $pids
+        happyclaw_wait_pids_gone 10 $pids || true
+        happyclaw_signal_pids KILL $pids
     done
 
     case " ${ports} " in
         *" 8089 "*)
-            pids="$(octop_fpk_native_run_pids | tr '\n' ' ')"
+            pids="$(happyclaw_fpk_native_run_pids | tr '\n' ' ')"
             if [ -n "$pids" ]; then
-                echo "[octop] 发现 fpk-native 残留 run 进程: $pids，准备清理" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
-                octop_signal_pids TERM $pids
-                octop_wait_pids_gone 10 $pids || true
-                octop_signal_pids KILL $pids
+                echo "[happyclaw] 发现 fpk-native 残留 run 进程: $pids，准备清理" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
+                happyclaw_signal_pids TERM $pids
+                happyclaw_wait_pids_gone 10 $pids || true
+                happyclaw_signal_pids KILL $pids
             fi
             ;;
     esac
@@ -137,14 +137,14 @@ free_octop_ports() {
 # ---------------------------------------------------------------------------
 fix_ownership_and_perms() {
     local pkgvar="$1" envfile="$2"
-    local octop_user="octop-native"
-    id "$octop_user" >/dev/null 2>&1 || {
-        echo "[octop] 警告：${octop_user} 账户不存在，跳过数据目录 chown（服务将回退以 root 运行）" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
+    local happyclaw_user="octop-native"
+    id "$happyclaw_user" >/dev/null 2>&1 || {
+        echo "[happyclaw] 警告：${happyclaw_user} 账户不存在，跳过数据目录 chown（服务将回退以 root 运行）" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
         return 0
     }
 
     # 1) 应用数据目录与 .env 改属主为运行用户
-    chown -R "$octop_user:$octop_user" "$pkgvar" 2>/dev/null || true
+    chown -R "$happyclaw_user:$happyclaw_user" "$pkgvar" 2>/dev/null || true
     chmod 700 "$pkgvar" 2>/dev/null || true
     [ -f "$envfile" ] && chmod 600 "$envfile" 2>/dev/null || true
 
@@ -157,12 +157,12 @@ fix_ownership_and_perms() {
     # 3) 共享数据目录（@appshare）：确保属主正确且可进入
     if [ -n "${TRIM_DATA_SHARE_PATHS:-}" ]; then
         local ds="${TRIM_DATA_SHARE_PATHS%%:*}"
-        chown -R "$octop_user:$octop_user" "$ds" 2>/dev/null || true
+        chown -R "$happyclaw_user:$happyclaw_user" "$ds" 2>/dev/null || true
         local share_root="$ds"
         while [ "$share_root" != "/" ] && [ "$(basename "$(dirname "$share_root")")" != "@appshare" ]; do
             share_root="$(dirname "$share_root")"
         done
-        chown "$octop_user:$octop_user" "$share_root" 2>/dev/null || true
+        chown "$happyclaw_user:$happyclaw_user" "$share_root" 2>/dev/null || true
         chmod 755 "$share_root" 2>/dev/null || true
         if command -v setfacl >/dev/null 2>&1; then
             setfacl -b "$share_root" 2>/dev/null || true
@@ -170,7 +170,7 @@ fix_ownership_and_perms() {
         fi
     fi
 
-    echo "[octop] 已修正数据目录/.env 属主与权限（${octop_user}:${octop_user}）" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
+    echo "[happyclaw] 已修正数据目录/.env 属主与权限（${happyclaw_user}:${happyclaw_user}）" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>&1 || true
 }
 
 # ---------------------------------------------------------------------------
@@ -178,7 +178,7 @@ fix_ownership_and_perms() {
 # 旧包没有该文件则跳过，避免升级路径误伤。
 # 测试可设 HAPPYCLAW_FPK_ARCH_FILE / HAPPYCLAW_FPK_HOST_ARCH。
 # ---------------------------------------------------------------------------
-octop_host_fpk_arch() {
+happyclaw_host_fpk_arch() {
     if [ -n "${HAPPYCLAW_FPK_HOST_ARCH:-}" ]; then
         printf '%s' "$HAPPYCLAW_FPK_HOST_ARCH"
         return 0
@@ -190,7 +190,7 @@ octop_host_fpk_arch() {
     esac
 }
 
-octop_packed_fpk_arch() {
+happyclaw_packed_fpk_arch() {
     local f here
     if [ -n "${HAPPYCLAW_FPK_ARCH_FILE:-}" ]; then
         [ -f "$HAPPYCLAW_FPK_ARCH_FILE" ] || return 1
@@ -207,11 +207,11 @@ octop_packed_fpk_arch() {
     return 1
 }
 
-octop_assert_native_arch() {
+happyclaw_assert_native_arch() {
     local packed host
-    packed="$(octop_packed_fpk_arch 2>/dev/null || true)"
+    packed="$(happyclaw_packed_fpk_arch 2>/dev/null || true)"
     [ -n "$packed" ] || return 0
-    host="$(octop_host_fpk_arch)"
+    host="$(happyclaw_host_fpk_arch)"
     if [ "$packed" != "$host" ]; then
         echo "此本地版安装包是 ${packed}，当前设备是 ${host}。请改用对应架构的包：x86_64 用 Octop-fnos-native-amd64，ARM64 用 Octop-fnos-native-arm64。ARM 飞牛已装 Docker 时优先用 Docker 版。"
         return 1
@@ -246,7 +246,7 @@ find_python312() {
 # 不强制安装：找不到就保持 PATH 不变。已在 PATH 上则不改。
 # 测试可设 HAPPYCLAW_FNOS_NODE_BIN_DIRS（冒号分隔）。
 # ---------------------------------------------------------------------------
-octop_fnos_node_candidate_dirs() {
+happyclaw_fnos_node_candidate_dirs() {
     local d oldifs
     if [ -n "${HAPPYCLAW_FNOS_NODE_BIN_DIRS:-}" ]; then
         oldifs="$IFS"
@@ -270,7 +270,7 @@ octop_fnos_node_candidate_dirs() {
     done
 }
 
-octop_prepend_fnos_node_path() {
+happyclaw_prepend_fnos_node_path() {
     local dir
     if command -v node >/dev/null 2>&1; then
         return 0
@@ -286,7 +286,7 @@ octop_prepend_fnos_node_path() {
             return 0
         fi
     done <<EOF
-$(octop_fnos_node_candidate_dirs)
+$(happyclaw_fnos_node_candidate_dirs)
 EOF
     return 0
 }
@@ -294,7 +294,7 @@ EOF
 # 单人自托管没有账号：安装向导不再收集用户名/密码，下列回调也不读凭据。
 
 # 从 .env 文件读取 KEY=VALUE 的值（容忍引号与行尾空白）。
-octop_env_get() {
+happyclaw_env_get() {
     local file="$1" key="$2" line
     [ -f "$file" ] || return 0
     line="$(grep -E "^${key}=" "$file" 2>/dev/null | tail -n 1)"
@@ -305,7 +305,7 @@ octop_env_get() {
 
 # 原地更新 .env 中的单个 KEY（保留其余行）；不存在则创建。
 # 纯 bash 实现：密码可能包含 | & / 等 sed 特殊字符，不能用 sed 替换。
-octop_env_set() {
+happyclaw_env_set() {
     local file="$1" key="$2" value="$3" tmp line
     if [ -f "$file" ]; then
         tmp="${file}.tmp.$$"
@@ -334,12 +334,12 @@ octop_env_set() {
 # （一般为 /volX/@appshare/octop/data）；本地版回调也读同一变量。
 # ---------------------------------------------------------------------------
 
-octop_legacy_docker_data_dir() {
+happyclaw_legacy_docker_data_dir() {
     printf '%s' "/var/apps/octop/share/octop/data"
 }
 
 # 解析飞牛持久 data-share 目录。可选参数为 resource.json 里的 share name。
-octop_data_share_dir() {
+happyclaw_data_share_dir() {
     local share_name="${1:-}" app="${TRIM_APPNAME:-octop}" cand dir
     if [ -z "$share_name" ]; then
         case "$app" in
@@ -376,9 +376,9 @@ octop_data_share_dir() {
 }
 
 # 旧绑定目录里若有 octop.db / config.json，迁到 share/.octop（不覆盖已有库）。
-octop_migrate_legacy_docker_data() {
+happyclaw_migrate_legacy_docker_data() {
     local dest="$1" src home
-    src="$(octop_legacy_docker_data_dir)"
+    src="$(happyclaw_legacy_docker_data_dir)"
     [ -n "$dest" ] || return 0
     home="${dest}/.octop"
     mkdir -p "$home"
@@ -390,12 +390,12 @@ octop_migrate_legacy_docker_data() {
     fi
     if [ -f "${src}/octop.db" ] || [ -f "${src}/config.json" ]; then
         cp -a "${src}/." "${home}/" 2>/dev/null || true
-        echo "[octop] 已将旧数据目录 ${src} 迁移到 ${home}" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true
+        echo "[happyclaw] 已将旧数据目录 ${src} 迁移到 ${home}" > "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null || true
     fi
 }
 
 # 飞牛 docker-project 的 compose 工作目录（payload 与 @appcenter 运行副本）。
-octop_docker_compose_dirs() {
+happyclaw_docker_compose_dirs() {
     local d
     [ -n "${TRIM_APPDEST:-}" ] && printf '%s\n' "${TRIM_APPDEST}/docker"
     printf '%s\n' "/var/apps/octop/target/docker"
@@ -407,7 +407,7 @@ octop_docker_compose_dirs() {
 }
 
 # 只把数据卷写成绝对路径，并删掉 env_file（缺文件 compose 会直接失败）。
-octop_sync_fnos_compose() {
+happyclaw_sync_fnos_compose() {
     local compose="$1" data_dir="$2" env_file="${3:-}" bind tmp line in_env_file=0
     [ -f "$compose" ] || return 0
     [ -n "$data_dir" ] || return 0
@@ -445,10 +445,10 @@ octop_sync_fnos_compose() {
 }
 
 # 把 .env 拷到飞牛实际执行 compose 的目录（含 /volX/@appcenter/octop/docker）。
-octop_distribute_docker_env() {
+happyclaw_distribute_docker_env() {
     local src="$1" data_dir="${2:-}" d dest seen=""
     [ -f "$src" ] || return 0
-    [ -n "$data_dir" ] || data_dir="$(octop_env_get "$src" TRIM_DATA_SHARE_PATHS)"
+    [ -n "$data_dir" ] || data_dir="$(happyclaw_env_get "$src" TRIM_DATA_SHARE_PATHS)"
     while IFS= read -r d; do
         [ -n "$d" ] || continue
         case " $seen " in
@@ -462,22 +462,22 @@ octop_distribute_docker_env() {
             chmod 600 "$dest" 2>/dev/null || true
         fi
         if [ -f "${d}/docker-compose.yaml" ]; then
-            octop_sync_fnos_compose "${d}/docker-compose.yaml" "$data_dir" "$src"
+            happyclaw_sync_fnos_compose "${d}/docker-compose.yaml" "$data_dir" "$src"
         fi
     done <<EOF
-$(octop_docker_compose_dirs)
+$(happyclaw_docker_compose_dirs)
 EOF
 }
 
 # docker/.env 在 target/ 下，升级会整目录替换；副本落到 TRIM_PKGVAR（@appdata）。
-octop_persist_docker_env() {
+happyclaw_persist_docker_env() {
     local env_file="$1" pkgvar="${TRIM_PKGVAR:-/var/apps/octop/var}"
     [ -f "$env_file" ] || return 0
     mkdir -p "$pkgvar"
     cp -a "$env_file" "${pkgvar}/docker.env" 2>/dev/null || true
 }
 
-octop_restore_docker_env() {
+happyclaw_restore_docker_env() {
     local env_file="$1" pkgvar="${TRIM_PKGVAR:-/var/apps/octop/var}"
     [ -f "$env_file" ] && return 0
     [ -f "${pkgvar}/docker.env" ] || return 0
@@ -486,25 +486,25 @@ octop_restore_docker_env() {
 }
 
 # 解析 data-share、迁旧数据、把路径写进 compose 插值用的 .env。
-octop_prepare_docker_persist() {
+happyclaw_prepare_docker_persist() {
     local env_file="$1" data_dir compose
-    octop_restore_docker_env "$env_file"
-    data_dir="$(octop_data_share_dir octop/data)"
+    happyclaw_restore_docker_env "$env_file"
+    data_dir="$(happyclaw_data_share_dir octop/data)"
     mkdir -p "${data_dir}/.octop"
-    octop_migrate_legacy_docker_data "$data_dir"
-    octop_env_set "$env_file" TRIM_DATA_SHARE_PATHS "$data_dir"
-    octop_env_set "$env_file" HAPPYCLAW_DATA "$data_dir"
-    octop_persist_docker_env "$env_file"
+    happyclaw_migrate_legacy_docker_data "$data_dir"
+    happyclaw_env_set "$env_file" TRIM_DATA_SHARE_PATHS "$data_dir"
+    happyclaw_env_set "$env_file" HAPPYCLAW_DATA "$data_dir"
+    happyclaw_persist_docker_env "$env_file"
     compose="$(dirname "$env_file")/docker-compose.yaml"
-    octop_sync_fnos_compose "$compose" "$data_dir" "$env_file"
-    octop_distribute_docker_env "$env_file" "$data_dir"
+    happyclaw_sync_fnos_compose "$compose" "$data_dir" "$env_file"
+    happyclaw_distribute_docker_env "$env_file" "$data_dir"
     printf '%s' "$data_dir"
 }
 
 # 渲染应用「设置」窗口（wizard/config）：单人版只提示数据目录与配置入口。
 # wizard_dir 为已安装包的向导目录（/var/apps/<app>/wizard），template 为
 # 包内载荷自带的模板文件路径。任一文件缺失则静默跳过（不影响安装）。
-octop_render_config_wizard() {
+happyclaw_render_config_wizard() {
     local template="$1" wizard_dir="$2" data_dir="${3:-}" target tmp content dir_label
     [ -f "$template" ] || return 0
     [ -d "$wizard_dir" ] || return 0

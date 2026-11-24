@@ -22,12 +22,12 @@ function release(tag: string, overrides: Record<string, unknown> = {}) {
     prerelease: false,
     assets: [
       {
-        name: `Octop-desktop-darwin-arm64-${tag.replace(/^v/, "")}.dmg`,
-        browser_download_url: `${PROJECT_DOWNLOADS}${tag}/Octop-desktop-darwin-arm64-1.dmg`,
+        name: `HappyClaw-desktop-darwin-arm64-${tag.replace(/^v/, "")}.dmg`,
+        browser_download_url: `${PROJECT_DOWNLOADS}${tag}/HappyClaw-desktop-darwin-arm64-1.dmg`,
       },
       {
-        name: `Octop-desktop-windows-amd64-${tag.replace(/^v/, "")}.exe`,
-        browser_download_url: `${PROJECT_DOWNLOADS}${tag}/Octop-desktop-windows-amd64-1.exe`,
+        name: `HappyClaw-desktop-windows-amd64-${tag.replace(/^v/, "")}.exe`,
+        browser_download_url: `${PROJECT_DOWNLOADS}${tag}/HappyClaw-desktop-windows-amd64-1.exe`,
       },
     ],
     ...overrides,
@@ -94,7 +94,7 @@ test("installers are mapped to asset keys by platform, not by position", () => {
   const assets = manifest.client.stable!.assets;
   assert.equal(assets.mac_arm?.ext, "dmg");
   assert.equal(assets.win_x64?.ext, "exe");
-  assert.match(assets.mac_arm!.url, /Octop-desktop-darwin-arm64-1\.dmg$/);
+  assert.match(assets.mac_arm!.url, /HappyClaw-desktop-darwin-arm64-1\.dmg$/);
   // The stable release carries no Windows arm64 or macOS intel installer.
   assert.equal(assets.win_arm, undefined);
   assert.equal(assets.mac_intel, undefined);

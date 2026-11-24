@@ -44,8 +44,8 @@ vi.mock("../../../api/modules/preferences", () => ({
     set: vi.fn().mockResolvedValue(undefined),
   },
 }));
-vi.mock("../../../api/modules/octopThreads", () => ({
-  octopThreadsApi: { patch: vi.fn().mockResolvedValue({}) },
+vi.mock("../../../api/modules/happyclawThreads", () => ({
+  happyclawThreadsApi: { patch: vi.fn().mockResolvedValue({}) },
 }));
 vi.mock("../../../api/request", () => ({
   request: vi.fn().mockResolvedValue(null),
@@ -85,7 +85,7 @@ import { connectorsApi } from "../../../api/modules/connectors";
 import { knowledgeBasesApi } from "../../../api/modules/knowledgeBases";
 import { preferencesApi } from "../../../api/modules/preferences";
 import { providerApi } from "../../../api/modules/provider";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import type { ResolvedModel } from "../../../api/types";
 import { useChatComposerResources } from "./useChatComposerResources";
 
@@ -515,7 +515,7 @@ describe("useChatComposerResources — peer expert defaults", () => {
 
     await waitFor(() => expect(result.current.modelsReady).toBe(true));
     expect(result.current.selectedModel).toBe("prov/shared-peer");
-    expect(octopThreadsApi.patch).not.toHaveBeenCalled();
+    expect(happyclawThreadsApi.patch).not.toHaveBeenCalled();
   });
 
   it("shows a shared local expert default even when this catalog omits it", async () => {
@@ -537,7 +537,7 @@ describe("useChatComposerResources — peer expert defaults", () => {
 
     await waitFor(() => expect(result.current.modelsReady).toBe(true));
     expect(result.current.selectedModel).toBe("prov/shared-local");
-    expect(octopThreadsApi.patch).not.toHaveBeenCalled();
+    expect(happyclawThreadsApi.patch).not.toHaveBeenCalled();
   });
 
   it("leaves a remote Auto expert unset instead of the local preferred model", async () => {
@@ -590,7 +590,7 @@ describe("useChatComposerResources — disabled model recovery (#2316)", () => {
       expect(result.current.modelsReady).toBe(true);
       expect(result.current.selectedModel).toBeNull();
     });
-    expect(octopThreadsApi.patch).toHaveBeenCalledWith(
+    expect(happyclawThreadsApi.patch).toHaveBeenCalledWith(
       "expertA",
       "thread-existing",
       { model_ref: null, reasoning_mode: "auto", reasoning_effort: null },
@@ -639,7 +639,7 @@ describe("useChatComposerResources — disabled model recovery (#2316)", () => {
     );
     expect(result.current.modelsReady).toBe(false);
     expect(result.current.selectedModel).toBe("prov/sticky");
-    expect(octopThreadsApi.patch).not.toHaveBeenCalled();
+    expect(happyclawThreadsApi.patch).not.toHaveBeenCalled();
   });
 
   it("keeps the last successful catalog if a focus refresh fails", async () => {
@@ -653,7 +653,7 @@ describe("useChatComposerResources — disabled model recovery (#2316)", () => {
     await act(async () => window.dispatchEvent(new Event("focus")));
     expect(result.current.selectedModel).toBe("prov/sticky");
     expect(result.current.modelsReady).toBe(true);
-    expect(octopThreadsApi.patch).not.toHaveBeenCalled();
+    expect(happyclawThreadsApi.patch).not.toHaveBeenCalled();
   });
 
   it("ignores an older catalog response after the disabled model was removed", async () => {
@@ -699,10 +699,10 @@ describe("useChatComposerResources — disabled model recovery (#2316)", () => {
     );
     rerender({ agentId: "expertB" });
     expect(result.current.modelsReady).toBe(false);
-    expect(octopThreadsApi.patch).not.toHaveBeenCalled();
+    expect(happyclawThreadsApi.patch).not.toHaveBeenCalled();
     await act(async () => resolveModels([model("other")]));
     await waitFor(() => expect(result.current.modelsReady).toBe(true));
     expect(result.current.selectedModel).toBe("prov/other");
-    expect(octopThreadsApi.patch).not.toHaveBeenCalled();
+    expect(happyclawThreadsApi.patch).not.toHaveBeenCalled();
   });
 });

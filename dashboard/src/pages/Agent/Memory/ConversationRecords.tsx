@@ -28,9 +28,9 @@ import cx from "classnames";
 import Markdown from "../../../components/Markdown/LazyMarkdown";
 import {
   CHAT_HISTORY_PAGE_SIZE,
-  octopThreadsApi,
-  type OctopThread,
-} from "../../../api/modules/octopThreads";
+  happyclawThreadsApi,
+  type HappyclawThread,
+} from "../../../api/modules/happyclawThreads";
 import {
   extractText,
   filterDialogueHistoryMessages,
@@ -75,13 +75,13 @@ function channelLabel(channel: string, t: (key: string) => string): string {
 }
 
 interface ConversationThreadCardProps {
-  thread: OctopThread;
+  thread: HappyclawThread;
   selected: boolean;
   deleting: boolean;
   channelLabel: string;
   timeZone: string;
-  onView: (thread: OctopThread) => void;
-  onDelete: (thread: OctopThread) => void;
+  onView: (thread: HappyclawThread) => void;
+  onDelete: (thread: HappyclawThread) => void;
 }
 
 function ConversationThreadCard({
@@ -158,9 +158,9 @@ export default function ConversationRecords({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const serverTimezone = useServerTimezone();
-  const [threads, setThreads] = useState<OctopThread[]>([]);
+  const [threads, setThreads] = useState<HappyclawThread[]>([]);
   const [listLoading, setListLoading] = useState(false);
-  const [selectedThread, setSelectedThread] = useState<OctopThread | null>(
+  const [selectedThread, setSelectedThread] = useState<HappyclawThread | null>(
     null,
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -178,7 +178,7 @@ export default function ConversationRecords({
   const loadThreads = useCallback(async () => {
     setListLoading(true);
     try {
-      const list = await octopThreadsApi.list(agentId, 100);
+      const list = await happyclawThreadsApi.list(agentId, 100);
       list.sort((a, b) => b.last_active - a.last_active);
       setThreads(list);
     } catch {
@@ -207,7 +207,7 @@ export default function ConversationRecords({
 
   const fetchThreadHistory = useCallback(
     async (threadId: string, offset: number) => {
-      const history = await octopThreadsApi.history(agentId, threadId, {
+      const history = await happyclawThreadsApi.history(agentId, threadId, {
         limit: CHAT_HISTORY_PAGE_SIZE,
         offset,
       });
@@ -221,7 +221,7 @@ export default function ConversationRecords({
   );
 
   const openThread = useCallback(
-    async (thread: OctopThread) => {
+    async (thread: HappyclawThread) => {
       setSelectedThread(thread);
       setDrawerOpen(true);
       setHistoryLoading(true);
@@ -301,7 +301,7 @@ export default function ConversationRecords({
   }, [resetHistoryState]);
 
   const confirmDelete = useCallback(
-    (thread: OctopThread) => {
+    (thread: HappyclawThread) => {
       confirmDeleteConversation(t, async (compact) => {
         setDeletingId(thread.thread_id);
         try {
@@ -344,7 +344,7 @@ export default function ConversationRecords({
     return threads.slice(start, start + cardPageSize);
   }, [threads, cardPage, cardPageSize]);
 
-  const columns: ColumnsType<OctopThread> = useMemo(
+  const columns: ColumnsType<HappyclawThread> = useMemo(
     () => [
       {
         title: t("memory.conversationColumns.threadId"),
@@ -513,7 +513,7 @@ export default function ConversationRecords({
           mobileList
         ) : (
           <Card className={styles.conversationTableCard} bordered={false}>
-            <Table<OctopThread>
+            <Table<HappyclawThread>
               className={styles.conversationTable}
               rowKey="thread_id"
               loading={listLoading}

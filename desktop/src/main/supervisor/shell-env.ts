@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -8,9 +9,9 @@ import { join } from "node:path";
  * agree on one location.
  *
  * Priority:
- *   1. non-empty ``HAPPYCLAW_HOME`` inherited by the process (trimmed)
- *   2. non-empty ``HAPPYCLAW_HOME`` from the login shell (macOS / Linux only)
- *   3. ``~/.octop`` (``%USERPROFILE%\.octop`` on Windows)
+ *   1. non-empty ``HAPPYCLAW_HOME`` (then legacy ``OCTOP_HOME``) inherited by the process
+ *   2. the same variables from the login shell (macOS / Linux only)
+ *   3. ``~/.happyclaw``, or ``~/.octop`` when only the pre-rename data directory exists
  *
  * A leading ``~`` expands against the current user's home directory.
  */
@@ -24,16 +25,20 @@ export function expandHome(raw: string, home = homedir()): string {
   return trimmed;
 }
 
-export function resolveOctopHome(
+export function resolveHappyclawHome(
   processEnv: NodeJS.ProcessEnv,
   loginShellEnv: Record<string, string | undefined>,
   home = homedir(),
 ): string {
-  const inherited = (processEnv.HAPPYCLAW_HOME ?? "").trim();
+  const inherited = (processEnv.HAPPYCLAW_HOME ?? "").trim() || (processEnv.OCTOP_HOME ?? "").trim();
   if (inherited) return expandHome(inherited, home);
-  const shellValue = (loginShellEnv.HAPPYCLAW_HOME ?? "").trim();
+  const shellValue =
+    (loginShellEnv.HAPPYCLAW_HOME ?? "").trim() || (loginShellEnv.OCTOP_HOME ?? "").trim();
   if (shellValue) return expandHome(shellValue, home);
-  return join(home, ".octop");
+  const current = join(home, ".happyclaw");
+  const legacy = join(home, ".octop");
+  if (!existsSync(current) && existsSync(legacy)) return legacy;
+  return current;
 }
 
 /** Run ``$SHELL -ilc 'env -0'`` and parse NUL-delimited ``KEY=VALUE`` pairs. */

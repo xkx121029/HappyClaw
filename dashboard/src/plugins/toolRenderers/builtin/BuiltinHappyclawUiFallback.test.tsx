@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import zh from "../../../locales/zh.json";
 import { builtinPluginHost } from "../host";
-import { BuiltinOctopUiFallback } from "./BuiltinOctopUiFallback";
+import { BuiltinHappyclawUiFallback } from "./BuiltinHappyclawUiFallback";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -25,9 +25,9 @@ const base = {
   isStreaming: false,
 };
 
-describe("BuiltinOctopUiFallback", () => {
+describe("BuiltinHappyclawUiFallback", () => {
   it("shows the returned text and a local-install note for a missing remote plugin", () => {
-    render(<BuiltinOctopUiFallback {...base} annotateMissingPlugin />);
+    render(<BuiltinHappyclawUiFallback {...base} annotateMissingPlugin />);
     expect(
       screen.getByText("本机未安装该插件，仅展示数据"),
     ).toBeInTheDocument();
@@ -36,7 +36,7 @@ describe("BuiltinOctopUiFallback", () => {
   });
 
   it("keeps the structured dump when the plugin UI is simply not registered yet", () => {
-    render(<BuiltinOctopUiFallback {...base} />);
+    render(<BuiltinHappyclawUiFallback {...base} />);
     expect(
       screen.queryByText("本机未安装该插件，仅展示数据"),
     ).not.toBeInTheDocument();

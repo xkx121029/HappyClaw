@@ -11,7 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import cx from "classnames";
 import { pluginsApi, type MarketPlugin } from "../../../api/modules/plugins";
-import { OctopEmptyMascot } from "../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../components/EmptyState";
 import PillScroller from "../../../components/PillScroller";
 import { CardSkeleton } from "../../../components/Skeleton";
 import { apiErrorMessage } from "../../../utils/apiError";
@@ -207,7 +207,7 @@ export function PluginMarketPanel() {
         <div className={styles.marketStage}>
           <Result
             className={styles.marketLoadResult}
-            icon={<OctopEmptyMascot size={120} />}
+            icon={<HappyclawEmptyMascot size={120} />}
             title={t("plugins.marketLoadError")}
             subTitle={
               networkFailure

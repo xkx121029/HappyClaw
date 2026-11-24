@@ -57,7 +57,7 @@ def apply_skill_presentation(
         extension = extensions.get(namespace)
         if not isinstance(extension, Mapping):
             continue
-        if namespace == "octop":
+        if namespace in ("happyclaw", "octop"):
             label = extension.get("label")
             short_summary = extension.get("summary")
             if isinstance(label, Mapping):

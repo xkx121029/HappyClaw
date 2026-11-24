@@ -103,23 +103,23 @@ describe("Windows 标题栏菜单", () => {
 
   it("macOS 和浏览器不画这排菜单", () => {
     const { container, rerender } = renderMenu("mac");
-    expect(container.querySelector(".octop-win-menu")).toBeNull();
+    expect(container.querySelector(".happyclaw-win-menu")).toBeNull();
     rerender(
       <DesktopChromeProvider value={null}>
         <WindowsAppMenu />
       </DesktopChromeProvider>,
     );
-    expect(container.querySelector(".octop-win-menu")).toBeNull();
+    expect(container.querySelector(".happyclaw-win-menu")).toBeNull();
   });
 
   it("占一整行，并把页面顶下去", async () => {
     renderMenu("windows");
     await screen.findByRole("menuitem", { name: "文件" });
-    const bar = document.querySelector(".octop-win-menu");
-    expect(bar).toHaveClass("octop-desktop-drag");
+    const bar = document.querySelector(".happyclaw-win-menu");
+    expect(bar).toHaveClass("happyclaw-desktop-drag");
     expect(document.documentElement.dataset.octopCaptionRow).toBe("");
     expect(
-      document.documentElement.style.getPropertyValue("--octop-caption-row"),
+      document.documentElement.style.getPropertyValue("--happyclaw-caption-row"),
     ).toBe("32px");
   });
 
@@ -131,7 +131,7 @@ describe("Windows 标题栏菜单", () => {
     ).toBeInTheDocument();
     expect(document.documentElement.dataset.octopCaptionRow).toBe("");
     expect(
-      document.documentElement.style.getPropertyValue("--octop-caption-row"),
+      document.documentElement.style.getPropertyValue("--happyclaw-caption-row"),
     ).toBe("32px");
   });
 });

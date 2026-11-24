@@ -297,7 +297,7 @@ export function useKnowledgePreview({
     }
     const fsEl = (document.querySelector<HTMLElement>(
       "[data-preview-fullscreen-root]",
-    ) ?? document.querySelector<HTMLElement>(".octop-modal-content")) as
+    ) ?? document.querySelector<HTMLElement>(".happyclaw-modal-content")) as
       | (HTMLElement & {
           webkitRequestFullscreen?: () => Promise<void> | void;
         })

@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { OctopAgent } from "../../../context/AgentContext";
 import type { Session } from "../hooks/useSessions";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import SessionList from "./SessionList";
 
 // 侧栏渲染基线：几百条专家 / 会话时单次挂载的耗时。
@@ -72,7 +72,7 @@ function renderList(agents: OctopAgent[], sessions: Session[]) {
 
 describe("SessionList render baseline", () => {
   beforeAll(() => {
-    vi.spyOn(octopThreadsApi, "list").mockResolvedValue([]);
+    vi.spyOn(happyclawThreadsApi, "list").mockResolvedValue([]);
   });
 
   it("renders 300 experts", () => {

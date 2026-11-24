@@ -66,7 +66,7 @@ import {
 } from "./utils/chromeInstallGate";
 import { isFileToolName } from "./constants";
 import { browserApi } from "../../api/modules/browser";
-import { octopThreadsApi } from "../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../api/modules/happyclawThreads";
 import type { TokenUsage } from "../../api/types";
 import type { ChatAttachment } from "./hooks/useChat";
 import MessageList from "./components/MessageList";
@@ -1433,7 +1433,7 @@ function ChatPageInner() {
       if (turnsFromEnd < 1) return;
       setForking(true);
       try {
-        const created = await octopThreadsApi.fork(agent, activeThreadId, {
+        const created = await happyclawThreadsApi.fork(agent, activeThreadId, {
           message_id: messageId,
           content: assistantMsg.content,
           assistant_turns_from_end: turnsFromEnd,
@@ -1469,7 +1469,7 @@ function ChatPageInner() {
       }
       setForking(true);
       try {
-        const created = await octopThreadsApi.fork(agent, threadId, {
+        const created = await happyclawThreadsApi.fork(agent, threadId, {
           assistant_turns_from_end: 1,
         });
         await navigateToForkedThread(agent, created);
@@ -1594,7 +1594,7 @@ function ChatPageInner() {
       onSelectSession={(sessionId, agentId) => {
         setActiveAgent(agentId);
         if (agentId && agentId !== resolvedAgentId) {
-          void octopThreadsApi.rebind(agentId, sessionId).catch(() => {});
+          void happyclawThreadsApi.rebind(agentId, sessionId).catch(() => {});
           navigate(`/chat/${agentId}/${sessionId}`);
           if (isMobile) setSidebarOpen(false);
           return;

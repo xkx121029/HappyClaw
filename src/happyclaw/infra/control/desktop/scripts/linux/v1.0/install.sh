@@ -21,8 +21,8 @@ SCRIPT_VERSION="v1.0"
 # Python interpreter the desktop deps are installed into (the Octop venv), used to
 # pick matching pythonX.Y-dev headers. Falls back to system `python3`.
 TARGET_PYTHON="python3"
-INSTALL_ROOT="/opt/octop-desktop"
-CONF_DIR="/etc/octop-desktop"
+INSTALL_ROOT="/opt/happyclaw-desktop"
+CONF_DIR="/etc/happyclaw-desktop"
 DISPLAY_NUM=":99"
 GEOMETRY="${GEOMETRY:-1920x1080}"
 # Absolute pixel size for xfdesktop icons (not scaled with GTK window scaling).
@@ -34,9 +34,9 @@ HAPPYCLAW_HOME="${HAPPYCLAW_HOME:-$HOME/.octop}"
 DESKTOP_STATE_DIR="${HAPPYCLAW_HOME}/desktop"
 DESKTOP_ENV="${DESKTOP_STATE_DIR}/desktop.env"
 
-SVC_XVNC="octop-desktop-xvnc"
-SVC_OPENBOX="octop-desktop-openbox"
-SVC_SESSION="octop-desktop-session"
+SVC_XVNC="happyclaw-desktop-xvnc"
+SVC_OPENBOX="happyclaw-desktop-openbox"
+SVC_SESSION="happyclaw-desktop-session"
 
 START_OPENBOX_SH="${INSTALL_ROOT}/start-openbox.sh"
 START_SESSION_SH="${INSTALL_ROOT}/start-session.sh"
@@ -47,8 +47,8 @@ APPLY_ICONS_SH="${INSTALL_ROOT}/apply-icon-size.sh"
 
 DESKTOP_DIR="/root/Desktop"
 AUTOSTART_DIR="/root/.config/autostart"
-WALLPAPER_FILE="/usr/share/backgrounds/octop-desktop-wallpaper.svg"
-WALLPAPER_PNG="/usr/share/backgrounds/octop-desktop-wallpaper.png"
+WALLPAPER_FILE="/usr/share/backgrounds/happyclaw-desktop-wallpaper.svg"
+WALLPAPER_PNG="/usr/share/backgrounds/happyclaw-desktop-wallpaper.png"
 XFCONF_DESKTOP_XML="/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
 
 fail() {
@@ -342,7 +342,7 @@ _icon_or_theme() {
 
 install_start_menu_logo() {
     # Copy the Octop PWA logo shipped next to this install.sh into the system
-    # install root. Uninstall removes /opt/octop-desktop; reinstall restores it.
+    # install root. Uninstall removes /opt/happyclaw-desktop; reinstall restores it.
     mkdir -p "${INSTALL_ROOT}/icons"
     local bundled_logo script_dir
     script_dir="$(cd "$(dirname "$0")" && pwd)"
@@ -399,10 +399,10 @@ fi
 
 mkdir -p /root/.config/xfce4/panel/launcher-1 \
     /root/.config/xfce4/xfconf/xfce-perchannel-xml \
-    /opt/octop-desktop/panel
+    /opt/happyclaw-desktop/panel
 
 write_panel_files() {
-    local start_icon="/opt/octop-desktop/icons/start-menu.png"
+    local start_icon="/opt/happyclaw-desktop/icons/start-menu.png"
     if [ ! -s "$start_icon" ]; then
         if [ -e /usr/share/icons/hicolor/48x48/apps/octop-start-menu.png ]; then
             start_icon="/usr/share/icons/hicolor/48x48/apps/octop-start-menu.png"
@@ -428,7 +428,7 @@ LAUNCHER_EOF
     chmod 0644 /root/.config/xfce4/panel/launcher-1/appfinder.desktop
 
     # Canonical copy under /opt survives user config wipes / bad xfconf flushes.
-    cat > /opt/octop-desktop/panel/xfce4-panel.xml << 'PANEL_EOF'
+    cat > /opt/happyclaw-desktop/panel/xfce4-panel.xml << 'PANEL_EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <channel name="xfce4-panel" version="1.0">
   <property name="configver" type="int" value="2"/>
@@ -464,10 +464,10 @@ LAUNCHER_EOF
   </property>
 </channel>
 PANEL_EOF
-    cp -f /opt/octop-desktop/panel/xfce4-panel.xml \
+    cp -f /opt/happyclaw-desktop/panel/xfce4-panel.xml \
         /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
     chmod 0644 /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml \
-        /opt/octop-desktop/panel/xfce4-panel.xml
+        /opt/happyclaw-desktop/panel/xfce4-panel.xml
 }
 
 if [ "$NO_START" = true ]; then
@@ -489,13 +489,13 @@ rm -rf /root/.cache/xfce4/xfconf 2>/dev/null || true
 pkill -x xfconfd >/dev/null 2>&1 || true
 sleep 0.2
 # Re-copy in case a racing xfconfd rewrote the channel file from an empty bus.
-cp -f /opt/octop-desktop/panel/xfce4-panel.xml \
+cp -f /opt/happyclaw-desktop/panel/xfce4-panel.xml \
     /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
 rm -rf /root/.cache/xfce4/xfconf 2>/dev/null || true
 
-if [ -f /tmp/octop-desktop-dbus-env ]; then
+if [ -f /tmp/happyclaw-desktop-dbus-env ]; then
     # shellcheck disable=SC1091
-    source /tmp/octop-desktop-dbus-env || true
+    source /tmp/happyclaw-desktop-dbus-env || true
 fi
 
 if command -v xfce4-panel >/dev/null 2>&1; then
@@ -757,15 +757,15 @@ EOF
 #!/bin/bash
 export DISPLAY=${DISPLAY_NUM} HOME=/root
 export LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
-export XDG_RUNTIME_DIR=/tmp/runtime-octop-desktop
+export XDG_RUNTIME_DIR=/tmp/runtime-happyclaw-desktop
 mkdir -p "\$XDG_RUNTIME_DIR"; chmod 700 "\$XDG_RUNTIME_DIR"
 for i in \$(seq 1 100); do xdpyinfo -display ${DISPLAY_NUM} >/dev/null 2>&1 && break; sleep 0.3; done
 eval "\$(dbus-launch --sh-syntax)"
-cat > /tmp/octop-desktop-dbus-env << ENVEOF
+cat > /tmp/happyclaw-desktop-dbus-env << ENVEOF
 export DBUS_SESSION_BUS_ADDRESS="\$DBUS_SESSION_BUS_ADDRESS"
 export DBUS_SESSION_BUS_PID="\$DBUS_SESSION_BUS_PID"
 ENVEOF
-chmod 644 /tmp/octop-desktop-dbus-env
+chmod 644 /tmp/happyclaw-desktop-dbus-env
 wait "\$DBUS_SESSION_BUS_PID" 2>/dev/null || sleep infinity
 SCRIPT_EOF
     chmod +x "$START_SESSION_SH"
@@ -776,11 +776,11 @@ set -euo pipefail
 export DISPLAY="${DISPLAY:-:99}"
 export HOME="${HOME:-/root}"
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-/root/.config}"
-[ -f /tmp/octop-desktop-dbus-env ] && source /tmp/octop-desktop-dbus-env || true
+[ -f /tmp/happyclaw-desktop-dbus-env ] && source /tmp/happyclaw-desktop-dbus-env || true
 
-WALLPAPER="/usr/share/backgrounds/octop-desktop-wallpaper.png"
-[ -f "$WALLPAPER" ] || WALLPAPER="/opt/octop-desktop/wallpaper.png"
-[ -f "$WALLPAPER" ] || WALLPAPER="/usr/share/backgrounds/octop-desktop-wallpaper.svg"
+WALLPAPER="/usr/share/backgrounds/happyclaw-desktop-wallpaper.png"
+[ -f "$WALLPAPER" ] || WALLPAPER="/opt/happyclaw-desktop/wallpaper.png"
+[ -f "$WALLPAPER" ] || WALLPAPER="/usr/share/backgrounds/happyclaw-desktop-wallpaper.svg"
 [ -f "$WALLPAPER" ] || exit 0
 command -v xfconf-query >/dev/null 2>&1 || exit 0
 
@@ -834,12 +834,12 @@ export DISPLAY="\${DISPLAY:-:99}"
 export HOME="\${HOME:-/root}"
 export XDG_CONFIG_HOME="\${XDG_CONFIG_HOME:-/root/.config}"
 
-if [ ! -f /tmp/octop-desktop-dbus-env ]; then
-    echo "missing /tmp/octop-desktop-dbus-env (desktop session not ready)"
+if [ ! -f /tmp/happyclaw-desktop-dbus-env ]; then
+    echo "missing /tmp/happyclaw-desktop-dbus-env (desktop session not ready)"
     exit 1
 fi
 # shellcheck disable=SC1091
-source /tmp/octop-desktop-dbus-env
+source /tmp/happyclaw-desktop-dbus-env
 if [ -z "\${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
     echo "DBUS_SESSION_BUS_ADDRESS empty"
     exit 1
@@ -911,13 +911,13 @@ ICONS_EOF
 
     cat > "$START_OPENBOX_SH" << 'SCRIPT_EOF'
 #!/bin/bash
-export DISPLAY=:99 HOME=/root XDG_RUNTIME_DIR=/tmp/runtime-octop-desktop
+export DISPLAY=:99 HOME=/root XDG_RUNTIME_DIR=/tmp/runtime-happyclaw-desktop
 export XDG_CONFIG_HOME=/root/.config XDG_DATA_HOME=/root/.local/share XDG_CURRENT_DESKTOP="XFCE"
 export LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8 LANGUAGE=zh_CN:zh
 mkdir -p "$XDG_RUNTIME_DIR" "$HOME/Desktop"; chmod 700 "$XDG_RUNTIME_DIR"
 for i in $(seq 1 100); do xdpyinfo -display :99 >/dev/null 2>&1 && break; sleep 0.3; done
 for i in $(seq 1 50); do
-    [ -f /tmp/octop-desktop-dbus-env ] && { source /tmp/octop-desktop-dbus-env; [ -n "$DBUS_SESSION_BUS_ADDRESS" ] && break; }
+    [ -f /tmp/happyclaw-desktop-dbus-env ] && { source /tmp/happyclaw-desktop-dbus-env; [ -n "$DBUS_SESSION_BUS_ADDRESS" ] && break; }
     sleep 0.3
 done
 xset -display :99 s off s noblank s 0 0 2>/dev/null || true
@@ -929,8 +929,8 @@ command -v xfdesktop >/dev/null 2>&1 && xfdesktop --display=:99 &>/dev/null &
 sleep 1
 # Seed panel once after xfsettingsd is up. ensure-panel SIGKILLs the panel and
 # restarts xfconfd so our XML wins over any stale in-memory channel.
-if [ -x /opt/octop-desktop/ensure-panel.sh ]; then
-    /opt/octop-desktop/ensure-panel.sh || true
+if [ -x /opt/happyclaw-desktop/ensure-panel.sh ]; then
+    /opt/happyclaw-desktop/ensure-panel.sh || true
 else
     pkill -9 -x xfce4-panel >/dev/null 2>&1 || true
     sleep 0.2
@@ -943,34 +943,34 @@ command -v fcitx5 >/dev/null 2>&1 && fcitx5 -d &>/dev/null &
         pgrep -x xfce4-panel >/dev/null 2>&1 && break
         sleep 0.5
     done
-    if ! pgrep -x xfce4-panel >/dev/null 2>&1 && [ -x /opt/octop-desktop/ensure-panel.sh ]; then
-        /opt/octop-desktop/ensure-panel.sh || true
+    if ! pgrep -x xfce4-panel >/dev/null 2>&1 && [ -x /opt/happyclaw-desktop/ensure-panel.sh ]; then
+        /opt/happyclaw-desktop/ensure-panel.sh || true
     fi
     for i in $(seq 1 40); do
         pgrep -f "xfdesktop --display=:99" >/dev/null 2>&1 && break
         sleep 0.5
     done
-    [ -x /opt/octop-desktop/apply-wallpaper.sh ] && /opt/octop-desktop/apply-wallpaper.sh
-    [ -x /opt/octop-desktop/apply-icon-size.sh ] && /opt/octop-desktop/apply-icon-size.sh
+    [ -x /opt/happyclaw-desktop/apply-wallpaper.sh ] && /opt/happyclaw-desktop/apply-wallpaper.sh
+    [ -x /opt/happyclaw-desktop/apply-icon-size.sh ] && /opt/happyclaw-desktop/apply-icon-size.sh
     if command -v xfconf-query >/dev/null 2>&1; then
         # shellcheck disable=SC1091
-        [ -f /tmp/octop-desktop-dbus-env ] && source /tmp/octop-desktop-dbus-env || true
+        [ -f /tmp/happyclaw-desktop-dbus-env ] && source /tmp/happyclaw-desktop-dbus-env || true
         xfconf-query -c xfce4-screensaver -p /screensaver/enabled --create -t bool -s false 2>/dev/null || true
         xfconf-query -c xfce4-screensaver -p /lock/enabled --create -t bool -s false 2>/dev/null || true
         xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/dpms-enabled --create -t bool -s false 2>/dev/null || true
         xset -display :99 s off s noblank s 0 0 2>/dev/null || true
         xset -display :99 -dpms 2>/dev/null || true
     fi
-    [ -x /opt/octop-desktop/trust-desktop-icons.sh ] && /opt/octop-desktop/trust-desktop-icons.sh
+    [ -x /opt/happyclaw-desktop/trust-desktop-icons.sh ] && /opt/happyclaw-desktop/trust-desktop-icons.sh
 ) &>/dev/null &
-exec openbox --config-file /opt/octop-desktop/openbox.xml
+exec openbox --config-file /opt/happyclaw-desktop/openbox.xml
 SCRIPT_EOF
     chmod +x "$START_OPENBOX_SH"
 }
 
 write_systemd_units() {
     local xvnc_bin="$1"
-    local vnc_password="${VNC_PASSWORD:-octop-desktop}"
+    local vnc_password="${VNC_PASSWORD:-happyclaw-desktop}"
     local vncpasswd_cmd
     local localhost_args
     vncpasswd_cmd=$(detect_vncpasswd_bin) || fail "vncpasswd not found"
@@ -1053,7 +1053,7 @@ start_services() {
         systemctl restart "$SVC_XVNC" "$SVC_SESSION" "$SVC_OPENBOX" \
             || fail "systemctl restart failed"
         sleep 2
-        systemctl is-active --quiet "$SVC_XVNC" || fail "octop-desktop-xvnc not active"
+        systemctl is-active --quiet "$SVC_XVNC" || fail "happyclaw-desktop-xvnc not active"
         sleep 4
         # Wallpaper/icon helpers can hang on older xfdesktop; cap wait time.
         timeout 30 env DISPLAY="${DISPLAY_NUM}" HOME=/root "${APPLY_WALLPAPER_SH}" 2>/dev/null || true
@@ -1072,7 +1072,7 @@ start_services() {
 
     local xvnc_bin
     xvnc_bin=$(detect_xvnc_bin) || fail "Xvnc not found"
-    local vnc_password="${VNC_PASSWORD:-octop-desktop}"
+    local vnc_password="${VNC_PASSWORD:-happyclaw-desktop}"
     local vncpasswd_cmd
     local localhost_args
     vncpasswd_cmd=$(detect_vncpasswd_bin) || fail "vncpasswd not found"

@@ -13,12 +13,12 @@ _HAPPYCLAW_COMMON="$(dirname "$0")/common.sh"
 
 ENV_FILE="${TRIM_APPDEST:-/var/apps/octop/target}/docker/.env"
 # 升级会替换 target/，先从 @appdata 恢复 .env，再挂回 data-share 并迁旧目录。
-DATA_DIR="$(octop_prepare_docker_persist "$ENV_FILE")"
+DATA_DIR="$(happyclaw_prepare_docker_persist "$ENV_FILE")"
 mkdir -p "$DATA_DIR"
 
 WIZARD_TEMPLATE="${TRIM_APPDEST:-/var/apps/octop/target}/wizard/config.template"
 WIZARD_DIR="$(dirname "${TRIM_APPDEST:-/var/apps/octop/target}")/wizard"
 [ -f "$WIZARD_TEMPLATE" ] || WIZARD_TEMPLATE="${TRIM_APPDEST:-/var/apps/octop/target}/../wizard/config"
-octop_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
+happyclaw_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
 
 exit 0

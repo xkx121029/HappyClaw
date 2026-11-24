@@ -1,5 +1,5 @@
 import { message } from "../../../utils/antdMessage";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import { patchStoredSession } from "../hooks/useSessions";
 
 /** Persist the share flag and tell the user when it does not stick. */
@@ -11,7 +11,7 @@ export async function saveSessionShared(
   failedText: string,
 ): Promise<void> {
   try {
-    await octopThreadsApi.patch(agentId, sessionId, { contributed });
+    await happyclawThreadsApi.patch(agentId, sessionId, { contributed });
   } catch {
     message.error(failedText);
     return;

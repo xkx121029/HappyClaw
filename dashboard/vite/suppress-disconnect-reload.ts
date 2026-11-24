@@ -11,7 +11,7 @@ import type { Plugin } from "vite";
  */
 export function suppressViteDisconnectReload(): Plugin {
   return {
-    name: "octop-suppress-vite-disconnect-reload",
+    name: "happyclaw-suppress-vite-disconnect-reload",
     apply: "serve",
     enforce: "pre",
     transform(code, id) {

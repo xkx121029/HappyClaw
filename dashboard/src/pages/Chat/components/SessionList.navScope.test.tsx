@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, vi } from "vitest";
 import type { OctopAgent } from "../../../context/AgentContext";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import MinimalAgentSessionNav from "./MinimalAgentSessionNav";
 import SessionList from "./SessionList";
 import { hiddenExpertsStorageKey } from "../utils/hiddenExpertsPrefs";
@@ -85,7 +85,7 @@ function renderList() {
 
 describe("MinimalAgentSessionNav nav scopes", () => {
   beforeEach(() => {
-    vi.spyOn(octopThreadsApi, "list").mockResolvedValue([]);
+    vi.spyOn(happyclawThreadsApi, "list").mockResolvedValue([]);
   });
 
   it("filters the same expert, team, and cloud tabs", async () => {

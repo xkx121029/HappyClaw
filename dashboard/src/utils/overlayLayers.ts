@@ -1,5 +1,5 @@
-const CHROME_ID = "octop-chrome";
-const STAGE_ID = "octop-stage";
+const CHROME_ID = "happyclaw-chrome";
+const STAGE_ID = "happyclaw-stage";
 
 /** Top flex slot. The Windows caption menu is portaled here. */
 export function chromeSlot(): HTMLElement {

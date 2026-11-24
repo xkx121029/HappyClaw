@@ -126,19 +126,19 @@ start_process() {
     fi
 
     HAPPYCLAW_PORT="$PORT" HAPPYCLAW_BIND_HOST=0.0.0.0 run_as_service_bg "$BIN" --host 0.0.0.0 --port "$PORT"
-    octop_pid=$!
+    happyclaw_pid=$!
     # 先写 PID：飞牛若在端口就绪前杀掉 start（超时 / 用户取消），stop 仍找得到进程。
-    printf "%s" "$octop_pid" > "${PID_FILE}"
+    printf "%s" "$happyclaw_pid" > "${PID_FILE}"
 
     _abort_start() {
         trap - INT TERM HUP
-        if [ -n "${octop_pid:-}" ]; then
-            kill -TERM -- "-$octop_pid" 2>/dev/null || true
-            if type octop_kill_pid_tree >/dev/null 2>&1; then
-                octop_kill_pid_tree "$octop_pid" TERM
-                octop_kill_pid_tree "$octop_pid" KILL
+        if [ -n "${happyclaw_pid:-}" ]; then
+            kill -TERM -- "-$happyclaw_pid" 2>/dev/null || true
+            if type happyclaw_kill_pid_tree >/dev/null 2>&1; then
+                happyclaw_kill_pid_tree "$happyclaw_pid" TERM
+                happyclaw_kill_pid_tree "$happyclaw_pid" KILL
             else
-                kill -KILL "$octop_pid" 2>/dev/null || true
+                kill -KILL "$happyclaw_pid" 2>/dev/null || true
             fi
         fi
         if type free_octop_ports >/dev/null 2>&1; then
@@ -158,10 +158,10 @@ start_process() {
         if port_ready; then
             trap - INT TERM HUP
             rm -f "${DATA_DIR}/octop-start-error.txt" "${PKGVAR}/last-error.txt"
-            log_msg "Octop pid=$octop_pid 端口 ${PORT} 已就绪"
+            log_msg "Octop pid=$happyclaw_pid 端口 ${PORT} 已就绪"
             return 0
         fi
-        if ! kill -0 "$octop_pid" 2>/dev/null; then
+        if ! kill -0 "$happyclaw_pid" 2>/dev/null; then
             trap - INT TERM HUP
             rm -f "${PID_FILE}"
             fail_start "进程已退出，未能监听 ${PORT}。请打开数据目录 octop-start-error.txt。"
@@ -183,8 +183,8 @@ stop_process() {
         if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
             # setsid 启动时 -$pid 即整组；失败则按进程树杀 runuser + Python 子进程。
             kill -TERM -- "-$pid" 2>/dev/null || true
-            if type octop_kill_pid_tree >/dev/null 2>&1; then
-                octop_kill_pid_tree "$pid" TERM
+            if type happyclaw_kill_pid_tree >/dev/null 2>&1; then
+                happyclaw_kill_pid_tree "$pid" TERM
             else
                 kill -TERM "$pid" 2>/dev/null || true
             fi
@@ -197,8 +197,8 @@ stop_process() {
             done
             if kill -0 "$pid" 2>/dev/null || port_ready; then
                 kill -KILL -- "-$pid" 2>/dev/null || true
-                if type octop_kill_pid_tree >/dev/null 2>&1; then
-                    octop_kill_pid_tree "$pid" KILL
+                if type happyclaw_kill_pid_tree >/dev/null 2>&1; then
+                    happyclaw_kill_pid_tree "$pid" KILL
                 else
                     kill -KILL "$pid" 2>/dev/null || true
                 fi

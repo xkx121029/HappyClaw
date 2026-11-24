@@ -25,7 +25,7 @@ export function portableZipName(platformTag: string, version: string): string {
 
 /** Dashboard files inside the portable tree. The shell serves this copy. */
 export function bundledDashboardDir(portableDir: string): string {
-  return join(portableDir, "packages", "octop", "dashboard");
+  return join(portableDir, "packages", "happyclaw", "dashboard");
 }
 
 export function installedRuntimeDir(
@@ -43,7 +43,7 @@ export function installedRuntimeDir(
 
 /**
  * PyInstaller onedir backend installed beside the shell:
- * ``resources/sidecar/backend/octop.exe`` with ``_internal/`` next to it. The
+ * ``resources/sidecar/backend/happyclaw.exe`` with ``_internal/`` next to it. The
  * exe resolves ``_internal`` relative to itself, so the two cannot be split.
  * The artifact is Windows x64 only, hence the platform gate.
  */
@@ -54,12 +54,12 @@ export function installedOnedirBackendDir(
 ): string | null {
   if (platform !== "win32") return null;
   const dir = join(resourcesRoot, "sidecar", "backend");
-  return exists(join(dir, "octop.exe")) ? dir : null;
+  return exists(join(dir, "happyclaw.exe")) ? dir : null;
 }
 
 /** Dashboard static files carried inside the onedir backend. */
 export function onedirDashboardDir(backendDir: string): string {
-  return join(backendDir, "_internal", "octop", "dashboard");
+  return join(backendDir, "_internal", "happyclaw", "dashboard");
 }
 
 /**

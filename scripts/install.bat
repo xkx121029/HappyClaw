@@ -7,7 +7,7 @@ REM Set HAPPYCLAW_INSTALL_BASE to a mirror serving the same scripts/ tree when G
 REM   if not defined HAPPYCLAW_INSTALL_BASE set HAPPYCLAW_INSTALL_BASE=https://raw.githubusercontent.com/xkx121029/HappyClaw/main
 REM   curl -fsSL "%HAPPYCLAW_INSTALL_BASE%/scripts/install.bat" -o install.bat
 
-if defined HAPPYCLAW_HOME (set "HAPPYCLAW_HOME=%HAPPYCLAW_HOME%") else (set "HAPPYCLAW_HOME=%USERPROFILE%\.octop")
+if defined HAPPYCLAW_HOME (set "HAPPYCLAW_HOME=%HAPPYCLAW_HOME%") else (if exist "%USERPROFILE%\.happyclaw" (set "HAPPYCLAW_HOME=%USERPROFILE%\.happyclaw") else (if exist "%USERPROFILE%\.octop" (set "HAPPYCLAW_HOME=%USERPROFILE%\.octop") else (set "HAPPYCLAW_HOME=%USERPROFILE%\.happyclaw")))
 set "HAPPYCLAW_VENV=%HAPPYCLAW_HOME%\venv"
 set "HAPPYCLAW_BIN=%HAPPYCLAW_HOME%\bin"
 set "PYTHON_VERSION=3.12"
@@ -46,29 +46,29 @@ echo         to install it, or install later from the dashboard.
 exit /b 0
 
 :done_args
-echo [octop] Installing HappyClaw into %HAPPYCLAW_HOME%
+echo [happyclaw] Installing HappyClaw into %HAPPYCLAW_HOME%
 
 call :ensure_uv
 if errorlevel 1 exit /b 1
 
 if exist "%HAPPYCLAW_VENV%" (
-    echo [octop] Existing environment found, upgrading...
+    echo [happyclaw] Existing environment found, upgrading...
 ) else (
-    echo [octop] Creating Python %PYTHON_VERSION% environment...
+    echo [happyclaw] Creating Python %PYTHON_VERSION% environment...
 )
 
 uv venv "%HAPPYCLAW_VENV%" --python %PYTHON_VERSION% --quiet --clear
-if errorlevel 1 (echo [octop] ERROR: Failed to create venv & exit /b 1)
+if errorlevel 1 (echo [happyclaw] ERROR: Failed to create venv & exit /b 1)
 
 set "VENV_PYTHON=%HAPPYCLAW_VENV%\Scripts\python.exe"
-if not exist "%VENV_PYTHON%" (echo [octop] ERROR: venv python missing & exit /b 1)
+if not exist "%VENV_PYTHON%" (echo [happyclaw] ERROR: venv python missing & exit /b 1)
 
 for /f "delims=" %%v in ('"%VENV_PYTHON%" --version 2^>^&1') do set "PY_VERSION=%%v"
-echo [octop] Python environment ready (%PY_VERSION%)
+echo [happyclaw] Python environment ready (%PY_VERSION%)
 
 set "EXTRAS_SUFFIX=[browser]"
 if defined ARG_EXTRAS set "EXTRAS_SUFFIX=[browser,%ARG_EXTRAS%]"
-set "VENV_OCTOP=%HAPPYCLAW_VENV%\Scripts\happyclaw.exe"
+set "VENV_HAPPYCLAW=%HAPPYCLAW_VENV%\Scripts\happyclaw.exe"
 
 if "%ARG_FROM_SOURCE%"=="1" goto :install_from_source
 goto :install_from_pypi
@@ -79,16 +79,16 @@ goto :install_from_git
 
 :install_from_local
 for %%I in ("%ARG_SOURCE_DIR%") do set "ARG_SOURCE_DIR=%%~fI"
-echo [octop] Installing from local source: %ARG_SOURCE_DIR%
+echo [happyclaw] Installing from local source: %ARG_SOURCE_DIR%
 call :prepare_console "%ARG_SOURCE_DIR%"
 uv pip install "%ARG_SOURCE_DIR%%EXTRAS_SUFFIX%" --python "%VENV_PYTHON%"
-if errorlevel 1 (echo [octop] ERROR: install failed & exit /b 1)
+if errorlevel 1 (echo [happyclaw] ERROR: install failed & exit /b 1)
 goto :install_verify
 
 :install_from_git
 where git >nul 2>&1
-if errorlevel 1 (echo [octop] ERROR: git required & exit /b 1)
-set "CLONE_DIR=%TEMP%\octop-install-%RANDOM%"
+if errorlevel 1 (echo [happyclaw] ERROR: git required & exit /b 1)
+set "CLONE_DIR=%TEMP%\happyclaw-install-%RANDOM%"
 git clone --depth 1 %HAPPYCLAW_REPO% "%CLONE_DIR%"
 if errorlevel 1 exit /b 1
 call :prepare_console "%CLONE_DIR%"
@@ -100,56 +100,58 @@ goto :install_verify
 
 :install_from_pypi
 REM PEP 508: extras must sit between name and version specifier
-REM (octop[browser]==x.y.z); octop==x.y.z[browser] is an invalid requirement.
-set "_PACKAGE=octop%EXTRAS_SUFFIX%"
-if defined ARG_VERSION set "_PACKAGE=octop%EXTRAS_SUFFIX%==%ARG_VERSION%"
-echo [octop] Installing %_PACKAGE% from PyPI...
+REM (happyclaw[browser]==x.y.z); happyclaw==x.y.z[browser] is an invalid requirement.
+set "_PACKAGE=happyclaw%EXTRAS_SUFFIX%"
+if defined ARG_VERSION set "_PACKAGE=happyclaw%EXTRAS_SUFFIX%==%ARG_VERSION%"
+echo [happyclaw] Installing %_PACKAGE% from PyPI...
 uv pip install "%_PACKAGE%" --python "%VENV_PYTHON%"
-if errorlevel 1 (echo [octop] ERROR: install failed & exit /b 1)
+if errorlevel 1 (echo [happyclaw] ERROR: install failed & exit /b 1)
 
 :install_verify
 call :verify_install
 if errorlevel 1 exit /b 1
-if not exist "%VENV_OCTOP%" (echo [octop] ERROR: octop CLI not found & exit /b 1)
-echo [octop] HappyClaw installed successfully
+if not exist "%VENV_HAPPYCLAW%" (echo [happyclaw] ERROR: happyclaw CLI not found & exit /b 1)
+echo [happyclaw] HappyClaw installed successfully
 
 if "%CONSOLE_AVAILABLE%"=="0" (
-    "%VENV_PYTHON%" -c "import importlib.resources, octop; p=importlib.resources.files('octop')/'dashboard'/'index.html'; print('yes' if p.is_file() else 'no')" > "%TEMP%\_octop_ui.tmp" 2>&1
-    set /p _UI=<"%TEMP%\_octop_ui.tmp"
-    del "%TEMP%\_octop_ui.tmp" >nul 2>&1
+    "%VENV_PYTHON%" -c "import importlib.resources, happyclaw; p=importlib.resources.files('happyclaw')/'dashboard'/'index.html'; print('yes' if p.is_file() else 'no')" > "%TEMP%\_happyclaw_ui.tmp" 2>&1
+    set /p _UI=<"%TEMP%\_happyclaw_ui.tmp"
+    del "%TEMP%\_happyclaw_ui.tmp" >nul 2>&1
     if "!_UI!"=="yes" set "CONSOLE_AVAILABLE=1"
 )
 
 echo ",%ARG_EXTRAS%," | findstr /i /c:",browser," >nul
 if errorlevel 1 (
-    echo [octop] Skipping Playwright Chromium download.
-    echo [octop] For remote-browser automation, re-run with -Extras browser, use the dashboard, or:
-    echo [octop]   "%VENV_PYTHON%" -m playwright install chromium
+    echo [happyclaw] Skipping Playwright Chromium download.
+    echo [happyclaw] For remote-browser automation, re-run with -Extras browser, use the dashboard, or:
+    echo [happyclaw]   "%VENV_PYTHON%" -m playwright install chromium
     goto :after_browser
 )
 call :detect_chrome
 if defined HAPPYCLAW_SYSTEM_CHROME (
-    echo [octop] Found system Chrome/Chromium: %HAPPYCLAW_SYSTEM_CHROME%
-    echo [octop] Using system browser; skipping Playwright Chromium download.
-    echo [octop] To use bundled Chromium instead, run: "%VENV_PYTHON%" -m playwright install chromium
+    echo [happyclaw] Found system Chrome/Chromium: %HAPPYCLAW_SYSTEM_CHROME%
+    echo [happyclaw] Using system browser; skipping Playwright Chromium download.
+    echo [happyclaw] To use bundled Chromium instead, run: "%VENV_PYTHON%" -m playwright install chromium
     goto :after_browser
 )
-echo [octop] Installing Playwright Chromium browser...
+echo [happyclaw] Installing Playwright Chromium browser...
 "%VENV_PYTHON%" -m playwright install chromium
 if errorlevel 1 (
-    echo [octop] WARNING: Playwright install failed. Run later: "%VENV_PYTHON%" -m playwright install chromium
+    echo [happyclaw] WARNING: Playwright install failed. Run later: "%VENV_PYTHON%" -m playwright install chromium
 )
 :after_browser
 
 if not exist "%HAPPYCLAW_BIN%" mkdir "%HAPPYCLAW_BIN%"
 
-echo @echo off > "%HAPPYCLAW_BIN%\octop.cmd"
-echo set "HAPPYCLAW_HOME=%%HAPPYCLAW_HOME%%" >> "%HAPPYCLAW_BIN%\octop.cmd"
-echo if "%%HAPPYCLAW_HOME%%"=="" set "HAPPYCLAW_HOME=%%USERPROFILE%%\.octop" >> "%HAPPYCLAW_BIN%\octop.cmd"
-echo "%%HAPPYCLAW_HOME%%\venv\Scripts\happyclaw.exe" %%* >> "%HAPPYCLAW_BIN%\octop.cmd"
+echo @echo off > "%HAPPYCLAW_BIN%\happyclaw.cmd"
+echo set "HAPPYCLAW_HOME=%%HAPPYCLAW_HOME%%" >> "%HAPPYCLAW_BIN%\happyclaw.cmd"
+echo if "%%HAPPYCLAW_HOME%%"=="" if exist "%%USERPROFILE%%\.happyclaw" set "HAPPYCLAW_HOME=%%USERPROFILE%%\.happyclaw" >> "%HAPPYCLAW_BIN%\happyclaw.cmd"
+echo if "%%HAPPYCLAW_HOME%%"=="" if not exist "%%USERPROFILE%%\.octop" set "HAPPYCLAW_HOME=%%USERPROFILE%%\.happyclaw" >> "%HAPPYCLAW_BIN%\happyclaw.cmd"
+echo if "%%HAPPYCLAW_HOME%%"=="" set "HAPPYCLAW_HOME=%%USERPROFILE%%\.octop" >> "%HAPPYCLAW_BIN%\happyclaw.cmd"
+echo "%%HAPPYCLAW_HOME%%\venv\Scripts\happyclaw.exe" %%* >> "%HAPPYCLAW_BIN%\happyclaw.cmd"
 
 set "HAPPYCLAW_BIN_FOR_PS=%HAPPYCLAW_BIN%"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$bin=$env:HAPPYCLAW_BIN_FOR_PS; $cur=[Environment]::GetEnvironmentVariable('Path','User'); if(-not $cur){$cur=''}; $parts=$cur.Split(';')|?{$_}; $ok=$false; foreach($p in $parts){if($p.TrimEnd('\') -ieq $bin.TrimEnd('\')){$ok=$true}}; if(-not $ok){$new=if($cur){$cur.TrimEnd(';')+';'+$bin}else{$bin}; [Environment]::SetEnvironmentVariable('Path',$new,'User'); Write-Host '[octop] Added to User PATH'} else {Write-Host '[octop] Already in User PATH'}"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$bin=$env:HAPPYCLAW_BIN_FOR_PS; $cur=[Environment]::GetEnvironmentVariable('Path','User'); if(-not $cur){$cur=''}; $parts=$cur.Split(';')|?{$_}; $ok=$false; foreach($p in $parts){if($p.TrimEnd('\') -ieq $bin.TrimEnd('\')){$ok=$true}}; if(-not $ok){$new=if($cur){$cur.TrimEnd(';')+';'+$bin}else{$bin}; [Environment]::SetEnvironmentVariable('Path',$new,'User'); Write-Host '[happyclaw] Added to User PATH'} else {Write-Host '[happyclaw] Already in User PATH'}"
 set "HAPPYCLAW_BIN_FOR_PS="
 echo %PATH% | findstr /i /c:"%HAPPYCLAW_BIN%" >nul || set "PATH=%HAPPYCLAW_BIN%;%PATH%"
 
@@ -158,7 +160,7 @@ echo HappyClaw installed successfully!
 echo   Location: %HAPPYCLAW_HOME%
 echo   Python:   %PY_VERSION%
 echo.
-echo If 'octop' is not found in this session, run:
+echo If 'happyclaw' is not found in this session, run:
 echo   set PATH=%HAPPYCLAW_BIN%;%%PATH%%
 echo Or open a new terminal ^(saved to User PATH^).
 echo.
@@ -172,11 +174,11 @@ exit /b 0
 ::detect_chrome
 set "HAPPYCLAW_SYSTEM_CHROME="
 REM Prefer happyclaw-browser's own detector (same path used at runtime)
-"%VENV_PYTHON%" -c "from happyclaw_browser.cdp.launcher import find_chrome; p=find_chrome(); print(p or '', end='')" > "%TEMP%\_octop_chrome.tmp" 2>nul
+"%VENV_PYTHON%" -c "from happyclaw_browser.cdp.launcher import find_chrome; p=find_chrome(); print(p or '', end='')" > "%TEMP%\_happyclaw_chrome.tmp" 2>nul
 if not errorlevel 1 (
-    set /p _CHROME=<"%TEMP%\_octop_chrome.tmp"
+    set /p _CHROME=<"%TEMP%\_happyclaw_chrome.tmp"
 )
-del "%TEMP%\_octop_chrome.tmp" >nul 2>&1
+del "%TEMP%\_happyclaw_chrome.tmp" >nul 2>&1
 if defined _CHROME (
     set "HAPPYCLAW_SYSTEM_CHROME=%_CHROME%"
     goto :detect_chrome_done
@@ -202,7 +204,7 @@ exit /b 0
 
 :ensure_uv
 if defined ARG_UV_PATH (
-    if not exist "%ARG_UV_PATH%" (echo [octop] ERROR: uv not found & exit /b 1)
+    if not exist "%ARG_UV_PATH%" (echo [happyclaw] ERROR: uv not found & exit /b 1)
     for %%I in ("%ARG_UV_PATH%") do set "PATH=%%~dpI;!PATH!"
     goto :ensure_uv_done
 )
@@ -211,10 +213,10 @@ if not errorlevel 1 goto :ensure_uv_done
 for %%c in ("%USERPROFILE%\.local\bin\uv.exe" "%LOCALAPPDATA%\uv\uv.exe") do (
     if exist %%c (set "PATH=%%~dpc;!PATH!" & goto :ensure_uv_done)
 )
-echo [octop] Installing uv...
+echo [happyclaw] Installing uv...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://astral.sh/uv/install.ps1 -TimeoutSec 15 | iex" 2>nul
 if not errorlevel 1 goto :ensure_uv_refresh
-echo [octop] astral.sh failed, trying GitHub...
+echo [happyclaw] astral.sh failed, trying GitHub...
 call :download_uv_github
 if errorlevel 1 exit /b 1
 goto :ensure_uv_done
@@ -223,7 +225,7 @@ goto :ensure_uv_done
 for %%p in ("%USERPROFILE%\.local\bin" "%LOCALAPPDATA%\uv") do (
     if exist %%p echo "!PATH!" | findstr /i /c:"%%~p" >nul || set "PATH=%%~p;!PATH!"
 )
-where uv >nul 2>&1 || (echo [octop] ERROR: uv install failed & exit /b 1)
+where uv >nul 2>&1 || (echo [happyclaw] ERROR: uv install failed & exit /b 1)
 :ensure_uv_done
 exit /b 0
 
@@ -241,11 +243,11 @@ exit /b 0
 
 :prepare_console
 set "_RD=%~1"
-set "_DEST=%_RD%\src\octop\dashboard"
+set "_DEST=%_RD%\src\happyclaw\dashboard"
 if exist "%_DEST%\index.html" (set "CONSOLE_AVAILABLE=1" & exit /b 0)
 if not exist "%_RD%\dashboard\package.json" exit /b 0
 where npm >nul 2>&1 || exit /b 0
-echo [octop] Building dashboard...
+echo [happyclaw] Building dashboard...
 pushd "%_RD%\dashboard"
 npm ci && npm run build
 popd
@@ -253,8 +255,8 @@ if exist "%_DEST%\index.html" set "CONSOLE_AVAILABLE=1"
 exit /b 0
 
 :verify_install
-echo [octop] Verifying installation...
+echo [happyclaw] Verifying installation...
 "%VENV_PYTHON%" -c "from happyclaw.infra.agents.manager import AgentManager" >nul 2>&1
-if errorlevel 1 (echo [octop] ERROR: install verification failed & exit /b 1)
-echo [octop] Install verification passed
+if errorlevel 1 (echo [happyclaw] ERROR: install verification failed & exit /b 1)
+echo [happyclaw] Install verification passed
 exit /b 0

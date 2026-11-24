@@ -64,6 +64,23 @@ def test_skillhub_metadata_writes_localized_label_and_summary() -> None:
     assert "display_name:" not in rendered
 
 
+def test_skillhub_metadata_writes_happyclaw_namespace_and_keeps_legacy_reads() -> None:
+    from_legacy = with_skillhub_presentation_metadata(
+        "---\nname: pdf-reader\nmetadata:\n  octop:\n    emoji: '📄'\n---\n\n# Body\n",
+        display_name="PDF 阅读",
+        icon_url="",
+    )
+    assert "happyclaw:" in from_legacy
+    assert "emoji: 📄" in from_legacy
+
+    preferred = with_skillhub_presentation_metadata(
+        "---\nname: pdf-reader\nmetadata:\n  happyclaw:\n    emoji: '📄'\n  octop:\n    emoji: '📦'\n---\n",
+        display_name="PDF 阅读",
+        icon_url="",
+    )
+    assert "emoji: 📄" in preferred
+
+
 def test_skillhub_icon_url_allows_only_http_urls() -> None:
     assert _valid_skillhub_icon_url("https://cdn.example.com/icon.png")
     assert _valid_skillhub_icon_url("http://cdn.example.com/icon.png")

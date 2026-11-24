@@ -63,13 +63,13 @@ fi
 # rpm %post passes 1 on install and 2 on upgrade.
 case "${1-}" in
   configure|[12])
-    _octop_desktop_lib='/opt/${sanitizedProductName}/resources/linux-desktop-shortcut.sh'
-    if [ -f "$_octop_desktop_lib" ]; then
+    _happyclaw_desktop_lib='/opt/${sanitizedProductName}/resources/linux-desktop-shortcut.sh'
+    if [ -f "$_happyclaw_desktop_lib" ]; then
       # shellcheck disable=SC1090
-      . "$_octop_desktop_lib"
-      octop_sync_desktop_shortcut "/usr/share/applications/${executable}.desktop" "${executable}.desktop" || true
+      . "$_happyclaw_desktop_lib"
+      happyclaw_sync_desktop_shortcut "/usr/share/applications/${executable}.desktop" "${executable}.desktop" || true
     else
-      echo "octop: desktop shortcut helper missing: $_octop_desktop_lib" >&2
+      echo "happyclaw: desktop shortcut helper missing: $_happyclaw_desktop_lib" >&2
     fi
     ;;
 esac

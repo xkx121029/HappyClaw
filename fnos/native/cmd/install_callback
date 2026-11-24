@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # 共享函数库（find_python312 / fix_ownership_and_perms / free_octop_ports /
-# octop_render_config_wizard 等）
+# happyclaw_render_config_wizard 等）
 # 打包时由 scripts/build-fpk.sh 注入；仓库内运行无此文件时跳过（函数缺失时再报错）。
 _HAPPYCLAW_COMMON="$(dirname "$0")/common.sh"
 [ -f "$_HAPPYCLAW_COMMON" ] || _HAPPYCLAW_COMMON="/var/apps/octop-native/cmd/common.sh"
@@ -37,8 +37,8 @@ fail_install() {
     exit 1
 }
 
-if type octop_assert_native_arch >/dev/null 2>&1; then
-    if ! REASON="$(octop_assert_native_arch)"; then
+if type happyclaw_assert_native_arch >/dev/null 2>&1; then
+    if ! REASON="$(happyclaw_assert_native_arch)"; then
         fail_install "$REASON"
     fi
 fi
@@ -58,7 +58,7 @@ echo "[octop-native] 已写入配置: $ENV_FILE" > "${TRIM_TEMP_LOGFILE:-/dev/nu
 WIZARD_TEMPLATE="$APPDEST/wizard/config.template"
 WIZARD_DIR="$(dirname "$APPDEST")/wizard"
 [ -f "$WIZARD_TEMPLATE" ] || WIZARD_TEMPLATE="${APPDEST}/../wizard/config"
-octop_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
+happyclaw_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
 
 # ---------------------------------------------------------------------------
 # 修正属主/权限：.env 与 appdata 改回 octop-native，避免服务以 octop-native 启动

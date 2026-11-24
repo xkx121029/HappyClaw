@@ -191,7 +191,7 @@ def _df_stub(size: int) -> str:
 
 @bash_only
 def test_entrypoint_warns_when_desktop_shm_is_default(tmp_path: Path) -> None:
-    conf = tmp_path / "octop-desktop"
+    conf = tmp_path / "happyclaw-desktop"
     conf.mkdir()
     script = (
         _source_helpers()
@@ -207,7 +207,7 @@ def test_entrypoint_warns_when_desktop_shm_is_default(tmp_path: Path) -> None:
 
 @bash_only
 def test_entrypoint_stays_quiet_when_shm_is_enough(tmp_path: Path) -> None:
-    conf = tmp_path / "octop-desktop"
+    conf = tmp_path / "happyclaw-desktop"
     conf.mkdir()
     missing = tmp_path / "missing"
     script = (

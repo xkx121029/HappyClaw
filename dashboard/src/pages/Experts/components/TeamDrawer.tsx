@@ -9,7 +9,7 @@ import {
   type TeamRecord,
   type TeamTemplateFile,
 } from "../../../api/modules/teams";
-import { octopAgentsApi } from "../../../api/modules/octopAgents";
+import { happyclawAgentsApi } from "../../../api/modules/happyclawAgents";
 import {
   avatarPickerStyles,
   expertPresetSrc,
@@ -342,7 +342,7 @@ export default function TeamDrawer({
             });
       if (avatarFile) {
         try {
-          const result = await octopAgentsApi.uploadAvatar(
+          const result = await happyclawAgentsApi.uploadAvatar(
             saved.agent_id,
             avatarFile,
           );
@@ -430,7 +430,7 @@ export default function TeamDrawer({
                   iconTouchedRef.current = true;
                   setAvatarBusy(true);
                   try {
-                    const result = await octopAgentsApi.uploadAvatar(
+                    const result = await happyclawAgentsApi.uploadAvatar(
                       team.agent_id,
                       file,
                     );
@@ -464,7 +464,7 @@ export default function TeamDrawer({
                 try {
                   if (isUploadedAvatarUrl(previousUrl)) {
                     try {
-                      await octopAgentsApi.deleteAvatar(team.agent_id);
+                      await happyclawAgentsApi.deleteAvatar(team.agent_id);
                     } catch {
                       // Preset path still wins when the portrait is saved.
                     }
@@ -497,7 +497,7 @@ export default function TeamDrawer({
                       setAvatarBusy(true);
                       try {
                         if (isUploadedAvatarUrl(previousUrl)) {
-                          await octopAgentsApi.deleteAvatar(team.agent_id);
+                          await happyclawAgentsApi.deleteAvatar(team.agent_id);
                         } else {
                           await teamsApi.update(team.agent_id, {
                             icon_url: TEAM_AVATAR_URL,

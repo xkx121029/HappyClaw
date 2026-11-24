@@ -355,11 +355,13 @@ class HarnessConfigMixin(AgentManagerBase):
 
         from happyclaw.infra.agents.middleware.binary_read_guard import BinaryReadGuardMiddleware
         from happyclaw.infra.agents.middleware.browser_profile import BrowserProfileMiddleware
+        from happyclaw.infra.agents.middleware.happyclaw_ui_offload import (
+            HappyclawUiOffloadMiddleware,
+        )
         from happyclaw.infra.agents.middleware.mcp_output_schema import (
             McpOutputSchemaMiddleware,
             harness_handles_mcp_tool_errors,
         )
-        from happyclaw.infra.agents.middleware.octop_ui_offload import HappyclawUiOffloadMiddleware
         from happyclaw.infra.agents.middleware.reasoning import ReasoningRequestMiddleware
         from happyclaw.infra.agents.middleware.thread_artifacts import ThreadArtifactsMiddleware
         from happyclaw.infra.agents.middleware.token_quota import TokenQuotaMiddleware

@@ -17,7 +17,7 @@ import {
 import cx from "classnames";
 import type { OctopAgent } from "../../../context/AgentContext";
 import { ExpertIcon } from "../../Experts/components/iconForName";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import {
   confirmDeleteConversation,
   deleteConversation,
@@ -78,7 +78,7 @@ async function fetchAgentPreview(
   agentId: string,
   limit: number,
 ): Promise<{ sessions: Session[]; hasMore: boolean }> {
-  const rows = await octopThreadsApi.list(agentId, limit + 1);
+  const rows = await happyclawThreadsApi.list(agentId, limit + 1);
   return {
     sessions: sortSessions(rows.slice(0, limit).map(toSession)),
     hasMore: rows.length > limit,
@@ -657,7 +657,7 @@ export default function MinimalAgentSessionNav({
       if (agentId === activeAgentId) {
         onRenameActive(sessionId, next);
       } else {
-        void octopThreadsApi.rename(agentId, sessionId, next).catch(() => {});
+        void happyclawThreadsApi.rename(agentId, sessionId, next).catch(() => {});
       }
       patchLocal(agentId, (prev) =>
         prev.map((s) => (s.id === sessionId ? { ...s, name: next } : s)),
@@ -671,7 +671,7 @@ export default function MinimalAgentSessionNav({
       if (agentId === activeAgentId) {
         onPinActive(sessionId, pinned);
       } else {
-        void octopThreadsApi
+        void happyclawThreadsApi
           .patch(agentId, sessionId, { pinned })
           .catch(() => {});
       }

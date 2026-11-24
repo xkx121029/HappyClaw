@@ -11,7 +11,7 @@ old UI. This script is now the first step of packaging:
    into the build output so the running server can report which UI it ships.
 
 The output directory is ``src/happyclaw/dashboard`` (``vite.config.ts`` ``outDir``),
-which is gitignored and collected by ``octop.spec``.
+which is gitignored and collected by ``happyclaw.spec``.
 """
 
 from __future__ import annotations

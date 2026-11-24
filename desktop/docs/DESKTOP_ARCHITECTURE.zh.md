@@ -55,7 +55,7 @@ HappyClaw Desktop 每次随壳启动自己的 Python 进程，监听回环地址
 
 ### 2.1 产物打包与放置
 
-- 由 CI / Makefile 打包生成一套绿色便携包，extras 与已发布的精简镜像一致：`Octop-portable-<plat>-<version>.zip` 只带 `browser`。桌面、OCR 和本地向量留在 Docker `:<version>-full`，不进桌面安装包。Pull request、打 tag 和手动 dispatch 都打这一套。
+- 由 CI / Makefile 打包生成一套绿色便携包，extras 与已发布的精简镜像一致：`HappyClaw-portable-<plat>-<version>.zip` 只带 `browser`。桌面、OCR 和本地向量留在 Docker `:<version>-full`，不进桌面安装包。Pull request、打 tag 和手动 dispatch 都打这一套。
 - **macOS / Linux**：`package.sh` 组装出的目录原样复制到 `resources/portable/`（`launch.py` 在这一层），安装包里不再放 zip。复制发生在 electron-builder 打包之前。安装包不签名、不公证。Linux 的 deb、rpm 都带上这棵树。DMG 没有安装脚本，deb/rpm 安装的也是同一棵已展开的树，所以不能留到安装时再解压。
 - **Windows**：zip 与 `portable-version.json` 放在 `resources/portable/`。NSIS `customInstall` 用 `tar.exe` 解到 `$INSTDIR\resources\sidecar\`，卸载时删掉这个目录。不把四万多个文件逐个打进 NSIS。
 - 打 zip 之前删掉 `googleapiclient/discovery_cache/documents`、`PyObjCTest`、`*.dSYM`，以及第三方包里的 `tests` / `test` / `testing`。`octop` 自己的目录和 `numpy/testing` 保留。缺静态 discovery 文档时改为联网拉取。绿色 zip 和安装包是同一棵树，所以两处一起生效。
@@ -361,7 +361,7 @@ Preload 仅暴露最小类型化桥梁 `window.octopDesktop`：
 
 主进程按固定配置检测更新，渲染进程不能改这个地址，也不能提交另一个安装包 URL。
 
-- 默认请求：`GET https://api.github.com/repos/xkx121029/HappyClaw/releases?per_page=30`，即本仓库自己的 GitHub Releases。桌面安装包由 `octop-desktop.yml` upsert 到同一个 Release（`Octop-desktop-<plat>-<version>.<ext>`），壳不再依赖任何上游站点。
+- 默认请求：`GET https://api.github.com/repos/xkx121029/HappyClaw/releases?per_page=30`，即本仓库自己的 GitHub Releases。桌面安装包由 `happyclaw-desktop.yml` upsert 到同一个 Release（`HappyClaw-desktop-<plat>-<version>.<ext>`），壳不再依赖任何上游站点。
 - 覆盖：`HAPPYCLAW_UPDATE_ENDPOINT`。写成 GitHub Releases API 地址（`https://api.github.com/repos/<owner>/<repo>/releases`）时按下面的 release 结构读；写成其他 https 地址时，必须返回 `data.client` 信封（见下文「另一种目录格式」）。
 - 时机：启动后，以及用户在设置里点击「检查更新」时。请求不经过 Python 后端。
 - 地址非法（非 https、无法解析）时回退到默认地址，不会变成「不检测」。
@@ -557,7 +557,7 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 `message` 是给用户读的一句话，`detail` 是路径 / errno 这类技术尾巴，默认收在「技术详情」
 折叠区里——不会再出现把 `ENOENT: ...` 直接糊在标题下面的页面。
 
-> 实现状态：`octop-desktop.yml` 已配置各平台 green zip + 原生 Electron 安装包。
+> 实现状态：`happyclaw-desktop.yml` 已配置各平台 green zip + 原生 Electron 安装包。
 > 安装包不签名、不公证。六平台实际 CI 产物仍需在仓库发布前逐项验证。
 >
 > 更新链路现状：[§6.3](#63-安装顺序) 的「页面确认 → 下载 → 校验 → Python 干净退出 →
@@ -594,7 +594,7 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 
 1. **构建 Dashboard**：执行仓库已有前端构建流程，生成最新静态产物。
 2. **构建或下载对应平台的 Python 绿色包**：
-   - `Octop-portable-<platform>-<version>.zip`
+   - `HappyClaw-portable-<platform>-<version>.zip`
    - macOS / Linux：把 `package.sh` 组装好的目录复制到 `desktop/src/resources/portable/`，不把 zip 打进安装包。
    - Windows：zip 放在 `desktop/src/resources/portable/`，安装时再展开。
 3. **Electron 打包**：

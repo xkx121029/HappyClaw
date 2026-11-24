@@ -134,7 +134,7 @@ build_one() {
   # 复制整个包目录（manifest / cmd / config / wizard / app / ICON* / LICENSE）
   cp -r "$PKG/." "$BUILD/"
 
-  # 注入共享函数库（find_python312 / fix_ownership_and_perms / free_octop_ports），
+  # 注入共享函数库（find_python312 / fix_ownership_and_perms / free_happyclaw_ports），
   # 仓库单一来源 scripts/fnos/common.sh，cmd/bin 脚本统一 source cmd/common.sh。
   if [ -f "$ROOT/scripts/fnos/common.sh" ]; then
     cp "$ROOT/scripts/fnos/common.sh" "$BUILD/cmd/common.sh"

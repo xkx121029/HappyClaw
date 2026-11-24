@@ -235,9 +235,9 @@ const ChatDockPanelShell: React.FC<ChatDockPanelShellProps> = ({
         target.closest("a") ||
         target.closest('[role="button"]') ||
         target.closest('[role="tab"]') ||
-        target.closest(".octop-select, .ant-select") ||
-        target.closest(".octop-segmented, .ant-segmented") ||
-        target.closest(".octop-dropdown, .ant-dropdown") ||
+        target.closest(".happyclaw-select, .ant-select") ||
+        target.closest(".happyclaw-segmented, .ant-segmented") ||
+        target.closest(".happyclaw-dropdown, .ant-dropdown") ||
         target.closest(`.${styles.popupResizeHandle}`)
       ) {
         return;

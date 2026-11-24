@@ -28,16 +28,16 @@ test("installerKindFor maps manifest extensions", () => {
 });
 
 test("installerKindFor falls back to the file name, then refuses", () => {
-  assert.equal(installerKindFor(asset("Octop-1.0.3-arm64.DMG", "")), "dmg");
-  assert.equal(installerKindFor(asset("Octop-1.0.3-arm64.zip", "")), "unsupported");
+  assert.equal(installerKindFor(asset("HappyClaw-1.0.3-arm64.DMG", "")), "dmg");
+  assert.equal(installerKindFor(asset("HappyClaw-1.0.3-arm64.zip", "")), "unsupported");
   assert.equal(installerKindFor(asset("Octop", "")), "unsupported");
   assert.equal(isSupportedKind("unsupported"), false);
 });
 
 test("downloadFilename never escapes the update directory", () => {
   assert.equal(
-    downloadFilename(asset("Octop-1.0.3-arm64.dmg", "dmg"), "v1.0.3"),
-    "Octop-1.0.3-arm64.dmg",
+    downloadFilename(asset("HappyClaw-1.0.3-arm64.dmg", "dmg"), "v1.0.3"),
+    "HappyClaw-1.0.3-arm64.dmg",
   );
   // Path components from a remote manifest are stripped.
   assert.equal(downloadFilename(asset("../../evil.dmg", "dmg"), "v1.0.3"), "evil.dmg");
@@ -46,25 +46,25 @@ test("downloadFilename never escapes the update directory", () => {
   // Shell-significant characters collapse into a single separator.
   assert.equal(downloadFilename(asset("Oct; rm -rf ~ .dmg", "dmg"), "v1.0.3"), "Oct-rm--rf-.dmg");
   // Empty name → version-based fallback that still carries the extension.
-  assert.equal(downloadFilename(asset("", "dmg"), "v1.0.3"), "Octop-v1.0.3.dmg");
+  assert.equal(downloadFilename(asset("", "dmg"), "v1.0.3"), "HappyClaw-v1.0.3.dmg");
 });
 
 test("planInstall keeps the shell-selected url and kind", () => {
   const plan = planInstall({
     tag: "v1.0.3",
-    asset: asset("Octop-1.0.3-arm64.dmg", "dmg"),
+    asset: asset("HappyClaw-1.0.3-arm64.dmg", "dmg"),
     releasesUrl: "https://github.com/x/releases",
   });
   assert.deepEqual(plan, {
     kind: "dmg",
     url: `${RELEASE_ORIGIN}/x`,
-    filename: "Octop-1.0.3-arm64.dmg",
+    filename: "HappyClaw-1.0.3-arm64.dmg",
   });
 });
 
 const selected = {
   tag: "v1.0.3",
-  asset: asset("Octop-1.0.3-arm64.dmg", "dmg"),
+  asset: asset("HappyClaw-1.0.3-arm64.dmg", "dmg"),
   releasesUrl: "https://github.com/x/releases",
 };
 
@@ -73,7 +73,7 @@ function hooks(overrides: Partial<InstallHooks> = {}) {
   const base: InstallHooks = {
     download: async () => {
       calls.push("download");
-      return "/tmp/octop-update/Octop-1.0.3-arm64.dmg";
+      return "/tmp/happyclaw-update/HappyClaw-1.0.3-arm64.dmg";
     },
     verify: async () => {
       calls.push("verify");
@@ -93,14 +93,14 @@ function hooks(overrides: Partial<InstallHooks> = {}) {
 test("installUpdate runs download → verify → clean exit → handoff", async () => {
   const { calls, hooks: h } = hooks();
   const outcome = await installUpdate(selected, h);
-  assert.deepEqual(outcome, { ok: true, path: "/tmp/octop-update/Octop-1.0.3-arm64.dmg" });
+  assert.deepEqual(outcome, { ok: true, path: "/tmp/happyclaw-update/HappyClaw-1.0.3-arm64.dmg" });
   assert.deepEqual(calls, ["download", "verify", "stop", "handoff"]);
 });
 
 test("unsupported asset is refused before anything is downloaded", async () => {
   const { calls, hooks: h } = hooks();
   const outcome = await installUpdate(
-    { ...selected, asset: asset("Octop-1.0.3-arm64.zip", "zip") },
+    { ...selected, asset: asset("HappyClaw-1.0.3-arm64.zip", "zip") },
     h,
   );
   assert.equal(outcome.ok, false);

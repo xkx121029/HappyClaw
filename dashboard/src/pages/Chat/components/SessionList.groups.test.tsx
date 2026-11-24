@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { OctopAgent } from "../../../context/AgentContext";
 import type { Session } from "../hooks/useSessions";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import { octopSettingsApi } from "../../../api/modules/settings";
 import SessionList from "./SessionList";
 
@@ -99,7 +99,7 @@ function renderList() {
 
 describe("SessionList recency groups", () => {
   beforeAll(() => {
-    vi.spyOn(octopThreadsApi, "list").mockResolvedValue([]);
+    vi.spyOn(happyclawThreadsApi, "list").mockResolvedValue([]);
     vi.spyOn(octopSettingsApi, "timezone").mockRejectedValue(
       new Error("no backend in unit test"),
     );

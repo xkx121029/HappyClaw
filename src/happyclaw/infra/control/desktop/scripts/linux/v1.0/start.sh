@@ -14,17 +14,17 @@ _xvnc_alive() {
 }
 
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
-  for unit in octop-desktop-xvnc octop-desktop-session octop-desktop-openbox; do
+  for unit in happyclaw-desktop-xvnc happyclaw-desktop-session happyclaw-desktop-openbox; do
     if [ ! -f "/etc/systemd/system/${unit}.service" ]; then
       echo "systemd unit ${unit}.service is missing; re-run the desktop install" >&2
       exit 1
     fi
   done
   systemctl daemon-reload
-  systemctl start octop-desktop-xvnc octop-desktop-session octop-desktop-openbox
+  systemctl start happyclaw-desktop-xvnc happyclaw-desktop-session happyclaw-desktop-openbox
 else
   HAPPYCLAW_HOME="${HAPPYCLAW_HOME:-$HOME/.octop}"
-  INSTALL_ROOT="/opt/octop-desktop"
+  INSTALL_ROOT="/opt/happyclaw-desktop"
   DISPLAY_NUM=":99"
   # Docker hides the image's /data/.octop with a volume, so the log dir from
   # install time is gone. Create it or the redirect below aborts start.sh.
@@ -33,7 +33,7 @@ else
     rm -f "/tmp/.X${DISPLAY_NUM#:}-lock" "/tmp/.X11-unix/X${DISPLAY_NUM#:}"
     nohup "$(command -v Xvnc || command -v Xtigervnc)" :99 -depth 24 -geometry 1920x1080 -dpi 96 \
       -rfbport 5900 -localhost yes -AlwaysShared -maxclients 256 -SecurityTypes VncAuth \
-      -rfbauth /etc/octop-desktop/rfbauth \
+      -rfbauth /etc/happyclaw-desktop/rfbauth \
       > "${HAPPYCLAW_HOME}/desktop/xvnc.log" 2>&1 &
     sleep 1
   fi
@@ -44,4 +44,4 @@ else
     sleep 1
   fi
 fi
-echo "octop-desktop services started"
+echo "happyclaw-desktop services started"

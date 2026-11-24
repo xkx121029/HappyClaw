@@ -103,7 +103,7 @@ describe("ChatTitleBar", () => {
       />,
     );
 
-    expect(container.querySelector(".octop-desktop-drag")).toBeNull();
+    expect(container.querySelector(".happyclaw-desktop-drag")).toBeNull();
   });
 
   it("shows the expert shared flag beside an owner's contributed title", () => {

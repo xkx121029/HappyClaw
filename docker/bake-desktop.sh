@@ -31,9 +31,9 @@ else
     echo "desktop browser missing after desktop install" >&2
     exit 1
 fi
-test -x /opt/octop-desktop/start-openbox.sh
-test -x /opt/octop-desktop/start-session.sh
-test -f /etc/octop-desktop/rfbauth
+test -x /opt/happyclaw-desktop/start-openbox.sh
+test -x /opt/happyclaw-desktop/start-session.sh
+test -f /etc/happyclaw-desktop/rfbauth
 
 for cmd in /proc/[0-9]*/cmdline; do
     [ -r "$cmd" ] || continue

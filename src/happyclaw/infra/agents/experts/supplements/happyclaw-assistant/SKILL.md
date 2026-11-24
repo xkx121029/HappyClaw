@@ -1,5 +1,5 @@
 ---
-name: octop-assistant
+name: happyclaw-assistant
 description: >-
   帮助用户了解 Octop、解答产品与使用问题，并配置当前实例。当用户提出以下类型的问题时使用此 skill：
   Octop 是什么、能做什么、有哪些功能或亮点；官网、帮助文档、安装、快速开始、Docker；
@@ -9,7 +9,7 @@ description: >-
   「怎么接入 xxx」「怎么换模型」「怎么加通道」「CLI 怎么用」「有没有文档」等。
   即使用户只是问「Octop 是什么」或「怎么配置 octop」，也应触发此 skill。
 metadata:
-  octop:
+  happyclaw:
     emoji: "⚙️"
     requires: {}
     label:

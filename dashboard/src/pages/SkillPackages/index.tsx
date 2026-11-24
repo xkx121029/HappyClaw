@@ -57,7 +57,7 @@ import {
 } from "../../components/AvatarPicker";
 import { CardSkeleton } from "../../components/Skeleton";
 import { CopyableResourceId } from "../../components/CopyableResourceId";
-import { OctopEmptyMascot } from "../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../components/EmptyState";
 import StreamSetupGuide from "../../components/StreamSetupGuide/StreamSetupGuide";
 import { TextAssistBar } from "../../components/TextAssistBar";
 import { useCardTableView } from "../../hooks/useCardTableView";
@@ -592,7 +592,7 @@ export default function SkillPackagesPage() {
         className={styles.emptyGuide}
         wide
         plain
-        icon={<OctopEmptyMascot />}
+        icon={<HappyclawEmptyMascot />}
         title={t("skillPackages.emptySkillsTitle")}
         description={t("skillPackages.emptySkillsDesc")}
         steps={[
@@ -677,7 +677,7 @@ export default function SkillPackagesPage() {
             className={styles.emptyGuide}
             wide
             plain
-            icon={<OctopEmptyMascot />}
+            icon={<HappyclawEmptyMascot />}
             title={t("skillPackages.emptyGuideTitle")}
             description={t("skillPackages.emptyGuideDesc")}
             steps={[
@@ -920,7 +920,7 @@ export default function SkillPackagesPage() {
                     className={styles.emptyGuide}
                     wide
                     plain
-                    icon={<OctopEmptyMascot />}
+                    icon={<HappyclawEmptyMascot />}
                     title={t("skillPackages.selectPackageTitle")}
                     description={t("skillPackages.selectPackageDesc")}
                     steps={[

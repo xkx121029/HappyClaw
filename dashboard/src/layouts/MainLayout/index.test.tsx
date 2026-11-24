@@ -135,7 +135,7 @@ const routeCases = [
 ] as const;
 
 function getShell(container: HTMLElement) {
-  const shell = container.querySelector<HTMLElement>(".octop-window-shell");
+  const shell = container.querySelector<HTMLElement>(".happyclaw-window-shell");
   expect(shell).not.toBeNull();
   return shell!;
 }
@@ -164,7 +164,7 @@ describe("MainLayout 共享顶栏", () => {
     const { container } = render(<MainLayout />);
     const shell = getShell(container);
 
-    expect(shell.style.getPropertyValue("--octop-shell-top-band")).toBe("58px");
+    expect(shell.style.getPropertyValue("--happyclaw-shell-top-band")).toBe("58px");
     expect(shell).toContainElement(screen.getByTestId("sidebar"));
     expect(shell).toContainElement(screen.getByTestId("tasks-page"));
     expect(screen.queryByTestId("header")).not.toBeInTheDocument();
@@ -176,24 +176,24 @@ describe("MainLayout 共享顶栏", () => {
     const { container } = render(<MainLayout />);
 
     expect(
-      getShell(container).style.getPropertyValue("--octop-shell-top-band"),
+      getShell(container).style.getPropertyValue("--happyclaw-shell-top-band"),
     ).toBe("0px");
-    expect(container.querySelector(".octop-shell-drag-band")).toBeNull();
+    expect(container.querySelector(".happyclaw-shell-drag-band")).toBeNull();
     expect(screen.getByTestId("header")).toBeInTheDocument();
   });
 
   it("Web 不渲染桌面拖拽区域", () => {
     const { container } = render(<MainLayout />);
-    expect(container.querySelector(".octop-shell-drag-band")).toBeNull();
+    expect(container.querySelector(".happyclaw-shell-drag-band")).toBeNull();
   });
 
   it("macOS 拖拽区域限制在顶栏且避开交通灯", () => {
     state.desktopChrome = "mac";
     const { container } = render(<MainLayout />);
-    const bands = container.querySelectorAll(".octop-shell-drag-band");
+    const bands = container.querySelectorAll(".happyclaw-shell-drag-band");
 
     expect(bands).toHaveLength(1);
-    expect(bands[0]).toHaveClass("octop-desktop-drag");
+    expect(bands[0]).toHaveClass("happyclaw-desktop-drag");
     expect(bands[0]).toHaveAttribute("aria-hidden", "true");
     expect(bands[0].parentElement).toBe(getShell(container));
     expect(bands[0]).toHaveStyle({
@@ -209,7 +209,7 @@ describe("MainLayout 共享顶栏", () => {
   it("Windows 页面里没有拖拽条", () => {
     state.desktopChrome = "windows";
     const { container } = render(<MainLayout />);
-    expect(container.querySelector(".octop-shell-drag-band")).toBeNull();
+    expect(container.querySelector(".happyclaw-shell-drag-band")).toBeNull();
   });
 
   describe.each(routeCases)("$path 路由", ({ path, page }) => {
@@ -223,7 +223,7 @@ describe("MainLayout 共享顶栏", () => {
       expect(rightColumn).toContainElement(screen.getByTestId(page));
       expect(["", "0px"]).toContain(rightColumn.style.paddingTop);
       expect(
-        getShell(container).style.getPropertyValue("--octop-shell-top-band"),
+        getShell(container).style.getPropertyValue("--happyclaw-shell-top-band"),
       ).toBe("58px");
     });
 
@@ -240,19 +240,19 @@ describe("MainLayout 共享顶栏", () => {
         const rightColumnStyle = rightColumn.getAttribute("style");
         const pageElement = screen.getByTestId(page);
         if (chrome === "windows") {
-          expect(container.querySelector(".octop-shell-drag-band")).toBeNull();
+          expect(container.querySelector(".happyclaw-shell-drag-band")).toBeNull();
         } else {
           expect(
-            container.querySelector(".octop-shell-drag-band"),
+            container.querySelector(".happyclaw-shell-drag-band"),
           ).not.toBeNull();
         }
 
         state.windowFullscreen = true;
         rerender(<MainLayout />);
 
-        expect(container.querySelector(".octop-shell-drag-band")).toBeNull();
+        expect(container.querySelector(".happyclaw-shell-drag-band")).toBeNull();
         expect(getShell(container)).toBe(shell);
-        expect(shell.style.getPropertyValue("--octop-shell-top-band")).toBe(
+        expect(shell.style.getPropertyValue("--happyclaw-shell-top-band")).toBe(
           "58px",
         );
         expect(shell).toHaveAttribute("style", shellStyle);
@@ -264,10 +264,10 @@ describe("MainLayout 共享顶栏", () => {
         state.windowFullscreen = false;
         rerender(<MainLayout />);
         if (chrome === "windows") {
-          expect(container.querySelector(".octop-shell-drag-band")).toBeNull();
+          expect(container.querySelector(".happyclaw-shell-drag-band")).toBeNull();
         } else {
           expect(
-            container.querySelector(".octop-shell-drag-band"),
+            container.querySelector(".happyclaw-shell-drag-band"),
           ).not.toBeNull();
         }
         expect(shell).toHaveAttribute("style", shellStyle);
