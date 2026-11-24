@@ -56,19 +56,21 @@ def with_skillhub_presentation_metadata(
     meta, body = parse_frontmatter(content)
     metadata = meta.get("metadata")
     metadata = {} if not isinstance(metadata, dict) else dict(metadata)
-    octop_meta = metadata.get("octop")
-    octop_meta = {} if not isinstance(octop_meta, dict) else dict(octop_meta)
+    extension = metadata.get("happyclaw")
+    if not isinstance(extension, dict):
+        extension = metadata.get("octop")
+    extension = {} if not isinstance(extension, dict) else dict(extension)
 
-    octop_meta["source"] = "skillhub"
+    extension["source"] = "skillhub"
     if icon_url:
-        octop_meta["icon_url"] = icon_url
+        extension["icon_url"] = icon_url
     if label:
-        octop_meta["label"] = {key: value for key, value in label.items() if value}
+        extension["label"] = {key: value for key, value in label.items() if value}
     elif display_name:
-        octop_meta["display_name"] = display_name
+        extension["display_name"] = display_name
     if summary:
-        octop_meta["summary"] = {key: value for key, value in summary.items() if value}
-    metadata["octop"] = octop_meta
+        extension["summary"] = {key: value for key, value in summary.items() if value}
+    metadata["happyclaw"] = extension
     meta["metadata"] = metadata
 
     dumped = yaml.safe_dump(
