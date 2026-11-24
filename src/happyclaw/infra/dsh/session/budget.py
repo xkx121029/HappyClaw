@@ -13,6 +13,7 @@ from dataclasses import dataclass
 
 __all__ = [
     "CJK_CHAR_UNITS",
+    "DEFAULT_WEIGHTS",
     "LATIN_WORD_UNITS",
     "OTHER_CHAR_UNITS",
     "UnitWeights",
@@ -53,12 +54,15 @@ class UnitWeights:
         )
 
 
+DEFAULT_WEIGHTS = UnitWeights()
+
+
 @dataclass(frozen=True, slots=True)
 class WeightedBudget:
     """A unit limit plus the weights used to measure and trim text."""
 
     limit_units: float
-    weights: UnitWeights = UnitWeights()
+    weights: UnitWeights = DEFAULT_WEIGHTS
 
     def measure(self, text: str) -> float:
         """Return the weighted unit count of ``text``."""
@@ -97,7 +101,7 @@ def measure_units(
     return round(total, 3)
 
 
-def trim_head(text: str, limit_units: float, *, weights: UnitWeights = UnitWeights()) -> str:
+def trim_head(text: str, limit_units: float, *, weights: UnitWeights = DEFAULT_WEIGHTS) -> str:
     """Return a prefix no heavier than ``limit_units``."""
     if not text or limit_units <= 0:
         return ""
@@ -112,7 +116,7 @@ def trim_head(text: str, limit_units: float, *, weights: UnitWeights = UnitWeigh
     return "".join(kept).rstrip()
 
 
-def trim_tail(text: str, limit_units: float, *, weights: UnitWeights = UnitWeights()) -> str:
+def trim_tail(text: str, limit_units: float, *, weights: UnitWeights = DEFAULT_WEIGHTS) -> str:
     """Return a suffix no heavier than ``limit_units``."""
     if not text or limit_units <= 0:
         return ""
