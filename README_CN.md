@@ -1,25 +1,23 @@
 <p align="center">
-  <img src="docs/assets/readme-banner-zh.png" alt="HappyClaw Banner" width="600" />
-</p>
-
-<p align="center">
-  <strong>装在自己电脑上的单人 AI 工作台 — 一个进程，一个你。</strong>
+  <img src="docs/assets/readme-hero-zh.svg" alt="HappyClaw — 一个人、一台机器上的 AI 工作台" width="100%" />
 </p>
 
 <p align="center">
   <a href="https://www.python.org/downloads/"><img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white" /></a>
-  <a href="https://github.com/xkx121029/HappyClaw/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green" /></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green" /></a>
   <a href="https://github.com/xkx121029/HappyClaw/releases"><img alt="Version" src="https://img.shields.io/badge/version-1.0.3b5-orange" /></a>
-  <a href="https://github.com/astral-sh/ruff"><img alt="Code Style: Ruff" src="https://img.shields.io/badge/code%20style-ruff-000000?logo=ruff&logoColor=white" /></a>
+  <a href="https://github.com/astral-sh/ruff"><img alt="Code style: ruff" src="https://img.shields.io/badge/code%20style-ruff-000000?logo=ruff&logoColor=white" /></a>
+  <a href="https://github.com/TencentCloud/Octop"><img alt="修改自 Octop" src="https://img.shields.io/badge/modified%20from-Octop-FF6B4A" /></a>
 </p>
 
 <p align="center">
   <a href="#-快速开始">快速开始</a> ·
   <a href="#-能做什么">能做什么</a> ·
+  <a href="#-架构">架构</a> ·
   <a href="#-安装">安装</a> ·
-  <a href="#️-配置模型">配置模型</a> ·
+  <a href="#-配置模型">配置模型</a> ·
   <a href="#-数据目录与备份">数据目录与备份</a> ·
-  <a href="#-常见问题">常见问题</a>
+  <a href="#-与上游-octop-的关系">修改自 Octop</a>
 </p>
 
 <p align="center">
@@ -28,13 +26,19 @@
 
 ---
 
-**HappyClaw** 是给个人使用的本地 AI 工作台。没有账号体系，没有登录页，也没有成员账号与权限配置：装好、启动、打开浏览器，就是以本机使用者的身份在工作。
+> **基于 Octop 修改。** HappyClaw 在 [TencentCloud/Octop](https://github.com/TencentCloud/Octop)（MIT）的基础上修改而来，产品形态收敛为**一个人、一台机器**：没有账号体系，没有登录页，没有邀请、角色与多租户部署。保持不变的是引擎契约——`octop` 命令、`~/.octop/` 数据目录、`OCTOP_*` 环境变量与 `/api` 接口，已有的安装与脚本可以继续使用。[查看改动范围 →](#-与上游-octop-的关系)
 
-它在同一个进程里提供 Web 控制台、CLI、IM 通道与定时任务，所有数据都留在你自己的机器上（默认 `~/.octop/`）。你可以创建多个专家，为每个专家配置模型、工作区、技能与通道；日常通过网页对话，也可以把飞书、钉钉、QQ、微信、企业微信、Telegram、Discord 接进来。
+**HappyClaw** 是给个人使用的本地 AI 工作台。装好、启动、打开浏览器，就是以本机使用者的身份在工作：不需要注册，不需要密码，也没有队友要邀请。
+
+同一个 Python 进程同时提供 Web 控制台、CLI、IM 通道与定时任务；状态集中在一个控制面数据库，所有工作区文件都留在自己的主目录下。你可以创建多个**专家**——每个专家拥有独立的模型、工作区、技能、通道与定时任务——在浏览器里对话，也可以把飞书、钉钉、QQ、微信、企业微信、Telegram、Discord 接进来。
 
 ## 🚀 快速开始
 
-> 完整 Windows 步骤见 [docs/quickstart.md](docs/quickstart.md)，5 分钟内可以跑通。
+> Windows 优先的 5 分钟上手见 [docs/quickstart.md](docs/quickstart.md)。
+
+<p align="center">
+  <img src="docs/assets/readme-flow-zh.svg" alt="安装、启动、打开 http://127.0.0.1:8088、配置模型" width="100%" />
+</p>
 
 **Windows（PowerShell）**
 
@@ -50,40 +54,69 @@ curl -fsSL https://download.octop.cloud/octop/scripts/install.sh | bash
 octop run
 ```
 
-然后打开 **http://127.0.0.1:8088**。首次启动会自动创建本机使用者，不需要注册，也不需要输入密码；直接进入控制台，在「设置 → 模型」里配置模型即可开始对话。
+打开 **http://127.0.0.1:8088**。首次启动会自动创建本机使用者，直接进入工作台；剩下要做的只有一件事：在「设置 → 模型」里配置一个模型。
 
-## 🧭 能做什么
+## ✨ 能做什么
 
-| | 能力 | 说明 |
-|---|------|------|
-| 💬 | **本机对话** | Web 控制台实时对话，支持多轮、附件、工具调用展示 |
-| 🎭 | **多专家** | 每个专家独立的工作区、模型、技能与定时任务；内置专家库与 16 种 MBTI 人格模板 |
-| 🎯 | **AgentTeams**（Beta） | 协调者调度多位专家完成多步骤任务，[说明](docs/expert-teams.md) |
-| 🔌 | **Connector** | 腾讯文档、腾讯会议、Notion、滴答清单、飞书 CLI、企业微信 CLI 等 OAuth / MCP 接入，[目录](docs/connectors.md) |
-| 📚 | **知识库** | 对本地文档做 RAG 检索，回答锚定自己的资料 |
-| 🧩 | **插件与技能** | 安装第三方插件，按专家启用技能 |
-| ↔️ | **ACP 双向集成** | `octop acp` 接入 IDE；对话中委派 OpenCode / CodeBuddy / Claude Code / Codex |
-| 💻 | **终端 AI+** | 浏览器内交互式 Shell，AI 辅助执行命令与排障 |
-| 🌐 | **浏览器 AI+** | 基于 Chromium 的会话，支持网页自动化、截图与远程浏览 |
-| 🖥️ | **远程桌面** | 控制台内看屏与键鼠操作，跨 Linux / Windows / macOS |
-| ⏰ | **定时任务** | 自然语言或 Cron 表达式创建，按时执行并推送结果 |
-| 🏠 | **完全本地** | 配置、对话、工作区与凭据都在 `~/.octop/`，不依赖外部账号服务 |
+<p align="center">
+  <img src="docs/assets/readme-features-zh.svg" alt="HappyClaw 能力：本机对话、多专家、AgentTeams、连接器、知识库、插件、ACP、终端/浏览器/桌面、定时任务" width="100%" />
+</p>
 
-## 🧠 技术栈
+- **专家，而不是账号。** 每个专家有自己的工作区、模型、技能与定时任务；可以从内置专家库或 16 种 MBTI 人格模板开始。
+- **AgentTeams（Beta）。** 由协调者调度多位专家，处理需要多视角协作的多步任务——见 [docs/expert-teams.md](docs/expert-teams.md)。
+- **通道与连接器。** 网页对话之外，IM 侧支持飞书、钉钉、QQ、微信、企业微信、Telegram、Discord；通过 OAuth 与 MCP 接入腾讯文档、腾讯会议、Notion、滴答清单以及飞书 / 企微 CLI——见 [docs/connectors.md](docs/connectors.md)。
+- **知识、技能与插件。** 对本地文档做 RAG 检索，按专家启用技能，也可以从控制台或 CLI 安装第三方插件。
+- **控制面。** 终端 AI+（浏览器内 Shell）、浏览器 AI+（Chromium 自动化、截图、远程浏览）与跨 Linux / Windows / macOS 的远程桌面。
+- **自动化。** 用自然语言或 Cron 表达式创建任务，在同一个进程内按时执行并把结果推回会话。
 
-| 层级 | 技术 |
+## 🖥️ Web 控制台
+
+`octop run` 启动后访问 **http://127.0.0.1:8088**：
+
+| 页面 | 作用 |
 |------|------|
-| 语言 | Python 3.12+ |
-| Web 框架 | FastAPI + uvicorn |
-| Agent 运行时 | [HappyClaw Harness](https://github.com/TencentCloud/octop-harness) |
-| IM 桥接 | [HappyClaw Gateway](https://github.com/TencentCloud/octop-gateway) |
-| 控制面数据库 | SQLite（WAL，默认）或 PostgreSQL（可选） |
-| 前端 | React 18 + TypeScript + Vite + Ant Design |
-| 调度 | APScheduler |
-| ACP | agent-client-protocol |
-| 构建 / 质量 | hatchling · ruff · mypy · pytest |
+| **对话** | 与专家或团队实时聊天；附件、工具调用与流式回复 |
+| **专家** | 创建专家、选择专家库 / MBTI、配置模型与工作区 |
+| **Connector** | OAuth 应用与 MCP 网关 |
+| **通道** | IM 平台配置 |
+| **定时任务** | 可视化 Cron 管理 |
+| **知识库** | 文档语料与语义检索 |
+| **插件** | 安装、启用与配置 |
+| **控制** | 远程桌面与浏览器 AI+ |
+| **ACP** | 配置出站编程 Agent Runner |
+| **设置** | 模型、备份、TLS、监听地址与日志 |
 
-单进程运行：Web UI、IM 与定时任务都经由进程内的 `HarnessProcessor` 处理，不依赖外部消息队列。重启后状态从控制面数据库重建。
+交互式 API 文档默认关闭；在 `config.json` 中设置 `"enable_api_docs": true` 后访问 `/api/docs`。
+
+## 🧠 架构
+
+<p align="center">
+  <img src="docs/assets/readme-architecture.svg" alt="单个 Python 进程：入口层、FastAPI API 层、领域层、octop-harness 与 octop-gateway、SQLite/PostgreSQL 存储" width="100%" />
+</p>
+
+整个栈就是一个进程。`OctopServer.start()` 按依赖顺序装配运行时树并挂载 FastAPI/uvicorn；没有独立 worker，没有外部队列，除了你自己配置的模型供应商之外不需要任何外部服务。配置、会话历史、工作区与凭据都在 `~/.octop/`。
+
+<details>
+<summary><b>仓库结构</b></summary>
+
+```text
+src/octop/
+  config.py    环境变量配置
+  launch.py    OctopServer 启动 + uvicorn
+  infra/       业务核心（agents、gateway、cron、db …）
+  api/         HTTP 层 — FastAPI 路由与 SSE
+  cli/         CLI 层 — Click 命令
+  dashboard/   构建后的 React SPA（wheel 产物）
+
+dashboard/     前端源码（Vite）— 在此编辑，运行 make build-frontend
+docker/        Docker Compose、入口脚本、构建脚本
+docs/          使用与架构文档
+tests/         unit/ + integration/
+```
+
+</details>
+
+完整说明见 [docs/architecture.md](docs/architecture.md)。
 
 ## 📦 安装
 
@@ -96,7 +129,7 @@ octop run
 | PyPI | 全平台 | `pip install octop` |
 | Docker | 全平台 | `docker compose -f docker/docker-compose.yml up -d --build` |
 
-安装脚本会把运行环境放在 `~/.octop/venv`，并在 `~/.octop/bin/octop` 生成命令入口，不会改动系统 Python。安装完成后请打开新终端，或重新加载 shell 配置。
+安装脚本把运行环境放在 `~/.octop/venv`，并在 `~/.octop/bin/octop` 生成命令入口，不改动系统 Python。安装完成后请打开新终端，让 `octop` 进入 `PATH`。
 
 可选组件：
 
@@ -105,19 +138,16 @@ octop run
 bash scripts/install.sh --extras browser
 ```
 
-安装选项（`--version`、`--from-source`、`--mirror`，其中 `--mirror` 仅 Unix 脚本提供）见 [scripts/README.md](scripts/README.md)。
+安装选项（`--version`、`--from-source`；`--mirror` 仅 Unix 脚本提供）见 [scripts/README.md](scripts/README.md)。
 
 ### Docker
 
 ```bash
-# 构建并启动
 docker compose -f docker/docker-compose.yml up -d --build
-
-# 打开控制台
-# http://localhost:8088
+# 打开 http://localhost:8088
 ```
 
-单人模式下 Docker 不需要预置管理员密码。容器首次启动会初始化数据库并自动绑定本机使用者；数据卷仍挂载在 `/data/.octop`。完整说明见 [docker/README_CN.md](docker/README_CN.md)。
+单人模式下 Docker 不需要预置管理员密码。容器首次启动会初始化数据库并自动绑定本机使用者，数据保存在 `/data/.octop`。完整说明见 [docker/README.md](docker/README.md)。
 
 ### 升级
 
@@ -125,25 +155,21 @@ docker compose -f docker/docker-compose.yml up -d --build
 octop update
 ```
 
-`octop update` 只替换程序本体，`~/.octop/` 下的数据库、工作区、密钥与 `config.json` 都会保留；数据库结构在下次启动时自动迁移。跨版本升级前建议先备份：
-
-```bash
-octop backup create
-```
+`octop update` 只替换程序本体，`~/.octop/` 下的数据库、工作区、密钥与 `config.json` 都会保留；数据库结构在下次启动时自动迁移。升级前建议先执行 `octop backup create`。
 
 ## ⚙️ 配置模型
 
 模型按专家配置，也可以在控制台「设置 → 模型」中统一管理。
 
 ```bash
-octop models              # 查看预设与模型解析
-octop provider list       # 列出已配置供应商
+octop models              # 供应商预设与模型解析
+octop provider list       # 已配置供应商
 octop provider --help     # 供应商增删改查
 ```
 
-支持 OpenAI 兼容 API、Anthropic、AWS Bedrock、DashScope（通义千问）、Ollama 本地模型等。新增供应商时填写 Base URL 与 API Key，勾选模型后点「测试连接」；测试通过再保存。Ollama 默认连接本机地址，无需 API Key。
+支持 OpenAI 兼容 API、Anthropic、AWS Bedrock、DashScope（通义千问）与本地 Ollama。新增供应商时填写 Base URL 与 API Key，勾选模型后点「测试连接」，通过再保存。Ollama 连接本机守护进程，无需 API Key。
 
-### 常用配置命令
+常用命令：
 
 ```bash
 octop agent list                 # 专家列表
@@ -157,14 +183,15 @@ octop cron list                  # 定时任务
 
 ## 📁 数据目录与备份
 
-```
+```text
 ~/.octop/                          ← 安装与数据根目录
 ├── config.json                    # 进程配置（端口、TLS、数据库等）
 ├── env                            # 可选环境变量（API Key 等）
-├── octop.db                       # SQLite 控制面（专家、通道、定时任务 …）
+├── octop.db                       # SQLite 控制面
 ├── secrets/                       # 腾讯云授权缓存（cloud/、cloud.key）
-├── agents/<agent_id>/             # 各专家工作区（SOUL.md、skills …）
+├── agents/<agent_id>/             # 各专家工作区（SOUL.md、skills、文件）
 ├── security/tool_guard/           # Shell 命令允许/拒绝规则
+├── plugins/                       # 已安装插件（内置插件默认关闭）
 ├── backups/                       # octop backup create 生成的归档
 ├── logs/                          # 运行日志
 ├── venv/                          # 安装脚本创建的 Python 环境
@@ -184,7 +211,7 @@ octop backup auto run            # 立即执行一次自动备份
 
 自动备份默认**关闭**（`backup.auto_enabled`）。开启后在 `octop run` 进程内每天 04:00 执行，默认保留 7 份；只清理 `octop-auto-backup-*` 旧归档，不会删除手动备份。
 
-> 默认归档不含聊天历史；迁移完整会话时使用 `octop backup create --include-chats`。SQLite 与 PostgreSQL 的备份不能跨引擎互恢，恢复前请确认运行中的数据库引擎与备份一致。
+> 命令行归档默认不含聊天历史，完整迁移时使用 `--include-chats`；自动备份与托盘「立即备份」默认包含会话（`backup.include_chats: true`）。SQLite 与 PostgreSQL 的备份不能跨引擎互恢，恢复前请确认运行中的数据库引擎与备份一致。
 
 换机、回退的逐步命令见 [docs/migration-and-restore.md](docs/migration-and-restore.md)。
 
@@ -200,77 +227,20 @@ octop backup auto run            # 立即执行一次自动备份
 | `octop chats` | 会话列表与交互式对话 |
 | `octop acp` | 为 IDE 提供 stdio ACP 服务 |
 | `octop cron` | 管理定时任务 |
-| `octop models` | 供应商预设与模型解析 |
+| `octop models` / `octop provider` | 供应商预设、模型解析与凭据 |
 | `octop skills` | 按专家启用/禁用技能 |
 | `octop plugin` | 安装与管理第三方插件 |
 | `octop backup` | 创建与恢复备份 |
+| `octop migrate` | 把 OpenClaw / Hermes Agent 配置迁入一个专家 |
+| `octop bridge` | 管理远程桥接节点 |
+| `octop cloud` | 腾讯云凭据桥（`tccli` 导入） |
+| `octop memory` | 记忆维护（备份与瘦身） |
 | `octop update` | 检查并安装更新 |
 | `octop clean` | 清理 CLI 状态或清空 `~/.octop/` |
 
+> `octop user`、`octop admin`、`octop captcha` 继承自上游 Octop，仅为兼容保留；在单人版本中不参与访问控制。
+
 完整参数见 [docs/cli.md](docs/cli.md)。
-
-## 📚 文档索引
-
-| 文档 | 内容 |
-|------|------|
-| [docs/quickstart.md](docs/quickstart.md) | Windows 优先的 5 分钟上手 |
-| [docs/user-guide.md](docs/user-guide.md) | 安装、模型、专家、通道、定时任务、常见问题 |
-| [docs/migration-and-restore.md](docs/migration-and-restore.md) | 备份、换机器迁移、恢复失败回退 |
-| [docs/configuration.md](docs/configuration.md) | 环境变量与 `config.json` 字段 |
-| [docs/cli.md](docs/cli.md) | 全部 CLI 命令与参数 |
-| [docs/api.md](docs/api.md) | HTTP API 参考 |
-| [docs/architecture.md](docs/architecture.md) | 运行结构与模块边界 |
-| [docs/connectors.md](docs/connectors.md) | OAuth / MCP Connector 目录 |
-| [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md) | 发布前检查清单 |
-
-## 🖥️ Web 控制台
-
-`octop run` 启动后访问 **http://127.0.0.1:8088**，直接进入工作台。
-
-- **对话** — 与专家或团队实时聊天
-- **专家** — 创建专家、选择专家库 / MBTI、配置供应商与工作区
-- **Connector** — OAuth 应用与 MCP 网关
-- **通道** — IM 平台配置
-- **定时任务** — 可视化 Cron 管理
-- **知识库** — 文档语料、语义检索
-- **插件** — 安装、启用与配置
-- **控制** — 远程桌面、浏览器 AI+
-- **ACP** — 配置出站编程 Agent Runner
-- **设置** — 模型、备份、TLS、监听地址与日志
-
-交互式 API 文档默认关闭，在 `config.json` 中设置 `"enable_api_docs": true` 后访问 `/api/docs`。
-
-## 🏗️ 架构与项目结构
-
-```
-OctopServer
- ├─ DatabasePool          SQLite (WAL) 或 PostgreSQL
- ├─ SharedServices        依赖注入根 — 所有 repo 与配置
- ├─ ExpertCatalog         启动时扫描专家库
- ├─ LocalOwner            本机使用者（启动时自动解析/创建）
- └─ AgentRuntime（按专家）
-     ├─ HarnessAgent      Agent 运行时（octop-harness）
-     ├─ HarnessProcessor  IM / UI / 定时任务入口
-     ├─ ChannelManager    IM 连接（octop-gateway）
-     └─ CronManager       APScheduler
-```
-
-```
-src/octop/
-  config.py    环境变量配置
-  launch.py    OctopServer 启动 + uvicorn
-  infra/       业务核心（agents、gateway、cron、db …）
-  api/         HTTP 层 — FastAPI 路由与 SSE
-  cli/         CLI 层 — Click 命令
-  dashboard/   构建后的 React SPA（wheel 产物）
-
-dashboard/     前端源码（Vite）— 在此编辑，运行 make build-frontend
-docker/        Docker Compose、入口脚本、构建脚本
-docs/          使用与架构文档
-tests/         unit/ + integration/
-```
-
-详见 [docs/architecture.md](docs/architecture.md)。
 
 ## 🛠️ 开发
 
@@ -286,7 +256,7 @@ make dev-frontend          # Vite 开发服务器 :5173
 make build-frontend        # 生产构建 → src/octop/dashboard/
 ```
 
-单独执行：`make test`、`make lint`、`make typecheck`、`make format`。
+单独执行：`make test`、`make lint`、`make typecheck`、`make format`。发布前检查见 [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md)。
 
 ## 🔒 安全与隐私
 
@@ -296,13 +266,40 @@ make build-frontend        # 生产构建 → src/octop/dashboard/
 - **敏感信息脱敏**：离开工作区前对敏感数据做遮盖。
 - **无厂商锁定**：模型供应商、存储后端与 IM 通道都可替换。
 
+## 🧬 与上游 Octop 的关系
+
+HappyClaw 是 Octop 的**修改版**，不是重写。Agent 运行时、网关、API 与插件/技能体系沿用上游引擎，这个仓库改变的是围绕它的产品形态。
+
+| | 上游 Octop | 本仓库 |
+|---|---|---|
+| 定位 | 面向多用户 / 团队的自托管助手 | 单人、单进程、单机 |
+| 账号 | 注册、登录、邀请、角色、JWT | 无登录面；首次启动创建本机使用者 |
+| 品牌 | Octop | HappyClaw（安装脚本、控制台、文档） |
+| 引擎契约 | `octop`、`~/.octop/`、`OCTOP_*`、`/api` | 保持不变，兼容已有安装 |
+| 许可 | MIT | MIT |
+
+**本版本改了什么**
+
+- 文档改写为「启动即工作」：删除登录、团队、权限与多租户部署章节。
+- 安装脚本、Docker 元数据、控制台与 CLI 帮助文案统一为 HappyClaw。
+- 旧账号表、`/api/auth/*` 端点与相关元数据字段保留在 schema 中，但不再参与访问控制。
+- 上游团队时期的文档与部分内部模块名仍可能出现 Octop，请按历史背景理解。
+
+**保持不变的部分**
+
+- `octop` CLI、`~/.octop/` 数据目录、`OCTOP_*` 环境变量与 PyPI 包名。
+- Agent 运行时（`octop-harness`）、IM 网关（`octop-gateway`）、REST/WS API、连接器、ACP、知识库、插件与定时任务。
+- 数据与备份格式，上游安装可以直接在本仓库上升级。
+
+单人化改造的变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## ❓ 常见问题
 
 **打不开 http://127.0.0.1:8088？**
 确认 `octop run` 仍在运行且终端没有报错；改过端口就用实际端口访问。
 
 **需要登录吗？**
-不需要。单人模式没有登录页与账号体系，启动后直接以本机使用者身份进入。
+不需要。没有登录页与账号体系，启动后直接以本机使用者身份进入。
 
 **怎么让局域网里的其他设备访问？**
 `octop run --host 0.0.0.0 --port 8088`，或设置 `OCTOP_BIND_HOST=0.0.0.0`。注意这会把控制台暴露给局域网，请自行确认网络环境。
@@ -331,6 +328,8 @@ make build-frontend        # 生产构建 → src/octop/dashboard/
 
 详见 [CHANGELOG.md](CHANGELOG.md)。
 
-## 📄 许可证
+## 📄 许可证与致谢
 
 本项目采用 [MIT License](LICENSE)。
+
+HappyClaw 修改自 [TencentCloud/Octop](https://github.com/TencentCloud/Octop)，并依赖其 `octop-harness`（LangGraph 对话运行时）与 `octop-gateway`（IM 通道管线）。感谢上游维护者，以及本项目所组装的 FastAPI、React 与 Ant Design 社区。

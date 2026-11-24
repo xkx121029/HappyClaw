@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="880" viewBox="0 0 1280 880" role="img" aria-labelledby="archTitle archDesc">
+  <title id="archTitle">HappyClaw architecture</title>
+  <desc id="archDesc">One Python process: dashboard, CLI, HTTP/WS, IM channels and cron on top of FastAPI, the OctopServer domain layer, octop-harness and octop-gateway, with SQLite or PostgreSQL storage.</desc>
+  <style>
+    :root{--bg:#FFFFFF;--panel:#FFFBF9;--card:#FFFFFF;--sub:#FFF6F2;--line:#F1E2DA;--ink:#1B1E26;--muted:#5B6270;--faint:#98A0AC;--brand:#FF6B4A;}
+    @media (prefers-color-scheme: dark){:root{--bg:#0F1117;--panel:#12151C;--card:#181C24;--sub:#1E171B;--line:#2B313D;--ink:#F2F4F8;--muted:#A7AEBB;--faint:#7B8390;--brand:#FF7A5C;}}
+    .bg{fill:var(--bg)} .panel{fill:var(--panel)} .card{fill:var(--card);stroke:var(--line)} .sub{fill:var(--sub);stroke:var(--line)}
+    .ink{fill:var(--ink)} .muted{fill:var(--muted)} .faint{fill:var(--faint)}
+    .txt{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}
+    .mono{font-family:"JetBrains Mono","Cascadia Mono",Consolas,monospace}
+    .arrow{stroke:#FF6B4A;stroke-width:1.7;fill:none;opacity:.8}
+    .dash{stroke:#FF6B4A;stroke-width:1.6;fill:none;stroke-dasharray:5 5;opacity:.55}
+  </style>
+  <defs>
+    <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#FF6B4A"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1280" height="880" rx="28"/>
+  <rect class="panel" x="24" y="24" width="952" height="800" rx="24" stroke="var(--line)" stroke-dasharray="7 6"/>
+  <text class="txt faint" x="48" y="58" font-size="11.5" letter-spacing="1.7">SINGLE PYTHON PROCESS</text>
+
+  <!-- Surface -->
+  <text class="txt faint" x="48" y="96" font-size="11" letter-spacing="1.6">SURFACE</text>
+  <g class="card">
+    <rect x="48" y="110" width="170" height="92" rx="12"/>
+    <rect x="236" y="110" width="170" height="92" rx="12"/>
+    <rect x="424" y="110" width="170" height="92" rx="12"/>
+    <rect x="612" y="110" width="170" height="92" rx="12"/>
+    <rect x="800" y="110" width="170" height="92" rx="12"/>
+  </g>
+  <g class="txt">
+    <text class="ink" x="64" y="148" font-size="15" font-weight="700">Dashboard</text>
+    <text class="faint" x="64" y="172" font-size="11.5">React console</text>
+    <text class="ink" x="252" y="148" font-size="15" font-weight="700">CLI</text>
+    <text class="faint mono" x="252" y="172" font-size="11">octop …</text>
+    <text class="ink" x="440" y="148" font-size="15" font-weight="700">HTTP / WS</text>
+    <text class="faint" x="440" y="172" font-size="11.5">FastAPI API</text>
+    <text class="ink" x="628" y="148" font-size="15" font-weight="700">IM channels</text>
+    <text class="faint mono" x="628" y="172" font-size="11">octop-gateway</text>
+    <text class="ink" x="816" y="148" font-size="15" font-weight="700">Cron</text>
+    <text class="faint" x="816" y="172" font-size="11.5">APScheduler</text>
+  </g>
+
+  <g class="arrow">
+    <path d="M133 202 V252" marker-end="url(#arrowHead)"/>
+    <path d="M321 202 V252" marker-end="url(#arrowHead)"/>
+    <path d="M509 202 V252" marker-end="url(#arrowHead)"/>
+    <path d="M697 202 V252" marker-end="url(#arrowHead)"/>
+    <path d="M885 202 V252" marker-end="url(#arrowHead)"/>
+  </g>
+
+  <!-- API layer -->
+  <text class="txt faint" x="48" y="240" font-size="11" letter-spacing="1.6">API LAYER</text>
+  <rect class="card" x="48" y="252" width="922" height="76" rx="12"/>
+  <text class="txt ink" x="68" y="282" font-size="15.5" font-weight="700">FastAPI routers</text>
+  <text class="txt faint" x="68" y="306" font-size="11.5">HTTP · WebSocket · SSE · JSON</text>
+
+  <g class="arrow">
+    <path d="M300 328 V384" marker-end="url(#arrowHead)"/>
+    <path d="M509 328 V384" marker-end="url(#arrowHead)"/>
+    <path d="M720 328 V384" marker-end="url(#arrowHead)"/>
+  </g>
+
+  <!-- Domain -->
+  <text class="txt faint" x="48" y="372" font-size="11" letter-spacing="1.6">DOMAIN</text>
+  <rect class="sub" x="48" y="384" width="922" height="262" rx="16"/>
+  <g class="card">
+    <rect x="68" y="404" width="440" height="108" rx="12"/>
+    <rect x="528" y="404" width="422" height="108" rx="12"/>
+    <rect x="68" y="528" width="282" height="98" rx="12"/>
+    <rect x="370" y="528" width="282" height="98" rx="12"/>
+    <rect x="672" y="528" width="282" height="98" rx="12"/>
+  </g>
+  <g class="txt">
+    <text class="ink" x="88" y="432" font-size="15" font-weight="700">AgentManager</text>
+    <text class="muted" x="88" y="456" font-size="11.5">global agent registry · builds runtimes on demand</text>
+    <text class="faint mono" x="88" y="478" font-size="10.5">HarnessAgent · GlobalProcessor · BackendWorkspace</text>
+    <text class="ink" x="548" y="432" font-size="15" font-weight="700">Gateway</text>
+    <text class="muted" x="548" y="456" font-size="11.5">ChannelManager · WebSocketHub</text>
+    <text class="faint" x="548" y="478" font-size="11">IM messages and WS push</text>
+    <text class="ink" x="88" y="558" font-size="15" font-weight="700">CronManager</text>
+    <text class="muted" x="88" y="582" font-size="11.5">process-wide APScheduler</text>
+    <text class="ink" x="390" y="558" font-size="15" font-weight="700">LocalOwner</text>
+    <text class="muted" x="390" y="582" font-size="11.5">single owner, resolved at boot</text>
+    <text class="ink" x="692" y="558" font-size="15" font-weight="700">SharedServices</text>
+    <text class="muted" x="692" y="582" font-size="11.5">repositories &amp; factories (DI root)</text>
+  </g>
+
+  <g class="arrow">
+    <path d="M280 646 V682" marker-end="url(#arrowHead)"/>
+    <path d="M740 646 V682" marker-end="url(#arrowHead)"/>
+  </g>
+
+  <!-- Reusable libraries -->
+  <text class="txt faint" x="48" y="670" font-size="11" letter-spacing="1.6">REUSABLE LIBRARIES</text>
+  <g class="card">
+    <rect x="48" y="682" width="440" height="66" rx="12"/>
+    <rect x="528" y="682" width="422" height="66" rx="12"/>
+  </g>
+  <text class="mono ink" x="68" y="710" font-size="13.5" font-weight="700">octop-harness</text>
+  <text class="txt faint" x="68" y="730" font-size="11">LangGraph chat runtime</text>
+  <text class="mono ink" x="548" y="710" font-size="13.5" font-weight="700">octop-gateway</text>
+  <text class="txt faint" x="548" y="730" font-size="11">IM channel pipeline</text>
+
+  <path class="arrow" d="M268 748 V786" marker-end="url(#arrowHead)"/>
+  <path class="arrow" d="M739 748 V786" marker-end="url(#arrowHead)"/>
+
+  <!-- Storage -->
+  <text class="txt faint" x="48" y="774" font-size="11" letter-spacing="1.6">STORAGE</text>
+  <rect class="card" x="48" y="786" width="922" height="34" rx="10"/>
+  <text class="txt muted" x="68" y="808" font-size="11.5">SQLite (WAL) or PostgreSQL control plane  +  <tspan class="mono">~/.octop/agents</tspan> file workspaces</text>
+
+  <!-- External systems -->
+  <text class="txt faint" x="1000" y="230" font-size="11" letter-spacing="1.6">EXTERNAL</text>
+  <g class="card">
+    <rect x="1000" y="240" width="256" height="200" rx="14"/>
+    <rect x="1000" y="462" width="256" height="170" rx="14"/>
+    <rect x="1000" y="662" width="256" height="140" rx="14"/>
+  </g>
+  <g class="txt">
+    <text class="ink" x="1022" y="272" font-size="15" font-weight="700">Model providers</text>
+    <text class="muted" x="1022" y="300" font-size="11.5">OpenAI-compatible APIs</text>
+    <text class="muted" x="1022" y="322" font-size="11.5">Anthropic · AWS Bedrock</text>
+    <text class="muted" x="1022" y="344" font-size="11.5">DashScope (Qwen)</text>
+    <text class="muted" x="1022" y="366" font-size="11.5">Ollama (local)</text>
+    <text class="ink" x="1022" y="494" font-size="15" font-weight="700">IM platforms</text>
+    <text class="muted" x="1022" y="522" font-size="11.5">Feishu · DingTalk · QQ</text>
+    <text class="muted" x="1022" y="544" font-size="11.5">WeChat · WeCom</text>
+    <text class="muted" x="1022" y="566" font-size="11.5">Telegram · Discord</text>
+    <text class="ink" x="1022" y="694" font-size="15" font-weight="700">MCP / OAuth</text>
+    <text class="muted" x="1022" y="722" font-size="11.5">Tencent Docs · Tencent Meeting</text>
+    <text class="muted" x="1022" y="744" font-size="11.5">Notion · TickTick</text>
+    <text class="muted" x="1022" y="766" font-size="11.5">Feishu / WeCom CLI</text>
+  </g>
+
+  <path class="dash" d="M970 300 H984 V340 H1000" marker-end="url(#arrowHead)"/>
+  <path class="dash" d="M950 470 H984 V540 H1000" marker-end="url(#arrowHead)"/>
+  <path class="dash" d="M970 610 H984 V724 H1000" marker-end="url(#arrowHead)"/>
+</svg>

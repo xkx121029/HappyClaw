@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="flowTitle flowDesc">
+  <title id="flowTitle">快速开始流程</title>
+  <desc id="flowDesc">安装、启动、打开控制台、配置模型</desc>
+  <style>
+    :root{--bg:#FFFFFF;--card:#FFFFFF;--line:#F1E2DA;--ink:#1B1E26;--muted:#5B6270;--faint:#98A0AC;--soft:#FFF0EA;--code:#F6F8FB;--brand:#FF6B4A;}
+    @media (prefers-color-scheme: dark){:root{--bg:#0F1117;--card:#171B22;--line:#2B313D;--ink:#F2F4F8;--muted:#A7AEBB;--faint:#7B8390;--soft:#35221D;--code:#12161D;--brand:#FF7A5C;}}
+    .bg{fill:var(--bg)} .card{fill:var(--card);stroke:var(--line)} .ink{fill:var(--ink)} .muted{fill:var(--muted)} .faint{fill:var(--faint)}
+    .soft{fill:var(--soft)} .code{fill:var(--code);stroke:var(--line)}
+    .txt{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}
+    .mono{font-family:"JetBrains Mono","Cascadia Mono",Consolas,monospace}
+  </style>
+  <rect class="bg" width="1200" height="300" rx="24"/>
+
+  <g>
+    <rect class="card" x="30" y="30" width="255" height="210" rx="16"/>
+    <rect class="soft" x="50" y="50" width="44" height="26" rx="13"/>
+    <text class="txt" x="72" y="68" text-anchor="middle" font-size="12" fill="#FF6B4A" font-weight="700">01</text>
+    <text class="txt ink" x="50" y="104" font-size="20" font-weight="700">安装</text>
+    <rect class="code" x="50" y="118" width="215" height="34" rx="8"/>
+    <text class="mono muted" x="62" y="140" font-size="13">install.sh · install.ps1</text>
+    <text class="txt muted" x="50" y="182" font-size="12">隔离环境 → ~/.octop/venv</text>
+    <text class="txt faint" x="50" y="204" font-size="12">不改动系统 Python</text>
+  </g>
+
+  <path d="M299 125 L310 135 L299 145" fill="none" stroke="#FF6B4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g>
+    <rect class="card" x="325" y="30" width="255" height="210" rx="16"/>
+    <rect class="soft" x="345" y="50" width="44" height="26" rx="13"/>
+    <text class="txt" x="367" y="68" text-anchor="middle" font-size="12" fill="#FF6B4A" font-weight="700">02</text>
+    <text class="txt ink" x="345" y="104" font-size="20" font-weight="700">启动</text>
+    <rect class="code" x="345" y="118" width="215" height="34" rx="8"/>
+    <text class="mono muted" x="357" y="140" font-size="13">octop run</text>
+    <text class="txt muted" x="345" y="182" font-size="12">单进程前台运行</text>
+    <text class="txt faint" x="345" y="204" font-size="12">日志写入 ~/.octop/logs</text>
+  </g>
+
+  <path d="M594 125 L605 135 L594 145" fill="none" stroke="#FF6B4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g>
+    <rect class="card" x="620" y="30" width="255" height="210" rx="16"/>
+    <rect class="soft" x="640" y="50" width="44" height="26" rx="13"/>
+    <text class="txt" x="662" y="68" text-anchor="middle" font-size="12" fill="#FF6B4A" font-weight="700">03</text>
+    <text class="txt ink" x="640" y="104" font-size="20" font-weight="700">打开</text>
+    <rect class="code" x="640" y="118" width="215" height="34" rx="8"/>
+    <text class="mono muted" x="652" y="140" font-size="13">127.0.0.1:8088</text>
+    <text class="txt muted" x="640" y="182" font-size="12">首次启动自动建本机用户</text>
+    <text class="txt faint" x="640" y="204" font-size="12">无需注册与登录</text>
+  </g>
+
+  <path d="M889 125 L900 135 L889 145" fill="none" stroke="#FF6B4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g>
+    <rect class="card" x="915" y="30" width="255" height="210" rx="16"/>
+    <rect class="soft" x="935" y="50" width="44" height="26" rx="13"/>
+    <text class="txt" x="957" y="68" text-anchor="middle" font-size="12" fill="#FF6B4A" font-weight="700">04</text>
+    <text class="txt ink" x="935" y="104" font-size="20" font-weight="700">配置模型</text>
+    <rect class="code" x="935" y="118" width="215" height="34" rx="8"/>
+    <text class="mono muted" x="947" y="140" font-size="13">设置 → 模型</text>
+    <text class="txt muted" x="935" y="182" font-size="12">填 Base URL 与 API Key</text>
+    <text class="txt faint" x="935" y="204" font-size="12">测试连接后即可对话</text>
+  </g>
+
+  <text class="txt faint" x="600" y="272" text-anchor="middle" font-size="13">Windows 优先的 5 分钟上手 · docs/quickstart.md</text>
+</svg>

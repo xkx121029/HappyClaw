@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="featTitle featDesc">
+  <title id="featTitle">HappyClaw capabilities</title>
+  <desc id="featDesc">Nine capabilities of the HappyClaw single-person AI workbench</desc>
+  <style>
+    :root{--bg:#FFFFFF;--card:#FFFFFF;--line:#F1E2DA;--ink:#1B1E26;--muted:#5B6270;--faint:#98A0AC;--soft:#FFF0EA;--brand:#FF6B4A;}
+    @media (prefers-color-scheme: dark){:root{--bg:#0F1117;--card:#171B22;--line:#2B313D;--ink:#F2F4F8;--muted:#A7AEBB;--faint:#7B8390;--soft:#35221D;--brand:#FF7A5C;}}
+    .bg{fill:var(--bg)} .card{fill:var(--card);stroke:var(--line)} .ink{fill:var(--ink)} .muted{fill:var(--muted)} .faint{fill:var(--faint)}
+    .soft{fill:var(--soft)} .brand{stroke:var(--brand)} .brandf{fill:var(--brand)}
+    .txt{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}
+  </style>
+  <rect class="bg" width="1200" height="620" rx="28"/>
+
+  <!-- 1. Local chat -->
+  <g>
+    <rect class="card" x="40" y="40" width="360" height="160" rx="18"/>
+    <circle class="soft" cx="94" cy="94" r="22"/>
+    <path class="brand" d="M82 84 h24 a4 4 0 0 1 4 4 v11 a4 4 0 0 1 -4 4 h-10 l-6 6 v-6 h-8 a4 4 0 0 1 -4 -4 v-11 a4 4 0 0 1 4 -4 z" fill="none" stroke-width="2.1" stroke-linejoin="round"/>
+    <circle class="brandf" cx="88" cy="95" r="1.7"/><circle class="brandf" cx="94" cy="95" r="1.7"/><circle class="brandf" cx="100" cy="95" r="1.7"/>
+    <text class="txt ink" x="128" y="88" font-size="19" font-weight="700">Local chat</text>
+    <text class="txt muted" x="128" y="116" font-size="13">Streaming replies, attachments and tool calls</text>
+    <text class="txt faint" x="128" y="140" font-size="13">History never leaves this machine</text>
+  </g>
+
+  <!-- 2. Experts -->
+  <g>
+    <rect class="card" x="420" y="40" width="360" height="160" rx="18"/>
+    <circle class="soft" cx="474" cy="94" r="22"/>
+    <circle class="brand" cx="466" cy="88" r="4.6" fill="none" stroke-width="2"/>
+    <circle class="brand" cx="482" cy="88" r="4.6" fill="none" stroke-width="2"/>
+    <circle class="brand" cx="474" cy="101" r="4.6" fill="none" stroke-width="2"/>
+    <path class="brand" d="M462 106 Q474 116 486 106" fill="none" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+    <text class="txt ink" x="508" y="88" font-size="19" font-weight="700">Experts</text>
+    <text class="txt muted" x="508" y="116" font-size="13">Per-expert workspace, model, skills and cron</text>
+    <text class="txt faint" x="508" y="140" font-size="13">Expert library + 16 MBTI personas</text>
+  </g>
+
+  <!-- 3. AgentTeams -->
+  <g>
+    <rect class="card" x="800" y="40" width="360" height="160" rx="18"/>
+    <circle class="soft" cx="854" cy="94" r="22"/>
+    <circle class="brand" cx="854" cy="84" r="3.6" fill="none" stroke-width="2"/>
+    <circle class="brand" cx="842" cy="104" r="3.6" fill="none" stroke-width="2"/>
+    <circle class="brand" cx="866" cy="104" r="3.6" fill="none" stroke-width="2"/>
+    <path class="brand" d="M854 88 v5 M854 93 l-10 7 M854 93 l10 7" fill="none" stroke-width="1.8" stroke-linecap="round"/>
+    <text class="txt ink" x="888" y="88" font-size="19" font-weight="700">AgentTeams <tspan font-size="12" fill="#FF6B4A">BETA</tspan></text>
+    <text class="txt muted" x="888" y="116" font-size="13">A coordinator schedules several experts</text>
+    <text class="txt faint" x="888" y="140" font-size="13">for multi-step work</text>
+  </g>
+
+  <!-- 4. Connectors -->
+  <g>
+    <rect class="card" x="40" y="220" width="360" height="160" rx="18"/>
+    <circle class="soft" cx="94" cy="274" r="22"/>
+    <rect class="brand" x="86" y="270" width="16" height="12" rx="3" fill="none" stroke-width="2"/>
+    <path class="brand" d="M90 270 v-6 M98 270 v-6 M94 282 v7" fill="none" stroke-width="2" stroke-linecap="round"/>
+    <text class="txt ink" x="128" y="268" font-size="19" font-weight="700">Connectors</text>
+    <text class="txt muted" x="128" y="296" font-size="13">Tencent Docs, Tencent Meeting, Notion,</text>
+    <text class="txt faint" x="128" y="320" font-size="13">TickTick, Feishu / WeCom CLI …</text>
+  </g>
+
+  <!-- 5. Knowledge base -->
+  <g>
+    <rect class="card" x="420" y="220" width="360" height="160" rx="18"/>
+    <circle class="soft" cx="474" cy="274" r="22"/>
+    <rect class="brand" x="462" y="266" width="11" height="17" rx="2" fill="none" stroke-width="2"/>
+    <rect class="brand" x="475" y="266" width="11" height="17" rx="2" fill="none" stroke-width="2"/>
+    <text class="txt ink" x="508" y="268" font-size="19" font-weight="700">Knowledge base</text>
+    <text class="txt muted" x="508" y="296" font-size="13">RAG over your own documents</text>
+    <text class="txt faint" x="508" y="320" font-size="13">Answers grounded in your corpus</text>
+  </g>
+
+  <!-- 6. Plugins & skills -->
+  <g>
+    <rect class="card" x="800" y="220" width="360" height="160" rx="18"/>
+    <circle class="soft" cx="854" cy="274" r="22"/>
+    <rect class="brand" x="844" y="264" width="8" height="8" rx="1.6" fill="none" stroke-width="1.9"/>
+    <rect class="brand" x="856" y="264" width="8" height="8" rx="1.6" fill="none" stroke-width="1.9"/>
+    <rect class="brand" x="844" y="276" width="8" height="8" rx="1.6" fill="none" stroke-width="1.9"/>
+    <rect class="brand" x="858" y="278" width="8" height="8" rx="1.6" fill="#FF6B4A" fill-opacity="0.18" stroke-width="1.9"/>
+    <text class="txt ink" x="888" y="268" font-size="19" font-weight="700">Plugins &amp; skills</text>
+    <text class="txt muted" x="888" y="296" font-size="13">Enable skills per expert</text>
+    <text class="txt faint" x="888" y="320" font-size="13">Install and manage third-party plugins</text>
+  </g>
+
+  <!-- 7. ACP -->
+  <g>
+    <rect class="card" x="40" y="400" width="360" height="160" rx="18"/>
+    <circle class="soft" cx="94" cy="454" r="22"/>
+    <path class="brand" d="M82 448 h20 m0 0 l-5 -5 m5 5 l-5 5" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="brand" d="M106 460 h-20 m0 0 l5 -5 m-5 5 l5 5" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+    <text class="txt ink" x="128" y="448" font-size="19" font-weight="700">ACP in both directions</text>
+    <text class="txt muted" x="128" y="476" font-size="13">octop acp for IDEs; delegate to</text>
+    <text class="txt faint" x="128" y="500" font-size="13">OpenCode, Claude Code, Codex …</text>
+  </g>
+
+  <!-- 8. Terminal / browser / desktop -->
+  <g>
+    <rect class="card" x="420" y="400" width="360" height="160" rx="18"/>
+    <circle class="soft" cx="474" cy="454" r="22"/>
+    <rect class="brand" x="462" y="444" width="24" height="16" rx="2.5" fill="none" stroke-width="2"/>
+    <path class="brand" d="M472 460 v5 M466 466 h12" fill="none" stroke-width="2" stroke-linecap="round"/>
+    <text class="txt ink" x="508" y="448" font-size="19" font-weight="700">Terminal · Browser · Desktop</text>
+    <text class="txt muted" x="508" y="476" font-size="13">Shell in the browser, Chromium automation,</text>
+    <text class="txt faint" x="508" y="500" font-size="13">remote desktop across OSes</text>
+  </g>
+
+  <!-- 9. Scheduled jobs -->
+  <g>
+    <rect class="card" x="800" y="400" width="360" height="160" rx="18"/>
+    <circle class="soft" cx="854" cy="454" r="22"/>
+    <circle class="brand" cx="854" cy="454" r="10" fill="none" stroke-width="2"/>
+    <path class="brand" d="M854 448 v7 l5 3" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="txt ink" x="888" y="448" font-size="19" font-weight="700">Scheduled jobs</text>
+    <text class="txt muted" x="888" y="476" font-size="13">Natural language or cron triggers</text>
+    <text class="txt faint" x="888" y="500" font-size="13">Runs on time and pushes results</text>
+  </g>
+
+  <text class="txt faint" x="600" y="596" text-anchor="middle" font-size="13">Control, ACP and Settings panels live in the console · see docs/</text>
+</svg>
