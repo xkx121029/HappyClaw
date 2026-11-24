@@ -1,148 +1,56 @@
 import { describe, expect, it } from "vitest";
 import {
-  ADVANCED_TAB_PERMISSIONS,
   canAccessPath,
-  NAV_PERMISSIONS,
   pathPermissionKeys,
-  PERM,
+  routeNeedsPermission,
 } from "../utils/permissions";
-import { isWorkbenchPath, resolveSelectedKey, routeConfigs } from "./index";
+import { resolveSelectedKey, routeConfigs } from "./index";
 
-describe("pathPermissionKeys", () => {
-  it("matches workbench and legacy aliases", () => {
-    expect(isWorkbenchPath("/workbench")).toBe(true);
-    expect(pathPermissionKeys("/workbench")).toEqual([...PERM.workbench]);
-    expect(pathPermissionKeys("/workbench/terminal")).toEqual([
-      ...PERM.terminal,
-    ]);
-    expect(pathPermissionKeys("/workbench/browser")).toEqual([...PERM.browser]);
-    expect(pathPermissionKeys("/terminal")).toEqual([...PERM.terminal]);
-    expect(pathPermissionKeys("/remote-browser")).toEqual([...PERM.browser]);
+/**
+ * 单人本机模式（f43f2d73「移除账号体系」）之后，控制台不再按角色或模块权限
+ * 裁剪入口：``pathPermissionKeys`` 恒为 ``null``、``canAccessPath`` 恒为
+ * ``true``、路由也不再包 ``RequirePermission``。
+ *
+ * 这些用例把「没有任何受限路径」钉成契约。谁把权限关卡加回来，这里会先红。
+ */
+describe("single-user console gates nothing", () => {
+  it("reports no permission requirement for any dashboard path", () => {
+    for (const path of [
+      "/chat",
+      "/chat/AGT001/thread-1",
+      "/experts",
+      "/tasks",
+      "/connectors",
+      "/knowledge-bases",
+      "/admin/users",
+      "/admin/advanced",
+      "/bridge/settings",
+      "/remote-desktop/phone",
+      "/personalization/skills",
+      "/does-not-exist",
+    ]) {
+      expect(pathPermissionKeys(path)).toBeNull();
+    }
   });
 
-  it("matches remote desktop hub tabs and acp", () => {
-    expect(pathPermissionKeys("/remote-desktop")).toEqual([
-      "desktop",
-      "mobile",
-    ]);
-    expect(pathPermissionKeys("/remote-desktop/desktop")).toEqual([
-      ...PERM.desktop,
-    ]);
-    expect(pathPermissionKeys("/remote-desktop/phone")).toEqual([
-      ...PERM.mobile,
-    ]);
-    expect(pathPermissionKeys("/remote-phone")).toEqual([...PERM.mobile]);
-    expect(pathPermissionKeys("/acp")).toBe("admin");
+  it("lets the local user into every path regardless of holder permissions", () => {
+    const holders = [
+      null,
+      { role: "user", permissions: [] },
+      { role: "user", permissions: ["desktop"] },
+      { role: "admin", permissions: [] },
+    ];
+    for (const holder of holders) {
+      for (const path of ["/chat", "/experts", "/admin/users", "/bridge"]) {
+        expect(canAccessPath(holder, path)).toBe(true);
+      }
+    }
   });
 
-  it("keeps sso on users page, not advanced", () => {
-    expect(pathPermissionKeys("/admin/users")).toEqual([...PERM.usersPage]);
-    expect(pathPermissionKeys("/admin/advanced")).toEqual([
-      ...PERM.advancedPage,
-    ]);
-    expect([...PERM.advancedPage]).not.toContain("sso");
-    expect(NAV_PERMISSIONS["admin-users"]).toEqual(PERM.usersPage);
-    expect(NAV_PERMISSIONS["admin-advanced"]).toEqual(PERM.advancedPage);
-    expect(ADVANCED_TAB_PERMISSIONS.captcha).toBe("captcha");
-    expect("bridge" in ADVANCED_TAB_PERMISSIONS).toBe(false);
-    expect(pathPermissionKeys("/bridge")).toEqual([...PERM.bridge]);
-    expect(NAV_PERMISSIONS.bridge).toEqual(PERM.bridge);
-    expect([...PERM.advancedPage]).toContain("captcha");
-  });
-
-  it("keeps voice and search on models page, not advanced", () => {
-    expect(pathPermissionKeys("/admin/models")).toEqual([...PERM.modelsPage]);
-    expect(pathPermissionKeys("/admin/voice")).toEqual([...PERM.modelsPage]);
-    expect([...PERM.modelsPage]).toContain("voice");
-    expect([...PERM.modelsPage]).toContain("search");
-    expect([...PERM.advancedPage]).not.toContain("voice");
-    expect([...PERM.advancedPage]).not.toContain("search");
-    expect(NAV_PERMISSIONS.models).toEqual(PERM.modelsPage);
-  });
-
-  it("does not gate common pages", () => {
-    expect(pathPermissionKeys("/chat")).toBeNull();
-    expect(pathPermissionKeys("/personalization/acp")).toBeNull();
-  });
-
-  it("gates cloud collab behind the bridge permission", () => {
-    expect(pathPermissionKeys("/bridge")).toEqual(["bridge"]);
-    expect(pathPermissionKeys("/bridge/settings")).toEqual(["bridge"]);
-  });
-
-  it("gates ungrouped pages except chat", () => {
-    expect(pathPermissionKeys("/experts")).toEqual([...PERM.experts]);
-    expect(pathPermissionKeys("/tasks")).toEqual([...PERM.tasks]);
-    expect(pathPermissionKeys("/token-usage")).toEqual([...PERM.tokenUsage]);
-    const user = { role: "user", permissions: ["experts"] };
-    expect(canAccessPath(user, "/experts")).toBe(true);
-    expect(canAccessPath(user, "/tasks")).toBe(false);
-    expect(canAccessPath(user, "/chat")).toBe(true);
-  });
-
-  it("gates settings modules", () => {
-    expect(pathPermissionKeys("/connectors")).toEqual([...PERM.connectors]);
-    expect(pathPermissionKeys("/skill-packages")).toEqual([
-      ...PERM.skillPackages,
-    ]);
-    expect(pathPermissionKeys("/personalization/skills")).toEqual([
-      "skills",
-      "skill_builtin",
-      "skill_market",
-    ]);
-    expect(pathPermissionKeys("/personalization/channels")).toEqual([
-      ...PERM.channels,
-    ]);
-    expect(pathPermissionKeys("/personalization/tools")).toEqual([
-      ...PERM.tools,
-    ]);
-    expect(pathPermissionKeys("/personalization/plugins")).toEqual([
-      ...PERM.agentPlugins,
-    ]);
-    expect(pathPermissionKeys("/personalization/memory")).toEqual([
-      ...PERM.memory,
-    ]);
-    expect(pathPermissionKeys("/memory")).toEqual([...PERM.memory]);
-    expect(NAV_PERMISSIONS.personalization).toEqual(PERM.personalization);
-    expect(pathPermissionKeys("/knowledge-bases")).toEqual([
-      ...PERM.knowledgeBasesPage,
-    ]);
-    expect([...PERM.advancedPage]).not.toContain("knowledge_settings");
-  });
-
-  it("canAccessPath respects holder permissions", () => {
-    const user = { role: "user", permissions: ["desktop"] };
-    expect(canAccessPath(user, "/remote-desktop")).toBe(true);
-    expect(canAccessPath(user, "/remote-desktop/desktop")).toBe(true);
-    expect(canAccessPath(user, "/remote-desktop/phone")).toBe(false);
-    expect(
-      canAccessPath(
-        { role: "user", permissions: ["mobile"] },
-        "/remote-desktop/phone",
-      ),
-    ).toBe(true);
-    expect(canAccessPath(user, "/admin/users")).toBe(false);
-    expect(canAccessPath({ role: "admin", permissions: [] }, "/acp")).toBe(
-      true,
-    );
-    expect(
-      canAccessPath(
-        { role: "user", permissions: ["knowledge_bases"] },
-        "/knowledge-bases",
-      ),
-    ).toBe(true);
-    expect(
-      canAccessPath(
-        { role: "user", permissions: ["knowledge_settings"] },
-        "/knowledge-bases",
-      ),
-    ).toBe(true);
-    expect(
-      canAccessPath(
-        { role: "user", permissions: ["knowledge_bases"] },
-        "/admin/advanced",
-      ),
-    ).toBe(false);
+  it("never wraps a route config in RequirePermission", () => {
+    for (const route of routeConfigs) {
+      expect(routeNeedsPermission(route.path)).toBe(false);
+    }
   });
 });
 

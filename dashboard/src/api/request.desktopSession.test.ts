@@ -106,7 +106,10 @@ describe("desktop device session", () => {
 
     await expect(mod.request("/agents")).rejects.toThrow();
     expect(session.renew).not.toHaveBeenCalled();
-    expect(replace).toHaveBeenCalledWith("/login");
+    // Single-user local mode has no login page: a dead session clears the
+    // token and broadcasts, but never reloads the page under the user.
+    expect(replace).not.toHaveBeenCalled();
+    expect(mod.getAuthToken()).toBe("");
   });
 
   it("registers the device credential for the local account only", async () => {
@@ -130,14 +133,14 @@ describe("desktop device session", () => {
     expect(session.register).not.toHaveBeenCalled();
   });
 
-  it("falls through to the login path when there is no bridge", async () => {
+  it("clears the token without a redirect when there is no bridge", async () => {
     mod.setAuthToken("stale-token");
     fetchMock.mockResolvedValue(tokenExpiredResponse());
 
     await expect(mod.request("/agents")).rejects.toThrow();
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(mod.getAuthToken()).toBe("");
-    expect(replace).toHaveBeenCalledWith("/login");
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it("does not retry a rejected login", async () => {

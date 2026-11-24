@@ -219,8 +219,11 @@ class DshToolRegistry:
         for exposed_name, definition in self.visible(scope).items():
             invoker = _make_invoker(exposed_name, definition, active)
             signature, annotations = synthetic_signature(definition.parameters)
-            invoker.__signature__ = signature
-            invoker.__annotations__ = annotations
+            # setattr, not attribute assignment: mypy sees ``invoker`` as
+            # ``Callable[..., Any]``, which has no ``__signature__``/``__annotations__``
+            # in its type, while the runtime function object does.
+            setattr(invoker, "__signature__", signature)  # noqa: B010
+            setattr(invoker, "__annotations__", annotations)  # noqa: B010
             registrations.append(
                 ToolRegistration(
                     plugin_id=self.plugin_id,

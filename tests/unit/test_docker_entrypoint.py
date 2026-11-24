@@ -71,14 +71,16 @@ def _init_marker(tmp_path: Path) -> Path:
 
 
 def _posix_path(path: Path) -> str:
-    """MSYS spelling of a Windows path (drive letter to /c form)."""
+    """MSYS spelling of a Windows path (drive letter to /c form); POSIX paths pass through."""
     text = path.resolve().as_posix()
-    return "/" + text[0].lower() + text[2:]
+    if len(text) >= 3 and text[1] == ":":
+        return "/" + text[0].lower() + text[2:]
+    return text
 
 
 def _posix_path_list(value: str) -> str:
     """Rewrite every Windows entry of a PATH into the MSYS form."""
-    parts = [part for part in value.split(";") if part.strip()]
+    parts = [part for part in value.split(os.pathsep) if part.strip()]
     return ":".join(
         _posix_path(Path(part)) if "\\" in part or ":" in part[:2] else part for part in parts
     )
