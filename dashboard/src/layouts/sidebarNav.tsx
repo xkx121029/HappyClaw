@@ -18,6 +18,7 @@ import {
   GraduationCap,
   Shield,
   PanelsTopLeft,
+  Palette,
 } from "lucide-react";
 
 export const EXPANDED_WIDTH = 220;
@@ -77,6 +78,7 @@ export const SIDEBAR_NAV_KEYS = [
   "admin-storage",
   "admin-plugins",
   "admin-security",
+  "appearance",
   "admin-advanced",
 ] as const;
 
@@ -130,6 +132,7 @@ export const SIDEBAR_GROUPED_NAV_KEYS = [
   "admin-storage",
   "admin-plugins",
   "admin-security",
+  "appearance",
   "admin-advanced",
   "agent-config",
 ] as const;
@@ -266,6 +269,12 @@ export function buildNavSections(_opts?: {
       path: "/admin/security",
       icon: <Shield size={iconSize} strokeWidth={iconStroke} />,
       labelKey: "nav.security",
+    },
+    {
+      key: "appearance",
+      path: "/admin/appearance",
+      icon: <Palette size={iconSize} strokeWidth={iconStroke} />,
+      labelKey: "nav.appearance",
     },
     {
       key: "admin-advanced",

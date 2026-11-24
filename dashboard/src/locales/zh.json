@@ -352,7 +352,8 @@
     "saveFailed": "没能保存导航布局",
     "dragToReorder": "拖动排序",
     "chatHistory": "会话列表",
-    "passkeys": "通行密钥"
+    "passkeys": "通行密钥",
+    "appearance": "外观"
   },
   "skillPackages": {
     "title": "技能包",
@@ -568,7 +569,7 @@
     "editDocumentSuccess": "已保存，正在重建索引",
     "editDocumentFailed": "保存文档失败",
     "filenameRequired": "请输入文件名",
-    "filenamePlaceholder": "例如 notes",
+    "filenamePlaceholder": "文件名",
     "fileFormat": "格式",
     "fileContent": "内容",
     "fileContentPlaceholder": "在此编写文档内容…",
@@ -588,7 +589,6 @@
     "moveConfirm": "移动",
     "moveSuccess": "已移动",
     "moveFailed": "移动失败",
-    "filenamePlaceholder": "文件名",
     "pathBreadcrumb": "路径导航",
     "deleteFolderConfirm": "删除此文件夹及其内部文档？",
     "uploaded": "文档已上传",
@@ -7411,5 +7411,106 @@
     "nameRequired": "请先填写名称",
     "failed": "润色失败，请稍后重试",
     "emptyResult": "模型未返回结果"
+  },
+  "appearance": {
+    "livePreview": "实时预览",
+    "resetAll": "恢复默认外观",
+    "storageHint": "外观设置保存在本机浏览器（localStorage），无需刷新即时生效；服务端暂无外观接口，不会跨设备同步。",
+    "packs": {
+      "title": "预设主题包",
+      "hint": "一包 = 一组参数组合，选完仍可单独微调",
+      "default": "默认",
+      "defaultDesc": "当前版本的原始外观",
+      "instrument": "仪器",
+      "instrumentDesc": "深色无彩、直角紧凑，只有状态有颜色",
+      "warmPaper": "暖纸",
+      "warmPaperDesc": "米色纸面、衬线正文、行距宽松",
+      "highContrast": "高对比",
+      "highContrastDesc": "纯黑白与加粗描边，适合弱视"
+    },
+    "brand": {
+      "title": "品牌色",
+      "hint": "AntD 主色 + 自动派生 hover 与浅背景",
+      "rose": "玫瑰",
+      "tech": "科技蓝",
+      "indigo": "靛蓝",
+      "teal": "青绿",
+      "violet": "紫罗兰",
+      "emerald": "翡翠",
+      "amber": "琥珀",
+      "custom": "自定义",
+      "customHint": "任选一个 hex",
+      "lowContrast": "正文对比度 {{ratio}}:1，低于 4.5:1",
+      "lowContrastHint": "仍会保存——可读性由你决定。"
+    },
+    "radius": {
+      "title": "圆角",
+      "hint": "作用于按钮、输入、卡片、弹窗、气泡与侧栏项",
+      "default": "不改"
+    },
+    "density": {
+      "title": "密度",
+      "hint": "改控件高度与列表行高，不只是字号",
+      "compact": "紧凑",
+      "standard": "标准",
+      "comfortable": "宽松"
+    },
+    "fontSize": {
+      "title": "字号",
+      "hint": "整条字阶等比缩放",
+      "xs": "极小",
+      "small": "小",
+      "standard": "标准",
+      "large": "大",
+      "xl": "特大"
+    },
+    "fontFamily": {
+      "title": "字体族",
+      "hint": "系统默认 / 衬线 / 等宽",
+      "system": "系统默认",
+      "serif": "衬线",
+      "mono": "等宽"
+    },
+    "customCss": {
+      "title": "自定义 CSS（高级）",
+      "hint": "追加到样式表末尾，即时生效。拒绝 @import、远程 url() 与 script。",
+      "apply": "应用 CSS",
+      "clear": "清空",
+      "errors": {
+        "import": "@import 不被允许",
+        "remoteUrl": "不允许远程 url() 引用",
+        "script": "不允许 script 标签",
+        "unbalanced": "花括号不配对"
+      }
+    },
+    "transfer": {
+      "title": "导入 / 导出"
+    },
+    "export": {
+      "copy": "复制主题 JSON",
+      "copied": "已复制",
+      "copyFailed": "复制失败，请手动选择文本",
+      "hint": "可备份或分享",
+      "markerHint": "导出文件带 {{marker}} 标记"
+    },
+    "import": {
+      "placeholder": "粘贴导出的主题 JSON",
+      "apply": "导入",
+      "done": "已导入并应用",
+      "invalid": "不是有效的主题文件"
+    },
+    "preview": {
+      "label": "外观预览",
+      "primary": "主按钮",
+      "secondary": "次按钮",
+      "placeholder": "输入框",
+      "one": "选项一",
+      "two": "选项二",
+      "tag": "标签",
+      "tagNeutral": "中性",
+      "caption": "辅助说明文字",
+      "userBubble": "用户消息气泡",
+      "agentBubble": "智能体回复气泡"
+    }
   }
 }

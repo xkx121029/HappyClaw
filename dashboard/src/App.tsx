@@ -29,6 +29,8 @@ import { LayoutModeProvider } from "./context/LayoutModeContext";
 import { VoiceOutputProvider } from "./context/VoiceOutputContext";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { brandTokensFor } from "./styles/themePalettes";
+import { antdOverrides } from "./styles/appearance/derive";
+import { useAppearance } from "./styles/appearance/useAppearance";
 import "./styles/theme-vars.css";
 import "./styles/layout.css";
 import "./styles/form-override.css";
@@ -61,6 +63,7 @@ function ThemedApp() {
     document.title = t("app.pageTitle");
   }, [t]);
 
+  const appearance = useAppearance();
   const themeConfig = {
     algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
@@ -117,9 +120,14 @@ function ThemedApp() {
       : {},
   };
 
+  // Appearance overrides ride on top of the shared tokens: radius, density,
+  // type size and font family, all derived from one settings object.
+  const appearanceOverrides = antdOverrides(appearance);
+  const themedConfig = { ...themeConfig, token: { ...themeConfig.token, ...appearanceOverrides.token } } as typeof themeConfig;
+
   return (
     <ConfigProvider
-      theme={themeConfig}
+      theme={themedConfig}
       prefixCls="happyclaw"
       locale={antdLocale}
       getPopupContainer={popupLayer}
