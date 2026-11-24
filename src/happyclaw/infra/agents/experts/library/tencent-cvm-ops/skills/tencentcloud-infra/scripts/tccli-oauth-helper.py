@@ -1,4 +1,3 @@
-from happyclaw.infra.utils.env_alias import env_get, env_has
 #!/usr/bin/env python3
 """
 tccli OAuth 登录辅助工具
@@ -32,6 +31,8 @@ import string
 import sys
 import time
 from urllib.parse import urlencode
+
+from happyclaw.infra.utils.env_alias import env_get
 
 # 尝试从 tccli 动态导入常量
 try:
