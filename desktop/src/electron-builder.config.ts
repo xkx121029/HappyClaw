@@ -16,16 +16,20 @@ const electronVersion = productVersion.replace(
     `${base}-${{ a: "alpha", b: "beta", rc: "rc" }[stage as "a" | "b" | "rc"]}.${number}`,
 );
 if (!/^\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?$/.test(electronVersion)) {
-  throw new Error(`Unsupported Octop release version: ${productVersion}`);
+  throw new Error(`Unsupported HappyClaw release version: ${productVersion}`);
 }
 const artifactName = process.env.HAPPYCLAW_PLATFORM
-  ? `Octop-desktop-${process.env.HAPPYCLAW_PLATFORM}-${productVersion}.\${ext}`
-  : `Octop-desktop-\${os}-\${arch}-\${version}.\${ext}`;
-const productName = "Octop";
+  ? `HappyClaw-desktop-${process.env.HAPPYCLAW_PLATFORM}-${productVersion}.\${ext}`
+  : `HappyClaw-desktop-\${os}-\${arch}-\${version}.\${ext}`;
+const productName = "HappyClaw";
 
 export default {
   extraMetadata: { version: electronVersion },
   artifactName,
+  // appId is the OS-level application identity (Windows uninstall key, macOS bundle id).
+  // Changing it would make an upgrade look like a brand-new app: installed users keep
+  // the old entry and get a second install side by side. Kept deliberately; the visible
+  // product name and executable below carry the rename.
   appId: "com.tencent.octop",
   productName,
   // extraResources places the portable tree outside asar. The shell reads
@@ -105,15 +109,15 @@ export default {
   },
   linux: {
     target: ["deb", "rpm"],
-    executableName: "octop",
+    executableName: "happyclaw",
     icon: "resources/icon.png",
     category: "Utility",
-    maintainer: "Octop",
+    maintainer: "HappyClaw",
   },
   deb: {
     // package.json name is happyclaw-desktop. fpm package names live on the target,
     // not on linux (LinuxConfiguration rejects packageName).
-    packageName: "octop",
+    packageName: "happyclaw",
     // Neither apt nor rpm has a finish page. The install script places a
     // desktop icon for the account that ran the install (or each normal
     // account when the installer is only root). A later upgrade refreshes an
@@ -122,7 +126,7 @@ export default {
     afterRemove: "build/linux-after-remove.sh",
   },
   rpm: {
-    packageName: "octop",
+    packageName: "happyclaw",
     afterInstall: "build/linux-after-install.sh",
     afterRemove: "build/linux-after-remove.sh",
   },

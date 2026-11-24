@@ -133,7 +133,11 @@ import {
 
 // Packaged renderer origin. Local dev replaces this with the Vite origin before
 // the relay starts, and the relay accepts upgrades only from that origin (§5.2).
-const WINDOW_ORIGIN = "octop://app";
+const APP_SCHEME = "happyclaw";
+// Pre-rename links (`octop://app/...`) keep working: the scheme stays registered
+// and is served by the same handler, so double-clicked old links still open.
+const LEGACY_SCHEME = "octop";
+const WINDOW_ORIGIN = `${APP_SCHEME}://app`;
 const PRELOAD_PATH = join(__dirname, "../preload/index.js");
 const SPLASH_PATH = join(__dirname, "../renderer/splash.html");
 const ERROR_PATH = join(__dirname, "../renderer/error.html");
@@ -214,19 +218,19 @@ type BackendLaunch =
 let backend: BackendLaunch | null = null;
 
 // A custom scheme used as the renderer origin must be declared privileged
-// BEFORE the app is ready, otherwise `octop://app/` is not treated as a
+// BEFORE the app is ready, otherwise `happyclaw://app/` is not treated as a
 // standard/secure origin and fetch/XHR/CORS break.
+const APP_SCHEME_PRIVILEGES = {
+  standard: true,
+  secure: true,
+  supportFetchAPI: true,
+  stream: true,
+  corsEnabled: true,
+} as const;
+
 protocol.registerSchemesAsPrivileged([
-  {
-    scheme: "octop",
-    privileges: {
-      standard: true,
-      secure: true,
-      supportFetchAPI: true,
-      stream: true,
-      corsEnabled: true,
-    },
-  },
+  { scheme: APP_SCHEME, privileges: APP_SCHEME_PRIVILEGES },
+  { scheme: LEGACY_SCHEME, privileges: APP_SCHEME_PRIVILEGES },
 ]);
 
 function resourcesRoot(): string {
@@ -315,7 +319,7 @@ async function writeLocalVersion(happyclawHome: string, version: string): Promis
 }
 
 function registerProtocol(staticRootDir: string): void {
-  protocol.handle("octop", async (request) => {
+  const serve = async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
@@ -346,7 +350,10 @@ function registerProtocol(staticRootDir: string): void {
       if (!out.headers.get("content-type")) out.headers.set("content-type", contentTypeFor(filePath));
       return out;
     });
-  });
+  };
+
+  protocol.handle(APP_SCHEME, serve);
+  protocol.handle(LEGACY_SCHEME, serve);
 }
 
 async function fetchUpdateManifest(): Promise<{ manifest: DownloadManifest; stableOnly: boolean }> {

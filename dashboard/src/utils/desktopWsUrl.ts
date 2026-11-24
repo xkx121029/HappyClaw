@@ -1,7 +1,7 @@
 /**
  * WebSocket addresses under the desktop shell (§5.2).
  *
- * The shell serves the Dashboard from the privileged ``octop://app/`` scheme,
+ * The shell serves the Dashboard from the privileged ``happyclaw://app/`` scheme,
  * which cannot carry a WebSocket handshake — Chromium's upgrade never reaches a
  * protocol handler, and a request redirect is dropped. So the shell runs a
  * loopback relay and tells the page where it listens; the page dials that

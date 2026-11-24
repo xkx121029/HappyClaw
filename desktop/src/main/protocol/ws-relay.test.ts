@@ -13,7 +13,7 @@ import { WsRelay } from "./ws-relay";
 
 /**
  * §5.2 — the relay is the only path a WebSocket can take out of the sandboxed
- * ``octop://app`` page. These cover what it refuses (wrong path, wrong origin,
+ * ``happyclaw://app`` page. These cover what it refuses (wrong path, wrong origin,
  * sidecar down) and that a real handshake survives the rewrite, with bytes
  * flowing both ways afterwards.
  *
@@ -22,7 +22,7 @@ import { WsRelay } from "./ws-relay";
  * matter.
  */
 
-const ORIGIN = "octop://app";
+const ORIGIN = "happyclaw://app";
 const WS_KEY = randomBytes(16).toString("base64");
 
 interface Seen {

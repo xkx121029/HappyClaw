@@ -1,7 +1,7 @@
 import { resolve, sep } from "node:path";
 
 /**
- * Pure helpers for the ``octop://app/`` static handler (§5.2). Actual request
+ * Pure helpers for the ``happyclaw://app/`` static handler (§5.2). Actual request
  * serving happens in the main process using Electron's ``protocol.handle`` and
  * ``net.fetch``; these functions are dependency-free so they can be unit-tested.
  */
