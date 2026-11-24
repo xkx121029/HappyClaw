@@ -60,8 +60,8 @@ describe("Linux 方形窗口按钮", () => {
       </DesktopChromeProvider>,
     );
     const close = await screen.findByRole("button", { name: "关闭" });
-    expect(close).toHaveClass("octop-linux-controls-close");
-    expect(close.parentElement).toHaveClass("octop-linux-controls");
+    expect(close).toHaveClass("happyclaw-linux-controls-close");
+    expect(close.parentElement).toHaveClass("happyclaw-linux-controls");
     expect(screen.getByRole("button", { name: "最小化" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "最大化" })).toBeInTheDocument();
   });
@@ -72,13 +72,13 @@ describe("Linux 方形窗口按钮", () => {
       "utf8",
     );
     expect(css).toMatch(
-      /\.octop-linux-controls button \{[^}]*border-radius:\s*0/,
+      /\.happyclaw-linux-controls button \{[^}]*border-radius:\s*0/,
     );
     expect(css).toMatch(
-      /\.octop-linux-controls-close:hover[\s\S]*background:\s*#e81123/,
+      /\.happyclaw-linux-controls-close:hover[\s\S]*background:\s*#e81123/,
     );
     expect(css).not.toMatch(
-      /\.octop-linux-controls button \{[^}]*border-radius:\s*50%/,
+      /\.happyclaw-linux-controls button \{[^}]*border-radius:\s*50%/,
     );
   });
 

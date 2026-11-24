@@ -3,7 +3,7 @@ import { withFromWorkspace } from "../../../utils/fromWorkspace";
 
 export const WORKSPACE_MENTION_LIMIT = 20;
 
-// Same names as ``MENTION_SKIP_DIRS`` in ``src/octop/infra/backend/mention_index.py``.
+// Same names as ``MENTION_SKIP_DIRS`` in ``src/happyclaw/infra/backend/mention_index.py``.
 // The index already omits them; this filter still applies to the truncated-index glob.
 const SKIP_SEGMENTS = new Set([
   ".octop",

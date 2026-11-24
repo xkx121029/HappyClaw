@@ -2,14 +2,14 @@ import { afterEach, describe, expect, it } from "vitest";
 import { chromeSlot, popupLayer } from "./overlayLayers";
 
 afterEach(() => {
-  document.getElementById("octop-chrome")?.remove();
-  document.getElementById("octop-stage")?.remove();
+  document.getElementById("happyclaw-chrome")?.remove();
+  document.getElementById("happyclaw-stage")?.remove();
 });
 
 describe("overlayLayers", () => {
   it("returns the stage under the menu", () => {
     const stage = document.createElement("div");
-    stage.id = "octop-stage";
+    stage.id = "happyclaw-stage";
     document.body.appendChild(stage);
 
     expect(popupLayer()).toBe(stage);
@@ -21,12 +21,12 @@ describe("overlayLayers", () => {
 
   it("puts the chrome slot before the stage", () => {
     const stage = document.createElement("div");
-    stage.id = "octop-stage";
+    stage.id = "happyclaw-stage";
     document.body.appendChild(stage);
 
     const chrome = chromeSlot();
 
-    expect(chrome.id).toBe("octop-chrome");
+    expect(chrome.id).toBe("happyclaw-chrome");
     expect(chrome.nextElementSibling).toBe(stage);
     expect(chromeSlot()).toBe(chrome);
   });

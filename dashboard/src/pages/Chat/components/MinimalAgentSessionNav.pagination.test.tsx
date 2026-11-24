@@ -10,9 +10,9 @@ import type { ComponentProps } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  octopThreadsApi,
-  type OctopThread,
-} from "../../../api/modules/octopThreads";
+  happyclawThreadsApi,
+  type HappyclawThread,
+} from "../../../api/modules/happyclawThreads";
 import type { OctopAgent } from "../../../context/AgentContext";
 import { emitSessionEvent } from "../hooks/chatStore";
 import type { Session } from "../hooks/useSessions";
@@ -43,7 +43,7 @@ const agents = [
   agent({ id: 1, agent_id: "other", name: "其他专家" }),
 ];
 
-function threads(agentId: string, count: number): OctopThread[] {
+function threads(agentId: string, count: number): HappyclawThread[] {
   return Array.from({ length: count }, (_, index) => ({
     thread_id: `${agentId}-${index + 1}`,
     title: `${agentId} 会话 ${index + 1}`,
@@ -55,11 +55,11 @@ function threads(agentId: string, count: number): OctopThread[] {
   }));
 }
 
-function pageFor(agentId: string): OctopThread[] {
+function pageFor(agentId: string): HappyclawThread[] {
   return threads(agentId, agentId === "other" ? 10 : 23);
 }
 
-function asSession(row: OctopThread): Session {
+function asSession(row: HappyclawThread): Session {
   return {
     id: row.thread_id,
     threadId: row.thread_id,
@@ -95,7 +95,7 @@ function renderNav(
 }
 
 describe("minimal expert conversation pagination", () => {
-  const list = vi.spyOn(octopThreadsApi, "list");
+  const list = vi.spyOn(happyclawThreadsApi, "list");
 
   beforeEach(() => {
     localStorage.clear();
@@ -160,7 +160,7 @@ describe("minimal expert conversation pagination", () => {
   });
 
   it("keeps the requested page size when a session event refreshes during expansion", async () => {
-    let resolveOlder: (value: OctopThread[]) => void = () => {};
+    let resolveOlder: (value: HappyclawThread[]) => void = () => {};
     renderNav();
     await screen.findByText("shared 会话 10");
     const shared = screen.getByText("共享专家").closest("section")!;

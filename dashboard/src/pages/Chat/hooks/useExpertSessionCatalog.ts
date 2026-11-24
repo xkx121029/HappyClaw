@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import type { OctopAgent } from "../../../context/AgentContext";
 import { isAgentChatReady } from "../../../utils/agentError";
 import { sortSessions, toSession, type Session } from "./useSessions";
@@ -42,7 +42,7 @@ export function useExpertSessionCatalog(
     void Promise.all(
       ids.map(async (id) => {
         try {
-          const rows = await octopThreadsApi.list(id, SEARCH_THREAD_LIMIT);
+          const rows = await happyclawThreadsApi.list(id, SEARCH_THREAD_LIMIT);
           return [id, sortSessions(rows.map(toSession))] as const;
         } catch {
           return [id, [] as Session[]] as const;

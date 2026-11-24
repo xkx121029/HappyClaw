@@ -1,43 +1,43 @@
 /**
- * Layout contract for the global antd Spin indicator (OctopSpinner).
+ * Layout contract for the global antd Spin indicator (HappyclawSpinner).
  * antd sizes and positions its default dot from the `dotSize` token, so every
  * geometry rule it derives (box, nested-pattern centering, tip gap) has to be
  * restated from the size variable.
  */
 
 /* Section-level loading (`size` omitted). */
-.octop-spin {
-  --octop-spinner-size: 20px;
-  --octop-spinner-ring-width: 2px;
+.happyclaw-spin {
+  --happyclaw-spinner-size: 20px;
+  --happyclaw-spinner-ring-width: 2px;
 }
 
 /* Full-page waits (`size="large"`): auth gate, route fallback. */
-.octop-spin-lg {
-  --octop-spinner-size: 32px;
-  --octop-spinner-ring-width: 2.5px;
+.happyclaw-spin-lg {
+  --happyclaw-spinner-size: 32px;
+  --happyclaw-spinner-ring-width: 2.5px;
 }
 
 /* `size="small"` marks spins nested in a control — input suffixes, select
    dropdowns, inline labels. */
-.octop-spin-sm {
-  --octop-spinner-size: 16px;
-  --octop-spinner-ring-width: 1.5px;
+.happyclaw-spin-sm {
+  --happyclaw-spinner-size: 16px;
+  --happyclaw-spinner-ring-width: 1.5px;
 }
 
-.octop-spin .octop-spin-dot {
-  width: var(--octop-spinner-size) !important;
-  height: var(--octop-spinner-size) !important;
+.happyclaw-spin .happyclaw-spin-dot {
+  width: var(--happyclaw-spinner-size) !important;
+  height: var(--happyclaw-spinner-size) !important;
 }
 
-.octop-spin-nested-loading .octop-spin .octop-spin-dot {
-  margin: calc(var(--octop-spinner-size) / -2) !important;
+.happyclaw-spin-nested-loading .happyclaw-spin .happyclaw-spin-dot {
+  margin: calc(var(--happyclaw-spinner-size) / -2) !important;
 }
 
 /* With a tip, lift the ring and drop the text below it. */
-.octop-spin-nested-loading .octop-spin-show-text .octop-spin-dot {
-  margin-top: calc(var(--octop-spinner-size) / -2 - 12px) !important;
+.happyclaw-spin-nested-loading .happyclaw-spin-show-text .happyclaw-spin-dot {
+  margin-top: calc(var(--happyclaw-spinner-size) / -2 - 12px) !important;
 }
 
-.octop-spin-nested-loading .octop-spin-show-text .octop-spin-text {
-  padding-top: calc(var(--octop-spinner-size) / 2 - 4px) !important;
+.happyclaw-spin-nested-loading .happyclaw-spin-show-text .happyclaw-spin-text {
+  padding-top: calc(var(--happyclaw-spinner-size) / 2 - 4px) !important;
 }

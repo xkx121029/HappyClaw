@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import type { FormInstance } from "antd";
 import { providerApi } from "../../../../api/modules/provider";
 import { connectorsApi } from "../../../../api/modules/connectors";
-import { octopThreadsApi } from "../../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../../api/modules/happyclawThreads";
 import { isBridgeAgentId } from "../../../../utils/remoteExpert";
 import {
   buildDefaultFormValues,
@@ -158,7 +158,7 @@ export function JobDrawer({
       return;
     }
     setSessionsLoading(true);
-    octopThreadsApi
+    happyclawThreadsApi
       .list(activeAgentId, 100)
       .then((threads) => {
         const seen = new Set<string>();

@@ -56,7 +56,7 @@ CI can do it explicitly with `npx install-electron`.
 Node is pinned to **24** by `src/mise.toml`, overriding the repo-root pin of
 20. That override is scoped to this directory and nowhere else: the Dashboard,
 `docker/Dockerfile` (`node:20-slim`), `release.yml`, `fnos-build-fpk.yml`,
-`octop-desktop.yml` and the server all stay on Node 20. The reason for the split
+`happyclaw-desktop.yml` and the server all stay on Node 20. The reason for the split
 is `pnpm test`, which uses `node --test --experimental-strip-types` and needs
 Node ≥22.6 (on Node 20 the runner dies with `bad option`), plus Node 20's April
 2026 EOL. This only affects build/test tooling: the shipped app runs on
@@ -294,7 +294,7 @@ From repo root:
 make -f desktop/portable/Makefile green
 ```
 
-CI: `.github/workflows/octop-desktop.yml` builds one package per native
+CI: `.github/workflows/happyclaw-desktop.yml` builds one package per native
 platform/arch (`darwin-arm64`, `darwin-amd64`, `linux-arm64`, `linux-amd64`,
 `windows-arm64`, `windows-amd64`). The green zip matches the published image
 and includes the `browser` extra only. Desktop, OCR, and local embedding stay
@@ -313,6 +313,6 @@ unsigned and not notarized.
 
 A `v*` tag triggers building all six platform/architecture variants and attaches
 both portable and desktop assets to the same GitHub Release. For a trial build
-without publishing a release, dispatch `octop-desktop.yml` on the feature branch
+without publishing a release, dispatch `happyclaw-desktop.yml` on the feature branch
 with `platforms=all` and `attach_release=false`; download the artifacts from
 that workflow run. Do not dispatch on an older tag without the Electron source.

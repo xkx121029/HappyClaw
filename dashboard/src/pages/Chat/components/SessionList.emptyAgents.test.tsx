@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import SessionList from "./SessionList";
 
 // 编辑专家抽屉会把 PDF / 浏览器预览整条链路带进 jsdom，
@@ -43,7 +43,7 @@ function renderList(props: { unreadyExperts?: number } = {}) {
  */
 describe("SessionList empty experts", () => {
   beforeEach(() => {
-    vi.spyOn(octopThreadsApi, "list").mockResolvedValue([]);
+    vi.spyOn(happyclawThreadsApi, "list").mockResolvedValue([]);
   });
 
   it("invites a first expert when the user owns none", () => {

@@ -12,8 +12,8 @@ import {
 const listMock = vi.fn();
 const createMock = vi.fn();
 
-vi.mock("../../../api/modules/octopThreads", () => ({
-  octopThreadsApi: {
+vi.mock("../../../api/modules/happyclawThreads", () => ({
+  happyclawThreadsApi: {
     list: (...args: unknown[]) => listMock(...args),
     create: (...args: unknown[]) => createMock(...args),
     delete: vi.fn(),

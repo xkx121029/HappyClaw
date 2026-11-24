@@ -3,7 +3,7 @@
  */
 
 import type { TokenUsage } from "../../../api/types";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import { rewritePeerSpeakerId } from "../../../utils/remoteExpert";
 import { generateId } from "../../../utils/messageParser";
 import { parseDecisionNotice, type SessionStreamState } from "./sseHelpers";
@@ -80,7 +80,7 @@ function settleGeneratedTitle(agentId: string, threadId: string): void {
     for (const delay of TITLE_SETTLE_DELAYS_MS) {
       await new Promise((resolve) => setTimeout(resolve, delay));
       try {
-        const rows = await octopThreadsApi.list(agentId, 50);
+        const rows = await happyclawThreadsApi.list(agentId, 50);
         const title = rows
           .find((row) => row.thread_id === threadId)
           ?.title?.trim();

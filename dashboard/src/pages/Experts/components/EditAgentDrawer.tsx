@@ -31,7 +31,7 @@ import { skillPackagesApi } from "../../../api/modules/skillPackages";
 import { apiErrorMessage, isNotFoundApiError } from "../../../utils/apiError";
 import { isAgentChatReady } from "../../../utils/agentError";
 import { useAgentFormResources } from "../../../hooks/useAgentFormResources";
-import { octopAgentsApi } from "../../../api/modules/octopAgents";
+import { happyclawAgentsApi } from "../../../api/modules/happyclawAgents";
 import { useAgent, type OctopAgent } from "../../../context/AgentContext";
 import {
   CONVERSATION_MODES,
@@ -771,7 +771,7 @@ function EditAgentDrawerBody({
                     void (async () => {
                       setAvatarBusy(true);
                       try {
-                        const result = await octopAgentsApi.uploadAvatar(
+                        const result = await happyclawAgentsApi.uploadAvatar(
                           agent.agent_id,
                           file,
                         );
@@ -796,7 +796,7 @@ function EditAgentDrawerBody({
                       setAvatarBusy(true);
                       try {
                         if (isUploadedAvatarUrl(iconUrl)) {
-                          await octopAgentsApi.deleteAvatar(agent.agent_id);
+                          await happyclawAgentsApi.deleteAvatar(agent.agent_id);
                         }
                         const nextUrl = expertPresetSrc(presetId ?? "default");
                         await request(`/agents/${agent.agent_id}`, {
@@ -822,7 +822,7 @@ function EditAgentDrawerBody({
                     void (async () => {
                       setAvatarBusy(true);
                       try {
-                        await octopAgentsApi.deleteAvatar(agent.agent_id);
+                        await happyclawAgentsApi.deleteAvatar(agent.agent_id);
                         setIconUrl(null);
                         await refresh({ silent: true });
                       } catch (err) {

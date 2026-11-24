@@ -1,7 +1,7 @@
 import { Plus, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { OctopEmptyMascot } from "../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../components/EmptyState";
 import StreamSetupGuide from "../../../components/StreamSetupGuide/StreamSetupGuide";
 import styles from "../index.module.less";
 
@@ -22,7 +22,7 @@ export function KnowledgeEnableGuide({
         className={styles.emptyGuide}
         wide
         plain
-        icon={<OctopEmptyMascot />}
+        icon={<HappyclawEmptyMascot />}
         title={
           canConfigureKb
             ? t("knowledgeBases.enableGuideTitle")
@@ -82,7 +82,7 @@ export function KnowledgeEmptyGuide({
         className={styles.emptyGuide}
         wide
         plain
-        icon={<OctopEmptyMascot />}
+        icon={<HappyclawEmptyMascot />}
         title={t("knowledgeBases.emptyGuideTitle")}
         description={t("knowledgeBases.emptyGuideDesc")}
         steps={[

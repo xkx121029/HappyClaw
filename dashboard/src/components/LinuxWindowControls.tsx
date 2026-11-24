@@ -49,7 +49,7 @@ export default function LinuxWindowControls() {
 
   return (
     <div
-      className="octop-linux-controls"
+      className="happyclaw-linux-controls"
       role="group"
       aria-label={t("layout.windowControls", "窗口控制")}
     >
@@ -71,7 +71,7 @@ export default function LinuxWindowControls() {
       </button>
       <button
         type="button"
-        className="octop-linux-controls-close"
+        className="happyclaw-linux-controls-close"
         title={t("layout.windowClose", "关闭")}
         aria-label={t("layout.windowClose", "关闭")}
         onClick={() => controls?.close()}

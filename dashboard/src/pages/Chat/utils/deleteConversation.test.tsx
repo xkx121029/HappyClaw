@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import { message } from "../../../utils/antdMessage";
 import { modal } from "../../../utils/antdModal";
 import {
@@ -22,8 +22,8 @@ vi.mock("../../../utils/antdMessage", () => ({
   },
 }));
 
-vi.mock("../../../api/modules/octopThreads", () => ({
-  octopThreadsApi: { delete: vi.fn() },
+vi.mock("../../../api/modules/happyclawThreads", () => ({
+  happyclawThreadsApi: { delete: vi.fn() },
 }));
 
 const TURN_ACTIVE =
@@ -34,7 +34,7 @@ const t = ((key: string) =>
 
 const confirmMock = vi.mocked(modal.confirm);
 const errorMock = vi.mocked(message.error);
-const deleteMock = vi.mocked(octopThreadsApi.delete);
+const deleteMock = vi.mocked(happyclawThreadsApi.delete);
 
 function turnActiveError(): Error {
   return new Error(

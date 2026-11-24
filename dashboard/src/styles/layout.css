@@ -36,17 +36,17 @@ html {
 /* Windows and Linux have no native menu bar under the transparent caption.
    The page draws one full-width row for File / Edit / View / Help, sharing
    that row with the window buttons. The row and the page are a column:
-   `#octop-chrome` on top, `#octop-stage` (popup container) below. */
-html[data-octop-caption-row] body {
+   `#happyclaw-chrome` on top, `#happyclaw-stage` (popup container) below. */
+html[data-happyclaw-caption-row] body {
   display: flex;
   flex-direction: column;
 }
 
-html[data-octop-caption-row] #octop-chrome {
+html[data-happyclaw-caption-row] #happyclaw-chrome {
   flex: 0 0 auto;
 }
 
-html[data-octop-caption-row] #octop-stage {
+html[data-happyclaw-caption-row] #happyclaw-stage {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
@@ -56,7 +56,7 @@ html[data-octop-caption-row] #octop-stage {
   transform: translateY(0);
 }
 
-html[data-octop-caption-row] #root {
+html[data-happyclaw-caption-row] #root {
   position: absolute;
   inset: 0;
   /* index.html pins #root to 100lvh for the boot splash. That height is the
@@ -65,13 +65,13 @@ html[data-octop-caption-row] #root {
   min-height: 0;
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-win-menu {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu {
   position: relative;
   display: flex;
   align-items: center;
   box-sizing: border-box;
   width: 100%;
-  height: var(--octop-caption-row, 32px);
+  height: var(--happyclaw-caption-row, 32px);
   padding-left: 4px;
   padding-right: var(--window-controls-inset-end, 138px);
   background: var(--fn-bg-layout, #0e0e0e);
@@ -79,7 +79,7 @@ html[data-octop-desktop-chrome="windows"] .octop-win-menu {
 
 /* Linux caption buttons. Electron's overlay paints Adwaita circles; these
    are the Windows caption rectangles: 46×32, no radius, close turns red. */
-html[data-octop-desktop-chrome="windows"] .octop-linux-controls {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-linux-controls {
   position: absolute;
   z-index: 1;
   top: 0;
@@ -89,7 +89,7 @@ html[data-octop-desktop-chrome="windows"] .octop-linux-controls {
   height: 100%;
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-linux-controls button {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-linux-controls button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,35 +104,35 @@ html[data-octop-desktop-chrome="windows"] .octop-linux-controls button {
   cursor: default;
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-linux-controls svg {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-linux-controls svg {
   display: block;
   width: 14px;
   height: 14px;
 }
 
-html[data-octop-desktop-chrome="windows"]
-  .octop-linux-controls
-  button:not(.octop-linux-controls-close):hover {
+html[data-happyclaw-desktop-chrome="windows"]
+  .happyclaw-linux-controls
+  button:not(.happyclaw-linux-controls-close):hover {
   background: rgba(127, 127, 127, 0.2);
 }
 
-html[data-octop-desktop-chrome="windows"]
-  .octop-linux-controls
-  button:not(.octop-linux-controls-close):active {
+html[data-happyclaw-desktop-chrome="windows"]
+  .happyclaw-linux-controls
+  button:not(.happyclaw-linux-controls-close):active {
   background: rgba(127, 127, 127, 0.32);
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-linux-controls-close:hover,
-html[data-octop-desktop-chrome="windows"] .octop-linux-controls-close:active {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-linux-controls-close:hover,
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-linux-controls-close:active {
   background: #e81123;
   color: #fff;
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-linux-controls-close:active {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-linux-controls-close:active {
   background: #c50f1f;
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-win-menu-item {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu-item {
   height: 24px;
   margin: 0;
   padding: 0 8px;
@@ -147,19 +147,19 @@ html[data-octop-desktop-chrome="windows"] .octop-win-menu-item {
   cursor: default;
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-win-menu-item:hover,
-html[data-octop-desktop-chrome="windows"] .octop-win-menu-item.is-open {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu-item:hover,
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu-item.is-open {
   background: rgba(127, 127, 127, 0.2);
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-win-menu-slot {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu-slot {
   position: relative;
   display: flex;
   align-items: center;
   height: 100%;
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-win-menu-popup {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu-popup {
   /* Portaled to document.body, above the caption row and every overlay under it. */
   position: fixed;
   z-index: 12000;
@@ -173,14 +173,14 @@ html[data-octop-desktop-chrome="windows"] .octop-win-menu-popup {
   color: var(--fn-text-primary, #1a1a1a);
 }
 
-html[data-theme="dark"][data-octop-desktop-chrome="windows"]
-  .octop-win-menu-popup {
+html[data-theme="dark"][data-happyclaw-desktop-chrome="windows"]
+  .happyclaw-win-menu-popup {
   border-color: rgba(255, 255, 255, 0.08);
   background: #2c2c2c;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-win-menu-command {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu-command {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -201,75 +201,75 @@ html[data-octop-desktop-chrome="windows"] .octop-win-menu-command {
   cursor: default;
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-win-menu-command:hover {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu-command:hover {
   background: rgba(0, 0, 0, 0.06);
 }
 
-html[data-theme="dark"][data-octop-desktop-chrome="windows"]
-  .octop-win-menu-command:hover {
+html[data-theme="dark"][data-happyclaw-desktop-chrome="windows"]
+  .happyclaw-win-menu-command:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-win-menu-accel {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu-accel {
   flex: 0 0 auto;
   color: var(--fn-text-secondary, #8a8a8a);
   font-size: 12px;
 }
 
-html[data-octop-desktop-chrome="windows"] .octop-win-menu-sep {
+html[data-happyclaw-desktop-chrome="windows"] .happyclaw-win-menu-sep {
   height: 1px;
   margin: 4px 8px;
   background: rgba(0, 0, 0, 0.08);
 }
 
-html[data-theme="dark"][data-octop-desktop-chrome="windows"]
-  .octop-win-menu-sep {
+html[data-theme="dark"][data-happyclaw-desktop-chrome="windows"]
+  .happyclaw-win-menu-sep {
   background: rgba(255, 255, 255, 0.1);
 }
 
-html[data-octop-desktop-chrome] .octop-desktop-drag {
+html[data-happyclaw-desktop-chrome] .happyclaw-desktop-drag {
   -webkit-app-region: drag;
   app-region: drag;
   user-select: none;
 }
 
-html[data-octop-desktop-chrome] .octop-desktop-no-drag,
+html[data-happyclaw-desktop-chrome] .happyclaw-desktop-no-drag,
 /* Controls can be siblings of the drag band or portalled menus/dialogs. */
-html[data-octop-desktop-chrome] button,
-html[data-octop-desktop-chrome] a,
-html[data-octop-desktop-chrome] input,
-html[data-octop-desktop-chrome] textarea,
-html[data-octop-desktop-chrome] select,
-html[data-octop-desktop-chrome] label,
-html[data-octop-desktop-chrome] summary,
-html[data-octop-desktop-chrome] [role="button"],
-html[data-octop-desktop-chrome] [role="tab"],
-html[data-octop-desktop-chrome] [role="separator"],
-html[data-octop-desktop-chrome] [role="slider"],
-html[data-octop-desktop-chrome] [role="combobox"],
-html[data-octop-desktop-chrome] [role="menu"],
-html[data-octop-desktop-chrome] [role="dialog"],
-html[data-octop-desktop-chrome] [role="alertdialog"],
-html[data-octop-desktop-chrome] [tabindex],
-html[data-octop-desktop-chrome] [contenteditable]:not([contenteditable="false"]),
-html[data-octop-desktop-chrome] [draggable="true"],
-html[data-octop-desktop-chrome] [data-octop-no-drag] {
+html[data-happyclaw-desktop-chrome] button,
+html[data-happyclaw-desktop-chrome] a,
+html[data-happyclaw-desktop-chrome] input,
+html[data-happyclaw-desktop-chrome] textarea,
+html[data-happyclaw-desktop-chrome] select,
+html[data-happyclaw-desktop-chrome] label,
+html[data-happyclaw-desktop-chrome] summary,
+html[data-happyclaw-desktop-chrome] [role="button"],
+html[data-happyclaw-desktop-chrome] [role="tab"],
+html[data-happyclaw-desktop-chrome] [role="separator"],
+html[data-happyclaw-desktop-chrome] [role="slider"],
+html[data-happyclaw-desktop-chrome] [role="combobox"],
+html[data-happyclaw-desktop-chrome] [role="menu"],
+html[data-happyclaw-desktop-chrome] [role="dialog"],
+html[data-happyclaw-desktop-chrome] [role="alertdialog"],
+html[data-happyclaw-desktop-chrome] [tabindex],
+html[data-happyclaw-desktop-chrome] [contenteditable]:not([contenteditable="false"]),
+html[data-happyclaw-desktop-chrome] [draggable="true"],
+html[data-happyclaw-desktop-chrome] [data-happyclaw-no-drag] {
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
 
 /* Right-edge overlays sit under the native caption buttons unless inset. */
-html[data-octop-desktop-chrome] [data-octop-chrome-end-pad] {
+html[data-happyclaw-desktop-chrome] [data-happyclaw-chrome-end-pad] {
   padding-inline-end: max(
     12px,
     var(--window-controls-inset-end, 0px)
   ) !important;
 }
 
-html[data-octop-desktop-chrome]:not([data-octop-caption-row])
-  .octop-drawer-right
-  .octop-drawer-header,
-html[data-octop-desktop-chrome]:not([data-octop-caption-row])
+html[data-happyclaw-desktop-chrome]:not([data-happyclaw-caption-row])
+  .happyclaw-drawer-right
+  .happyclaw-drawer-header,
+html[data-happyclaw-desktop-chrome]:not([data-happyclaw-caption-row])
   .ant-drawer-right
   .ant-drawer-header {
   padding-inline-end: max(
@@ -278,10 +278,10 @@ html[data-octop-desktop-chrome]:not([data-octop-caption-row])
   ) !important;
 }
 
-html[data-octop-desktop-chrome]:not([data-octop-caption-row])
-  .octop-drawer-right
-  .octop-drawer-close,
-html[data-octop-desktop-chrome]:not([data-octop-caption-row])
+html[data-happyclaw-desktop-chrome]:not([data-happyclaw-caption-row])
+  .happyclaw-drawer-right
+  .happyclaw-drawer-close,
+html[data-happyclaw-desktop-chrome]:not([data-happyclaw-caption-row])
   .ant-drawer-right
   .ant-drawer-close {
   inset-inline-end: var(--window-controls-inset-end, 0px) !important;
@@ -291,8 +291,8 @@ html[data-octop-desktop-chrome]:not([data-octop-caption-row])
    no-drag. The header is the replacement hit target. Controls inside stay
    clickable via the no-drag rules above. Windows and Linux drag from the
    caption menu. */
-html[data-octop-desktop-chrome="mac"] .octop-drawer-header,
-html[data-octop-desktop-chrome="mac"] .ant-drawer-header {
+html[data-happyclaw-desktop-chrome="mac"] .happyclaw-drawer-header,
+html[data-happyclaw-desktop-chrome="mac"] .ant-drawer-header {
   -webkit-app-region: drag;
   app-region: drag;
   user-select: none;
@@ -309,22 +309,22 @@ html[data-octop-desktop-chrome="mac"] .ant-drawer-header {
   overscroll-behavior: none;
 }
 
-/* ConfigProvider prefixCls="octop" → antd <App> is .octop-app.
+/* ConfigProvider prefixCls="happyclaw" → antd <App> is .happyclaw-app.
    Without an explicit height, MainLayout's height:100% cannot fill #root. */
-.octop-app,
+.happyclaw-app,
 .ant-app {
   height: 100%;
 }
 
 /* Chat paints to the screen edge; don't leak page-layout gray under the
    composer or in the iOS home-indicator letterbox. */
-html.octop-chat-open,
-html.octop-chat-open body,
-html.octop-chat-open #root {
+html.happyclaw-chat-open,
+html.happyclaw-chat-open body,
+html.happyclaw-chat-open #root {
   background: var(--fn-bg-elevated, #fff);
 }
 
-html.octop-chat-open .page-container {
+html.happyclaw-chat-open .page-container {
   background: var(--fn-bg-elevated, #fff);
 }
 
@@ -337,14 +337,14 @@ a,
 }
 
 .ant-layout,
-.octop-layout {
+.happyclaw-layout {
   min-height: 0;
   max-height: 100%;
   overflow: hidden;
 }
 
 .ant-layout-content,
-.octop-layout-content {
+.happyclaw-layout-content {
   overflow: hidden;
   height: 100%;
 }
@@ -396,7 +396,7 @@ a,
 /* ---- Dark mode: force antd component backgrounds ---- */
 /* Cards */
 html[data-theme="dark"] .ant-card,
-html[data-theme="dark"] .octop-ant-card,
+html[data-theme="dark"] .happyclaw-ant-card,
 html[data-theme="dark"] [class$="-card"]:not([class*="-card-"]) {
   background-color: var(--fn-bg-secondary) !important;
   border-color: var(--fn-border-primary) !important;
@@ -404,96 +404,96 @@ html[data-theme="dark"] [class$="-card"]:not([class*="-card-"]) {
 
 /* Tables */
 html[data-theme="dark"] .ant-table-wrapper,
-html[data-theme="dark"] .octop-ant-table-wrapper {
+html[data-theme="dark"] .happyclaw-ant-table-wrapper {
   background-color: transparent !important;
 }
 
 html[data-theme="dark"] .ant-table,
-html[data-theme="dark"] .octop-ant-table {
+html[data-theme="dark"] .happyclaw-ant-table {
   background-color: var(--fn-bg-primary) !important;
 }
 
 html[data-theme="dark"] .ant-table-container,
-html[data-theme="dark"] .octop-ant-table-container {
+html[data-theme="dark"] .happyclaw-ant-table-container {
   border-color: var(--fn-border-primary) !important;
 }
 
 html[data-theme="dark"] .ant-table-thead > tr > th,
-html[data-theme="dark"] .octop-ant-table-thead > tr > th,
+html[data-theme="dark"] .happyclaw-ant-table-thead > tr > th,
 html[data-theme="dark"] .ant-table-thead > tr > td,
-html[data-theme="dark"] .octop-ant-table-thead > tr > td {
+html[data-theme="dark"] .happyclaw-ant-table-thead > tr > td {
   background-color: var(--fn-bg-tertiary) !important;
   border-color: var(--fn-border-primary) !important;
   color: var(--fn-text-secondary) !important;
 }
 
 html[data-theme="dark"] .ant-table-tbody > tr > td,
-html[data-theme="dark"] .octop-ant-table-tbody > tr > td {
+html[data-theme="dark"] .happyclaw-ant-table-tbody > tr > td {
   border-color: var(--fn-border-primary) !important;
   color: var(--fn-text-primary) !important;
 }
 
 html[data-theme="dark"] .ant-table-tbody > tr.ant-table-row:hover > td,
-html[data-theme="dark"] .octop-ant-table-tbody > tr:hover > td {
+html[data-theme="dark"] .happyclaw-ant-table-tbody > tr:hover > td {
   background-color: var(--fn-bg-hover) !important;
 }
 
 html[data-theme="dark"] .ant-table-cell-row-hover,
-html[data-theme="dark"] .octop-ant-table-cell-row-hover {
+html[data-theme="dark"] .happyclaw-ant-table-cell-row-hover {
   background-color: var(--fn-bg-hover) !important;
 }
 
 html[data-theme="dark"] .ant-table-placeholder td,
-html[data-theme="dark"] .octop-ant-table-placeholder td {
+html[data-theme="dark"] .happyclaw-ant-table-placeholder td {
   background-color: transparent !important;
 }
 
 html[data-theme="dark"] .ant-empty-description,
-html[data-theme="dark"] .octop-ant-empty-description {
+html[data-theme="dark"] .happyclaw-ant-empty-description {
   color: var(--fn-text-tertiary) !important;
 }
 
 /* Inputs */
 html[data-theme="dark"] .ant-input,
-html[data-theme="dark"] .octop-ant-input,
+html[data-theme="dark"] .happyclaw-ant-input,
 html[data-theme="dark"] .ant-input-affix-wrapper,
-html[data-theme="dark"] .octop-ant-input-affix-wrapper {
+html[data-theme="dark"] .happyclaw-ant-input-affix-wrapper {
   background-color: var(--fn-bg-primary) !important;
   border-color: var(--fn-border-input) !important;
   color: var(--fn-text-primary) !important;
 }
 
 html[data-theme="dark"] .ant-input::placeholder,
-html[data-theme="dark"] .octop-ant-input::placeholder {
+html[data-theme="dark"] .happyclaw-ant-input::placeholder {
   color: var(--fn-text-placeholder) !important;
 }
 
 /* Select */
 html[data-theme="dark"] .ant-select-selector,
-html[data-theme="dark"] .octop-ant-select-selector {
+html[data-theme="dark"] .happyclaw-ant-select-selector {
   background-color: var(--fn-bg-primary) !important;
   border-color: var(--fn-border-input) !important;
   color: var(--fn-text-primary) !important;
 }
 
 html[data-theme="dark"] .ant-select-dropdown,
-html[data-theme="dark"] .octop-ant-select-dropdown {
+html[data-theme="dark"] .happyclaw-ant-select-dropdown {
   background-color: var(--fn-bg-elevated) !important;
 }
 
 html[data-theme="dark"] .ant-select-item-option-active,
-html[data-theme="dark"] .octop-ant-select-item-option-active {
+html[data-theme="dark"] .happyclaw-ant-select-item-option-active {
   background-color: var(--fn-bg-hover) !important;
 }
 
 html[data-theme="dark"] .ant-select-item-option-selected,
-html[data-theme="dark"] .octop-ant-select-item-option-selected {
+html[data-theme="dark"] .happyclaw-ant-select-item-option-selected {
   background-color: var(--fn-bg-active) !important;
 }
 
 /* InputNumber */
 html[data-theme="dark"] .ant-input-number,
-html[data-theme="dark"] .octop-ant-input-number {
+html[data-theme="dark"] .happyclaw-ant-input-number {
   background-color: var(--fn-bg-primary) !important;
   border-color: var(--fn-border-input) !important;
   color: var(--fn-text-primary) !important;
@@ -501,78 +501,78 @@ html[data-theme="dark"] .octop-ant-input-number {
 
 /* Modal */
 html[data-theme="dark"] .ant-modal-content,
-html[data-theme="dark"] .octop-ant-modal-content {
+html[data-theme="dark"] .happyclaw-ant-modal-content {
   background-color: var(--fn-bg-elevated) !important;
 }
 
 html[data-theme="dark"] .ant-modal-header,
-html[data-theme="dark"] .octop-ant-modal-header {
+html[data-theme="dark"] .happyclaw-ant-modal-header {
   background-color: var(--fn-bg-elevated) !important;
 }
 
 /* Form */
 html[data-theme="dark"] .ant-form-item-label > label,
-html[data-theme="dark"] .octop-ant-form-item-label > label {
+html[data-theme="dark"] .happyclaw-ant-form-item-label > label {
   color: var(--fn-text-secondary) !important;
 }
 
 /* Drawer */
 html[data-theme="dark"] .ant-drawer-content,
-html[data-theme="dark"] .octop-ant-drawer-content {
+html[data-theme="dark"] .happyclaw-ant-drawer-content {
   background-color: var(--fn-bg-elevated) !important;
 }
 
 /* Pagination */
 html[data-theme="dark"] .ant-pagination-item,
-html[data-theme="dark"] .octop-ant-pagination-item {
+html[data-theme="dark"] .happyclaw-ant-pagination-item {
   background-color: transparent !important;
   border-color: var(--fn-border-input) !important;
 }
 
 html[data-theme="dark"] .ant-pagination-item a,
-html[data-theme="dark"] .octop-ant-pagination-item a {
+html[data-theme="dark"] .happyclaw-ant-pagination-item a {
   color: var(--fn-text-primary) !important;
 }
 
 /* Checkbox */
 html[data-theme="dark"] .ant-checkbox-inner,
-html[data-theme="dark"] .octop-ant-checkbox-inner {
+html[data-theme="dark"] .happyclaw-ant-checkbox-inner {
   background-color: transparent !important;
   border-color: var(--fn-border-input) !important;
 }
 
 /* Tabs */
 html[data-theme="dark"] .ant-tabs-tab,
-html[data-theme="dark"] .octop-ant-tabs-tab {
+html[data-theme="dark"] .happyclaw-ant-tabs-tab {
   color: var(--fn-text-secondary) !important;
 }
 
 /* Tooltip */
 html[data-theme="dark"] .ant-tooltip-inner,
-html[data-theme="dark"] .octop-ant-tooltip-inner {
+html[data-theme="dark"] .happyclaw-ant-tooltip-inner {
   background-color: var(--fn-bg-elevated) !important;
 }
 
 /* Popover */
 html[data-theme="dark"] .ant-popover-inner,
-html[data-theme="dark"] .octop-ant-popover-inner {
+html[data-theme="dark"] .happyclaw-ant-popover-inner {
   background-color: var(--fn-bg-elevated) !important;
 }
 
 /* Tag */
 html[data-theme="dark"] .ant-tag,
-html[data-theme="dark"] .octop-ant-tag {
+html[data-theme="dark"] .happyclaw-ant-tag {
   border-color: var(--fn-border-primary) !important;
 }
 
 /* Green status tags: preset antd green fails AA at 12px, deepen the text. */
-.octop-tag-green {
+.happyclaw-tag-green {
   color: #237804 !important;
   background: #f6ffed !important;
   border-color: #b7eb8f !important;
 }
 
-html[data-theme="dark"] .octop-tag-green {
+html[data-theme="dark"] .happyclaw-tag-green {
   color: #95de64 !important;
   background: rgba(35, 120, 4, 0.18) !important;
   border-color: rgba(149, 222, 100, 0.35) !important;
@@ -580,25 +580,25 @@ html[data-theme="dark"] .octop-tag-green {
 
 /* Primary buttons keep white labels; the dark palette's light brand tone
    would drop them to 3.1:1, so use the deeper brand surface in dark. */
-html[data-theme="dark"] .octop-btn-primary:not(:disabled) {
+html[data-theme="dark"] .happyclaw-btn-primary:not(:disabled) {
   background: #b93b52;
   border-color: #b93b52;
   color: #ffffff;
 }
 
-html[data-theme="dark"] .octop-btn-primary:not(:disabled):hover {
+html[data-theme="dark"] .happyclaw-btn-primary:not(:disabled):hover {
   background: #c9435c;
   border-color: #c9435c;
 }
 
 /* Switch */
 html[data-theme="dark"] .ant-switch,
-html[data-theme="dark"] .octop-ant-switch {
+html[data-theme="dark"] .happyclaw-ant-switch {
   background: var(--fn-text-quaternary) !important;
 }
 
 html[data-theme="dark"] .ant-switch-checked,
-html[data-theme="dark"] .octop-ant-switch-checked {
+html[data-theme="dark"] .happyclaw-ant-switch-checked {
   background: var(--fn-color-brand) !important;
 }
 
@@ -648,10 +648,10 @@ html[data-theme="dark"] .octop-ant-switch-checked {
   }
 
   /* Tables scroll inside their own wrapper on mobile — do not set
-     min-width on .octop-table (that expands the page and creates a
+     min-width on .happyclaw-table (that expands the page and creates a
      second, page-level horizontal scrollbar). */
   .ant-table-wrapper,
-  .octop-table-wrapper {
+  .happyclaw-table-wrapper {
     max-width: 100%;
     min-width: 0;
   }
@@ -668,18 +668,18 @@ html[data-theme="dark"] .octop-ant-switch-checked {
   .ant-drawer-left .ant-drawer-header,
   .ant-drawer-right .ant-drawer-header,
   .ant-drawer-top .ant-drawer-header,
-  .octop-drawer-left .octop-drawer-header,
-  .octop-drawer-right .octop-drawer-header,
-  .octop-drawer-top .octop-drawer-header {
+  .happyclaw-drawer-left .happyclaw-drawer-header,
+  .happyclaw-drawer-right .happyclaw-drawer-header,
+  .happyclaw-drawer-top .happyclaw-drawer-header {
     padding-top: max(16px, env(safe-area-inset-top, 0px));
   }
 
   .ant-drawer-left .ant-drawer-footer,
   .ant-drawer-right .ant-drawer-footer,
   .ant-drawer-bottom .ant-drawer-footer,
-  .octop-drawer-left .octop-drawer-footer,
-  .octop-drawer-right .octop-drawer-footer,
-  .octop-drawer-bottom .octop-drawer-footer {
+  .happyclaw-drawer-left .happyclaw-drawer-footer,
+  .happyclaw-drawer-right .happyclaw-drawer-footer,
+  .happyclaw-drawer-bottom .happyclaw-drawer-footer {
     padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
   }
 
@@ -695,40 +695,40 @@ html[data-theme="dark"] .octop-ant-switch-checked {
   }
 
   /* Confirm dialogs — full-width stacked action buttons */
-  .octop-confirm-modal--mobile.octop-modal-root .octop-modal,
-  .octop-confirm-modal--mobile [class*="-modal"] {
+  .happyclaw-confirm-modal--mobile.happyclaw-modal-root .happyclaw-modal,
+  .happyclaw-confirm-modal--mobile [class*="-modal"] {
     max-width: calc(100vw - 32px) !important;
     margin: 0 auto !important;
     padding-bottom: 0;
   }
 
-  .octop-confirm-modal--mobile .octop-modal-confirm-body-wrapper,
-  .octop-confirm-modal--mobile [class*="-modal-confirm-body-wrapper"] {
+  .happyclaw-confirm-modal--mobile .happyclaw-modal-confirm-body-wrapper,
+  .happyclaw-confirm-modal--mobile [class*="-modal-confirm-body-wrapper"] {
     padding: 0 2px;
   }
 
-  .octop-confirm-modal--mobile .octop-modal-confirm-title,
-  .octop-confirm-modal--mobile [class*="-modal-confirm-title"] {
+  .happyclaw-confirm-modal--mobile .happyclaw-modal-confirm-title,
+  .happyclaw-confirm-modal--mobile [class*="-modal-confirm-title"] {
     font-size: 17px;
     line-height: 1.35;
   }
 
-  .octop-confirm-modal--mobile .octop-modal-confirm-content,
-  .octop-confirm-modal--mobile [class*="-modal-confirm-content"] {
+  .happyclaw-confirm-modal--mobile .happyclaw-modal-confirm-content,
+  .happyclaw-confirm-modal--mobile [class*="-modal-confirm-content"] {
     font-size: 15px;
     line-height: 1.5;
   }
 
-  .octop-confirm-modal--mobile .octop-modal-confirm-btns,
-  .octop-confirm-modal--mobile [class*="-modal-confirm-btns"] {
+  .happyclaw-confirm-modal--mobile .happyclaw-modal-confirm-btns,
+  .happyclaw-confirm-modal--mobile [class*="-modal-confirm-btns"] {
     display: flex;
     flex-direction: column-reverse;
     gap: 8px;
     margin-top: 20px;
   }
 
-  .octop-confirm-modal--mobile .octop-modal-confirm-btns .octop-btn,
-  .octop-confirm-modal--mobile [class*="-modal-confirm-btns"] [class*="-btn"] {
+  .happyclaw-confirm-modal--mobile .happyclaw-modal-confirm-btns .happyclaw-btn,
+  .happyclaw-confirm-modal--mobile [class*="-modal-confirm-btns"] [class*="-btn"] {
     width: 100%;
     margin-inline-start: 0 !important;
     min-height: 40px;

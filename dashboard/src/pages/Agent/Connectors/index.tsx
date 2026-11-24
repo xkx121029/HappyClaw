@@ -17,7 +17,7 @@ import PageShell from "../../../layouts/PageShell";
 import PillScroller from "../../../components/PillScroller";
 import TabBar, { type TabBarItem } from "../../../components/TabLabel/TabBar";
 import StreamSetupGuide from "../../../components/StreamSetupGuide/StreamSetupGuide";
-import { OctopEmptyMascot } from "../../../components/EmptyState/OctopEmptyMascot";
+import { HappyclawEmptyMascot } from "../../../components/EmptyState/HappyclawEmptyMascot";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import { CONNECTOR_TAB_PERMISSIONS, userCan } from "../../../utils/permissions";
 import {
@@ -247,7 +247,7 @@ export default function ConnectorsPage() {
                   className={styles.emptyGuide}
                   wide
                   plain
-                  icon={<OctopEmptyMascot />}
+                  icon={<HappyclawEmptyMascot />}
                   title={t("connectors.emptyGuideTitle")}
                   description={t("connectors.emptyGuideDesc")}
                   steps={[

@@ -53,7 +53,7 @@ import {
   isUploadedAvatarUrl,
   ResourceAvatarPicker,
 } from "../../../components/AvatarPicker";
-import { OctopEmptyMascot } from "../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../components/EmptyState";
 import {
   ResourceVisibilityFields,
   ResourceVisibilityGate,
@@ -1703,7 +1703,7 @@ export default function BridgeSettingsPanel({
           className={styles.emptyGuide}
           wide
           plain
-          icon={<OctopEmptyMascot />}
+          icon={<HappyclawEmptyMascot />}
           title={t("advancedSettings.bridge.emptyTitle")}
           description={t("advancedSettings.bridge.emptyDesc")}
           steps={[

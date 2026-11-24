@@ -103,9 +103,9 @@ describe("desktopChrome", () => {
     expect(titleRowEndPadding(32)).toContain("--window-controls-inset-end");
     expect(titleRowEndPadding(32)).toContain("32px");
     expect(titleRowStartPadding(32)).toContain("--window-controls-inset-start");
-    expect(CHROME_END_PAD_ATTR).toBe("data-octop-chrome-end-pad");
+    expect(CHROME_END_PAD_ATTR).toBe("data-happyclaw-chrome-end-pad");
     expect(WINDOW_CONTROLS_SPACER_ATTR).toBe(
-      "data-octop-window-controls-spacer",
+      "data-happyclaw-window-controls-spacer",
     );
     expect(chromeEndPadValue(12)).toContain("--window-controls-inset-end");
     expect(chromeEndPadValue(12)).toContain("12px");
@@ -152,9 +152,9 @@ describe("desktopChrome", () => {
       resolve(__dirname, "../styles/layout.css"),
       "utf8",
     );
-    expect(css).toContain("[data-octop-chrome-end-pad]");
+    expect(css).toContain("[data-happyclaw-chrome-end-pad]");
     expect(css).not.toContain("[data-dock-panel]");
-    expect(css).toContain(".octop-drawer-right");
+    expect(css).toContain(".happyclaw-drawer-right");
     expect(css).toMatch(/padding-inline-end:\s*max\(/);
   });
 
@@ -164,13 +164,13 @@ describe("desktopChrome", () => {
       "utf8",
     );
     expect(css).toMatch(
-      /html\[data-octop-desktop-chrome="mac"\] \.octop-drawer-header,[\s\S]*?-webkit-app-region:\s*drag/,
+      /html\[data-happyclaw-desktop-chrome="mac"\] \.happyclaw-drawer-header,[\s\S]*?-webkit-app-region:\s*drag/,
     );
     expect(css).toMatch(
-      /html\[data-octop-desktop-chrome="mac"\] \.ant-drawer-header[\s\S]*?-webkit-app-region:\s*drag/,
+      /html\[data-happyclaw-desktop-chrome="mac"\] \.ant-drawer-header[\s\S]*?-webkit-app-region:\s*drag/,
     );
     expect(css).not.toMatch(
-      /html\[data-octop-desktop-chrome="windows"\][^{]*drawer-header/,
+      /html\[data-happyclaw-desktop-chrome="windows"\][^{]*drawer-header/,
     );
   });
 
@@ -180,18 +180,18 @@ describe("desktopChrome", () => {
       "utf8",
     );
     expect(css).toMatch(
-      /html\[data-octop-caption-row\] body\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column/,
+      /html\[data-happyclaw-caption-row\] body\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column/,
     );
     expect(css).toMatch(
-      /html\[data-octop-caption-row\] #octop-stage\s*\{[^}]*flex:\s*1 1 auto;[^}]*transform:\s*translateY\(0\)/,
+      /html\[data-happyclaw-caption-row\] #happyclaw-stage\s*\{[^}]*flex:\s*1 1 auto;[^}]*transform:\s*translateY\(0\)/,
     );
     expect(css).toMatch(
-      /html\[data-octop-caption-row\] #root\s*\{[^}]*min-height:\s*0/,
+      /html\[data-happyclaw-caption-row\] #root\s*\{[^}]*min-height:\s*0/,
     );
-    expect(css).not.toMatch(/\.octop-win-menu\s*\{[^}]*z-index/);
-    expect(css).not.toMatch(/\.octop-win-menu\s*\{[^}]*position:\s*fixed/);
+    expect(css).not.toMatch(/\.happyclaw-win-menu\s*\{[^}]*z-index/);
+    expect(css).not.toMatch(/\.happyclaw-win-menu\s*\{[^}]*position:\s*fixed/);
     expect(css).not.toMatch(
-      /html\[data-octop-caption-row\] \.octop-drawer\s*\{[^}]*--octop-caption-row/,
+      /html\[data-happyclaw-caption-row\] \.happyclaw-drawer\s*\{[^}]*--happyclaw-caption-row/,
     );
   });
 
@@ -200,10 +200,10 @@ describe("desktopChrome", () => {
       resolve(__dirname, "../styles/layout.css"),
       "utf8",
     );
-    expect(css).toContain(".octop-desktop-drag");
+    expect(css).toContain(".happyclaw-desktop-drag");
     expect(css).toContain("-webkit-app-region: drag");
     expect(css).toContain("-webkit-app-region: no-drag");
-    expect(DESKTOP_DRAG_REGION_CLASS).toBe("octop-desktop-drag");
+    expect(DESKTOP_DRAG_REGION_CLASS).toBe("happyclaw-desktop-drag");
   });
 
   it("keeps controls and portalled overlays out of the drag band", () => {
@@ -227,9 +227,9 @@ describe("desktopChrome", () => {
       '[role="alertdialog"]',
       "[tabindex]",
       '[contenteditable]:not([contenteditable="false"])',
-      "[data-octop-no-drag]",
+      "[data-happyclaw-no-drag]",
     ]) {
-      expect(css).toContain(`html[data-octop-desktop-chrome] ${selector}`);
+      expect(css).toContain(`html[data-happyclaw-desktop-chrome] ${selector}`);
     }
   });
 

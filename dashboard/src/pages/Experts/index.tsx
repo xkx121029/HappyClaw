@@ -60,7 +60,7 @@ import type { TeamRecord } from "../../api/modules/teams";
 import { TeamCard } from "./components/TeamCard";
 import AgentExpertsTable from "./components/AgentExpertsTable";
 import ExpertMarketTab from "./components/ExpertMarketTab";
-import { OctopEmptyMascot } from "../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../components/EmptyState";
 import { isOwnedExpert, ownedExperts } from "../../utils/sharedExpert";
 import {
   matchesExpertLocation,
@@ -474,7 +474,7 @@ export default function ExpertsPage() {
             className={styles.emptyGuide}
             wide
             plain
-            icon={<OctopEmptyMascot />}
+            icon={<HappyclawEmptyMascot />}
             title={t("experts.emptyGuideTitle")}
             description={t("experts.emptyGuideDesc")}
             steps={[
@@ -685,7 +685,7 @@ export default function ExpertsPage() {
             className={styles.emptyGuide}
             wide
             plain
-            icon={<OctopEmptyMascot />}
+            icon={<HappyclawEmptyMascot />}
             title={t("experts.teams.emptyGuideTitle")}
             description={t("experts.teams.emptyGuideDesc")}
             steps={[

@@ -31,7 +31,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { request } from "../../../api/request";
-import { OctopEmptyMascot } from "../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../components/EmptyState";
 import StreamSetupGuide from "../../../components/StreamSetupGuide/StreamSetupGuide";
 import { useCvmOpsExpert } from "../../../hooks/useCvmOpsExpert";
 import { ALERT_MIN, WARN_MIN, levelTone } from "./theme";
@@ -956,7 +956,7 @@ export default function CloudHostsPage({
             className={styles.emptyGuide}
             wide
             plain
-            icon={<OctopEmptyMascot />}
+            icon={<HappyclawEmptyMascot />}
             title={t("cloud.emptyGuideTitle")}
             description={t("cloud.emptyGuideDesc")}
             steps={[

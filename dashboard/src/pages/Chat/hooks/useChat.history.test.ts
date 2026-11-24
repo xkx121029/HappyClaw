@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  octopThreadsApi,
-  type OctopThreadHistory,
-} from "../../../api/modules/octopThreads";
+  happyclawThreadsApi,
+  type HappyclawThreadHistory,
+} from "../../../api/modules/happyclawThreads";
 import * as chatStore from "./chatStore";
 import { useChat } from "./useChat";
 import {
@@ -34,8 +34,8 @@ afterEach(() => {
 });
 
 function deferredHistory() {
-  let resolve!: (history: OctopThreadHistory) => void;
-  const promise = new Promise<OctopThreadHistory>((done) => {
+  let resolve!: (history: HappyclawThreadHistory) => void;
+  const promise = new Promise<HappyclawThreadHistory>((done) => {
     resolve = done;
   });
   return { promise, resolve };
@@ -80,7 +80,7 @@ describe("history failures", () => {
       [{ id: "old", role: "user", content: "keep me", timestamp: 1 }],
       { hasMore: true, nextOffset: 25, nextCursor: "boundary" },
     );
-    vi.spyOn(octopThreadsApi, "history").mockRejectedValue(
+    vi.spyOn(happyclawThreadsApi, "history").mockRejectedValue(
       new Error("archive unavailable"),
     );
     const { result } = renderChat(thread);
@@ -95,7 +95,7 @@ describe("history failures", () => {
 
   it("does not mark a failed initial load as an empty hydrated conversation", async () => {
     const history = vi
-      .spyOn(octopThreadsApi, "history")
+      .spyOn(happyclawThreadsApi, "history")
       .mockRejectedValueOnce(new Error("decode failed"));
     const { result } = renderChat(thread);
     await act(async () => {
@@ -122,7 +122,7 @@ describe("history failures", () => {
       nextOffset: 0,
       nextCursor: null,
     });
-    const history = vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    const history = vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       messages: [{ id: "cron", role: "assistant", content: "task done" }],
       has_more: false,
@@ -142,7 +142,7 @@ describe("history failures", () => {
       { hasMore: true, nextOffset: 25, nextCursor: "pinned-boundary" },
     );
     const history = vi
-      .spyOn(octopThreadsApi, "history")
+      .spyOn(happyclawThreadsApi, "history")
       .mockResolvedValue({ thread_id: thread, messages: [], has_more: false });
     const { result } = renderChat(thread);
     await act(async () => {
@@ -161,7 +161,7 @@ describe("history failures", () => {
       { hasMore: true, nextOffset: 25, nextCursor: "same-boundary" },
     );
     const history = vi
-      .spyOn(octopThreadsApi, "history")
+      .spyOn(happyclawThreadsApi, "history")
       .mockRejectedValueOnce(new Error("unavailable"))
       .mockResolvedValueOnce({
         thread_id: thread,
@@ -192,8 +192,8 @@ describe("history failures", () => {
     const gate = new Promise((resolve) => {
       resolveHistory = resolve;
     });
-    vi.spyOn(octopThreadsApi, "history").mockImplementation(
-      () => gate as ReturnType<typeof octopThreadsApi.history>,
+    vi.spyOn(happyclawThreadsApi, "history").mockImplementation(
+      () => gate as ReturnType<typeof happyclawThreadsApi.history>,
     );
     const { result } = renderChat(thread);
     let pending!: Promise<void>;
@@ -249,7 +249,7 @@ describe("history failures", () => {
         timestamp: 5_100,
       },
     ]);
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       messages: [
         { id: "old", role: "assistant", content: "之前的回复" },
@@ -279,7 +279,7 @@ describe("history failures", () => {
     ];
     chatStore.setHistoryPage(thread, local, { hasMore: false, nextOffset: 0 });
     flushInflightTail(thread, local);
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       messages: [
         { id: "u", role: "user", content: "继续", timestamp: 5_000 },
@@ -300,7 +300,7 @@ describe("history failures", () => {
 });
 
 describe("cache ordering and stale history responses", () => {
-  const latest: OctopThreadHistory = {
+  const latest: HappyclawThreadHistory = {
     thread_id: thread,
     messages: Array.from({ length: 25 }, (_, index) => ({
       id: `latest-${index}`,
@@ -330,7 +330,7 @@ describe("cache ordering and stale history responses", () => {
   it("keeps an unmatched 11:02 cache out of the latest 25, then loads it once in its historical position", async () => {
     flushInflightTail(thread, stale);
     const history = vi
-      .spyOn(octopThreadsApi, "history")
+      .spyOn(happyclawThreadsApi, "history")
       .mockResolvedValueOnce(latest)
       .mockResolvedValueOnce(latest)
       .mockResolvedValueOnce({
@@ -372,7 +372,7 @@ describe("cache ordering and stale history responses", () => {
 
   it("does not treat a cached streaming flag as proof that a completed server reply is stale", async () => {
     flushInflightTail(thread, stale);
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       turn_active: false,
       messages: [stale[0], { id: "final", role: "assistant", content: "done" }],
@@ -421,7 +421,7 @@ describe("cache ordering and stale history responses", () => {
       "current",
       "partial",
     ]);
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       turn_active: true,
       messages: [{ id: "current", role: "user", content: "current" }],
@@ -448,7 +448,7 @@ describe("cache ordering and stale history responses", () => {
       content: "new",
       timestamp: 2,
     });
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue(latest);
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue(latest);
     const { result } = renderChat(thread);
     await act(async () => {
       await result.current.refreshHistory();
@@ -469,7 +469,7 @@ describe("cache ordering and stale history responses", () => {
       { hasMore: true, nextOffset: 25, nextCursor: "old-boundary" },
     );
     const older = deferredHistory();
-    vi.spyOn(octopThreadsApi, "history").mockImplementation(
+    vi.spyOn(happyclawThreadsApi, "history").mockImplementation(
       (_agent, _thread, options) =>
         options?.offset ? older.promise : Promise.resolve(latest),
     );
@@ -499,7 +499,7 @@ describe("cache ordering and stale history responses", () => {
     "ignores an initial history response after %s",
     async (action) => {
       const pending = deferredHistory();
-      vi.spyOn(octopThreadsApi, "history").mockReturnValue(pending.promise);
+      vi.spyOn(happyclawThreadsApi, "history").mockReturnValue(pending.promise);
       const { result, rerender, unmount } = renderChat(thread);
       let request!: Promise<void>;
       act(() => {
@@ -529,7 +529,7 @@ describe("cache ordering and stale history responses", () => {
       { hasMore: false, nextOffset: 0 },
     );
     const pending = deferredHistory();
-    vi.spyOn(octopThreadsApi, "history").mockReturnValue(pending.promise);
+    vi.spyOn(happyclawThreadsApi, "history").mockReturnValue(pending.promise);
     const send = vi.spyOn(chatStore, "sendTurn").mockResolvedValue();
     const { result } = renderChat(thread);
     let request!: Promise<void>;
@@ -554,7 +554,7 @@ describe("cache ordering and stale history responses", () => {
   });
 
   it("rejects a history response belonging to a different thread", async () => {
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       ...latest,
       thread_id: "other-history-thread",
     });
@@ -569,7 +569,7 @@ describe("cache ordering and stale history responses", () => {
   it("does not let a previous thread's finally block clear the current refresh state", async () => {
     const first = deferredHistory();
     const second = deferredHistory();
-    vi.spyOn(octopThreadsApi, "history").mockImplementation((_agent, id) =>
+    vi.spyOn(happyclawThreadsApi, "history").mockImplementation((_agent, id) =>
       id === thread ? first.promise : second.promise,
     );
     const { result, rerender } = renderChat(thread);

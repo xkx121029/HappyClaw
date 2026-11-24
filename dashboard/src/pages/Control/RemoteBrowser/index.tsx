@@ -42,7 +42,7 @@ import cx from "classnames";
 
 import StreamEdgeControls from "../../../components/StreamEdgeControls/StreamEdgeControls";
 import StreamSetupGuide from "../../../components/StreamSetupGuide/StreamSetupGuide";
-import { OctopEmptyMascot } from "../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../components/EmptyState";
 import PageShell from "../../../layouts/PageShell";
 import PeerOnlyRemoteAlert from "../../../components/PeerOnlyRemoteAlert";
 import BrowserAiPanel from "../../../components/BrowserAiPanel";
@@ -1353,7 +1353,7 @@ export default function RemoteBrowserPage({
                 ) : (
                   <StreamSetupGuide
                     plain
-                    icon={<OctopEmptyMascot />}
+                    icon={<HappyclawEmptyMascot />}
                     title={
                       envReady
                         ? t("remoteBrowser.startBrowserTitle", "启动远程浏览器")

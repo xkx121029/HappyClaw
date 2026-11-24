@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { request } from "../../../api/request";
 import { apiErrorMessage } from "../../../utils/apiError";
 import { useAgent } from "../../../context/AgentContext";
-import { OctopEmptyMascot } from "../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../components/EmptyState";
 import type { OctopAgent } from "../../../context/AgentContext";
 import {
   formatAgentError,
@@ -109,7 +109,7 @@ export default function AgentNotReadyScreen({
         <div className={styles.noAgentsEmpty}>
           <div className={styles.noAgentsEmptyInner}>
             <div className={styles.noAgentsEmptyIcon}>
-              <OctopEmptyMascot className={styles.noAgentsEmptyMascot} />
+              <HappyclawEmptyMascot className={styles.noAgentsEmptyMascot} />
             </div>
             <h1 className={styles.noAgentsEmptyTitle}>
               {t("chat.onboardingTitle", "两步就能开始对话")}
@@ -140,7 +140,7 @@ export default function AgentNotReadyScreen({
       <div className={styles.noAgentsEmpty}>
         <div className={styles.noAgentsEmptyInner}>
           <div className={styles.noAgentsEmptyIcon}>
-            <OctopEmptyMascot className={styles.noAgentsEmptyMascot} />
+            <HappyclawEmptyMascot className={styles.noAgentsEmptyMascot} />
           </div>
           <h1 className={styles.noAgentsEmptyTitle}>
             {t("chat.noAgentsTitle")}

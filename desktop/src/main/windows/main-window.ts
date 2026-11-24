@@ -96,7 +96,7 @@ export function createMainWindow(options: {
 
   installDashboardGuards(win, options);
 
-  // The boot splash (#octop-boot) is still the loading page. The page menu
+  // The boot splash (#happyclaw-boot) is still the loading page. The page menu
   // appears only after React replaces that splash.
   concealWindowsMenuBar(win);
   if (options.maximized && options.bounds) win.maximize();

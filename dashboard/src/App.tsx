@@ -19,7 +19,7 @@ import AuthGuard from "./components/AuthGuard";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt";
 import DesktopWindowDragBand from "./components/DesktopWindowDragBand";
 import WindowsAppMenu from "./components/WindowsAppMenu";
-import OctopSpinner from "./components/OctopSpinner";
+import HappyclawSpinner from "./components/HappyclawSpinner";
 import { AntdAppProvider } from "./components/AntdAppProvider";
 import { popupLayer } from "./utils/overlayLayers";
 import GlobalErrorBoundary from "./components/ErrorBoundary";
@@ -120,10 +120,10 @@ function ThemedApp() {
   return (
     <ConfigProvider
       theme={themeConfig}
-      prefixCls="octop"
+      prefixCls="happyclaw"
       locale={antdLocale}
       getPopupContainer={popupLayer}
-      spin={{ indicator: <OctopSpinner /> }}
+      spin={{ indicator: <HappyclawSpinner /> }}
     >
       <AntdAppProvider>
         <DesktopChromeProvider value={desktopChrome}>
