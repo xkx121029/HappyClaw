@@ -11,6 +11,98 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Cheap structural guards. Both scripts are stdlib-only AST / regex scans that
+  # finish in well under a second, so they get their own job ahead of every
+  # install and suite: a broken invariant fails the PR at once instead of
+  # hiding behind a twenty-minute test run. They need no uv sync and no venv,
+  # which is why they call the scripts directly rather than going through make
+  # (make would `uv run` them and pay for a resolve first).
+  guards:
+    name: "Guards (upstream refs, env compat)"
+    runs-on: ubuntu-latest
+    if: ${{ !startsWith(github.head_ref, 'chore/sync-develop-after-') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upstream reference check
+        run: python3 scripts/check_no_upstream_refs.py
+
+      - name: Env compat check
+        run: python3 scripts/check_env_compat.py
+
+  # Strict mypy over the whole package (812 files, 0 errors). Cold this takes
+  # 30-40 minutes and warm 6-10, so it is its own job with its own caches
+  # instead of a step inside a fast job or the local pre-commit hook. mypy does
+  # not see the platform, so one runner covers both operating systems.
+  mypy:
+    name: "Type check (mypy --strict)"
+    runs-on: ubuntu-latest
+    if: ${{ !startsWith(github.head_ref, 'chore/sync-develop-after-') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      # Re-analysing unchanged modules is what makes a cold run expensive, so
+      # the incremental cache is worth more here than in any other job. Keyed
+      # on the lock file so a dependency change starts clean; the restore-key
+      # still seeds the first run after a lock bump.
+      - name: Restore mypy cache
+        uses: actions/cache@v4
+        with:
+          path: .mypy_cache
+          key: mypy-${{ runner.os }}-py312-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            mypy-${{ runner.os }}-py312-
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Type check
+        run: make typecheck
+
+  # The dashboard carried no CI at all: `tsconfig.app.json` excludes
+  # *.test.ts(x) from `tsc -b`, so a broken test file was invisible to both the
+  # type checker and the (nonexistent) suite. useChat.history.test.ts sat red
+  # for days because nothing ever ran it. Types, lint, and tests each get their
+  # own step so a failure names its cause instead of arriving as one blurred
+  # red job.
+  dashboard:
+    name: "Dashboard (tsc, eslint, vitest)"
+    runs-on: ubuntu-latest
+    if: ${{ !startsWith(github.head_ref, 'chore/sync-develop-after-') }}
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc -b
+
+      # Baselines at 0 errors / 76 warnings. The cap is the current count, not
+      # zero: the existing warnings are real but not load-bearing, and pinning
+      # them means a PR that adds one has to face it. The count can only go
+      # down without touching this line.
+      - name: Lint
+        run: npx eslint . --max-warnings 76
+
+      - name: Test
+        run: npx vitest run
+        timeout-minutes: 40
+
   quality:
     name: "Python ${{ matrix.python-version }}"
     runs-on: ubuntu-latest
@@ -35,13 +127,9 @@ jobs:
       - name: Lint
         run: make lint
 
-      - name: Upstream reference check
-        run: make check-upstream
-        make check-env-compat
-
-      - name: Type check
-        run: make typecheck
-
+      # ``make test`` collects tests/unit/api/test_acl_gate_coverage.py: the
+      # ACL gate discovers route modules itself and fails on any module that is
+      # neither gated nor exempt, so a new router cannot skip the guard.
       - name: Test
         run: make test
 
@@ -62,9 +150,6 @@ jobs:
 
       - name: Lint
         run: make lint
-
-      - name: Type check
-        run: make typecheck
 
       - name: Test
         run: make test
