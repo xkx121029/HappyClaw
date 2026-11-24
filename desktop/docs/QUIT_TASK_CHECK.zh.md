@@ -153,7 +153,7 @@ export async function inspectBeforeQuit(options: {
   查询；`quitting` 标志继续负责「已经在停机中」。
 - **信号路径不弹框**（`shutdownFromSignal` 里没有 UI，也没有窗口），保持现在直接停机的行为。
 - **查询方式**：主进程内 `net.fetch(\`http://127.0.0.1:${backendPort}/api/runtime/activity\`)`，
-  不走 `octop://` 协议代理（那是渲染层的入口，主进程直连更短也更明确）。
+  不走 `happyclaw://` 协议代理（那是渲染层的入口，主进程直连更短也更明确）。
 - `apiAdmissionClosed`（更新中）时视同 `backendPort === 0`，直接退出。
 - 现有 `before-quit` 已经在做「先关 WS 中继 → 停 Sidecar → `app.quit()`」；guard 只是插在
   它前面的一次异步判断，停机顺序不变。

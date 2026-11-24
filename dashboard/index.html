@@ -36,7 +36,8 @@
       so a stored "light" preference wins over an OS dark setting.
       Storage shape matches appearanceStorage.ts (THEME_STORAGE_KEY = "theme").
 
-      The desktop shell loads this page with ?octopTheme=system|light|dark
+      The desktop shell loads this page with ?happyclawTheme=system|light|dark
+      (pre-rename builds sent ?octopTheme=; both are read).
       (DASHBOARD_THEME_QUERY in desktop/src/main/windows/chrome.ts). That
       device preference wins over localStorage and is written back, then the
       query is removed so a later reload keeps the stored value. Browser
@@ -65,9 +66,8 @@
           return "system";
         }
         function shellPref() {
-          var query = new URLSearchParams(window.location.search).get(
-            "octopTheme",
-          );
+          var params = new URLSearchParams(window.location.search);
+          var query = params.get("happyclawTheme") || params.get("octopTheme");
           return isPref(query) ? query : null;
         }
         // Keep palette / customColor; only the light/dark preference moves.
@@ -88,6 +88,7 @@
           localStorage.setItem(KEY, JSON.stringify(next));
           try {
             var url = new URL(window.location.href);
+            url.searchParams.delete("happyclawTheme");
             url.searchParams.delete("octopTheme");
             history.replaceState(
               null,

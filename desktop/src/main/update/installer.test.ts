@@ -20,7 +20,7 @@ function asset(name: string, ext: string): DownloadAsset {
 
 test("installerKindFor maps manifest extensions", () => {
   assert.equal(installerKindFor(asset("Octop.dmg", "dmg")), "dmg");
-  assert.equal(installerKindFor(asset("Octop.exe", "exe")), "exe");
+  assert.equal(installerKindFor(asset("happyclaw.exe", "exe")), "exe");
   assert.equal(installerKindFor(asset("Octop.AppImage", ".AppImage")), "appimage");
   assert.equal(installerKindFor(asset("Octop.deb", "deb")), "deb");
   assert.equal(installerKindFor(asset("Octop.pkg", "pkg")), "pkg");

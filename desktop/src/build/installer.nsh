@@ -46,7 +46,7 @@ happyclaw_files_done:
 ; shortcut was already created during install.
 
 ; Same rule as DeepSeek Harness customCheckAppRunning: match this install's
-; executable, not another Octop.exe. An update waits up to 10s for the shell
+; executable, not another happyclaw.exe. An update waits up to 10s for the shell
 ; to leave the tray. Otherwise stop and ask the user to quit. Never taskkill.
 !macro customCheckAppRunning
   Push $0
@@ -105,7 +105,7 @@ happyclaw_run_log_done:
 
 ; The onedir backend is installed with the rest of the resources
 ; (resources\sidecar\backend). Nothing is extracted here; this only proves the
-; payload is complete before the wizard reports success. octop.exe resolves
+; payload is complete before the wizard reports success. happyclaw.exe resolves
 ; _internal relative to itself, so a missing half is a broken install, not a
 ; degraded one.
 !macro customInstall
@@ -121,7 +121,7 @@ happyclaw_rt_log_en:
   DetailPrint "Checking the local service files…"
 happyclaw_rt_log_done:
   StrCpy $0 "$INSTDIR\resources\sidecar\backend"
-  IfFileExists "$0\octop.exe" 0 happyclaw_rt_missing
+  IfFileExists "$0\happyclaw.exe" 0 happyclaw_rt_missing
   IfFileExists "$0\_internal\happyclaw\dashboard\index.html" 0 happyclaw_rt_missing
   IntCmp $LANGUAGE 2052 happyclaw_rt_ok_zh happyclaw_rt_ok_en happyclaw_rt_ok_en
 happyclaw_rt_ok_zh:
@@ -136,6 +136,22 @@ happyclaw_rt_missing:
   Pop $0
   Abort
 happyclaw_rt_end:
+  ; The desktop product name changed after 0.4, so electron-builder now installs
+  ; to $LOCALAPPDATA\Programs\HappyClaw. A pre-rename per-user install would stay
+  ; behind as a second copy: its uninstall entry shares this appId (already
+  ; repointed by the wizard), so only the stale program files are removed here.
+  ; User data lives in HAPPYCLAW_HOME and is never touched.
+  StrCpy $1 "$LOCALAPPDATA\Programs\Octop"
+  IfFileExists "$1\octop.exe" 0 happyclaw_legacy_dir_done
+  IntCmp $LANGUAGE 2052 happyclaw_legacy_dir_zh happyclaw_legacy_dir_en happyclaw_legacy_dir_en
+happyclaw_legacy_dir_zh:
+  DetailPrint "正在清理改名前的旧安装目录 $1…"
+  Goto happyclaw_legacy_dir_rm
+happyclaw_legacy_dir_en:
+  DetailPrint "Removing the pre-rename install directory $1…"
+happyclaw_legacy_dir_rm:
+  RMDir /r "$1"
+happyclaw_legacy_dir_done:
   Pop $1
   Pop $0
 !macroend

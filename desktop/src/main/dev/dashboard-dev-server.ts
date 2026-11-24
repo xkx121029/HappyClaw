@@ -5,7 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 /**
  * Local Dashboard dev server. The packaged shell serves a static build from
- * ``octop://app``. ``pnpm dev`` instead runs Vite and loads that origin, so
+ * ``happyclaw://app``. ``pnpm dev`` instead runs Vite and loads that origin, so
  * edits to ``dashboard/`` hot-reload without a production rebuild.
  */
 

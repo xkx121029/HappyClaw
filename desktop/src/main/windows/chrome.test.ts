@@ -143,16 +143,16 @@ test("macOS 不用标题栏覆盖层", () => {
 test("窗口底色与仪表盘启动地址跟设备主题走", () => {
   assert.equal(chrome.windowBackground("light"), "#f5f6f8");
   assert.equal(chrome.windowBackground("dark"), "#0e0e0e");
-  assert.equal(chrome.dashboardEntryUrl("system"), "octop://app/?octopTheme=system");
-  assert.equal(chrome.dashboardEntryUrl("dark"), "octop://app/?octopTheme=dark");
+  assert.equal(chrome.dashboardEntryUrl("system"), "happyclaw://app/?happyclawTheme=system");
+  assert.equal(chrome.dashboardEntryUrl("dark"), "happyclaw://app/?happyclawTheme=dark");
   assert.equal(
     chrome.dashboardEntryUrl("system", "http://127.0.0.1:5173"),
-    "http://127.0.0.1:5173/?octopTheme=system",
+    "http://127.0.0.1:5173/?happyclawTheme=system",
   );
-  assert.equal(chrome.isAppNavigation("octop://app/chat", "octop://app"), true);
-  assert.equal(chrome.isAppNavigation("octop://apple", "octop://app"), false);
+  assert.equal(chrome.isAppNavigation("happyclaw://app/chat", "happyclaw://app"), true);
+  assert.equal(chrome.isAppNavigation("happyclaw://apple", "happyclaw://app"), false);
   assert.equal(
-    chrome.isAppNavigation("http://127.0.0.1:5173/?octopTheme=system", "http://127.0.0.1:5173"),
+    chrome.isAppNavigation("http://127.0.0.1:5173/?happyclawTheme=system", "http://127.0.0.1:5173"),
     true,
   );
   assert.equal(chrome.isAppNavigation("http://127.0.0.1:51730/", "http://127.0.0.1:5173"), false);

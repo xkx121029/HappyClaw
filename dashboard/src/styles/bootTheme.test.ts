@@ -108,7 +108,7 @@ describe("index.html boot theme", () => {
         customColor: "#112233",
       }),
     );
-    window.history.replaceState(null, "", "/?octopTheme=light");
+    window.history.replaceState(null, "", "/?happyclawTheme=light");
     eval(bootThemeScript());
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
     expect(JSON.parse(localStorage.getItem(THEME_STORAGE_KEY)!)).toEqual({
@@ -116,7 +116,7 @@ describe("index.html boot theme", () => {
       palette: "tech",
       customColor: "#112233",
     });
-    expect(window.location.search).not.toContain("octopTheme");
+    expect(window.location.search).not.toContain("happyclawTheme");
   });
 
   it("resolves a desktop system preference against the OS", () => {
@@ -124,7 +124,7 @@ describe("index.html boot theme", () => {
       THEME_STORAGE_KEY,
       JSON.stringify({ preference: "light", palette: "rose" }),
     );
-    window.history.replaceState(null, "", "/?octopTheme=system");
+    window.history.replaceState(null, "", "/?happyclawTheme=system");
     eval(bootThemeScript());
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(JSON.parse(localStorage.getItem(THEME_STORAGE_KEY)!)).toMatchObject({

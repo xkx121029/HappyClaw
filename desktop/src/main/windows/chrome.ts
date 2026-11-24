@@ -87,10 +87,12 @@ export function windowBackground(mode: WindowChromeTheme["mode"]): string {
  * Query key read by the Dashboard boot script (`dashboard/index.html`).
  * The value is the preference (`system` | `light` | `dark`), not the resolved mode.
  */
-export const DASHBOARD_THEME_QUERY = "octopTheme";
+export const DASHBOARD_THEME_QUERY = "happyclawTheme";
+/** Pre-rename spelling still honoured by the boot script in index.html. */
+export const LEGACY_THEME_QUERY = "octopTheme";
 
 /** Packaged pages live on the privileged scheme. Local dev uses the Vite origin. */
-export const PACKAGED_APP_ORIGIN = "octop://app";
+export const PACKAGED_APP_ORIGIN = "happyclaw://app";
 
 export function dashboardEntryUrl(
   scheme: "system" | "light" | "dark",
