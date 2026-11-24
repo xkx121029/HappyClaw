@@ -441,7 +441,9 @@ async def install_published_expert(
             config_extra["providers"] = list(options.providers)
         if options.backend:
             config_extra["backend"] = options.backend
-        from happyclaw.infra.agents.workspace.dir import apply_explicit_workspace_dir  # noqa: PLC0415
+        from happyclaw.infra.agents.workspace.dir import (
+            apply_explicit_workspace_dir,  # noqa: PLC0415
+        )
 
         apply_explicit_workspace_dir(config_extra, options.workspace_dir)
         apply_enable_trajectory(config_extra, options.enable_trajectory)

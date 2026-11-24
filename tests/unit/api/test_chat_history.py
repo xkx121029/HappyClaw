@@ -10,8 +10,8 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
-from langchain_core.messages import HumanMessage
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
+from langchain_core.messages import HumanMessage
 
 from happyclaw.api.routers.chat import history as history_mod
 from happyclaw.api.routers.chat.serialize import (
@@ -76,9 +76,9 @@ def test_slice_message_page_long_thread_no_gaps_or_overlaps() -> None:
 
 
 def test_isolated_sqlite_history_supports_pypi_memory_0_9_7(tmp_path: Path) -> None:
+    from happyclaw_memory import Memory
     from langchain_core.messages import AIMessage
     from langgraph.checkpoint.base import empty_checkpoint
-    from happyclaw_memory import Memory
 
     db_path = tmp_path / "checkpoint.db"
     memory = Memory(

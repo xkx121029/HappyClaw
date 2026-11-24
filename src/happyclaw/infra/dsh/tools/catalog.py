@@ -310,7 +310,7 @@ def _mount_plugin(
         capability=probe,
         hitl=hitl,
         approval=approval,
-        risky_tools={name: declared for name in exposed_names} if declared else {},
+        risky_tools=dict.fromkeys(exposed_names, declared) if declared else {},
         known_tools=exposed_names,
         plugin_id=candidate.plugin_id,
         ledger=ledger,

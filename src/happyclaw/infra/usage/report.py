@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from io import BytesIO
 from typing import TYPE_CHECKING, Any, cast
 
 from happyclaw.api.common.usage_xlsx import build_usage_xlsx
@@ -36,9 +35,9 @@ class UsageReportService:
     def __init__(
         self,
         *,
-        usage_repo: "UsageRepo",
-        agent_repo: "AgentRepo",
-        user_manager: "UserManager",
+        usage_repo: UsageRepo,
+        agent_repo: AgentRepo,
+        user_manager: UserManager,
         agent_exists: Callable[[str], bool],
         timezone: str,
     ) -> None:

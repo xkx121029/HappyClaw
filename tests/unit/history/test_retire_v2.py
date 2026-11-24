@@ -9,10 +9,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, message_to_dict
-from langgraph.checkpoint.base import empty_checkpoint
 from happyclaw_memory import Memory
 from happyclaw_memory.pipeline.lifecycle.checkpoint_gc import prune_checkpoints
+from langchain_core.messages import AIMessage, HumanMessage, message_to_dict
+from langgraph.checkpoint.base import empty_checkpoint
 
 from happyclaw.config import HappyclawConfig
 from happyclaw.infra.db.migrate import run_migrations

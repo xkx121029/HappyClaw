@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import contextlib
 import os
 import shutil
 import uuid
 from pathlib import Path
 from typing import Any, Literal
+
+from happyclaw.infra.utils.env_alias import env_get
 
 ProbeCode = Literal[
     "not_directory",

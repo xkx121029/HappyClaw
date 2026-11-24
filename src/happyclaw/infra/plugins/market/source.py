@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, ClassVar, Mapping
+from typing import Any, ClassVar
 
 from happyclaw.infra.plugins.market.archive import extract_archive
 from happyclaw.infra.plugins.market.digest import count_files, sha256_bytes, sha256_tree

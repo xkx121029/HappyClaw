@@ -410,7 +410,6 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         admin,
         agent_files,
         agent_mcp,
-        agent_mcp,
         agent_tools,
         auth_device,
         backup,
@@ -455,7 +454,9 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
     from happyclaw.api.routers.decision import router as decision_router  # noqa: PLC0415
     from happyclaw.api.routers.filesystem import router as filesystem_router  # noqa: PLC0415
     from happyclaw.api.routers.observability import router as observability_router  # noqa: PLC0415
-    from happyclaw.api.routers.providers import admin_router as admin_providers_router  # noqa: PLC0415
+    from happyclaw.api.routers.providers import (
+        admin_router as admin_providers_router,  # noqa: PLC0415
+    )
     from happyclaw.api.routers.security import router as security_router  # noqa: PLC0415
     from happyclaw.api.routers.storage_backends import (  # noqa: PLC0415
         admin_router as admin_storage_router,

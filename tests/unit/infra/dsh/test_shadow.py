@@ -10,8 +10,8 @@ from pathlib import Path
 import pytest
 
 from happyclaw.infra.db.repos.thread_messages import ThreadMessageInput
-from happyclaw.infra.dsh.session import verify
 from happyclaw.infra.dsh.session import shadow as shadow_mod
+from happyclaw.infra.dsh.session import verify
 from happyclaw.infra.dsh.session.log import SessionLog
 from happyclaw.infra.dsh.session.shadow import (
     append_shadow_turn,

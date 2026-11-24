@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langgraph.config import var_child_runnable_config
 
-from happyclaw.config import CapabilitiesConfig, MobileCapabilities, HappyclawConfig
+from happyclaw.config import CapabilitiesConfig, HappyclawConfig, MobileCapabilities
 from happyclaw.infra.control.mobile.tools import build_mobile_tools
 
 _PNG_BYTES = b"\x89PNG\r\n\x1a\nfake-png-payload"

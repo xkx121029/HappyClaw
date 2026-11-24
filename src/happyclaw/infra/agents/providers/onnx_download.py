@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import json
 import logging
 import os
@@ -21,6 +19,7 @@ from typing import Any
 import httpx
 
 from happyclaw.infra.agents.providers.onnx_catalog import get_onnx_model_meta
+from happyclaw.infra.utils.env_alias import env_get
 
 logger = logging.getLogger(__name__)
 

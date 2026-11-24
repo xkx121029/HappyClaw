@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from happyclaw.infra.config_service import LocalConfigService
 
 

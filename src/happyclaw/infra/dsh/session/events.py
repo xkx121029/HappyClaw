@@ -9,9 +9,10 @@ log can be diffed and replayed byte for byte.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Mapping
+from typing import Any
 
 __all__ = [
     "COMPACTION_EVENT_TYPES",

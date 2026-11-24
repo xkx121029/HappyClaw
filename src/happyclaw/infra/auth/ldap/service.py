@@ -13,7 +13,12 @@ try:
 except ImportError:  # pragma: no cover - optional PostgreSQL driver
     pg_errors = None  # type: ignore[assignment]
 
-from happyclaw.infra.auth.ldap.client import LdapClient, LdapIdentity, LdapProbeResult, LdapUnavailable
+from happyclaw.infra.auth.ldap.client import (
+    LdapClient,
+    LdapIdentity,
+    LdapProbeResult,
+    LdapUnavailable,
+)
 from happyclaw.infra.auth.ldap.config import (
     EXTRA_FIELDS,
     LDAP_KIND,

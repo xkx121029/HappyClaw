@@ -33,10 +33,10 @@ from happyclaw.infra.dsh.llm.types import (
     FinishChunk,
     FinishReason,
     LlmRequest,
+    ReasoningDelta,
     RuntimeEvent,
     StepRestart,
     TextDelta,
-    ReasoningDelta,
     ToolCallDelta,
     UsageChunk,
 )

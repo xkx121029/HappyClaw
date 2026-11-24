@@ -35,8 +35,9 @@ Assumptions (also recorded in ``marketplace.md``):
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 from urllib.parse import urlparse
 
 from happyclaw.infra.plugins.market.download import (

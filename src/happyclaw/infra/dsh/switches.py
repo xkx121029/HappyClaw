@@ -11,8 +11,6 @@ stage is off, regardless of the per-stage variables.
 
 from __future__ import annotations
 
-import os
-
 from happyclaw.infra.utils.env_alias import CURRENT_PREFIX, env_get
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})

@@ -5,12 +5,12 @@ from __future__ import annotations
 import pytest
 
 from happyclaw.infra.dsh.prompts import (
+    SECTION_ORDERS,
+    SKILLS_SECTION_ORDER,
     DuplicateSectionError,
     MalformedPromptVariableError,
     MultipleCompleteSectionsError,
     PromptSection,
-    SECTION_ORDERS,
-    SKILLS_SECTION_ORDER,
     SectionRegistry,
     SkillInjectionCursor,
     SkillPromptEntry,

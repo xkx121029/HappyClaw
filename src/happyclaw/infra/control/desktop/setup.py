@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import asyncio
 import importlib.util
 import json
@@ -19,6 +17,7 @@ from pathlib import Path
 from typing import Literal
 
 from happyclaw.i18n import tr
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.posix_compat import geteuid
 from happyclaw.infra.utils.runtime_packages import (
     build_install_commands,

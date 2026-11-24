@@ -549,7 +549,9 @@ def _enrich_history_tool_media(
     Prefer each entry's ``agent_id`` (team speaker) so member tool media
     resolves against the producer workspace, not the room host.
     """
-    from happyclaw.infra.gateway.media.tool_media import enrich_tool_output_string_sync  # noqa: PLC0415
+    from happyclaw.infra.gateway.media.tool_media import (
+        enrich_tool_output_string_sync,  # noqa: PLC0415
+    )
 
     enriched: list[dict[str, Any]] = []
     for entry in messages:

@@ -23,7 +23,10 @@ from happyclaw.api.common.attachments import save_attachment
 from happyclaw.infra.agents.middleware.binary_read_guard import read_file_block_reason
 from happyclaw.infra.backend.resolver import default_agent_backend_spec
 from happyclaw.infra.gateway.media.attachment_hints import format_attachment_path_hint
-from happyclaw.infra.gateway.media.inbound_store import resolve_inbound_attachment_path, write_inbound
+from happyclaw.infra.gateway.media.inbound_store import (
+    resolve_inbound_attachment_path,
+    write_inbound,
+)
 from happyclaw.infra.gateway.media.ingress import AgentBackedMediaBackend
 from happyclaw.infra.gateway.process.harness_request import build_content_from_message
 from happyclaw.infra.gateway.threads import ThreadRegistry

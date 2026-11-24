@@ -22,7 +22,11 @@ from happyclaw.infra.plugins.bridge import (
     describe_exception,
     text_content,
 )
-from happyclaw.infra.plugins.runtime.contract import CapabilityKind, PluginErrorCode, PluginRequirement
+from happyclaw.infra.plugins.runtime.contract import (
+    CapabilityKind,
+    PluginErrorCode,
+    PluginRequirement,
+)
 
 ADD_PARAMETERS: dict[str, Any] = {
     "type": "object",

@@ -1714,10 +1714,10 @@ def test_build_harness_config_without_default_model(manager: AgentManager) -> No
 async def test_model_retry_exhaustion_fails_background_job(
     manager: AgentManager, failure_type: type[Exception]
 ) -> None:
-    from langchain.agents.middleware import ModelRetryMiddleware
-    from langchain_core.messages import AIMessage
     from happyclaw_harness.teams.inbox import HarnessAgentInboxManager, InboxMessage
     from happyclaw_harness.teams.processor import default_compose_followup
+    from langchain.agents.middleware import ModelRetryMiddleware
+    from langchain_core.messages import AIMessage
 
     cfg = manager._build_harness_config(_row())
     retries = [m for m in cfg.middleware or [] if isinstance(m, ModelRetryMiddleware)]
@@ -3188,9 +3188,9 @@ async def test_restore_respects_runtime_capability_and_expert_scope(
     import sqlite3
     from contextlib import closing
 
-    from langgraph.checkpoint.base import empty_checkpoint
     from happyclaw_harness import HarnessAgentManager
     from happyclaw_harness.middleware.memory import MemoryMiddleware
+    from langgraph.checkpoint.base import empty_checkpoint
 
     from happyclaw.infra.agents.manager import AgentCreateSpec
     from happyclaw.infra.agents.memory.sqlite_restore import restore_sqlite

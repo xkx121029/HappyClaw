@@ -20,10 +20,7 @@ package: the sandbox decides, the host decides how to report it.
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import logging
-import os
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -42,6 +39,7 @@ from happyclaw.infra.plugins.sandbox import (
     ToolInspection,
     resolve_absence_mode,
 )
+from happyclaw.infra.utils.env_alias import env_get
 
 logger = logging.getLogger(__name__)
 

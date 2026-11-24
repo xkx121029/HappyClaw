@@ -15,13 +15,10 @@ verification; the live path is the processor hook.
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import argparse
 import hashlib
 import json
 import logging
-import os
 import re
 import sqlite3
 import threading
@@ -34,6 +31,7 @@ from typing import Any
 from happyclaw.infra.db.repos.thread_messages import ThreadMessageInput
 from happyclaw.infra.dsh.session.events import EventType
 from happyclaw.infra.dsh.session.log import SessionLog
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.paths import PathLayout
 
 __all__ = [
@@ -303,7 +301,7 @@ def _message_key(item: ThreadMessageInput) -> str:
     if item.message_id:
         return f"id:{item.message_id}"
     digest = hashlib.sha256(
-        f"{item.role}\x00{item.created_at}\x00{item.message_json}".encode("utf-8")
+        f"{item.role}\x00{item.created_at}\x00{item.message_json}".encode()
     ).hexdigest()[:24]
     return f"anon:{digest}"
 

@@ -7,6 +7,8 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+from tests.dsh_integration.fixtures.tools import fixture_tool
+from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentManager
@@ -16,9 +18,6 @@ from happyclaw.infra.db.repos.agents import AgentRow
 from happyclaw.infra.db.services import build_shared_services
 from happyclaw.infra.dsh.tools.gate import SKIP_NO_PROVIDER
 from happyclaw.infra.utils.paths import PathLayout
-
-from tests.dsh_integration.fixtures.tools import fixture_tool
-from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 
 @pytest.fixture

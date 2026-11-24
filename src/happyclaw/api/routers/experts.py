@@ -21,7 +21,11 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel, Field
 
-from happyclaw.api.common.agent import apply_agent_audience, require_agent_owner_row, user_owns_agent
+from happyclaw.api.common.agent import (
+    apply_agent_audience,
+    require_agent_owner_row,
+    user_owns_agent,
+)
 from happyclaw.api.common.agent_runtime import AgentRuntimeFields, runtime_field_updates
 from happyclaw.api.common.validators import assert_user_backend_root_dirs
 from happyclaw.api.deps import current_user, get_server

@@ -6,8 +6,8 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-from langchain_core.messages import HumanMessage
 from happyclaw_gateway.models import ChannelSubject, InboundMessage, TextContent
+from langchain_core.messages import HumanMessage
 
 from happyclaw.infra.gateway.process.processor import GlobalProcessor, _overwrite_last_user_text
 from happyclaw.infra.gateway.slash.dispatcher import SlashDispatcher

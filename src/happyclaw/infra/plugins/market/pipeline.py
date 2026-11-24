@@ -51,10 +51,11 @@ import os
 import re
 import shutil
 import tempfile
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator, Literal, Mapping, Sequence
+from typing import Any, Literal
 from uuid import uuid4
 
 from happyclaw.infra.plugins.market.digest import count_files, sha256_tree
@@ -1107,4 +1108,4 @@ def _remove_orphan_slots(plugin_root: Path, before: set[str]) -> None:
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")

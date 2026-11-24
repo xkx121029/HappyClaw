@@ -12,9 +12,9 @@ import pytest
 from happyclaw.infra.plugins.market import (
     ChecksumMismatchError,
     DshSource,
+    HappyclawSource,
     InstallConflictError,
     MarketplaceIndex,
-    HappyclawSource,
     plugin_dir_name,
     verify_install,
 )

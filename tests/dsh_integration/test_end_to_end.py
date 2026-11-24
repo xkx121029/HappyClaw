@@ -24,7 +24,6 @@ from happyclaw.infra.plugins.bridge import (
     RiskAssessment,
     RiskLevel,
     ToolCall,
-    ToolDefinition,
 )
 from happyclaw.infra.plugins.bridge.approval import ApprovalDecision, ToolGuardrail
 from happyclaw.infra.plugins.runtime.dsh_plugin import DshPluginLoader
@@ -35,7 +34,6 @@ from happyclaw.infra.plugins.sandbox import (
     SandboxErrorCode,
     ToolInspection,
 )
-
 from tests.dsh_integration.fixture_specs import DSH_FIXTURE_DIR, DSH_FIXTURE_ID
 from tests.dsh_integration.fixtures.tools import fixture_tool
 

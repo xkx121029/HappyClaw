@@ -38,8 +38,8 @@ from happyclaw.infra.plugins.runtime.contract import (
     PluginErrorCode,
     PluginHandle,
     PluginKind,
-    PluginLoadError,
     PluginLoader,
+    PluginLoadError,
     PluginRuntimeError,
 )
 

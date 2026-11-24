@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import asyncio
 import gzip
 import logging
@@ -22,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 from happyclaw.config import HappyclawConfig, load_config
 from happyclaw.infra.setup.wizard_tokens import WizardTokenStore
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.paths import PathLayout
 from happyclaw.infra.utils.process_resources import ensure_nofile_limit
 
@@ -433,7 +432,9 @@ class HappyclawServer:
     @property
     def ldap_bind_throttle(self) -> LdapBindThrottle:
         """Process-level brute-force backoff for directory binds."""
-        from happyclaw.infra.auth.ldap.throttle import LdapBindThrottle as ThrottleCls  # noqa: PLC0415
+        from happyclaw.infra.auth.ldap.throttle import (
+            LdapBindThrottle as ThrottleCls,  # noqa: PLC0415
+        )
 
         if self.services is None:
             raise RuntimeError("LDAP throttle requires a started server")
@@ -469,9 +470,9 @@ class HappyclawServer:
         """
         if self._started:
             return
-        from happyclaw.infra.utils import startup_timing as _timing  # noqa: PLC0415
-
         import time  # noqa: PLC0415
+
+        from happyclaw.infra.utils import startup_timing as _timing  # noqa: PLC0415
 
         _timing.mark("start.enter")
         self._serve_background = serve_background
@@ -508,7 +509,9 @@ class HappyclawServer:
         _timing.emit_process()
         ensure_nofile_limit()
         from happyclaw.infra.backend.grep_safety import install_safe_grep_fallback  # noqa: PLC0415
-        from happyclaw.infra.backend.shell_output import install_shell_output_decoding  # noqa: PLC0415
+        from happyclaw.infra.backend.shell_output import (
+            install_shell_output_decoding,  # noqa: PLC0415
+        )
         from happyclaw.infra.utils.google_discovery import (  # noqa: PLC0415
             install_google_discovery_fallback,
         )
@@ -606,7 +609,6 @@ class HappyclawServer:
         import happyclaw.infra.proactive.scheduler  # noqa: F401, PLC0415
         import happyclaw.infra.proactive.service  # noqa: F401, PLC0415
         import happyclaw.infra.users.manager  # noqa: F401, PLC0415
-
         from happyclaw.infra.connectors.gateway.cli_install import ensure_cli_path  # noqa: PLC0415
 
         ensure_cli_path()
@@ -768,7 +770,6 @@ class HappyclawServer:
         assert self.services is not None
         assert self.plugin_manager is not None
 
-        from happyclaw.infra.utils import startup_timing as _timing  # noqa: PLC0415
         # Imported here, not at module scope: this is the agent stack (harness →
         # deepagents → langchain) and it must stay off the pre-listen path.
         from happyclaw.infra.agents.manager import AgentManager  # noqa: PLC0415
@@ -780,6 +781,7 @@ class HappyclawServer:
         from happyclaw.infra.proactive.scheduler import ProactiveCareScheduler  # noqa: PLC0415
         from happyclaw.infra.proactive.service import ProactiveCareService  # noqa: PLC0415
         from happyclaw.infra.users.manager import UserManager  # noqa: PLC0415
+        from happyclaw.infra.utils import startup_timing as _timing  # noqa: PLC0415
 
         with _timing.segment("services.providers"):
             added = await asyncio.get_running_loop().run_in_executor(
@@ -1041,7 +1043,9 @@ class HappyclawServer:
         try:
             from happyclaw_harness.plugins.registry import PluginRegistry  # noqa: PLC0415
 
-            from happyclaw.infra.gateway.plugin_channels import apply_plugin_channels  # noqa: PLC0415
+            from happyclaw.infra.gateway.plugin_channels import (
+                apply_plugin_channels,  # noqa: PLC0415
+            )
 
             apply_plugin_channels(registry=PluginRegistry())
         except Exception:

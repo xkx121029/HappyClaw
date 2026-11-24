@@ -6,13 +6,13 @@ import logging
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Any, Literal, cast
 
+from happyclaw_harness.context_usage import breakdown_from_model_request
+from happyclaw_harness.middleware.runtime import runtime_config
+from happyclaw_harness.middleware.turn_model import latest_human_needs_multimodal
 from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResponse
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain_core.messages import AIMessage
 from langgraph.errors import GraphBubbleUp
-from happyclaw_harness.context_usage import breakdown_from_model_request
-from happyclaw_harness.middleware.runtime import runtime_config
-from happyclaw_harness.middleware.turn_model import latest_human_needs_multimodal
 
 from happyclaw.i18n.domains.stream import model_retry_failure_prompt
 from happyclaw.infra.agents.providers.health import (

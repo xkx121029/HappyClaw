@@ -14,15 +14,14 @@ from typing import Any
 
 import pytest
 from langgraph.errors import GraphBubbleUp
+from tests.dsh_integration.fixtures.tools import fixture_tool
+from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 from happyclaw.infra.dsh.tools import build_dsh_plugin_tools
 from happyclaw.infra.dsh.tools.guardrail import build_read_only_guardrail
 from happyclaw.infra.plugins.bridge import ToolCall
 from happyclaw.infra.plugins.bridge.hitl import HitlApprovalChannel
 from happyclaw.infra.plugins.bridge.registry import DshToolRegistry
-
-from tests.dsh_integration.fixtures.tools import fixture_tool
-from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 NAME = "dsh__demo__dsh_fixture_report"
 

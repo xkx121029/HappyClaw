@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 from happyclaw.infra.dsh.tools import build_dsh_plugin_tools
 from happyclaw.infra.plugins.bridge import (
@@ -27,7 +28,6 @@ from happyclaw.infra.plugins.bridge import (
     text_content,
 )
 from happyclaw.infra.plugins.sandbox import SandboxErrorCode, ToolInspection
-from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 TOOL = "dsh_fixture_report"
 

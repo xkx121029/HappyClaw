@@ -41,7 +41,7 @@ class Report:
         self.results.append(result)
 
     def counts(self) -> dict[Status, int]:
-        counts = {status: 0 for status in Status}
+        counts = dict.fromkeys(Status, 0)
         for result in self.results:
             counts[result.status] += 1
         return counts

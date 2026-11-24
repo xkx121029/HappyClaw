@@ -6,9 +6,12 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from tests.dsh_integration.fixtures.tools import fixture_tool
+from tests.unit.infra.dsh.plugin_fixtures import write_package
+
 from happyclaw.infra.dsh.tools import (
-    SKIP_NO_PROVIDER,
     SKIP_NAME_CONFLICT,
+    SKIP_NO_PROVIDER,
     SKIP_PROVIDER_FAILED,
     SKIP_UNSAFE_PERMISSION,
     build_dsh_plugin_tools,
@@ -21,9 +24,6 @@ from happyclaw.infra.plugins.bridge import (
     ToolExecutionContext,
 )
 from happyclaw.infra.plugins.bridge.registry import DshToolRegistry
-
-from tests.dsh_integration.fixtures.tools import fixture_tool
-from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 EXPOSED = "dsh__demo__dsh_fixture_report"
 

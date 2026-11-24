@@ -8,8 +8,6 @@ hand-rolling ``pip`` / ``uv pip`` commands.
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import asyncio
 import importlib
 import importlib.util
@@ -23,6 +21,8 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
+
+from happyclaw.infra.utils.env_alias import env_get
 
 logger = logging.getLogger(__name__)
 

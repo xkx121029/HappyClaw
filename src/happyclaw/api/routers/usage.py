@@ -17,7 +17,7 @@ Query params:
 from __future__ import annotations
 
 from io import BytesIO
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse

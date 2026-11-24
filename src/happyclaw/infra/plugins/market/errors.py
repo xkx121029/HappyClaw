@@ -21,9 +21,9 @@ transient outage from a tampered package:
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Mapping, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from happyclaw.infra.plugins.runtime.contract import (
     InvalidManifestError,
@@ -113,7 +113,7 @@ class IndexUnusableError(MarketError):
         source: str,
         *,
         reason: str = "",
-        rejected: Sequence["RejectedEntry"] = (),
+        rejected: Sequence[RejectedEntry] = (),
     ) -> None:
         if rejected:
             header = f"索引 {source} 的 {len(rejected)} 个条目全部被拒绝，市场无法使用"

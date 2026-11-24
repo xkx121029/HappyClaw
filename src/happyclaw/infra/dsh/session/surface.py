@@ -13,8 +13,9 @@ events stay in the log for audit.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 
 from happyclaw.infra.dsh.session.budget import UnitWeights
 from happyclaw.infra.dsh.session.events import EventType, LogRecord

@@ -15,8 +15,6 @@ from __future__ import annotations
 
 from happyclaw.infra.utils.env_alias import CURRENT_PREFIX, LEGACY_PREFIX, env_get
 
-import os
-
 _DESKTOP_SHELL_ENV = "HAPPYCLAW_DESKTOP_SHELL"
 
 # Shell-owned keys that the ``~/.octop/env`` file and ``/api/envs`` must never

@@ -337,7 +337,10 @@ def test_desktop_status_linux_deps_missing() -> None:
 
 
 def test_bundled_install_script_exists() -> None:
-    from happyclaw.infra.control.desktop.setup import bundled_scripts_dir, resolve_install_script_path
+    from happyclaw.infra.control.desktop.setup import (
+        bundled_scripts_dir,
+        resolve_install_script_path,
+    )
 
     install = bundled_scripts_dir() / "install.sh"
     assert install.is_file()

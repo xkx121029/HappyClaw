@@ -11,7 +11,8 @@ installed_at) live in ``metadata`` and in the sibling ``.market.json``.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from happyclaw.infra.plugins.market.models import MarketEntry, PluginRelease
 from happyclaw.infra.plugins.market.source import InstalledPayload

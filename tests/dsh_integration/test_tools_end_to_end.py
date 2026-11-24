@@ -16,7 +16,6 @@ from langchain_core.language_models.fake_chat_models import FakeMessagesListChat
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from happyclaw.infra.dsh.tools import build_dsh_plugin_tools
-
 from tests.dsh_integration.fixtures.tools import fixture_tool
 from tests.unit.infra.dsh.plugin_fixtures import write_package
 

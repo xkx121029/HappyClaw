@@ -25,7 +25,7 @@ import inspect
 import json
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import IntEnum, StrEnum
 from typing import Any, Literal, Protocol
 from uuid import uuid4
@@ -407,7 +407,7 @@ class ToolGuardrail:
     async def _check_capability(
         self,
         context: GuardrailContext,
-    ) -> "_CapabilityOutcome":
+    ) -> _CapabilityOutcome:
         if self.capability is None:
             return _CapabilityOutcome(
                 (
@@ -688,7 +688,7 @@ class ToolGuardrail:
     ) -> None:
         record = ApprovalRecord(
             record_id=uuid4().hex,
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             actor=context.actor,
             call_id=context.call_id,
             tool_name=context.tool_name,

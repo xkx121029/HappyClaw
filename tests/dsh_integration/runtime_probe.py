@@ -243,7 +243,7 @@ def _is_loader(value: Any) -> bool:
 
 
 def _call_discover(facade: Any, roots: list[Any]) -> tuple[list[Any], bool]:
-    method = getattr(facade, "discover")
+    method = facade.discover
     try:
         parameters = inspect.signature(method).parameters
     except (TypeError, ValueError):

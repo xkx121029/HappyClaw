@@ -217,8 +217,8 @@ class DshToolRegistry:
         for exposed_name, definition in self.visible(scope).items():
             invoker = _make_invoker(exposed_name, definition, active)
             signature, annotations = synthetic_signature(definition.parameters)
-            setattr(invoker, "__signature__", signature)
-            setattr(invoker, "__annotations__", annotations)
+            invoker.__signature__ = signature
+            invoker.__annotations__ = annotations
             registrations.append(
                 ToolRegistration(
                     plugin_id=self.plugin_id,

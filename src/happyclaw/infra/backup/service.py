@@ -19,13 +19,10 @@ from typing import TYPE_CHECKING, Any
 
 from happyclaw.config import BackupConfig, DatabaseConfig
 from happyclaw.infra.backup.auto import (
-    AUTO_BACKUP_JOB_ID,
     backup_config_from_payload,
     backup_status_payload,
     hold_backup_lock,
     raise_if_backup_busy,
-    run_auto_backup,
-    update_server_backup_config,
 )
 from happyclaw.infra.backup.store import (
     BackupFileInfo,
@@ -76,7 +73,7 @@ class AutoBackupSettings:
     include_chats: bool = True
 
     @classmethod
-    def from_payload(cls, data: dict[str, Any]) -> "AutoBackupSettings":
+    def from_payload(cls, data: dict[str, Any]) -> AutoBackupSettings:
         return cls(**{k: data[k] for k in cls.__dataclass_fields__ if k in data})
 
     def to_config(self) -> BackupConfig:

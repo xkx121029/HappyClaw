@@ -6,10 +6,8 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
-import pytest
-
 from happyclaw.infra.db.pool import SqlitePool
-from happyclaw.infra.selfcheck import SelfCheckReport, StartupSelfCheck
+from happyclaw.infra.selfcheck import StartupSelfCheck
 from happyclaw.infra.utils.paths import PathLayout
 
 

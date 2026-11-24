@@ -25,14 +25,14 @@ import logging
 from collections import Counter
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, fields
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from happyclaw.infra.plugins.sandbox.audit import (
     SandboxAuditRecord,
-    SandboxCheckRecord,
     SandboxCheckLedger,
+    SandboxCheckRecord,
     new_check_record,
 )
 from happyclaw.infra.plugins.sandbox.errors import describe_exception
@@ -220,7 +220,7 @@ class CheckAggregator:
         checked: tuple[str, ...],
     ) -> None:
         key = (tool_name, stage, coverage, tuple(checked))
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         bucket = self._buckets.get(key)
         if bucket is None:
             bucket = _CheckBucket(now)
@@ -680,8 +680,8 @@ def _parse_bound(value: datetime | str | None) -> datetime | None:
         except ValueError:
             raise ValueError(f"无法解析时间边界：{value!r}") from None
     if moment.tzinfo is None:
-        moment = moment.replace(tzinfo=timezone.utc)
-    return moment.astimezone(timezone.utc)
+        moment = moment.replace(tzinfo=UTC)
+    return moment.astimezone(UTC)
 
 
 def _bound_text(value: datetime | None) -> str | None:
@@ -700,7 +700,7 @@ def _in_window(
         # when no window was requested, so totals never silently drop records.
         return since is None and until is None
     if moment.tzinfo is None:
-        moment = moment.replace(tzinfo=timezone.utc)
+        moment = moment.replace(tzinfo=UTC)
     if since is not None and moment < since:
         return False
     if until is not None and moment > until:

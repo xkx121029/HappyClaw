@@ -61,8 +61,8 @@ class StartupSelfCheck:
     def __init__(
         self,
         *,
-        paths: "PathLayout",
-        db_pool: "DatabasePool",
+        paths: PathLayout,
+        db_pool: DatabasePool,
         providers_provider: Any,
     ) -> None:
         self._paths = paths
