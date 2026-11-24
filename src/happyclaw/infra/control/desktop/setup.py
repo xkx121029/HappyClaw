@@ -148,7 +148,8 @@ async def _iter_subprocess_lines(stream: asyncio.StreamReader) -> AsyncIterator[
 
 
 def octop_home() -> Path:
-    return Path(env_get("HOME", Path.home() / ".octop"))
+    default = str(Path.home() / ".octop")
+    return Path(env_get("HOME", default))
 
 
 def desktop_state_dir() -> Path:

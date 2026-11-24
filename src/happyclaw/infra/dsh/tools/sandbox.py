@@ -27,7 +27,7 @@ import os
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from happyclaw.infra.plugins.bridge.approval import CapabilityProbe
 from happyclaw.infra.plugins.bridge.errors import DshToolErrorCode
@@ -78,7 +78,7 @@ class SandboxProbe:
     def __call__(
         self, tool_name: str, arguments: Mapping[str, Any] | None = None
     ) -> SandboxProbeResult:
-        return self.probe(tool_name, arguments or {})
+        return cast(SandboxProbeResult, self.probe(tool_name, arguments or {}))
 
 
 def resolve_absence_mode_strict(raw: object | None) -> SandboxAbsenceMode:
@@ -198,7 +198,7 @@ def _with_bridge_code(probe: CapabilityProbe) -> CapabilityProbe:
     ) -> SandboxProbeResult:
         result = probe(tool_name, arguments or {})
         if not isinstance(result, SandboxProbeResult) or result.available:
-            return result
+            return cast(SandboxProbeResult, result)
         code = (
             DshToolErrorCode.TOOL_SANDBOX_NOT_ASSEMBLED
             if result.error_code is SandboxErrorCode.NOT_ASSEMBLED

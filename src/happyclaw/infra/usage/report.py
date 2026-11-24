@@ -85,15 +85,12 @@ class UsageReportService:
     ) -> dict[str, Any]:
         """Query the usage ledger and label agent/user buckets for display."""
         try:
-            payload = cast(
-                "dict[str, Any]",
-                self._usage_repo.summary(
-                    user_id=user_id,
-                    agent_id=agent_id,
-                    window=window,
-                    granularity=granularity,
-                    timezone=self._timezone,
-                ),
+            payload = self._usage_repo.summary(
+                user_id=user_id,
+                agent_id=agent_id,
+                window=window,
+                granularity=granularity,
+                timezone=self._timezone,
             )
         except ValueError as exc:
             raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
@@ -146,12 +143,13 @@ class UsageReportService:
         window: str,
         granularity: str,
     ) -> list[Any]:
-        return self.summary(
+        summary = self.summary(
             user_id=user_id,
             agent_id=agent_id,
             window=window,
             granularity=granularity,
-        )["buckets"]
+        )
+        return cast("list[Any]", summary["buckets"])
 
     def _agent_name_map(self) -> dict[str, str]:
         rows = self._agent_repo.list_all(include_disabled=True)

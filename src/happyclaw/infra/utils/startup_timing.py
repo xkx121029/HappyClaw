@@ -48,7 +48,7 @@ def process_age_ms() -> float | None:
     try:
         import psutil  # noqa: PLC0415 - optional, only for diagnostics
 
-        created = psutil.Process().create_time()
+        created = float(psutil.Process().create_time())
     except Exception:  # pragma: no cover - psutil absent or denied
         return None
     return (time.time() - created) * 1000.0

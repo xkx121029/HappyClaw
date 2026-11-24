@@ -14,10 +14,16 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncIterator, Mapping, Sequence
 from importlib.metadata import PackageNotFoundError, version
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ToolCallChunk,
+    UsageMetadata,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from happyclaw.infra.dsh.llm.adapter import adapter_for
@@ -145,7 +151,9 @@ def _message_blocks(message: BaseMessage) -> tuple[Role, list[Any]]:
 
 
 def _tool_schema(raw: Mapping[str, Any]) -> ToolSchema | None:
-    function = raw.get("function") if isinstance(raw.get("function"), Mapping) else raw
+    function = raw.get("function")
+    if not isinstance(function, Mapping):
+        function = raw
     name = str(function.get("name") or "")
     if not name:
         return None
@@ -218,7 +226,7 @@ def _turn_to_message(turn: AssistantTurn) -> AIMessage:
         additional_kwargs=additional_kwargs,
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
-        usage_metadata=_usage_metadata(turn.usage) if turn.usage is not None else None,
+        usage_metadata=cast("UsageMetadata", _usage_metadata(turn.usage)) if turn.usage is not None else None,
     )
 
 
@@ -239,19 +247,21 @@ def _event_to_chunk(event: Any, *, provider: str) -> ChatGenerationChunk | None:
             )
         )
     if isinstance(event, ToolCallDelta):
-        entry = {
-            "name": event.name,
-            "args": event.arguments_delta,
-            "id": event.wire_id,
-            "index": event.slot if event.slot is not None else event.index,
-            "type": "tool_call_chunk",
-        }
+        entry = ToolCallChunk(
+            name=event.name,
+            args=event.arguments_delta,
+            id=event.wire_id,
+            index=event.slot if event.slot is not None else event.index,
+            type="tool_call_chunk",
+        )
         return ChatGenerationChunk(
             message=AIMessageChunk(content="", tool_call_chunks=[entry], response_metadata=dict(meta))
         )
     if isinstance(event, UsageChunk):
         return ChatGenerationChunk(
-            message=AIMessageChunk(content="", usage_metadata=_usage_metadata(event.usage))
+            message=AIMessageChunk(
+                content="", usage_metadata=cast("UsageMetadata", _usage_metadata(event.usage))
+            )
         )
     if isinstance(event, FinishChunk):
         if event.failure is not None:

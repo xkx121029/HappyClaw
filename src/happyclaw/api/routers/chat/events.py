@@ -217,7 +217,7 @@ class ThreadFrame(PayloadOut):
 
 
 # Chunks the agent stream emits; also the payload of ``event: chunk`` SSE frames.
-CHAT_CHUNK_FRAMES: tuple[type[BaseModel], ...] = (
+CHAT_CHUNK_FRAMES: tuple[type[PayloadOut], ...] = (
     TokenFrame,
     ReasoningFrame,
     ToolCallFrame,
@@ -234,7 +234,7 @@ CHAT_CHUNK_FRAMES: tuple[type[BaseModel], ...] = (
 )
 
 # Everything the chat WebSocket can push to a connected dashboard.
-CHAT_WS_FRAMES: tuple[type[BaseModel], ...] = (
+CHAT_WS_FRAMES: tuple[type[PayloadOut], ...] = (
     *CHAT_CHUNK_FRAMES,
     PongFrame,
     TurnStatusFrame,
@@ -249,9 +249,9 @@ CHAT_WS_FRAMES: tuple[type[BaseModel], ...] = (
     ThreadFrame,
 )
 
-STREAM_EVENT_MODELS: tuple[type[BaseModel], ...] = (*CHAT_WS_FRAMES,)
+STREAM_EVENT_MODELS: tuple[type[PayloadOut], ...] = (*CHAT_WS_FRAMES,)
 
-_UNIONS: dict[str, tuple[str, tuple[type[BaseModel], ...]]] = {
+_UNIONS: dict[str, tuple[str, tuple[type[PayloadOut], ...]]] = {
     "ChatStreamChunk": (
         "One harness stream chunk: the payload of an `event: chunk` SSE frame and "
         "the bulk of what the chat WebSocket pushes.",
@@ -269,7 +269,7 @@ def _frame_type(model: type[BaseModel]) -> str:
     return str(get_args(model.model_fields["type"].annotation)[0])
 
 
-def _union_schema(name: str, description: str, models: tuple[type[BaseModel], ...]) -> dict[str, Any]:
+def _union_schema(name: str, description: str, models: tuple[type[PayloadOut], ...]) -> dict[str, Any]:
     return {
         "title": name,
         "description": description,
