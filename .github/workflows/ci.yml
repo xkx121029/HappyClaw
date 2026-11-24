@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Cheap structural guards. Both scripts are stdlib-only AST / regex scans that
-  # finish in well under a second, so they get their own job ahead of every
+  # Cheap structural guards. Both scripts are stdlib-only AST / regex scans over
+  # the checkout (a couple of seconds), so they get their own job ahead of every
   # install and suite: a broken invariant fails the PR at once instead of
   # hiding behind a twenty-minute test run. They need no uv sync and no venv,
   # which is why they call the scripts directly rather than going through make
@@ -30,10 +30,10 @@ jobs:
       - name: Env compat check
         run: python3 scripts/check_env_compat.py
 
-  # Strict mypy over the whole package (812 files, 0 errors). Cold this takes
-  # 30-40 minutes and warm 6-10, so it is its own job with its own caches
-  # instead of a step inside a fast job or the local pre-commit hook. mypy does
-  # not see the platform, so one runner covers both operating systems.
+  # Strict mypy over the whole package (812 files, 0 errors). Cold that is half
+  # an hour of analysis and warm a couple of minutes, so it is its own job with
+  # its own caches instead of a step inside a fast job or the local pre-commit
+  # hook. mypy does not see the platform, so one runner covers both systems.
   mypy:
     name: "Type check (mypy --strict)"
     runs-on: ubuntu-latest
