@@ -208,7 +208,9 @@ async def delete_global_acp_runner(
     server: Any = Depends(get_server),
 ) -> None:
     if runner_name in _BUILTIN_RUNNERS:
-        raise HappyclawError(ErrorCode.FORBIDDEN, f"built-in runner {runner_name!r} cannot be deleted")
+        raise HappyclawError(
+            ErrorCode.FORBIDDEN, f"built-in runner {runner_name!r} cannot be deleted"
+        )
     registry = _registry(server)
     runners = registry.acp_settings.load_runners(user.id)
     if runner_name not in runners:

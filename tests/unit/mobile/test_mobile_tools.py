@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langgraph.config import var_child_runnable_config
 
-from happyclaw.config import CapabilitiesConfig, MobileCapabilities, HappyclawConfig
+from happyclaw.config import CapabilitiesConfig, HappyclawConfig, MobileCapabilities
 from happyclaw.infra.control.mobile.tools import build_mobile_tools
 
 _PNG_BYTES = b"\x89PNG\r\n\x1a\nfake-png-payload"
@@ -92,7 +92,9 @@ async def test_mobile_tap_success() -> None:
         with (
             _configurable(user="1", user_is_admin=False, locale="en", agent_id="agent1"),
             patch("happyclaw.infra.control.mobile.tools.mobile_status") as status,
-            patch("happyclaw.infra.control.mobile.tools.list_devices", return_value=["emulator-5554"]),
+            patch(
+                "happyclaw.infra.control.mobile.tools.list_devices", return_value=["emulator-5554"]
+            ),
             patch("happyclaw.infra.control.mobile.tools.tap", return_value=True) as tap_fn,
         ):
             status.return_value = MagicMock(setup_state="ready", ok=True)
@@ -148,7 +150,9 @@ async def _invoke_screenshot(tool: object) -> dict:
         with (
             _configurable(user="1", user_is_admin=True, locale="en", agent_id="agent1"),
             patch("happyclaw.infra.control.mobile.tools.mobile_status") as status,
-            patch("happyclaw.infra.control.mobile.tools.list_devices", return_value=["emulator-5554"]),
+            patch(
+                "happyclaw.infra.control.mobile.tools.list_devices", return_value=["emulator-5554"]
+            ),
             patch("happyclaw.infra.control.mobile.tools.screencap_png", return_value=_PNG_BYTES),
         ):
             status.return_value = MagicMock(setup_state="ready", ok=True)

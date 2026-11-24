@@ -20,8 +20,8 @@ from happyclaw.infra.dsh.llm import (
     StepRestart,
     StepTracker,
     StreamChunk,
-    TextDelta,
     TextBlock,
+    TextDelta,
     TokenUsage,
     ToolCallDelta,
     UsageChunk,
@@ -215,7 +215,9 @@ async def test_rate_limit_backoff_is_bounded_and_honors_retry_after() -> None:
 
 
 async def test_invalid_request_is_reported_without_retry() -> None:
-    adapter = FakeAdapter([[ProviderFailure(FailureCode.INVALID_REQUEST, "bad schema", status=400)]])
+    adapter = FakeAdapter(
+        [[ProviderFailure(FailureCode.INVALID_REQUEST, "bad schema", status=400)]]
+    )
     sleeper = RecordingSleeper()
     runtime = LlmRuntime(adapter, policy=_policy(), sleeper=sleeper)
 
@@ -285,9 +287,7 @@ async def test_empty_response_is_treated_as_transient() -> None:
 
 
 async def test_cancel_mid_stream_marks_partial_output_and_closes_stream() -> None:
-    adapter = FakeAdapter(
-        [[TextDelta(0, "a"), TextDelta(0, "b"), FinishChunk(FinishReason.STOP)]]
-    )
+    adapter = FakeAdapter([[TextDelta(0, "a"), TextDelta(0, "b"), FinishChunk(FinishReason.STOP)]])
     runtime = LlmRuntime(adapter, policy=_policy())
     token = CancellationToken()
     tasks_before = asyncio.all_tasks()
@@ -342,6 +342,4 @@ async def test_usage_drift_is_reported_against_estimate() -> None:
 
 
 def txt(turn: Any) -> str:
-    return "".join(
-        block.text for block in turn.content if isinstance(block, TextBlock)
-    )
+    return "".join(block.text for block in turn.content if isinstance(block, TextBlock))

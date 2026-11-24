@@ -9,7 +9,10 @@ from unittest import mock
 
 import pytest
 
-from happyclaw.infra.agents.settings.langfuse import LangfuseSettingsStore, verify_langfuse_credentials
+from happyclaw.infra.agents.settings.langfuse import (
+    LangfuseSettingsStore,
+    verify_langfuse_credentials,
+)
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.secrets import SecretRepo

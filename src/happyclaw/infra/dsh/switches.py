@@ -11,8 +11,6 @@ stage is off, regardless of the per-stage variables.
 
 from __future__ import annotations
 
-import os
-
 from happyclaw.infra.utils.env_alias import CURRENT_PREFIX, env_get
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
@@ -22,7 +20,7 @@ _LLM_REFS = "HAPPYCLAW_DSH_LLM_REFS"
 
 
 def _flag(name: str) -> bool:
-    suffix = name[len(CURRENT_PREFIX):] if name.startswith(CURRENT_PREFIX) else name
+    suffix = name[len(CURRENT_PREFIX) :] if name.startswith(CURRENT_PREFIX) else name
     return (env_get(suffix) or "").strip().lower() in _TRUTHY
 
 

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import asyncio
 import importlib.util
 import json
@@ -19,6 +17,7 @@ from pathlib import Path
 from typing import Literal
 
 from happyclaw.i18n import tr
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.posix_compat import geteuid
 from happyclaw.infra.utils.runtime_packages import (
     build_install_commands,
@@ -173,7 +172,9 @@ def bundled_scripts_dir() -> Path:
 
 
 def resolve_install_script_path() -> Path | None:
-    return _script_path_from_env("HAPPYCLAW_DESKTOP_INSTALL_SCRIPT") or _bundled_script("install.sh")
+    return _script_path_from_env("HAPPYCLAW_DESKTOP_INSTALL_SCRIPT") or _bundled_script(
+        "install.sh"
+    )
 
 
 def resolve_start_script_path() -> Path | None:

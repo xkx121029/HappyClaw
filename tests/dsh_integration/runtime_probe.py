@@ -200,11 +200,7 @@ def _facades_from_target(target: Any, *, origin: str) -> list[FacadeHit]:
     if callable(target):
         produced = target()
         if isinstance(produced, (list, tuple)):
-            return [
-                FacadeHit(item, origin)
-                for item in produced
-                if _as_facade(item) is not None
-            ]
+            return [FacadeHit(item, origin) for item in produced if _as_facade(item) is not None]
         facade = _as_facade(produced)
         if facade is not None:
             return [FacadeHit(facade, origin)]
@@ -243,7 +239,7 @@ def _is_loader(value: Any) -> bool:
 
 
 def _call_discover(facade: Any, roots: list[Any]) -> tuple[list[Any], bool]:
-    method = getattr(facade, "discover")
+    method = facade.discover
     try:
         parameters = inspect.signature(method).parameters
     except (TypeError, ValueError):

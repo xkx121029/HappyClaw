@@ -100,9 +100,7 @@ def dsh_tarball(
     package_json = dsh_package(
         name, version, config_schema=config_schema, capabilities=capabilities
     )
-    return make_tgz(
-        {"package.json": package_json, "index.js": "export const name = 'x'\n"}
-    )
+    return make_tgz({"package.json": package_json, "index.js": "export const name = 'x'\n"})
 
 
 def dsh_git_zip(

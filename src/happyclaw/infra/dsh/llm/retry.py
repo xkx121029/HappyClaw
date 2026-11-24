@@ -58,9 +58,7 @@ class RetryPolicy:
     jitter_ratio: float = 0.0
     max_compressions: int = 2
     retryable_codes: frozenset[str] = field(default_factory=lambda: DEFAULT_RETRYABLE_CODES)
-    compressible_codes: frozenset[str] = field(
-        default_factory=lambda: DEFAULT_COMPRESSIBLE_CODES
-    )
+    compressible_codes: frozenset[str] = field(default_factory=lambda: DEFAULT_COMPRESSIBLE_CODES)
 
     def __post_init__(self) -> None:
         if self.max_attempts < 1:

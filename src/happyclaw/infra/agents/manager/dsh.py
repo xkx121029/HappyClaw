@@ -12,6 +12,7 @@ from happyclaw.infra.utils.env_alias import env_get
 
 logger = logging.getLogger(__name__)
 
+
 def _dsh_local_roots() -> tuple[str, ...]:
     """Explicit local plugin directories for S2 discovery.
 
@@ -24,7 +25,6 @@ def _dsh_local_roots() -> tuple[str, ...]:
 
 class DshMixin(AgentManagerBase):
     """Optional DSH stage wiring: model adapter install and read-only tool mounting."""
-
 
     def _install_dsh_llm(self) -> None:
         """Wire the S8 model adapter into the harness factory when enabled.
@@ -55,20 +55,14 @@ class DshMixin(AgentManagerBase):
                 transport_factory=transport_factory,
             )
         except Exception:
-            logger.exception(
-                "DSH LLM adapter setup failed; continuing with the harness factory"
-            )
+            logger.exception("DSH LLM adapter setup failed; continuing with the harness factory")
             self._dsh_llm_install = None
-
 
     def dsh_llm_status(self) -> dict[str, Any]:
         """Read-only snapshot of the S8 adapter wiring (which refs, why)."""
         from happyclaw.infra.dsh.llm.factory import describe_installation  # noqa: PLC0415
 
-        return describe_installation(
-            self._harness_manager, result=self._dsh_llm_install
-        ).as_dict()
-
+        return describe_installation(self._harness_manager, result=self._dsh_llm_install).as_dict()
 
     def register_dsh_tool_provider(self, plugin_id: str, provider: Any) -> None:
         """Register the tool body provider for one ``dsh:<native>`` plugin (S2).
@@ -79,7 +73,6 @@ class DshMixin(AgentManagerBase):
         exactly what it was before S2.
         """
         self._dsh_tool_providers[str(plugin_id)] = provider
-
 
     def dsh_tools_status(self) -> dict[str, Any]:
         """Read-only view of the last S2 assembly: mounted tools + skip reasons.
@@ -101,7 +94,6 @@ class DshMixin(AgentManagerBase):
             }
         return {"enabled": True, **self._dsh_tools_status.report()}
 
-
     def _dsh_sandbox_root(self, row: Any) -> Any:
         """Workspace the DSH sandbox confines calls to, or None if unresolvable.
 
@@ -119,7 +111,6 @@ class DshMixin(AgentManagerBase):
         except Exception as exc:  # noqa: BLE001 - tool assembly must not fail here
             logger.warning("DSH sandbox workspace unavailable: %s", exc)
             return None
-
 
     def _dsh_plugin_tools(self, row: Any, *, reserved: Sequence[Any]) -> list[Any]:
         """Assemble read-only DSH tools for one agent (called only when enabled)."""

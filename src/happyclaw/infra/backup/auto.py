@@ -126,11 +126,15 @@ def backup_config_from_payload(payload: dict[str, Any]) -> BackupConfig:
     try:
         build_trigger(schedule)
     except HappyclawError as exc:
-        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid backup schedule: {schedule}") from exc
+        raise HappyclawError(
+            ErrorCode.SLASH_BAD_ARGS, f"invalid backup schedule: {schedule}"
+        ) from exc
     try:
         retention = int(payload.get("retention_count", defaults.retention_count))
     except (TypeError, ValueError) as exc:
-        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "retention_count must be an integer") from exc
+        raise HappyclawError(
+            ErrorCode.SLASH_BAD_ARGS, "retention_count must be an integer"
+        ) from exc
     if retention < 1:
         raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "retention_count must be >= 1")
     return BackupConfig(

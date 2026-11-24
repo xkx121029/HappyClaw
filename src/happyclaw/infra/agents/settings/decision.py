@@ -301,7 +301,9 @@ def _service_map(data: dict[str, object], provider: str) -> dict[str, dict[str, 
 
 def _validate_service(provider: str, endpoint: str, model: str, *, required: bool) -> None:
     if endpoint and not endpoint.startswith(("http://", "https://")):
-        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "endpoint must start with http:// or https://")
+        raise HappyclawError(
+            ErrorCode.SLASH_BAD_ARGS, "endpoint must start with http:// or https://"
+        )
     if not required:
         return
     if not endpoint.startswith(("http://", "https://")):

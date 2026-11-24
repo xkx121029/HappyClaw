@@ -9,8 +9,10 @@ import time as _time
 PROCESS_MONO_ORIGIN = _time.perf_counter()
 PROCESS_EPOCH_ORIGIN = _time.time()
 
-from happyclaw.infra.utils.env_alias import alias_legacy_env
-from happyclaw.infra.utils.httpx_proxy import install_lazy_httpx_proxy_patch
+# Deliberately below the origin capture: a top-of-file import would make the
+# measured interpreter start-up include this package's own import cost (E402).
+from happyclaw.infra.utils.env_alias import alias_legacy_env  # noqa: E402
+from happyclaw.infra.utils.httpx_proxy import install_lazy_httpx_proxy_patch  # noqa: E402
 
 __version__ = "1.0.3b6"
 

@@ -268,9 +268,7 @@ def _mount_plugin(
 
     exposed_names = [registry.exposed_name(definition.name) for definition in accepted]
     declared = tuple(
-        permission_name(kind)
-        for kind in envelope.permissions
-        if kind in BLOCKING_PERMISSIONS
+        permission_name(kind) for kind in envelope.permissions if kind in BLOCKING_PERMISSIONS
     )
 
     # Host-facing maps are keyed by native tool name; the sandbox sees the
@@ -310,7 +308,7 @@ def _mount_plugin(
         capability=probe,
         hitl=hitl,
         approval=approval,
-        risky_tools={name: declared for name in exposed_names} if declared else {},
+        risky_tools=dict.fromkeys(exposed_names, declared) if declared else {},
         known_tools=exposed_names,
         plugin_id=candidate.plugin_id,
         ledger=ledger,

@@ -157,9 +157,9 @@ def test_root_skips_malformed_frontmatter_unless_strict(tmp_path: Path) -> None:
     _write(root / "beta.md", _BETA)
     _write(root / "broken.md", "# no frontmatter\n")
 
-    assert [summary.name for summary in discover_skill_root(DshSkillRoot(root, "user-dsh", 400))] == [
-        "beta"
-    ]
+    assert [
+        summary.name for summary in discover_skill_root(DshSkillRoot(root, "user-dsh", 400))
+    ] == ["beta"]
 
     with pytest.raises(DshSkillFrontmatterError):
         discover_skill_root(DshSkillRoot(root, "user-dsh", 400), strict=True)

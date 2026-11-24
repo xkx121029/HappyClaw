@@ -667,9 +667,7 @@ class PluginSandbox:
                     f"沙箱配置错误：工具 {tool_name} 声明了路径参数，但没有声明读/写文件能力。",
                     details={"plugin": self.plugin_id, "tool_name": tool_name},
                 )
-            if plan.command_arg is not None and not declaration.declares(
-                SandboxCapability.EXEC
-            ):
+            if plan.command_arg is not None and not declaration.declares(SandboxCapability.EXEC):
                 raise SandboxConfigError(
                     f"沙箱配置错误：工具 {tool_name} 声明了命令参数，但没有声明执行命令能力。",
                     details={"plugin": self.plugin_id, "tool_name": tool_name},

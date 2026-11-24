@@ -12,7 +12,7 @@ they never authenticate anything.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from fastapi import Depends, Header, Query, Request
 

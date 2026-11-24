@@ -18,6 +18,7 @@ from happyclaw.infra.connectors.builder import (
 
 logger = logging.getLogger(__name__)
 
+
 def _sanitize_bound_mcp_tools(agent: Any) -> None:
     """Clamp MCP tool names already bound on *agent* to the 64-char LLM limit."""
     from happyclaw.infra.agents.plugins.plugin_tool_names import sanitize_plugin_tool_names
@@ -74,7 +75,6 @@ def _bind_custom_mcp_tools(
 class McpMixin(AgentManagerBase):
     """Connector reloads, MCP tool cache and per-turn MCP preparation."""
 
-
     async def reload_connectors(
         self,
         agent_id: str,
@@ -105,7 +105,6 @@ class McpMixin(AgentManagerBase):
         finally:
             self._connector_user_override.pop(agent_id, None)
 
-
     async def reload_connectors_for_user(self, user_id: int) -> None:
         self.invalidate_mcp_tool_cache(user_id)
         reloaded: set[str] = set()
@@ -118,7 +117,6 @@ class McpMixin(AgentManagerBase):
                 continue
             await self.reload_connectors(row.agent_id, connector_user_id=user_id)
 
-
     def invalidate_mcp_tool_cache(self, user_id: int | None = None) -> None:
         """Drop cached custom MCP tools (one user, or all users when ``user_id`` is None)."""
         if user_id is None:
@@ -130,7 +128,6 @@ class McpMixin(AgentManagerBase):
         for lock_key in [k for k in self._mcp_tool_cache_locks if k[0] == user_id]:
             del self._mcp_tool_cache_locks[lock_key]
 
-
     def mcp_server_labels_for_user(self, user_id: int) -> dict[str, str]:
         labels: dict[str, str] = {}
         for inst in self._connector_svc.list_instances_for_api(user_id):
@@ -138,7 +135,6 @@ class McpMixin(AgentManagerBase):
             display_name = str(inst.get("display_name") or name)
             labels[name] = display_name.strip() or name
         return labels
-
 
     def resolve_tool_display_name_for_chat(
         self,
@@ -162,7 +158,6 @@ class McpMixin(AgentManagerBase):
             plugin_labels=self._plugin_tool_labels.get(agent_id, {}),
         )
 
-
     async def _server_lock(self, user_id: int, server_name: str) -> asyncio.Lock:
         key = (user_id, server_name)
         async with self._mcp_tool_cache_guard:
@@ -171,7 +166,6 @@ class McpMixin(AgentManagerBase):
                 lock = asyncio.Lock()
                 self._mcp_tool_cache_locks[key] = lock
             return lock
-
 
     async def _get_or_load_mcp_tools(
         self,
@@ -239,7 +233,6 @@ class McpMixin(AgentManagerBase):
             )
             return wrapped
 
-
     def merge_turn_mcp_servers(
         self,
         user_id: int,
@@ -258,7 +251,6 @@ class McpMixin(AgentManagerBase):
             agent_owner_id=agent_owner_id,
         )
 
-
     def present_mcp_names_for_viewer(
         self,
         owner_user_id: int,
@@ -272,7 +264,6 @@ class McpMixin(AgentManagerBase):
             names=names,
         )
 
-
     def align_mcp_names_to_harness(
         self,
         owner_user_id: int,
@@ -285,7 +276,6 @@ class McpMixin(AgentManagerBase):
             viewer_user_id=viewer_user_id,
             names=names,
         )
-
 
     def mcp_names_for_chips(
         self,
@@ -302,7 +292,6 @@ class McpMixin(AgentManagerBase):
             harness_names=harness_names,
         )
 
-
     def default_mcp_servers(self, agent_id: str) -> list[str]:
         """Composer MCP servers selected on the expert for new sessions."""
         from happyclaw.infra.agents.teams import is_team_agent
@@ -312,14 +301,12 @@ class McpMixin(AgentManagerBase):
             return []
         return id_list_from_row(row, "mcp_servers")
 
-
     def default_knowledge_base_ids(self, agent_id: str) -> list[str]:
         """Composer knowledge bases selected on the expert for new sessions."""
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
             return []
         return id_list_from_row(row, "knowledge_base_ids")
-
 
     async def prepare_chat_mcp(
         self,
@@ -562,7 +549,6 @@ class McpMixin(AgentManagerBase):
                 for name in still_missing
             ]
         return still_missing
-
 
     async def _attach_gateway_tools(
         self,

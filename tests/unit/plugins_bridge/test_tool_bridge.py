@@ -22,7 +22,11 @@ from happyclaw.infra.plugins.bridge import (
     describe_exception,
     text_content,
 )
-from happyclaw.infra.plugins.runtime.contract import CapabilityKind, PluginErrorCode, PluginRequirement
+from happyclaw.infra.plugins.runtime.contract import (
+    CapabilityKind,
+    PluginErrorCode,
+    PluginRequirement,
+)
 
 ADD_PARAMETERS: dict[str, Any] = {
     "type": "object",
@@ -246,10 +250,7 @@ async def test_checkpoint_failure_aborts_without_side_effects() -> None:
     assert executed["value"] is False
     assert invocation.result.is_error is True
     assert invocation.result.error is not None
-    assert (
-        invocation.result.error["code"]
-        == DshToolErrorCode.TOOL_ABORTED_BEFORE_DISPATCH.value
-    )
+    assert invocation.result.error["code"] == DshToolErrorCode.TOOL_ABORTED_BEFORE_DISPATCH.value
 
 
 async def test_pre_execute_deny_and_single_approver() -> None:
@@ -280,13 +281,17 @@ async def test_pre_execute_deny_and_single_approver() -> None:
     assert approved.result.is_error is False
     assert approved.text == "sum=3"
 
-    unapproved = await _registry_with(
-        _add_definition(
-            execute,
-            pre_execute=(lambda _ctx, _args: PreToolDecision.ask("allow add?"),),
-        ),
-    ).build_pipeline().invoke(
-        ToolCall(call_id="c3", name="add", arguments={"a": 1, "b": 2}),
+    unapproved = (
+        await _registry_with(
+            _add_definition(
+                execute,
+                pre_execute=(lambda _ctx, _args: PreToolDecision.ask("allow add?"),),
+            ),
+        )
+        .build_pipeline()
+        .invoke(
+            ToolCall(call_id="c3", name="add", arguments={"a": 1, "b": 2}),
+        )
     )
     assert unapproved.result.error is not None
     assert unapproved.result.error["code"] == DshToolErrorCode.TOOL_DENIED.value
@@ -319,9 +324,7 @@ def test_scope_visibility_and_shadowing() -> None:
 
     assert set(registry.visible()) == {"dsh__tools__add"}
     assert set(registry.visible("agent-1")) == {"dsh__tools__add", "dsh__tools__extra"}
-    assert registry.visible("agent-1")["dsh__tools__add"].description == (
-        "Agent-specific variant."
-    )
+    assert registry.visible("agent-1")["dsh__tools__add"].description == ("Agent-specific variant.")
     assert registry.get("dsh__tools__add", scope="agent-1") is not None
     assert registry.get("add", scope="agent-1") is not None
 
@@ -357,8 +360,12 @@ async def test_execution_failure_is_readable_without_traceback() -> None:
     async def execute(_args: Mapping[str, Any], _ctx: Any) -> dict[str, Any]:
         raise ValueError("disk full")
 
-    invocation = await _registry_with(_add_definition(execute)).build_pipeline().invoke(
-        ToolCall(call_id="c1", name="add", arguments={"a": 1, "b": 2}),
+    invocation = (
+        await _registry_with(_add_definition(execute))
+        .build_pipeline()
+        .invoke(
+            ToolCall(call_id="c1", name="add", arguments={"a": 1, "b": 2}),
+        )
     )
 
     assert invocation.result.error is not None

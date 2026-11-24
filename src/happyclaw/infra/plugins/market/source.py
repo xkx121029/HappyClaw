@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, ClassVar, Mapping
+from typing import Any, ClassVar
 
 from happyclaw.infra.plugins.market.archive import extract_archive
 from happyclaw.infra.plugins.market.digest import count_files, sha256_bytes, sha256_tree
@@ -138,9 +140,7 @@ class Source(ABC):
     ) -> None:
         """Re-check an installed payload without touching the network."""
         manifest = read_manifest(payload.manifest_path)
-        self._validate_manifest(
-            entry, release or entry.release(), manifest, payload.content_root
-        )
+        self._validate_manifest(entry, release or entry.release(), manifest, payload.content_root)
         actual = sha256_tree(payload.content_root)
         if actual != payload.content_sha256:
             raise ChecksumMismatchError(payload.content_sha256, actual)
@@ -170,9 +170,7 @@ class Source(ABC):
                 return candidate
         return None
 
-    def _nested_content_root(
-        self, wrapper: Path, release: PluginRelease | None
-    ) -> Path | None:
+    def _nested_content_root(self, wrapper: Path, release: PluginRelease | None) -> Path | None:
         """Extra directory level declared by the release (e.g. git ``path``)."""
         del wrapper, release
         return None
@@ -211,10 +209,8 @@ def _flatten_into(source_root: Path, dest: Path) -> Path:
         if target.exists():
             raise PayloadError(f"archive has a duplicate path: {child.name}")
         os.replace(child, target)
-    try:
+    with contextlib.suppress(OSError):
         source_root.rmdir()
-    except OSError:
-        pass
     return dest
 
 

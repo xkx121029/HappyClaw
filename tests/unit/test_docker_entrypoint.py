@@ -79,7 +79,9 @@ def _posix_path(path: Path) -> str:
 def _posix_path_list(value: str) -> str:
     """Rewrite every Windows entry of a PATH into the MSYS form."""
     parts = [part for part in value.split(";") if part.strip()]
-    return ":".join(_posix_path(Path(part)) if "\\" in part or ":" in part[:2] else part for part in parts)
+    return ":".join(
+        _posix_path(Path(part)) if "\\" in part or ":" in part[:2] else part for part in parts
+    )
 
 
 def _run_entrypoint(

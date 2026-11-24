@@ -135,7 +135,9 @@ async def create_storage_backend(
     server: Any = Depends(get_server),
 ) -> dict[str, Any]:
     if server.services.storage_backend_repo.get_by_name(body.name) is not None:
-        raise HappyclawError(ErrorCode.STORAGE_BACKEND_NAME_TAKEN, f"name {body.name!r} already exists")
+        raise HappyclawError(
+            ErrorCode.STORAGE_BACKEND_NAME_TAKEN, f"name {body.name!r} already exists"
+        )
     _ensure_opensandbox_sdk((body.kind or "").lower())
     bid = server.services.storage_backend_repo.create(
         name=body.name,

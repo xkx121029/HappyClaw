@@ -422,7 +422,9 @@ async def _unique_inbound_path(workspace: BackendWorkspace, stored_name: str) ->
         alt = f"{INBOUND_DIR}/{stem}-{index}{suffix}"
         if not await workspace.aexists(alt):
             return alt
-    raise HappyclawError(ErrorCode.INTERNAL_ERROR, f"cannot allocate unique path for {stored_name!r}")
+    raise HappyclawError(
+        ErrorCode.INTERNAL_ERROR, f"cannot allocate unique path for {stored_name!r}"
+    )
 
 
 async def write_inbound(

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import json
 import logging
 import os
@@ -12,6 +10,8 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus, urlparse
+
+from happyclaw.infra.utils.env_alias import env_get, env_has
 
 logger = logging.getLogger(__name__)
 
@@ -488,9 +488,7 @@ def load_config(path: Path) -> HappyclawConfig:
         merged["login_lockout_seconds"] = _coerce_int(
             "HAPPYCLAW_LOGIN_LOCKOUT_SECONDS", v, merged.get("login_lockout_seconds", 900)
         )
-    if (v := env_get("DEFAULT_TIMEZONE")) or (
-        v := env_get("CRON_TIMEZONE")
-    ):
+    if (v := env_get("DEFAULT_TIMEZONE")) or (v := env_get("CRON_TIMEZONE")):
         merged["default_timezone"] = v
     if v := env_get("CORS_ORIGINS"):
         merged["cors_origins"] = [s.strip() for s in v.split(",") if s.strip()]
@@ -571,7 +569,9 @@ def load_config(path: Path) -> HappyclawConfig:
     if v := env_get("BACKUP_INCLUDE_CONFIG"):
         backup = replace(
             backup,
-            include_config=_coerce_bool("HAPPYCLAW_BACKUP_INCLUDE_CONFIG", v, backup.include_config),
+            include_config=_coerce_bool(
+                "HAPPYCLAW_BACKUP_INCLUDE_CONFIG", v, backup.include_config
+            ),
         )
     if v := env_get("BACKUP_INCLUDE_WORKSPACES"):
         backup = replace(
@@ -592,7 +592,9 @@ def load_config(path: Path) -> HappyclawConfig:
     if v := env_get("BACKUP_INCLUDE_PLUGINS"):
         backup = replace(
             backup,
-            include_plugins=_coerce_bool("HAPPYCLAW_BACKUP_INCLUDE_PLUGINS", v, backup.include_plugins),
+            include_plugins=_coerce_bool(
+                "HAPPYCLAW_BACKUP_INCLUDE_PLUGINS", v, backup.include_plugins
+            ),
         )
     if v := env_get("BACKUP_INCLUDE_KNOWLEDGE"):
         backup = replace(

@@ -6,7 +6,14 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from happyclaw.infra.db.pool import DatabasePool
-from happyclaw.infra.db.repos._base import UNSET, DbRow, bool_int, map_rows, now_ts, optional_updates
+from happyclaw.infra.db.repos._base import (
+    UNSET,
+    DbRow,
+    bool_int,
+    map_rows,
+    now_ts,
+    optional_updates,
+)
 from happyclaw.infra.users.groups import RESOURCE_EXPERT, group_visibility_sql
 
 

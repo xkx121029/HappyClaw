@@ -306,16 +306,8 @@ def _display(value: Any) -> Any:
 
 def _render(result: ComparisonResult) -> str:
     lines = [f"thread:   {result.thread_id}"]
-    lines.append(
-        "existing: "
-        f"{result.existing_count} 条 "
-        f"({_kind_summary(result.existing_by_kind)})"
-    )
-    lines.append(
-        "shadow:   "
-        f"{result.shadow_count} 条 "
-        f"({_kind_summary(result.shadow_by_kind)})"
-    )
+    lines.append(f"existing: {result.existing_count} 条 ({_kind_summary(result.existing_by_kind)})")
+    lines.append(f"shadow:   {result.shadow_count} 条 ({_kind_summary(result.shadow_by_kind)})")
     if result.consistent:
         lines.append("result:   CONSISTENT — 投影与现有历史逐条一致")
     else:

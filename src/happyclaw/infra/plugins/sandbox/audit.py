@@ -23,7 +23,7 @@ complete host path. Durable JSONL sinks live in
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Protocol, overload
 from uuid import uuid4
 
@@ -133,7 +133,7 @@ def new_audit_record(
     clipped_reason, reason_cut = clip_text(reason, MAX_REASON_CHARS)
     return SandboxAuditRecord(
         record_id=uuid4().hex,
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         plugin_id=plugin_id,
         tool_name=tool_name,
         operation=operation,

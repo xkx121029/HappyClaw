@@ -106,9 +106,7 @@ def _message_payload(message: Message) -> list[dict[str, Any]]:
         return payloads
 
     text = "".join(
-        block.text
-        for block in message.content
-        if isinstance(block, (TextBlock, ReasoningBlock))
+        block.text for block in message.content if isinstance(block, (TextBlock, ReasoningBlock))
     )
     payload: dict[str, Any] = {"role": message.role.value, "content": text}
     calls = [block for block in message.content if isinstance(block, ToolCallBlock)]
@@ -262,9 +260,7 @@ class OpenAICompatibleAdapter:
         finally:
             await raw.aclose()
 
-    def _translate_delta(
-        self, state: _StreamState, delta: Mapping[str, Any]
-    ) -> list[StreamChunk]:
+    def _translate_delta(self, state: _StreamState, delta: Mapping[str, Any]) -> list[StreamChunk]:
         events: list[StreamChunk] = []
 
         reasoning = _str(delta.get("reasoning_content")) or _str(delta.get("reasoning"))
@@ -317,15 +313,11 @@ class OpenAICompatibleAdapter:
         events: list[StreamChunk] = []
         blocks: list[tuple[int, TextBlock | ReasoningBlock | ToolCallBlock]] = []
         if state.reasoning is not None:
-            blocks.append(
-                (state.reasoning.index, ReasoningBlock("".join(state.reasoning.parts)))
-            )
+            blocks.append((state.reasoning.index, ReasoningBlock("".join(state.reasoning.parts))))
         if state.text is not None:
             blocks.append((state.text.index, TextBlock("".join(state.text.parts))))
         for tool in state.tools.values():
-            blocks.append(
-                (tool.index, ToolCallBlock(tool.call_id, tool.name, "".join(tool.parts)))
-            )
+            blocks.append((tool.index, ToolCallBlock(tool.call_id, tool.name, "".join(tool.parts))))
         for index, block in sorted(blocks, key=lambda item: item[0]):
             events.append(BlockEnd(index, block))
         return events

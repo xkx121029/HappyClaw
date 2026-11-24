@@ -7,11 +7,11 @@ import logging
 from typing import Any
 
 import pytest
-from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
 from happyclaw_harness.config import ModelConfig, ProviderConfig
 from happyclaw_harness.llm.factory import ChatModelFactory
 from happyclaw_harness.manager import HarnessAgentManager
+from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
 
 from happyclaw.infra.dsh.llm import factory as factory_module
 from happyclaw.infra.dsh.llm.factory import DshModelFactory, install_dsh_model_factory
@@ -67,9 +67,7 @@ STREAM_CHUNKS: list[dict[str, Any]] = [
         "choices": [
             {
                 "index": 0,
-                "delta": {
-                    "tool_calls": [{"index": 0, "function": {"arguments": '"x"}'}}]
-                },
+                "delta": {"tool_calls": [{"index": 0, "function": {"arguments": '"x"}'}}]},
                 "finish_reason": "tool_calls",
             }
         ],
@@ -310,9 +308,7 @@ async def test_minimal_live_link_streams_one_fixture_ref(
     manager = HarnessAgentManager(_providers(), file_logging=False)
     created: list[ScriptedTransport] = []
 
-    result = install_dsh_model_factory(
-        manager, transport_factory=_transport_factory(created)
-    )
+    result = install_dsh_model_factory(manager, transport_factory=_transport_factory(created))
 
     assert result.applied is True
     model = manager.shared_factory.get_chat_model("p/m")

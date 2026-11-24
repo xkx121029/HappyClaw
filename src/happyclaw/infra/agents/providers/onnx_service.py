@@ -6,8 +6,6 @@ models under ``~/.octop/embedding_models`` for the Models admin local tab.
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import asyncio
 import json
 import logging
@@ -29,6 +27,7 @@ from happyclaw.infra.agents.providers.onnx_catalog import (
     list_onnx_catalog_models,
 )
 from happyclaw.infra.agents.providers.onnx_download import download_model_raced
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.paths import PathLayout
 from happyclaw.infra.utils.runtime_packages import (
     PackageInstallSpec,

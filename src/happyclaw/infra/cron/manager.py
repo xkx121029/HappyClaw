@@ -551,7 +551,9 @@ class CronManager:
                 ErrorCode.FORBIDDEN, "Agent Mail source is not visible to the job owner"
             )
         if not self._mailbox_authorized(source):
-            raise HappyclawError(ErrorCode.CRON_TRIGGER_INVALID, "Agent Mail mailbox is not authorized")
+            raise HappyclawError(
+                ErrorCode.CRON_TRIGGER_INVALID, "Agent Mail mailbox is not authorized"
+            )
         return source
 
     async def _run_mail_event(self, cron_id: str, message_id: str) -> None:

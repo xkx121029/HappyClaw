@@ -109,9 +109,7 @@ def test_status_query_distinguishes_installed_skipped_and_failed(
     monkeypatch.delenv("OCTOP_DSH_RUNTIME", raising=False)
     monkeypatch.delenv("OCTOP_DSH_LLM", raising=False)
     off_manager = _FakeManager(_factory())
-    off_result = install_dsh_model_factory(
-        off_manager, transport_factory=_transport_factory()
-    )
+    off_result = install_dsh_model_factory(off_manager, transport_factory=_transport_factory())
     skipped = describe_installation(off_manager, result=off_result).as_dict()
     assert skipped["outcome"] == "skipped"
     assert skipped["applied"] is False
@@ -120,9 +118,7 @@ def test_status_query_distinguishes_installed_skipped_and_failed(
 
     _enable(monkeypatch)
     bad_manager = _FakeManager(object())
-    bad_result = install_dsh_model_factory(
-        bad_manager, transport_factory=_transport_factory()
-    )
+    bad_result = install_dsh_model_factory(bad_manager, transport_factory=_transport_factory())
     failed = describe_installation(bad_manager, result=bad_result).as_dict()
     assert failed["outcome"] == "failed"
     assert failed["applied"] is False
@@ -130,9 +126,7 @@ def test_status_query_distinguishes_installed_skipped_and_failed(
     assert "expected ChatModelFactory" in failed["reason"]
 
     good_manager = _FakeManager(_factory())
-    good_result = install_dsh_model_factory(
-        good_manager, transport_factory=_transport_factory()
-    )
+    good_result = install_dsh_model_factory(good_manager, transport_factory=_transport_factory())
     installed = describe_installation(good_manager, result=good_result).as_dict()
     assert installed["outcome"] == "installed"
     assert installed["applied"] is True
@@ -144,16 +138,12 @@ def test_version_warning_reaches_the_startup_log(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     _enable(monkeypatch)
-    monkeypatch.setattr(
-        "happyclaw.infra.dsh.llm.langchain_model.version", lambda _name: "9.9.9"
-    )
+    monkeypatch.setattr("happyclaw.infra.dsh.llm.langchain_model.version", lambda _name: "9.9.9")
     agent_manager = _agent_manager_for(_FakeManager(_factory()))
 
     with caplog.at_level(logging.WARNING):
         AgentManager._install_dsh_llm(agent_manager)
 
     messages = [record.message for record in caplog.records]
-    assert any(
-        "9.9.9" in message and REQUIRED_HARNESS_VERSION in message for message in messages
-    )
+    assert any("9.9.9" in message and REQUIRED_HARNESS_VERSION in message for message in messages)
     assert agent_manager._dsh_llm_install.version_warning is not None

@@ -97,7 +97,9 @@ def create_user_offline(
             normalized_email is not None
             and svc.user_repo.get_by_email(normalized_email) is not None
         ):
-            raise HappyclawError(ErrorCode.EMAIL_TAKEN, f"email {normalized_email!r} already exists")
+            raise HappyclawError(
+                ErrorCode.EMAIL_TAKEN, f"email {normalized_email!r} already exists"
+            )
         permissions = None
         role_name = None
         policies: list[tuple[str, str]] = []

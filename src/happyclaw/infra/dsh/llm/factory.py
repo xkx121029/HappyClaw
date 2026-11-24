@@ -229,9 +229,7 @@ def install_dsh_model_factory(
             "DSH LLM adapter not installed: %s is None (no providers yet)",
             _SHARED_FACTORY,
         )
-        return InstallResult(
-            False, f"{_SHARED_FACTORY} is None", warning, InstallOutcome.FAILED
-        )
+        return InstallResult(False, f"{_SHARED_FACTORY} is None", warning, InstallOutcome.FAILED)
     if isinstance(original, DshModelFactory):
         return InstallResult(True, "already installed", warning, InstallOutcome.INSTALLED)
     if transport_factory is None:
@@ -283,9 +281,7 @@ def describe_installation(
                 True, "installed (no boot record)", outcome=InstallOutcome.INSTALLED
             )
     if result is None:
-        result = InstallResult(
-            False, "installer has not run", outcome=InstallOutcome.SKIPPED
-        )
+        result = InstallResult(False, "installer has not run", outcome=InstallOutcome.SKIPPED)
     return LlmInstallStatus(
         outcome=str(result.outcome),
         applied=result.applied,

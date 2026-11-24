@@ -19,13 +19,10 @@ from typing import TYPE_CHECKING, Any
 
 from happyclaw.config import BackupConfig, DatabaseConfig
 from happyclaw.infra.backup.auto import (
-    AUTO_BACKUP_JOB_ID,
     backup_config_from_payload,
     backup_status_payload,
     hold_backup_lock,
     raise_if_backup_busy,
-    run_auto_backup,
-    update_server_backup_config,
 )
 from happyclaw.infra.backup.store import (
     BackupFileInfo,
@@ -76,7 +73,7 @@ class AutoBackupSettings:
     include_chats: bool = True
 
     @classmethod
-    def from_payload(cls, data: dict[str, Any]) -> "AutoBackupSettings":
+    def from_payload(cls, data: dict[str, Any]) -> AutoBackupSettings:
         return cls(**{k: data[k] for k in cls.__dataclass_fields__ if k in data})
 
     def to_config(self) -> BackupConfig:
@@ -146,7 +143,7 @@ class BackupService:
         # ``update_server_backup_config`` needs the server object to reschedule
         # the cron job; the router passes it in via a wrapper.  We only validate
         # and return the new payload here.
-        backup = settings.to_config()
+        settings.to_config()
         return {"ok": True, **self.get_auto_settings()}
 
     # -- create / export --------------------------------------------------
@@ -227,9 +224,7 @@ class BackupService:
         if len(raw) > _MAX_IMPORT_BYTES:
             from happyclaw.infra.errors import ErrorCode, HappyclawError
 
-            raise HappyclawError(
-                ErrorCode.SLASH_BAD_ARGS, "backup archive too large (max 512MB)"
-            )
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "backup archive too large (max 512MB)")
         if not raw:
             from happyclaw.infra.errors import ErrorCode, HappyclawError
 

@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import argparse
 import json
 import os
@@ -22,6 +20,8 @@ from typing import Any
 from urllib.parse import unquote, urlparse
 
 import yaml
+
+from happyclaw.infra.utils.env_alias import env_get
 
 MAX_FILES = 2_000
 MAX_BYTES = 64 * 1024 * 1024

@@ -448,8 +448,8 @@ def test_install_plugin_importing_legacy_harness_agent(tmp_path: Path) -> None:
     assert [tool.name for tool in loaded.tools] == ["ping"]
 
     import happyclaw_harness
-    from harness_agent.plugins import PluginContext
     from happyclaw_harness.plugins import PluginContext as RealContext
+    from harness_agent.plugins import PluginContext
 
     assert PluginContext is RealContext
     assert happyclaw_harness.__name__ == "happyclaw_harness"

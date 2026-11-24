@@ -216,9 +216,7 @@ def test_default_local_root_follows_octop_home_drive(tmp_path: Path) -> None:
     from happyclaw.infra.agents.experts.default_agent import _default_local_root
 
     fake_layout = SimpleNamespace(root=Path("E:/HAPPYclaw/.octop"))
-    with patch(
-        "happyclaw.infra.utils.paths.PathLayout.from_env", return_value=fake_layout
-    ):
+    with patch("happyclaw.infra.utils.paths.PathLayout.from_env", return_value=fake_layout):
         root = _default_local_root()
     assert root.lower().startswith("e:")
     assert root.endswith("/")

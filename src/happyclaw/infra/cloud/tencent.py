@@ -10,8 +10,6 @@ automatically while the refresh token is still valid.
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import base64
 import json
 import logging
@@ -38,6 +36,8 @@ from tencentcloud.cvm.v20170312 import cvm_client
 from tencentcloud.cvm.v20170312 import models as cvm_models
 from tencentcloud.monitor.v20180724 import models as monitor_models
 from tencentcloud.monitor.v20180724 import monitor_client
+
+from happyclaw.infra.utils.env_alias import env_get
 
 logger = logging.getLogger(__name__)
 

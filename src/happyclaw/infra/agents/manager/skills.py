@@ -38,9 +38,9 @@ from happyclaw.infra.utils.locale import Locale
 
 logger = logging.getLogger(__name__)
 
+
 class SkillsMixin(AgentManagerBase):
     """Skill packages, skill/tool toggles and skill catalog summaries."""
-
 
     async def persist_skills_disabled(self, agent_id: str, disabled: set[str]) -> None:
         """Persist ``skills_disabled`` and hot-sync the running agent (no rebuild).
@@ -53,7 +53,6 @@ class SkillsMixin(AgentManagerBase):
         self.persist_harness_config(agent_id, cfg)
         self.sync_skills_disabled(agent_id, disabled)
 
-
     async def persist_tools_disabled(self, agent_id: str, disabled: set[str]) -> None:
         """Persist builtin ``tools_disabled`` and hot-sync the effective denylist."""
         from happyclaw.infra.agents.settings.tool_catalog import normalize_tools_disabled
@@ -63,7 +62,6 @@ class SkillsMixin(AgentManagerBase):
         cfg["tools_disabled"] = cleaned
         self.persist_harness_config(agent_id, cfg)
         self.sync_effective_tools_disabled(agent_id)
-
 
     async def persist_plugin_tools_config(
         self,
@@ -76,14 +74,12 @@ class SkillsMixin(AgentManagerBase):
         self.persist_harness_config(agent_id, cfg)
         self.sync_effective_tools_disabled(agent_id)
 
-
     def _skill_package_store(self) -> SkillPackageStore:
         return SkillPackageStore(
             repo=self._repos.skill_package_repo,
             root=self._paths.skill_packages_dir,
             database=self._config.database,
         )
-
 
     def _resolve_skill_package_dirs(self, agent_id: str) -> list[str]:
         """Resolve persisted package ids to existing absolute package skill directories."""
@@ -100,7 +96,6 @@ class SkillsMixin(AgentManagerBase):
             roots.append(str(store.package_skills_dir(package_id).resolve()))
         return roots
 
-
     @staticmethod
     def _normalize_skills_dir_config(value: Any) -> list[str]:
         if isinstance(value, str | bytes):
@@ -114,7 +109,6 @@ class SkillsMixin(AgentManagerBase):
                     out.append(text)
             return out
         return []
-
 
     @staticmethod
     def _backend_supports_host_skill_packages(
@@ -149,7 +143,6 @@ class SkillsMixin(AgentManagerBase):
         except OSError:
             return False
 
-
     @staticmethod
     def _backend_blocks_acp_outbound(
         spec: Any,
@@ -181,7 +174,6 @@ class SkillsMixin(AgentManagerBase):
                 pass
         return True
 
-
     async def persist_skill_package_ids(self, agent_id: str, package_ids: list[str]) -> None:
         """Persist package ids after validation and hot-sync a running agent.
 
@@ -211,7 +203,6 @@ class SkillsMixin(AgentManagerBase):
             config_json=dumps_config(cfg),
         )
         self.sync_skill_package_dirs(agent_id)
-
 
     def sync_skill_package_dirs(self, agent_id: str) -> None:
         """Hot-update ``skills_dir`` on the running harness agent (no rebuild)."""
@@ -245,7 +236,6 @@ class SkillsMixin(AgentManagerBase):
             if callable(init_graph):
                 init_graph()
 
-
     def validate_skill_package_ids(self, package_ids: list[str]) -> list[str]:
         """Normalize package ids and ensure each package still exists."""
         normalized_ids = skill_package_ids_list({"skill_package_ids": package_ids})
@@ -257,7 +247,6 @@ class SkillsMixin(AgentManagerBase):
                 )
         return normalized_ids
 
-
     def _skill_package_shared_with(self, user_id: int, package: Any) -> bool:
         """Private packages stay with the owner. Groups cannot open them."""
         if self._user_is_admin(user_id):
@@ -265,7 +254,6 @@ class SkillsMixin(AgentManagerBase):
         if str(user_id) == str(getattr(package, "created_by", "")):
             return True
         return bool(getattr(package, "shared", False))
-
 
     def _skill_package_visible(self, user_id: int, package: Any) -> bool:
         from happyclaw.infra.users.groups import RESOURCE_SKILL_PACKAGE, GroupAccess
@@ -279,7 +267,6 @@ class SkillsMixin(AgentManagerBase):
             resource_key=str(package.id),
             is_owner=str(user_id) == str(package.created_by),
         )
-
 
     def _assert_skill_packages_visible(self, user_id: int, package_ids: list[str]) -> None:
         from happyclaw.infra.users.groups import RESOURCE_SKILL_PACKAGE, GroupAccess
@@ -299,7 +286,6 @@ class SkillsMixin(AgentManagerBase):
                 resource_key=str(package.id),
                 is_owner=str(user_id) == str(package.created_by),
             )
-
 
     def assert_backend_supports_skill_packages(
         self,
@@ -327,14 +313,12 @@ class SkillsMixin(AgentManagerBase):
             "with host root '/' or the agent workspace root",
         )
 
-
     async def refresh_agents_for_package(self, package_id: str) -> None:
         """Hot-sync running agents that mount a changed package."""
         for row in self._repos.agent_repo.list_all(include_disabled=False):
             if package_id not in skill_package_ids_list(self.get_config(row.agent_id)):
                 continue
             self.sync_skill_package_dirs(row.agent_id)
-
 
     async def strip_skill_package_id(self, package_id: str) -> None:
         """Remove a deleted package id from every agent and hot-sync running agents."""
@@ -350,7 +334,6 @@ class SkillsMixin(AgentManagerBase):
                 config_json=dumps_config(cfg),
             )
             self.sync_skill_package_dirs(row.agent_id)
-
 
     async def list_skill_summaries(
         self,
@@ -504,7 +487,6 @@ class SkillsMixin(AgentManagerBase):
             return [localize_skill_summary(row, locale) for row in rows]
         return rows
 
-
     async def list_subagent_summaries(self, agent_id: str) -> list[dict[str, Any]]:
         """Installed subagents for *agent_id* (delegates to happyclaw-harness catalog)."""
         agent = self.get_agent(agent_id)
@@ -512,11 +494,9 @@ class SkillsMixin(AgentManagerBase):
         await _fill_missing_subagent_colors(agent, rows)
         return rows
 
-
     def sync_skills_disabled(self, agent_id: str, disabled: set[str]) -> None:
         """Push ``skills_disabled`` to the running harness agent (hot update)."""
         self.get_agent(agent_id).set_skills_disabled(disabled)
-
 
     def sync_tools_disabled(self, agent_id: str, disabled: set[str]) -> None:
         """Push ``tools_disabled`` to the running harness agent (hot update).
@@ -531,7 +511,6 @@ class SkillsMixin(AgentManagerBase):
         setter = getattr(agent, "set_tools_disabled", None)
         if callable(setter):
             setter(disabled)
-
 
     def strip_team_host_runtime_tools(self, agent_id: str) -> None:
         """Drop leftover MCP / connector tools on a running team host."""
@@ -552,7 +531,6 @@ class SkillsMixin(AgentManagerBase):
             if callable(replace):
                 replace([])
         self.sync_effective_tools_disabled(agent_id)
-
 
     def sync_effective_tools_disabled(self, agent_id: str) -> None:
         """Hot-sync builtin + plugin denylist derived from current agent config."""

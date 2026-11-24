@@ -10,8 +10,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from deepagents.backends.local_shell import LocalShellBackend
-from langchain_core.messages import HumanMessage
 from happyclaw_harness.backends.workspace import BackendWorkspace
+from langchain_core.messages import HumanMessage
 from PIL import Image
 
 from happyclaw.api.common.attachments import save_attachment

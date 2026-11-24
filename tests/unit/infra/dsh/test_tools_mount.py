@@ -6,9 +6,12 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from tests.dsh_integration.fixtures.tools import fixture_tool
+from tests.unit.infra.dsh.plugin_fixtures import write_package
+
 from happyclaw.infra.dsh.tools import (
-    SKIP_NO_PROVIDER,
     SKIP_NAME_CONFLICT,
+    SKIP_NO_PROVIDER,
     SKIP_PROVIDER_FAILED,
     SKIP_UNSAFE_PERMISSION,
     build_dsh_plugin_tools,
@@ -21,9 +24,6 @@ from happyclaw.infra.plugins.bridge import (
     ToolExecutionContext,
 )
 from happyclaw.infra.plugins.bridge.registry import DshToolRegistry
-
-from tests.dsh_integration.fixtures.tools import fixture_tool
-from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 EXPOSED = "dsh__demo__dsh_fixture_report"
 
@@ -171,9 +171,7 @@ def _pipeline_with_guardrail(
         return dict(fixture_tool.EXPECTED_RESULT)
 
     registry = DshToolRegistry(plugin_id="dsh:demo")
-    registry.register(
-        replace(fixture_tool.build_definition(), execute=execute), scope="AGT1"
-    )
+    registry.register(replace(fixture_tool.build_definition(), execute=execute), scope="AGT1")
     guardrail = build_read_only_guardrail(
         capability=_passing_probe,
         hitl=hitl,
@@ -211,9 +209,7 @@ class _Approval:
 async def test_high_risk_call_runs_after_human_approval() -> None:
     executed: list[dict[str, Any]] = []
     approval = _Approval(ApprovalOutcome.ALLOWED_ONCE)
-    _registry, pipeline = _pipeline_with_guardrail(
-        executed, hitl=True, approval=approval
-    )
+    _registry, pipeline = _pipeline_with_guardrail(executed, hitl=True, approval=approval)
 
     invocation = await pipeline.invoke(
         ToolCall(call_id="c2", name=EXPOSED, arguments={"message": "x"})
@@ -227,9 +223,7 @@ async def test_high_risk_call_runs_after_human_approval() -> None:
 async def test_high_risk_call_is_denied_when_human_rejects() -> None:
     executed: list[dict[str, Any]] = []
     approval = _Approval(ApprovalOutcome.REJECTED)
-    _registry, pipeline = _pipeline_with_guardrail(
-        executed, hitl=True, approval=approval
-    )
+    _registry, pipeline = _pipeline_with_guardrail(executed, hitl=True, approval=approval)
 
     invocation = await pipeline.invoke(
         ToolCall(call_id="c3", name=EXPOSED, arguments={"message": "x"})

@@ -12,6 +12,7 @@ as unimplemented.
 
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 
 from . import fixture_specs, runtime_probe
@@ -174,7 +175,5 @@ def _release(facade: Any, *handles: Any) -> None:
     for handle in handles:
         if not _activation_id(handle):
             continue
-        try:
+        with contextlib.suppress(Exception):  # noqa: BLE001 - cleanup must not mask the verdict
             deactivate(handle)
-        except Exception:  # noqa: BLE001 - cleanup must not mask the verdict
-            pass

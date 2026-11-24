@@ -111,7 +111,9 @@ async def test_strong_login_requires_token_before_password(client: Any) -> None:
     r = await c.post("/api/auth/login", json={"username": "alice", "password": "wrong"})
     assert r.status_code == 200
     assert r.json()["access_token"] == "local-owner"
-    assert int(srv.services.user_repo.get(srv.services.owner.owner().id).login_failed_count or 0) == 0
+    assert (
+        int(srv.services.user_repo.get(srv.services.owner.owner().id).login_failed_count or 0) == 0
+    )
 
 
 async def test_strong_login_mocked_ok_token_returns_jwt(client: Any, siteverify: Any) -> None:
@@ -144,7 +146,9 @@ async def test_captcha_fail_does_not_increment_lockout(client: Any, siteverify: 
     )
     assert r.status_code == 200
     assert handler.hits == 0
-    assert int(srv.services.user_repo.get(srv.services.owner.owner().id).login_failed_count or 0) == 0
+    assert (
+        int(srv.services.user_repo.get(srv.services.owner.owner().id).login_failed_count or 0) == 0
+    )
 
 
 async def test_tencent_login_mocked_ok_returns_jwt(client: Any, siteverify: Any) -> None:

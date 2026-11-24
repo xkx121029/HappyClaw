@@ -5,7 +5,10 @@ from pathlib import Path
 import pytest
 
 from happyclaw.config import DatabaseConfig, HappyclawConfig
-from happyclaw.infra.agents.memory.backend import memory_backend_from_agent_config, open_memory_kwargs
+from happyclaw.infra.agents.memory.backend import (
+    memory_backend_from_agent_config,
+    open_memory_kwargs,
+)
 from happyclaw.infra.errors import HappyclawError
 
 

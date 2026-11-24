@@ -2468,9 +2468,7 @@ def _ensure_single_user_schema(db: DatabasePool) -> None:
                 (int(user_id), int(time.time()), source),
             )
     except Exception as exc:
-        logger.exception(
-            "single-user schema adoption failed; existing rows were left untouched"
-        )
+        logger.exception("single-user schema adoption failed; existing rows were left untouched")
         raise RuntimeError("单人模式迁移失败：已保留原有数据，请查看日志") from exc
 
 

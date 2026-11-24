@@ -166,7 +166,9 @@ def classify_http_failure(
     """
     text = body or ""
     if status == 429:
-        code = FailureCode.QUOTA_EXCEEDED if is_quota_exceeded_text(text) else FailureCode.RATE_LIMIT
+        code = (
+            FailureCode.QUOTA_EXCEEDED if is_quota_exceeded_text(text) else FailureCode.RATE_LIMIT
+        )
     elif status in (401, 403):
         code = FailureCode.AUTHENTICATION
     elif status == 402 or is_quota_exceeded_text(text):

@@ -243,7 +243,10 @@ class CronDeliveryService:
         # Local imports keep ``import happyclaw.infra.cron.manager`` free of the
         # harness/deepagents import tree during server startup.
         from happyclaw.infra.gateway.process import build_harness_request
-        from happyclaw.infra.gateway.process.message_keys import COMPOSER_CTX_KEY, build_composer_context
+        from happyclaw.infra.gateway.process.message_keys import (
+            COMPOSER_CTX_KEY,
+            build_composer_context,
+        )
 
         composer = build_composer_context(
             mcp_servers=shown_servers or None,

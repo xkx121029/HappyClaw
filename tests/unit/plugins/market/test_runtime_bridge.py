@@ -20,9 +20,7 @@ from .test_uninstall import MIRROR_URL, octop_item
 def test_runtime_discovery_sees_installed_plugin(tmp_path):
     root = tmp_path / "plugins"
     blobs = {
-        MIRROR_URL.format(plugin_id="weather", version="1.0.0"): octop_package(
-            "weather", "1.0.0"
-        ),
+        MIRROR_URL.format(plugin_id="weather", version="1.0.0"): octop_package("weather", "1.0.0"),
     }
     index = build_index(tmp_path, octop_items=[octop_item("weather")], blobs=blobs)
     result = index.install("octop:weather", root)

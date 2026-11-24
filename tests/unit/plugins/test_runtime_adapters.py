@@ -33,9 +33,7 @@ from happyclaw.infra.plugins.runtime.octop_plugin import HappyclawPluginLoader
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _OCTOP_PLUGINS = _REPO_ROOT / "plugins"
-_DSH_SDK_MINIMAL = Path(
-    "e:/HAPPYclaw/research/deepseek-harness/packages/bundle/sdk-minimal"
-)
+_DSH_SDK_MINIMAL = Path("e:/HAPPYclaw/research/deepseek-harness/packages/bundle/sdk-minimal")
 
 _requires_dsh_checkout = pytest.mark.skipif(
     not _DSH_SDK_MINIMAL.is_dir(),
@@ -117,11 +115,7 @@ def test_octop_invalid_plugin_requirement_is_not_silently_dropped(tmp_path: Path
     plugin_dir = tmp_path / "broken-dependency"
     plugin_dir.mkdir()
     (plugin_dir / "plugin.yaml").write_text(
-        "id: broken-dependency\n"
-        "version: 1.0.0\n"
-        "entry: main.py\n"
-        "requires:\n"
-        "  - octop:bad id\n",
+        "id: broken-dependency\nversion: 1.0.0\nentry: main.py\nrequires:\n  - octop:bad id\n",
         encoding="utf-8",
     )
 
@@ -181,17 +175,13 @@ def test_dsh_discover_maps_real_sdk_minimal_bundle() -> None:
     # Bundles own the packages they compose: no external bundle reference, so
     # ``requires`` stays empty and the composed packages are diagnostics only.
     assert envelope.requires == ()
-    bundled = {
-        item["name"]: item["constraint"] for item in envelope.metadata["bundled_plugins"]
-    }
+    bundled = {item["name"]: item["constraint"] for item in envelope.metadata["bundled_plugins"]}
     assert "@deepseek-ai/dsh-agent" in bundled
     assert "@deepseek-ai/dsh-tools" in bundled
     assert all(isinstance(value, str) for value in bundled.values())
 
     # ``!!js`` values survive as data instead of being evaluated or coerced.
-    assert rows["terminal-bash"]["disabled"] == {
-        "$js": "process.platform === 'win32'"
-    }
+    assert rows["terminal-bash"]["disabled"] == {"$js": "process.platform === 'win32'"}
     assert rows["llm-deepseek"]["config"]["defaultContextWindow"] == {
         "$js": "Number(process.env.DSH_CONTEXT_WINDOW ?? 1000000)"
     }
@@ -212,9 +202,7 @@ def test_dsh_requires_only_lists_external_bundles(tmp_path: Path) -> None:
     host = envelopes["dsh:dsh-host"]
 
     assert host.requires == (PluginRequirement("dsh:dsh-peer", "*"),)
-    assert host.metadata["bundled_plugins"] == [
-        {"name": "@scope/dsh-inner", "constraint": "*"}
-    ]
+    assert host.metadata["bundled_plugins"] == [{"name": "@scope/dsh-inner", "constraint": "*"}]
 
 
 def test_dsh_whole_row_patches_are_not_dependencies(tmp_path: Path) -> None:
@@ -323,9 +311,7 @@ def test_dsh_missing_entry_reports_load_failed(tmp_path: Path) -> None:
     envelope = DshPluginLoader().discover(roots=[tmp_path])[0]
 
     with pytest.raises(PluginLoadError) as raised:
-        DshPluginLoader().activate(
-            envelope, ActivationContext(services={"node_version": "24.9.0"})
-        )
+        DshPluginLoader().activate(envelope, ActivationContext(services={"node_version": "24.9.0"}))
 
     assert raised.value.code is PluginErrorCode.LOAD_FAILED
     details = raised.value.details
@@ -346,9 +332,7 @@ def test_dsh_engine_requirement_is_enforced(tmp_path: Path) -> None:
     }
 
     with pytest.raises(PluginLoadError) as raised:
-        DshPluginLoader().activate(
-            envelope, ActivationContext(services={"node_version": "20.0.0"})
-        )
+        DshPluginLoader().activate(envelope, ActivationContext(services={"node_version": "20.0.0"}))
 
     details = raised.value.details
     assert details["reason"] == "engine_unsatisfied"
@@ -439,8 +423,7 @@ def test_unknown_permission_is_a_manifest_error(tmp_path: Path) -> None:
     octop_dir = tmp_path / "octop-bad-permission"
     octop_dir.mkdir()
     (octop_dir / "plugin.yaml").write_text(
-        "id: bad-permission\nversion: 1.0.0\nkind: tool\nentry: main.py\n"
-        "permissions:\n  - fs.*\n",
+        "id: bad-permission\nversion: 1.0.0\nkind: tool\nentry: main.py\npermissions:\n  - fs.*\n",
         encoding="utf-8",
     )
 

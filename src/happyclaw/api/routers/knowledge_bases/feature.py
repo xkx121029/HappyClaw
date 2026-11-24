@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.get("/capability", summary="Get knowledge-base feature capability")
 async def capability(
     server: HappyclawServer = Depends(get_server),

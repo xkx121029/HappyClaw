@@ -7,6 +7,8 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+from tests.dsh_integration.fixtures.tools import fixture_tool
+from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 from happyclaw.config import HappyclawConfig
 from happyclaw.infra.agents.manager import AgentManager
@@ -16,9 +18,6 @@ from happyclaw.infra.db.repos.agents import AgentRow
 from happyclaw.infra.db.services import build_shared_services
 from happyclaw.infra.dsh.tools.gate import SKIP_NO_PROVIDER
 from happyclaw.infra.utils.paths import PathLayout
-
-from tests.dsh_integration.fixtures.tools import fixture_tool
-from tests.unit.infra.dsh.plugin_fixtures import write_package
 
 
 @pytest.fixture
@@ -75,9 +74,7 @@ def test_switch_off_does_not_import_or_change_tools(
 
     assert manager._dsh_tools_status is None
     assert not any(name.startswith("dsh__") for name in names)
-    assert not any(
-        module.startswith("happyclaw.infra.dsh.tools") for module in sys.modules
-    )
+    assert not any(module.startswith("happyclaw.infra.dsh.tools") for module in sys.modules)
 
 
 def test_switch_on_without_provider_adds_nothing_but_reports_reason(

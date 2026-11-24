@@ -10,8 +10,8 @@ from pathlib import Path
 import pytest
 
 from happyclaw.infra.db.repos.thread_messages import ThreadMessageInput
-from happyclaw.infra.dsh.session import verify
 from happyclaw.infra.dsh.session import shadow as shadow_mod
+from happyclaw.infra.dsh.session import verify
 from happyclaw.infra.dsh.session.log import SessionLog
 from happyclaw.infra.dsh.session.shadow import (
     append_shadow_turn,
@@ -171,16 +171,19 @@ def test_verify_reports_consistent(tmp_path: Path) -> None:
     assert result.consistent is True
     assert result.existing_count == 3
     assert result.shadow_count == 3
-    assert verify.main(
-        [
-            "--thread-id",
-            "thr_test",
-            "--db",
-            str(db_path),
-            "--shadow-dir",
-            str(root),
-        ]
-    ) == 0
+    assert (
+        verify.main(
+            [
+                "--thread-id",
+                "thr_test",
+                "--db",
+                str(db_path),
+                "--shadow-dir",
+                str(root),
+            ]
+        )
+        == 0
+    )
 
 
 def test_verify_reports_field_level_difference(tmp_path: Path) -> None:
@@ -198,16 +201,19 @@ def test_verify_reports_field_level_difference(tmp_path: Path) -> None:
     assert difference["kind"] == "field_mismatch"
     assert difference["fields"]["text"]["existing"] == "你好"
     assert difference["fields"]["text"]["shadow"] == "你好呀"
-    assert verify.main(
-        [
-            "--thread-id",
-            "thr_test",
-            "--db",
-            str(db_path),
-            "--shadow-dir",
-            str(root),
-        ]
-    ) == 1
+    assert (
+        verify.main(
+            [
+                "--thread-id",
+                "thr_test",
+                "--db",
+                str(db_path),
+                "--shadow-dir",
+                str(root),
+            ]
+        )
+        == 1
+    )
 
 
 def test_verify_reports_missing_and_extra(tmp_path: Path) -> None:

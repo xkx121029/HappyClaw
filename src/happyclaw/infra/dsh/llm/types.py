@@ -12,7 +12,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from happyclaw.infra.dsh.llm.errors import ProviderFailure
@@ -104,7 +104,7 @@ class ToolResultBlock:
     is_error: bool = False
 
 
-ContentBlock: TypeAlias = TextBlock | ReasoningBlock | ToolCallBlock | ToolResultBlock
+type ContentBlock = TextBlock | ReasoningBlock | ToolCallBlock | ToolResultBlock
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,7 +222,7 @@ class FinishChunk:
     failure: ProviderFailure | None = None
 
 
-StreamChunk: TypeAlias = (
+type StreamChunk = (
     BlockStart | TextDelta | ReasoningDelta | ToolCallDelta | BlockEnd | UsageChunk | FinishChunk
 )
 
@@ -267,4 +267,4 @@ class AssistantTurn:
         return tuple(block for block in self.content if isinstance(block, ToolCallBlock))
 
 
-RuntimeEvent: TypeAlias = StreamChunk | StepRestart | UsageDrift
+type RuntimeEvent = StreamChunk | StepRestart | UsageDrift

@@ -34,6 +34,7 @@ from happyclaw.infra.utils.locale import Locale, resolve_request_locale
 
 router = APIRouter()
 
+
 class SkillPackageMountBody(BaseModel):
     package_ids: list[str]
 

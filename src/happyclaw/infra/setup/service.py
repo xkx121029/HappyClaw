@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import logging
 import os
 import platform
@@ -19,6 +17,7 @@ from typing import Literal
 from happyclaw.config import load_config
 from happyclaw.infra.errors import corrupt_config_error
 from happyclaw.infra.utils import posix_compat as pwd
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.json_file import (
     JsonFileCorruptError,
     read_json_object,

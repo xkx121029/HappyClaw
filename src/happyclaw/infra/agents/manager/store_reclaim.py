@@ -15,9 +15,9 @@ from happyclaw.infra.errors import (
 
 logger = logging.getLogger(__name__)
 
+
 class StoreReclaimMixin(AgentManagerBase):
     """Thread checkpoint deletion and idle SQLite store rebuilds."""
-
 
     async def delete_thread_checkpoint(
         self, agent_id: str, thread_id: str, *, reclaim: bool = True
@@ -74,7 +74,6 @@ class StoreReclaimMixin(AgentManagerBase):
                 ) from live_error
             raise
 
-
     def _delete_thread_from_store(
         self, agent_id: str, thread_id: str, row: Any, reclaim: bool = True
     ) -> None:
@@ -95,7 +94,6 @@ class StoreReclaimMixin(AgentManagerBase):
             reclaim=reclaim,
         )
 
-
     def _reclaim_thread_store(self, agent_id: str, thread_id: str, row: Any) -> None:
         if row is None:
             return
@@ -112,7 +110,6 @@ class StoreReclaimMixin(AgentManagerBase):
             workspace_dir=workspace_for_agent_row(row, paths=self._paths),
         )
 
-
     def schedule_store_reclaim(self, agent_id: str) -> None:
         """Shrink this agent's database after it is idle.
 
@@ -121,7 +118,6 @@ class StoreReclaimMixin(AgentManagerBase):
         """
         self._reclaim_pending.add(agent_id)
         self._ensure_reclaim_task()
-
 
     def schedule_idle_reclaim_sweep(self) -> None:
         """Queue loaded stores whose freelist is already large enough to compact."""
@@ -135,7 +131,6 @@ class StoreReclaimMixin(AgentManagerBase):
         self._reclaim_sweep_task = loop.create_task(
             self._sweep_bloated_stores(), name="store-reclaim-sweep"
         )
-
 
     async def compact_agent_database(self, agent_id: str, *, wait_s: float = 60) -> bool:
         """Rebuild the database now. False means it was deferred until idle."""
@@ -156,7 +151,6 @@ class StoreReclaimMixin(AgentManagerBase):
                 return False
             await asyncio.sleep(0.25)
 
-
     def _try_acquire_reclaim(self, agent_id: str) -> bool:
         if (
             self.is_agent_active(agent_id)
@@ -171,12 +165,10 @@ class StoreReclaimMixin(AgentManagerBase):
             return False
         return True
 
-
     def _release_reclaim(self, agent_id: str) -> None:
         event = self._reclaim_holds.pop(agent_id, None)
         if event is not None:
             event.set()
-
 
     def _ensure_reclaim_task(self) -> None:
         if self._reclaim_wake is None:
@@ -191,7 +183,6 @@ class StoreReclaimMixin(AgentManagerBase):
             return
         self._reclaim_task = loop.create_task(self._reclaim_pending_loop(), name="store-reclaim")
 
-
     async def _sweep_bloated_stores(self) -> None:
         try:
             queued = await asyncio.to_thread(self._queue_bloated_sqlite_stores)
@@ -201,7 +192,6 @@ class StoreReclaimMixin(AgentManagerBase):
             current = asyncio.current_task()
             if self._reclaim_sweep_task is current:
                 self._reclaim_sweep_task = None
-
 
     def _queue_bloated_sqlite_stores(self) -> int:
         from happyclaw.infra.agents.memory.thread_cleanup import (  # noqa: PLC0415
@@ -229,7 +219,6 @@ class StoreReclaimMixin(AgentManagerBase):
             self._reclaim_pending.add(row.agent_id)
             queued += 1
         return queued
-
 
     async def _reclaim_pending_loop(self) -> None:
         try:
@@ -267,7 +256,6 @@ class StoreReclaimMixin(AgentManagerBase):
                 self._reclaim_task = None
             if self._reclaim_pending and (self._reclaim_task is None or self._reclaim_task.done()):
                 self._ensure_reclaim_task()
-
 
     def _compact_agent_database_sync(self, agent_id: str) -> bool:
         from happyclaw.infra.agents.memory.thread_cleanup import (  # noqa: PLC0415

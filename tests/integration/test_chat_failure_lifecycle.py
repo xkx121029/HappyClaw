@@ -8,8 +8,8 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
-from langchain_core.messages import AIMessage
 from happyclaw_gateway.utils import close_event_stream
+from langchain_core.messages import AIMessage
 
 from tests.support.app import octop_client
 from tests.support.auth import auth_header, bootstrap_admin, create_agent, seed_openai_provider

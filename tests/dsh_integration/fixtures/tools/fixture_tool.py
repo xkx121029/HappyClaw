@@ -14,7 +14,6 @@ from happyclaw.infra.plugins.bridge import (
     ToolDefinition,
     ToolExecutionContext,
     ToolOutputSpec,
-    text_content,
 )
 
 TOOL_NAME = "dsh_fixture_report"

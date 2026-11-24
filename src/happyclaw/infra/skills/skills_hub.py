@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import base64
 import io
 import json
@@ -19,6 +17,7 @@ from urllib.parse import quote, unquote, urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from happyclaw.infra.skills.skill_packages import MAX_SKILL_BYTES, MAX_SKILL_FILES
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.frontmatter import parse_frontmatter
 
 logger = logging.getLogger(__name__)
@@ -146,25 +145,29 @@ def _hub_base_url() -> str:
 
 
 def _hub_search_path() -> str:
-    return env_get("SKILLS_HUB_SEARCH_PATH",
+    return env_get(
+        "SKILLS_HUB_SEARCH_PATH",
         "/api/v1/search",
     )
 
 
 def _hub_version_path() -> str:
-    return env_get("SKILLS_HUB_VERSION_PATH",
+    return env_get(
+        "SKILLS_HUB_VERSION_PATH",
         "/api/v1/skills/{slug}/versions/{version}",
     )
 
 
 def _hub_detail_path() -> str:
-    return env_get("SKILLS_HUB_DETAIL_PATH",
+    return env_get(
+        "SKILLS_HUB_DETAIL_PATH",
         "/api/v1/skills/{slug}",
     )
 
 
 def _hub_file_path() -> str:
-    return env_get("SKILLS_HUB_FILE_PATH",
+    return env_get(
+        "SKILLS_HUB_FILE_PATH",
         "/api/v1/skills/{slug}/file",
     )
 

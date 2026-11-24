@@ -43,6 +43,7 @@ from happyclaw.infra.utils.locale import resolve_request_locale
 
 router = APIRouter()
 
+
 @router.get("", summary="List global skill packages")
 async def list_skill_packages(
     writable_only: bool = False,

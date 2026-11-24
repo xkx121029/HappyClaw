@@ -130,7 +130,9 @@ async def delete_env(
     if not _KEY_RE.match(k):
         raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid env key: {k!r}")
     if shell_owned_env_key(k):
-        raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"env key is shell-owned and read-only: {k!r}")
+        raise HappyclawError(
+            ErrorCode.SLASH_BAD_ARGS, f"env key is shell-owned and read-only: {k!r}"
+        )
     path = env_file_path(server.paths.root)
     previous = load_env_file(path)
     values = dict(previous)

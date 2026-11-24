@@ -40,9 +40,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 class HarnessConfigMixin(AgentManagerBase):
     """Harness config assembly, peer manifest metadata and stream request preparation."""
-
 
     def _agent_runtime_bundle(
         self, row: AgentRow
@@ -80,7 +80,6 @@ class HarnessConfigMixin(AgentManagerBase):
             tags.append(row.template_name)
         return cfg, metadata, tags, user_display
 
-
     def _refresh_peer_entry(self, entry: AgentEntry) -> None:
         """Re-read description / guidance cards into a running registry entry."""
         row = self._repos.agent_repo.get(entry.agent_id)
@@ -88,7 +87,6 @@ class HarnessConfigMixin(AgentManagerBase):
         if row is not None and str(row.name or "").strip():
             entry.metadata["display_name"] = row.name
         self._apply_peer_profile_metadata(entry.metadata, entry.agent_id, row_desc)
-
 
     def _apply_peer_profile_metadata(
         self,
@@ -108,7 +106,6 @@ class HarnessConfigMixin(AgentManagerBase):
             metadata["quick_prompts"] = prompts
         else:
             metadata.pop("quick_prompts", None)
-
 
     def _peer_manifest_metadata(
         self,
@@ -140,7 +137,6 @@ class HarnessConfigMixin(AgentManagerBase):
             break
         return extra
 
-
     def _connector_uid_for(
         self,
         row: AgentRow,
@@ -153,7 +149,6 @@ class HarnessConfigMixin(AgentManagerBase):
         if connector_user_id is not None:
             return connector_user_id
         return row.user_id
-
 
     def _prepare_stream_request(self, agent_id: str, request: dict[str, Any]) -> dict[str, Any]:
         from happyclaw_harness.plugins import collect_plugin_tool_configs  # noqa: PLC0415
@@ -175,7 +170,6 @@ class HarnessConfigMixin(AgentManagerBase):
             req = self._apply_dsh_skill_delta(agent_id, req)
         return req
 
-
     def _apply_dsh_skill_delta(self, agent_id: str, req: dict[str, Any]) -> dict[str, Any]:
         """Attach this turn's incremental DSH skill text, if the set changed.
 
@@ -194,7 +188,6 @@ class HarnessConfigMixin(AgentManagerBase):
         configurable["dsh_skills_delta"] = text
         req["configurable"] = configurable
         return req
-
 
     def _stream_model_label(self, agent_id: str, request: dict[str, Any], thread_id: str) -> str:
         raw = request.get("model")
@@ -215,7 +208,6 @@ class HarnessConfigMixin(AgentManagerBase):
             if row is not None and (row.default_model or "").strip():
                 return str(row.default_model).strip()
         return ""
-
 
     def _build_harness_config(self, row: AgentRow) -> HarnessAgentConfig:
         """Convert an AgentRow into a HarnessAgentConfig."""
@@ -644,7 +636,6 @@ class HarnessConfigMixin(AgentManagerBase):
             tool_guard_rules_dir=str(self._tool_guard_rules.rules_dir),
         )
 
-
     def _install_team_host_dispatch(self) -> None:
         """Team hosts always enqueue inbox work, even on harness 1.0.8 (default sync)."""
         from happyclaw.infra.agents.teams import is_team_agent
@@ -669,7 +660,6 @@ class HarnessConfigMixin(AgentManagerBase):
             or getattr(proc, "take_team_peer_prompt", None),
         )
 
-
     def _agently_write_interrupts(self, user_id: int | None) -> dict[str, Any]:
         from happyclaw.infra.connectors.gateway.adapters.agently_cli import write_interrupt_on
 
@@ -685,7 +675,6 @@ class HarnessConfigMixin(AgentManagerBase):
             ]
         )
 
-
     def _merge_agently_write_interrupts(
         self, cfg: HarnessAgentConfig, user_id: int | None
     ) -> HarnessAgentConfig:
@@ -693,7 +682,6 @@ class HarnessConfigMixin(AgentManagerBase):
         if not extra:
             return cfg
         return replace(cfg, interrupt_on={**(cfg.interrupt_on or {}), **extra})
-
 
     def _apply_team_host_config(self, cfg: HarnessAgentConfig, row: Any) -> HarnessAgentConfig:
         from happyclaw.infra.agents.teams import (

@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import errno
 import json
-import os
 import socket
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -14,6 +11,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from happyclaw.infra.market.errors import PortalMarketError
+from happyclaw.infra.utils.env_alias import env_get, env_has
 
 DEFAULT_REMOTE_BASE = "https://github.com"
 # Off by default: this ships as a single-user self-hosted install, and pointing

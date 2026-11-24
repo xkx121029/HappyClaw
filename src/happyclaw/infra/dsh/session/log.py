@@ -28,7 +28,7 @@ import json
 import os
 import re
 from collections.abc import Callable, Mapping, Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -170,9 +170,8 @@ class SessionLog:
     def _resolve_generation(self) -> int:
         manifest_generation = self._read_manifest_generation()
         existing = self._existing_generation_numbers()
-        if manifest_generation is not None:
-            if manifest_generation in existing or not existing:
-                return manifest_generation
+        if manifest_generation is not None and (manifest_generation in existing or not existing):
+            return manifest_generation
         if existing:
             return max(existing)
         return 0
@@ -254,15 +253,13 @@ class SessionLog:
                 raise LogCorruptionError(f"record line is malformed: {exc}") from exc
             expected = records[-1].seq + 1 if records else 0
             if record.seq != expected:
-                raise LogCorruptionError(
-                    f"record seq {record.seq} does not follow {expected - 1}"
-                )
+                raise LogCorruptionError(f"record seq {record.seq} does not follow {expected - 1}")
             records.append(record)
         return records, valid_size
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def _fsync_dir(path: Path) -> None:

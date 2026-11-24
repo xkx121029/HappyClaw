@@ -119,7 +119,9 @@ async def resolve_harness_session(
     from happyclaw.infra.control.browser.bundled import browser_enabled  # noqa: PLC0415
 
     if not browser_enabled():
-        raise HappyclawError(ErrorCode.BROWSER_NOT_ENABLED, "The browser is installed but not enabled.")
+        raise HappyclawError(
+            ErrorCode.BROWSER_NOT_ENABLED, "The browser is installed but not enabled."
+        )
 
     profile = hint
     harness_settings = None

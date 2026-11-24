@@ -15,13 +15,11 @@ verification; the live path is the processor hook.
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import argparse
+import contextlib
 import hashlib
 import json
 import logging
-import os
 import re
 import sqlite3
 import threading
@@ -34,6 +32,7 @@ from typing import Any
 from happyclaw.infra.db.repos.thread_messages import ThreadMessageInput
 from happyclaw.infra.dsh.session.events import EventType
 from happyclaw.infra.dsh.session.log import SessionLog
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.paths import PathLayout
 
 __all__ = [
@@ -215,9 +214,7 @@ def parse_message(
             name=str(data.get("name") or additional.get("name") or ""),
             content=content,
             is_error=bool(
-                data.get("is_error")
-                or additional.get("is_error")
-                or data.get("status") == "error"
+                data.get("is_error") or additional.get("is_error") or data.get("status") == "error"
             ),
         )
     return None
@@ -303,7 +300,7 @@ def _message_key(item: ThreadMessageInput) -> str:
     if item.message_id:
         return f"id:{item.message_id}"
     digest = hashlib.sha256(
-        f"{item.role}\x00{item.created_at}\x00{item.message_json}".encode("utf-8")
+        f"{item.role}\x00{item.created_at}\x00{item.message_json}".encode()
     ).hexdigest()[:24]
     return f"anon:{digest}"
 
@@ -348,10 +345,8 @@ def _normalize_tool_calls(raw: Any) -> list[dict[str, Any]]:
         function = function if isinstance(function, dict) else {}
         arguments = call.get("args", call.get("arguments", function.get("arguments")))
         if isinstance(arguments, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 arguments = json.loads(arguments)
-            except json.JSONDecodeError:
-                pass
         normalized.append(
             {
                 "arguments": arguments,

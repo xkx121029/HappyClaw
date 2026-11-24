@@ -10,9 +10,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from deepagents.backends.local_shell import LocalShellBackend
-from langchain_core.messages import HumanMessage
 from happyclaw_gateway.models import FileContent, ImageContent, InboundMessage, TextContent
 from happyclaw_harness.backends.workspace import BackendWorkspace
+from langchain_core.messages import HumanMessage
 from PIL import Image
 
 from happyclaw.api.routers.chat.models import ChatTurnBody
@@ -506,7 +506,9 @@ async def test_weixin_pdf_history_is_downloadable_attachment() -> None:
         yield MagicMock()
 
     with (
-        patch("happyclaw.infra.gateway.process.processor.media_backend_for_agent", return_value=None),
+        patch(
+            "happyclaw.infra.gateway.process.processor.media_backend_for_agent", return_value=None
+        ),
         patch("happyclaw.infra.gateway.process.processor.project_stream", new=fake_project_stream),
     ):
         _ = [event async for event in processor(inbound)]

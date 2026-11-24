@@ -194,7 +194,12 @@ def _tool_call_parts(block: ToolCallBlock) -> tuple[dict[str, Any] | None, dict[
     try:
         parsed = json.loads(block.arguments or "{}")
     except ValueError as exc:
-        return None, {"name": block.name, "args": block.arguments, "id": block.id, "error": str(exc)}
+        return None, {
+            "name": block.name,
+            "args": block.arguments,
+            "id": block.id,
+            "error": str(exc),
+        }
     if not isinstance(parsed, dict):
         return None, {
             "name": block.name,
@@ -226,7 +231,9 @@ def _turn_to_message(turn: AssistantTurn) -> AIMessage:
         additional_kwargs=additional_kwargs,
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
-        usage_metadata=cast("UsageMetadata", _usage_metadata(turn.usage)) if turn.usage is not None else None,
+        usage_metadata=cast("UsageMetadata", _usage_metadata(turn.usage))
+        if turn.usage is not None
+        else None,
     )
 
 
@@ -255,7 +262,9 @@ def _event_to_chunk(event: Any, *, provider: str) -> ChatGenerationChunk | None:
             type="tool_call_chunk",
         )
         return ChatGenerationChunk(
-            message=AIMessageChunk(content="", tool_call_chunks=[entry], response_metadata=dict(meta))
+            message=AIMessageChunk(
+                content="", tool_call_chunks=[entry], response_metadata=dict(meta)
+            )
         )
     if isinstance(event, UsageChunk):
         return ChatGenerationChunk(
@@ -265,9 +274,7 @@ def _event_to_chunk(event: Any, *, provider: str) -> ChatGenerationChunk | None:
         )
     if isinstance(event, FinishChunk):
         if event.failure is not None:
-            raise DshModelError(
-                f"provider failure {event.failure.code}: {event.failure.message}"
-            )
+            raise DshModelError(f"provider failure {event.failure.code}: {event.failure.message}")
         return ChatGenerationChunk(
             message=AIMessageChunk(content=""),
             generation_info={"finish_reason": _wire_finish(event.reason)},
@@ -316,7 +323,8 @@ class DshChatModel(BaseChatModel):
             system="\n\n".join(part for part in system_parts if part) or None,
             tools=tuple(tools),
             temperature=kwargs.get("temperature"),
-            max_tokens=kwargs.get("max_tokens") or getattr(self.model_spec, "max_output_tokens", None),
+            max_tokens=kwargs.get("max_tokens")
+            or getattr(self.model_spec, "max_output_tokens", None),
             stop=tuple(stop_values or ()),
         )
 
@@ -339,9 +347,7 @@ class DshChatModel(BaseChatModel):
             asyncio.get_running_loop()
         except RuntimeError:
             return asyncio.run(self._agenerate(messages, stop, run_manager, **kwargs))
-        raise DshModelError(
-            "DshChatModel is async-only; use ainvoke/astream inside a running loop"
-        )
+        raise DshModelError("DshChatModel is async-only; use ainvoke/astream inside a running loop")
 
     async def _agenerate(
         self,
