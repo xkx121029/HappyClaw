@@ -133,9 +133,7 @@ class DshSource(Source):
             raise PayloadError("package does not declare dsh.bundle")
         return manifest_text(manifest, "main") or "index.js"
 
-    def _nested_content_root(
-        self, wrapper: Path, release: PluginRelease | None
-    ) -> Path | None:
+    def _nested_content_root(self, wrapper: Path, release: PluginRelease | None) -> Path | None:
         sub_path = release.extra.get("git_path") if release is not None else None
         if isinstance(sub_path, str) and sub_path:
             candidate = wrapper / sub_path
@@ -228,12 +226,18 @@ def _releases(raw: Any, path: str, package_name: str, npm_registry: str) -> list
             raise IndexFormatError("version is not an object", path=item_path)
         version = item.get("version")
         if not isinstance(version, str) or not is_exact_semver(version):
-            raise IndexFormatError("version must be an exact semver string", path=f"{item_path}.version")
+            raise IndexFormatError(
+                "version must be an exact semver string", path=f"{item_path}.version"
+            )
         if version in seen:
             raise IndexFormatError(f"duplicate version {version!r}", path=f"{item_path}.version")
         seen.add(version)
         timestamp = item.get("publishTimestamp")
-        if isinstance(timestamp, bool) or not isinstance(timestamp, int) or not 0 <= timestamp < 10**11:
+        if (
+            isinstance(timestamp, bool)
+            or not isinstance(timestamp, int)
+            or not 0 <= timestamp < 10**11
+        ):
             raise IndexFormatError(
                 "publishTimestamp must be an integer in [0, 10^11)",
                 path=f"{item_path}.publishTimestamp",
@@ -243,9 +247,13 @@ def _releases(raw: Any, path: str, package_name: str, npm_registry: str) -> list
             raise IndexFormatError("engines must be an object", path=f"{item_path}.engines")
         dsh_range = engines.get("dsh")
         if not isinstance(dsh_range, str) or not dsh_range.strip():
-            raise IndexFormatError("engines.dsh must be a non-blank string", path=f"{item_path}.engines.dsh")
+            raise IndexFormatError(
+                "engines.dsh must be a non-blank string", path=f"{item_path}.engines.dsh"
+            )
         if _SEMVER_RANGE_CHARS_RE.fullmatch(dsh_range.strip()) is None:
-            raise IndexFormatError("engines.dsh is not a semver range", path=f"{item_path}.engines.dsh")
+            raise IndexFormatError(
+                "engines.dsh is not a semver range", path=f"{item_path}.engines.dsh"
+            )
         artifact, extra = _artifact(
             item.get("source"),
             package_name,
@@ -300,13 +308,19 @@ def _artifact(
         parsed = urlparse(url)
         segments = [part for part in parsed.path.split("/") if part]
         if len(segments) < 2 or parsed.path.endswith("/"):
-            raise IndexFormatError("git url must have at least two path segments", path=f"{path}.url")
+            raise IndexFormatError(
+                "git url must have at least two path segments", path=f"{path}.url"
+            )
         if parsed.query or parsed.fragment or parsed.username or parsed.password:
-            raise IndexFormatError("git url must not carry credentials, query or fragment", path=f"{path}.url")
+            raise IndexFormatError(
+                "git url must not carry credentials, query or fragment", path=f"{path}.url"
+            )
         if url.endswith((".tgz", ".tar.gz")):
             raise IndexFormatError("git url must not point at a tarball", path=f"{path}.url")
         if not isinstance(commit, str) or _HEX40_RE.fullmatch(commit) is None:
-            raise IndexFormatError("git commit must be a 40-char lowercase sha", path=f"{path}.commit")
+            raise IndexFormatError(
+                "git commit must be a 40-char lowercase sha", path=f"{path}.commit"
+            )
         if sub_path is not None and (
             not isinstance(sub_path, str) or not _valid_sub_path(sub_path)
         ):

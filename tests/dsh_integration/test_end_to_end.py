@@ -195,10 +195,7 @@ async def test_sandbox_denial_skips_approval_and_execution(tmp_path: Path) -> No
 
     assert invocation.result.is_error is True
     assert invocation.result.error is not None
-    assert (
-        invocation.result.error["code"]
-        == DshToolErrorCode.TOOL_CAPABILITY_UNAVAILABLE.value
-    )
+    assert invocation.result.error["code"] == DshToolErrorCode.TOOL_CAPABILITY_UNAVAILABLE.value
     # The sandbox ran, but approval and execution were never reached.
     assert probe_calls == [ESCAPING_PATH_ARGUMENT]
     assert channel.requests == []
@@ -244,10 +241,7 @@ async def test_no_sandbox_plus_strict_mode_denies_with_distinct_code(tmp_path: P
 
     assert invocation.result.is_error is True
     assert invocation.result.error is not None
-    assert (
-        invocation.result.error["code"]
-        == DshToolErrorCode.TOOL_SANDBOX_BACKING_MISSING.value
-    )
+    assert invocation.result.error["code"] == DshToolErrorCode.TOOL_SANDBOX_BACKING_MISSING.value
     assert "coverage=unknown" in invocation.text
     assert channel.requests == []
     assert executed == []

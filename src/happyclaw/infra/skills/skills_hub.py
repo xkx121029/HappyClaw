@@ -145,25 +145,29 @@ def _hub_base_url() -> str:
 
 
 def _hub_search_path() -> str:
-    return env_get("SKILLS_HUB_SEARCH_PATH",
+    return env_get(
+        "SKILLS_HUB_SEARCH_PATH",
         "/api/v1/search",
     )
 
 
 def _hub_version_path() -> str:
-    return env_get("SKILLS_HUB_VERSION_PATH",
+    return env_get(
+        "SKILLS_HUB_VERSION_PATH",
         "/api/v1/skills/{slug}/versions/{version}",
     )
 
 
 def _hub_detail_path() -> str:
-    return env_get("SKILLS_HUB_DETAIL_PATH",
+    return env_get(
+        "SKILLS_HUB_DETAIL_PATH",
         "/api/v1/skills/{slug}",
     )
 
 
 def _hub_file_path() -> str:
-    return env_get("SKILLS_HUB_FILE_PATH",
+    return env_get(
+        "SKILLS_HUB_FILE_PATH",
         "/api/v1/skills/{slug}/file",
     )
 

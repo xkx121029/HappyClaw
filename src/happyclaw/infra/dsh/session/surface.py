@@ -80,9 +80,7 @@ def surface_json(nodes: Iterable[SurfaceNode]) -> str:
     )
 
 
-def surface_units(
-    nodes: Iterable[SurfaceNode], weights: UnitWeights = DEFAULT_WEIGHTS
-) -> float:
+def surface_units(nodes: Iterable[SurfaceNode], weights: UnitWeights = DEFAULT_WEIGHTS) -> float:
     """Return the weighted size of everything still visible."""
     total = 0.0
     for node in nodes:

@@ -328,8 +328,7 @@ def _render(
     complete = [section for section in ordered if section.complete]
     if len(complete) > 1:
         raise MultipleCompleteSectionsError(
-            "同时存在多个完整提示词 section："
-            + "、".join(section.name for section in complete),
+            "同时存在多个完整提示词 section：" + "、".join(section.name for section in complete),
             details={"sections": [section.name for section in complete]},
         )
     selected = complete or ordered

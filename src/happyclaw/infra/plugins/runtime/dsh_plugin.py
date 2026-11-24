@@ -268,9 +268,7 @@ def _native_id(package_name: str) -> str:
     return cleaned or "unnamed"
 
 
-_PACKAGE_NAME_RE = re.compile(
-    r"^(?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*$"
-)
+_PACKAGE_NAME_RE = re.compile(r"^(?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
 def _dependency_constraint(dependencies: Mapping[str, Any], name: str) -> str:
@@ -410,9 +408,7 @@ def _envelope_from_package(
     if not isinstance(dependencies, Mapping):
         dependencies = {}
     plugin_id = canonical_plugin_id(PluginKind.DSH, _native_id(package_name))
-    requires, bundled_plugins = _split_bundle_rows(
-        rows, plugin_id, external_bundles, dependencies
-    )
+    requires, bundled_plugins = _split_bundle_rows(rows, plugin_id, external_bundles, dependencies)
     # DSH has no capability declaration; package-name heuristics are surfaced as
     # inferred metadata only and never enter ``capabilities`` (sandbox gate).
     capabilities = _declared_capabilities(manifest)
@@ -420,9 +416,7 @@ def _envelope_from_package(
     inferred_capabilities = _infer_capabilities(package_name)
     # Permissions are a separate vocabulary (what the sandbox may let it touch)
     # and are never derived from capabilities or the package name.
-    permissions, permissions_declared = parse_permission_list(
-        manifest.get("permissions")
-    )
+    permissions, permissions_declared = parse_permission_list(manifest.get("permissions"))
 
     return PluginEnvelope(
         id=plugin_id,

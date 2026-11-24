@@ -140,9 +140,7 @@ class Source(ABC):
     ) -> None:
         """Re-check an installed payload without touching the network."""
         manifest = read_manifest(payload.manifest_path)
-        self._validate_manifest(
-            entry, release or entry.release(), manifest, payload.content_root
-        )
+        self._validate_manifest(entry, release or entry.release(), manifest, payload.content_root)
         actual = sha256_tree(payload.content_root)
         if actual != payload.content_sha256:
             raise ChecksumMismatchError(payload.content_sha256, actual)
@@ -172,9 +170,7 @@ class Source(ABC):
                 return candidate
         return None
 
-    def _nested_content_root(
-        self, wrapper: Path, release: PluginRelease | None
-    ) -> Path | None:
+    def _nested_content_root(self, wrapper: Path, release: PluginRelease | None) -> Path | None:
         """Extra directory level declared by the release (e.g. git ``path``)."""
         del wrapper, release
         return None

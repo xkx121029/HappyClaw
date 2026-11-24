@@ -47,9 +47,9 @@ async def test_setup_again_410(client):
 async def test_change_password(client):
     """Passwords were removed with login; the placeholder token stays usable."""
     c, _, _home = client
-    tok = (
-        await c.post("/api/auth/login", json={"username": "a", "password": "OldPass12"})
-    ).json()["access_token"]
+    tok = (await c.post("/api/auth/login", json={"username": "a", "password": "OldPass12"})).json()[
+        "access_token"
+    ]
     r = await c.post(
         "/api/auth/change-password",
         headers={"Authorization": f"Bearer {tok}"},

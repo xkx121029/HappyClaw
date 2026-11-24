@@ -28,6 +28,7 @@ from happyclaw.infra.errors import ErrorCode, HappyclawError
 
 router = APIRouter()
 
+
 @router.get("/connectors/custom-mcp", summary="Get custom MCP servers")
 async def get_custom_mcp(
     user: Any = Depends(current_user),

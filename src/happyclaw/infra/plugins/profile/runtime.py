@@ -717,11 +717,7 @@ class ProfileRuntime:
         return {
             "profile": self._profile_name,
             "plugins": plugins,
-            "union": [
-                permission.value
-                for permission in PermissionKind
-                if permission in union
-            ],
+            "union": [permission.value for permission in PermissionKind if permission in union],
             "undeclared": undeclared,
         }
 
@@ -792,9 +788,7 @@ class ProfileRuntime:
         reference = plan or self._plan
         if reference is not None:
             missing.update(
-                plugin_id
-                for plugin_id in reference.order
-                if plugin_id not in self._envelopes
+                plugin_id for plugin_id in reference.order if plugin_id not in self._envelopes
             )
         self._missing = tuple(sorted(missing))
         self._degraded = True

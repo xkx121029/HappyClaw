@@ -343,9 +343,7 @@ class MarketplaceIndex:
             before_caps = _capabilities_of(plugin_root, current)
             added_caps = tuple(sorted(set(inspection.capabilities) - set(before_caps)))
             if added_caps and not allow_capability_expansion:
-                raise CapabilityExpansionError(
-                    plugin_id, previous, release.version, added_caps
-                )
+                raise CapabilityExpansionError(plugin_id, previous, release.version, added_caps)
             old_schema = _config_schema_of(plugin_root, current)
             if downgrading and old_schema != inspection.config_schema:
                 raise ConfigSchemaChangedError(
@@ -508,11 +506,7 @@ def install_entry(
             },
         )
         os.replace(staging, slot)
-        installs = [
-            item
-            for item in _records(ledger)
-            if item.get("slot") != record["slot"]
-        ]
+        installs = [item for item in _records(ledger) if item.get("slot") != record["slot"]]
         installs.append(record)
         _write_ledger(
             plugin_root,
@@ -642,9 +636,7 @@ def _plan_install(
             status = "downgrade"
         else:
             status = "reinstall"
-        slots_added = (
-            _slot_dir(plugin_root, release.version, inspection.content_sha256).name,
-        )
+        slots_added = (_slot_dir(plugin_root, release.version, inspection.content_sha256).name,)
 
     before_caps = _capabilities_of(plugin_root, current)
     added_caps = tuple(sorted(set(inspection.capabilities) - set(before_caps)))
@@ -842,9 +834,7 @@ def _write_ledger(plugin_root: Path, ledger: Mapping[str, Any]) -> None:
 def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
-    temporary.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(temporary, path)
 
 
@@ -1017,9 +1007,7 @@ def _inspect_release(
             entry=entry, release=release, payload=payload, installed_at=_utc_now()
         )
         return ReleaseInspection(
-            capabilities=tuple(
-                sorted(str(item) for item in envelope.get("capabilities") or ())
-            ),
+            capabilities=tuple(sorted(str(item) for item in envelope.get("capabilities") or ())),
             config_schema=dict(envelope.get("config_schema") or {}),
             files=payload.files,
             content_sha256=payload.content_sha256,

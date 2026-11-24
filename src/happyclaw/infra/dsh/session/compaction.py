@@ -359,7 +359,9 @@ class CompactionEngine:
         text = node.payload.get("text")
         if not isinstance(text, str) or config.weights.measure(text) <= config.l2_block_units:
             return []
-        return [self._offload_target(node, "text", "text_ref", text.encode("utf-8"), text, "text/plain")]
+        return [
+            self._offload_target(node, "text", "text_ref", text.encode("utf-8"), text, "text/plain")
+        ]
 
     def _plan_l2_content(self, node: SurfaceNode) -> list[dict[str, Any]]:
         config = self._config
@@ -379,7 +381,12 @@ class CompactionEngine:
             body = json.dumps(content, ensure_ascii=False, sort_keys=True, default=str)
             return [
                 self._offload_target(
-                    node, "content", "text_ref", body.encode("utf-8"), content_text(content), "application/json"
+                    node,
+                    "content",
+                    "text_ref",
+                    body.encode("utf-8"),
+                    content_text(content),
+                    "application/json",
                 )
             ]
         if not isinstance(content, list):
@@ -516,8 +523,12 @@ class CompactionEngine:
                 stripped = line.strip()
                 if not stripped:
                     continue
-                _append_unique(decisions, stripped, config.l3_item_units, config.weights, DECISION_KEYWORDS)
-                _append_unique(pending, stripped, config.l3_item_units, config.weights, PENDING_KEYWORDS)
+                _append_unique(
+                    decisions, stripped, config.l3_item_units, config.weights, DECISION_KEYWORDS
+                )
+                _append_unique(
+                    pending, stripped, config.l3_item_units, config.weights, PENDING_KEYWORDS
+                )
             point = trim_head(
                 text.replace("\n", " ").strip(), config.l3_point_units, weights=config.weights
             )

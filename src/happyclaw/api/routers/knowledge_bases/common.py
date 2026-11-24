@@ -36,6 +36,7 @@ from happyclaw.infra.utils.locale import resolve_request_locale
 
 logger = logging.getLogger(__name__)
 
+
 def _kb_avatars(server: HappyclawServer) -> Any:
     assert server.services is not None
     return server.services.avatars("knowledge_base")
@@ -164,7 +165,9 @@ def _map_knowledge_error(
         # Report that instead of the generic prerequisite error, which told the user
         # nothing they could act on and sent them into a retry loop.
         if "restart the server" in text:
-            return HappyclawError.localized(ErrorCode.KNOWLEDGE_PREREQUISITES_RESTART_REQUIRED, locale)
+            return HappyclawError.localized(
+                ErrorCode.KNOWLEDGE_PREREQUISITES_RESTART_REQUIRED, locale
+            )
         if any(
             kw in text
             for kw in (

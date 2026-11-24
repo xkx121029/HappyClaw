@@ -63,9 +63,7 @@ def test_uninstall_refuses_version_another_plugin_requires(tmp_path):
     root = tmp_path / "plugins"
     blobs = {
         MIRROR_URL.format(plugin_id="core", version="1.0.0"): octop_package("core", "1.0.0"),
-        MIRROR_URL.format(plugin_id="weather", version="1.0.0"): octop_package(
-            "weather", "1.0.0"
-        ),
+        MIRROR_URL.format(plugin_id="weather", version="1.0.0"): octop_package("weather", "1.0.0"),
     }
     index = build_index(
         tmp_path,
@@ -94,9 +92,7 @@ def test_uninstall_refuses_version_another_plugin_requires(tmp_path):
 def test_uninstall_rolls_back_when_ledger_write_fails(tmp_path, monkeypatch):
     root = tmp_path / "plugins"
     blobs = {
-        MIRROR_URL.format(plugin_id="weather", version="1.0.0"): octop_package(
-            "weather", "1.0.0"
-        ),
+        MIRROR_URL.format(plugin_id="weather", version="1.0.0"): octop_package("weather", "1.0.0"),
     }
     index = build_index(tmp_path, octop_items=[octop_item("weather")], blobs=blobs)
     result = index.install("octop:weather", root)
@@ -123,9 +119,7 @@ def test_uninstall_rolls_back_when_ledger_write_fails(tmp_path, monkeypatch):
 def test_uninstall_only_touches_its_own_ecosystem(tmp_path):
     root = tmp_path / "plugins"
     blobs = {
-        MIRROR_URL.format(plugin_id="weather", version="1.0.0"): octop_package(
-            "weather", "1.0.0"
-        ),
+        MIRROR_URL.format(plugin_id="weather", version="1.0.0"): octop_package("weather", "1.0.0"),
         NPM_URL.format(version="1.0.0"): dsh_tarball("weather", "1.0.0"),
     }
     index = build_index(

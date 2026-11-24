@@ -27,9 +27,9 @@ from happyclaw.infra.utils.turn_failure import turn_model_scope
 if TYPE_CHECKING:
     from happyclaw.infra.db.repos.agents import AgentRow
 
+
 class RuntimeMixin(AgentManagerBase):
     """Live agent handles: start/stop, dispatch guards, chat invocation and thread model overrides."""
-
 
     async def start(self, agent_id: str) -> None:
         """Load agent into harness runtime (no-op config merge)."""
@@ -39,14 +39,12 @@ class RuntimeMixin(AgentManagerBase):
                 raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
             await self._start_agent(row, init_workspace=False)
 
-
     def _lifecycle_lock_for(self, agent_id: str) -> asyncio.Lock:
         lock = self._agent_lifecycle_locks.get(agent_id)
         if lock is None:
             lock = asyncio.Lock()
             self._agent_lifecycle_locks[agent_id] = lock
         return lock
-
 
     def _thread_execution_lock(self, agent_id: str, thread_id: str) -> asyncio.Lock:
         key = (agent_id, thread_id)
@@ -56,11 +54,9 @@ class RuntimeMixin(AgentManagerBase):
             self._thread_execution_locks[key] = lock
         return lock
 
-
     @staticmethod
     def _is_already_registered_error(exc: BaseException) -> bool:
         return "already exists in the registry" in str(exc)
-
 
     def _happyclaw_harness_or_none(self, agent_id: str) -> HarnessAgent | None:
         if self._harness_manager is None:
@@ -69,7 +65,6 @@ class RuntimeMixin(AgentManagerBase):
             return self._harness_manager.get_agent(agent_id).agent
         except KeyError:
             return None
-
 
     async def stop(self, agent_id: str) -> None:
         """Unload agent from harness runtime and persist ``last_state=stopped``."""
@@ -86,7 +81,6 @@ class RuntimeMixin(AgentManagerBase):
                 self._dsh_skill_snapshots.pop(agent_id, None)
                 self._repos.agent_repo.set_state(agent_id, "stopped", error=None)
 
-
     def get_agent(self, agent_id: str) -> HarnessAgent:
         """Return the live HarnessAgent for agent_id (ULID).
 
@@ -101,7 +95,6 @@ class RuntimeMixin(AgentManagerBase):
             return self._harness_manager.get_agent(agent_id).agent
         except KeyError:
             raise self._unavailable_error(agent_id) from None
-
 
     def _unavailable_error(self, agent_id: str) -> HappyclawError:
         """Map a missing live harness handle to the right public error code."""
@@ -120,7 +113,6 @@ class RuntimeMixin(AgentManagerBase):
             )
         return HappyclawError(ErrorCode.AGENT_NOT_RUNNING, f"agent {agent_id!r} not running")
 
-
     def ensure_dispatchable(self, agent_id: str) -> None:
         """Fail before the harness registry raises ``KeyError``.
 
@@ -132,22 +124,18 @@ class RuntimeMixin(AgentManagerBase):
         """
         self.get_agent(agent_id)
 
-
     def _require_live_agent(self, agent_id: str) -> None:
         """Last-moment guard inside ``stream`` / ``call`` / ``resume_hitl``."""
         self.ensure_dispatchable(agent_id)
-
 
     def _has_usable_model(self, row: AgentRow) -> bool:
         if self._harness_manager is not None and self._harness_manager.shared_factory is not None:
             return True
         return bool((row.default_model or "").strip())
 
-
     def is_agent_active(self, agent_id: str) -> bool:
         """Whether the agent is currently executing a user-visible invocation."""
         return self._active_invocations.get(agent_id, 0) > 0
-
 
     def try_begin_history_backfill(self, agent_id: str) -> bool:
         """Reserve an idle agent for one history backfill without racing a new turn."""
@@ -160,13 +148,11 @@ class RuntimeMixin(AgentManagerBase):
         self._history_backfills[agent_id] = asyncio.Event()
         return True
 
-
     def end_history_backfill(self, agent_id: str) -> None:
         """Release one history-backfill reservation and wake waiting invocations."""
         event = self._history_backfills.pop(agent_id, None)
         if event is not None:
             event.set()
-
 
     async def _begin_invocation(self, agent_id: str) -> None:
         self._invocation_waiters[agent_id] = self._invocation_waiters.get(agent_id, 0) + 1
@@ -184,7 +170,6 @@ class RuntimeMixin(AgentManagerBase):
                 self._invocation_waiters.pop(agent_id, None)
         self._active_invocations[agent_id] = self._active_invocations.get(agent_id, 0) + 1
 
-
     def _end_invocation(self, agent_id: str) -> None:
         active = self._active_invocations.get(agent_id, 1) - 1
         if active > 0:
@@ -194,7 +179,6 @@ class RuntimeMixin(AgentManagerBase):
             if agent_id in self._reclaim_pending:
                 self._ensure_reclaim_task()
 
-
     @asynccontextmanager
     async def _track_invocation(self, agent_id: str) -> AsyncIterator[None]:
         await self._begin_invocation(agent_id)
@@ -202,7 +186,6 @@ class RuntimeMixin(AgentManagerBase):
             yield
         finally:
             self._end_invocation(agent_id)
-
 
     async def stream(self, agent_id: str, request: dict[str, Any]) -> AsyncIterator[Any]:
         """Stream harness chunks (Langfuse tracing handled inside happyclaw-harness)."""
@@ -225,7 +208,6 @@ class RuntimeMixin(AgentManagerBase):
                     yield chunk
             self._apply_pending_bootstrap_graph_refresh(agent_id)
 
-
     async def call(self, agent_id: str, request: dict[str, Any]) -> dict[str, Any]:
         """Non-streaming harness invocation (one-shot agent call)."""
         if self._harness_manager is None:
@@ -244,7 +226,6 @@ class RuntimeMixin(AgentManagerBase):
         if not isinstance(result, dict):
             return {"result": result}
         return result
-
 
     async def resume_hitl(
         self,
@@ -271,28 +252,23 @@ class RuntimeMixin(AgentManagerBase):
                     yield chunk
             self._apply_pending_bootstrap_graph_refresh(agent_id)
 
-
     def cancel_stream(self, agent_id: str, thread_id: str) -> None:
         """Signal happyclaw-harness to stop the active stream for *(agent_id, thread_id)*."""
         if self._harness_manager is not None:
             self._harness_manager.cancel(agent_id, thread_id)
-
 
     def get_thread_model(self, agent_id: str, thread_id: str) -> str | None:
         if self._harness_manager is None:
             return None
         return self._harness_manager.get_thread_model(agent_id, thread_id)
 
-
     def set_thread_model(self, agent_id: str, thread_id: str, model: str) -> None:
         if self._harness_manager is not None:
             self._harness_manager.set_thread_model(agent_id, thread_id, model)
 
-
     def clear_thread_model(self, agent_id: str, thread_id: str) -> None:
         if self._harness_manager is not None:
             self._harness_manager.clear_thread_model(agent_id, thread_id)
-
 
     def _resolve_configured_fallback_model_ref(self) -> str | None:
         """Return the configured fallback without applying runtime health."""
@@ -303,7 +279,6 @@ class RuntimeMixin(AgentManagerBase):
                 return ref
         return self._providers.resolve_first_model_ref()
 
-
     def resolve_fallback_model_ref(self) -> str | None:
         """Return the first healthy model for an automatic route."""
         configured = self._resolve_configured_fallback_model_ref()
@@ -313,7 +288,6 @@ class RuntimeMixin(AgentManagerBase):
             if self._model_health.is_routable(candidate.ref):
                 return candidate.ref
         return None
-
 
     def is_auto_route_model_available(self, ref: str) -> bool:
         """Return whether a usable model can start an automatic route now."""

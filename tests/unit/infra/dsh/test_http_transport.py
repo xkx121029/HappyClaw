@@ -71,9 +71,7 @@ OPENAI_FRAMES: list[dict[str, Any]] = [
         "choices": [
             {
                 "index": 0,
-                "delta": {
-                    "tool_calls": [{"index": 0, "function": {"arguments": '"x"}'}}]
-                },
+                "delta": {"tool_calls": [{"index": 0, "function": {"arguments": '"x"}'}}]},
                 "finish_reason": "tool_calls",
             }
         ]
@@ -175,9 +173,7 @@ def _sse_head(*, chunked: bool = False) -> bytes:
     ).encode()
 
 
-async def _write_frames(
-    writer: asyncio.StreamWriter, frames: list[dict[str, Any]]
-) -> None:
+async def _write_frames(writer: asyncio.StreamWriter, frames: list[dict[str, Any]]) -> None:
     for frame in frames:
         writer.write(f"data: {json.dumps(frame)}\n\n".encode())
         await writer.drain()
@@ -198,9 +194,7 @@ async def test_fixture_ref_streams_through_a_real_socket(
 
     async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         line, headers, body = await _read_request(reader)
-        captured.update(
-            line=line, headers=headers, body=json.loads(body.decode("utf-8"))
-        )
+        captured.update(line=line, headers=headers, body=json.loads(body.decode("utf-8")))
         writer.write(_sse_head())
         await writer.drain()
         await _write_frames(writer, OPENAI_FRAMES)
@@ -224,21 +218,14 @@ async def test_fixture_ref_streams_through_a_real_socket(
 
     text = "".join(str(chunk.message.content) for chunk in chunks)
     reasoning = "".join(
-        str(chunk.message.additional_kwargs.get("reasoning_content") or "")
-        for chunk in chunks
+        str(chunk.message.additional_kwargs.get("reasoning_content") or "") for chunk in chunks
     )
-    tool_parts = [
-        part for chunk in chunks for part in chunk.message.tool_call_chunks
-    ]
+    tool_parts = [part for chunk in chunks for part in chunk.message.tool_call_chunks]
     usage = next(
-        chunk.message.usage_metadata
-        for chunk in chunks
-        if chunk.message.usage_metadata is not None
+        chunk.message.usage_metadata for chunk in chunks if chunk.message.usage_metadata is not None
     )
     finish = next(
-        chunk.generation_info["finish_reason"]
-        for chunk in chunks
-        if chunk.generation_info
+        chunk.generation_info["finish_reason"] for chunk in chunks if chunk.generation_info
     )
 
     assert text == "hello"
@@ -269,9 +256,7 @@ async def test_anthropic_transport_speaks_the_messages_protocol(
 
     async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         line, headers, body = await _read_request(reader)
-        captured.update(
-            line=line, headers=headers, body=json.loads(body.decode("utf-8"))
-        )
+        captured.update(line=line, headers=headers, body=json.loads(body.decode("utf-8")))
         writer.write(_sse_head())
         await writer.drain()
         await _write_frames(writer, ANTHROPIC_FRAMES)
@@ -294,14 +279,10 @@ async def test_anthropic_transport_speaks_the_messages_protocol(
 
     text = "".join(str(chunk.message.content) for chunk in chunks)
     usage = next(
-        chunk.message.usage_metadata
-        for chunk in chunks
-        if chunk.message.usage_metadata is not None
+        chunk.message.usage_metadata for chunk in chunks if chunk.message.usage_metadata is not None
     )
     finish = next(
-        chunk.generation_info["finish_reason"]
-        for chunk in chunks
-        if chunk.generation_info
+        chunk.generation_info["finish_reason"] for chunk in chunks if chunk.generation_info
     )
 
     assert text == "hi"
@@ -419,9 +400,7 @@ async def test_loopback_ignores_proxy_environment(
         assert transport is not None
         frames = [
             frame
-            async for frame in transport.stream(
-                {"model": "m", "stream": True, "messages": []}
-            )
+            async for frame in transport.stream({"model": "m", "stream": True, "messages": []})
         ]
         assert len(frames) == len(OPENAI_FRAMES)
     finally:

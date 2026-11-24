@@ -409,7 +409,9 @@ async def test_probe_with_explicit_endpoints_needs_no_discovery(
     async def no_discovery(url: str) -> dict[str, Any]:
         raise AssertionError("explicit endpoints must not trigger discovery")
 
-    monkeypatch.setattr("happyclaw.infra.connectors.probe.discover_oauth_from_mcp_url", no_discovery)
+    monkeypatch.setattr(
+        "happyclaw.infra.connectors.probe.discover_oauth_from_mcp_url", no_discovery
+    )
 
     result = await _maybe_attach_oauth_discovery(
         {"ok": False, "error_type": "auth"},

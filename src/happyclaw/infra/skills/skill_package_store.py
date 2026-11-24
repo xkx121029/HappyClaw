@@ -253,7 +253,9 @@ class SkillPackageStore:
         try:
             normalized = PurePosixPath(text)
         except ValueError as exc:
-            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"invalid path: {relative_path!r}") from exc
+            raise HappyclawError(
+                ErrorCode.SLASH_BAD_ARGS, f"invalid path: {relative_path!r}"
+            ) from exc
         if (
             normalized.is_absolute()
             or ".." in normalized.parts
@@ -264,7 +266,9 @@ class SkillPackageStore:
         try:
             target.relative_to(skill_dir.resolve())
         except ValueError as exc:
-            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, f"unsafe path: {relative_path!r}") from exc
+            raise HappyclawError(
+                ErrorCode.SLASH_BAD_ARGS, f"unsafe path: {relative_path!r}"
+            ) from exc
         return target
 
     def list_skill_tree(
@@ -286,7 +290,9 @@ class SkillPackageStore:
                 key=lambda p: (not p.is_dir(), p.name.lower()),
             )
         except OSError as exc:
-            raise HappyclawError(ErrorCode.NOT_FOUND, f"cannot list {relative_path or '.'!r}") from exc
+            raise HappyclawError(
+                ErrorCode.NOT_FOUND, f"cannot list {relative_path or '.'!r}"
+            ) from exc
         for entry in entries:
             try:
                 if entry.is_symlink():
@@ -359,7 +365,9 @@ class SkillPackageStore:
     def assert_can_mutate(self, row: SkillPackageRow, user: User) -> None:
         if self.can_mutate(row, user):
             return
-        raise HappyclawError(ErrorCode.FORBIDDEN, "skill package can only be modified by its creator")
+        raise HappyclawError(
+            ErrorCode.FORBIDDEN, "skill package can only be modified by its creator"
+        )
 
     def can_view(self, row: SkillPackageRow, user: User) -> bool:
         """Whether *user* may see / mount / read this package."""

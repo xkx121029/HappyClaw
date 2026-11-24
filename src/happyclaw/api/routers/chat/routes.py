@@ -234,15 +234,13 @@ def _dashboard_hitl_stream_context(
     summary="Resume HITL approval (SSE)",
     responses={
         200: {
-"description": (
+            "description": (
                 "Server-sent events. Each frame is `event: chunk` followed by one "
                 "JSON `ChatStreamChunk` payload (`data: {...}`), ending with a "
                 "`done` or `error` chunk."
             ),
             "content": {
-                "text/event-stream": {
-                    "schema": {"$ref": "#/components/schemas/ChatStreamChunk"}
-                }
+                "text/event-stream": {"schema": {"$ref": "#/components/schemas/ChatStreamChunk"}}
             },
         }
     },

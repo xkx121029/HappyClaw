@@ -78,9 +78,7 @@ def test_compaction_events_are_traceable_to_turn_and_sources(tmp_path: Path) -> 
     report = engine.run_turn(9)
 
     records = log.load()
-    compaction = [
-        record for record in records if record.type.startswith("compaction/")
-    ]
+    compaction = [record for record in records if record.type.startswith("compaction/")]
     assert [record.type for record in compaction] == [
         "compaction/l1",
         "compaction/l2",

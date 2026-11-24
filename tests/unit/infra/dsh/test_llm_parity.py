@@ -77,11 +77,7 @@ STREAM_CHUNKS: list[dict[str, Any]] = [
             }
         ]
     },
-    {
-        "choices": [
-            {"index": 0, "delta": {"content": "lo"}, "finish_reason": None}
-        ]
-    },
+    {"choices": [{"index": 0, "delta": {"content": "lo"}, "finish_reason": None}]},
     {
         "choices": [
             {
@@ -104,9 +100,7 @@ STREAM_CHUNKS: list[dict[str, Any]] = [
         "choices": [
             {
                 "index": 0,
-                "delta": {
-                    "tool_calls": [{"index": 0, "function": {"arguments": '"x"}'}}]
-                },
+                "delta": {"tool_calls": [{"index": 0, "function": {"arguments": '"x"}'}}]},
                 "finish_reason": "tool_calls",
             }
         ],
@@ -237,7 +231,9 @@ def assert_parity(reference: dict[str, Any], actual: dict[str, Any]) -> None:
 
 def test_non_stream_message_matches_harness_field_by_field() -> None:
     reference = _reference_model()
-    reference_message = reference._create_chat_result(copy.deepcopy(COMPLETION)).generations[0].message
+    reference_message = (
+        reference._create_chat_result(copy.deepcopy(COMPLETION)).generations[0].message
+    )
 
     transport = ScriptedTransport(STREAM_CHUNKS)
     adapter = _adapter_model(transport)
@@ -280,7 +276,9 @@ async def test_accumulated_stream_message_matches_harness() -> None:
 
 def test_missing_field_is_reported_not_defaulted() -> None:
     reference = _reference_model()
-    reference_message = reference._create_chat_result(copy.deepcopy(COMPLETION)).generations[0].message
+    reference_message = (
+        reference._create_chat_result(copy.deepcopy(COMPLETION)).generations[0].message
+    )
     projected = _project_message(reference_message)
     projected.pop("reasoning")
 

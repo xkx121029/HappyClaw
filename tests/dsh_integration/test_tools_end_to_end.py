@@ -39,9 +39,7 @@ async def test_model_tool_call_runs_through_pipeline_and_returns_to_chat(
         scope="01AGENT",
         local_roots=[root],
         providers={
-            "dsh:demo": lambda envelope: [
-                replace(fixture_tool.build_definition(), name="echo")
-            ]
+            "dsh:demo": lambda envelope: [replace(fixture_tool.build_definition(), name="echo")]
         },
         hitl=False,
     )

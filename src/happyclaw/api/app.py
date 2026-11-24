@@ -58,7 +58,9 @@ def _retired_multi_user_router() -> Any:
 
     for prefix in _RETIRED_MULTI_USER_PREFIXES:
         router.add_api_route(prefix, retired_multi_user_endpoint, methods=methods)
-        router.add_api_route(f"{prefix}/{{rest:path}}", retired_multi_user_endpoint, methods=methods)
+        router.add_api_route(
+            f"{prefix}/{{rest:path}}", retired_multi_user_endpoint, methods=methods
+        )
 
     return router
 
@@ -288,6 +290,7 @@ def build_app(server: HappyclawServer, *, defer_heavy: bool = False) -> FastAPI:
         dashboard_dir = default_dashboard_dir()
         index_file = dashboard_dir / "index.html"
         if index_file.exists():
+
             @app.get("/sw.js", include_in_schema=False)
             async def service_worker() -> Response:
                 """Serve the bundled worker; unregister when the build has none.
@@ -501,9 +504,7 @@ def deferred_router_specs(*, enable_mobile: bool) -> list[_RouterMount]:
         _RouterMount(tls_router, "/api/admin/tls", ["tls"]),
         _RouterMount(security_router, "/api/admin/security", ["security"]),
         _RouterMount(admin_storage_router, "/api/admin/storage-backends", ["admin"]),
-        _RouterMount(
-            storage_backends_user_router, "/api/storage-backends", ["storage-backends"]
-        ),
+        _RouterMount(storage_backends_user_router, "/api/storage-backends", ["storage-backends"]),
         _RouterMount(filesystem_router, "/api/filesystem", ["filesystem"]),
         _RouterMount(mbti.router, "/api", ["mbti"]),
         _RouterMount(experts.router, "/api", ["experts"]),

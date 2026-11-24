@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.post("/connectors/test-credentials", summary="Test credentials")
 async def test_credentials(
     body: TestCredentialsBody,

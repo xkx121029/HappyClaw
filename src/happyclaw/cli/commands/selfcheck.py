@@ -42,8 +42,14 @@ _IMPORTS: tuple[tuple[str, str], ...] = (
     # are the only consumers; importing them proves the modules (not the data)
     # survive the prune.
     ("googleapiclient.discovery", "googleapiclient.discovery"),
-    ("langchain_community.document_loaders.googledrive", "langchain_community.document_loaders.googledrive"),
-    ("langchain_community.agent_toolkits.gmail.toolkit", "langchain_community.agent_toolkits.gmail.toolkit"),
+    (
+        "langchain_community.document_loaders.googledrive",
+        "langchain_community.document_loaders.googledrive",
+    ),
+    (
+        "langchain_community.agent_toolkits.gmail.toolkit",
+        "langchain_community.agent_toolkits.gmail.toolkit",
+    ),
 )
 
 

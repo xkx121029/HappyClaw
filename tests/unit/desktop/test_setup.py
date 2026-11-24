@@ -119,7 +119,8 @@ def test_desktop_uninstall_succeeded_linux_stack_removed_with_host_ready() -> No
         patch("happyclaw.infra.control.desktop.setup.platform.system", return_value="Linux"),
         patch("happyclaw.infra.control.desktop.setup._python_deps_available", return_value=True),
         patch(
-            "happyclaw.infra.control.desktop.setup._linux_virtual_desktop_present", return_value=False
+            "happyclaw.infra.control.desktop.setup._linux_virtual_desktop_present",
+            return_value=False,
         ),
         patch(
             "happyclaw.infra.control.desktop.setup.desktop_status",
@@ -134,7 +135,8 @@ def test_desktop_uninstall_failed_linux_stack_remains() -> None:
         patch("happyclaw.infra.control.desktop.setup.platform.system", return_value="Linux"),
         patch("happyclaw.infra.control.desktop.setup._python_deps_available", return_value=True),
         patch(
-            "happyclaw.infra.control.desktop.setup._linux_virtual_desktop_present", return_value=True
+            "happyclaw.infra.control.desktop.setup._linux_virtual_desktop_present",
+            return_value=True,
         ),
     ):
         assert _desktop_uninstall_succeeded() is False
@@ -227,9 +229,12 @@ def test_desktop_status_darwin_missing_perms_not_ok() -> None:
         patch("happyclaw.infra.control.desktop.setup._python_deps_available", return_value=True),
         patch("happyclaw.infra.control.desktop.setup.platform.system", return_value="Darwin"),
         patch(
-            "happyclaw.infra.control.desktop.setup._mac_screen_recording_granted", return_value=False
+            "happyclaw.infra.control.desktop.setup._mac_screen_recording_granted",
+            return_value=False,
         ),
-        patch("happyclaw.infra.control.desktop.setup._mac_accessibility_granted", return_value=True),
+        patch(
+            "happyclaw.infra.control.desktop.setup._mac_accessibility_granted", return_value=True
+        ),
     ):
         status = desktop_status()
     assert status.setup_state == "ready"
@@ -241,8 +246,12 @@ def test_desktop_status_ready_darwin_omits_linux_cmds() -> None:
     with (
         patch("happyclaw.infra.control.desktop.setup._python_deps_available", return_value=True),
         patch("happyclaw.infra.control.desktop.setup.platform.system", return_value="Darwin"),
-        patch("happyclaw.infra.control.desktop.setup._mac_screen_recording_granted", return_value=True),
-        patch("happyclaw.infra.control.desktop.setup._mac_accessibility_granted", return_value=True),
+        patch(
+            "happyclaw.infra.control.desktop.setup._mac_screen_recording_granted", return_value=True
+        ),
+        patch(
+            "happyclaw.infra.control.desktop.setup._mac_accessibility_granted", return_value=True
+        ),
     ):
         status = desktop_status()
     assert status.setup_state == "ready"
@@ -257,9 +266,12 @@ def test_desktop_status_darwin_reports_only_missing_perms() -> None:
         patch("happyclaw.infra.control.desktop.setup._python_deps_available", return_value=True),
         patch("happyclaw.infra.control.desktop.setup.platform.system", return_value="Darwin"),
         patch(
-            "happyclaw.infra.control.desktop.setup._mac_screen_recording_granted", return_value=False
+            "happyclaw.infra.control.desktop.setup._mac_screen_recording_granted",
+            return_value=False,
         ),
-        patch("happyclaw.infra.control.desktop.setup._mac_accessibility_granted", return_value=True),
+        patch(
+            "happyclaw.infra.control.desktop.setup._mac_accessibility_granted", return_value=True
+        ),
     ):
         status = desktop_status()
     assert status.permissions_needed == ("screen_recording",)
@@ -273,7 +285,9 @@ def test_virtual_desktop_installed_requires_complete_stack() -> None:
         patch("happyclaw.infra.control.desktop.setup.system_conf_dir") as conf,
         patch("happyclaw.infra.control.desktop.setup.desktop_env_file") as env,
         patch("happyclaw.infra.control.desktop.setup._systemd_available", return_value=True),
-        patch("happyclaw.infra.control.desktop.setup._systemd_unit_files_present", return_value=False),
+        patch(
+            "happyclaw.infra.control.desktop.setup._systemd_unit_files_present", return_value=False
+        ),
     ):
         conf.return_value.is_dir.return_value = True
         env.return_value.is_file.return_value = False
@@ -288,7 +302,9 @@ def test_virtual_desktop_installed_ok_with_units() -> None:
         patch("happyclaw.infra.control.desktop.setup.system_conf_dir") as conf,
         patch("happyclaw.infra.control.desktop.setup.desktop_env_file") as env,
         patch("happyclaw.infra.control.desktop.setup._systemd_available", return_value=True),
-        patch("happyclaw.infra.control.desktop.setup._systemd_unit_files_present", return_value=True),
+        patch(
+            "happyclaw.infra.control.desktop.setup._systemd_unit_files_present", return_value=True
+        ),
     ):
         conf.return_value.is_dir.return_value = True
         env.return_value.is_file.return_value = False
@@ -300,10 +316,14 @@ def test_resolve_linux_installed_but_stopped_needs_start() -> None:
     from happyclaw.infra.control.desktop.setup import _resolve_linux_setup
 
     with (
-        patch("happyclaw.infra.control.desktop.setup._check_vnc_localhost", return_value=(None, "")),
+        patch(
+            "happyclaw.infra.control.desktop.setup._check_vnc_localhost", return_value=(None, "")
+        ),
         patch.dict("os.environ", {"DISPLAY": "", "WAYLAND_DISPLAY": ""}, clear=False),
         patch("happyclaw.infra.control.desktop.setup._display_from_env_file", return_value=None),
-        patch("happyclaw.infra.control.desktop.setup._virtual_desktop_installed", return_value=True),
+        patch(
+            "happyclaw.infra.control.desktop.setup._virtual_desktop_installed", return_value=True
+        ),
         patch("happyclaw.infra.control.desktop.setup._xvnc_service_active", return_value=False),
     ):
         state, display, reason, _vnc = _resolve_linux_setup(locale="en")
@@ -316,10 +336,14 @@ def test_resolve_linux_partial_install_needs_reinstall() -> None:
     from happyclaw.infra.control.desktop.setup import _resolve_linux_setup
 
     with (
-        patch("happyclaw.infra.control.desktop.setup._check_vnc_localhost", return_value=(None, "")),
+        patch(
+            "happyclaw.infra.control.desktop.setup._check_vnc_localhost", return_value=(None, "")
+        ),
         patch.dict("os.environ", {"DISPLAY": "", "WAYLAND_DISPLAY": ""}, clear=False),
         patch("happyclaw.infra.control.desktop.setup._display_from_env_file", return_value=None),
-        patch("happyclaw.infra.control.desktop.setup._virtual_desktop_installed", return_value=False),
+        patch(
+            "happyclaw.infra.control.desktop.setup._virtual_desktop_installed", return_value=False
+        ),
     ):
         state, _display, _reason, _vnc = _resolve_linux_setup(locale="en")
     assert state == "needs_install"

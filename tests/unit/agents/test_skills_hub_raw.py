@@ -168,7 +168,9 @@ def test_resolve_github_url_with_slash_branch_uses_encoded_archive_ref(
 
     with (
         patch("happyclaw.infra.skills.skills_hub._http_text_get", side_effect=_fake_http_text_get),
-        patch("happyclaw.infra.skills.skills_hub._http_bytes_get", side_effect=_fake_http_bytes_get),
+        patch(
+            "happyclaw.infra.skills.skills_hub._http_bytes_get", side_effect=_fake_http_bytes_get
+        ),
     ):
         resolved = resolve_bundle_from_url(
             bundle_url="https://github.com/example/skills-repo/tree/feature/x/skills/find-skills",

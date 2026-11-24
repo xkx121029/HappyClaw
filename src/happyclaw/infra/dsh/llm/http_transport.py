@@ -188,18 +188,19 @@ class _HttpStream:
             # trust_env=False, so a machine-wide proxy cannot intercept it.
             # Remote routes keep httpx's default environment handling (also
             # retries=0); replay belongs to LlmRuntime only.
-            transport = (
-                None if self._trust_env else httpx.AsyncHTTPTransport(retries=0)
-            )
+            transport = None if self._trust_env else httpx.AsyncHTTPTransport(retries=0)
             client = httpx.AsyncClient(
                 timeout=self._timeout,
                 transport=transport,
                 trust_env=self._trust_env,
                 follow_redirects=False,
             )
-            async with client, client.stream(
-                "POST", self._url, json=self._payload, headers=self._headers
-            ) as response:
+            async with (
+                client,
+                client.stream(
+                    "POST", self._url, json=self._payload, headers=self._headers
+                ) as response,
+            ):
                 if response.status_code >= 400:
                     body = (await response.aread()).decode("utf-8", "replace")
                     raise TransportError(

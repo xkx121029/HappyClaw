@@ -43,6 +43,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 async def _fill_missing_subagent_colors(agent: Any, rows: list[dict[str, Any]]) -> None:
     """Copy ``color`` from workspace frontmatter when harness omitted it."""
     missing = [row for row in rows if not str(row.get("color") or "").strip() and row.get("path")]
@@ -71,7 +72,6 @@ async def _fill_missing_subagent_colors(agent: Any, rows: list[dict[str, Any]]) 
 class StartupMixin(AgentManagerBase):
     """Agent start-up, backend spec resolution and workspace seeding."""
 
-
     async def _complete_create_bootstrap(self, row: AgentRow) -> None:
         """Start harness runtime after create (expert files are already seeded on disk)."""
         try:
@@ -85,7 +85,6 @@ class StartupMixin(AgentManagerBase):
                     await asyncio.to_thread(reload)
         except Exception:
             logger.exception("Deferred bootstrap failed for agent %s", row.agent_id)
-
 
     def _repair_persisted_backend_root(self, row: AgentRow) -> None:
         """Persist a workspace-scoped backend root for agents stored on the wrong drive.
@@ -110,7 +109,6 @@ class StartupMixin(AgentManagerBase):
             return
         cfg["backend"] = fixed
         self.persist_harness_config(row.agent_id, cfg)
-
 
     async def _start_agent(
         self, row: AgentRow, *, init_workspace: bool = True
@@ -177,7 +175,6 @@ class StartupMixin(AgentManagerBase):
                     error=format_agent_start_error(exc),
                 )
                 return None
-
 
     async def _post_start_agent(
         self,
@@ -250,7 +247,6 @@ class StartupMixin(AgentManagerBase):
 
             agent.on_bootstrap_complete = _on_bootstrap_complete
 
-
     def _mark_bootstrap_graph_refresh_pending(self, agent_id: str, agent: HarnessAgent) -> None:
         """Record DB-backed config updates; graph rebuild runs on the next turn."""
         row = self._repos.agent_repo.get(agent_id)
@@ -264,7 +260,6 @@ class StartupMixin(AgentManagerBase):
             "Bootstrap complete for agent %s — graph refresh deferred to next turn",
             agent_id,
         )
-
 
     def _apply_pending_bootstrap_graph_refresh(self, agent_id: str) -> None:
         """Recompile harness graph after bootstrap once no stream is in progress."""
@@ -284,11 +279,9 @@ class StartupMixin(AgentManagerBase):
             logger.exception("Bootstrap graph refresh failed for agent %s", agent_id)
             self._bootstrap_graph_refresh_pending.add(agent_id)
 
-
     def _agent_config_dict(self, row: AgentRow) -> dict[str, Any]:
         cfg = parse_config_json(row.config_json)
         return overlay_skill_package_ids(cfg, row)
-
 
     def _backend_spec_for_row(
         self,
@@ -335,14 +328,12 @@ class StartupMixin(AgentManagerBase):
             resolved, workspace_dir=workspace_dir, agent_id=row.agent_id
         )
 
-
     def resolved_backend_spec(self, agent_id: str) -> Any:
         """Backend spec for *agent_id* with Octop docker enrichments applied."""
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
             return None
         return self._prepare_docker_backend(self._backend_spec_for_row(row), row)
-
 
     def _owner_username(self, row: AgentRow) -> str | None:
         if row.user_id is None:
@@ -352,11 +343,9 @@ class StartupMixin(AgentManagerBase):
             return None
         return owner.username or None
 
-
     @staticmethod
     def _spec_is_opensandbox(spec: Any) -> bool:
         return isinstance(spec, dict) and str(spec.get("type") or "").lower() == "opensandbox"
-
 
     def _prepare_docker_backend(self, backend: Any, row: AgentRow) -> Any:
         """Inject Octop docker defaults (prefix / agent_id / username) without overwrite."""
@@ -370,7 +359,6 @@ class StartupMixin(AgentManagerBase):
             username=self._owner_username(row),
         )
         return inject_docker_global_environment(enriched, env_file_path(self._paths.root))
-
 
     def _backend_workspace_for_row(
         self,
@@ -415,7 +403,6 @@ class StartupMixin(AgentManagerBase):
             workspace_dir,
             system_files_path=system_files_path_from_config(cfg),
         )
-
 
     async def _seed_expert_template(self, row: AgentRow, template_name: str) -> None:
         """Copy bundled expert files into the agent workspace before harness start."""

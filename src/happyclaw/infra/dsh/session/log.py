@@ -170,9 +170,7 @@ class SessionLog:
     def _resolve_generation(self) -> int:
         manifest_generation = self._read_manifest_generation()
         existing = self._existing_generation_numbers()
-        if manifest_generation is not None and (
-            manifest_generation in existing or not existing
-        ):
+        if manifest_generation is not None and (manifest_generation in existing or not existing):
             return manifest_generation
         if existing:
             return max(existing)
@@ -255,9 +253,7 @@ class SessionLog:
                 raise LogCorruptionError(f"record line is malformed: {exc}") from exc
             expected = records[-1].seq + 1 if records else 0
             if record.seq != expected:
-                raise LogCorruptionError(
-                    f"record seq {record.seq} does not follow {expected - 1}"
-                )
+                raise LogCorruptionError(f"record seq {record.seq} does not follow {expected - 1}")
             records.append(record)
         return records, valid_size
 

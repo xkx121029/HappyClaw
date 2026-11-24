@@ -269,7 +269,9 @@ def _frame_type(model: type[BaseModel]) -> str:
     return str(get_args(model.model_fields["type"].annotation)[0])
 
 
-def _union_schema(name: str, description: str, models: tuple[type[PayloadOut], ...]) -> dict[str, Any]:
+def _union_schema(
+    name: str, description: str, models: tuple[type[PayloadOut], ...]
+) -> dict[str, Any]:
     return {
         "title": name,
         "description": description,

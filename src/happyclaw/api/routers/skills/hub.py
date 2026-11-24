@@ -19,6 +19,7 @@ from happyclaw.infra.skills.skill_packages import (
 
 router = APIRouter()
 
+
 class LocalizedSkillCopy(BaseModel):
     zh: str | None = None
     en: str | None = None

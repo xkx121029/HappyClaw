@@ -70,9 +70,7 @@ def _pipeline(executed: list[dict[str, Any]], *, hitl: bool, approval: Any) -> A
         return dict(fixture_tool.EXPECTED_RESULT)
 
     registry = DshToolRegistry(plugin_id="dsh:demo")
-    registry.register(
-        replace(fixture_tool.build_definition(), execute=execute), scope="AGT"
-    )
+    registry.register(replace(fixture_tool.build_definition(), execute=execute), scope="AGT")
     guardrail = build_read_only_guardrail(
         capability=_passing_probe,
         hitl=hitl,
@@ -90,9 +88,7 @@ def _call() -> ToolCall:
 async def test_pause_propagates_instead_of_becoming_a_denial() -> None:
     executed: list[dict[str, Any]] = []
     transport = _PausingTransport()
-    pipeline = _pipeline(
-        executed, hitl=True, approval=HitlApprovalChannel(transport=transport)
-    )
+    pipeline = _pipeline(executed, hitl=True, approval=HitlApprovalChannel(transport=transport))
 
     with pytest.raises(GraphBubbleUp):
         await pipeline.invoke(_call())
@@ -113,9 +109,7 @@ async def test_pause_propagates_instead_of_becoming_a_denial() -> None:
 async def test_resume_approve_runs_the_tool() -> None:
     executed: list[dict[str, Any]] = []
     transport = _AnsweringTransport({"decisions": [{"type": "approve"}]})
-    pipeline = _pipeline(
-        executed, hitl=True, approval=HitlApprovalChannel(transport=transport)
-    )
+    pipeline = _pipeline(executed, hitl=True, approval=HitlApprovalChannel(transport=transport))
 
     invocation = await pipeline.invoke(_call())
 
@@ -126,9 +120,7 @@ async def test_resume_approve_runs_the_tool() -> None:
 async def test_resume_reject_denies_without_running() -> None:
     executed: list[dict[str, Any]] = []
     transport = _AnsweringTransport({"decisions": [{"type": "reject"}]})
-    pipeline = _pipeline(
-        executed, hitl=True, approval=HitlApprovalChannel(transport=transport)
-    )
+    pipeline = _pipeline(executed, hitl=True, approval=HitlApprovalChannel(transport=transport))
 
     invocation = await pipeline.invoke(_call())
 
@@ -149,13 +141,9 @@ async def test_resume_reject_denies_without_running() -> None:
         ),
     ],
 )
-async def test_each_failure_kind_is_distinct_and_denies(
-    transport: Any, code: str
-) -> None:
+async def test_each_failure_kind_is_distinct_and_denies(transport: Any, code: str) -> None:
     executed: list[dict[str, Any]] = []
-    pipeline = _pipeline(
-        executed, hitl=True, approval=HitlApprovalChannel(transport=transport)
-    )
+    pipeline = _pipeline(executed, hitl=True, approval=HitlApprovalChannel(transport=transport))
 
     invocation = await pipeline.invoke(_call())
 
@@ -205,9 +193,7 @@ async def test_mounted_tool_pauses_through_the_catalog(tmp_path: Path) -> None:
         scope="AGT",
         local_roots=[root],
         providers={
-            "dsh:demo": lambda envelope: [
-                replace(fixture_tool.build_definition(), name="echo")
-            ]
+            "dsh:demo": lambda envelope: [replace(fixture_tool.build_definition(), name="echo")]
         },
         hitl=True,
         approval=HitlApprovalChannel(transport=transport),

@@ -199,9 +199,7 @@ def test_command_timeout_is_denied(tmp_path: Path) -> None:
 def test_output_over_limit_is_truncated_and_marked(tmp_path: Path) -> None:
     workspace = tmp_path / "ws"
     workspace.mkdir()
-    executor = FakeExecutor(
-        ExecutorOutput(exit_code=0, stdout=b"a" * 5000, stderr=b"b" * 2000)
-    )
+    executor = FakeExecutor(ExecutorOutput(exit_code=0, stdout=b"a" * 5000, stderr=b"b" * 2000))
     sandbox = _sandbox(
         workspace,
         declarations={"run_script": {"exec"}},
@@ -374,10 +372,7 @@ def test_execution_denial_after_uncovered_probe_is_recorded_as_miss(tmp_path: Pa
 
     assert denied.value.code is SandboxErrorCode.PATH_OUTSIDE_WORKSPACE
     assert denied.value.details["early_check_miss"] is True
-    assert (
-        denied.value.details["root_error_code"]
-        == SandboxErrorCode.PATH_OUTSIDE_WORKSPACE.value
-    )
+    assert denied.value.details["root_error_code"] == SandboxErrorCode.PATH_OUTSIDE_WORKSPACE.value
 
     record = ledger.records[-1]
     assert record.error_code == SandboxErrorCode.EARLY_CHECK_MISS.value
@@ -399,9 +394,10 @@ def test_declared_permission_allows_tool(tmp_path: Path) -> None:
 
     assert result.available is True
     assert sandbox.permissions_declared is True
-    assert sandbox.resolve_path(
-        "write_note", SandboxCapability.FS_WRITE, "notes/a.md"
-    ) == (workspace / "notes" / "a.md").resolve()
+    assert (
+        sandbox.resolve_path("write_note", SandboxCapability.FS_WRITE, "notes/a.md")
+        == (workspace / "notes" / "a.md").resolve()
+    )
 
 
 def test_permission_outside_plugin_declaration_is_denied_with_distinct_code(
@@ -705,11 +701,7 @@ def test_check_aggregation_is_bounded_under_high_frequency(tmp_path: Path) -> No
         assert result.available is True
     sandbox.flush_checks()
 
-    lines = [
-        line
-        for line in check_path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    lines = [line for line in check_path.read_text(encoding="utf-8").splitlines() if line.strip()]
     assert len(lines) <= 11
     summary = summarize_check_file(check_path)
     assert summary.total == 1000

@@ -447,14 +447,10 @@ def format_denial_summary(summary: DenialSummary) -> str:
         return "沙箱拒绝汇总：没有记录。"
     lines = [f"沙箱拒绝汇总：共 {summary.total} 条"]
     if summary.since is not None or summary.until is not None:
-        lines[0] += (
-            f"（时间范围 {summary.since or '不限'} ~ {summary.until or '不限'}）"
-        )
+        lines[0] += f"（时间范围 {summary.since or '不限'} ~ {summary.until or '不限'}）"
     lines.append("按插件：")
     for item in summary.by_plugin:
-        lines.append(
-            f"  {item.plugin_id}：{item.total} 次（{item.first_seen} ~ {item.last_seen}）"
-        )
+        lines.append(f"  {item.plugin_id}：{item.total} 次（{item.first_seen} ~ {item.last_seen}）")
         lines.append(f"    阶段：{_format_counts(item.by_stage)}")
         lines.append(f"    错误码：{_format_counts(item.by_error_code)}")
     lines.append(f"按错误码：{_format_counts(summary.by_error_code)}")
@@ -469,9 +465,7 @@ def format_check_summary(summary: CheckSummary) -> str:
         return "沙箱检查汇总：没有记录。"
     lines = [f"沙箱检查汇总：共 {summary.total} 次"]
     if summary.since is not None or summary.until is not None:
-        lines[0] += (
-            f"（时间范围 {summary.since or '不限'} ~ {summary.until or '不限'}）"
-        )
+        lines[0] += f"（时间范围 {summary.since or '不限'} ~ {summary.until or '不限'}）"
     lines.append(f"按插件：{_format_counts(summary.by_plugin)}")
     lines.append(f"按覆盖：{_format_counts(summary.by_coverage)}")
     lines.append(f"按阶段：{_format_counts(summary.by_stage)}")
@@ -654,11 +648,7 @@ def _record_from_mapping(
 ) -> Any:
     if not _REQUIRED_FIELDS[record_type].issubset(payload):
         return None
-    values = {
-        name: payload[name]
-        for name in _RECORD_FIELDS[record_type]
-        if name in payload
-    }
+    values = {name: payload[name] for name in _RECORD_FIELDS[record_type] if name in payload}
     if record_type is SandboxCheckRecord and "checked" in values:
         raw = values["checked"]
         if isinstance(raw, (list, tuple)):

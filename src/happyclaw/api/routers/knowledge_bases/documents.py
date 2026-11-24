@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.get("/{kb_id}/documents", summary="List knowledge-base documents")
 async def list_documents(
     kb_id: str,

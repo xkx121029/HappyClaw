@@ -60,24 +60,37 @@ logger = logging.getLogger(__name__)
 _AGENT_BOOT_START_TIMEOUT = 60.0
 
 
-class AgentManager(HarnessConfigMixin, SkillsMixin, StartupMixin, ConfigMixin, McpMixin, ReloadMixin, StoreReclaimMixin, RuntimeMixin, QueriesMixin, CrudMixin, DshMixin, MemoryMixin, AgentManagerBase):
+class AgentManager(
+    HarnessConfigMixin,
+    SkillsMixin,
+    StartupMixin,
+    ConfigMixin,
+    McpMixin,
+    ReloadMixin,
+    StoreReclaimMixin,
+    RuntimeMixin,
+    QueriesMixin,
+    CrudMixin,
+    DshMixin,
+    MemoryMixin,
+    AgentManagerBase,
+):
     """Process-wide singleton: owns harness HarnessAgentManager + all HarnessAgent instances.
 
-On boot, loads all enabled agents from the DB and registers them with the
-harness HarnessAgentManager. Provides CRUD that stays in sync between DB and runtime.
+    On boot, loads all enabled agents from the DB and registers them with the
+    harness HarnessAgentManager. Provides CRUD that stays in sync between DB and runtime.
 
-Row data is always read directly from the DB — no in-process row cache —
-so callers always see the latest persisted state.
+    Row data is always read directly from the DB — no in-process row cache —
+    so callers always see the latest persisted state.
 
-Public surface (by concern):
-  - Lifecycle: boot / shutdown, start / stop individual agents
-  - CRUD: create / update / delete
-  - Reads: get_row, list_*, get_config, resolve_user_agent
-  - Runtime: get_agent, stream / call / HITL / thread model
-  - Hot-reload: reload*, on_provider_changed, reload_happyclaw_harness
-  - Connectors: reload_connectors*, prepare_chat_mcp
-  - Settings stores: langfuse, security, acp_settings, tool_guard_rules, providers"""
-
+    Public surface (by concern):
+      - Lifecycle: boot / shutdown, start / stop individual agents
+      - CRUD: create / update / delete
+      - Reads: get_row, list_*, get_config, resolve_user_agent
+      - Runtime: get_agent, stream / call / HITL / thread model
+      - Hot-reload: reload*, on_provider_changed, reload_happyclaw_harness
+      - Connectors: reload_connectors*, prepare_chat_mcp
+      - Settings stores: langfuse, security, acp_settings, tool_guard_rules, providers"""
 
     def __init__(
         self,
@@ -185,7 +198,6 @@ Public surface (by concern):
         # Sanitized plugin tool name → original label (per agent, rebuilt on reload).
         self._plugin_tool_labels: dict[str, dict[str, str]] = {}
 
-
     def replace_persistence(self, repos: RepoBundle, config: HappyclawConfig) -> None:
         """Retarget repos/config and rebuild settings stores after control-plane rebind."""
         self._repos = repos
@@ -218,16 +230,13 @@ Public surface (by concern):
             config=self._config,
         )
 
-
     def set_cron_manager(self, cron_manager: CronManager) -> None:
         """Attach the process-wide CronManager (must be set before boot())."""
         self._cron_manager = cron_manager
 
-
     def set_proactive_scheduler(self, scheduler: ProactiveCareScheduler) -> None:
         """Attach the process-wide proactive-care scheduler (optional; used after create/delete)."""
         self._proactive_scheduler = scheduler
-
 
     def set_team_processor(self, team_processor: Any | None) -> None:
         """Attach harness TeamProcessor (GlobalProcessor); required before boot()."""
@@ -235,11 +244,9 @@ Public surface (by concern):
         if self._harness_manager is not None:
             self._install_team_host_dispatch()
 
-
     def set_hitl_session_store(self, store: HitlSessionPolicyStore | None) -> None:
         """Attach the thread-scoped HITL bypass store (set before boot())."""
         self._hitl_session_store = store
-
 
     def set_dsh_transport_factory(self, factory: Any | None) -> None:
         """Override the S8 DSH transport factory (set before boot(); optional).
@@ -250,11 +257,9 @@ Public surface (by concern):
         """
         self._dsh_transport_factory = factory
 
-
     @property
     def teams(self) -> Any:
         return self._teams
-
 
     async def boot(self, *, restore_agents: bool = True) -> None:
         """Wire the harness, then (optionally) start every persisted agent.
@@ -298,7 +303,6 @@ Public surface (by concern):
         if restore_agents:
             await self.restore_agents()
 
-
     async def restore_agents(self) -> None:
         """Start every persisted agent that is not explicitly stopped.
 
@@ -335,7 +339,6 @@ Public surface (by concern):
                     error=AGENT_START_TIMEOUT,
                 )
 
-
     async def shutdown(self) -> None:
         # The idle sweep reads the control-plane DB on a worker thread. Wait for
         # that read to finish before the caller closes the shared connection.
@@ -371,57 +374,46 @@ Public surface (by concern):
                 self._harness_manager = None
             self._host_models.close()
 
-
     @property
     def providers(self) -> ProviderStore:
         return self._providers
-
 
     @property
     def host_models(self) -> HostModelFactory:
         """One-shot model access outside an agent turn."""
         return self._host_models
 
-
     @property
     def security(self) -> SecuritySettingsStore:
         return self._security
-
 
     @property
     def acp_settings(self) -> ACPSettingsStore:
         return self._acp_settings
 
-
     @property
     def tool_guard_rules(self) -> ToolGuardRulesStore:
         return self._tool_guard_rules
-
 
     @property
     def langfuse(self) -> LangfuseSettingsStore:
         return self._langfuse
 
-
     @property
     def decision(self) -> DecisionSettingsStore:
         return self._decision
-
 
     @property
     def media_generation(self) -> MediaGenerationSettingsStore:
         return self._media_generation
 
-
     @property
     def paths(self) -> PathLayout:
         return self._paths
 
-
     @property
     def harness_manager(self) -> HarnessAgentManager | None:
         return self._harness_manager
-
 
     @property
     def octop_config(self) -> HappyclawConfig:

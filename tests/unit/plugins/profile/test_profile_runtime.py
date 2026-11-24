@@ -158,9 +158,7 @@ def test_real_envelopes_resolve_dependency_closure(
 def test_real_envelope_missing_dependency_is_identifiable(
     envelopes: Mapping[str, PluginEnvelope],
 ) -> None:
-    assert envelopes[ORPHAN].requires == (
-        PluginRequirement("octop:profile-missing", ">=1.0.0"),
-    )
+    assert envelopes[ORPHAN].requires == (PluginRequirement("octop:profile-missing", ">=1.0.0"),)
     runtime, loader = make_runtime(envelopes)
 
     with pytest.raises(MissingDependencyError) as caught:
@@ -313,9 +311,7 @@ def test_switch_rolls_back_when_a_real_plugin_fails(
     assert loader.deactivated == []
     assert runtime.active_profile == "base"
     assert runtime.revision == first.revision
-    assert {
-        row.plugin_id: row.status for row in runtime.status()
-    } == {BASE: PluginStatus.ACTIVE}
+    assert {row.plugin_id: row.status for row in runtime.status()} == {BASE: PluginStatus.ACTIVE}
     active = store.load_active()
     assert active is not None and active.name == "base"
     assert runtime.timing_report()["eager_ms"] == pytest.approx(0.0)
@@ -325,9 +321,7 @@ def test_lazy_failure_marks_only_that_plugin(
     envelopes: Mapping[str, PluginEnvelope],
 ) -> None:
     runtime, _loader = make_runtime(envelopes, failing=frozenset({BARE}))
-    runtime.switch(
-        Profile("p", (ProfileEntry(BASE), ProfileEntry(BARE, load=LoadMode.LAZY)))
-    )
+    runtime.switch(Profile("p", (ProfileEntry(BASE), ProfileEntry(BARE, load=LoadMode.LAZY))))
 
     with pytest.raises(PluginLoadError):
         runtime.ensure_loaded(BARE)
@@ -391,19 +385,13 @@ def _package(
     permissions: Sequence[str] = (),
 ) -> bytes:
     manifest = (
-        f"id: {native_id}\n"
-        f"version: {version}\n"
-        f"name: {native_id}\n"
-        "kind: tool\n"
-        "entry: main.py\n"
+        f"id: {native_id}\nversion: {version}\nname: {native_id}\nkind: tool\nentry: main.py\n"
     )
     if permissions:
         manifest += "permissions:\n" + "".join(f"  - {item}\n" for item in permissions)
     if requires:
         manifest += "requires:\n" + "".join(f"  - {item}\n" for item in requires)
-    return _zip(
-        {"plugin.yaml": manifest, "main.py": "def main():\n    return 'ok'\n"}
-    )
+    return _zip({"plugin.yaml": manifest, "main.py": "def main():\n    return 'ok'\n"})
 
 
 def _catalog_index(
@@ -480,9 +468,10 @@ def test_composition_discovers_and_uses_plugins_from_market_root(
     # The dependency is auto-included and both come from the market root; the
     # composition names only the dependent id.
     assert result.activated == (MARKET_BASE, MARKET_DEPENDENT)
-    assert {
-        row.plugin_id: row.version for row in runtime.status()
-    } == {MARKET_BASE: "1.0.0", MARKET_DEPENDENT: "1.0.0"}
+    assert {row.plugin_id: row.version for row in runtime.status()} == {
+        MARKET_BASE: "1.0.0",
+        MARKET_DEPENDENT: "1.0.0",
+    }
     assert runtime.permissions_for(MARKET_BASE) == (PermissionKind.FS_READ,)
 
 

@@ -158,11 +158,8 @@ class LlmRuntime:
                         yield chunk
                         return
 
-                    if (
-                        isinstance(chunk, (TextDelta, ReasoningDelta)) and chunk.text
-                    ) or (
-                        isinstance(chunk, ToolCallDelta)
-                        and (chunk.name or chunk.arguments_delta)
+                    if (isinstance(chunk, (TextDelta, ReasoningDelta)) and chunk.text) or (
+                        isinstance(chunk, ToolCallDelta) and (chunk.name or chunk.arguments_delta)
                     ):
                         state.emitted = True
                     yield chunk
@@ -265,9 +262,7 @@ class LlmRuntime:
                     return
 
                 exhausted = (
-                    failure.with_attempts(attempt)
-                    if action is FailureAction.RETRY
-                    else failure
+                    failure.with_attempts(attempt) if action is FailureAction.RETRY else failure
                 )
                 yield FinishChunk(
                     FinishReason.ERROR,

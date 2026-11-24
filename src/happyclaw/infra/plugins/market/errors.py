@@ -232,8 +232,7 @@ class DependencyInUseError(MarketError):
             for dep_id, dep_version, constraint in dependents
         )
         super().__init__(
-            f"无法卸载 {plugin_id} {version}：已安装的 {listed} 依赖它，"
-            "请先卸载依赖方",
+            f"无法卸载 {plugin_id} {version}：已安装的 {listed} 依赖它，请先卸载依赖方",
             code=MarketErrorCode.DEPENDENCY_IN_USE,
             details={
                 "plugin_id": plugin_id,
@@ -268,8 +267,7 @@ class DependencyConstraintError(VersionConflictError):
             for dep_id, dep_version, constraint in mismatched
         )
         super().__init__(
-            f"无法升级 {plugin_id} 到 {version}：已安装的 {listed}，"
-            "升级后不再满足，请先升级依赖方",
+            f"无法升级 {plugin_id} 到 {version}：已安装的 {listed}，升级后不再满足，请先升级依赖方",
             details={
                 "plugin_id": plugin_id,
                 "version": version,

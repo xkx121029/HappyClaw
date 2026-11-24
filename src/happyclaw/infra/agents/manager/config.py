@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 def skills_disabled_set(cfg: dict[str, Any]) -> set[str]:
     """Return the set of disabled skill slugs from agent config."""
     raw = cfg.get("skills_disabled")
@@ -61,7 +62,6 @@ def skill_package_ids_list(cfg: dict[str, Any]) -> list[str]:
 class ConfigMixin(AgentManagerBase):
     """Global settings stores and per-agent configuration persistence."""
 
-
     def save_langfuse(
         self,
         *,
@@ -80,7 +80,6 @@ class ConfigMixin(AgentManagerBase):
         if self._harness_manager is not None:
             self._harness_manager.set_langfuse(self._langfuse.harness_config())
         return view
-
 
     async def save_decision(
         self,
@@ -114,7 +113,6 @@ class ConfigMixin(AgentManagerBase):
         await self.reload_all()
         return view
 
-
     async def probe_decision(
         self,
         *,
@@ -129,7 +127,6 @@ class ConfigMixin(AgentManagerBase):
             model=model,
             provider=provider,
         )
-
 
     async def save_media_generation(
         self,
@@ -149,7 +146,6 @@ class ConfigMixin(AgentManagerBase):
         await self.reload_all()
         return view
 
-
     def save_security(self, policy: SecurityPolicy | dict[str, Any]) -> SecurityPolicy:
         """Persist security policy and push it into harness agents."""
         resolved = self._security.save(policy)
@@ -159,7 +155,6 @@ class ConfigMixin(AgentManagerBase):
             except Exception:
                 logger.exception("failed to apply security policy to running harness agents")
         return resolved
-
 
     async def apply_persona_mbti(self, agent_id: str, code: str) -> AgentRow:
         """Persist MBTI persona on the agent row and reload harness runtime."""
@@ -192,7 +187,6 @@ class ConfigMixin(AgentManagerBase):
         self._schedule_reload(agent_id)
         return row
 
-
     async def update_config_json(self, agent_id: str, config_json: str) -> AgentRow:
         """Patch ``config_json`` and reload the harness runtime in the background."""
         parsed = self._preserve_internal_layout(
@@ -210,7 +204,6 @@ class ConfigMixin(AgentManagerBase):
         self._schedule_reload(agent_id)
         return row
 
-
     def persist_knowledge_base_ids(self, agent_id: str, knowledge_base_ids: list[str]) -> None:
         """Persist composer knowledge-base defaults without reloading harness."""
         row = self._repos.agent_repo.get(agent_id)
@@ -225,7 +218,6 @@ class ConfigMixin(AgentManagerBase):
             agent_id,
             knowledge_base_ids=dump_id_list(normalized),
         )
-
 
     def persist_mcp_servers(self, agent_id: str, mcp_servers: list[str]) -> None:
         """Persist composer connector defaults without reloading harness."""
@@ -247,7 +239,6 @@ class ConfigMixin(AgentManagerBase):
             mcp_servers=dump_id_list(normalized),
         )
 
-
     def validate_knowledge_base_ids(self, user_id: int, knowledge_base_ids: list[str]) -> list[str]:
         """Normalize ids and ensure each knowledge base is visible to *user_id*."""
         normalized = skill_package_ids_list({"skill_package_ids": knowledge_base_ids})
@@ -262,7 +253,6 @@ class ConfigMixin(AgentManagerBase):
             )
         return normalized
 
-
     def validate_mcp_servers(self, user_id: int, mcp_servers: list[str]) -> list[str]:
         """Normalize MCP server names and ensure they are available to *user_id*."""
         normalized = skill_package_ids_list({"skill_package_ids": mcp_servers})
@@ -273,13 +263,11 @@ class ConfigMixin(AgentManagerBase):
         except ValueError as exc:
             raise HappyclawError(ErrorCode.CONNECTOR_NOT_BOUND, str(exc)) from exc
 
-
     def _user_is_admin(self, user_id: int | None) -> bool:
         if user_id is None:
             return False
         user = self._repos.user_repo.get(user_id)
         return user is not None and user.role == "admin"
-
 
     def model_ref_allowed_for_user(self, user_id: int, model_ref: str | None) -> bool:
         from happyclaw.infra.users.groups import model_ref_allowed
@@ -290,7 +278,6 @@ class ConfigMixin(AgentManagerBase):
             is_admin=self._user_is_admin(user_id),
             model_ref=model_ref,
         )
-
 
     def _assert_model_ref(self, user_id: int, model_ref: str | None) -> None:
         from happyclaw.infra.users.groups import RESOURCE_MODEL, GroupAccess
@@ -305,7 +292,6 @@ class ConfigMixin(AgentManagerBase):
             resource_key=ref,
             is_owner=False,
         )
-
 
     def _assert_named_storage_backends(self, user_id: int, backend: Any) -> None:
         from happyclaw.infra.backend.resolver import collect_named_storage_backend_refs

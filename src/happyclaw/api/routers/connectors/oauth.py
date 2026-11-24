@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 def _oauth_callback_html(
     request: Request,
     message_key: str,

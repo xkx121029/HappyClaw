@@ -116,9 +116,7 @@ class SandboxBacking:
         if isinstance(backed_flag, bool):
             backed = backed_flag
         else:
-            backed = coverage == SANDBOX_COVERAGE_COVERED and bool(
-                getattr(raw, "available", False)
-            )
+            backed = coverage == SANDBOX_COVERAGE_COVERED and bool(getattr(raw, "available", False))
         reason = str(getattr(raw, "reason", "") or "").strip()
         return cls(
             coverage=coverage,
@@ -331,9 +329,7 @@ class ToolGuardrail:
         if not self.passthrough_exceptions and approval is not None:
             # 审批通道自带的暂停异常（如 langgraph 的 GraphBubbleUp）必须默认可穿透，
             # 否则 interrupt() 会被当成审批失败并记录为拒绝，HITL 永远无法暂停。
-            self.passthrough_exceptions = tuple(
-                getattr(approval, "pause_exceptions", ()) or ()
-            )
+            self.passthrough_exceptions = tuple(getattr(approval, "pause_exceptions", ()) or ())
         self._consumed_calls: set[str] = set()
 
     async def evaluate(self, context: GuardrailContext) -> GuardrailDecision:

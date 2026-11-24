@@ -719,7 +719,9 @@ async def patch_thread(
                 model_ref,
             )
         ):
-            raise HappyclawError(ErrorCode.RESOURCE_NOT_ALLOWED, "resource is not visible to this user")
+            raise HappyclawError(
+                ErrorCode.RESOURCE_NOT_ALLOWED, "resource is not visible to this user"
+            )
     if "reasoning_mode" in body.model_fields_set:
         reasoning_mode = body.reasoning_mode
     if "reasoning_effort" in body.model_fields_set:

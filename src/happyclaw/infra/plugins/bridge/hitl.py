@@ -121,9 +121,7 @@ class HitlApprovalChannel:
         self.transport: ApprovalTransport = transport or LangGraphInterruptTransport()
         self.timeout_s = timeout_s
         self.clock = clock
-        self.pause_exceptions = tuple(
-            getattr(self.transport, "pause_exceptions", ()) or ()
-        )
+        self.pause_exceptions = tuple(getattr(self.transport, "pause_exceptions", ()) or ())
 
     def request(self, request: ApprovalRequest) -> ApprovalOutcome:
         """Ask the user once; deny on reject, timeout, close, or disconnect."""

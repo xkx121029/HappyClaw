@@ -26,6 +26,7 @@ from happyclaw.infra.users.groups import CONNECTOR_FEATURE_KEY, RESOURCE_CONNECT
 
 logger = logging.getLogger(__name__)
 
+
 def _connector_service(server: Any) -> ConnectorService:
     return ConnectorService(
         repo=server.services.repos.connector_repo,

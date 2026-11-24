@@ -38,6 +38,7 @@ from happyclaw.infra.utils.locale import resolve_request_locale
 
 router = APIRouter()
 
+
 @router.get("/{package_id}/skills", summary="List skills in a global skill package")
 async def list_package_skills(
     package_id: str,

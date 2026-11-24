@@ -343,7 +343,9 @@ def test_observe_tool_result_records_tool_duration_ms(
 
 
 def test_finish_turn_prunes_old_user_turns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("happyclaw.infra.history.trajectory.service.TRAJECTORY_RETENTION_USER_TURNS", 1)
+    monkeypatch.setattr(
+        "happyclaw.infra.history.trajectory.service.TRAJECTORY_RETENTION_USER_TURNS", 1
+    )
     service, _bus = _service(tmp_path)
     service.observe_chunk("A1", "T1", {"type": "user", "content": "one"})
     service.observe_chunk("A1", "T1", {"type": "user", "content": "two"})

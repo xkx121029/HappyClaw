@@ -25,11 +25,9 @@ _AGENT_STATES_NEEDING_MODEL_RELOAD = frozenset({"failed", "created"})
 class ReloadMixin(AgentManagerBase):
     """Hot reload of harness agents after config or provider changes."""
 
-
     async def reload(self, agent_id: str) -> None:
         """Rebuild harness runtime for one agent (e.g. after plugin install)."""
         await self._reload_agent(agent_id)
-
 
     async def reload_all(self) -> None:
         """Rebuild harness runtime for every enabled agent (bounded parallel)."""
@@ -37,7 +35,6 @@ class ReloadMixin(AgentManagerBase):
             row.agent_id for row in self._repos.agent_repo.list_all(include_disabled=False)
         ]
         await self._reload_agents(agent_ids)
-
 
     def reload_happyclaw_harness(self) -> None:
         """Rebuild harness agents in place (e.g. after tool-guard rules changed on disk).
@@ -47,11 +44,9 @@ class ReloadMixin(AgentManagerBase):
         if self._harness_manager is not None:
             self._harness_manager.rebuild_all_agents()
 
-
     def _agent_uses_auto_default(self, row: AgentRow) -> bool:
         cfg = self.get_config(row.agent_id)
         return self._providers.resolve_explicit_default_model(row, cfg) is None
-
 
     def _provider_reload_impact_ids(
         self,
@@ -97,7 +92,6 @@ class ReloadMixin(AgentManagerBase):
 
         return sorted(impact)
 
-
     def _stale_auto_default_ids(
         self,
         *,
@@ -131,7 +125,6 @@ class ReloadMixin(AgentManagerBase):
                 stale.add(aid)
         return stale & enabled_ids
 
-
     async def _reload_agents(self, agent_ids: list[str]) -> None:
         """Reload agents concurrently with a fixed concurrency cap."""
         if not agent_ids:
@@ -146,7 +139,6 @@ class ReloadMixin(AgentManagerBase):
                     logger.exception("Parallel reload failed for agent %s", agent_id)
 
         await asyncio.gather(*(_one(agent_id) for agent_id in agent_ids))
-
 
     async def on_provider_changed(
         self,
@@ -177,7 +169,6 @@ class ReloadMixin(AgentManagerBase):
                 active_model_changed=active_model_changed,
             )
         )
-
 
     async def _reload_agent(self, agent_id: str) -> None:
         assert self._harness_manager is not None
@@ -216,7 +207,6 @@ class ReloadMixin(AgentManagerBase):
                     error=format_agent_start_error(exc),
                 )
 
-
     def _schedule_reload(self, agent_id: str) -> None:
         """Queue a background harness reload; coalesces rapid successive updates."""
         self._reload_dirty.add(agent_id)
@@ -224,7 +214,6 @@ class ReloadMixin(AgentManagerBase):
             return
         self._reload_worker_running[agent_id] = True
         asyncio.create_task(self._reload_worker(agent_id), name=f"reload-agent-{agent_id}")
-
 
     async def _reload_worker(self, agent_id: str) -> None:
         try:

@@ -43,16 +43,21 @@ async def test_restore_backup_file_rehydrates_providers_channels_and_cron(
     service = backup_router.build_backup_service(server)
 
     # Mock the sync restore so no real archive work happens.
-    with patch(
-        "happyclaw.infra.backup.service.restore_system_backup",
-        return_value=restored,
-    ), patch(
-        "happyclaw.infra.backup.service.resolve_backup_path",
-        return_value="/tmp/fake.tar.gz",
-    ), patch(
-        "happyclaw.infra.backup.service.raise_if_backup_busy",
-    ), patch(
-        "happyclaw.infra.backup.service.hold_backup_lock",
+    with (
+        patch(
+            "happyclaw.infra.backup.service.restore_system_backup",
+            return_value=restored,
+        ),
+        patch(
+            "happyclaw.infra.backup.service.resolve_backup_path",
+            return_value="/tmp/fake.tar.gz",
+        ),
+        patch(
+            "happyclaw.infra.backup.service.raise_if_backup_busy",
+        ),
+        patch(
+            "happyclaw.infra.backup.service.hold_backup_lock",
+        ),
     ):
         result = await service.arestore_backup(
             "octop-backup.tar.gz",

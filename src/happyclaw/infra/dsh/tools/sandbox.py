@@ -119,8 +119,7 @@ def build_capability_probe(
 
     names = [str(name) for name in tool_names]
     granted = tuple(
-        item.value if isinstance(item, PermissionKind) else str(item)
-        for item in permissions
+        item.value if isinstance(item, PermissionKind) else str(item) for item in permissions
     )
     declared: dict[str, tuple[object, ...]] = {}
     for name in names:
@@ -191,9 +190,7 @@ def _with_bridge_code(probe: CapabilityProbe) -> CapabilityProbe:
     result, otherwise "no sandbox" and "path escape" look the same.
     """
 
-    def call(
-        tool_name: str, arguments: Mapping[str, Any] | None = None
-    ) -> SandboxProbeResult:
+    def call(tool_name: str, arguments: Mapping[str, Any] | None = None) -> SandboxProbeResult:
         result = probe(tool_name, arguments or {})
         if not isinstance(result, SandboxProbeResult) or result.available:
             return cast(SandboxProbeResult, result)

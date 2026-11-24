@@ -25,14 +25,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 class QueriesMixin(AgentManagerBase):
     """Read-only row, config and workspace queries."""
-
 
     def get_row(self, agent_id: str) -> AgentRow | None:
         """Look up an agent row by its public agent_id (ULID). Returns None if absent."""
         return self._repos.agent_repo.get(agent_id)
-
 
     def workspace_for_agent(self, agent_id: str) -> Any | None:
         """Return the agent's :class:`BackendWorkspace`.
@@ -51,15 +50,12 @@ class QueriesMixin(AgentManagerBase):
                 pass
         return self._backend_workspace_for_row(row)
 
-
     def list_agents(self, user_id: int) -> list[AgentRow]:
         return self._repos.agent_repo.list_by_user(user_id, include_disabled=False)
-
 
     def list_rows(self) -> list[AgentRow]:
         """Return all enabled agent rows (all users), sorted by creation time."""
         return self._repos.agent_repo.list_all(include_disabled=False)
-
 
     def resolve_user_agent(self, user_id: int, query: str) -> AgentRow | None:
         """Match an agent owned by *user_id* by id suffix, full id, or name."""
@@ -77,14 +73,12 @@ class QueriesMixin(AgentManagerBase):
         partial = [r for r in rows if ql in r.name.lower()]
         return partial[0] if len(partial) == 1 else None
 
-
     def get_config(self, agent_id: str) -> dict[str, Any]:
         """Return harness config for agent_id, overlaying column skill_package_ids."""
         row = self._repos.agent_repo.get(agent_id)
         if row is None:
             return {}
         return self._agent_config_dict(row)
-
 
     def persist_harness_config(self, agent_id: str, cfg: dict[str, Any], **extra: Any) -> None:
         """Write harness keys to ``config_json`` and lift leftover profile fields.
@@ -104,7 +98,6 @@ class QueriesMixin(AgentManagerBase):
                     kwargs[key] = value
         kwargs.update(extra)
         self._repos.agent_repo.update_config(agent_id, **kwargs)
-
 
     def resolve_workspace_dir(self, agent_id: str, *, persist_if_missing: bool = True) -> Path:
         """On-disk workspace for Octop host FS ops (delete, memory path, …).
@@ -148,7 +141,6 @@ class QueriesMixin(AgentManagerBase):
             self.persist_harness_config(agent_id, new_cfg)
         return out
 
-
     def is_bootstrapped(self, agent_id: str) -> bool:
         """Whether onboarding has completed for a running agent."""
         from happyclaw.infra.agents.teams import is_team_agent  # noqa: PLC0415
@@ -177,7 +169,6 @@ class QueriesMixin(AgentManagerBase):
             self._bootstrap_known[agent_id] = True
         return known
 
-
     def find_agents_using_provider(self, provider_name: str) -> list[dict[str, str]]:
         """Return agents referencing *provider_name* in config or default_model."""
         return self._providers.find_agents_using_provider(
@@ -185,7 +176,6 @@ class QueriesMixin(AgentManagerBase):
             get_config=self.get_config,
             provider_name=provider_name,
         )
-
 
     def find_agents_using_storage_backend(self, backend_name: str) -> list[dict[str, str]]:
         """Return agents whose ``config.backend`` references a storage backend by name."""
@@ -199,12 +189,10 @@ class QueriesMixin(AgentManagerBase):
             backend_name=backend_name,
         )
 
-
     def assert_agents_deletable(self, agent_ids: Sequence[str]) -> None:
         """Raise when any owned agent has an in-flight team job."""
         for agent_id in agent_ids:
             self._teams.assert_can_delete_agent(agent_id)
-
 
     def resolve_context_max_tokens(self, agent_id: str, *, fallback: int = 128_000) -> int:
         """Return the configured context cap for *agent_id* (``max_input_length``)."""

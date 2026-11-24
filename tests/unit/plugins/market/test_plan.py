@@ -20,9 +20,7 @@ from .test_pipeline import NPM_URL, build_index
 def capability_index(tmp_path: Path) -> MarketplaceIndex:
     """1.0.0 declares ``tool``; 2.0.0 adds ``hook`` (a wider permission surface)."""
     blobs = {
-        NPM_URL.format(version="1.0.0"): dsh_tarball(
-            "weather", "1.0.0", capabilities=("tool",)
-        ),
+        NPM_URL.format(version="1.0.0"): dsh_tarball("weather", "1.0.0", capabilities=("tool",)),
         NPM_URL.format(version="2.0.0"): dsh_tarball(
             "weather", "2.0.0", capabilities=("tool", "hook")
         ),

@@ -26,7 +26,9 @@ MAX_ARCHIVE_BYTES = 100 * 1024 * 1024
 def require_http_url(url: str, *, path: str = "") -> None:
     parsed = urlparse(url.strip())
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        raise MarketError(f"invalid http url at {path}: {url!r}" if path else f"invalid http url: {url!r}")
+        raise MarketError(
+            f"invalid http url at {path}: {url!r}" if path else f"invalid http url: {url!r}"
+        )
 
 
 def fetch_bytes(url: str, *, limit: int = MAX_ARCHIVE_BYTES) -> bytes:

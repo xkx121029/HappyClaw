@@ -33,6 +33,7 @@ from happyclaw.infra.utils.locale import resolve_request_locale
 
 router = APIRouter()
 
+
 @router.get("/agents/{agent_id}/skills")
 async def list_skills(
     agent_id: str,

@@ -506,7 +506,9 @@ async def test_weixin_pdf_history_is_downloadable_attachment() -> None:
         yield MagicMock()
 
     with (
-        patch("happyclaw.infra.gateway.process.processor.media_backend_for_agent", return_value=None),
+        patch(
+            "happyclaw.infra.gateway.process.processor.media_backend_for_agent", return_value=None
+        ),
         patch("happyclaw.infra.gateway.process.processor.project_stream", new=fake_project_stream),
     ):
         _ = [event async for event in processor(inbound)]

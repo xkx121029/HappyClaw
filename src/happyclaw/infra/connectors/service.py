@@ -860,7 +860,9 @@ class ConnectorService:
     ) -> tuple[ConnectorRow, dict[str, Any]]:
         inst = self._repo.get(instance_id)
         if inst is None:
-            raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+            raise HappyclawError(
+                ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found"
+            )
         if inst.user_id != user_id:
             raise HappyclawError(ErrorCode.FORBIDDEN, "not your connector instance")
         if inst.kind != "feishu-cli":

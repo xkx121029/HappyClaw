@@ -246,8 +246,5 @@ async def test_pipeline_reports_guardrail_denial_without_dispatching() -> None:
     assert executed["value"] is False
     assert invocation.result.is_error is True
     assert invocation.result.error is not None
-    assert (
-        invocation.result.error["code"]
-        == DshToolErrorCode.TOOL_CAPABILITY_UNAVAILABLE.value
-    )
+    assert invocation.result.error["code"] == DshToolErrorCode.TOOL_CAPABILITY_UNAVAILABLE.value
     assert events == ["tool/call", "tool/result"]

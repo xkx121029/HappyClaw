@@ -44,9 +44,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 class CrudMixin(AgentManagerBase):
     """Agent row CRUD: create, update, delete and sharing."""
-
 
     async def create(
         self,
@@ -248,7 +248,6 @@ class CrudMixin(AgentManagerBase):
                 self._proactive_scheduler.ensure_scheduled(agent_id)
             return row
 
-
     async def _abort_incomplete_create(self, agent_id: str) -> None:
         """Best-effort rollback after a failed create. Caller holds ``_lock``."""
         try:
@@ -293,7 +292,6 @@ class CrudMixin(AgentManagerBase):
         except Exception:
             logger.exception("abort team create: db delete failed for %s", agent_id)
 
-
     def _preserve_internal_layout(
         self,
         agent_id: str,
@@ -322,7 +320,6 @@ class CrudMixin(AgentManagerBase):
         if pin_workspace_dir and "workspace_dir" in current_raw:
             out["workspace_dir"] = current_raw["workspace_dir"]
         return out
-
 
     async def update(self, agent_id: str, **kwargs: Any) -> AgentRow:
         """Update agent config in DB and reload harness agent in the background."""
@@ -411,7 +408,6 @@ class CrudMixin(AgentManagerBase):
         self._schedule_reload(agent_id)
         return row
 
-
     async def set_shared(self, agent_id: str, shared: bool) -> AgentRow:
         """Persist whether other users may access this agent."""
         existing = self._repos.agent_repo.get(agent_id)
@@ -427,7 +423,6 @@ class CrudMixin(AgentManagerBase):
             raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         return row
 
-
     def set_icon_url(self, agent_id: str, icon_url: str | None) -> AgentRow:
         """Persist display avatar URL without reloading the harness agent."""
         row = self._repos.agent_repo.get(agent_id)
@@ -438,7 +433,6 @@ class CrudMixin(AgentManagerBase):
         if updated is None:
             raise HappyclawError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
         return updated
-
 
     async def delete(self, agent_id: str) -> None:
         """Remove agent from DB, harness runtime, workspace, memory, and checkpoints.
@@ -503,7 +497,6 @@ class CrudMixin(AgentManagerBase):
                 await self.reload(team_id)
             except Exception:
                 logger.exception("failed to reload team %s after dropping %s", team_id, agent_id)
-
 
     def _assert_agent_name_available(
         self,

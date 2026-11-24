@@ -224,9 +224,7 @@ class BackupService:
         if len(raw) > _MAX_IMPORT_BYTES:
             from happyclaw.infra.errors import ErrorCode, HappyclawError
 
-            raise HappyclawError(
-                ErrorCode.SLASH_BAD_ARGS, "backup archive too large (max 512MB)"
-            )
+            raise HappyclawError(ErrorCode.SLASH_BAD_ARGS, "backup archive too large (max 512MB)")
         if not raw:
             from happyclaw.infra.errors import ErrorCode, HappyclawError
 

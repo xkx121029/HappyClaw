@@ -62,9 +62,7 @@ def _config_schema(manifest: Mapping[str, Any]) -> dict[str, Any]:
     return dict(schema) if isinstance(schema, Mapping) else {}
 
 
-def _capabilities(
-    entry: MarketEntry, manifest: Mapping[str, Any]
-) -> tuple[CapabilityKind, ...]:
+def _capabilities(entry: MarketEntry, manifest: Mapping[str, Any]) -> tuple[CapabilityKind, ...]:
     declared: list[CapabilityKind] = list(entry.capabilities)
     bundle = manifest.get("dsh")
     if isinstance(bundle, dict):

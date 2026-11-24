@@ -158,7 +158,10 @@ async def test_overflow_compacts_and_retries_with_reassembled_request(tmp_path: 
     retried = adapter.requests[1]
     assert retried.messages != original.messages
     assert "工" * 500 not in "".join(
-        block.text for message in retried.messages for block in message.content if hasattr(block, "text")
+        block.text
+        for message in retried.messages
+        for block in message.content
+        if hasattr(block, "text")
     )
     trace = retried.metadata["compression_trace"][0]
     assert trace["turn"] == turn

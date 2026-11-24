@@ -89,9 +89,7 @@ def _probe_env() -> dict[str, Any]:
                 "下载 Playwright Chromium 后重试。"
             )
     except ImportError:
-        out["hint_zh"] = (
-            "当前安装不包含浏览器组件（happyclaw-browser），远程浏览器功能不可用。"
-        )
+        out["hint_zh"] = "当前安装不包含浏览器组件（happyclaw-browser），远程浏览器功能不可用。"
 
     try:
         import playwright  # noqa: F401, PLC0415

@@ -42,6 +42,7 @@ from happyclaw.infra.utils.locale import resolve_request_locale
 
 router = APIRouter()
 
+
 @router.get(
     "/agents/{agent_id}/skills/{name}/export",
     summary="Download a workspace skill as a ZIP",

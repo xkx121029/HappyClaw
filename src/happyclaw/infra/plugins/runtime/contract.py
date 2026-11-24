@@ -339,11 +339,7 @@ def version_satisfies(version: str, constraint: str) -> bool:
     text = str(constraint or "").strip()
     if text in {"", "*"}:
         return True
-    return all(
-        _constraint_matches(version, part)
-        for part in text.split(",")
-        if part.strip()
-    )
+    return all(_constraint_matches(version, part) for part in text.split(",") if part.strip())
 
 
 def parse_permission_list(raw: object) -> tuple[tuple[PermissionKind, ...], bool]:

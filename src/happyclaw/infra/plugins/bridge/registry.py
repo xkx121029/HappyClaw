@@ -83,7 +83,9 @@ class DshToolRegistry:
         keep = _MAX_TOOL_NAME - len(prefix) - len(digest) - 1
         return f"{prefix}{native_name[:keep]}-{digest}"
 
-    def register(self, definition: ToolDefinition, *, scope: str = GLOBAL_SCOPE) -> Callable[[], None]:
+    def register(
+        self, definition: ToolDefinition, *, scope: str = GLOBAL_SCOPE
+    ) -> Callable[[], None]:
         """Register a definition and return a disposer that removes it again."""
         bucket = self._scopes.setdefault(scope, {})
         if definition.name in bucket:
@@ -354,11 +356,7 @@ def synthetic_signature(parameters: Mapping[str, Any]) -> tuple[inspect.Signatur
     """Build an ``inspect.Signature`` matching a JSON Schema's top-level properties."""
     properties = parameters.get("properties")
     required_raw = parameters.get("required")
-    required = (
-        {str(name) for name in required_raw}
-        if isinstance(required_raw, list)
-        else set()
-    )
+    required = {str(name) for name in required_raw} if isinstance(required_raw, list) else set()
 
     params: list[inspect.Parameter] = []
     annotations: dict[str, Any] = {}

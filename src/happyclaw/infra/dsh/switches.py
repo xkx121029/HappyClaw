@@ -20,7 +20,7 @@ _LLM_REFS = "HAPPYCLAW_DSH_LLM_REFS"
 
 
 def _flag(name: str) -> bool:
-    suffix = name[len(CURRENT_PREFIX):] if name.startswith(CURRENT_PREFIX) else name
+    suffix = name[len(CURRENT_PREFIX) :] if name.startswith(CURRENT_PREFIX) else name
     return (env_get(suffix) or "").strip().lower() in _TRUTHY
 
 

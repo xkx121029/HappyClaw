@@ -11,6 +11,7 @@ from happyclaw.infra.users.identity import User
 
 router = APIRouter()
 
+
 @router.get("/hub/search", summary="Search SkillHub for installing into packages")
 async def package_hub_search(
     q: str = "",

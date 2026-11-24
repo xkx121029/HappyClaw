@@ -93,9 +93,7 @@ class ProfileStore:
     def names(self) -> tuple[str, ...]:
         if not self._profiles.is_dir():
             return ()
-        return tuple(
-            sorted(path.stem for path in self._profiles.glob("*.json") if path.is_file())
-        )
+        return tuple(sorted(path.stem for path in self._profiles.glob("*.json") if path.is_file()))
 
     def save_active(self, state: ActiveProfile) -> None:
         self._write(self._root / _ACTIVE_FILE, state.to_dict())

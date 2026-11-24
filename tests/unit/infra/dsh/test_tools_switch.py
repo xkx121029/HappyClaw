@@ -74,9 +74,7 @@ def test_switch_off_does_not_import_or_change_tools(
 
     assert manager._dsh_tools_status is None
     assert not any(name.startswith("dsh__") for name in names)
-    assert not any(
-        module.startswith("happyclaw.infra.dsh.tools") for module in sys.modules
-    )
+    assert not any(module.startswith("happyclaw.infra.dsh.tools") for module in sys.modules)
 
 
 def test_switch_on_without_provider_adds_nothing_but_reports_reason(

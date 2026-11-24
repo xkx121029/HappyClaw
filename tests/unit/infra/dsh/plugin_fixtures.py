@@ -29,9 +29,7 @@ def write_package(
         manifest["capabilities"] = list(capabilities)
     if permissions is not None:
         manifest["permissions"] = list(permissions)
-    (package_dir / "package.json").write_text(
-        json.dumps(manifest), encoding="utf-8"
-    )
+    (package_dir / "package.json").write_text(json.dumps(manifest), encoding="utf-8")
     (package_dir / "cordis.patch.yml").write_text(_PATCH, encoding="utf-8")
     (package_dir / "index.js").write_text("export default {};\n", encoding="utf-8")
     return package_dir
@@ -47,9 +45,7 @@ def write_market_plugin(
 ) -> Path:
     """Write ``<dest_root>/dsh/<name>/index.json`` plus one installed slot."""
     plugin_root = dest_root / "dsh" / name
-    package_dir = write_package(
-        plugin_root / version, name, version=version, **package_kwargs
-    )
+    package_dir = write_package(plugin_root / version, name, version=version, **package_kwargs)
     (plugin_root / "index.json").write_text(
         json.dumps({"plugin_id": f"dsh:{name}", "current": {"slot": slot or version}}),
         encoding="utf-8",

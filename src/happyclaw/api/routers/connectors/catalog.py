@@ -14,6 +14,7 @@ from happyclaw.infra.utils.locale import resolve_request_locale
 
 router = APIRouter()
 
+
 @router.get("/connectors/catalog", summary="Connector catalog")
 async def get_catalog(
     request: Request,

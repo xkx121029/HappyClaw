@@ -102,9 +102,7 @@ def test_one_unusable_catalog_does_not_hide_the_other(tmp_path):
     }
     index_path = tmp_path / "dsh-index.json"
     index_path.write_text(json.dumps(dsh_document("1.0.0")), encoding="utf-8")
-    index = MarketplaceIndex(
-        [HappyclawSource(loader=lambda: [broken_row]), DshSource(index_path)]
-    )
+    index = MarketplaceIndex([HappyclawSource(loader=lambda: [broken_row]), DshSource(index_path)])
 
     entries = index.fetch()
 
@@ -276,9 +274,7 @@ def test_same_native_id_installs_side_by_side(tmp_path):
     octop_ledger = json.loads(
         (root / "octop" / "weather" / "index.json").read_text(encoding="utf-8")
     )
-    dsh_ledger = json.loads(
-        (root / "dsh" / "weather" / "index.json").read_text(encoding="utf-8")
-    )
+    dsh_ledger = json.loads((root / "dsh" / "weather" / "index.json").read_text(encoding="utf-8"))
     assert octop_ledger["plugin_id"] == "octop:weather"
     assert dsh_ledger["plugin_id"] == "dsh:weather"
     assert octop_ledger["current"]["slot"] == "1.0.0"

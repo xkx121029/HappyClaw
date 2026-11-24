@@ -140,13 +140,21 @@ async def test_enabling_reindexes_documents_when_model_changes(
         settings_set("knowledge_embedding_model", model)
 
     _patch_kb(monkeypatch, "set_feature_enabled", set_feature)
-    _patch_kb(monkeypatch, "reindex_all_documents", lambda services, model: calls.append((services, model)))
-    _patch_kb(monkeypatch, "get_capability", lambda get, _provider_repo=None: {
+    _patch_kb(
+        monkeypatch,
+        "reindex_all_documents",
+        lambda services, model: calls.append((services, model)),
+    )
+    _patch_kb(
+        monkeypatch,
+        "get_capability",
+        lambda get, _provider_repo=None: {
             "feature_enabled": get("knowledge_bases_enabled") == "true",
             "selected_model": get("knowledge_embedding_model"),
             "backend": get("knowledge_embedding_backend") or "onnx",
             "provider_id": get("knowledge_embedding_provider_id") or "",
-        })
+        },
+    )
 
     await knowledge_bases.put_feature(
         knowledge_bases.FeatureBody(enabled=True, model="new-model"),
@@ -233,7 +241,11 @@ async def test_upload_enqueues_document_indexing(monkeypatch: pytest.MonkeyPatch
     )
     _patch_kb(monkeypatch, "_knowledge_service", lambda _server: service)
     _patch_kb(monkeypatch, "assert_knowledge_usable", lambda *_a, **_k: None)
-    _patch_kb(monkeypatch, "enqueue_index_document", lambda services, kb_id, doc_id: calls.append((services, kb_id, doc_id)))
+    _patch_kb(
+        monkeypatch,
+        "enqueue_index_document",
+        lambda services, kb_id, doc_id: calls.append((services, kb_id, doc_id)),
+    )
 
     response = await knowledge_bases.upload_document(
         "kb-1", request=_request(), upload=upload, server=server, user=user
@@ -493,7 +505,11 @@ async def test_reindex_document_enqueues_job(
     user = SimpleNamespace(id=1, is_admin=False)
     _patch_kb(monkeypatch, "_knowledge_service", lambda _server: service)
     _patch_kb(monkeypatch, "_require_usable", lambda *_a, **_k: None)
-    _patch_kb(monkeypatch, "enqueue_index_document", lambda services, kb_id, doc_id: calls.append((services, kb_id, doc_id)))
+    _patch_kb(
+        monkeypatch,
+        "enqueue_index_document",
+        lambda services, kb_id, doc_id: calls.append((services, kb_id, doc_id)),
+    )
 
     response = await knowledge_bases.reindex_document(
         "kb-1", "doc-1", request=_request(), server=server, user=user
@@ -547,8 +563,14 @@ async def test_onnx_activate_enables_downloaded_service(
     _patch_kb(monkeypatch, "ensure_local_embedding_deps_async", ready)
     _patch_kb(monkeypatch, "assert_catalog_model", lambda model: model)
     _patch_kb(monkeypatch, "is_model_downloaded", lambda _model: True)
-    _patch_kb(monkeypatch, "save_config", lambda _setter, config: saved.update(config.to_dict()) or config)
-    _patch_kb(monkeypatch, "status_payload", lambda *_args, **_kwargs: {"enabled": True, "model": "BAAI/bge-small-zh-v1.5"})
+    _patch_kb(
+        monkeypatch, "save_config", lambda _setter, config: saved.update(config.to_dict()) or config
+    )
+    _patch_kb(
+        monkeypatch,
+        "status_payload",
+        lambda *_args, **_kwargs: {"enabled": True, "model": "BAAI/bge-small-zh-v1.5"},
+    )
     server = SimpleNamespace(services=_services())
 
     response = await knowledge_bases.activate_onnx_service(
@@ -637,7 +659,10 @@ async def test_move_document_passes_the_target_and_returns_the_row(
         (LookupError("knowledge folder not found"), ErrorCode.KNOWLEDGE_NOT_FOUND),
         (PermissionError("write access required"), ErrorCode.KNOWLEDGE_FORBIDDEN),
         (HappyclawError(ErrorCode.KNOWLEDGE_MOVE_INVALID, "x"), ErrorCode.KNOWLEDGE_MOVE_INVALID),
-        (HappyclawError(ErrorCode.KNOWLEDGE_MOVE_NAME_TAKEN, "x"), ErrorCode.KNOWLEDGE_MOVE_NAME_TAKEN),
+        (
+            HappyclawError(ErrorCode.KNOWLEDGE_MOVE_NAME_TAKEN, "x"),
+            ErrorCode.KNOWLEDGE_MOVE_NAME_TAKEN,
+        ),
     ],
 )
 async def test_move_document_maps_errors(

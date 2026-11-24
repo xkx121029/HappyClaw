@@ -49,7 +49,9 @@ def _sdk_env_names() -> set[str]:
 
 def test_octop_reads_no_langfuse_env_var() -> None:
     """Guard the premise: Octop's switch lives in the settings table, not env."""
-    source = (REPO_ROOT / "src/happyclaw/infra/agents/settings/langfuse.py").read_text(encoding="utf-8")
+    source = (REPO_ROOT / "src/happyclaw/infra/agents/settings/langfuse.py").read_text(
+        encoding="utf-8"
+    )
     assert '"observability_langfuse_enabled"' in source
     assert not re.search(r"(?:getenv|environ(?:\.get)?)\(\s*[\"']OCTOP_LANGFUSE", source)
 

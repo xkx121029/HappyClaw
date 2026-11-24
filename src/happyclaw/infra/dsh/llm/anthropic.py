@@ -294,9 +294,7 @@ class AnthropicAdapter:
             events.append(TextDelta(index, initial))
         return events
 
-    def _translate_delta(
-        self, state: _StreamState, event: Mapping[str, Any]
-    ) -> list[StreamChunk]:
+    def _translate_delta(self, state: _StreamState, event: Mapping[str, Any]) -> list[StreamChunk]:
         index = _int(event.get("index"))
         current = state.blocks.get(index)
         delta = _mapping(event.get("delta")) or {}

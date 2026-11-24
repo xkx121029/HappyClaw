@@ -214,9 +214,7 @@ def parse_message(
             name=str(data.get("name") or additional.get("name") or ""),
             content=content,
             is_error=bool(
-                data.get("is_error")
-                or additional.get("is_error")
-                or data.get("status") == "error"
+                data.get("is_error") or additional.get("is_error") or data.get("status") == "error"
             ),
         )
     return None

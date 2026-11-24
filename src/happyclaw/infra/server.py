@@ -206,9 +206,7 @@ def _parse_log_retention_days() -> int:
 
 
 def _parse_log_max_bytes() -> int:
-    raw = env_get("LOG_MAX_BYTES", str(DEFAULT_LOG_MAX_BYTES)) or str(
-        DEFAULT_LOG_MAX_BYTES
-    )
+    raw = env_get("LOG_MAX_BYTES", str(DEFAULT_LOG_MAX_BYTES)) or str(DEFAULT_LOG_MAX_BYTES)
     try:
         return max(0, int(raw))
     except ValueError:
@@ -250,7 +248,9 @@ def _build_log_handler(
     # Rotated files are ``octop.YYYY-MM-DD.log`` (date before the extension).
     handler.suffix = "%Y-%m-%d"
     handler.namer = _dated_log_namer
-    handler.setFormatter(_HappyclawLogFormatter("%(asctime)s %(levelname)-5s %(name)s — %(message)s"))
+    handler.setFormatter(
+        _HappyclawLogFormatter("%(asctime)s %(levelname)-5s %(name)s — %(message)s")
+    )
     return handler
 
 
@@ -1054,7 +1054,9 @@ class HappyclawServer:
     def _emit_wizard_password(self, *, user_count: int) -> None:
         # Single-user mode: no setup wizard account and no one-time password
         # file. Existing ``octop-login.txt`` files stay on disk untouched.
-        logger.info("single-user mode: skipping first-run wizard password (user_count=%s)", user_count)
+        logger.info(
+            "single-user mode: skipping first-run wizard password (user_count=%s)", user_count
+        )
         return
 
     def _legacy_emit_wizard_password(self, *, user_count: int) -> None:

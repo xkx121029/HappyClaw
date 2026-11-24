@@ -25,6 +25,7 @@ from happyclaw.infra.utils.locale import resolve_request_locale
 
 router = APIRouter()
 
+
 @router.get(
     "/connectors/{kind}/cli-status",
     summary="Host CLI install status for CLI connectors",

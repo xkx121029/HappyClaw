@@ -322,7 +322,4 @@ def test_invalid_absence_policy_falls_back_to_strict(
 
 
 def test_sandbox_error_codes_are_distinct() -> None:
-    assert (
-        SandboxErrorCode.PATH_OUTSIDE_WORKSPACE.value
-        != SandboxErrorCode.NOT_ASSEMBLED.value
-    )
+    assert SandboxErrorCode.PATH_OUTSIDE_WORKSPACE.value != SandboxErrorCode.NOT_ASSEMBLED.value

@@ -200,11 +200,7 @@ def _facades_from_target(target: Any, *, origin: str) -> list[FacadeHit]:
     if callable(target):
         produced = target()
         if isinstance(produced, (list, tuple)):
-            return [
-                FacadeHit(item, origin)
-                for item in produced
-                if _as_facade(item) is not None
-            ]
+            return [FacadeHit(item, origin) for item in produced if _as_facade(item) is not None]
         facade = _as_facade(produced)
         if facade is not None:
             return [FacadeHit(facade, origin)]

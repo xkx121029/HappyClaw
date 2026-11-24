@@ -206,9 +206,7 @@ def _envelope_from_manifest(manifest_path: Path) -> PluginEnvelope:
         ),
         capabilities=capabilities,
         permissions=permissions,
-        config_schema=(
-            config_schema if isinstance(config_schema, dict) else {}
-        ),
+        config_schema=(config_schema if isinstance(config_schema, dict) else {}),
         requires=requires,
         metadata=metadata,
     )

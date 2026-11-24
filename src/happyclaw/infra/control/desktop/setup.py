@@ -172,7 +172,9 @@ def bundled_scripts_dir() -> Path:
 
 
 def resolve_install_script_path() -> Path | None:
-    return _script_path_from_env("HAPPYCLAW_DESKTOP_INSTALL_SCRIPT") or _bundled_script("install.sh")
+    return _script_path_from_env("HAPPYCLAW_DESKTOP_INSTALL_SCRIPT") or _bundled_script(
+        "install.sh"
+    )
 
 
 def resolve_start_script_path() -> Path | None:

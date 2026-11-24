@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 def _model_retry_on_failure(
     exc: Exception,
     *,
@@ -235,7 +236,6 @@ def _resolve_memory_backend_kwargs(
 class MemoryMixin(AgentManagerBase):
     """Memory extraction settings and the per-agent memory store lifecycle."""
 
-
     def _quiesce_happyclaw_memory(self, agent_id: str) -> None:
         """Stop memory GC before the harness closes the SQLite backend.
 
@@ -260,7 +260,6 @@ class MemoryMixin(AgentManagerBase):
             with suppress(Exception):
                 shutdown()
         self._wait_memory_maintenance_idle(mw)
-
 
     async def restore_memory_store(
         self, agent_id: str, memory: Any, operation: Callable[[], dict[str, Any]], *, locale: str
@@ -335,7 +334,6 @@ class MemoryMixin(AgentManagerBase):
                 finally:
                     await asyncio.to_thread(pause.__exit__, None, None, None)
 
-
     @staticmethod
     def _wait_memory_maintenance_idle(mw: object, *, timeout: float = 5.0) -> None:
         deadline = time.monotonic() + timeout
@@ -354,7 +352,6 @@ class MemoryMixin(AgentManagerBase):
             if acquired:
                 lock.release()
 
-
     async def save_manual_memory_document(self, agent_id: str, filename: str, content: str) -> None:
         """Serialize owner edits with document review and lifecycle changes."""
         if filename not in {"USER.md", "MEMORY.md"}:
@@ -364,7 +361,6 @@ class MemoryMixin(AgentManagerBase):
             if workspace is None:
                 raise self._unavailable_error(agent_id)
             await workspace.awrite_text(filename, content, force=True)
-
 
     async def review_manual_memory_documents(self, agent_id: str) -> dict[str, Any]:
         """Review current files, including for stopped agents, without changing session snapshots."""

@@ -268,9 +268,7 @@ def _mount_plugin(
 
     exposed_names = [registry.exposed_name(definition.name) for definition in accepted]
     declared = tuple(
-        permission_name(kind)
-        for kind in envelope.permissions
-        if kind in BLOCKING_PERMISSIONS
+        permission_name(kind) for kind in envelope.permissions if kind in BLOCKING_PERMISSIONS
     )
 
     # Host-facing maps are keyed by native tool name; the sandbox sees the

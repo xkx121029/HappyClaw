@@ -94,8 +94,7 @@ def test_seq_gap_in_committed_prefix_is_rejected(tmp_path: Path) -> None:
     root = tmp_path / "session"
     root.mkdir(parents=True)
     (root / "session.g0.jsonl").write_text(
-        '{"seq":0,"type":"session/start","data":{}}\n'
-        '{"seq":2,"type":"session/end","data":{}}\n',
+        '{"seq":0,"type":"session/start","data":{}}\n{"seq":2,"type":"session/end","data":{}}\n',
         encoding="utf-8",
     )
 

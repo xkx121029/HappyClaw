@@ -198,9 +198,9 @@ def maintain_postgres_storage(
                 deleted[table] = 0
                 continue
             cur.execute(
-                sql.SQL("DELETE FROM happyclaw_memory.{} WHERE namespace = %s AND id = ANY(%s)").format(
-                    sql.Identifier(table)
-                ),
+                sql.SQL(
+                    "DELETE FROM happyclaw_memory.{} WHERE namespace = %s AND id = ANY(%s)"
+                ).format(sql.Identifier(table)),
                 (namespace, [row["id"] for row in rows]),
             )
             deleted[table] = cur.rowcount

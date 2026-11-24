@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.get("", summary="List visible knowledge bases")
 async def list_bases(
     server: HappyclawServer = Depends(get_server),

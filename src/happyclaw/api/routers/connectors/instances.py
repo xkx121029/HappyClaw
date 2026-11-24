@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.get("/connector-instances", summary="List connector instances")
 async def list_instances(
     user: Any = Depends(current_user),
@@ -264,7 +265,9 @@ async def patch_instance(
     if body.display_name is not None:
         display_name = body.display_name.strip()
         if not display_name:
-            raise HappyclawError(ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "display_name is required")
+            raise HappyclawError(
+                ErrorCode.CONNECTOR_INVALID_CREDENTIALS, "display_name is required"
+            )
         svc = _connector_service(server)
         if repo.name_exists(
             inst.user_id, display_name, exclude_instance_id=instance_id
@@ -348,7 +351,9 @@ async def delete_instance(
         svc = _connector_service(server)
         servers = dict(svc.get_custom_servers(custom_user_id))
         if synthetic_name not in servers:
-            raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+            raise HappyclawError(
+                ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found"
+            )
         del servers[synthetic_name]
         try:
             svc.put_custom_servers(custom_user_id, servers)
@@ -429,7 +434,9 @@ async def test_instance(
         saved = svc.get_custom_servers(custom_user_id)
         raw = saved.get(synthetic_name)
         if not isinstance(raw, dict):
-            raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+            raise HappyclawError(
+                ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found"
+            )
         return await probe_custom_mcp_server(dict(raw))
 
     repo = server.services.repos.connector_repo
