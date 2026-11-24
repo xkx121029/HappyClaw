@@ -37,9 +37,10 @@ describe("theme palettes", () => {
   });
 
   it("keeps the historic Elegant Rose default brand tokens", () => {
-    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimary).toBe("#E85D75");
-    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimaryHover).toBe("#D14A62");
-    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimaryActive).toBe("#B83A50");
+    // Darkened from #E85D75 in f907f774 so white button text clears 4.5:1.
+    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimary).toBe("#C9435C");
+    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimaryHover).toBe("#B93B52");
+    expect(ANTD_BRAND_TOKENS.rose.light.colorPrimaryActive).toBe("#A63348");
     expect(ANTD_BRAND_TOKENS.rose.dark.colorPrimary).toBe("#F08B9A");
     expect(ANTD_BRAND_TOKENS.rose.dark.colorLink).toBe("#F08B9A");
   });

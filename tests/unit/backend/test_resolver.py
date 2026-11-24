@@ -194,6 +194,10 @@ def test_windows_neutralize_foreign_drive_root_scopes_to_workspace() -> None:
     assert out["type"] == "local_shell"
 
 
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="drive letters only exist on Windows; on POSIX tmp_path has no drive to compare",
+)
 def test_windows_neutralize_same_drive_root_kept(tmp_path: Path) -> None:
     """A drive root on the workspace's own drive is reachable and stays as-is."""
     spec = {"type": "local_shell", "root_dir": "C:/", "virtual_mode": True}

@@ -67,8 +67,8 @@ def test_resolve_octop_executable_falls_back_to_path(
 def test_render_systemd_unit_user_scope(tmp_path: Path) -> None:
     runtime = _runtime(tmp_path)
     unit = render_systemd_unit(runtime, user_unit=True)
-    assert "OCTOP_SERVICE_MODE=systemd" in unit
-    assert "OCTOP_SYSTEMD_USER=1" in unit
+    assert "HAPPYCLAW_SERVICE_MODE=systemd" in unit
+    assert "HAPPYCLAW_SYSTEMD_USER=1" in unit
     assert "WantedBy=default.target" in unit
     assert f"User={getpass.getuser()}" not in unit
     assert f"ExecStart={runtime.octop_bin} run\n" in unit
@@ -82,7 +82,7 @@ def test_render_systemd_unit_system_scope(tmp_path: Path) -> None:
     assert f"User={getpass.getuser()}" in unit
     assert 'Environment="HOME=' in unit
     assert "WantedBy=multi-user.target" in unit
-    assert "OCTOP_SYSTEMD_USER=1" not in unit
+    assert "HAPPYCLAW_SYSTEMD_USER=1" not in unit
     assert f"LimitNOFILE={service_mod.SERVICE_NOFILE_LIMIT}" in unit
 
 
@@ -104,7 +104,7 @@ def test_render_systemd_unit_system_scope_uses_runtime_scope_by_default(
     unit = render_systemd_unit(runtime)
     assert f"User={user}" in unit
     assert f'Environment="HOME={account_home}"' in unit
-    assert f"Environment=OCTOP_HOME={tmp_path}" in unit
+    assert f"Environment=HAPPYCLAW_HOME={tmp_path}" in unit
     assert "WorkingDirectory=" not in unit
     assert "WantedBy=multi-user.target" in unit
 
@@ -426,7 +426,7 @@ def test_ensure_nofile_dropin_skips_when_user_limit_unknown(
 def test_render_systemd_unit_includes_service_mode(tmp_path: Path) -> None:
     runtime = _runtime(tmp_path)
     unit = render_systemd_unit(runtime, user_unit=True)
-    assert "OCTOP_SERVICE_MODE=systemd" in unit
+    assert "HAPPYCLAW_SERVICE_MODE=systemd" in unit
     assert "ExecStart=" in unit
     assert f"ExecStart={runtime.octop_bin} run\n" in unit
     assert "LimitNOFILE=" in unit
@@ -437,7 +437,7 @@ def test_render_systemd_unit_includes_service_mode(tmp_path: Path) -> None:
 def test_render_launchd_plist_includes_service_mode(tmp_path: Path) -> None:
     runtime = replace(_runtime(tmp_path), mode="launchd")
     plist = render_launchd_plist(runtime)
-    assert "<key>OCTOP_SERVICE_MODE</key>" in plist
+    assert "<key>HAPPYCLAW_SERVICE_MODE</key>" in plist
     assert "<string>launchd</string>" in plist
     assert "<string>run</string>" in plist
     assert "<key>NumberOfFiles</key>" in plist

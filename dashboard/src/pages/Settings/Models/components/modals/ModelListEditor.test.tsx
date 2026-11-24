@@ -63,7 +63,8 @@ describe("ModelListEditor", () => {
     await user.click(screen.getByRole("button", { name: "models.editModel" }));
     expect(await screen.findByDisplayValue("qwen")).toBeInTheDocument();
     expect(scrollIntoView).toHaveBeenCalled();
-    expect(screen.getByText("models.purposeChat")).toBeInTheDocument();
+    // Model purpose moved out of this editor; what stays behind is the
+    // advanced toggle that reveals the reasoning controls.
     expect(screen.queryByText("models.reasoning")).not.toBeInTheDocument();
 
     await user.click(
