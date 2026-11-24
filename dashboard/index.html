@@ -36,13 +36,14 @@
       so a stored "light" preference wins over an OS dark setting.
       Storage shape matches appearanceStorage.ts (THEME_STORAGE_KEY = "theme").
 
-      The desktop shell loads this page with ?octopTheme=system|light|dark
+      The desktop shell loads this page with ?happyclawTheme=system|light|dark
+      (pre-rename builds sent ?octopTheme=; both are read).
       (DASHBOARD_THEME_QUERY in desktop/src/main/windows/chrome.ts). That
       device preference wins over localStorage and is written back, then the
       query is removed so a later reload keeps the stored value. Browser
       loads have no query and keep using localStorage alone.
     -->
-    <script id="octop-boot-theme">
+    <script id="happyclaw-boot-theme">
       (function () {
         var KEY = "theme";
         var mode = "light";
@@ -65,9 +66,8 @@
           return "system";
         }
         function shellPref() {
-          var query = new URLSearchParams(window.location.search).get(
-            "octopTheme",
-          );
+          var params = new URLSearchParams(window.location.search);
+          var query = params.get("happyclawTheme") || params.get("octopTheme");
           return isPref(query) ? query : null;
         }
         // Keep palette / customColor; only the light/dark preference moves.
@@ -88,6 +88,7 @@
           localStorage.setItem(KEY, JSON.stringify(next));
           try {
             var url = new URL(window.location.href);
+            url.searchParams.delete("happyclawTheme");
             url.searchParams.delete("octopTheme");
             history.replaceState(
               null,
@@ -131,7 +132,7 @@
         min-height: 100%;
         min-height: 100lvh;
       }
-      #octop-boot {
+      #happyclaw-boot {
         /* fixed + inset: always viewport-centered before app CSS sets #root height */
         position: fixed;
         inset: 0;
@@ -164,7 +165,7 @@
       html[data-theme="dark"] body {
         background: #0e0e0e;
       }
-      html[data-theme="dark"] #octop-boot {
+      html[data-theme="dark"] #happyclaw-boot {
         background: radial-gradient(
             720px 380px at 50% -8%,
             rgba(240, 139, 154, 0.1),
@@ -173,31 +174,31 @@
           #0e0e0e;
         color: rgba(255, 255, 255, 0.6);
       }
-      .octop-boot-stack {
+      .happyclaw-boot-stack {
         display: flex;
         flex-direction: column;
         align-items: center;
-        animation: octop-boot-in 420ms ease-out both;
+        animation: happyclaw-boot-in 420ms ease-out both;
       }
       /* Horizontal lockup: dark wordmark on light, white on dark. */
-      .octop-boot-logo {
+      .happyclaw-boot-logo {
         display: block;
         height: 72px;
         width: auto;
         max-width: min(260px, 75vw);
         object-fit: contain;
       }
-      .octop-boot-logo-dark {
+      .happyclaw-boot-logo-dark {
         display: none;
       }
-      html[data-theme="dark"] .octop-boot-logo-light {
+      html[data-theme="dark"] .happyclaw-boot-logo-light {
         display: none;
       }
-      html[data-theme="dark"] .octop-boot-logo-dark {
+      html[data-theme="dark"] .happyclaw-boot-logo-dark {
         display: block;
       }
       /* Arc + status: same composition as BrandLoading / shell splash. */
-      .octop-boot-status {
+      .happyclaw-boot-status {
         display: flex;
         align-items: center;
         gap: 12px;
@@ -207,24 +208,24 @@
         line-height: 1;
         letter-spacing: 0.01em;
       }
-      .octop-boot-spinner {
+      .happyclaw-boot-spinner {
         position: relative;
         display: block;
         width: 22px;
         height: 22px;
         flex: none;
       }
-      .octop-boot-spinner-track {
+      .happyclaw-boot-spinner-track {
         position: absolute;
         inset: 0;
         box-sizing: border-box;
         border: 2px solid rgba(232, 93, 117, 0.14);
         border-radius: 50%;
       }
-      html[data-theme="dark"] .octop-boot-spinner-track {
+      html[data-theme="dark"] .happyclaw-boot-spinner-track {
         border-color: rgba(240, 139, 154, 0.16);
       }
-      .octop-boot-spinner-ring {
+      .happyclaw-boot-spinner-ring {
         position: absolute;
         inset: 0;
         border-radius: 50%;
@@ -245,9 +246,9 @@
           transparent calc(100% - 2px),
           #000 calc(100% - 2px + 0.5px)
         );
-        animation: octop-boot-spin 0.9s linear infinite;
+        animation: happyclaw-boot-spin 0.9s linear infinite;
       }
-      html[data-theme="dark"] .octop-boot-spinner-ring {
+      html[data-theme="dark"] .happyclaw-boot-spinner-ring {
         background: conic-gradient(
           from 0deg,
           transparent 0%,
@@ -256,12 +257,12 @@
           #f08b9a 100%
         );
       }
-      @keyframes octop-boot-spin {
+      @keyframes happyclaw-boot-spin {
         to {
           transform: rotate(360deg);
         }
       }
-      @keyframes octop-boot-in {
+      @keyframes happyclaw-boot-in {
         from {
           opacity: 0;
           transform: translateY(6px);
@@ -272,8 +273,8 @@
         }
       }
       @media (prefers-reduced-motion: reduce) {
-        .octop-boot-stack,
-        .octop-boot-spinner-ring {
+        .happyclaw-boot-stack,
+        .happyclaw-boot-spinner-ring {
           animation: none;
         }
       }
@@ -362,29 +363,29 @@
     </script>
   </head>
   <body>
-    <div id="octop-chrome"></div>
-    <div id="octop-stage">
+    <div id="happyclaw-chrome"></div>
+    <div id="happyclaw-stage">
     <div id="root">
-      <div id="octop-boot" role="status" aria-live="polite">
-        <div class="octop-boot-stack">
+      <div id="happyclaw-boot" role="status" aria-live="polite">
+        <div class="happyclaw-boot-stack">
           <img
-            class="octop-boot-logo octop-boot-logo-light"
+            class="happyclaw-boot-logo happyclaw-boot-logo-light"
             src="%BASE_URL%logo_horizontal_dark.png"
             alt="HappyClaw"
             height="72"
           />
           <img
-            class="octop-boot-logo octop-boot-logo-dark"
+            class="happyclaw-boot-logo happyclaw-boot-logo-dark"
             src="%BASE_URL%logo_horizontal_white.png"
             alt="HappyClaw"
             height="72"
           />
-          <p class="octop-boot-status">
-            <span class="octop-boot-spinner" aria-hidden="true">
-              <span class="octop-boot-spinner-track"></span>
-              <span class="octop-boot-spinner-ring"></span>
+          <p class="happyclaw-boot-status">
+            <span class="happyclaw-boot-spinner" aria-hidden="true">
+              <span class="happyclaw-boot-spinner-track"></span>
+              <span class="happyclaw-boot-spinner-ring"></span>
             </span>
-            <span id="octop-boot-text">Opening…</span>
+            <span id="happyclaw-boot-text">Opening…</span>
           </p>
         </div>
       </div>
@@ -392,7 +393,7 @@
     </div>
     <script>
       (function () {
-        var el = document.getElementById("octop-boot-text");
+        var el = document.getElementById("happyclaw-boot-text");
         if (!el) return;
         try {
           var lang = (

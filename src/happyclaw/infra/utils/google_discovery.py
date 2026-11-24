@@ -23,9 +23,11 @@ from __future__ import annotations
 import importlib.abc
 import sys
 import threading
+from collections.abc import Sequence
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 
 _TARGET = "googleapiclient.discovery"
 _MARKER = "__octop_static_discovery_fallback__"
@@ -50,7 +52,7 @@ def _patch(module: ModuleType) -> None:
     if original is None or getattr(original, _MARKER, False):
         return
 
-    def build_with_fallback(*args: Any, **kwargs: Any):
+    def build_with_fallback(*args: Any, **kwargs: Any) -> Any:
         try:
             return original(*args, **kwargs)
         except Exception as exc:  # noqa: BLE001 - only static misses are retried
@@ -63,7 +65,7 @@ def _patch(module: ModuleType) -> None:
                 raise RuntimeError(HINT_ZH) from retry_exc
 
     setattr(build_with_fallback, _MARKER, True)
-    module.build = build_with_fallback
+    setattr(module, "build", build_with_fallback)  # noqa: B010 - patches the module namespace
 
 
 class _PatchingLoader(importlib.abc.Loader):
@@ -72,7 +74,7 @@ class _PatchingLoader(importlib.abc.Loader):
     def __init__(self, inner: Any) -> None:
         self._inner = inner
 
-    def create_module(self, spec):  # noqa: ANN001 - signature fixed by importlib
+    def create_module(self, spec: ModuleSpec) -> ModuleType | None:
         creator = getattr(self._inner, "create_module", None)
         return None if creator is None else creator(spec)
 
@@ -87,7 +89,12 @@ class _PatchingLoader(importlib.abc.Loader):
 class _PatchingFinder(importlib.abc.MetaPathFinder):
     """Patch ``googleapiclient.discovery`` on first import, whatever imports it."""
 
-    def find_spec(self, fullname: str, path=None, target=None):  # noqa: ANN001
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[str] | None = None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
         if fullname != _TARGET:
             return None
         for finder in tuple(sys.meta_path):
@@ -99,6 +106,7 @@ class _PatchingFinder(importlib.abc.MetaPathFinder):
             spec = find_spec(fullname, path, target)
             if spec is None:
                 continue
+            spec = cast("ModuleSpec", spec)
             if spec.loader is not None:
                 spec.loader = _PatchingLoader(spec.loader)
             return spec

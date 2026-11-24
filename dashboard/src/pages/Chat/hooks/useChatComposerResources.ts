@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { connectorsApi } from "../../../api/modules/connectors";
 import { providerApi } from "../../../api/modules/provider";
 import { preferencesApi } from "../../../api/modules/preferences";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import {
   knowledgeBasesApi,
   type KnowledgeBase,
@@ -551,7 +551,7 @@ export function useChatComposerResources(
         activeThreadId &&
         !isPendingThread(activeThreadId)
       ) {
-        void octopThreadsApi
+        void happyclawThreadsApi
           .patch(resolvedAgentId, activeThreadId, {
             model_ref: model,
             reasoning_mode: nextMode,
@@ -626,7 +626,7 @@ export function useChatComposerResources(
         activeThreadId &&
         !isPendingThread(activeThreadId)
       ) {
-        void octopThreadsApi.patch(resolvedAgentId, activeThreadId, {
+        void happyclawThreadsApi.patch(resolvedAgentId, activeThreadId, {
           reasoning_mode: mode,
           reasoning_effort: effort,
         });
@@ -652,7 +652,7 @@ export function useChatComposerResources(
         activeThreadId &&
         !isPendingThread(activeThreadId)
       ) {
-        void octopThreadsApi.patch(resolvedAgentId, activeThreadId, {
+        void happyclawThreadsApi.patch(resolvedAgentId, activeThreadId, {
           conversation_mode: mode,
         });
       }
@@ -674,7 +674,7 @@ export function useChatComposerResources(
         activeThreadId &&
         !isPendingThread(activeThreadId)
       ) {
-        void octopThreadsApi.patch(resolvedAgentId, activeThreadId, {
+        void happyclawThreadsApi.patch(resolvedAgentId, activeThreadId, {
           hitl_policy: next,
         });
       }

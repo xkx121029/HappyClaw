@@ -16,7 +16,6 @@ from langchain_core.language_models.fake_chat_models import FakeMessagesListChat
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from happyclaw.infra.dsh.tools import build_dsh_plugin_tools
-
 from tests.dsh_integration.fixtures.tools import fixture_tool
 from tests.unit.infra.dsh.plugin_fixtures import write_package
 
@@ -40,9 +39,7 @@ async def test_model_tool_call_runs_through_pipeline_and_returns_to_chat(
         scope="01AGENT",
         local_roots=[root],
         providers={
-            "dsh:demo": lambda envelope: [
-                replace(fixture_tool.build_definition(), name="echo")
-            ]
+            "dsh:demo": lambda envelope: [replace(fixture_tool.build_definition(), name="echo")]
         },
         hitl=False,
     )

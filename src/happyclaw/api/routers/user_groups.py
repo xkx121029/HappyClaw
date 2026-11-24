@@ -216,7 +216,9 @@ async def create_user_group(
     except Exception as exc:
         kind = _unique_kind(exc)
         if kind == "id":
-            raise HappyclawError(ErrorCode.USER_GROUP_ID_TAKEN, "user group id already exists") from exc
+            raise HappyclawError(
+                ErrorCode.USER_GROUP_ID_TAKEN, "user group id already exists"
+            ) from exc
         if kind == "name":
             raise HappyclawError(
                 ErrorCode.FORBIDDEN, "user group name is already in use", status=409

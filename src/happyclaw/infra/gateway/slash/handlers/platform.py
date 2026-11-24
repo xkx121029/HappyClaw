@@ -10,7 +10,12 @@ from happyclaw.i18n.domains.slash import localized_rows, tr
 from happyclaw.infra.agents.security import tool_execution_may_pause
 from happyclaw.infra.errors import ErrorCode, HappyclawError
 from happyclaw.infra.gateway.slash.catalog import channel_origin
-from happyclaw.infra.gateway.slash.ctx import SlashCtx, ensure_thread_id, lang_of, resolve_user_agent
+from happyclaw.infra.gateway.slash.ctx import (
+    SlashCtx,
+    ensure_thread_id,
+    lang_of,
+    resolve_user_agent,
+)
 from happyclaw.infra.gateway.slash.formatting import markdown_bullets, markdown_kv_block
 from happyclaw.infra.gateway.slash.help import format_help
 from happyclaw.infra.gateway.slash.types import GatewayHandler

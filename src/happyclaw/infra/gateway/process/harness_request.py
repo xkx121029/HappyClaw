@@ -6,7 +6,13 @@ from collections.abc import Sequence
 from typing import Any
 
 from happyclaw_gateway.media import MediaBackend
-from happyclaw_gateway.models import ContentPart, FileContent, ImageContent, InboundMessage, TextContent
+from happyclaw_gateway.models import (
+    ContentPart,
+    FileContent,
+    ImageContent,
+    InboundMessage,
+    TextContent,
+)
 
 from happyclaw.i18n.domains.attachment import (
     attachment_empty_image,

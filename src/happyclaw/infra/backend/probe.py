@@ -158,7 +158,9 @@ def _probe_docker(row: BackendRow) -> dict[str, Any]:
     except ImportError:
         return {
             "ok": False,
-            "message": ("docker sandbox helpers unavailable (pip install 'happyclaw-harness[docker]')"),
+            "message": (
+                "docker sandbox helpers unavailable (pip install 'happyclaw-harness[docker]')"
+            ),
         }
 
     try:

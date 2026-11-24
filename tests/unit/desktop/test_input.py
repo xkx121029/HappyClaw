@@ -50,7 +50,9 @@ def test_virtual_display_does_not_init_pynput_on_click(monkeypatch) -> None:
     monkeypatch.setattr(
         "happyclaw.infra.control.desktop.input.shutil.which", lambda name: "/usr/bin/xdotool"
     )
-    monkeypatch.setattr("happyclaw.infra.control.desktop.input._run_xdotool", lambda *_a, **_k: True)
+    monkeypatch.setattr(
+        "happyclaw.infra.control.desktop.input._run_xdotool", lambda *_a, **_k: True
+    )
 
     inj = InputInjector(display=":99")
     controllers = MagicMock(side_effect=AssertionError("pynput should not be used"))

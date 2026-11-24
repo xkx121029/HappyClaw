@@ -3,7 +3,7 @@
  * Used by Terminal AI and other embedded chat surfaces (same path as /chat).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { octopThreadsApi, type OctopThread } from "../api/modules/octopThreads";
+import { happyclawThreadsApi, type HappyclawThread } from "../api/modules/happyclawThreads";
 import { useChat } from "../pages/Chat/hooks/useChat";
 import {
   pickPreferredSession,
@@ -55,7 +55,7 @@ export function useAgentThreadChat(
   const hitlMode = options.hitlMode ?? "allow_all";
   const pinKey = options.pinKey;
   const [threadId, setThreadId] = useState<string | null>(null);
-  const [threads, setThreads] = useState<OctopThread[]>([]);
+  const [threads, setThreads] = useState<HappyclawThread[]>([]);
   const [booting, setBooting] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
   /** Bumped by ``reload``: re-runs the boot effect after a failure. */
@@ -113,7 +113,7 @@ export function useAgentThreadChat(
       return;
     }
     try {
-      setThreads(await octopThreadsApi.list(agentId));
+      setThreads(await happyclawThreadsApi.list(agentId));
     } catch {
       // Listing is best-effort; the conversation itself still works.
     }
@@ -148,7 +148,7 @@ export function useAgentThreadChat(
 
     void (async () => {
       try {
-        const rows = await octopThreadsApi.list(agentId);
+        const rows = await happyclawThreadsApi.list(agentId);
         if (!cancelled) setThreads(rows);
 
         if (pinnedRef.current) {
@@ -165,7 +165,7 @@ export function useAgentThreadChat(
             if (!cancelled) adoptThread(agentId, pinIdentity, remembered);
             return;
           }
-          const created = await octopThreadsApi.create(agentId, {
+          const created = await happyclawThreadsApi.create(agentId, {
             rebind: false,
           });
           tid = created.thread_id;
@@ -175,17 +175,17 @@ export function useAgentThreadChat(
           const preferred = pickPreferredSession(rows.map(toSession));
           tid = preferred?.threadId ?? "";
           if (!tid) {
-            const created = await octopThreadsApi.create(agentId);
+            const created = await happyclawThreadsApi.create(agentId);
             tid = created.thread_id;
           }
-          await octopThreadsApi.rebind(agentId, tid);
+          await happyclawThreadsApi.rebind(agentId, tid);
         }
 
         // 只在会话尚未设置策略时落默认值，不覆盖用户手动改过的设置
         const existing = rows.find((row) => row.thread_id === tid);
         if (!existing?.hitl_policy) {
           try {
-            await octopThreadsApi.patch(agentId, tid, {
+            await happyclawThreadsApi.patch(agentId, tid, {
               hitl_policy: { mode: hitlMode },
             });
           } catch {
@@ -247,12 +247,12 @@ export function useAgentThreadChat(
         ? bound.threadId
         : null;
     if (currentThreadId && messages.length === 0) return;
-    const created = await octopThreadsApi.create(
+    const created = await happyclawThreadsApi.create(
       agentId,
       pinKey ? { rebind: false } : undefined,
     );
     if (pinKey) writeSurfaceThread(pinKey, agentId, created.thread_id);
-    else await octopThreadsApi.rebind(agentId, created.thread_id);
+    else await happyclawThreadsApi.rebind(agentId, created.thread_id);
     pinnedRef.current = created.thread_id;
     adoptThread(agentId, pinIdentity, created.thread_id);
     void refreshThreads();
@@ -270,7 +270,7 @@ export function useAgentThreadChat(
     async (id: string) => {
       if (!agentId || !id) return;
       if (pinKey) writeSurfaceThread(pinKey, agentId, id);
-      else await octopThreadsApi.rebind(agentId, id);
+      else await happyclawThreadsApi.rebind(agentId, id);
       pinnedRef.current = id;
       adoptThread(agentId, pinIdentity, id);
     },

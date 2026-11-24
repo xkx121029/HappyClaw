@@ -50,7 +50,9 @@ def test_host_browse_roots_windows_enumerates_drives_independent_of_home(
     """
     home = tmp_path / "profile_on_c"
     home.mkdir()
-    monkeypatch.setattr("happyclaw.infra.utils.host_dirs._ready_drive_roots", lambda: ["C:/", "D:/"])
+    monkeypatch.setattr(
+        "happyclaw.infra.utils.host_dirs._ready_drive_roots", lambda: ["C:/", "D:/"]
+    )
     monkeypatch.setattr("happyclaw.infra.utils.host_dirs.os.name", "nt")
     monkeypatch.setattr("happyclaw.infra.utils.host_dirs.Path.home", lambda: home)
 

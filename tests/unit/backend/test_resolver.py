@@ -194,6 +194,10 @@ def test_windows_neutralize_foreign_drive_root_scopes_to_workspace() -> None:
     assert out["type"] == "local_shell"
 
 
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="drive letters only exist on Windows; on POSIX tmp_path has no drive to compare",
+)
 def test_windows_neutralize_same_drive_root_kept(tmp_path: Path) -> None:
     """A drive root on the workspace's own drive is reachable and stays as-is."""
     spec = {"type": "local_shell", "root_dir": "C:/", "virtual_mode": True}
@@ -216,9 +220,7 @@ def test_default_local_root_follows_octop_home_drive(tmp_path: Path) -> None:
     from happyclaw.infra.agents.experts.default_agent import _default_local_root
 
     fake_layout = SimpleNamespace(root=Path("E:/HAPPYclaw/.octop"))
-    with patch(
-        "happyclaw.infra.utils.paths.PathLayout.from_env", return_value=fake_layout
-    ):
+    with patch("happyclaw.infra.utils.paths.PathLayout.from_env", return_value=fake_layout):
         root = _default_local_root()
     assert root.lower().startswith("e:")
     assert root.endswith("/")

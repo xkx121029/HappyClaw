@@ -14,8 +14,6 @@ completion — so it works regardless of how/where Octop is deployed.
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import base64
 import contextlib
 import json
@@ -28,6 +26,7 @@ import urllib.request
 from pathlib import Path
 from typing import TypedDict
 
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.paths import PathLayout
 
 logger = logging.getLogger(__name__)

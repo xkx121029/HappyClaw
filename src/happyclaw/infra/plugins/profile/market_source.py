@@ -111,10 +111,7 @@ class MarketInstallSource:
     def envelopes(self) -> dict[str, PluginEnvelope]:
         """Provider compatible with ``ProfileRuntime(envelope_provider=...)``."""
 
-        return {
-            plugin_id: slot.envelope
-            for plugin_id, slot in self.installed_slots().items()
-        }
+        return {plugin_id: slot.envelope for plugin_id, slot in self.installed_slots().items()}
 
     def broken(self) -> Mapping[str, str]:
         return dict(self._broken)

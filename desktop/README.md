@@ -56,7 +56,7 @@ CI can do it explicitly with `npx install-electron`.
 Node is pinned to **24** by `src/mise.toml`, overriding the repo-root pin of
 20. That override is scoped to this directory and nowhere else: the Dashboard,
 `docker/Dockerfile` (`node:20-slim`), `release.yml`, `fnos-build-fpk.yml`,
-`octop-desktop.yml` and the server all stay on Node 20. The reason for the split
+`happyclaw-desktop.yml` and the server all stay on Node 20. The reason for the split
 is `pnpm test`, which uses `node --test --experimental-strip-types` and needs
 Node ≥22.6 (on Node 20 the runner dies with `bad option`), plus Node 20's April
 2026 EOL. This only affects build/test tooling: the shipped app runs on
@@ -198,14 +198,15 @@ and is not implemented yet.
 
 ## WebSocket relay (shell-owned)
 
-`octop://app` cannot carry a WebSocket handshake: the upgrade never reaches
+`happyclaw://app` cannot carry a WebSocket handshake: the upgrade never reaches
 `protocol.handle`, and `webRequest.onBeforeRequest` drops `redirectURL` for a
 `webSocket` request. So the shell runs a relay on `127.0.0.1`
 (`main/protocol/ws-relay.ts`) and the page dials
 `ws://127.0.0.1:<ephemeral>/<per-launch path segment>/api/<path>?<query>`,
 learning both from `window.octopDesktop.wsEndpoint()` — never the sidecar port,
 which the relay re-reads per connection. Requests without the exact path segment,
-or with any `Origin` other than `octop://app`, are refused with `403`; a sidecar
+or with any `Origin` other than `happyclaw://app` (the pre-rename `octop://`
+  scheme stays registered and served), are refused with `403`; a sidecar
 that is down gives `503` and an unreachable one `504`, while a backend refusal
 (401/404) is passed through instead of being turned into a tunnel. The JWT still
 travels in the query, exactly as it does in a browser — the relay injects
@@ -225,7 +226,7 @@ the taskbar or Dock.
    download origins only).
 2. `main/update/download.ts` streams the installer into `$TMPDIR/octop-update`
    and reports progress to the taskbar/Dock.
-3. API admission closes (the `octop://app/api/*` proxy answers `503`), then
+3. API admission closes (the `happyclaw://app/api/*` proxy answers `503`), then
    `SidecarSupervisor.stop()` waits for Python to exit **by itself with code 0**.
    A forced kill or non-zero exit cancels the install instead of replacing files
    under a live backend.
@@ -294,7 +295,7 @@ From repo root:
 make -f desktop/portable/Makefile green
 ```
 
-CI: `.github/workflows/octop-desktop.yml` builds one package per native
+CI: `.github/workflows/happyclaw-desktop.yml` builds one package per native
 platform/arch (`darwin-arm64`, `darwin-amd64`, `linux-arm64`, `linux-amd64`,
 `windows-arm64`, `windows-amd64`). The green zip matches the published image
 and includes the `browser` extra only. Desktop, OCR, and local embedding stay
@@ -313,6 +314,6 @@ unsigned and not notarized.
 
 A `v*` tag triggers building all six platform/architecture variants and attaches
 both portable and desktop assets to the same GitHub Release. For a trial build
-without publishing a release, dispatch `octop-desktop.yml` on the feature branch
+without publishing a release, dispatch `happyclaw-desktop.yml` on the feature branch
 with `platforms=all` and `attach_release=false`; download the artifacts from
 that workflow run. Do not dispatch on an older tag without the Electron source.

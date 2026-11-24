@@ -1,0 +1,55 @@
+// Sizing vars come from `.happyclaw-spin` in styles/spin-override.css so the
+// indicator can follow antd's size prop; fallbacks cover standalone usage.
+.host {
+  position: relative;
+  display: inline-block;
+  width: var(--happyclaw-spinner-size, 32px);
+  height: var(--happyclaw-spinner-size, 32px);
+  font-size: 0;
+  vertical-align: middle;
+}
+
+.track {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border: var(--happyclaw-spinner-ring-width, 2.5px) solid
+    color-mix(in srgb, var(--fn-color-brand) 14%, transparent);
+  border-radius: 50%;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 55%,
+    color-mix(in srgb, var(--fn-color-brand) 40%, transparent) 80%,
+    var(--fn-color-brand) 100%
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - var(--happyclaw-spinner-ring-width, 2.5px)),
+    #000 calc(100% - var(--happyclaw-spinner-ring-width, 2.5px) + 0.5px)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - var(--happyclaw-spinner-ring-width, 2.5px)),
+    #000 calc(100% - var(--happyclaw-spinner-ring-width, 2.5px) + 0.5px)
+  );
+  animation: octopSpinnerSpin 0.9s linear infinite;
+}
+
+@keyframes octopSpinnerSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring {
+    animation: none;
+  }
+}

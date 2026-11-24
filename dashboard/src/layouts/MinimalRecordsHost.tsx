@@ -4,7 +4,7 @@ import { message as antMessage } from "@/utils/antdMessage";
 import { useTranslation } from "react-i18next";
 import { apiErrorMessage } from "../utils/apiError";
 import { useAgent, selectEnabledExperts } from "../context/AgentContext";
-import { octopThreadsApi } from "../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../api/modules/happyclawThreads";
 import { deleteConversation } from "../pages/Chat/utils/deleteConversation";
 import MinimalAgentSessionNav from "../pages/Chat/components/MinimalAgentSessionNav";
 import { emitSessionEvent } from "../pages/Chat/hooks/chatStore";
@@ -94,7 +94,7 @@ export default function MinimalRecordsHost() {
       if (!resolvedAgentId) return;
       const next = formatThreadTitle(name) || name.trim();
       if (!next) return;
-      void octopThreadsApi
+      void happyclawThreadsApi
         .rename(resolvedAgentId, sessionId, next)
         .catch(() => {});
     },
@@ -104,7 +104,7 @@ export default function MinimalRecordsHost() {
   const handlePinActive = useCallback(
     (sessionId: string, pinned: boolean) => {
       if (!resolvedAgentId) return;
-      void octopThreadsApi
+      void happyclawThreadsApi
         .patch(resolvedAgentId, sessionId, { pinned })
         .catch(() => {});
     },
@@ -116,7 +116,7 @@ export default function MinimalRecordsHost() {
       const agent = agentId || resolvedAgentId;
       if (!agent || !threadId) return;
       try {
-        const created = await octopThreadsApi.fork(agent, threadId, {
+        const created = await happyclawThreadsApi.fork(agent, threadId, {
           assistant_turns_from_end: 1,
         });
         setActiveAgent(agent);

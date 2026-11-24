@@ -102,9 +102,7 @@ def _discover_market(
     skipped: list[DshToolSkip],
 ) -> None:
     if not root.is_dir():
-        skipped.append(
-            DshToolSkip("", ORIGIN_MARKET, SKIP_MARKET_ROOT_MISSING, str(root))
-        )
+        skipped.append(DshToolSkip("", ORIGIN_MARKET, SKIP_MARKET_ROOT_MISSING, str(root)))
         return
     try:
         source = MarketInstallSource(root)
@@ -112,9 +110,7 @@ def _discover_market(
         broken = source.broken()
     except Exception as exc:  # pragma: no cover - defensive, adapters are read-only
         logger.warning("DSH market discovery failed under %s: %s", root, exc)
-        skipped.append(
-            DshToolSkip("", ORIGIN_MARKET, SKIP_DISCOVERY_FAILED, _describe(exc))
-        )
+        skipped.append(DshToolSkip("", ORIGIN_MARKET, SKIP_DISCOVERY_FAILED, _describe(exc)))
         return
 
     touched: set[str] = set()
@@ -125,9 +121,7 @@ def _discover_market(
         _admit(slot.envelope, ORIGIN_MARKET, str(slot.slot), candidates, skipped)
     for plugin_id, reason in sorted(broken.items()):
         touched.add(_native_of(plugin_id))
-        skipped.append(
-            DshToolSkip(plugin_id, ORIGIN_MARKET, SKIP_INSTALL_BROKEN, reason)
-        )
+        skipped.append(DshToolSkip(plugin_id, ORIGIN_MARKET, SKIP_INSTALL_BROKEN, reason))
 
     # ``installed_slots`` silently drops a plugin root whose ledger has no
     # readable ``current`` pointer. Enumerate the DSH install directories only to
@@ -155,9 +149,7 @@ def _discover_local(
         envelopes = DshPluginLoader().discover(roots=list(roots), strict=False)
     except Exception as exc:  # pragma: no cover - loader already swallows bad files
         logger.warning("DSH local discovery failed for %s: %s", roots, exc)
-        skipped.append(
-            DshToolSkip("", ORIGIN_LOCAL, SKIP_DISCOVERY_FAILED, _describe(exc))
-        )
+        skipped.append(DshToolSkip("", ORIGIN_LOCAL, SKIP_DISCOVERY_FAILED, _describe(exc)))
         return
     for envelope in envelopes:
         if envelope.kind is not PluginKind.DSH:

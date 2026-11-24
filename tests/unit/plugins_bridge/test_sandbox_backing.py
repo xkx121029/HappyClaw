@@ -159,10 +159,7 @@ async def test_strict_mode_denies_unbacked_call_without_running_the_tool() -> No
     assert channel.requests == []
     assert invocation.result.is_error is True
     assert invocation.result.error is not None
-    assert (
-        invocation.result.error["code"]
-        == DshToolErrorCode.TOOL_SANDBOX_BACKING_MISSING.value
-    )
+    assert invocation.result.error["code"] == DshToolErrorCode.TOOL_SANDBOX_BACKING_MISSING.value
     assert events == ["tool/call", "tool/result"]
     record = guardrail.ledger.records[0]
     assert record.decision is ApprovalDecision.DENIED

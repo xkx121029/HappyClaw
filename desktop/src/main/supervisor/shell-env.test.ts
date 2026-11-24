@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { join, resolve, sep } from "node:path";
 import { test } from "node:test";
 
-import { resolveOctopHome, expandHome } from "./shell-env";
+import { resolveHappyclawHome, expandHome } from "./shell-env";
 import { resolveDashboardFile, resolveStaticPath, isExternalLink } from "../protocol/static-handler";
 import { isApiPath, toBackendUrl, sanitizeForwardHeaders } from "../protocol/stream-proxy";
 
@@ -21,16 +21,16 @@ import { isApiPath, toBackendUrl, sanitizeForwardHeaders } from "../protocol/str
  */
 const DASHBOARD_ROOT = resolve(sep, "root", "dashboard");
 
-test("resolveOctopHome prefers inherited non-empty value", () => {
+test("resolveHappyclawHome prefers inherited non-empty value", () => {
   assert.equal(
-    resolveOctopHome({ HAPPYCLAW_HOME: " /data/octop " }, {}, "/home/u"),
+    resolveHappyclawHome({ HAPPYCLAW_HOME: " /data/octop " }, {}, "/home/u"),
     "/data/octop",
   );
 });
 
-test("resolveOctopHome falls back to login shell then ~/.octop", () => {
-  assert.equal(resolveOctopHome({}, { HAPPYCLAW_HOME: "/from/shell" }, "/home/u"), "/from/shell");
-  assert.equal(resolveOctopHome({}, {}, "/home/u"), join("/home/u", ".octop"));
+test("resolveHappyclawHome falls back to the login shell then ~/.happyclaw", () => {
+  assert.equal(resolveHappyclawHome({}, { HAPPYCLAW_HOME: "/from/shell" }, "/home/u"), "/from/shell");
+  assert.equal(resolveHappyclawHome({}, {}, "/home/u"), join("/home/u", ".happyclaw"));
 });
 
 test("expandHome expands leading tilde", () => {
@@ -69,6 +69,7 @@ test("reload of a client route serves the dashboard shell", () => {
 test("isExternalLink only allows real http(s) links", () => {
   assert.equal(isExternalLink("https://docs.example.com/"), true);
   assert.equal(isExternalLink("http://127.0.0.1:1234/api"), false);
+  assert.equal(isExternalLink("happyclaw://app/api/health"), false);
   assert.equal(isExternalLink("octop://app/api/health"), false);
 });
 

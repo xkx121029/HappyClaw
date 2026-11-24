@@ -108,6 +108,89 @@ if (typeof window !== "undefined") {
     ).IntersectionObserver = _IntersectionObserver;
   }
 
+  // DOMMatrix — jsdom ships no geometry API, but pdfjs-dist (reached through
+  // react-pdf) builds one while the module is being imported. Any test whose
+  // import graph touches a PDF preview therefore dies with
+  // ``ReferenceError: DOMMatrix is not defined`` before an assertion runs.
+  // This is the 2D affine subset pdfjs actually calls.
+  class _DOMMatrix {
+    a = 1;
+    b = 0;
+    c = 0;
+    d = 1;
+    e = 0;
+    f = 0;
+    constructor(init?: number[] | string) {
+      if (Array.isArray(init) && init.length >= 6) {
+        const values = init.slice(0, 6).map(Number);
+        [this.a, this.b, this.c, this.d, this.e, this.f] = [
+          values[0],
+          values[1],
+          values[2],
+          values[3],
+          values[4],
+          values[5],
+        ];
+      }
+    }
+    get isIdentity() {
+      return (
+        this.a === 1 &&
+        this.b === 0 &&
+        this.c === 0 &&
+        this.d === 1 &&
+        this.e === 0 &&
+        this.f === 0
+      );
+    }
+    multiply(other: _DOMMatrix): _DOMMatrix {
+      return new _DOMMatrix([
+        this.a * other.a + this.c * other.b,
+        this.b * other.a + this.d * other.b,
+        this.a * other.c + this.c * other.d,
+        this.b * other.c + this.d * other.d,
+        this.a * other.e + this.c * other.f + this.e,
+        this.b * other.e + this.d * other.f + this.f,
+      ]);
+    }
+    translate(x: number, y = 0): _DOMMatrix {
+      return this.multiply(new _DOMMatrix([1, 0, 0, 1, x, y]));
+    }
+    scale(sx: number, sy = sx): _DOMMatrix {
+      return this.multiply(new _DOMMatrix([sx, 0, 0, sy, 0, 0]));
+    }
+    inverse(): _DOMMatrix {
+      const det = this.a * this.d - this.b * this.c;
+      if (!det) return new _DOMMatrix();
+      return new _DOMMatrix([
+        this.d / det,
+        -this.b / det,
+        -this.c / det,
+        this.a / det,
+        (this.c * this.f - this.d * this.e) / det,
+        (this.b * this.e - this.a * this.f) / det,
+      ]);
+    }
+    transformPoint(point: { x?: number; y?: number } = {}) {
+      const { x = 0, y = 0 } = point;
+      return {
+        x: this.a * x + this.c * y + this.e,
+        y: this.b * x + this.d * y + this.f,
+        z: 0,
+        w: 1,
+      };
+    }
+    toString() {
+      return `matrix(${this.a}, ${this.b}, ${this.c}, ${this.d}, ${this.e}, ${this.f})`;
+    }
+  }
+  if (!("DOMMatrix" in window)) {
+    (window as unknown as { DOMMatrix: typeof _DOMMatrix }).DOMMatrix =
+      _DOMMatrix;
+    (globalThis as unknown as { DOMMatrix: typeof _DOMMatrix }).DOMMatrix =
+      _DOMMatrix;
+  }
+
   // jsdom doesn't implement ``getComputedStyle().transition`` properly,
   // so antd's wave / motion can throw — silence that one noisy console
   // warning without hiding real errors.

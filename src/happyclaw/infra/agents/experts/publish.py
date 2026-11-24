@@ -80,7 +80,9 @@ def assert_can_mutate_published(row: PublishedExpertRow, user: User) -> None:
     """Allow a published expert's creator or an administrator to mutate it."""
     if user.is_admin or str(user.id) == row.created_by:
         return
-    raise HappyclawError(ErrorCode.FORBIDDEN, "published expert can only be modified by its creator")
+    raise HappyclawError(
+        ErrorCode.FORBIDDEN, "published expert can only be modified by its creator"
+    )
 
 
 def resolve_published_expert_slug(

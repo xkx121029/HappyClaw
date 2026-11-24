@@ -9,7 +9,10 @@ from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResp
 from langchain_core.tools.base import BaseTool
 from langgraph.config import get_config
 
-from happyclaw.infra.knowledge.tools import SEARCH_KNOWLEDGE_TOOL, format_search_knowledge_description
+from happyclaw.infra.knowledge.tools import (
+    SEARCH_KNOWLEDGE_TOOL,
+    format_search_knowledge_description,
+)
 
 
 def catalog_for_selected_bases(

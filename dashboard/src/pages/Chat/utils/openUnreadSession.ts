@@ -1,4 +1,4 @@
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import { sortSessions, toSession, type Session } from "../hooks/useSessions";
 
 /** First unread row in list order. Callers that sort with ``sortSessions`` put pinned threads first. */
@@ -20,7 +20,7 @@ export async function openAgentUnread(
     return;
   }
   try {
-    const rows = await octopThreadsApi.list(agentId, 50);
+    const rows = await happyclawThreadsApi.list(agentId, 50);
     const fetched = pickUnreadSession(sortSessions(rows.map(toSession)));
     if (fetched) onSelect(fetched.id, agentId);
   } catch {

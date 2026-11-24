@@ -48,7 +48,7 @@ def process_age_ms() -> float | None:
     try:
         import psutil  # noqa: PLC0415 - optional, only for diagnostics
 
-        created = psutil.Process().create_time()
+        created = float(psutil.Process().create_time())
     except Exception:  # pragma: no cover - psutil absent or denied
         return None
     return (time.time() - created) * 1000.0
@@ -79,9 +79,7 @@ def emit_process() -> None:
     """Report spawn → now, split into interpreter start-up and package imports."""
     since_spawn_ms = process_age_ms()
     since_import_ms = (time.perf_counter() - _origin_mono()) * 1000.0
-    interpreter_ms = (
-        None if since_spawn_ms is None else max(0.0, since_spawn_ms - since_import_ms)
-    )
+    interpreter_ms = None if since_spawn_ms is None else max(0.0, since_spawn_ms - since_import_ms)
     emit(
         "process",
         since_spawn_ms if since_spawn_ms is not None else since_import_ms,

@@ -8,8 +8,8 @@ import pytest
 
 from happyclaw.infra.plugins.market import (
     ChecksumMismatchError,
-    IndexUnusableError,
     HappyclawSource,
+    IndexUnusableError,
 )
 from happyclaw.infra.plugins.market.digest import sha256_bytes
 from happyclaw.infra.plugins.market.errors import PayloadError

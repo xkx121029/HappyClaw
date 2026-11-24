@@ -107,9 +107,7 @@ def resolve_profile(
     def visit(plugin_id: str, requested: LoadMode) -> None:
         current = modes.get(plugin_id)
         effective = requested
-        if current is LoadMode.EAGER:
-            effective = LoadMode.EAGER
-        elif current is LoadMode.LAZY and requested is LoadMode.EAGER:
+        if current is LoadMode.EAGER or current is LoadMode.LAZY and requested is LoadMode.EAGER:
             effective = LoadMode.EAGER
 
         if plugin_id in visited:

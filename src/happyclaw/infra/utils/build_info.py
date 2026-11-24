@@ -2,7 +2,7 @@
 
 ``scripts/packaging/build_dashboard.py`` writes ``dashboard/version.json``
 (git commit, dashboard build time, sha256 of ``index.html``) into the build
-output, which ``octop.spec`` collects as data. Health reports it so an installed
+output, which ``happyclaw.spec`` collects as data. Health reports it so an installed
 bundle can be traced back to the exact frontend that was packaged.
 """
 

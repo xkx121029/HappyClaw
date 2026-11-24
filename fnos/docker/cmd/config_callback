@@ -16,12 +16,12 @@ ENV_FILE="${TRIM_APPDEST:-/var/apps/octop/target}/docker/.env"
 mkdir -p "$(dirname "$ENV_FILE")"
 
 # 挂飞牛 data-share（TRIM_DATA_SHARE_PATHS），与 compose 卷一致。
-DATA_DIR="$(octop_prepare_docker_persist "$ENV_FILE")"
+DATA_DIR="$(happyclaw_prepare_docker_persist "$ENV_FILE")"
 mkdir -p "$DATA_DIR"
 
 WIZARD_TEMPLATE="${TRIM_APPDEST:-/var/apps/octop/target}/wizard/config.template"
 WIZARD_DIR="$(dirname "${TRIM_APPDEST:-/var/apps/octop/target}")/wizard"
 [ -f "$WIZARD_TEMPLATE" ] || WIZARD_TEMPLATE="${TRIM_APPDEST:-/var/apps/octop/target}/../wizard/config"
-octop_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
+happyclaw_render_config_wizard "$WIZARD_TEMPLATE" "$WIZARD_DIR" "$DATA_DIR"
 
 exit 0

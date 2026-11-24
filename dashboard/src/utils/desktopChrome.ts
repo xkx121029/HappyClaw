@@ -73,8 +73,8 @@ export function chromeTopBandPx(
 }
 
 /** Right-edge overlay chrome (dock toolbar, etc.) to keep clear of caption buttons. */
-export const CHROME_END_PAD_ATTR = "data-octop-chrome-end-pad";
-export const WINDOW_CONTROLS_SPACER_ATTR = "data-octop-window-controls-spacer";
+export const CHROME_END_PAD_ATTR = "data-happyclaw-chrome-end-pad";
+export const WINDOW_CONTROLS_SPACER_ATTR = "data-happyclaw-window-controls-spacer";
 
 /**
  * Dock toolbar already has 12px end padding. Subtract that plus 6px so the
@@ -119,10 +119,10 @@ export function windowControlsStartSpacerPx(
 /**
  * Marks shell chrome the shell window treats as a drag region.
  * `layout.css` maps these classes to `-webkit-app-region: drag` / `no-drag`
- * once `data-octop-desktop-chrome` is on `<html>`.
+ * once `data-happyclaw-desktop-chrome` is on `<html>`.
  */
-export const DESKTOP_DRAG_REGION_CLASS = "octop-desktop-drag";
-export const DESKTOP_NO_DRAG_CLASS = "octop-desktop-no-drag";
+export const DESKTOP_DRAG_REGION_CLASS = "happyclaw-desktop-drag";
+export const DESKTOP_NO_DRAG_CLASS = "happyclaw-desktop-no-drag";
 
 /**
  * Which chrome — if any — the page has to make room for.

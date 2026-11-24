@@ -13,10 +13,11 @@ events stay in the log for audit.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 
-from happyclaw.infra.dsh.session.budget import UnitWeights
+from happyclaw.infra.dsh.session.budget import DEFAULT_WEIGHTS, UnitWeights
 from happyclaw.infra.dsh.session.events import EventType, LogRecord
 
 __all__ = [
@@ -79,7 +80,7 @@ def surface_json(nodes: Iterable[SurfaceNode]) -> str:
     )
 
 
-def surface_units(nodes: Iterable[SurfaceNode], weights: UnitWeights = UnitWeights()) -> float:
+def surface_units(nodes: Iterable[SurfaceNode], weights: UnitWeights = DEFAULT_WEIGHTS) -> float:
     """Return the weighted size of everything still visible."""
     total = 0.0
     for node in nodes:
@@ -99,7 +100,7 @@ def surface_units(nodes: Iterable[SurfaceNode], weights: UnitWeights = UnitWeigh
     return round(total, 3)
 
 
-def content_units(content: Any, weights: UnitWeights = UnitWeights()) -> float:
+def content_units(content: Any, weights: UnitWeights = DEFAULT_WEIGHTS) -> float:
     """Measure text blocks with weighted units and images with a fixed price."""
     if content is None:
         return 0.0

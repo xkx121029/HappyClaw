@@ -11,7 +11,8 @@ installed_at) live in ``metadata`` and in the sibling ``.market.json``.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from happyclaw.infra.plugins.market.models import MarketEntry, PluginRelease
 from happyclaw.infra.plugins.market.source import InstalledPayload
@@ -61,9 +62,7 @@ def _config_schema(manifest: Mapping[str, Any]) -> dict[str, Any]:
     return dict(schema) if isinstance(schema, Mapping) else {}
 
 
-def _capabilities(
-    entry: MarketEntry, manifest: Mapping[str, Any]
-) -> tuple[CapabilityKind, ...]:
+def _capabilities(entry: MarketEntry, manifest: Mapping[str, Any]) -> tuple[CapabilityKind, ...]:
     declared: list[CapabilityKind] = list(entry.capabilities)
     bundle = manifest.get("dsh")
     if isinstance(bundle, dict):

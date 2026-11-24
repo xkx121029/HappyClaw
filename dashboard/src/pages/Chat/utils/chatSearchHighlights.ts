@@ -1,5 +1,5 @@
-const ALL_HIGHLIGHT = "octop-chat-search";
-const ACTIVE_HIGHLIGHT = "octop-chat-search-active";
+const ALL_HIGHLIGHT = "happyclaw-chat-search";
+const ACTIVE_HIGHLIGHT = "happyclaw-chat-search-active";
 
 type HighlightCtor = new (...ranges: Range[]) => unknown;
 

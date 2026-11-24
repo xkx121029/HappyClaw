@@ -75,8 +75,7 @@ def build_read_only_guardrail(
         if declared:
             return RiskAssessment(
                 RiskLevel.HIGH,
-                f"plugin {plugin_id or 'unknown'} tool {tool_name} declares "
-                + ", ".join(declared),
+                f"plugin {plugin_id or 'unknown'} tool {tool_name} declares " + ", ".join(declared),
             )
         if known is not None and tool_name not in known:
             return RiskAssessment(RiskLevel.HIGH, UNKNOWN_TOOL_NOTE)

@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from happyclaw.infra.dsh.llm import (
+    AnthropicAdapter,
     AssistantTurnBuilder,
     CancellationToken,
     FailureCode,
@@ -26,7 +27,6 @@ from happyclaw.infra.dsh.llm import (
     UsageDrift,
     adapter_for,
     text_message,
-    AnthropicAdapter,
 )
 
 

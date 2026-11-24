@@ -13,6 +13,7 @@ merge them into the existing value at startup and leave everything else alone.
 from __future__ import annotations
 
 import os
+from collections.abc import MutableMapping
 
 LOOPBACK_HOSTS: tuple[str, ...] = ("127.0.0.1", "localhost", "::1")
 
@@ -20,9 +21,9 @@ _PROXY_VARS = ("NO_PROXY", "no_proxy")
 
 
 def skip_loopback_proxy(
-    env: dict[str, str] | None = None,
+    env: MutableMapping[str, str] | None = None,
     hosts: tuple[str, ...] = LOOPBACK_HOSTS,
-) -> dict[str, str]:
+) -> MutableMapping[str, str]:
     """Return *env* with loopback hosts merged into ``NO_PROXY``.
 
     Pure helper (no ``os.environ`` writes) so it can be unit-tested; merge order

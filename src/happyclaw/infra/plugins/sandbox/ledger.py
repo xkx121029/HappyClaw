@@ -25,14 +25,14 @@ import logging
 from collections import Counter
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, fields
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from happyclaw.infra.plugins.sandbox.audit import (
     SandboxAuditRecord,
-    SandboxCheckRecord,
     SandboxCheckLedger,
+    SandboxCheckRecord,
     new_check_record,
 )
 from happyclaw.infra.plugins.sandbox.errors import describe_exception
@@ -220,7 +220,7 @@ class CheckAggregator:
         checked: tuple[str, ...],
     ) -> None:
         key = (tool_name, stage, coverage, tuple(checked))
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         bucket = self._buckets.get(key)
         if bucket is None:
             bucket = _CheckBucket(now)
@@ -447,14 +447,10 @@ def format_denial_summary(summary: DenialSummary) -> str:
         return "沙箱拒绝汇总：没有记录。"
     lines = [f"沙箱拒绝汇总：共 {summary.total} 条"]
     if summary.since is not None or summary.until is not None:
-        lines[0] += (
-            f"（时间范围 {summary.since or '不限'} ~ {summary.until or '不限'}）"
-        )
+        lines[0] += f"（时间范围 {summary.since or '不限'} ~ {summary.until or '不限'}）"
     lines.append("按插件：")
     for item in summary.by_plugin:
-        lines.append(
-            f"  {item.plugin_id}：{item.total} 次（{item.first_seen} ~ {item.last_seen}）"
-        )
+        lines.append(f"  {item.plugin_id}：{item.total} 次（{item.first_seen} ~ {item.last_seen}）")
         lines.append(f"    阶段：{_format_counts(item.by_stage)}")
         lines.append(f"    错误码：{_format_counts(item.by_error_code)}")
     lines.append(f"按错误码：{_format_counts(summary.by_error_code)}")
@@ -469,9 +465,7 @@ def format_check_summary(summary: CheckSummary) -> str:
         return "沙箱检查汇总：没有记录。"
     lines = [f"沙箱检查汇总：共 {summary.total} 次"]
     if summary.since is not None or summary.until is not None:
-        lines[0] += (
-            f"（时间范围 {summary.since or '不限'} ~ {summary.until or '不限'}）"
-        )
+        lines[0] += f"（时间范围 {summary.since or '不限'} ~ {summary.until or '不限'}）"
     lines.append(f"按插件：{_format_counts(summary.by_plugin)}")
     lines.append(f"按覆盖：{_format_counts(summary.by_coverage)}")
     lines.append(f"按阶段：{_format_counts(summary.by_stage)}")
@@ -654,11 +648,7 @@ def _record_from_mapping(
 ) -> Any:
     if not _REQUIRED_FIELDS[record_type].issubset(payload):
         return None
-    values = {
-        name: payload[name]
-        for name in _RECORD_FIELDS[record_type]
-        if name in payload
-    }
+    values = {name: payload[name] for name in _RECORD_FIELDS[record_type] if name in payload}
     if record_type is SandboxCheckRecord and "checked" in values:
         raw = values["checked"]
         if isinstance(raw, (list, tuple)):
@@ -680,8 +670,8 @@ def _parse_bound(value: datetime | str | None) -> datetime | None:
         except ValueError:
             raise ValueError(f"无法解析时间边界：{value!r}") from None
     if moment.tzinfo is None:
-        moment = moment.replace(tzinfo=timezone.utc)
-    return moment.astimezone(timezone.utc)
+        moment = moment.replace(tzinfo=UTC)
+    return moment.astimezone(UTC)
 
 
 def _bound_text(value: datetime | None) -> str | None:
@@ -700,12 +690,10 @@ def _in_window(
         # when no window was requested, so totals never silently drop records.
         return since is None and until is None
     if moment.tzinfo is None:
-        moment = moment.replace(tzinfo=timezone.utc)
+        moment = moment.replace(tzinfo=UTC)
     if since is not None and moment < since:
         return False
-    if until is not None and moment > until:
-        return False
-    return True
+    return until is None or moment <= until
 
 
 def _sorted_counts(counts: Mapping[str, int]) -> dict[str, int]:

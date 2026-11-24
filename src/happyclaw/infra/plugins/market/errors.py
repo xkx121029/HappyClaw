@@ -21,9 +21,9 @@ transient outage from a tampered package:
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Mapping, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from happyclaw.infra.plugins.runtime.contract import (
     InvalidManifestError,
@@ -113,7 +113,7 @@ class IndexUnusableError(MarketError):
         source: str,
         *,
         reason: str = "",
-        rejected: Sequence["RejectedEntry"] = (),
+        rejected: Sequence[RejectedEntry] = (),
     ) -> None:
         if rejected:
             header = f"索引 {source} 的 {len(rejected)} 个条目全部被拒绝，市场无法使用"
@@ -232,8 +232,7 @@ class DependencyInUseError(MarketError):
             for dep_id, dep_version, constraint in dependents
         )
         super().__init__(
-            f"无法卸载 {plugin_id} {version}：已安装的 {listed} 依赖它，"
-            "请先卸载依赖方",
+            f"无法卸载 {plugin_id} {version}：已安装的 {listed} 依赖它，请先卸载依赖方",
             code=MarketErrorCode.DEPENDENCY_IN_USE,
             details={
                 "plugin_id": plugin_id,
@@ -268,8 +267,7 @@ class DependencyConstraintError(VersionConflictError):
             for dep_id, dep_version, constraint in mismatched
         )
         super().__init__(
-            f"无法升级 {plugin_id} 到 {version}：已安装的 {listed}，"
-            "升级后不再满足，请先升级依赖方",
+            f"无法升级 {plugin_id} 到 {version}：已安装的 {listed}，升级后不再满足，请先升级依赖方",
             details={
                 "plugin_id": plugin_id,
                 "version": version,

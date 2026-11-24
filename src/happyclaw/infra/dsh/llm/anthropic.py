@@ -22,6 +22,7 @@ from happyclaw.infra.dsh.llm.types import (
     BlockEnd,
     BlockKind,
     BlockStart,
+    ContentBlock,
     FinishChunk,
     FinishReason,
     LlmRequest,
@@ -293,9 +294,7 @@ class AnthropicAdapter:
             events.append(TextDelta(index, initial))
         return events
 
-    def _translate_delta(
-        self, state: _StreamState, event: Mapping[str, Any]
-    ) -> list[StreamChunk]:
+    def _translate_delta(self, state: _StreamState, event: Mapping[str, Any]) -> list[StreamChunk]:
         index = _int(event.get("index"))
         current = state.blocks.get(index)
         delta = _mapping(event.get("delta")) or {}
@@ -334,6 +333,7 @@ class AnthropicAdapter:
             return []
         state.open_blocks.discard(index)
         text = "".join(current.parts)
+        block: ContentBlock
         if current.kind is BlockKind.TOOL_CALL:
             block = ToolCallBlock(current.call_id, current.name, text)
         elif current.kind is BlockKind.REASONING:

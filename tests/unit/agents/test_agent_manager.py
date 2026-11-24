@@ -653,7 +653,7 @@ def test_memory_runtime_switches_skip_unsupported_harness_fields() -> None:
 def test_memory_runtime_switches_advertise_only_supported_options(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from happyclaw.infra.agents import manager as module
+    from happyclaw.infra.agents.manager import memory as module
 
     monkeypatch.setattr(
         module, "_HARNESS_AGENT_CONFIG_FIELDS", frozenset({"memory_capture_enabled"})
@@ -1714,10 +1714,10 @@ def test_build_harness_config_without_default_model(manager: AgentManager) -> No
 async def test_model_retry_exhaustion_fails_background_job(
     manager: AgentManager, failure_type: type[Exception]
 ) -> None:
-    from langchain.agents.middleware import ModelRetryMiddleware
-    from langchain_core.messages import AIMessage
     from happyclaw_harness.teams.inbox import HarnessAgentInboxManager, InboxMessage
     from happyclaw_harness.teams.processor import default_compose_followup
+    from langchain.agents.middleware import ModelRetryMiddleware
+    from langchain_core.messages import AIMessage
 
     cfg = manager._build_harness_config(_row())
     retries = [m for m in cfg.middleware or [] if isinstance(m, ModelRetryMiddleware)]
@@ -1958,7 +1958,7 @@ def test_build_harness_config_passes_default_model_without_embedded_providers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """default_model is forwarded; providers stay on HarnessAgentManager, not per-agent config."""
-    from happyclaw.infra.agents import manager as mgr_mod
+    from happyclaw.infra.agents.manager import harness_config as mgr_mod
 
     captured: list[dict] = []
 
@@ -3188,9 +3188,9 @@ async def test_restore_respects_runtime_capability_and_expert_scope(
     import sqlite3
     from contextlib import closing
 
-    from langgraph.checkpoint.base import empty_checkpoint
     from happyclaw_harness import HarnessAgentManager
     from happyclaw_harness.middleware.memory import MemoryMiddleware
+    from langgraph.checkpoint.base import empty_checkpoint
 
     from happyclaw.infra.agents.manager import AgentCreateSpec
     from happyclaw.infra.agents.memory.sqlite_restore import restore_sqlite

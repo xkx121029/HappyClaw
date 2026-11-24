@@ -366,7 +366,9 @@ def _read_checkpoint(
     thread_id: str,
     anchor: Mapping[str, Any],
 ) -> list[Any]:
-    from happyclaw_memory.storage.backends.sqlite_checkpoint import CompactSqliteSaver  # noqa: PLC0415
+    from happyclaw_memory.storage.backends.sqlite_checkpoint import (
+        CompactSqliteSaver,  # noqa: PLC0415
+    )
 
     config = anchor["checkpoint_config"]
     ref = config["configurable"]

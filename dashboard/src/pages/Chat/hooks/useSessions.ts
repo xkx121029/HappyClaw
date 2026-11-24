@@ -3,9 +3,9 @@ import { useTranslation } from "react-i18next";
 import { deleteConversation } from "../utils/deleteConversation";
 import {
   normalizeThreadArtifacts,
-  octopThreadsApi,
+  happyclawThreadsApi,
   type ThreadArtifact,
-} from "../../../api/modules/octopThreads";
+} from "../../../api/modules/happyclawThreads";
 import type { HitlSessionPolicy } from "../../../api/types/hitl";
 import * as chatStore from "./chatStore";
 import { onSessionEvent } from "./chatStore";
@@ -238,7 +238,7 @@ export async function fetchAndSyncSessionArtifacts(
 ): Promise<ThreadArtifact[]> {
   if (!agentId || !threadId) return [];
   try {
-    const history = await octopThreadsApi.history(agentId, threadId, {
+    const history = await happyclawThreadsApi.history(agentId, threadId, {
       limit: 1,
       offset: 0,
     });
@@ -337,7 +337,7 @@ async function fetchSessionsPage(
   agentId: string,
   limit: number,
 ): Promise<{ sessions: Session[]; hasMore: boolean }> {
-  const rows = await octopThreadsApi.list(agentId, limit + 1);
+  const rows = await happyclawThreadsApi.list(agentId, limit + 1);
   const hasMore = rows.length > limit;
   const sessions = sortSessions(
     rows.slice(0, limit).map((row) => toSession({ ...row, agent_id: agentId })),
@@ -591,7 +591,7 @@ export function useSessions(agentId: string | null) {
       channelType: "dashboard",
     };
     setModuleSessions((prev) => sortSessions([placeholder, ...prev]));
-    const resolvedId = octopThreadsApi
+    const resolvedId = happyclawThreadsApi
       .create(agentId)
       .then((created) => {
         markPendingThread(created.thread_id);
@@ -639,7 +639,7 @@ export function useSessions(agentId: string | null) {
         sortSessions(prev.map((s) => (s.id === id ? { ...s, pinned } : s))),
       );
       if (agentId) {
-        void octopThreadsApi.patch(agentId, id, { pinned }).catch(() => {});
+        void happyclawThreadsApi.patch(agentId, id, { pinned }).catch(() => {});
       }
     },
     [agentId],
@@ -653,7 +653,7 @@ export function useSessions(agentId: string | null) {
         prev.map((s) => (s.id === id ? { ...s, name: next } : s)),
       );
       if (agentId) {
-        void octopThreadsApi.rename(agentId, id, next).catch(() => {});
+        void happyclawThreadsApi.rename(agentId, id, next).catch(() => {});
       }
     },
     [agentId],

@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  octopThreadsApi,
-  type OctopThreadHistory,
-} from "../../../api/modules/octopThreads";
+  happyclawThreadsApi,
+  type HappyclawThreadHistory,
+} from "../../../api/modules/happyclawThreads";
 import * as chatStore from "./chatStore";
 import { useChat } from "./useChat";
 import {
@@ -11,6 +11,18 @@ import {
   flushInflightTail,
   readInflightTail,
 } from "../utils/inflightTranscriptCache";
+
+// `loadThreadHistory` lazily imports this session-metadata module. None of the
+// three functions below is under test here, and pulling the real module graph
+// in makes the first history call pay a cold dynamic import (measured minutes
+// on a Defender-scanned Windows box). That import used to run inside the first
+// test's act(), blow the 5s default timeout, and leave React's act queue open,
+// which turned every later render in this file into `result.current === null`.
+vi.mock("./useSessions", () => ({
+  syncSessionArtifacts: vi.fn(),
+  syncSessionConversationMode: vi.fn(),
+  syncSessionHitlPolicy: vi.fn(),
+}));
 
 const thread = "versioned-history-test";
 
@@ -22,8 +34,8 @@ afterEach(() => {
 });
 
 function deferredHistory() {
-  let resolve!: (history: OctopThreadHistory) => void;
-  const promise = new Promise<OctopThreadHistory>((done) => {
+  let resolve!: (history: HappyclawThreadHistory) => void;
+  const promise = new Promise<HappyclawThreadHistory>((done) => {
     resolve = done;
   });
   return { promise, resolve };
@@ -35,6 +47,32 @@ async function flushHistoryRequest() {
   });
 }
 
+type ChatSurface = ReturnType<typeof useChat>;
+
+/**
+ * React Testing Library assigns `result.current` from a passive effect inside
+ * its own wrapper component. A null there never means `useChat` returned
+ * nothing: it means the render never committed, which in practice only happens
+ * when an earlier `act()` was aborted by a test timeout and the act queue is
+ * still open.
+ */
+function assertCommitted(result: { current: ChatSurface | null }): void {
+  if (result.current === null) {
+    throw new Error(
+      "renderHook never committed useChat: an earlier act() was aborted (usually a test timeout), so passive effects never flushed and every later render reports a null result.",
+    );
+  }
+}
+
+function renderChat(sessionId: string | null) {
+  const rendered = renderHook(
+    ({ id }: { id: string | null }) => useChat(id, "agent"),
+    { initialProps: { id: sessionId } },
+  );
+  assertCommitted(rendered.result);
+  return rendered;
+}
+
 describe("history failures", () => {
   it("keeps a loaded conversation and its cursor when refreshing fails", async () => {
     chatStore.setHistoryPage(
@@ -42,10 +80,10 @@ describe("history failures", () => {
       [{ id: "old", role: "user", content: "keep me", timestamp: 1 }],
       { hasMore: true, nextOffset: 25, nextCursor: "boundary" },
     );
-    vi.spyOn(octopThreadsApi, "history").mockRejectedValue(
+    vi.spyOn(happyclawThreadsApi, "history").mockRejectedValue(
       new Error("archive unavailable"),
     );
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.refreshHistory();
     });
@@ -57,9 +95,9 @@ describe("history failures", () => {
 
   it("does not mark a failed initial load as an empty hydrated conversation", async () => {
     const history = vi
-      .spyOn(octopThreadsApi, "history")
+      .spyOn(happyclawThreadsApi, "history")
       .mockRejectedValueOnce(new Error("decode failed"));
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.loadHistory(thread);
     });
@@ -84,12 +122,12 @@ describe("history failures", () => {
       nextOffset: 0,
       nextCursor: null,
     });
-    const history = vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    const history = vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       messages: [{ id: "cron", role: "assistant", content: "task done" }],
       has_more: false,
     });
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.loadHistory(thread);
     });
@@ -104,9 +142,9 @@ describe("history failures", () => {
       { hasMore: true, nextOffset: 25, nextCursor: "pinned-boundary" },
     );
     const history = vi
-      .spyOn(octopThreadsApi, "history")
+      .spyOn(happyclawThreadsApi, "history")
       .mockResolvedValue({ thread_id: thread, messages: [], has_more: false });
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.loadMoreHistory();
     });
@@ -123,14 +161,14 @@ describe("history failures", () => {
       { hasMore: true, nextOffset: 25, nextCursor: "same-boundary" },
     );
     const history = vi
-      .spyOn(octopThreadsApi, "history")
+      .spyOn(happyclawThreadsApi, "history")
       .mockRejectedValueOnce(new Error("unavailable"))
       .mockResolvedValueOnce({
         thread_id: thread,
         messages: [{ id: "older", role: "user", content: "older" }],
         has_more: false,
       });
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.loadMoreHistory();
     });
@@ -154,10 +192,10 @@ describe("history failures", () => {
     const gate = new Promise((resolve) => {
       resolveHistory = resolve;
     });
-    vi.spyOn(octopThreadsApi, "history").mockImplementation(
-      () => gate as ReturnType<typeof octopThreadsApi.history>,
+    vi.spyOn(happyclawThreadsApi, "history").mockImplementation(
+      () => gate as ReturnType<typeof happyclawThreadsApi.history>,
     );
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     let pending!: Promise<void>;
     act(() => {
       pending = result.current.loadHistory(thread);
@@ -174,7 +212,17 @@ describe("history failures", () => {
     });
     resolveHistory({
       thread_id: thread,
-      messages: [{ id: "old", role: "assistant", content: "之前的回复" }],
+      // Stored history always carries a timestamp (the backend backfills it from
+      // the checkpoint). Without one the merge treats the page as the tail of
+      // the in-flight turn and places it after the send.
+      messages: [
+        {
+          id: "old",
+          role: "assistant",
+          content: "之前的回复",
+          timestamp: 1_000,
+        },
+      ],
       has_more: false,
     });
     await act(async () => {
@@ -201,7 +249,7 @@ describe("history failures", () => {
         timestamp: 5_100,
       },
     ]);
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       messages: [
         { id: "old", role: "assistant", content: "之前的回复" },
@@ -209,7 +257,7 @@ describe("history failures", () => {
       ],
       has_more: false,
     });
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.loadHistory(thread);
     });
@@ -231,7 +279,7 @@ describe("history failures", () => {
     ];
     chatStore.setHistoryPage(thread, local, { hasMore: false, nextOffset: 0 });
     flushInflightTail(thread, local);
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       messages: [
         { id: "u", role: "user", content: "继续", timestamp: 5_000 },
@@ -239,7 +287,7 @@ describe("history failures", () => {
       ],
       has_more: false,
     });
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.refreshHistory();
     });
@@ -252,7 +300,7 @@ describe("history failures", () => {
 });
 
 describe("cache ordering and stale history responses", () => {
-  const latest: OctopThreadHistory = {
+  const latest: HappyclawThreadHistory = {
     thread_id: thread,
     messages: Array.from({ length: 25 }, (_, index) => ({
       id: `latest-${index}`,
@@ -282,7 +330,7 @@ describe("cache ordering and stale history responses", () => {
   it("keeps an unmatched 11:02 cache out of the latest 25, then loads it once in its historical position", async () => {
     flushInflightTail(thread, stale);
     const history = vi
-      .spyOn(octopThreadsApi, "history")
+      .spyOn(happyclawThreadsApi, "history")
       .mockResolvedValueOnce(latest)
       .mockResolvedValueOnce(latest)
       .mockResolvedValueOnce({
@@ -290,7 +338,7 @@ describe("cache ordering and stale history responses", () => {
         messages: stale,
         has_more: false,
       });
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.loadHistory(thread);
     });
@@ -324,12 +372,12 @@ describe("cache ordering and stale history responses", () => {
 
   it("does not treat a cached streaming flag as proof that a completed server reply is stale", async () => {
     flushInflightTail(thread, stale);
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       turn_active: false,
       messages: [stale[0], { id: "final", role: "assistant", content: "done" }],
     });
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.loadHistory(thread);
     });
@@ -373,12 +421,12 @@ describe("cache ordering and stale history responses", () => {
       "current",
       "partial",
     ]);
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       thread_id: thread,
       turn_active: true,
       messages: [{ id: "current", role: "user", content: "current" }],
     });
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.loadHistory(thread);
     });
@@ -400,8 +448,8 @@ describe("cache ordering and stale history responses", () => {
       content: "new",
       timestamp: 2,
     });
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue(latest);
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue(latest);
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.refreshHistory();
     });
@@ -421,11 +469,11 @@ describe("cache ordering and stale history responses", () => {
       { hasMore: true, nextOffset: 25, nextCursor: "old-boundary" },
     );
     const older = deferredHistory();
-    vi.spyOn(octopThreadsApi, "history").mockImplementation(
+    vi.spyOn(happyclawThreadsApi, "history").mockImplementation(
       (_agent, _thread, options) =>
         options?.offset ? older.promise : Promise.resolve(latest),
     );
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     let request!: Promise<boolean>;
     act(() => {
       request = result.current.loadMoreHistory();
@@ -451,11 +499,8 @@ describe("cache ordering and stale history responses", () => {
     "ignores an initial history response after %s",
     async (action) => {
       const pending = deferredHistory();
-      vi.spyOn(octopThreadsApi, "history").mockReturnValue(pending.promise);
-      const { result, rerender, unmount } = renderHook(
-        ({ id }) => useChat(id, "agent"),
-        { initialProps: { id: thread } },
-      );
+      vi.spyOn(happyclawThreadsApi, "history").mockReturnValue(pending.promise);
+      const { result, rerender, unmount } = renderChat(thread);
       let request!: Promise<void>;
       act(() => {
         request = result.current.loadHistory(thread);
@@ -484,9 +529,9 @@ describe("cache ordering and stale history responses", () => {
       { hasMore: false, nextOffset: 0 },
     );
     const pending = deferredHistory();
-    vi.spyOn(octopThreadsApi, "history").mockReturnValue(pending.promise);
+    vi.spyOn(happyclawThreadsApi, "history").mockReturnValue(pending.promise);
     const send = vi.spyOn(chatStore, "sendTurn").mockResolvedValue();
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     let request!: Promise<void>;
     act(() => {
       request = result.current.refreshHistory();
@@ -509,11 +554,11 @@ describe("cache ordering and stale history responses", () => {
   });
 
   it("rejects a history response belonging to a different thread", async () => {
-    vi.spyOn(octopThreadsApi, "history").mockResolvedValue({
+    vi.spyOn(happyclawThreadsApi, "history").mockResolvedValue({
       ...latest,
       thread_id: "other-history-thread",
     });
-    const { result } = renderHook(() => useChat(thread, "agent"));
+    const { result } = renderChat(thread);
     await act(async () => {
       await result.current.loadHistory(thread);
     });
@@ -524,12 +569,10 @@ describe("cache ordering and stale history responses", () => {
   it("does not let a previous thread's finally block clear the current refresh state", async () => {
     const first = deferredHistory();
     const second = deferredHistory();
-    vi.spyOn(octopThreadsApi, "history").mockImplementation((_agent, id) =>
+    vi.spyOn(happyclawThreadsApi, "history").mockImplementation((_agent, id) =>
       id === thread ? first.promise : second.promise,
     );
-    const { result, rerender } = renderHook(({ id }) => useChat(id, "agent"), {
-      initialProps: { id: thread },
-    });
+    const { result, rerender } = renderChat(thread);
     let oldRequest!: Promise<void>;
     act(() => {
       oldRequest = result.current.refreshHistory();
@@ -553,5 +596,50 @@ describe("cache ordering and stale history responses", () => {
     });
     expect(result.current.historyRefreshing).toBe(false);
     expect(result.current.messages).toHaveLength(25);
+  });
+});
+
+describe("hook contract", () => {
+  const surfaces = [
+    "loadHistory",
+    "loadMoreHistory",
+    "refreshHistory",
+    "retryHistory",
+    "clearMessages",
+    "sendMessage",
+    "editAndResend",
+    "cancelStream",
+    "resumeHitl",
+  ] as const;
+
+  it.each([
+    [null, null],
+    [null, "agent"],
+    ["", null],
+    ["", "agent"],
+    ["__empty__", null],
+    ["__empty__", "agent"],
+    [thread, null],
+    [thread, "agent"],
+    [thread, ""],
+  ] as const)(
+    "returns a complete chat surface for sessionId=%s agentId=%s",
+    (sessionId, agentId) => {
+      const { result } = renderHook(() => useChat(sessionId, agentId));
+      const surface = result.current as ChatSurface | null;
+      expect(surface).not.toBeNull();
+      expect(Object.keys(surface ?? {}).length).toBeGreaterThan(0);
+      for (const name of surfaces) {
+        expect(typeof surface?.[name]).toBe("function");
+      }
+      expect(Array.isArray(surface?.messages)).toBe(true);
+      expect(typeof surface?.historyLoading).toBe("boolean");
+    },
+  );
+
+  it("names an aborted render instead of surfacing a null dereference", () => {
+    expect(() => assertCommitted({ current: null })).toThrow(
+      /never committed useChat/,
+    );
   });
 });

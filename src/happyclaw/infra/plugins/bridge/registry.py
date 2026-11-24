@@ -83,7 +83,9 @@ class DshToolRegistry:
         keep = _MAX_TOOL_NAME - len(prefix) - len(digest) - 1
         return f"{prefix}{native_name[:keep]}-{digest}"
 
-    def register(self, definition: ToolDefinition, *, scope: str = GLOBAL_SCOPE) -> Callable[[], None]:
+    def register(
+        self, definition: ToolDefinition, *, scope: str = GLOBAL_SCOPE
+    ) -> Callable[[], None]:
         """Register a definition and return a disposer that removes it again."""
         bucket = self._scopes.setdefault(scope, {})
         if definition.name in bucket:
@@ -217,8 +219,11 @@ class DshToolRegistry:
         for exposed_name, definition in self.visible(scope).items():
             invoker = _make_invoker(exposed_name, definition, active)
             signature, annotations = synthetic_signature(definition.parameters)
-            setattr(invoker, "__signature__", signature)
-            setattr(invoker, "__annotations__", annotations)
+            # setattr, not attribute assignment: mypy sees ``invoker`` as
+            # ``Callable[..., Any]``, which has no ``__signature__``/``__annotations__``
+            # in its type, while the runtime function object does.
+            setattr(invoker, "__signature__", signature)  # noqa: B010
+            setattr(invoker, "__annotations__", annotations)  # noqa: B010
             registrations.append(
                 ToolRegistration(
                     plugin_id=self.plugin_id,
@@ -354,11 +359,7 @@ def synthetic_signature(parameters: Mapping[str, Any]) -> tuple[inspect.Signatur
     """Build an ``inspect.Signature`` matching a JSON Schema's top-level properties."""
     properties = parameters.get("properties")
     required_raw = parameters.get("required")
-    required = (
-        {str(name) for name in required_raw}
-        if isinstance(required_raw, list)
-        else set()
-    )
+    required = {str(name) for name in required_raw} if isinstance(required_raw, list) else set()
 
     params: list[inspect.Parameter] = []
     annotations: dict[str, Any] = {}

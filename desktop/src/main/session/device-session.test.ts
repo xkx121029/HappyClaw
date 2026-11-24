@@ -32,7 +32,7 @@ async function makeFixture(options: {
   respond?: (call: Call) => Response | Promise<Response>;
   seed?: string;
 } = {}) {
-  const home = await fs.mkdtemp(join(tmpdir(), "octop-session-"));
+  const home = await fs.mkdtemp(join(tmpdir(), "happyclaw-session-"));
   const store = new DeviceCredentialStore(home, {
     available: async () => true,
     encrypt: async (plain) => `enc:${Buffer.from(plain, "utf8").toString("base64")}`,

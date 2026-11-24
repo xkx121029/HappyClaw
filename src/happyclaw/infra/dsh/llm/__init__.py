@@ -11,7 +11,13 @@ Public surface:
 * orchestration: :mod:`happyclaw.infra.dsh.llm.runtime`
 """
 
-from happyclaw.infra.dsh.llm.adapter import ChunkStream, ProviderAdapter, RawChunkStream, Transport, adapter_for
+from happyclaw.infra.dsh.llm.adapter import (
+    ChunkStream,
+    ProviderAdapter,
+    RawChunkStream,
+    Transport,
+    adapter_for,
+)
 from happyclaw.infra.dsh.llm.anthropic import AnthropicAdapter
 from happyclaw.infra.dsh.llm.assembly import AssistantTurnBuilder
 from happyclaw.infra.dsh.llm.compression import SessionCompressionHook, messages_from_surface

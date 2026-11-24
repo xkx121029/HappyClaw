@@ -6,14 +6,20 @@
 # The one-liner defaults to this repository's main branch; export HAPPYCLAW_INSTALL_BASE
 # with a mirror that serves the same scripts/ tree when GitHub is unreachable.
 #
-# Installs HappyClaw into ~/.octop and uses uv to manage the Python environment.
+# Installs HappyClaw into ~/.happyclaw and uses uv to manage the Python environment.
 # Python does not need to be installed first; uv handles that.
-# After install, octop is linked into a directory already on PATH (such as
+# After install, happyclaw is linked into a directory already on PATH (such as
 # /usr/local/bin) so the current terminal can run it without sourcing a profile.
 set -euo pipefail
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
-HAPPYCLAW_HOME="${HAPPYCLAW_HOME:-$HOME/.octop}"
+if [ -z "${HAPPYCLAW_HOME:-}" ]; then
+    if [ -d "$HOME/.happyclaw" ] || [ ! -d "$HOME/.octop" ]; then
+        HAPPYCLAW_HOME="$HOME/.happyclaw"
+    else
+        HAPPYCLAW_HOME="$HOME/.octop"
+    fi
+fi
 HAPPYCLAW_VENV="$HAPPYCLAW_HOME/venv"
 HAPPYCLAW_BIN="$HAPPYCLAW_HOME/bin"
 PYTHON_VERSION="3.12"
@@ -55,9 +61,9 @@ else
     BOLD="" GREEN="" YELLOW="" RED="" RESET=""
 fi
 
-info()  { printf "${GREEN}[octop]${RESET} %s\n" "$*"; }
-warn()  { printf "${YELLOW}[octop]${RESET} %s\n" "$*"; }
-error() { printf "${RED}[octop]${RESET} %s\n" "$*" >&2; }
+info()  { printf "${GREEN}[happyclaw]${RESET} %s\n" "$*"; }
+warn()  { printf "${YELLOW}[happyclaw]${RESET} %s\n" "$*"; }
+error() { printf "${RED}[happyclaw]${RESET} %s\n" "$*" >&2; }
 die()   { error "$@"; exit 1; }
 
 # ── Parse arguments ──────────────────────────────────────────────────────────────────
@@ -100,7 +106,7 @@ Note: Playwright Chromium is not downloaded by default. Pass
   even with --extras browser.
 
 Environment variables:
-  HAPPYCLAW_HOME              Install directory (default: ~/.octop)
+  HAPPYCLAW_HOME              Install directory (default: ~/.happyclaw)
   HAPPYCLAW_PYPI_MIRROR       PyPI mirror URL (same as --mirror)
   HAPPYCLAW_REPO              Git URL to clone (used by --from-source with no local dir)
   HAPPYCLAW_LIBS_BASE         Git org/user hosting the runtime libraries
@@ -112,7 +118,7 @@ Environment variables:
   PLAYWRIGHT_INSTALL_TIMEOUT  Per-mirror download timeout in seconds (default 600)
 
 Details:
-  Everything is installed into an isolated virtualenv (~/.octop/venv), so the
+  Everything is installed into an isolated virtualenv (~/.happyclaw/venv), so the
   system Python is untouched. Playwright Chromium is opt-in (--extras browser):
   1. Playwright Chromium browser (skipped if a system browser exists)
   2. System libraries (Linux: apt/dnf/yum/pacman/zypper; only needed for Chromium)
@@ -131,7 +137,7 @@ case "$OS" in
     *) die "Unsupported OS: $OS. Use install.ps1 or install.bat on Windows." ;;
 esac
 
-printf "${GREEN}[octop]${RESET} Installing HappyClaw into ${BOLD}%s${RESET}\n" "$HAPPYCLAW_HOME"
+printf "${GREEN}[happyclaw]${RESET} Installing HappyClaw into ${BOLD}%s${RESET}\n" "$HAPPYCLAW_HOME"
 
 # ── Step 1: ensure uv is available ────────────────────────────────────────────────────
 _install_uv_via_pip() {
@@ -674,10 +680,10 @@ if [ "$FROM_SOURCE" = true ]; then
         uv pip install "${REPO_DIR}${EXTRAS_SUFFIX}" --python "$HAPPYCLAW_VENV/bin/python"
     fi
 else
-    # PEP 508: extras go between the name and the version (octop[browser]==x.y.z).
-    # octop==x.y.z[browser] is an invalid requirement and uv/pip reject it.
-    PACKAGE="octop${EXTRAS_SUFFIX}"
-    [ -n "$VERSION" ] && PACKAGE="octop${EXTRAS_SUFFIX}==$VERSION"
+    # PEP 508: extras go between the name and the version (happyclaw[browser]==x.y.z).
+    # happyclaw==x.y.z[browser] is an invalid requirement and uv/pip reject it.
+    PACKAGE="happyclaw${EXTRAS_SUFFIX}"
+    [ -n "$VERSION" ] && PACKAGE="happyclaw${EXTRAS_SUFFIX}==$VERSION"
 
     info "Installing ${PACKAGE} from PyPI..."
     if [ -n "${_EXTRA_MIRROR:-}" ]; then
@@ -696,11 +702,11 @@ fi
 _pin_mcp_compat || true
 _verify_install
 
-[ -x "$HAPPYCLAW_VENV/bin/octop" ] || die "Install failed: octop CLI not found in the virtualenv"
-info "Octop installed successfully"
+[ -x "$HAPPYCLAW_VENV/bin/happyclaw" ] || die "Install failed: happyclaw CLI not found in the virtualenv"
+info "HappyClaw installed successfully"
 
 if [ "$_CONSOLE_AVAILABLE" = 0 ]; then
-    CONSOLE_CHECK="$("$HAPPYCLAW_VENV/bin/python" -c "import importlib.resources, octop; p=importlib.resources.files('octop')/'dashboard'/'index.html'; print('yes' if p.is_file() else 'no')" 2>/dev/null || echo 'no')"
+    CONSOLE_CHECK="$("$HAPPYCLAW_VENV/bin/python" -c "import importlib.resources, happyclaw; p=importlib.resources.files('happyclaw')/'dashboard'/'index.html'; print('yes' if p.is_file() else 'no')" 2>/dev/null || echo 'no')"
     [ "$CONSOLE_CHECK" = "yes" ] && _CONSOLE_AVAILABLE=1
 fi
 
@@ -954,16 +960,22 @@ fi
 # ── Step 4: create the wrapper script ─────────────────────────────────────────────────────
 mkdir -p "$HAPPYCLAW_BIN"
 
-cat > "$HAPPYCLAW_BIN/octop" << 'WRAPPER'
+cat > "$HAPPYCLAW_BIN/happyclaw" << 'WRAPPER'
 #!/usr/bin/env bash
 # HappyClaw CLI wrapper. Delegates to the uv-managed environment.
 set -euo pipefail
 
-HAPPYCLAW_HOME="${HAPPYCLAW_HOME:-$HOME/.octop}"
-REAL_BIN="$HAPPYCLAW_HOME/venv/bin/octop"
+if [ -z "${HAPPYCLAW_HOME:-}" ]; then
+    if [ -d "$HOME/.happyclaw" ] || [ ! -d "$HOME/.octop" ]; then
+        HAPPYCLAW_HOME="$HOME/.happyclaw"
+    else
+        HAPPYCLAW_HOME="$HOME/.octop"
+    fi
+fi
+REAL_BIN="$HAPPYCLAW_HOME/venv/bin/happyclaw"
 
 if [ ! -x "$REAL_BIN" ]; then
-    echo "Error: Octop environment not found in $HAPPYCLAW_HOME/venv" >&2
+    echo "Error: HappyClaw environment not found in $HAPPYCLAW_HOME/venv" >&2
     echo "Please re-run the installer" >&2
     exit 1
 fi
@@ -971,10 +983,10 @@ fi
 exec "$REAL_BIN" "$@"
 WRAPPER
 
-chmod +x "$HAPPYCLAW_BIN/octop"
-info "Wrapper script created: $HAPPYCLAW_BIN/octop"
+chmod +x "$HAPPYCLAW_BIN/happyclaw"
+info "Wrapper script created: $HAPPYCLAW_BIN/happyclaw"
 
-# ── Step 5: make octop available immediately (no source) ─────────────────────
+# ── Step 5: make happyclaw available immediately (no source) ─────────────────
 # A child process cannot change the parent shell's PATH. After curl|bash or
 # bash install.sh, the binary has to land in a directory already on PATH
 # (commonly /usr/local/bin) to work in the current terminal.
@@ -985,10 +997,10 @@ _can_write_dir() {
 }
 
 _try_symlink() {
-    # Symlink the wrapper to octop in target_dir. Return 0 on success.
+    # Symlink the wrapper to happyclaw in target_dir. Return 0 on success.
     local target_dir="$1"
-    local link_path="$target_dir/octop"
-    local src="$HAPPYCLAW_BIN/octop"
+    local link_path="$target_dir/happyclaw"
+    local src="$HAPPYCLAW_BIN/happyclaw"
 
     mkdir -p "$target_dir" 2>/dev/null || true
 
@@ -1025,7 +1037,7 @@ _link_into_existing_path() {
     local dir
     for dir in "${candidates[@]}"; do
         if _path_contains "$dir" && _try_symlink "$dir"; then
-            LINKED_PATH="$dir/octop"
+            LINKED_PATH="$dir/happyclaw"
             return 0
         fi
     done
@@ -1034,7 +1046,7 @@ _link_into_existing_path() {
     # once it exists. If this session's PATH does not include it yet, the current
     # shell still needs the profile block below.
     if _try_symlink "$HOME/.local/bin"; then
-        LINKED_PATH="$HOME/.local/bin/octop"
+        LINKED_PATH="$HOME/.local/bin/happyclaw"
         if _path_contains "$HOME/.local/bin"; then
             return 0
         fi
@@ -1047,12 +1059,12 @@ _link_into_existing_path() {
 IMMEDIATE_OK=false
 if _link_into_existing_path; then
     IMMEDIATE_OK=true
-    info "Linked to ${LINKED_PATH} (octop works in the current shell)"
+    info "Linked to ${LINKED_PATH} (happyclaw works in the current shell)"
 elif [ -n "$LINKED_PATH" ]; then
     info "Linked to $LINKED_PATH"
 fi
 
-# ── Step 6: update the shell profile so new terminals keep octop on PATH ─────────────────────
+# ── Step 6: update the shell profile so new terminals keep happyclaw on PATH ─────────────────
 PATH_ENTRY="export PATH=\"${HAPPYCLAW_BIN}:\$PATH\""
 
 add_to_profile() {
@@ -1066,7 +1078,7 @@ add_to_profile() {
         return 0
     fi
     if [ -f "$profile" ] || [ "$create" = "create" ]; then
-        printf '\n# Octop\n%s\n' "$PATH_ENTRY" >> "$profile"
+        printf '\n# HappyClaw\n%s\n' "$PATH_ENTRY" >> "$profile"
         info "Updated $profile"
         return 0
     fi
@@ -1075,8 +1087,8 @@ add_to_profile() {
 
 _write_profile_d() {
     # CentOS and Ubuntu login shells load /etc/profile.d/*.sh.
-    local dest="/etc/profile.d/octop.sh"
-    local content="# Octop CLI
+    local dest="/etc/profile.d/happyclaw.sh"
+    local content="# HappyClaw CLI
 export PATH=\"${HAPPYCLAW_BIN}:\$PATH\"
 "
     if [ -d /etc/profile.d ]; then
@@ -1127,7 +1139,7 @@ fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo ""
-printf "${GREEN}${BOLD}Octop installed successfully!${RESET}\n"
+printf "${GREEN}${BOLD}HappyClaw installed successfully!${RESET}\n"
 echo ""
 printf "  Location:          ${BOLD}%s${RESET}\n" "$HAPPYCLAW_HOME"
 printf "  Python:            ${BOLD}%s${RESET}\n" "$("$HAPPYCLAW_VENV/bin/python" --version 2>&1)"
@@ -1142,10 +1154,10 @@ fi
 echo ""
 
 if [ "$IMMEDIATE_OK" = true ]; then
-    info "octop is ready to use in the current shell (no source needed)"
+    info "happyclaw is ready to use in the current shell (no source needed)"
 elif [ -n "${BASH_SOURCE[0]:-}" ] && [ "${BASH_SOURCE[0]}" != "$0" ]; then
     export PATH="$HAPPYCLAW_BIN:$PATH"
-    info "PATH updated; octop is available now"
+    info "PATH updated; happyclaw is available now"
 else
     warn "Could not write to a directory already in PATH (e.g. /usr/local/bin). In this shell run:"
     echo ""

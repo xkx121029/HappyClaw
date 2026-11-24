@@ -84,7 +84,7 @@ function writeModeZip(dir: string, entries: { name: string; data: string; mode: 
 }
 
 test("extractPortableZip restores the python3 symlink and the executable bit", posixOnly, () => {
-  const dir = mkdtempSync(join(tmpdir(), "octop-extract-"));
+  const dir = mkdtempSync(join(tmpdir(), "happyclaw-extract-"));
   try {
     const zipPath = writeModeZip(dir, [
       { name: "Octop-darwin-arm64/launch.py", data: "print(1)\n", mode: 0o100644 },
@@ -104,7 +104,7 @@ test("extractPortableZip restores the python3 symlink and the executable bit", p
 });
 
 test("extractPortableZip rejects a symlink that escapes the tree", () => {
-  const dir = mkdtempSync(join(tmpdir(), "octop-extract-"));
+  const dir = mkdtempSync(join(tmpdir(), "happyclaw-extract-"));
   try {
     const zipPath = writeModeZip(dir, [
       { name: "Octop-darwin-arm64/launch.py", data: "print(1)\n", mode: 0o100644 },
@@ -137,7 +137,7 @@ test("portableZipName is the unsuffixed release zip", () => {
 test("bundledDashboardDir is the copy inside the portable tree", () => {
   assert.equal(
     bundledDashboardDir(join("resources", "portable")),
-    join("resources", "portable", "packages", "octop", "dashboard"),
+    join("resources", "portable", "packages", "happyclaw", "dashboard"),
   );
 });
 

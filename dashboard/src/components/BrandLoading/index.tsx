@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 
 import { useTheme } from "../../context/ThemeContext";
 import { publicUrl } from "../../utils/publicUrl";
-import OctopSpinner from "../OctopSpinner";
+import HappyclawSpinner from "../HappyclawSpinner";
 import styles from "./BrandLoading.module.less";
 
 interface BrandLoadingProps {
@@ -39,7 +39,7 @@ export default function BrandLoading({ label, viewport }: BrandLoadingProps) {
           height={72}
         />
         <p className={styles.status}>
-          <OctopSpinner />
+          <HappyclawSpinner />
           <span>{label ?? t("common.loading")}</span>
         </p>
       </div>

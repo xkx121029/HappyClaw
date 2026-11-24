@@ -54,7 +54,7 @@ jobs:
       - name: Read version and image name
         id: ver
         run: |
-          # Same as octop-desktop.yml: keep full PEP 440 (e.g. 1.0.2b1), not digits-only.
+          # Same as happyclaw-desktop.yml: keep full PEP 440 (e.g. 1.0.2b1), not digits-only.
           VER=$(sed -nE 's/^version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' pyproject.toml | head -1)
           if [ -z "$VER" ]; then
             echo "::error::Failed to parse version from pyproject.toml"
@@ -438,7 +438,7 @@ jobs:
           FPK_ARCH: arm64
         run: |
           set -euo pipefail
-          test -d fnos/native/app/site-packages/octop
+          test -d fnos/native/app/site-packages/happyclaw
           bash scripts/build-fpk.sh native
 
       - name: Show native arm64 fpk size

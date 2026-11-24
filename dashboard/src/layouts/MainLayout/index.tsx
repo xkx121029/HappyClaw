@@ -240,9 +240,9 @@ export default function MainLayout() {
   const isChatRoute = isChatPath(currentPath);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("octop-chat-open", isChatRoute);
+    document.documentElement.classList.toggle("happyclaw-chat-open", isChatRoute);
     return () => {
-      document.documentElement.classList.remove("octop-chat-open");
+      document.documentElement.classList.remove("happyclaw-chat-open");
     };
   }, [isChatRoute]);
 
@@ -252,7 +252,7 @@ export default function MainLayout() {
         {/* Shell column: the window's title band floats over the workbench row,
             so every column paints its own surface to the top edge. */}
         <div
-          className="octop-window-shell"
+          className="happyclaw-window-shell"
           style={
             {
               height: "100%",
@@ -271,7 +271,7 @@ export default function MainLayout() {
               position: "relative",
               /* The title row's height, for columns that paint their own
                  surface behind it (see the band below). */
-              "--octop-shell-top-band": `${shellTopBand}px`,
+              "--happyclaw-shell-top-band": `${shellTopBand}px`,
             } as React.CSSProperties
           }
         >

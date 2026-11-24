@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from happyclaw.config import CapabilitiesConfig, MobileCapabilities, HappyclawConfig
+from happyclaw.config import CapabilitiesConfig, HappyclawConfig, MobileCapabilities
 from happyclaw.infra.control.mobile.setup import mobile_status
 
 

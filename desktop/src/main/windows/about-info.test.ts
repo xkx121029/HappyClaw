@@ -10,10 +10,10 @@ import {
 } from "./about-info";
 
 test("per-user and per-machine installs are named, dev electron is not", () => {
-  assert.equal(windowsInstallScope("C:\\Users\\finn\\Octop\\Octop.exe"), "user");
-  assert.equal(windowsInstallScope("C:\\Program Files\\Octop\\Octop.exe"), "system");
+  assert.equal(windowsInstallScope("C:\\Users\\finn\\HappyClaw\\happyclaw.exe"), "user");
+  assert.equal(windowsInstallScope("C:\\Program Files\\HappyClaw\\happyclaw.exe"), "system");
   assert.equal(
-    windowsInstallScope("D:\\repo\\Octop\\desktop\\src\\node_modules\\electron\\dist\\electron.exe"),
+    windowsInstallScope("D:\\repo\\HappyClaw\\desktop\\src\\node_modules\\electron\\dist\\electron.exe"),
     null,
   );
 });

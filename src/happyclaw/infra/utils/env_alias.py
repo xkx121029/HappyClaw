@@ -11,30 +11,39 @@ from __future__ import annotations
 import os
 import warnings
 from collections.abc import MutableMapping
+from typing import overload
 
 LEGACY_PREFIX = "OCTOP_"
 CURRENT_PREFIX = "HAPPYCLAW_"
 
-__all__ = ["CURRENT_PREFIX", "LEGACY_PREFIX", "alias_legacy_env", "current_env_name", "legacy_env_name"]
+__all__ = [
+    "CURRENT_PREFIX",
+    "LEGACY_PREFIX",
+    "alias_legacy_env",
+    "current_env_name",
+    "legacy_env_name",
+]
 
 _warned: set[str] = set()
 
 
 def current_env_name(legacy: str) -> str:
     """The post-rename spelling of an ``OCTOP_*`` variable name."""
-    return CURRENT_PREFIX + legacy[len(LEGACY_PREFIX):]
+    return CURRENT_PREFIX + legacy[len(LEGACY_PREFIX) :]
 
 
 def legacy_env_name(current: str) -> str:
     """The pre-rename spelling of a ``HAPPYCLAW_*`` variable name."""
-    return LEGACY_PREFIX + current[len(CURRENT_PREFIX):]
+    return LEGACY_PREFIX + current[len(CURRENT_PREFIX) :]
 
 
 def _warn(legacy: str, current: str) -> None:
     if legacy in _warned or os.environ.get("HAPPYCLAW_SILENCE_RENAME_NOTICE"):
         return
     _warned.add(legacy)
-    warnings.warn(f"{legacy} is deprecated; set {current} instead", DeprecationWarning, stacklevel=3)
+    warnings.warn(
+        f"{legacy} is deprecated; set {current} instead", DeprecationWarning, stacklevel=3
+    )
 
 
 def alias_legacy_env(environ: MutableMapping[str, str] | None = None) -> list[str]:
@@ -57,6 +66,18 @@ def alias_legacy_env(environ: MutableMapping[str, str] | None = None) -> list[st
         aliased.append(current)
         _warn(name, current)
     return aliased
+
+
+@overload
+def env_get(suffix: str) -> str | None: ...
+
+
+@overload
+def env_get(suffix: str, default: str) -> str: ...
+
+
+@overload
+def env_get(suffix: str, default: str | None) -> str | None: ...
 
 
 def env_get(suffix: str, default: str | None = None) -> str | None:

@@ -20,14 +20,11 @@ package: the sandbox decides, the host decides how to report it.
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import logging
-import os
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from happyclaw.infra.plugins.bridge.approval import CapabilityProbe
 from happyclaw.infra.plugins.bridge.errors import DshToolErrorCode
@@ -42,6 +39,7 @@ from happyclaw.infra.plugins.sandbox import (
     ToolInspection,
     resolve_absence_mode,
 )
+from happyclaw.infra.utils.env_alias import env_get
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +76,7 @@ class SandboxProbe:
     def __call__(
         self, tool_name: str, arguments: Mapping[str, Any] | None = None
     ) -> SandboxProbeResult:
-        return self.probe(tool_name, arguments or {})
+        return cast(SandboxProbeResult, self.probe(tool_name, arguments or {}))
 
 
 def resolve_absence_mode_strict(raw: object | None) -> SandboxAbsenceMode:
@@ -121,8 +119,7 @@ def build_capability_probe(
 
     names = [str(name) for name in tool_names]
     granted = tuple(
-        item.value if isinstance(item, PermissionKind) else str(item)
-        for item in permissions
+        item.value if isinstance(item, PermissionKind) else str(item) for item in permissions
     )
     declared: dict[str, tuple[object, ...]] = {}
     for name in names:
@@ -193,12 +190,10 @@ def _with_bridge_code(probe: CapabilityProbe) -> CapabilityProbe:
     result, otherwise "no sandbox" and "path escape" look the same.
     """
 
-    def call(
-        tool_name: str, arguments: Mapping[str, Any] | None = None
-    ) -> SandboxProbeResult:
+    def call(tool_name: str, arguments: Mapping[str, Any] | None = None) -> SandboxProbeResult:
         result = probe(tool_name, arguments or {})
         if not isinstance(result, SandboxProbeResult) or result.available:
-            return result
+            return cast(SandboxProbeResult, result)
         code = (
             DshToolErrorCode.TOOL_SANDBOX_NOT_ASSEMBLED
             if result.error_code is SandboxErrorCode.NOT_ASSEMBLED

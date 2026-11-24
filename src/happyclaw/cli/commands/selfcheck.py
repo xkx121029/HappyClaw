@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import click
 
@@ -42,13 +42,19 @@ _IMPORTS: tuple[tuple[str, str], ...] = (
     # are the only consumers; importing them proves the modules (not the data)
     # survive the prune.
     ("googleapiclient.discovery", "googleapiclient.discovery"),
-    ("langchain_community.document_loaders.googledrive", "langchain_community.document_loaders.googledrive"),
-    ("langchain_community.agent_toolkits.gmail.toolkit", "langchain_community.agent_toolkits.gmail.toolkit"),
+    (
+        "langchain_community.document_loaders.googledrive",
+        "langchain_community.document_loaders.googledrive",
+    ),
+    (
+        "langchain_community.agent_toolkits.gmail.toolkit",
+        "langchain_community.agent_toolkits.gmail.toolkit",
+    ),
 )
 
 
 class _GraphState(TypedDict):
-    messages: list
+    messages: list[Any]
 
 
 @click.command("selfcheck")
@@ -99,7 +105,7 @@ def selfcheck() -> None:
         from langchain_core.messages import HumanMessage
         from langgraph.graph import END, START, StateGraph
 
-        def _agent_node(state: _GraphState) -> dict[str, list]:
+        def _agent_node(state: _GraphState) -> dict[str, list[Any]]:
             return {"messages": [*state.get("messages", []), HumanMessage(content="ping")]}
 
         builder = StateGraph(_GraphState)

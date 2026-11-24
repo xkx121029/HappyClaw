@@ -11,6 +11,9 @@ def supplements_dir() -> Path:
     return Path(__file__).resolve().parent
 
 
+LEGACY_SLUGS = {"happyclaw-assistant": ("octop-assistant",)}
+
+
 def supplement_paths() -> list[Path]:
     """Packaged ``SKILL.md`` files, in skill-slug order."""
     skills: list[Path] = []
@@ -41,12 +44,14 @@ async def install_supplements(workspace: Any) -> None:
     """Copy each packaged skill into ``skills/<slug>/`` once.
 
     BackendWorkspace remaps that path under ``.octop/skills/`` for new agents.
-    An existing ``SKILL.md`` is left unchanged.
+    An existing ``SKILL.md`` is left unchanged, and so is a legacy slug that
+    predates the HappyClaw rename: workspaces keep the copy they already run.
     """
     pairs: list[tuple[str, bytes]] = []
     for skill in supplement_paths():
-        dest = f"skills/{skill.parent.name}/SKILL.md"
-        if await workspace.aexists(dest):
+        slug = skill.parent.name
+        slugs = (slug, *LEGACY_SLUGS.get(slug, ()))
+        if any([await workspace.aexists(f"skills/{name}/SKILL.md") for name in slugs]):
             continue
         pairs.extend(_skill_files(skill))
     if pairs:

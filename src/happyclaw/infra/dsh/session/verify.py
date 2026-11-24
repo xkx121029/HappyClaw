@@ -21,7 +21,7 @@ import json
 import sqlite3
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
@@ -63,8 +63,8 @@ class ComparisonResult:
     shadow_count: int = 0
     existing_by_kind: Counter[str] | None = None
     shadow_by_kind: Counter[str] | None = None
-    differences: list[dict[str, Any]] | None = None
-    notes: list[str] | None = None
+    differences: list[dict[str, Any]] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
 
     @property
     def consistent(self) -> bool:
@@ -306,16 +306,8 @@ def _display(value: Any) -> Any:
 
 def _render(result: ComparisonResult) -> str:
     lines = [f"thread:   {result.thread_id}"]
-    lines.append(
-        "existing: "
-        f"{result.existing_count} 条 "
-        f"({_kind_summary(result.existing_by_kind)})"
-    )
-    lines.append(
-        "shadow:   "
-        f"{result.shadow_count} 条 "
-        f"({_kind_summary(result.shadow_by_kind)})"
-    )
+    lines.append(f"existing: {result.existing_count} 条 ({_kind_summary(result.existing_by_kind)})")
+    lines.append(f"shadow:   {result.shadow_count} 条 ({_kind_summary(result.shadow_by_kind)})")
     if result.consistent:
         lines.append("result:   CONSISTENT — 投影与现有历史逐条一致")
     else:

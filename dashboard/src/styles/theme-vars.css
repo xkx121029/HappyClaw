@@ -118,19 +118,19 @@ html[data-theme="dark"] body {
 /* ---------- READING FONT SCALE (小 / 标准 / 大) ----------
    Only typography tokens change; layout breakpoints and spacing stay put. */
 :root {
-  --octop-reading-font-size: 15px;
-  --octop-message-font-size: 14px;
-  --octop-list-font-size: 13px;
+  --happyclaw-reading-font-size: 15px;
+  --happyclaw-message-font-size: 14px;
+  --happyclaw-list-font-size: 13px;
 }
 
 html[data-font-scale="small"] {
-  --octop-reading-font-size: 14px;
-  --octop-message-font-size: 13px;
-  --octop-list-font-size: 12px;
+  --happyclaw-reading-font-size: 14px;
+  --happyclaw-message-font-size: 13px;
+  --happyclaw-list-font-size: 12px;
 }
 
 html[data-font-scale="large"] {
-  --octop-reading-font-size: 17px;
-  --octop-message-font-size: 16px;
-  --octop-list-font-size: 14.5px;
+  --happyclaw-reading-font-size: 17px;
+  --happyclaw-message-font-size: 16px;
+  --happyclaw-list-font-size: 14.5px;
 }

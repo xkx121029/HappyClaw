@@ -93,9 +93,7 @@ def run() -> CheckResult:
             problem = _least_privilege_problem(envelope)
             if problem:
                 return CheckResult(_NAME, Status.FAIL, problem, tuple(evidence))
-            evidence.append(
-                f"{envelope.id} 未声明能力 → 下游授权集合=[]（最小权限，而非全允许）"
-            )
+            evidence.append(f"{envelope.id} 未声明能力 → 下游授权集合=[]（最小权限，而非全允许）")
 
     return CheckResult(
         _NAME,

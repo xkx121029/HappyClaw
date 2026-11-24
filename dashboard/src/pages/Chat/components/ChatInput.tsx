@@ -904,9 +904,9 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     return (
       <div
         ref={shellRef}
-        id="octop-chat-file-drop"
+        id="happyclaw-chat-file-drop"
         data-file-drop-target=""
-        data-octop-chat-drop="1"
+        data-happyclaw-chat-drop="1"
         className={cx(styles.chatInput, showDrop && styles.dropActive)}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}

@@ -614,7 +614,9 @@ async def test_window_presets_today_yesterday_rolling(env: Any) -> None:
 
 
 def test_extract_usage_from_chunk_direct() -> None:
-    from happyclaw.api.routers.chat.turn import extract_usage_from_chunk as _extract_usage_from_chunk
+    from happyclaw.api.routers.chat.turn import (
+        extract_usage_from_chunk as _extract_usage_from_chunk,
+    )
 
     chunk = {"usage": {"input_tokens": 7, "output_tokens": 3}}
     usage = _extract_usage_from_chunk(chunk)
@@ -626,7 +628,9 @@ def test_extract_usage_from_chunk_direct() -> None:
 
 
 def test_extract_usage_from_state_snapshot_dict_message() -> None:
-    from happyclaw.api.routers.chat.turn import extract_usage_from_chunk as _extract_usage_from_chunk
+    from happyclaw.api.routers.chat.turn import (
+        extract_usage_from_chunk as _extract_usage_from_chunk,
+    )
 
     chunk = {
         "type": "state_snapshot",
@@ -747,7 +751,9 @@ def test_usage_tracker_explicit_events_supersede_legacy_snapshots() -> None:
 
 
 def test_extract_usage_from_state_snapshot_sums_turn_calls() -> None:
-    from happyclaw.api.routers.chat.turn import extract_usage_from_chunk as _extract_usage_from_chunk
+    from happyclaw.api.routers.chat.turn import (
+        extract_usage_from_chunk as _extract_usage_from_chunk,
+    )
 
     chunk = {
         "type": "state_snapshot",
@@ -774,7 +780,9 @@ def test_extract_usage_from_state_snapshot_sums_turn_calls() -> None:
 
 
 def test_extract_usage_returns_none_when_absent() -> None:
-    from happyclaw.api.routers.chat.turn import extract_usage_from_chunk as _extract_usage_from_chunk
+    from happyclaw.api.routers.chat.turn import (
+        extract_usage_from_chunk as _extract_usage_from_chunk,
+    )
 
     assert _extract_usage_from_chunk({"type": "token", "content": "hi"}) is None
     assert _extract_usage_from_chunk({"type": "state_snapshot", "data": {}}) is None

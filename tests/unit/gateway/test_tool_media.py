@@ -859,8 +859,8 @@ async def test_project_stream_sends_only_this_turn_relative_image() -> None:
     import base64
     from types import SimpleNamespace
 
-    from langchain_core.messages import ToolMessage
     from happyclaw_gateway.models import ImageContent, MessageEventType
+    from langchain_core.messages import ToolMessage
 
     from happyclaw.infra.gateway.process.stream_project import project_stream
 
@@ -913,8 +913,8 @@ async def test_project_stream_sends_only_this_turn_relative_image() -> None:
 async def test_project_stream_drops_media_when_tool_call_has_no_id() -> None:
     from types import SimpleNamespace
 
-    from langchain_core.messages import ToolMessage
     from happyclaw_gateway.models import ImageContent, MessageEventType
+    from langchain_core.messages import ToolMessage
 
     from happyclaw.infra.gateway.process.stream_project import project_stream
 

@@ -14,8 +14,8 @@ FILE_PATH="${TRIM_APPDEST}/docker/docker-compose.yaml"
 ENV_FILE="${TRIM_APPDEST:-/var/apps/octop/target}/docker/.env"
 
 ensure_persist() {
-    if type octop_prepare_docker_persist >/dev/null 2>&1; then
-        octop_prepare_docker_persist "$ENV_FILE" >/dev/null
+    if type happyclaw_prepare_docker_persist >/dev/null 2>&1; then
+        happyclaw_prepare_docker_persist "$ENV_FILE" >/dev/null
     fi
 }
 

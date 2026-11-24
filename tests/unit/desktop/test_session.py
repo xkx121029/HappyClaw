@@ -65,7 +65,10 @@ async def test_acquire_raises_when_global_cap_reached(monkeypatch) -> None:
 
 @pytest.mark.asyncio
 async def test_disconnect_all_streams_closes_sessions(monkeypatch) -> None:
-    from happyclaw.infra.control.desktop.session import disconnect_all_streams, supersede_user_stream
+    from happyclaw.infra.control.desktop.session import (
+        disconnect_all_streams,
+        supersede_user_stream,
+    )
 
     monkeypatch.setattr("happyclaw.infra.control.desktop.session._MAX_DESKTOP_SESSIONS", 3)
 

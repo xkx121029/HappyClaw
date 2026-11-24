@@ -49,15 +49,15 @@ export HAPPYCLAW_DATA_DIR="$DATA_DIR"
 # 查找飞牛系统上的 Python 3.12（优先应用商店安装路径，再 PATH）。
 # 若应用中心已装 Node.js，一并加入 PATH，供专家 shell / npx 使用。
 
-if type octop_assert_native_arch >/dev/null 2>&1; then
-    if ! REASON="$(octop_assert_native_arch)"; then
+if type happyclaw_assert_native_arch >/dev/null 2>&1; then
+    if ! REASON="$(happyclaw_assert_native_arch)"; then
         echo "[octop-native] $REASON" >&2
         exit 1
     fi
 fi
 
-if type octop_prepend_fnos_node_path >/dev/null 2>&1; then
-    octop_prepend_fnos_node_path
+if type happyclaw_prepend_fnos_node_path >/dev/null 2>&1; then
+    happyclaw_prepend_fnos_node_path
 fi
 
 PY="$(find_python312)" || {
@@ -100,14 +100,14 @@ HAPPYCLAW_BIND_HOST="${HAPPYCLAW_BIND_HOST:-0.0.0.0}"
 
 mkdir -p "$HAPPYCLAW_HOME"
 
-octop_cmd() {
+happyclaw_cmd() {
     "$PY" -m happyclaw.cli.main "$@"
 }
 
 # 首次初始化（仅当数据库尚未建立）：单人版没有账号，只建目录 + 跑迁移。
 if [ ! -f "$HAPPYCLAW_HOME/octop.db" ]; then
     echo "[octop-native] 首次启动，正在初始化运行目录与数据库 ..."
-    if ! octop_cmd init --yes; then
+    if ! happyclaw_cmd init --yes; then
         echo "[octop-native] 错误：初始化失败，请查看上方日志。" >&2
         exit 1
     fi

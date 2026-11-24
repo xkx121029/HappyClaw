@@ -16,8 +16,8 @@
  *   when the endpoint names another repository.
  *
  * The default catalog is this project's own GitHub Releases, which
- * ``.github/workflows/octop-desktop.yml`` fills with the per-platform installers
- * (``Octop-desktop-<plat>-<version>.<ext>``). Nothing here reaches upstream.
+ * ``.github/workflows/happyclaw-desktop.yml`` fills with the per-platform installers
+ * (``HappyClaw-desktop-<plat>-<version>.<ext>``). Nothing here reaches upstream.
  */
 
 import { compareVersions, parseVersion } from "../supervisor/version";
@@ -106,7 +106,7 @@ export function resolveUpdateSource(env: NodeJS.ProcessEnv = process.env): Updat
 
 /**
  * Installer file names the desktop workflow attaches to a release, per asset
- * key. ``platform`` values match the matrix in ``octop-desktop.yml``.
+ * key. ``platform`` values match the matrix in ``happyclaw-desktop.yml``.
  */
 const PLATFORM_ASSETS: Record<PlatformKey, { platform: string; ext: string }> = {
   mac_arm: { platform: "darwin-arm64", ext: "dmg" },

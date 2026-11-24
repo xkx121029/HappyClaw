@@ -8,8 +8,8 @@ from contextlib import closing
 from pathlib import Path
 
 import pytest
-from langgraph.checkpoint.base import empty_checkpoint
 from happyclaw_memory import Memory
+from langgraph.checkpoint.base import empty_checkpoint
 
 from happyclaw.infra.agents.memory.sqlite_restore import backup_path, list_backups, restore_sqlite
 

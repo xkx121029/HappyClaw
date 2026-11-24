@@ -75,7 +75,11 @@ def _extract_zip(data: bytes, dest: Path) -> None:
 
 def _extract_tar(data: bytes, dest: Path) -> None:
     try:
-        archive = tarfile.open(fileobj=io.BytesIO(data), mode="r:*")
+        # The try must wrap the open only: a bad payload has to surface as
+        # PayloadError, while errors raised while reading members must not.
+        archive = tarfile.open(  # noqa: SIM115 - entered on the next line
+            fileobj=io.BytesIO(data), mode="r:*"
+        )
     except tarfile.TarError as exc:
         raise PayloadError("package is not a tar archive") from exc
     with archive:

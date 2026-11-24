@@ -7,7 +7,10 @@ from pathlib import Path
 from typing import Any
 
 from happyclaw.infra.agents.memory.backend import open_memory_kwargs
-from happyclaw.infra.agents.memory.thread_cleanup import agent_config_from_row, workspace_for_agent_row
+from happyclaw.infra.agents.memory.thread_cleanup import (
+    agent_config_from_row,
+    workspace_for_agent_row,
+)
 
 
 def sqlite_store_is_shared(registry: Any, agent_id: str, memory: Any) -> bool:

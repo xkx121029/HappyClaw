@@ -1,4 +1,4 @@
-import { OctopEmptyMascot } from "../EmptyState/OctopEmptyMascot";
+import { HappyclawEmptyMascot } from "../EmptyState/HappyclawEmptyMascot";
 import styles from "./ErrorFallback.module.less";
 
 export interface ErrorFallbackAction {
@@ -46,7 +46,7 @@ export default function ErrorFallback({
   return (
     <div className={styles.wrap} role="alert">
       <div className={styles.inner}>
-        <OctopEmptyMascot size={132} className={styles.mascot} />
+        <HappyclawEmptyMascot size={132} className={styles.mascot} />
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.subtitle}>{subtitle}</p>
         <div className={styles.actions}>

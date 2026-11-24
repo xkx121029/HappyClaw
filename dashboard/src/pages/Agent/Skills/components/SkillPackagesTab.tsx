@@ -12,7 +12,7 @@ import type {
 } from "../../../../api/types/skillPackage";
 import { useAgent } from "../../../../context/AgentContext";
 import { PackageIcon } from "../../../SkillPackages/PackageIcon";
-import { OctopEmptyMascot } from "../../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../../components/EmptyState";
 import StreamSetupGuide from "../../../../components/StreamSetupGuide/StreamSetupGuide";
 import { showApiError } from "../../../../utils/showApiToast";
 import { createDetailRequestGate } from "../../../../utils/detailRequestGate";
@@ -241,7 +241,7 @@ export default function SkillPackagesTab({
       <StreamSetupGuide
         wide
         plain
-        icon={<OctopEmptyMascot />}
+        icon={<HappyclawEmptyMascot />}
         title={t("skills.packagesEmptyTitle")}
         description={t("skills.packagesEmptyDesc")}
         steps={[
@@ -428,7 +428,7 @@ export default function SkillPackagesTab({
             {detailPackage.skills.length === 0 ? (
               <StreamSetupGuide
                 plain
-                icon={<OctopEmptyMascot />}
+                icon={<HappyclawEmptyMascot />}
                 title={t("skillPackages.emptySkillsTitle")}
                 description={t("skillPackages.emptySkillsDesc")}
                 steps={[

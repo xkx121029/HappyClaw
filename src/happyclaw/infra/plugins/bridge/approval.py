@@ -21,11 +21,12 @@ risk, decision, reason); approval channel failures are recorded too.
 
 from __future__ import annotations
 
+import contextlib
 import inspect
 import json
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import IntEnum, StrEnum
 from typing import Any, Literal, Protocol
 from uuid import uuid4
@@ -115,9 +116,7 @@ class SandboxBacking:
         if isinstance(backed_flag, bool):
             backed = backed_flag
         else:
-            backed = coverage == SANDBOX_COVERAGE_COVERED and bool(
-                getattr(raw, "available", False)
-            )
+            backed = coverage == SANDBOX_COVERAGE_COVERED and bool(getattr(raw, "available", False))
         reason = str(getattr(raw, "reason", "") or "").strip()
         return cls(
             coverage=coverage,
@@ -330,9 +329,7 @@ class ToolGuardrail:
         if not self.passthrough_exceptions and approval is not None:
             # 审批通道自带的暂停异常（如 langgraph 的 GraphBubbleUp）必须默认可穿透，
             # 否则 interrupt() 会被当成审批失败并记录为拒绝，HITL 永远无法暂停。
-            self.passthrough_exceptions = tuple(
-                getattr(approval, "pause_exceptions", ()) or ()
-            )
+            self.passthrough_exceptions = tuple(getattr(approval, "pause_exceptions", ()) or ())
         self._consumed_calls: set[str] = set()
 
     async def evaluate(self, context: GuardrailContext) -> GuardrailDecision:
@@ -407,7 +404,7 @@ class ToolGuardrail:
     async def _check_capability(
         self,
         context: GuardrailContext,
-    ) -> "_CapabilityOutcome":
+    ) -> _CapabilityOutcome:
         if self.capability is None:
             return _CapabilityOutcome(
                 (
@@ -688,7 +685,7 @@ class ToolGuardrail:
     ) -> None:
         record = ApprovalRecord(
             record_id=uuid4().hex,
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             actor=context.actor,
             call_id=context.call_id,
             tool_name=context.tool_name,
@@ -704,11 +701,9 @@ class ToolGuardrail:
             sandbox_checked=backing.checked,
             reason=reason,
         )
-        try:
-            self.ledger.append(record)
-        except Exception:
+        with contextlib.suppress(Exception):
             # An audit sink failure must not change the security decision.
-            pass
+            self.ledger.append(record)
 
 
 def _approval_reason(tool_name: str, risk: RiskAssessment) -> str:

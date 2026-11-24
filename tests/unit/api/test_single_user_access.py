@@ -168,9 +168,7 @@ async def test_provider_patch_ignores_masked_key(client) -> None:
 
     # Row as stored on disk: ciphertext, never the plaintext key.
     with sqlite3.connect(f"file:{srv.paths.db}?mode=ro", uri=True) as conn:
-        raw = conn.execute(
-            "SELECT api_key FROM providers WHERE id = ?", (pid,)
-        ).fetchone()
+        raw = conn.execute("SELECT api_key FROM providers WHERE id = ?", (pid,)).fetchone()
     assert raw is not None
     assert raw[0] != original
     assert original not in raw[0]
@@ -228,5 +226,3 @@ async def test_mfa_and_passkey_routes_are_removed(client, path: str) -> None:
         r = await c.post(path, json={})
     assert r.status_code == 404, f"{path} -> {r.status_code} {r.text[:200]}"
     assert r.json()["error"]["code"] == "NOT_FOUND"
-
-

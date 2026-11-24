@@ -52,9 +52,7 @@ async def test_upload_requires_auth(env: Any) -> None:
             "kind": "openai",
             "base_url": "https://api.openai.com/v1",
             "api_key": "sk-x",
-            "models": [
-                {"id": "gpt-4o", "name": "GPT-4o", "enabled": True, "input": ["text"]}
-            ],
+            "models": [{"id": "gpt-4o", "name": "GPT-4o", "enabled": True, "input": ["text"]}],
         },
     )
     assert provider.status_code == 201, provider.text

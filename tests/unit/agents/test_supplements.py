@@ -42,3 +42,33 @@ async def test_install_supplements_copies_each_skill_once(
     assert workspace.files["skills/beta/SKILL.md"] == b"beta body\n"
     await install_supplements(workspace)
     assert workspace.uploads == 1
+
+
+async def test_install_supplements_skips_renamed_slug_present_under_legacy_name(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    renamed = tmp_path / "happyclaw-assistant" / "SKILL.md"
+    renamed.parent.mkdir()
+    renamed.write_text("assistant body\n", encoding="utf-8", newline="\n")
+    monkeypatch.setattr(
+        "happyclaw.infra.agents.experts.supplements.supplement_paths",
+        lambda: [renamed],
+    )
+
+    class _Workspace:
+        def __init__(self) -> None:
+            self.files = {"skills/octop-assistant/SKILL.md": b"legacy body\n"}
+            self.uploads = 0
+
+        async def aexists(self, path: str) -> bool:
+            return path in self.files
+
+        async def aupload_many(self, pairs: list[tuple[str, bytes]]) -> None:
+            self.uploads += 1
+            for path, data in pairs:
+                self.files[path] = data
+
+    workspace = _Workspace()
+    await install_supplements(workspace)
+    assert workspace.uploads == 0
+    assert "skills/happyclaw-assistant/SKILL.md" not in workspace.files

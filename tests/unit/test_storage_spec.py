@@ -6,7 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from happyclaw.infra.backend.adapter import row_to_backend_spec, storage_backend_kind_agent_resolvable
+from happyclaw.infra.backend.adapter import (
+    row_to_backend_spec,
+    storage_backend_kind_agent_resolvable,
+)
 from happyclaw.infra.backend.resolver import (
     backend_spec_supports_execution,
     collect_named_storage_backend_refs,

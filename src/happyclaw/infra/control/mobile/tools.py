@@ -15,7 +15,14 @@ from pydantic import Field
 
 from happyclaw.config import HappyclawConfig
 from happyclaw.i18n import tr
-from happyclaw.infra.control.mobile.adb import find_adb, list_devices, screencap_png, shell, swipe, tap
+from happyclaw.infra.control.mobile.adb import (
+    find_adb,
+    list_devices,
+    screencap_png,
+    shell,
+    swipe,
+    tap,
+)
 from happyclaw.infra.control.mobile.setup import mobile_status
 from happyclaw.infra.users.permissions import user_has_permission
 from happyclaw.infra.utils.ulid import new_short_id

@@ -1,0 +1,15 @@
+[package]
+name = "happyclaw-launcher"
+version = "0.1.0"
+edition = "2021"
+description = "Thin process launcher for HappyClaw: health-gate + signal forwarding + exit-code passthrough"
+
+# Deliberately dependency-free (std only). The target build environment has a
+# slow network and a minimal Rust toolchain, so zero crates means `cargo build`
+# never needs to fetch anything and stays fast/reproducible.
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+panic = "abort"

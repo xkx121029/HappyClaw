@@ -58,9 +58,7 @@ class RetryPolicy:
     jitter_ratio: float = 0.0
     max_compressions: int = 2
     retryable_codes: frozenset[str] = field(default_factory=lambda: DEFAULT_RETRYABLE_CODES)
-    compressible_codes: frozenset[str] = field(
-        default_factory=lambda: DEFAULT_COMPRESSIBLE_CODES
-    )
+    compressible_codes: frozenset[str] = field(default_factory=lambda: DEFAULT_COMPRESSIBLE_CODES)
 
     def __post_init__(self) -> None:
         if self.max_attempts < 1:
@@ -103,7 +101,7 @@ def backoff_delay(
     """
     if failed_attempt < 1:
         raise ValueError("failed_attempt must be at least 1")
-    base = policy.initial_delay_s * (2 ** (failed_attempt - 1))
+    base = policy.initial_delay_s * (2.0 ** (failed_attempt - 1))
     if retry_after_s is not None and retry_after_s > base:
         base = retry_after_s
     delay = min(base, policy.max_delay_s)

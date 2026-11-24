@@ -16,10 +16,7 @@ No module-level mutable state is used: cursors live on the owning
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import logging
-import os
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -35,6 +32,7 @@ from happyclaw.infra.dsh.prompts.skills_injection import (
     snapshot_from_summaries,
 )
 from happyclaw.infra.dsh.skills import DshSkillError, DshSkillRoot, discover_skill_root
+from happyclaw.infra.utils.env_alias import env_get
 
 __all__ = [
     "DSH_SKILLS_PROMPTS_ENV",

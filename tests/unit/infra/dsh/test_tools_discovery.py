@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.unit.infra.dsh.plugin_fixtures import write_market_plugin, write_package
+
 from happyclaw.infra.dsh.tools.discovery import discover_dsh_plugins
 from happyclaw.infra.dsh.tools.gate import (
     SKIP_DUPLICATE,
@@ -13,8 +15,6 @@ from happyclaw.infra.dsh.tools.gate import (
     SKIP_NOT_TOOL,
     SKIP_UNSAFE_PERMISSION,
 )
-
-from tests.unit.infra.dsh.plugin_fixtures import write_market_plugin, write_package
 
 
 def _reasons(skipped: list) -> list[str]:

@@ -26,9 +26,7 @@ from happyclaw.infra.server import HappyclawServer
 async def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     dash = tmp_path / "dashboard"
     dash.mkdir()
-    (dash / "index.html").write_text(
-        "<!doctype html><title>octop-shell</title>", encoding="utf-8"
-    )
+    (dash / "index.html").write_text("<!doctype html><title>octop-shell</title>", encoding="utf-8")
     monkeypatch.setattr(app_module, "default_dashboard_dir", lambda: dash)
     home = tmp_path / "home"
     home.mkdir()

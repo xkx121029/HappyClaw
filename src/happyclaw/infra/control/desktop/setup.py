@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import asyncio
 import importlib.util
 import json
@@ -19,6 +17,7 @@ from pathlib import Path
 from typing import Literal
 
 from happyclaw.i18n import tr
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.posix_compat import geteuid
 from happyclaw.infra.utils.runtime_packages import (
     build_install_commands,
@@ -148,7 +147,8 @@ async def _iter_subprocess_lines(stream: asyncio.StreamReader) -> AsyncIterator[
 
 
 def octop_home() -> Path:
-    return Path(env_get("HOME", Path.home() / ".octop"))
+    default = str(Path.home() / ".octop")
+    return Path(env_get("HOME", default))
 
 
 def desktop_state_dir() -> Path:
@@ -160,11 +160,11 @@ def desktop_env_file() -> Path:
 
 
 def system_conf_dir() -> Path:
-    return Path("/etc/octop-desktop")
+    return Path("/etc/happyclaw-desktop")
 
 
 def system_install_root() -> Path:
-    return Path("/opt/octop-desktop")
+    return Path("/opt/happyclaw-desktop")
 
 
 def bundled_scripts_dir() -> Path:
@@ -172,7 +172,9 @@ def bundled_scripts_dir() -> Path:
 
 
 def resolve_install_script_path() -> Path | None:
-    return _script_path_from_env("HAPPYCLAW_DESKTOP_INSTALL_SCRIPT") or _bundled_script("install.sh")
+    return _script_path_from_env("HAPPYCLAW_DESKTOP_INSTALL_SCRIPT") or _bundled_script(
+        "install.sh"
+    )
 
 
 def resolve_start_script_path() -> Path | None:
@@ -441,9 +443,9 @@ def _systemd_available() -> bool:
 
 def _systemd_unit_files() -> tuple[Path, ...]:
     return (
-        Path("/etc/systemd/system/octop-desktop-xvnc.service"),
-        Path("/etc/systemd/system/octop-desktop-session.service"),
-        Path("/etc/systemd/system/octop-desktop-openbox.service"),
+        Path("/etc/systemd/system/happyclaw-desktop-xvnc.service"),
+        Path("/etc/systemd/system/happyclaw-desktop-session.service"),
+        Path("/etc/systemd/system/happyclaw-desktop-openbox.service"),
     )
 
 
@@ -490,7 +492,7 @@ def _xvnc_service_active() -> bool:
     if shutil.which("systemctl") and Path("/run/systemd/system").is_dir():
         try:
             proc = subprocess.run(
-                ["systemctl", "is-active", "--quiet", "octop-desktop-xvnc"],
+                ["systemctl", "is-active", "--quiet", "happyclaw-desktop-xvnc"],
                 capture_output=True,
                 timeout=3,
                 check=False,
@@ -854,23 +856,23 @@ def _sudo_shell_cmd(script: str) -> list[str] | None:
 _LINUX_UNINSTALL_SHELL = """
 set -euo pipefail
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
-  systemctl disable octop-desktop-xvnc octop-desktop-openbox octop-desktop-session 2>/dev/null || true
-  systemctl stop octop-desktop-xvnc octop-desktop-openbox octop-desktop-session 2>/dev/null || true
-  systemctl reset-failed octop-desktop-xvnc octop-desktop-openbox octop-desktop-session 2>/dev/null || true
+  systemctl disable happyclaw-desktop-xvnc happyclaw-desktop-openbox happyclaw-desktop-session 2>/dev/null || true
+  systemctl stop happyclaw-desktop-xvnc happyclaw-desktop-openbox happyclaw-desktop-session 2>/dev/null || true
+  systemctl reset-failed happyclaw-desktop-xvnc happyclaw-desktop-openbox happyclaw-desktop-session 2>/dev/null || true
   systemctl daemon-reload 2>/dev/null || true
 fi
-rm -f /etc/systemd/system/octop-desktop-xvnc.service \\
-      /etc/systemd/system/octop-desktop-openbox.service \\
-      /etc/systemd/system/octop-desktop-session.service
+rm -f /etc/systemd/system/happyclaw-desktop-xvnc.service \\
+      /etc/systemd/system/happyclaw-desktop-openbox.service \\
+      /etc/systemd/system/happyclaw-desktop-session.service
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
   systemctl daemon-reload 2>/dev/null || true
 fi
-rm -rf /opt/octop-desktop /etc/octop-desktop
-rm -f /usr/share/backgrounds/octop-desktop-wallpaper.png \\
-      /usr/share/backgrounds/octop-desktop-wallpaper.svg 2>/dev/null || true
+rm -rf /opt/happyclaw-desktop /etc/happyclaw-desktop
+rm -f /usr/share/backgrounds/happyclaw-desktop-wallpaper.png \\
+      /usr/share/backgrounds/happyclaw-desktop-wallpaper.svg 2>/dev/null || true
 rm -f /usr/share/icons/hicolor/48x48/apps/octop-start-menu.png 2>/dev/null || true
 # Remove octop-managed Desktop launchers so they are not left as orphans after
-# uninstall (they point at the now-removed /opt/octop-desktop tree). Targeted by
+# uninstall (they point at the now-removed /opt/happyclaw-desktop tree). Targeted by
 # filename to avoid deleting user-placed .desktop files on the Desktop.
 rm -f /root/Desktop/terminal.desktop \\
       /root/Desktop/files.desktop \\
@@ -885,11 +887,11 @@ rm -rf /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml \\
        /root/.cache/xfce4/xfdesktop 2>/dev/null || true
 pkill -9 -f 'import -display :99' 2>/dev/null || true
 pkill -9 -f 'Xvnc :99' 2>/dev/null || true
-pkill -9 -f '/opt/octop-desktop/' 2>/dev/null || true
+pkill -9 -f '/opt/happyclaw-desktop/' 2>/dev/null || true
 pkill -x xfce4-panel 2>/dev/null || true
 pkill -f 'xfdesktop --display' 2>/dev/null || true
 rm -f /tmp/.X99-lock
-rm -rf /tmp/.X11-unix/X99 /tmp/octop-desktop-dbus-env /tmp/runtime-octop-desktop
+rm -rf /tmp/.X11-unix/X99 /tmp/happyclaw-desktop-dbus-env /tmp/runtime-happyclaw-desktop
 """
 
 

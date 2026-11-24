@@ -222,7 +222,7 @@ describe("ChatInput composer affordances", () => {
 
     expect(screen.getByTestId("chat-drop-overlay")).toBeInTheDocument();
 
-    const shell = container.querySelector("#octop-chat-file-drop");
+    const shell = container.querySelector("#happyclaw-chat-file-drop");
     expect(shell).not.toBeNull();
     fireEvent.drop(shell as Element, {
       dataTransfer: { files: [] },

@@ -40,9 +40,7 @@ WRITE_PARAMETERS: dict[str, Any] = {
 }
 
 APPROVE: dict[str, Any] = {"decisions": [{"type": "approve"}]}
-REJECT: dict[str, Any] = {
-    "decisions": [{"type": "reject", "message": "not this time"}]
-}
+REJECT: dict[str, Any] = {"decisions": [{"type": "reject", "message": "not this time"}]}
 
 
 class FakeClock:
@@ -253,10 +251,7 @@ async def test_disconnected_channel_denies_and_never_runs_the_tool() -> None:
     assert executed["value"] is False
     assert invocation.result.is_error is True
     assert invocation.result.error is not None
-    assert (
-        invocation.result.error["code"]
-        == DshToolErrorCode.TOOL_APPROVAL_DISCONNECTED.value
-    )
+    assert invocation.result.error["code"] == DshToolErrorCode.TOOL_APPROVAL_DISCONNECTED.value
     assert events == ["tool/call", "tool/result"]
 
 

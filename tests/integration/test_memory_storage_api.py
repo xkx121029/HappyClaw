@@ -5,8 +5,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-from langgraph.checkpoint.base import empty_checkpoint
 from happyclaw_memory import Memory
+from langgraph.checkpoint.base import empty_checkpoint
 
 
 @pytest.mark.asyncio

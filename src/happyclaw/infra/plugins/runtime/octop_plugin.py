@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -194,6 +194,7 @@ def _envelope_from_manifest(manifest_path: Path) -> PluginEnvelope:
     if ui_entry:
         metadata["ui_entry"] = ui_entry
 
+    config_schema = raw.get("config_schema")
     return PluginEnvelope(
         id=canonical_plugin_id(PluginKind.OCTOP, manifest.id),
         kind=PluginKind.OCTOP,
@@ -205,11 +206,7 @@ def _envelope_from_manifest(manifest_path: Path) -> PluginEnvelope:
         ),
         capabilities=capabilities,
         permissions=permissions,
-        config_schema=(
-            raw.get("config_schema")
-            if isinstance(raw.get("config_schema"), dict)
-            else {}
-        ),
+        config_schema=(config_schema if isinstance(config_schema, dict) else {}),
         requires=requires,
         metadata=metadata,
     )

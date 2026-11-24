@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import importlib
-import os
 import sys
 from pathlib import Path
 from typing import Any, ClassVar
@@ -13,6 +10,7 @@ from typing import Any, ClassVar
 import click
 
 from happyclaw.cli.registry import COMMANDS
+from happyclaw.infra.utils.env_alias import env_get
 
 
 def _warn_if_invoked_as_octop() -> None:
@@ -59,7 +57,8 @@ def _ensure_utf8_stdio(
 
 
 def _get_version() -> str:
-    from importlib.metadata import PackageNotFoundError, version as pkg_version
+    from importlib.metadata import PackageNotFoundError
+    from importlib.metadata import version as pkg_version
 
     for dist in ("happyclaw", "octop"):
         try:

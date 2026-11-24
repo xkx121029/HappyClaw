@@ -6,13 +6,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from langchain_core.tools import StructuredTool
 from happyclaw_harness.plugins import (
     PluginRegistry,
     build_plugin_tools,
     collect_plugin_tool_configs,
     load_plugin_dir,
 )
+from langchain_core.tools import StructuredTool
 
 from happyclaw.infra.agents.plugins.plugin_tool_names import (
     sanitize_plugin_tool_name,

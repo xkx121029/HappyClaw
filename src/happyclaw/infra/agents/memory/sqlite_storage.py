@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import logging
 import os
 import sqlite3
@@ -12,6 +10,8 @@ from contextlib import closing
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
+
+from happyclaw.infra.utils.env_alias import env_get, env_has
 
 logger = logging.getLogger(__name__)
 

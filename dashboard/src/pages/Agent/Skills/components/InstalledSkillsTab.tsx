@@ -13,7 +13,7 @@ import { useAgent } from "../../../../context/AgentContext";
 import { isAgentChatReady } from "../../../../utils/agentError";
 import { CardSkeleton } from "../../../../components/Skeleton";
 import { useCardTableView } from "../../../../hooks/useCardTableView";
-import { OctopEmptyMascot } from "../../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../../components/EmptyState";
 import StreamSetupGuide from "../../../../components/StreamSetupGuide/StreamSetupGuide";
 import { SkillCard } from "./SkillCard";
 import { SkillDrawer, type SkillFormValues } from "./SkillDrawer";
@@ -203,7 +203,7 @@ export default function InstalledSkillsTab({
         <StreamSetupGuide
           wide
           plain
-          icon={<OctopEmptyMascot />}
+          icon={<HappyclawEmptyMascot />}
           title={t("skills.builtinEmptyTitle")}
           description={t("skills.builtinEmptyDesc")}
           steps={[
@@ -221,7 +221,7 @@ export default function InstalledSkillsTab({
         <StreamSetupGuide
           wide
           plain
-          icon={<OctopEmptyMascot />}
+          icon={<HappyclawEmptyMascot />}
           title={t("skills.customEmptyTitle")}
           description={t("skills.customEmptyDesc")}
           steps={[

@@ -14,7 +14,7 @@ HappyClaw Desktop 每次随壳启动自己的 Python 进程，监听回环地址
 2. **零系统环境依赖**：内置独立的绿色 Python 运行环境（CPython Green Portable），用户无需预装 Python、uv、Git 或 C++ 编译器。
 3. **快速冷启动体验**：引入 Early Window 与持久化主题背景机制，消除冷启动白屏，渐进式展示后端加载状态。
 4. **伴随进程随壳启动**：每次启动都拉起自己的 Python 进程，只监听 `127.0.0.1` 上的随机端口；用健康检查确认本次进程就绪，退出时回收本次进程树。
-5. **凭据隔离**：特权自定义协议（`octop://`）代理转发 API 请求，渲染层完全沙箱化运行，后端凭据由主进程统一注入。
+5. **凭据隔离**：特权自定义协议（`happyclaw://`，旧 `octop://` 仍注册）代理转发 API 请求，渲染层完全沙箱化运行，后端凭据由主进程统一注入。
 6. **与壳一起更新**：壳、Dashboard 静态资源和绿色 Python 运行时是同一次发布。客户端设置作为新增项放进原有 Web 设置，不另开壳设置页。桌面进程拒绝 Web 设置里的应用内升级和 `octop update`。用户手动覆盖安装旧版时，壳在启动前发现更高的本地运行时版本，于是停止启动，并在错误提示里写出检测到的本地版本（见 [§2.3](#23-手动覆盖安装旧版)）。
 
 ### 1.2 系统进程拓扑图
@@ -28,7 +28,7 @@ HappyClaw Desktop 每次随壳启动自己的 Python 进程，监听回环地址
 │  └────────────────────────┘  └─────────────────────────┘  └─────────────────────────┘  │
 │  ┌────────────────────────┐  ┌─────────────────────────┐  ┌─────────────────────────┐  │
 │  │ Sidecar Supervisor     │  │ Custom Protocol Proxy   │  │ Clean Teardown Manager  │  │
-│  │ (Spawn / Health Check) │  │ (octop:// Forward)      │  │ (Process Tree Kill)     │  │
+│  │ (Spawn / Health Check) │  │ (happyclaw:// Forward)  │  │ (Process Tree Kill)     │  │
 │  └────────────────────────┘  └─────────────────────────┘  └─────────────────────────┘  │
 └───────────────────────────┬─────────────────────────────────┬──────────────────────────┘
                             │ Spawn / Ready / Health Check    │ WebContents / Preload
@@ -36,7 +36,7 @@ HappyClaw Desktop 每次随壳启动自己的 Python 进程，监听回环地址
 ┌───────────────────────────────────────────┐     ┌──────────────────────────────────────┐
 │        Python Sidecar (HappyClaw Server)      │     │      Renderer Process (Dashboard)    │
 │                                           │     │                                      │
-│  - Runtime: install dir, all platforms    │     │  - Origin: octop://app/              │
+│  - Runtime: install dir, all platforms    │     │  - Origin: happyclaw://app/              │
 │  - Win: resources/sidecar; else portable  │     │  - React 18 + TypeScript + Vite      │
 │  - Entry: launch.py run                   │     │  - sandbox: true                     │
 │  - Loopback API: http://127.0.0.1:<port>  │     │  - contextIsolation: true            │
@@ -55,11 +55,11 @@ HappyClaw Desktop 每次随壳启动自己的 Python 进程，监听回环地址
 
 ### 2.1 产物打包与放置
 
-- 由 CI / Makefile 打包生成一套绿色便携包，extras 与已发布的精简镜像一致：`Octop-portable-<plat>-<version>.zip` 只带 `browser`。桌面、OCR 和本地向量留在 Docker `:<version>-full`，不进桌面安装包。Pull request、打 tag 和手动 dispatch 都打这一套。
+- 由 CI / Makefile 打包生成一套绿色便携包，extras 与已发布的精简镜像一致：`HappyClaw-portable-<plat>-<version>.zip` 只带 `browser`。桌面、OCR 和本地向量留在 Docker `:<version>-full`，不进桌面安装包。Pull request、打 tag 和手动 dispatch 都打这一套。
 - **macOS / Linux**：`package.sh` 组装出的目录原样复制到 `resources/portable/`（`launch.py` 在这一层），安装包里不再放 zip。复制发生在 electron-builder 打包之前。安装包不签名、不公证。Linux 的 deb、rpm 都带上这棵树。DMG 没有安装脚本，deb/rpm 安装的也是同一棵已展开的树，所以不能留到安装时再解压。
 - **Windows**：zip 与 `portable-version.json` 放在 `resources/portable/`。NSIS `customInstall` 用 `tar.exe` 解到 `$INSTDIR\resources\sidecar\`，卸载时删掉这个目录。不把四万多个文件逐个打进 NSIS。
 - 打 zip 之前删掉 `googleapiclient/discovery_cache/documents`、`PyObjCTest`、`*.dSYM`，以及第三方包里的 `tests` / `test` / `testing`。`octop` 自己的目录和 `numpy/testing` 保留。缺静态 discovery 文档时改为联网拉取。绿色 zip 和安装包是同一棵树，所以两处一起生效。
-- Dashboard 只留 wheel 里的 `packages/happyclaw/dashboard`。壳从这份目录提供 `octop://app/`，不再另拷一份到 `resources/dashboard`。开发时 `HAPPYCLAW_DASHBOARD_DIR` 仍可指向另一份构建。
+- Dashboard 只留 wheel 里的 `packages/happyclaw/dashboard`。壳从这份目录提供 `happyclaw://app/`，不再另拷一份到 `resources/dashboard`。开发时 `HAPPYCLAW_DASHBOARD_DIR` 仍可指向另一份构建。
 - 展开后的结构（zip 内层目录名已去掉）：
 
 ```text
@@ -290,14 +290,14 @@ Electron main 入口：执行轻量初始化并获取单实例锁
 - 渲染层不应知道内部真实监听端口或长期认证凭据。
 - 原生文件、外部链接与系统能力需要由主进程统一执行安全校验。
 
-### 5.2 `octop://` 特权协议设计
+### 5.2 `happyclaw://` 特权协议设计（旧 `octop://` 保持注册）
 
 主进程注册 `protocol.handle("octop")`：
 
 | 请求路径 | 处理机制 | 安全保障 |
 |---|---|---|
-| `octop://app/`、`/assets/*`、`*.js`、`*.css` | 从便携运行时的 `packages/happyclaw/dashboard` 读取 | 只允许受支持的方法，路径必须位于静态资源根目录内 |
-| `octop://app/api/*` | 主进程透明反向代理至 `http://127.0.0.1:<assigned-port>/api/*` | 校验来源和窗口身份，过滤伪造的 Host、Origin、Cookie 与连接级标头 |
+| `happyclaw://app/`、`/assets/*`、`*.js`、`*.css` | 从便携运行时的 `packages/happyclaw/dashboard` 读取 | 只允许受支持的方法，路径必须位于静态资源根目录内 |
+| `happyclaw://app/api/*` | 主进程透明反向代理至 `http://127.0.0.1:<assigned-port>/api/*` | 校验来源和窗口身份，过滤伪造的 Host、Origin、Cookie 与连接级标头 |
 | 外部 `http://` / `https://` 链接 | 拦截导航并调用 `shell.openExternal` | 防止外部页面进入应用受信上下文 |
 
 流式响应需要保留背压与取消语义；SSE 不应先完整缓冲到主进程内存。
@@ -306,7 +306,7 @@ Electron main 入口：执行轻量初始化并获取单实例锁
 
 自定义协议承载不了 WebSocket 握手：Chromium 的 upgrade 不会进入 `protocol.handle`，
 而 `webRequest.onBeforeRequest` 虽然能看见 `webSocket` 类型的请求，却会丢弃
-`redirectURL`（已实测：请求被记录，上游从未收到握手）。因此 `octop://app` 页面不能
+`redirectURL`（已实测：请求被记录，上游从未收到握手）。因此 `happyclaw://app` 页面不能
 像 fetch 一样"照原样"用 `ws://octop/app/...`。
 
 方案是主进程起一个只监听 `127.0.0.1` 的中继（`protocol/ws-relay.ts`），页面从
@@ -316,7 +316,7 @@ Electron main 入口：执行轻量初始化并获取单实例锁
 - **凭据隔离**：页面只见到中继，永远不知道 Sidecar 端口；中继每次连接都重新读端口，
   更新重启 Sidecar 后页面无需换地址。
 - **路径即授权**：路径段不对一律 403，且用常量时间比较；`Origin` 必须等于
-  `octop://app`，本机别的页面即使猜到路径也接不进来。
+  `happyclaw://app`，本机别的页面即使猜到路径也接不进来。
 - **不新增信任**：JWT 仍由页面自己放进 query（和浏览器模式一致），中继不注入、不存储
   任何凭据；请求行按 `/api/...` 重写后原样转发握手头，101 之后只做双向 pipe，
   保留背压与取消语义。
@@ -361,7 +361,7 @@ Preload 仅暴露最小类型化桥梁 `window.octopDesktop`：
 
 主进程按固定配置检测更新，渲染进程不能改这个地址，也不能提交另一个安装包 URL。
 
-- 默认请求：`GET https://api.github.com/repos/xkx121029/HappyClaw/releases?per_page=30`，即本仓库自己的 GitHub Releases。桌面安装包由 `octop-desktop.yml` upsert 到同一个 Release（`Octop-desktop-<plat>-<version>.<ext>`），壳不再依赖任何上游站点。
+- 默认请求：`GET https://api.github.com/repos/xkx121029/HappyClaw/releases?per_page=30`，即本仓库自己的 GitHub Releases。桌面安装包由 `happyclaw-desktop.yml` upsert 到同一个 Release（`HappyClaw-desktop-<plat>-<version>.<ext>`），壳不再依赖任何上游站点。
 - 覆盖：`HAPPYCLAW_UPDATE_ENDPOINT`。写成 GitHub Releases API 地址（`https://api.github.com/repos/<owner>/<repo>/releases`）时按下面的 release 结构读；写成其他 https 地址时，必须返回 `data.client` 信封（见下文「另一种目录格式」）。
 - 时机：启动后，以及用户在设置里点击「检查更新」时。请求不经过 Python 后端。
 - 地址非法（非 https、无法解析）时回退到默认地址，不会变成「不检测」。
@@ -417,7 +417,7 @@ release 的 `prerelease` 进 `beta` 通道，其余进 `stable`；`draft` 跳过
 
 桌面不另开壳设置页。客户端设置作为新增项放进 Dashboard 已有的 Web 设置。
 
-- 原有页面保留：模型、用户、安全、存储、语言、环境变量、备份等继续由 Python 后端保存，请求仍走 `octop://app/api/*`。
+- 原有页面保留：模型、用户、安全、存储、语言、环境变量、备份等继续由 Python 后端保存，请求仍走 `happyclaw://app/api/*`。
 - 新增项也画在这些 Web 页面里。主进程通过 `clientSettings` 读写，不写入 `config.json`。项包括开机启动、关闭窗口时退出还是留在托盘、早期窗口使用的主题背景、壳自己的更新检查，以及「只跟随稳定版」。浏览器里打开的服务器版没有这些项。
 
 服务器版和 CLI 仍然可以使用 Web 设置里的「检查更新」「立即升级」，以及 `octop update`。桌面托管的这次 Python 进程不行。
@@ -439,7 +439,7 @@ release 的 `prerelease` 进 `beta` 通道，其余进 `stable`；`draft` 跳过
 3. 把退出交给安装器。安装器在用户上次选定的安装目录里替换壳、前端资源和随包运行时，不改回默认盘符。
 4. 新版本启动后直接使用安装目录里的运行时。Windows 安装器在覆盖文件后重新展开 `resources\sidecar`；macOS 的新 `.app` 和 Linux 的新 deb / rpm 里已经是展开的树。`HAPPYCLAW_HOME` 里的数据库、工作区、密钥和 `config.json` 保留。
 
-干净退出没有完成时，安装被拒绝。安装失败且 Python 进程已经停过时，壳重新拉起本次进程，并重新加载 `octop://app/`，因为新进程的端口和注入都可能变了。
+干净退出没有完成时，安装被拒绝。安装失败且 Python 进程已经停过时，壳重新拉起本次进程，并重新加载 `happyclaw://app/`，因为新进程的端口和注入都可能变了。
 
 隐藏窗口上完成的下载把「安装并重启」推迟到窗口再次显示。强制更新仍要求任务栏或 Dock 的注意。
 
@@ -557,7 +557,7 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 `message` 是给用户读的一句话，`detail` 是路径 / errno 这类技术尾巴，默认收在「技术详情」
 折叠区里——不会再出现把 `ENOENT: ...` 直接糊在标题下面的页面。
 
-> 实现状态：`octop-desktop.yml` 已配置各平台 green zip + 原生 Electron 安装包。
+> 实现状态：`happyclaw-desktop.yml` 已配置各平台 green zip + 原生 Electron 安装包。
 > 安装包不签名、不公证。六平台实际 CI 产物仍需在仓库发布前逐项验证。
 >
 > 更新链路现状：[§6.3](#63-安装顺序) 的「页面确认 → 下载 → 校验 → Python 干净退出 →
@@ -594,7 +594,7 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 
 1. **构建 Dashboard**：执行仓库已有前端构建流程，生成最新静态产物。
 2. **构建或下载对应平台的 Python 绿色包**：
-   - `Octop-portable-<platform>-<version>.zip`
+   - `HappyClaw-portable-<platform>-<version>.zip`
    - macOS / Linux：把 `package.sh` 组装好的目录复制到 `desktop/src/resources/portable/`，不把 zip 打进安装包。
    - Windows：zip 放在 `desktop/src/resources/portable/`，安装时再展开。
 3. **Electron 打包**：
@@ -629,7 +629,7 @@ query（页面是 `sandbox: true`、无 preload、无 IPC，这是两者唯一�
 
 ### 阶段二：特权协议与主窗口桥接
 
-- 实现 `octop://` 静态资源映射与 API 代理。
+- 实现 `happyclaw://` 静态资源映射与 API 代理（旧 `octop://` 复用同一处理器）。
 - 保持 SSE 流式传输与请求取消能力。
 - 搭建最小 Preload 安全桥并接入 Dashboard。
 - 验证外部导航、路径遍历、伪造 Origin 和未授权 IPC 均被拒绝。

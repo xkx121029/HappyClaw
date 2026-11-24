@@ -19,7 +19,7 @@ import AuthGuard from "./components/AuthGuard";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt";
 import DesktopWindowDragBand from "./components/DesktopWindowDragBand";
 import WindowsAppMenu from "./components/WindowsAppMenu";
-import OctopSpinner from "./components/OctopSpinner";
+import HappyclawSpinner from "./components/HappyclawSpinner";
 import { AntdAppProvider } from "./components/AntdAppProvider";
 import { popupLayer } from "./utils/overlayLayers";
 import GlobalErrorBoundary from "./components/ErrorBoundary";
@@ -120,24 +120,18 @@ function ThemedApp() {
       : {},
   };
 
-  // Appearance overrides ride on top: radius, density, type size and font
-  // family, all derived from one settings object.
+  // Appearance overrides ride on top of the shared tokens: radius, density,
+  // type size and font family, all derived from one settings object.
   const appearanceOverrides = antdOverrides(appearance);
-  const themedConfig: typeof themeConfig = {
-    ...themeConfig,
-    token: { ...themeConfig.token, ...appearanceOverrides.token },
-    components: appearanceOverrides.components
-      ? { ...themeConfig.components, ...appearanceOverrides.components }
-      : themeConfig.components,
-  } as typeof themeConfig;
+  const themedConfig = { ...themeConfig, token: { ...themeConfig.token, ...appearanceOverrides.token } } as typeof themeConfig;
 
   return (
     <ConfigProvider
       theme={themedConfig}
-      prefixCls="octop"
+      prefixCls="happyclaw"
       locale={antdLocale}
       getPopupContainer={popupLayer}
-      spin={{ indicator: <OctopSpinner /> }}
+      spin={{ indicator: <HappyclawSpinner /> }}
     >
       <AntdAppProvider>
         <DesktopChromeProvider value={desktopChrome}>

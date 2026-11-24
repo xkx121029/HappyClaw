@@ -7,8 +7,9 @@ so an installed envelope needs no id rewriting before the loader sees it.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Mapping
+from typing import Any
 
 from happyclaw.infra.plugins.market.errors import MarketError, ReleaseNotFound
 from happyclaw.infra.plugins.market.versions import compare_versions, is_prerelease

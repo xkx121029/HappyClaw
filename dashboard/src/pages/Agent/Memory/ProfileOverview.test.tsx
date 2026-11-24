@@ -105,10 +105,11 @@ describe("<ProfileOverview />", () => {
 
     render(<ProfileOverview agentId="ZYWZTD" />);
 
-    await waitFor(() => {
-      expect(screen.getAllByText(/用户画像/).length).toBeGreaterThan(0);
-    });
-    expect(screen.getByText(/Octop 还在了解你/)).toBeInTheDocument();
+    // The empty-state copy only renders once the section fetches settle, so
+    // this has to wait for it instead of reading the tree straight away.
+    expect(
+      await screen.findByText(/HappyClaw 还在了解你/),
+    ).toBeInTheDocument();
   });
 
   it("caps a section at 6 rows and shows 查看全部 that calls onViewAll", async () => {

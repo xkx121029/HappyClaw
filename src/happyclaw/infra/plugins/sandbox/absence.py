@@ -149,8 +149,7 @@ class SandboxAbsenceGate:
             return SandboxProbeResult(
                 available=True,
                 reason=(
-                    f"沙箱未启用：工具 {tool_name} 未声明需要权限，严格模式放行，"
-                    "但仍没有路径检查。"
+                    f"沙箱未启用：工具 {tool_name} 未声明需要权限，严格模式放行，但仍没有路径检查。"
                 ),
                 coverage=SandboxCoverage.UNAVAILABLE,
             )

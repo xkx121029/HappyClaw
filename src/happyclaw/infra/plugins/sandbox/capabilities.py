@@ -75,7 +75,7 @@ def parse_capabilities(raw: object) -> frozenset[SandboxCapability]:
 
     if raw is None:
         return frozenset()
-    if isinstance(raw, str) or isinstance(raw, SandboxCapability):
+    if isinstance(raw, (str, SandboxCapability)):
         return frozenset({parse_capability(raw)})
     if not isinstance(raw, Iterable) or isinstance(raw, (bytes, bytearray, Mapping)):
         raise SandboxConfigError(

@@ -71,7 +71,7 @@ import {
   type ToolRenderProps,
   type ToolRenderStatus,
 } from "../../../plugins/toolRenderers";
-import { BuiltinOctopUiFallback } from "../../../plugins/toolRenderers/builtin/BuiltinOctopUiFallback";
+import { BuiltinHappyclawUiFallback } from "../../../plugins/toolRenderers/builtin/BuiltinHappyclawUiFallback";
 import { ToolUiErrorBoundary } from "../../../plugins/toolRenderers/ToolUiErrorBoundary";
 import { remotePluginUiUnavailable } from "../../../plugins/toolRenderers/remotePluginUi";
 import {
@@ -528,7 +528,7 @@ export function ToolDetailsInline({
     return (
       <div
         ref={wrapRef}
-        data-octop-tool-renderer=""
+        data-happyclaw-tool-renderer=""
         className={styles.toolUiRendererWrap}
       >
         <ToolUiErrorBoundary propsForFallback={props}>
@@ -549,10 +549,10 @@ export function ToolDetailsInline({
     return (
       <div
         ref={wrapRef}
-        data-octop-tool-renderer=""
+        data-happyclaw-tool-renderer=""
         className={styles.toolUiRendererWrap}
       >
-        <BuiltinOctopUiFallback
+        <BuiltinHappyclawUiFallback
           {...props}
           annotateMissingPlugin={annotateMissingPlugin}
         />
@@ -562,7 +562,7 @@ export function ToolDetailsInline({
   }
 
   return (
-    <div data-octop-tool-renderer="">
+    <div data-happyclaw-tool-renderer="">
       <DefaultToolRenderer {...props} />
     </div>
   );

@@ -23,8 +23,8 @@ complete host path. Durable JSONL sinks live in
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Protocol
+from datetime import UTC, datetime
+from typing import Any, Protocol, overload
 from uuid import uuid4
 
 __all__ = [
@@ -45,6 +45,18 @@ __all__ = [
 MAX_TARGET_CHARS = 160
 MAX_REASON_CHARS = 240
 TRUNCATION_MARKER = "…[已截断]"
+
+
+@overload
+def clip_text(value: None, limit: int) -> tuple[None, bool]: ...
+
+
+@overload
+def clip_text(value: str, limit: int) -> tuple[str, bool]: ...
+
+
+@overload
+def clip_text(value: str | None, limit: int) -> tuple[str | None, bool]: ...
 
 
 def clip_text(value: str | None, limit: int) -> tuple[str | None, bool]:
@@ -121,7 +133,7 @@ def new_audit_record(
     clipped_reason, reason_cut = clip_text(reason, MAX_REASON_CHARS)
     return SandboxAuditRecord(
         record_id=uuid4().hex,
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         plugin_id=plugin_id,
         tool_name=tool_name,
         operation=operation,

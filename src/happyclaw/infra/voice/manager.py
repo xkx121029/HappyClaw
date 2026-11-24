@@ -148,7 +148,9 @@ class VoiceManager:
             return await adapters.transcribe_openai(row, audio, mime=mime, language=language)
         if kind == "tencent":
             if row is None:
-                raise HappyclawError(ErrorCode.NOT_FOUND, "Tencent voice provider is not configured")
+                raise HappyclawError(
+                    ErrorCode.NOT_FOUND, "Tencent voice provider is not configured"
+                )
             return await adapters.transcribe_tencent(row, audio, mime=mime, language=language)
         if kind == "mimo":
             if row is None:
@@ -203,7 +205,9 @@ class VoiceManager:
             return
         if kind == "tencent":
             if row is None:
-                raise HappyclawError(ErrorCode.NOT_FOUND, "Tencent voice provider is not configured")
+                raise HappyclawError(
+                    ErrorCode.NOT_FOUND, "Tencent voice provider is not configured"
+                )
             async for chunk in adapters.synthesize_tencent(
                 row, text, voice_id=voice_id, speed=speed
             ):

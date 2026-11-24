@@ -13,7 +13,7 @@ Single-user mode: this endpoint is anonymous and only reports counters.
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends
 
@@ -99,7 +99,7 @@ async def activity(server: Any = Depends(get_server)) -> dict[str, Any]:
     now = time.monotonic()
     cached = getattr(server, _CACHE_ATTR, None)
     if cached is not None and now - cached[0] < _CACHE_TTL_SECONDS:
-        return cached[1]
+        return cast("dict[str, Any]", cached[1])
     payload = _collect(server)
     setattr(server, _CACHE_ATTR, (now, payload))
     return payload

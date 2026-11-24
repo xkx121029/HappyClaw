@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from happyclaw.infra.utils.env_alias import env_get, env_has
-
 import asyncio
 import logging
 import os
@@ -45,6 +43,7 @@ from happyclaw.infra.setup.service import (
     is_service_installed,
     restart_service,
 )
+from happyclaw.infra.utils.env_alias import env_get
 from happyclaw.infra.utils.locale import DEFAULT_LOCALE, resolve_locale, resolve_request_locale
 
 logger = logging.getLogger(__name__)

@@ -21,7 +21,7 @@ export interface SessionSnapshot {
 const DEFAULTS: SessionSnapshot = { url: null, cleanExit: true, sessionId: null };
 
 /** Must match `DASHBOARD_THEME_QUERY` in `windows/chrome.ts`. */
-const THEME_QUERY = "octopTheme";
+const THEME_QUERY = "happyclawTheme";
 
 /** Sign-in and server-initialisation walls are never worth restoring. */
 const SKIP_PREFIXES = ["/login", "/invite", "/setup"];

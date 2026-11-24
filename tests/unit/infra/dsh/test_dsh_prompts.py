@@ -5,12 +5,12 @@ from __future__ import annotations
 import pytest
 
 from happyclaw.infra.dsh.prompts import (
+    SECTION_ORDERS,
+    SKILLS_SECTION_ORDER,
     DuplicateSectionError,
     MalformedPromptVariableError,
     MultipleCompleteSectionsError,
     PromptSection,
-    SECTION_ORDERS,
-    SKILLS_SECTION_ORDER,
     SectionRegistry,
     SkillInjectionCursor,
     SkillPromptEntry,
@@ -62,9 +62,7 @@ def test_plan_maps_zones_and_excludes_context_zones_from_system_prompt() -> None
     registry.register(PromptSection("tool:sdk", 5000, "TOOLS-SDK"))
     registry.register(PromptSection("runtime:harness", 10000, "RUNTIME"))
     registry.register(PromptSection("deployment:persona-suffix", 10200, "SUFFIX"))
-    registry.register(
-        build_dsh_skills_section(SkillPromptSnapshot.build([_entry("alpha")]))
-    )
+    registry.register(build_dsh_skills_section(SkillPromptSnapshot.build([_entry("alpha")])))
 
     plan = plan_octop_prompt(registry.assemble())
 
@@ -179,10 +177,13 @@ def test_registry_rejects_duplicates_and_multiple_complete_sections() -> None:
     with pytest.raises(MultipleCompleteSectionsError):
         render_prompt(sections)
 
-    assert render_prompt(
-        [
-            PromptSection("complete:1", 0, "ONE", complete=True),
-            PromptSection("other", 1, "OTHER"),
-        ],
-        None,
-    ) == "ONE"
+    assert (
+        render_prompt(
+            [
+                PromptSection("complete:1", 0, "ONE", complete=True),
+                PromptSection("other", 1, "OTHER"),
+            ],
+            None,
+        )
+        == "ONE"
+    )

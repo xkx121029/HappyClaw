@@ -78,6 +78,6 @@ jobs:
           tag="${{ steps.version.outputs.tag }}"
           gh workflow run release.yml --ref "$tag"
           gh workflow run docker-publish.yml --ref "$tag"
-          gh workflow run octop-desktop.yml --ref "$tag" \
+          gh workflow run happyclaw-desktop.yml --ref "$tag" \
             -f platforms=all \
             -f attach_release=true

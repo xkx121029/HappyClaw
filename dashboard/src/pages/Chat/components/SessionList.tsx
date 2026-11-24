@@ -36,7 +36,7 @@ import { isTeamAgent } from "../../../utils/teamAgent";
 import { useExpertSessionCatalog } from "../hooks/useExpertSessionCatalog";
 import { usePinnedExperts } from "../hooks/usePinnedExperts";
 import { useSessionWorkIds } from "../hooks/useSessionWorkIds";
-import { octopThreadsApi } from "../../../api/modules/octopThreads";
+import { happyclawThreadsApi } from "../../../api/modules/happyclawThreads";
 import { formatThreadTitle } from "../utils/threadTitle";
 import {
   expertVisibleInNavSearch,
@@ -95,7 +95,7 @@ function NavSearchInput({
   }, [debounced, onQueryChange]);
 
   return (
-    <div className={styles.sessionSearchWrap} data-octop-no-drag>
+    <div className={styles.sessionSearchWrap} data-happyclaw-no-drag>
       <Search size={14} className={styles.sessionSearchIcon} strokeWidth={2} />
       <input
         type="search"
@@ -904,7 +904,7 @@ export default function SessionList({
     (agentId: string, id: string, name: string) => {
       const next = formatThreadTitle(name) || name.trim();
       if (!next) return;
-      void octopThreadsApi.rename(agentId, id, next).catch(() => {});
+      void happyclawThreadsApi.rename(agentId, id, next).catch(() => {});
       catalog.patch(agentId, (prev) =>
         prev.map((session) =>
           session.id === id ? { ...session, name: next } : session,
@@ -915,7 +915,7 @@ export default function SessionList({
   );
   const pinOther = useCallback(
     (agentId: string, id: string, pinned: boolean) => {
-      void octopThreadsApi.patch(agentId, id, { pinned }).catch(() => {});
+      void happyclawThreadsApi.patch(agentId, id, { pinned }).catch(() => {});
       catalog.patch(agentId, (prev) =>
         prev.map((session) =>
           session.id === id ? { ...session, pinned } : session,

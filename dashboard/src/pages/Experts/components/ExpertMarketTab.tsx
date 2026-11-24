@@ -23,7 +23,7 @@ import {
 } from "../../../api/modules/expertMarket";
 import type { PublishedExpert } from "../../../api/modules/publishedExperts";
 import { PublishedExpertCard } from "./PublishedExpertCard";
-import { OctopEmptyMascot } from "../../../components/EmptyState";
+import { HappyclawEmptyMascot } from "../../../components/EmptyState";
 import { FadeInImg } from "../../../components/FadeInImg";
 import { CardSkeleton } from "../../../components/Skeleton";
 import Markdown from "../../../components/Markdown/LazyMarkdown";
@@ -359,7 +359,7 @@ export default function ExpertMarketTab({
           <div className={styles.marketStage}>
             <Result
               className={styles.marketLoadResult}
-              icon={<OctopEmptyMascot size={120} />}
+              icon={<HappyclawEmptyMascot size={120} />}
               title={t("experts.marketLoadFailed")}
               subTitle={
                 networkFailure

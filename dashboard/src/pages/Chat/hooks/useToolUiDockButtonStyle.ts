@@ -12,8 +12,8 @@ const DOCK_BTN_INSET = 8;
 
 function findToolUiCard(root: HTMLElement): HTMLElement | null {
   return (
-    root.querySelector<HTMLElement>("[data-octop-plugin-ui]") ??
-    root.querySelector<HTMLElement>(".octop-builtin-ui-fallback") ??
+    root.querySelector<HTMLElement>("[data-happyclaw-plugin-ui]") ??
+    root.querySelector<HTMLElement>(".happyclaw-builtin-ui-fallback") ??
     null
   );
 }

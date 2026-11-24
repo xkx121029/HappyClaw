@@ -43,6 +43,23 @@ def test_apply_skill_presentation_keeps_identity_without_locale() -> None:
     assert raw["display_name"] == "PDF Reader"
 
 
+def test_apply_skill_presentation_reads_happyclaw_namespace() -> None:
+    summary = {"slug": "pdf-reader", "name": "pdf-reader", "description": "Agent trigger"}
+    frontmatter = {
+        "metadata": {
+            "happyclaw": {
+                "label": {"zh": "PDF 阅读", "en": "PDF Reader"},
+                "emoji": "📄",
+            }
+        }
+    }
+
+    raw = apply_skill_presentation(summary, frontmatter)
+
+    assert raw["label"] == {"zh": "PDF 阅读", "en": "PDF Reader"}
+    assert raw["emoji"] == "📄"
+
+
 def test_localize_skill_summary_uses_english_then_chinese_fallback() -> None:
     summary = {
         "name": "stable-name",

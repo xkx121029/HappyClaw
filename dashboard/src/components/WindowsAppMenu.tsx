@@ -19,8 +19,8 @@ import LinuxWindowControls from "./LinuxWindowControls";
  * beside the window buttons and draws each submenu in the page. Choosing an
  * item asks the shell to run that command.
  * Fullscreen keeps this row; the native caption buttons are hidden separately.
- * The row is the top flex item (`#octop-chrome`). Popups mount in
- * `#octop-stage` below it, so they cannot cover this row. The open submenu
+ * The row is the top flex item (`#happyclaw-chrome`). Popups mount in
+ * `#happyclaw-stage` below it, so they cannot cover this row. The open submenu
  * still portals to `document.body` so it can hang over the page.
  */
 export default function WindowsAppMenu() {
@@ -40,17 +40,17 @@ export default function WindowsAppMenu() {
     const root = document.documentElement;
     if (!showRow) {
       delete root.dataset.octopCaptionRow;
-      root.style.removeProperty("--octop-caption-row");
+      root.style.removeProperty("--happyclaw-caption-row");
       return;
     }
     root.dataset.octopCaptionRow = "";
     root.style.setProperty(
-      "--octop-caption-row",
+      "--happyclaw-caption-row",
       `${WINDOWS_CAPTION_HEIGHT}px`,
     );
     return () => {
       delete root.dataset.octopCaptionRow;
-      root.style.removeProperty("--octop-caption-row");
+      root.style.removeProperty("--happyclaw-caption-row");
     };
   }, [showRow]);
 
@@ -114,7 +114,7 @@ export default function WindowsAppMenu() {
       ? createPortal(
           <div
             ref={popupRef}
-            className="octop-win-menu-popup"
+            className="happyclaw-win-menu-popup"
             role="menu"
             style={{ top: popupBox.top, left: popupBox.left }}
           >
@@ -122,7 +122,7 @@ export default function WindowsAppMenu() {
               entry.kind === "separator" ? (
                 <div
                   key={`sep-${entryIndex}`}
-                  className="octop-win-menu-sep"
+                  className="happyclaw-win-menu-sep"
                   role="separator"
                 />
               ) : (
@@ -130,7 +130,7 @@ export default function WindowsAppMenu() {
                   key={entry.id}
                   type="button"
                   role="menuitem"
-                  className="octop-win-menu-command"
+                  className="happyclaw-win-menu-command"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
                     setOpen(null);
@@ -139,7 +139,7 @@ export default function WindowsAppMenu() {
                 >
                   <span>{entry.label}</span>
                   {entry.accelerator ? (
-                    <span className="octop-win-menu-accel">
+                    <span className="happyclaw-win-menu-accel">
                       {entry.accelerator}
                     </span>
                   ) : null}
@@ -154,13 +154,13 @@ export default function WindowsAppMenu() {
   return createPortal(
     <div
       ref={barRef}
-      className={`${DESKTOP_DRAG_REGION_CLASS} octop-win-menu`}
+      className={`${DESKTOP_DRAG_REGION_CLASS} happyclaw-win-menu`}
       role="menubar"
     >
       {titles.map((label, index) => {
         const expanded = open === index;
         return (
-          <div key={label} className="octop-win-menu-slot">
+          <div key={label} className="happyclaw-win-menu-slot">
             <button
               ref={(node) => {
                 titleRefs.current[index] = node;
@@ -170,7 +170,7 @@ export default function WindowsAppMenu() {
               aria-haspopup="menu"
               aria-expanded={expanded}
               className={
-                expanded ? "octop-win-menu-item is-open" : "octop-win-menu-item"
+                expanded ? "happyclaw-win-menu-item is-open" : "happyclaw-win-menu-item"
               }
               onMouseDown={(event) => event.preventDefault()}
               onMouseEnter={() => {

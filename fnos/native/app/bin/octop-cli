@@ -47,15 +47,15 @@ fi
 
 # 查找飞牛应用商店提供的 Python 3.12
 
-if type octop_assert_native_arch >/dev/null 2>&1; then
-    if ! REASON="$(octop_assert_native_arch)"; then
+if type happyclaw_assert_native_arch >/dev/null 2>&1; then
+    if ! REASON="$(happyclaw_assert_native_arch)"; then
         echo "[octop] $REASON" >&2
         exit 1
     fi
 fi
 
-if type octop_prepend_fnos_node_path >/dev/null 2>&1; then
-    octop_prepend_fnos_node_path
+if type happyclaw_prepend_fnos_node_path >/dev/null 2>&1; then
+    happyclaw_prepend_fnos_node_path
 fi
 
 PY="$(find_python312)" || {

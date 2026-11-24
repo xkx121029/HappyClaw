@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 
 vi.mock("../../../../api/modules/skillPackages", () => ({
   skillPackagesApi: {
@@ -88,13 +89,16 @@ function makeDetail(
 }
 
 function renderTab() {
+  // The tab links out to /skill-packages, so it needs a router in scope.
   return render(
-    <SkillPackagesTab
-      agentId="a1"
-      skills={[]}
-      fetchSkills={vi.fn().mockResolvedValue(undefined)}
-      toggleEnabled={vi.fn().mockResolvedValue(true)}
-    />,
+    <MemoryRouter>
+      <SkillPackagesTab
+        agentId="a1"
+        skills={[]}
+        fetchSkills={vi.fn().mockResolvedValue(undefined)}
+        toggleEnabled={vi.fn().mockResolvedValue(true)}
+      />
+    </MemoryRouter>,
   );
 }
 

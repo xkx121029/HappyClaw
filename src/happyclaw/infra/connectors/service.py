@@ -11,7 +11,11 @@ from weakref import WeakKeyDictionary
 
 from happyclaw.config import HappyclawConfig
 from happyclaw.infra.connectors import qcc
-from happyclaw.infra.connectors.builder import build_http_mcp_spec, mcp_server_name, new_internal_token
+from happyclaw.infra.connectors.builder import (
+    build_http_mcp_spec,
+    mcp_server_name,
+    new_internal_token,
+)
 from happyclaw.infra.connectors.catalog import get_catalog_entry, uses_internal_http_mcp
 from happyclaw.infra.connectors.crypto import decrypt_credentials, encrypt_credentials
 from happyclaw.infra.connectors.custom_mcp import (
@@ -33,7 +37,10 @@ from happyclaw.infra.connectors.custom_mcp import (
     validate_servers_map,
     wrap_servers,
 )
-from happyclaw.infra.connectors.default_open import merge_mcp_servers_with_defaults, read_default_open
+from happyclaw.infra.connectors.default_open import (
+    merge_mcp_servers_with_defaults,
+    read_default_open,
+)
 from happyclaw.infra.connectors.gateway import agently_auth
 from happyclaw.infra.connectors.gateway.cli_dirs import resolve_cli_config_key
 from happyclaw.infra.connectors.gateway.feishu_user_auth import (
@@ -853,7 +860,9 @@ class ConnectorService:
     ) -> tuple[ConnectorRow, dict[str, Any]]:
         inst = self._repo.get(instance_id)
         if inst is None:
-            raise HappyclawError(ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found")
+            raise HappyclawError(
+                ErrorCode.CONNECTOR_NOT_FOUND, f"instance {instance_id!r} not found"
+            )
         if inst.user_id != user_id:
             raise HappyclawError(ErrorCode.FORBIDDEN, "not your connector instance")
         if inst.kind != "feishu-cli":

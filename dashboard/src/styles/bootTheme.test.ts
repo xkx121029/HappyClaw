@@ -7,10 +7,10 @@ const INDEX_HTML = readFileSync(resolve(__dirname, "../../index.html"), "utf8");
 
 function bootThemeScript(): string {
   const match = INDEX_HTML.match(
-    /<script id="octop-boot-theme">([\s\S]*?)<\/script>/,
+    /<script id="happyclaw-boot-theme">([\s\S]*?)<\/script>/,
   );
   if (!match) {
-    throw new Error("octop-boot-theme script missing from index.html");
+    throw new Error("happyclaw-boot-theme script missing from index.html");
   }
   return match[1];
 }
@@ -46,9 +46,9 @@ describe("index.html boot theme", () => {
   });
 
   it("styles the splash from data-theme, not OS color scheme", () => {
-    expect(INDEX_HTML).toContain('html[data-theme="dark"] #octop-boot');
+    expect(INDEX_HTML).toContain('html[data-theme="dark"] #happyclaw-boot');
     expect(INDEX_HTML).not.toMatch(
-      /@media \(prefers-color-scheme: dark\)[\s\S]*#octop-boot/,
+      /@media \(prefers-color-scheme: dark\)[\s\S]*#happyclaw-boot/,
     );
   });
 
@@ -60,8 +60,8 @@ describe("index.html boot theme", () => {
   });
 
   it("shows the shared arc beside the status line", () => {
-    expect(INDEX_HTML).toContain('class="octop-boot-spinner"');
-    expect(INDEX_HTML).toContain("@keyframes octop-boot-spin");
+    expect(INDEX_HTML).toContain('class="happyclaw-boot-spinner"');
+    expect(INDEX_HTML).toContain("@keyframes happyclaw-boot-spin");
   });
 
   it("keeps a stored light preference over OS dark", () => {
@@ -108,7 +108,7 @@ describe("index.html boot theme", () => {
         customColor: "#112233",
       }),
     );
-    window.history.replaceState(null, "", "/?octopTheme=light");
+    window.history.replaceState(null, "", "/?happyclawTheme=light");
     eval(bootThemeScript());
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
     expect(JSON.parse(localStorage.getItem(THEME_STORAGE_KEY)!)).toEqual({
@@ -116,7 +116,7 @@ describe("index.html boot theme", () => {
       palette: "tech",
       customColor: "#112233",
     });
-    expect(window.location.search).not.toContain("octopTheme");
+    expect(window.location.search).not.toContain("happyclawTheme");
   });
 
   it("resolves a desktop system preference against the OS", () => {
@@ -124,7 +124,7 @@ describe("index.html boot theme", () => {
       THEME_STORAGE_KEY,
       JSON.stringify({ preference: "light", palette: "rose" }),
     );
-    window.history.replaceState(null, "", "/?octopTheme=system");
+    window.history.replaceState(null, "", "/?happyclawTheme=system");
     eval(bootThemeScript());
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(JSON.parse(localStorage.getItem(THEME_STORAGE_KEY)!)).toMatchObject({

@@ -14,7 +14,7 @@ a machine that has no Python:
 
 Usage (called by ``make package-backend``):
 
-    python scripts/packaging/verify_backend.py --exe dist/backend/octop/octop.exe
+    python scripts/packaging/verify_backend.py --exe dist/backend/happyclaw/happyclaw.exe
 """
 
 from __future__ import annotations

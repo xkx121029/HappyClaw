@@ -22,7 +22,10 @@ import pytest
 from happyclaw.infra.db.migrate import run_migrations
 from happyclaw.infra.db.pool import SqlitePool
 from happyclaw.infra.db.repos.agents import AgentRepo
-from happyclaw.infra.db.repos.proactive_care_config import ProactiveCareConfig, ProactiveCareConfigRepo
+from happyclaw.infra.db.repos.proactive_care_config import (
+    ProactiveCareConfig,
+    ProactiveCareConfigRepo,
+)
 from happyclaw.infra.db.repos.users import UserRepo
 from happyclaw.infra.proactive.scheduler import (
     ProactiveCareScheduler,

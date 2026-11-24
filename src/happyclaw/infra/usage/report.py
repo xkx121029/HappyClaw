@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from io import BytesIO
 from typing import TYPE_CHECKING, Any, cast
 
 from happyclaw.api.common.usage_xlsx import build_usage_xlsx
@@ -36,9 +35,9 @@ class UsageReportService:
     def __init__(
         self,
         *,
-        usage_repo: "UsageRepo",
-        agent_repo: "AgentRepo",
-        user_manager: "UserManager",
+        usage_repo: UsageRepo,
+        agent_repo: AgentRepo,
+        user_manager: UserManager,
         agent_exists: Callable[[str], bool],
         timezone: str,
     ) -> None:
@@ -85,15 +84,12 @@ class UsageReportService:
     ) -> dict[str, Any]:
         """Query the usage ledger and label agent/user buckets for display."""
         try:
-            payload = cast(
-                "dict[str, Any]",
-                self._usage_repo.summary(
-                    user_id=user_id,
-                    agent_id=agent_id,
-                    window=window,
-                    granularity=granularity,
-                    timezone=self._timezone,
-                ),
+            payload = self._usage_repo.summary(
+                user_id=user_id,
+                agent_id=agent_id,
+                window=window,
+                granularity=granularity,
+                timezone=self._timezone,
             )
         except ValueError as exc:
             raise HappyclawError(ErrorCode.INTERNAL_ERROR, str(exc), status=400) from exc
@@ -146,12 +142,13 @@ class UsageReportService:
         window: str,
         granularity: str,
     ) -> list[Any]:
-        return self.summary(
+        summary = self.summary(
             user_id=user_id,
             agent_id=agent_id,
             window=window,
             granularity=granularity,
-        )["buckets"]
+        )
+        return cast("list[Any]", summary["buckets"])
 
     def _agent_name_map(self) -> dict[str, str]:
         rows = self._agent_repo.list_all(include_disabled=True)
@@ -217,7 +214,9 @@ class UsageReportService:
                 continue
             username = str(getattr(user, "username", None) or uid).strip() or str(uid)
             display = getattr(user, "display_name", None)
-            preferred = display.strip() if isinstance(display, str) and display.strip() else username
+            preferred = (
+                display.strip() if isinstance(display, str) and display.strip() else username
+            )
             rows.append((int(uid), preferred, username))
         counts: dict[str, int] = {}
         for _uid, preferred, _username in rows:
