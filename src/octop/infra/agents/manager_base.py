@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from octop.infra.agents.security.hitl_session import HitlSessionPolicyStore
     from octop.infra.agents.settings.acp import ACPSettingsStore
     from octop.infra.agents.settings.decision import DecisionSettingsStore
+    from octop.infra.agents.settings.langfuse import LangfuseSettingsStore
     from octop.infra.agents.settings.media_generation import MediaGenerationSettingsStore
     from octop.infra.connectors.service import ConnectorService
     from octop.infra.cron.manager import CronManager
@@ -50,6 +51,7 @@ class AgentManagerBase:
     _security: SecuritySettingsStore
     _acp_settings: ACPSettingsStore
     _decision: DecisionSettingsStore
+    _langfuse: LangfuseSettingsStore
     _media_generation: MediaGenerationSettingsStore
     _cron_manager: CronManager | None
     _connector_user_override: dict[str, int]
@@ -95,6 +97,30 @@ class AgentManagerBase:
         raise NotImplementedError
 
     def get_config(self, agent_id: str) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def persist_harness_config(self, agent_id: str, cfg: dict[str, Any], **extra: Any) -> None:
+        raise NotImplementedError
+
+    def _preserve_internal_layout(
+        self,
+        agent_id: str,
+        cfg: dict[str, Any],
+        *,
+        pin_workspace_dir: bool = False,
+    ) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def _schedule_reload(self, agent_id: str) -> None:
+        raise NotImplementedError
+
+    async def reload_all(self) -> None:
+        raise NotImplementedError
+
+    def sync_skills_disabled(self, agent_id: str, disabled: set[str]) -> None:
+        raise NotImplementedError
+
+    def sync_effective_tools_disabled(self, agent_id: str) -> None:
         raise NotImplementedError
 
     def _build_harness_config(
