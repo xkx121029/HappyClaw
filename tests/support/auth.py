@@ -170,8 +170,11 @@ async def resolve_user_id(
     admin_auth: dict[str, str],
     username: str,
 ) -> int:
-    users = (await client.get("/api/users", headers=admin_auth)).json()
-    return next(u["id"] for u in users if u["username"] == username)
+    """Single-user mode: ``/api/users`` is retired, resolve via ``/api/auth/me``."""
+    me = (await client.get("/api/auth/me", headers=admin_auth)).json()
+    if me.get("username") != username:
+        pytest.skip(f"single-user mode has no account {username!r}")
+    return int(me["id"])
 
 
 async def create_provider(

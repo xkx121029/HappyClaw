@@ -46,8 +46,8 @@ async def test_full_golden_path(env: Any) -> None:
             "display_name": "Alice",
         },
     )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "NOT_FOUND"
 
     # 4) the owner creates the only provider
     r = await c.post(
@@ -137,12 +137,7 @@ async def test_expert_to_chat_golden_path(env: Any) -> None:
     )
     assert r.status_code == 201
 
-    # 2) create user + login
-    await c.post(
-        "/api/users",
-        headers=admin_auth,
-        json={"username": "bob", "password": "TestPass12", "role": "user", "display_name": "Bob"},
-    )
+    # 2) login — every login resolves the single local owner
     r = await c.post("/api/auth/login", json={"username": "bob", "password": "TestPass12"})
     bob_auth = {"Authorization": f"Bearer {r.json()['access_token']}"}
 

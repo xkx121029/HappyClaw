@@ -1,519 +1,71 @@
-"""tests/integration/test_users_api.py"""
+"""``/api/users`` and ``/api/user-groups`` are fully unmounted in single-user mode.
+
+The historical read-only CRUD contract is gone: every account-management
+surface answers ``404 NOT_FOUND`` on every method. Only
+``GET /api/users/{id}/avatar`` survives (sender portraits in shared
+conversations); profile edits go through ``/api/auth/me``.
+"""
 
 from __future__ import annotations
 
+import pytest
 
-async def test_create_list_get_delete(env):
-    """Accounts are read-only: writing is refused and only the owner is listed."""
-    c, srv, auth = env
-    r = await c.post(
-        "/api/users",
+_PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+    b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01"
+    b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
+RETIRED_PATHS = [
+    "/api/users",
+    "/api/users/1",
+    "/api/users/1/unlock-login",
+    "/api/users/1/reset-password",
+    "/api/users/1/mfa",
+    "/api/users/batch",
+    "/api/user-groups",
+    "/api/user-groups/1",
+    "/api/user-groups/audience",
+]
+
+
+@pytest.mark.parametrize("path", RETIRED_PATHS)
+@pytest.mark.parametrize("method", ["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def test_user_account_routes_are_removed(env, method: str, path: str) -> None:
+    c, _srv, _auth = env
+    r = await c.request(method, path, json={})
+    assert r.status_code == 404, f"{method} {path} -> {r.status_code} {r.text[:200]}"
+    assert r.json()["error"]["code"] == "NOT_FOUND"
+
+
+@pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
+async def test_user_avatar_write_methods_are_removed(env, method: str) -> None:
+    c, _srv, _auth = env
+    r = await c.request(method, "/api/users/1/avatar", json={})
+    assert r.status_code == 404, f"{method} avatar -> {r.status_code} {r.text[:200]}"
+    assert r.json()["error"]["code"] == "NOT_FOUND"
+
+
+async def test_user_avatar_read_survives(env) -> None:
+    """Shared conversations render sender portraits: the GET avatar URL works."""
+    c, _srv, auth = env
+    me = (await c.get("/api/auth/me", headers=auth)).json()
+    uploaded = await c.post(
+        "/api/auth/me/avatar",
         headers=auth,
-        json={"username": "alice", "password": "TestPass12", "role": "user"},
+        files={"file": ("avatar.png", _PNG, "image/png")},
     )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-
-    r = await c.get("/api/users", headers=auth)
+    assert uploaded.status_code == 201, uploaded.text
+    r = await c.get(f"/api/users/{me['id']}/avatar", headers=auth)
     assert r.status_code == 200
-    usernames = [u["username"] for u in r.json()]
-    assert usernames == [srv.services.owner.owner().username]
-    uid = r.json()[0]["id"]
-
-    r = await c.get(f"/api/users/{uid}", headers=auth)
-    assert r.status_code == 200
-    assert r.json()["username"] == "local-owner"
-    assert r.json()["role"] == "admin"
-    assert r.json()["email"] is None
-    assert r.json()["has_password"] is False
-    assert r.json()["sso_linked"] is False
-    assert r.json()["login_locked"] is False
-    assert r.json()["login_retry_after_seconds"] == 0
-    assert isinstance(r.json()["created_at"], int)
-    assert r.json()["created_at"] > 0
-
-    # The owner row cannot be deleted, and stays readable afterwards.
-    r = await c.delete(f"/api/users/{uid}", headers=auth)
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-    assert (await c.get(f"/api/users/{uid}", headers=auth)).status_code == 200
+    assert r.content == _PNG
 
 
-async def test_admin_can_save_own_account_with_empty_permissions(env):
-    """Account editing is retired: the owner profile is edited through /auth/me."""
+async def test_owner_profile_edits_go_through_auth_me(env) -> None:
+    """Account editing is retired; the owner profile is edited via /auth/me."""
     c, _srv, auth = env
     me = (await c.get("/api/auth/me", headers=auth)).json()
-    saved = await c.patch(
-        f"/api/users/{me['id']}",
-        headers=auth,
-        json={
-            "display_name": "Root",
-            "role": "admin",
-            "permissions": [],
-        },
-    )
-    assert saved.status_code == 400
-    assert saved.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-
-    renamed = await c.patch("/api/auth/me", headers=auth, json={"display_name": "Root"})
-    assert renamed.status_code == 200
-    assert renamed.json()["display_name"] == "Root"
-    assert renamed.json()["role"] == "local"
-
-
-async def test_non_admin_gets_403(env):
-    """There are no roles: logging in as anyone yields the same local owner."""
-    c, _srv, _ = env
-    tok = (
-        await c.post("/api/auth/login", json={"username": "bob", "password": "TestPass12"})
-    ).json()["access_token"]
-    user_auth = {"Authorization": f"Bearer {tok}"}
-    r = await c.get("/api/users", headers=user_auth)
-    assert r.status_code == 200
-    assert [u["username"] for u in r.json()] == ["local-owner"]
-
-
-async def test_admin_cannot_delete_self(env):
-    c, srv, auth = env
-    me = (await c.get("/api/auth/me", headers=auth)).json()
-    r = await c.delete(f"/api/users/{me['id']}", headers=auth)
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-    assert srv.services.user_repo.get(me["id"]) is not None
-
-
-async def test_admin_cannot_demote_self(env):
-    c, srv, auth = env
-    me = (await c.get("/api/auth/me", headers=auth)).json()
-    r = await c.patch(f"/api/users/{me['id']}", headers=auth, json={"role": "user"})
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-    assert srv.services.user_repo.get(me["id"]).role == "admin"
-
-
-async def test_admin_can_enable_disabled_user(env):
-    """Bulk/individual enable-disable is retired with account management."""
-    c, srv, auth = env
-    r = await c.post(
-        "/api/users",
-        headers=auth,
-        json={"username": "disabled_user", "password": "TestPass12", "role": "user"},
-    )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-
-    me = (await c.get("/api/auth/me", headers=auth)).json()
-    r = await c.patch(f"/api/users/{me['id']}", headers=auth, json={"disabled": True})
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-    assert not srv.services.user_repo.get(me["id"]).disabled
-
-
-async def test_admin_can_unlock_login(env):
-    """Login never locks: credentials are ignored and the unlock route is gone."""
-    c, srv, auth = env
-    r = await c.post(
-        "/api/users",
-        headers=auth,
-        json={"username": "lock_user", "password": "TestPass12", "role": "user"},
-    )
-    assert r.status_code == 400
-
-    for _ in range(srv.services.config.login_max_attempts):
-        await c.post("/api/auth/login", json={"username": "lock_user", "password": "bad"})
-
-    me = (await c.get("/api/auth/me", headers=auth)).json()
-    assert me["username"] == "local-owner"
-    r = await c.post(f"/api/users/{me['id']}/unlock-login", headers=auth)
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-
-    r = await c.post("/api/auth/login", json={"username": "lock_user", "password": "TestPass12"})
-    assert r.status_code == 200
-    assert r.json()["access_token"] == "local-owner"
-
-
-async def test_admin_can_create_user_with_resource_policy(env, tmp_path, monkeypatch):
-    monkeypatch.setenv("OCTOP_IN_CONTAINER", "0")
-    c, _srv, auth = env
-    jail = tmp_path / "jail"
-    jail.mkdir()
-
-    r = await c.post(
-        "/api/users",
-        headers=auth,
-        json={
-            "username": "policy_create",
-            "password": "TestPass12",
-            "role": "user",
-            "workspace_root_dir": jail.as_posix(),
-            "token_quota": 2000,
-        },
-    )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-
-    listed = (await c.get("/api/users", headers=auth)).json()
-    assert [u["username"] for u in listed] == ["local-owner"]
-    assert listed[0]["workspace_root_dir"] is None
-    assert listed[0]["token_quota"] is None
-
-
-async def test_create_user_rejects_workspace_root_in_container(env, tmp_path, monkeypatch):
-    monkeypatch.setenv("OCTOP_IN_CONTAINER", "1")
-    c, _srv, auth = env
-    jail = tmp_path / "jail"
-    jail.mkdir()
-
-    r = await c.post(
-        "/api/users",
-        headers=auth,
-        json={
-            "username": "policy_container",
-            "password": "TestPass12",
-            "role": "user",
-            "workspace_root_dir": jail.as_posix(),
-        },
-    )
-    assert r.status_code == 400, r.text
-    # Read-only guard runs before any body/policy validation.
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-    listed = (await c.get("/api/users", headers=auth)).json()
-    assert "policy_container" not in [u["username"] for u in listed]
-
-
-async def test_create_user_rejects_invalid_workspace_root(env, tmp_path, monkeypatch):
-    monkeypatch.setenv("OCTOP_IN_CONTAINER", "0")
-    c, _srv, auth = env
-    missing = tmp_path / "no-such-dir"
-
-    r = await c.post(
-        "/api/users",
-        headers=auth,
-        json={
-            "username": "bad_root",
-            "password": "TestPass12",
-            "role": "user",
-            "workspace_root_dir": missing.as_posix(),
-        },
-    )
-    assert r.status_code == 400, r.text
-    listed = (await c.get("/api/users", headers=auth)).json()
-    assert "bad_root" not in [u["username"] for u in listed]
-
-
-async def test_admin_can_set_resource_policy(env, tmp_path, monkeypatch):
-    monkeypatch.setenv("OCTOP_IN_CONTAINER", "0")
-    from tests.support.auth import TEST_PASSWORD, create_user
-
-    c, _srv, auth = env
-    jail = tmp_path / "jail"
-    nested = jail / "ok"
-    outside = tmp_path / "outside"
-    jail.mkdir()
-    nested.mkdir()
-    outside.mkdir()
-
-    user_auth = await create_user(c, auth, username="policy_user", password=TEST_PASSWORD)
-    listed = (await c.get("/api/users", headers=auth)).json()
-    row = next(u for u in listed if u["username"] == "policy_user")
-    uid = row["id"]
-    assert row["workspace_root_dir"] is None
-    assert row["token_quota"] is None
-
-    r = await c.patch(
-        f"/api/users/{uid}",
-        headers=auth,
-        json={"workspace_root_dir": jail.as_posix(), "token_quota": 1000},
-    )
+    r = await c.patch("/api/auth/me", headers=auth, json={"display_name": "Root"})
     assert r.status_code == 200, r.text
-    body = r.json()
-    assert body["workspace_root_dir"] == jail.resolve().as_posix()
-    assert body["token_quota"] == 1000
-
-    ok = await c.post(
-        "/api/agents",
-        headers=user_auth,
-        json={
-            "name": "inside-root",
-            "config": {
-                "backend": {
-                    "type": "local_shell",
-                    "virtual_mode": True,
-                    "root_dir": nested.as_posix(),
-                }
-            },
-        },
-    )
-    assert ok.status_code == 201, ok.text
-
-    denied = await c.post(
-        "/api/agents",
-        headers=user_auth,
-        json={
-            "name": "outside-root",
-            "config": {
-                "backend": {
-                    "type": "local_shell",
-                    "virtual_mode": True,
-                    "root_dir": outside.as_posix(),
-                }
-            },
-        },
-    )
-    assert denied.status_code == 400, denied.text
-    assert denied.json()["error"]["code"] == "WORKSPACE_ROOT_RESTRICTED"
-
-    r = await c.patch(
-        f"/api/users/{uid}",
-        headers=auth,
-        json={"workspace_root_dir": None, "token_quota": None},
-    )
-    assert r.status_code == 200
-    assert r.json()["workspace_root_dir"] is None
-    assert r.json()["token_quota"] is None
-
-
-async def test_create_expert_without_backend_uses_workspace_root(env, tmp_path, monkeypatch):
-    """Omitting backend must still jail the new expert under workspace_root_dir."""
-    monkeypatch.setenv("OCTOP_IN_CONTAINER", "0")
-    from pathlib import Path
-
-    from tests.support.auth import TEST_PASSWORD, create_user
-
-    c, _srv, auth = env
-    jail = tmp_path / "jail"
-    jail.mkdir()
-    user_auth = await create_user(c, auth, username="jailed_creator", password=TEST_PASSWORD)
-    listed = (await c.get("/api/users", headers=auth)).json()
-    uid = next(u["id"] for u in listed if u["username"] == "jailed_creator")
-    patched = await c.patch(
-        f"/api/users/{uid}",
-        headers=auth,
-        json={"workspace_root_dir": jail.as_posix()},
-    )
-    assert patched.status_code == 200, patched.text
-    allowed = jail.resolve().as_posix()
-
-    async def _assert_jailed(agent_id: str) -> None:
-        detail = (await c.get(f"/api/agents/{agent_id}", headers=user_auth)).json()
-        backend = detail["config"]["backend"]
-        assert backend["type"] == "local_shell"
-        assert backend["root_dir"] == allowed
-        assert backend["virtual_mode"] is True
-        assert detail["config"]["workspace_dir"] == f"/.octop/workspaces/{agent_id}"
-        assert (Path(allowed) / ".octop" / "workspaces" / agent_id).is_dir()
-
-    created = await c.post("/api/agents", headers=user_auth, json={"name": "plain"})
-    assert created.status_code == 201, created.text
-    await _assert_jailed(created.json()["agent_id"])
-
-    from_expert = await c.post(
-        "/api/agents/from-expert/default",
-        headers=user_auth,
-        json={"name": "from-template"},
-    )
-    assert from_expert.status_code == 201, from_expert.text
-    await _assert_jailed(from_expert.json()["agent_id"])
-
-    filesystem = await c.post(
-        "/api/agents",
-        headers=user_auth,
-        json={
-            "name": "filesystem-root",
-            "config": {
-                "backend": {
-                    "type": "filesystem",
-                    "virtual_mode": True,
-                    "root_dir": "/",
-                }
-            },
-        },
-    )
-    assert filesystem.status_code == 201, filesystem.text
-    fs_id = filesystem.json()["agent_id"]
-    fs_detail = (await c.get(f"/api/agents/{fs_id}", headers=user_auth)).json()
-    assert fs_detail["config"]["backend"]["type"] == "filesystem"
-    assert fs_detail["config"]["backend"]["root_dir"] == allowed
-    assert fs_detail["config"]["workspace_dir"] == f"/.octop/workspaces/{fs_id}"
-
-    nested = jail / "proj"
-    nested.mkdir()
-    composite = await c.post(
-        "/api/agents",
-        headers=user_auth,
-        json={
-            "name": "composite-root",
-            "config": {
-                "backend": {
-                    "type": "composite",
-                    "default": {
-                        "type": "local_shell",
-                        "virtual_mode": True,
-                        "root_dir": "/",
-                    },
-                    "routes": {
-                        "/data": {"type": "filesystem", "virtual_mode": True},
-                        "/keep": {
-                            "type": "filesystem",
-                            "virtual_mode": True,
-                            "root_dir": nested.as_posix(),
-                        },
-                        "/remote": {"type": "docker"},
-                    },
-                }
-            },
-        },
-    )
-    assert composite.status_code == 201, composite.text
-    body = (await c.get(f"/api/agents/{composite.json()['agent_id']}", headers=user_auth)).json()
-    backend = body["config"]["backend"]
-    assert backend["default"]["root_dir"] == allowed
-    assert backend["routes"]["/data"]["type"] == "filesystem"
-    assert backend["routes"]["/data"]["root_dir"] == allowed
-    assert backend["routes"]["/keep"]["root_dir"] == nested.resolve().as_posix()
-    assert backend["routes"]["/remote"] == {"type": "docker"}
-
-    outside = tmp_path / "outside"
-    outside.mkdir()
-    denied = await c.post(
-        "/api/agents",
-        headers=user_auth,
-        json={
-            "name": "composite-outside",
-            "config": {
-                "backend": {
-                    "type": "composite",
-                    "default": {"type": "local_shell", "root_dir": allowed, "virtual_mode": True},
-                    "routes": {
-                        "/nope": {
-                            "type": "filesystem",
-                            "root_dir": outside.as_posix(),
-                            "virtual_mode": True,
-                        }
-                    },
-                }
-            },
-        },
-    )
-    assert denied.status_code == 400, denied.text
-    assert denied.json()["error"]["code"] == "WORKSPACE_ROOT_RESTRICTED"
-
-
-async def test_batch_enable_disable_delete_and_token_quota(env):
-    """Batch account operations are retired; the owner row is all that remains."""
-    c, srv, auth = env
-    me = (await c.get("/api/auth/me", headers=auth)).json()
-
-    r = await c.post(
-        "/api/users/batch",
-        headers=auth,
-        json={"user_ids": [me["id"]], "action": "disable"},
-    )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-
-    r = await c.post(
-        "/api/users",
-        headers=auth,
-        json={"username": "batch_a", "password": "TestPass12", "role": "user"},
-    )
-    assert r.status_code == 400
-
-    listed = (await c.get("/api/users", headers=auth)).json()
-    assert [u["username"] for u in listed] == [srv.services.owner.owner().username]
-    assert listed[0]["disabled"] is False
-    assert listed[0]["token_quota"] is None
-
-
-async def test_batch_disable_skips_self(env):
-    c, srv, auth = env
-    me = (await c.get("/api/auth/me", headers=auth)).json()
-    r = await c.post(
-        "/api/users",
-        headers=auth,
-        json={"username": "batch_other", "password": "TestPass12", "role": "user"},
-    )
-    assert r.status_code == 400
-
-    r = await c.post(
-        "/api/users/batch",
-        headers=auth,
-        json={"user_ids": [me["id"]], "action": "disable"},
-    )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-    assert not srv.services.user_repo.get(me["id"]).disabled
-
-
-async def test_admin_can_set_max_agents_and_block_create(env):
-    from tests.support.auth import TEST_PASSWORD, create_user
-
-    c, _srv, auth = env
-    user_auth = await create_user(c, auth, username="quota_user", password=TEST_PASSWORD)
-    listed = (await c.get("/api/users", headers=auth)).json()
-    uid = next(u["id"] for u in listed if u["username"] == "quota_user")
-
-    r = await c.patch(
-        f"/api/users/{uid}",
-        headers=auth,
-        json={"max_agents": 1},
-    )
-    assert r.status_code == 200, r.text
-    assert r.json()["max_agents"] == 1
-
-    first = await c.post(
-        "/api/agents",
-        headers=user_auth,
-        json={"name": "expert-one"},
-    )
-    assert first.status_code == 201, first.text
-
-    second = await c.post(
-        "/api/agents",
-        headers=user_auth,
-        json={"name": "expert-two"},
-    )
-    assert second.status_code == 403, second.text
-    assert second.json()["error"]["code"] == "AGENT_QUOTA_EXCEEDED"
-    assert second.json()["error"]["details"] == {"used": 1, "quota": 1}
-
-    r = await c.post(
-        "/api/users/batch",
-        headers=auth,
-        json={"user_ids": [uid], "action": "set_max_agents", "max_agents": None},
-    )
-    assert r.status_code == 200
-    assert r.json()["succeeded"] == 1
-    listed = {u["id"]: u for u in (await c.get("/api/users", headers=auth)).json()}
-    assert listed[uid]["max_agents"] is None
-
-    third = await c.post(
-        "/api/agents",
-        headers=user_auth,
-        json={"name": "expert-three"},
-    )
-    assert third.status_code == 201, third.text
-
-
-async def test_sharing_audience_counts_enabled_users_and_groups(env):
-    """There is no sharing picker in single-user mode: the audience is empty."""
-    c, _, auth = env
-    solo = await c.get("/api/user-groups/audience", headers=auth)
-    assert solo.status_code == 200, solo.text
-    assert solo.json() == []
-
-    created = await c.post(
-        "/api/users",
-        headers=auth,
-        json={"username": "carol", "password": "TestPass12", "role": "user"},
-    )
-    assert created.status_code == 400
-    assert created.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-
-    group = await c.post("/api/user-groups", headers=auth, json={"name": "Engineering"})
-    assert group.status_code == 400
-    assert group.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
-
-    still_empty = await c.get("/api/user-groups/audience", headers=auth)
-    assert still_empty.json() == []
+    assert r.json()["display_name"] == "Root"
+    assert r.json()["id"] == me["id"]

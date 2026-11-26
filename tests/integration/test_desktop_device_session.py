@@ -56,12 +56,11 @@ async def test_revoke_returns_no_content(client) -> None:
 
 
 async def test_device_calls_do_not_create_accounts(client) -> None:
-    before = {row["username"] for row in (await client.get("/api/users")).json()}
+    me_id = (await client.get("/api/auth/me")).json()["id"]
     await client.post("/api/auth/device/register", json={"device_token": DEVICE})
     await client.post("/api/auth/device/token", json={"device_token": DEVICE})
     await client.post("/api/auth/device/revoke", json={"device_token": DEVICE})
-    after = {row["username"] for row in (await client.get("/api/users")).json()}
-    assert after == before
+    assert (await client.get("/api/auth/me")).json()["id"] == me_id
 
 
 async def test_register_requires_device_token(client) -> None:

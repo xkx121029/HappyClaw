@@ -5,9 +5,9 @@ Covers the single-user demolition contract:
 - Retired multi-account prefixes (``/api/auth/oidc``, ``/api/users/roles`` ...)
   must answer ``404 NOT_FOUND`` on every method, including the IdP callback
   paths that used to create additional accounts.
-- The surviving account routers (``/api/users``, ``/api/user-groups``) must
-  stay read-only: writes answer ``400 SINGLE_USER_UNSUPPORTED`` while reads
-  keep working for the owner.
+- ``/api/users`` and ``/api/user-groups`` are fully unmounted: reads and
+  writes alike answer ``404 NOT_FOUND`` (only the read-only avatar GET
+  survives).
 """
 
 from __future__ import annotations
@@ -55,18 +55,13 @@ async def test_idp_callback_paths_answer_not_found(tmp_octop_home: Path) -> None
             assert resp.json()["error"]["code"] == "NOT_FOUND", (path, resp.text)
 
 
-async def test_account_routers_stay_read_only(tmp_octop_home: Path) -> None:
+async def test_account_routers_are_fully_retired(tmp_octop_home: Path) -> None:
     async with _client(tmp_octop_home) as c:
-        users = c.post("/api/users", json={"username": "extra", "password": "x"})
-        assert users.status_code == 400, users.text
-        assert users.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED", users.text
+        for path in ("/api/users", "/api/user-groups"):
+            write = c.post(path, json={"username": "extra", "password": "x"})
+            assert write.status_code == 404, (path, write.text)
+            assert write.json()["error"]["code"] == "NOT_FOUND", (path, write.text)
 
-        listing = c.get("/api/users")
-        assert listing.status_code == 200, listing.text
-
-        groups = c.post("/api/user-groups", json={"name": "extra"})
-        assert groups.status_code == 400, groups.text
-        assert groups.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED", groups.text
-
-        group_list = c.get("/api/user-groups")
-        assert group_list.status_code == 200, group_list.text
+            listing = c.get(path)
+            assert listing.status_code == 404, (path, listing.text)
+            assert listing.json()["error"]["code"] == "NOT_FOUND", (path, listing.text)

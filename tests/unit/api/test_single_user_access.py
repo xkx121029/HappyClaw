@@ -40,8 +40,6 @@ async def client(tmp_path: Path):
         "/api/providers",
         "/api/runtime/activity",
         "/api/teams",
-        "/api/user-groups/audience",
-        "/api/users",
     ],
 )
 async def test_anonymous_get_is_served(client, path: str) -> None:
@@ -78,29 +76,31 @@ async def test_setup_writes_are_rejected_in_chinese(client) -> None:
         assert "单人" in err["message"]
 
 
-async def test_fresh_instance_has_no_teams_and_no_audience(client) -> None:
+async def test_fresh_instance_has_no_teams(client) -> None:
     c, _srv = client
     # Expert teams are a single-user feature; a fresh home simply has none.
     assert (await c.get("/api/teams")).json() == []
-    assert (await c.get("/api/user-groups/audience")).json() == []
 
 
-async def test_users_list_only_contains_owner(client) -> None:
-    c, srv = client
-    users = (await c.get("/api/users")).json()
-    assert srv.services is not None
-    owner = srv.services.owner.owner()
-    assert [u["id"] for u in users] == [owner.id]
-
-
-async def test_user_creation_is_read_only(client) -> None:
+@pytest.mark.parametrize(
+    "path",
+    ["/api/users", "/api/users/1", "/api/user-groups", "/api/user-groups/audience"],
+)
+@pytest.mark.parametrize("method", ["GET", "POST"])
+async def test_account_routes_are_removed(client, method: str, path: str) -> None:
+    """Account CRUD and groups are fully unmounted: reads and writes both 404."""
     c, _srv = client
-    r = await c.post(
-        "/api/users",
-        json={"username": "bob", "password": "TestPass12", "role": "user"},
-    )
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    r = await c.request(method, path, json={})
+    assert r.status_code == 404, f"{method} {path} -> {r.status_code} {r.text[:200]}"
+    assert r.json()["error"]["code"] == "NOT_FOUND"
+
+
+async def test_owner_identity_served_without_user_listing(client) -> None:
+    """The owner resolves via /api/auth/me; the /api/users listing is gone."""
+    c, srv = client
+    me = (await c.get("/api/auth/me")).json()
+    assert srv.services is not None
+    assert me["id"] == srv.services.owner.owner().id
 
 
 async def test_runtime_activity_shape(client) -> None:

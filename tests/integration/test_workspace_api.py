@@ -107,8 +107,8 @@ async def test_tree_and_file_follow_project_thread(env: Any, tmp_octop_home: Any
     project_root.mkdir(parents=True)
     (project_root / "project-note.md").write_text("from project", encoding="utf-8")
 
-    users = (await c.get("/api/users", headers=auth)).json()
-    uid = users[0]["id"]
+    me = (await c.get("/api/auth/me", headers=auth)).json()
+    uid = me["id"]
     srv.services.project_repo.create(
         project_id="prj_ws_test",
         user_id=uid,
@@ -355,7 +355,7 @@ async def test_non_owner_cannot_access_workspace(env: Any) -> None:
         headers=admin_auth,
         json={"username": "bob", "password": "TestPass12", "role": "user"},
     )
-    assert created.status_code == 400
+    assert created.status_code == 404
     bob_tok = (
         await c.post(
             "/api/auth/login",

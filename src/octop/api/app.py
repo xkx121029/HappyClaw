@@ -32,8 +32,8 @@ class _RouterMount:
 # with live routers (``/api/users/{user_id}`` would answer ``roles`` with 422)
 # and with the GET-only SPA catch-all (405), so answer them explicitly.
 _RETIRED_MULTI_USER_PREFIXES = (
-    "/users/roles",
-    "/users/invites",
+    "/users",
+    "/user-groups",
     "/auth/invite",
     "/auth/ldap",
     "/auth/oidc",
@@ -475,8 +475,7 @@ def deferred_router_specs() -> list[_RouterMount]:
         update,
         uploads,
         usage,
-        user_groups,
-        users,
+        user_avatars,
         voice,
         workspace,
     )
@@ -496,9 +495,12 @@ def deferred_router_specs() -> list[_RouterMount]:
     from octop.api.routers.voice import admin_router as admin_voice_router  # noqa: PLC0415
 
     specs = [
+        # The read-only avatar endpoint must be mounted BEFORE the retired
+        # catch-all below: ``GET /api/users/{id}/avatar`` stays alive (shared
+        # conversations render sender portraits), while every other
+        # ``/api/users`` and ``/api/user-groups`` surface answers 404 NOT_FOUND.
+        _RouterMount(user_avatars.router, "/api/users", ["users"]),
         _RouterMount(_retired_multi_user_router(), "/api", []),
-        _RouterMount(user_groups.router, "/api/user-groups", ["users"]),
-        _RouterMount(users.router, "/api/users", ["users"]),
         _RouterMount(agent_tools.router, "/api", ["agents"]),
         _RouterMount(acp.router, "/api", ["agents"]),
         _RouterMount(agent_mcp.router, "/api", ["agent-mcp"]),

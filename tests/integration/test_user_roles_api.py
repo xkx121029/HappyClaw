@@ -10,6 +10,12 @@ from __future__ import annotations
 
 import pytest
 
+_PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+    b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01"
+    b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
 ROLE_PATHS = [
     "/api/users/roles",
     "/api/users/roles/admin",
@@ -39,9 +45,45 @@ async def test_admin_invite_routes_are_removed(client, path: str) -> None:
         assert r.json()["error"]["code"] == "NOT_FOUND"
 
 
-async def test_user_write_routes_stay_mounted_but_read_only(client) -> None:
-    """``/api/users`` survives for reads; writes keep the single-user guard."""
-    assert (await client.get("/api/users")).status_code == 200
-    r = await client.post("/api/users", json={"username": "bob", "password": "x" * 12})
-    assert r.status_code == 400
-    assert r.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+USER_ACCOUNT_PATHS = [
+    "/api/users",
+    "/api/users/1",
+    "/api/users/1/unlock-login",
+    "/api/users/1/reset-password",
+    "/api/users/1/mfa",
+    "/api/user-groups",
+    "/api/user-groups/1",
+]
+
+
+@pytest.mark.parametrize("path", USER_ACCOUNT_PATHS)
+@pytest.mark.parametrize("method", ["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def test_user_account_routes_are_removed(client, method: str, path: str) -> None:
+    """``/api/users`` and ``/api/user-groups`` CRUD are fully unmounted.
+
+    Only ``GET /api/users/{id}/avatar`` survives (sender portraits in shared
+    conversations); its write methods are retired with the rest.
+    """
+    r = await client.request(method, path, json={})
+    assert r.status_code == 404, f"{method} {path} -> {r.status_code} {r.text[:200]}"
+    assert r.json()["error"]["code"] == "NOT_FOUND"
+
+
+@pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
+async def test_user_avatar_write_methods_are_removed(client, method: str) -> None:
+    r = await client.request(method, "/api/users/1/avatar", json={})
+    assert r.status_code == 404, f"{method} avatar -> {r.status_code} {r.text[:200]}"
+    assert r.json()["error"]["code"] == "NOT_FOUND"
+
+
+async def test_user_avatar_read_survives(client) -> None:
+    """Shared conversations render sender portraits: the GET avatar URL works."""
+    me = (await client.get("/api/auth/me")).json()
+    uploaded = await client.post(
+        "/api/auth/me/avatar",
+        files={"file": ("avatar.png", _PNG, "image/png")},
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    r = await client.get(f"/api/users/{me['id']}/avatar")
+    assert r.status_code == 200
+    assert r.content == _PNG

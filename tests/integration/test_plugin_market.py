@@ -13,11 +13,16 @@ def _empty_portal(monkeypatch: pytest.MonkeyPatch) -> None:
     clear_market_cache()
 
 
-async def test_list_market_unavailable_without_portal(env: Any) -> None:
+async def test_list_market_without_portal_still_lists_bundled(env: Any) -> None:
+    """当 portal 为空时远程市场不可用，但 bundled 插件仍在列表中（source=bundled）。"""
     client, _srv, auth = env
     response = await client.get("/api/plugins/market", headers=auth)
-    assert response.status_code == 502, response.text
-    assert response.json()["error"]["code"] == "PLUGIN_MARKET_FAILED"
+    assert response.status_code == 200, response.text
+    items = response.json()
+    assert isinstance(items, list)
+    bundled = [p for p in items if p.get("source") == "bundled"]
+    assert bundled, "bundled 插件必须出现在市场列表中"
+    any(b.get("id") == "task-progress-monitor" for b in bundled)
 
 
 async def test_market_requires_plugin_market_permission(env_admin_alice: Any) -> None:

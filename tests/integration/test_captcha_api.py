@@ -347,8 +347,8 @@ async def test_admin_captcha_forbidden_without_permission(env: Any) -> None:
         headers=admin_auth,
         json={"username": "bob", "password": "TestPass12", "role": "user"},
     )
-    assert created.status_code == 400
-    assert created.json()["error"]["code"] == "SINGLE_USER_UNSUPPORTED"
+    assert created.status_code == 404
+    assert created.json()["error"]["code"] == "NOT_FOUND"
 
     r = await c.get("/api/settings/captcha", headers={"Authorization": "Bearer bob"})
     assert r.status_code == 200

@@ -52,7 +52,7 @@ async def test_regular_user_cannot_create_provider(env):
         headers=admin_auth,
         json={"username": "regular", "password": "TestPass12", "role": "user"},
     )
-    assert created_user.status_code == 400
+    assert created_user.status_code == 404
     tok = (
         await c.post("/api/auth/login", json={"username": "regular", "password": "TestPass12"})
     ).json()["access_token"]

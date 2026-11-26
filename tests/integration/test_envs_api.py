@@ -84,7 +84,7 @@ async def test_envs_non_admin_forbidden(env: Any) -> None:
         headers=admin_auth,
         json={"username": "bob", "password": "TestPass12", "role": "user"},
     )
-    assert created.status_code == 400
+    assert created.status_code == 404
     bob_tok = (
         await c.post("/api/auth/login", json={"username": "bob", "password": "TestPass12"})
     ).json()["access_token"]
