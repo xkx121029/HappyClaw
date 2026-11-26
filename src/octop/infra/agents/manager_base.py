@@ -22,11 +22,13 @@ if TYPE_CHECKING:
     from octop.infra.agents.settings.decision import DecisionSettingsStore
     from octop.infra.agents.settings.langfuse import LangfuseSettingsStore
     from octop.infra.agents.settings.media_generation import MediaGenerationSettingsStore
+    from octop.infra.agents.teams import TeamService
     from octop.infra.connectors.service import ConnectorService
     from octop.infra.cron.manager import CronManager
     from octop.infra.db.repos.agents import AgentRow
     from octop.infra.db.services import RepoBundle
     from octop.infra.errors import OctopError
+    from octop.infra.proactive.scheduler import ProactiveCareScheduler
     from octop.infra.utils.paths import PathLayout
 
 
@@ -54,8 +56,11 @@ class AgentManagerBase:
     _langfuse: LangfuseSettingsStore
     _media_generation: MediaGenerationSettingsStore
     _cron_manager: CronManager | None
+    _proactive_scheduler: ProactiveCareScheduler | None
     _connector_user_override: dict[str, int]
     _plugin_tool_labels: dict[str, dict[str, str]]
+    _teams: TeamService
+    _lock: asyncio.Lock
     # Pooled harness instances: one per (expert, project directory).
     _workspace_pool: dict[str, dict[str, str]]
     _pool_workspaces: dict[str, str]
@@ -67,6 +72,7 @@ class AgentManagerBase:
     _reload_dirty: set[str]
     _reload_worker_running: dict[str, bool]
     _bootstrap_graph_refresh_pending: set[str]
+    _bootstrap_known: dict[str, bool]
 
     # Invocation tracking + store reclaim state.
     _active_invocations: dict[str, int]
@@ -115,6 +121,41 @@ class AgentManagerBase:
         raise NotImplementedError
 
     async def reload_all(self) -> None:
+        raise NotImplementedError
+
+    async def reload(self, agent_id: str) -> None:
+        raise NotImplementedError
+
+    def _assert_agent_name_available(
+        self,
+        user_id: int | None,
+        name: str,
+        *,
+        exclude_agent_id: str | None = None,
+    ) -> None:
+        raise NotImplementedError
+
+    async def _complete_create_bootstrap(self, row: AgentRow) -> None:
+        raise NotImplementedError
+
+    async def _start_agent(
+        self, row: AgentRow, *, init_workspace: bool = True
+    ) -> HarnessAgent | None:
+        raise NotImplementedError
+
+    async def _seed_expert_template(self, row: AgentRow, template_name: str) -> None:
+        raise NotImplementedError
+
+    def _assert_model_ref(self, user_id: int, model_ref: str | None) -> None:
+        raise NotImplementedError
+
+    def _assert_named_storage_backends(self, user_id: int, backend: Any) -> None:
+        raise NotImplementedError
+
+    def _assert_skill_packages_visible(self, user_id: int, package_ids: list[str]) -> None:
+        raise NotImplementedError
+
+    def validate_knowledge_base_ids(self, user_id: int, knowledge_base_ids: list[str]) -> list[str]:
         raise NotImplementedError
 
     def sync_skills_disabled(self, agent_id: str, disabled: set[str]) -> None:
