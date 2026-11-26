@@ -333,3 +333,5 @@ See [CHANGELOG.md](CHANGELOG.md).
 MIT — see [LICENSE](LICENSE).
 
 HappyClaw is derived from [TencentCloud/Octop](https://github.com/TencentCloud/Octop), and builds on its `octop-harness` (LangGraph chat runtime) and `octop-gateway` (IM channel pipeline) libraries. Thanks to the upstream maintainers and to the FastAPI, React and Ant Design projects this workbench is assembled from.
+
+**Character artwork —** special thanks to [@blessonism](https://github.com/blessonism) and the [grok-icon-study](https://github.com/blessonism/grok-icon-study) project, which provided the character design that gives HappyClaw its face.

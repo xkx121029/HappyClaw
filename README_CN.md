@@ -333,3 +333,5 @@ HappyClaw 是 Octop 的**修改版**，不是重写。Agent 运行时、网关�
 本项目采用 [MIT License](LICENSE)。
 
 HappyClaw 修改自 [TencentCloud/Octop](https://github.com/TencentCloud/Octop)，并依赖其 `octop-harness`（LangGraph 对话运行时）与 `octop-gateway`（IM 通道管线）。感谢上游维护者，以及本项目所组装的 FastAPI、React 与 Ant Design 社区。
+
+**形象素材**：特别感谢 [@blessonism](https://github.com/blessonism) 的 [grok-icon-study](https://github.com/blessonism/grok-icon-study) 项目，为 HappyClaw 提供了角色形象。
